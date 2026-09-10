@@ -69,7 +69,7 @@ class Command(BaseCommand):
             for op_id in sorted(operators):
                 self.stdout.write(f"  {op_id}")
 
-        path = Path(settings.DATA_DIR) / "overrides.json"
+        path = Path(settings.OVERRIDES_PATH)
         if options["write"]:
             data = {"maps": {}, "operators": {}}
             if path.exists():
@@ -80,11 +80,12 @@ class Command(BaseCommand):
                 data["maps"].setdefault(str(map_id), "")
             for op_id in operators:
                 data["operators"].setdefault(str(op_id), "")
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
             self.stdout.write(
                 self.style.SUCCESS(
                     f"\nEscribi las entradas vacias en {path}. Rellenalas y corre "
-                    "`manage.py import_replays --force` para reetiquetar."
+                    "`manage.py retag` para etiquetar lo ya importado."
                 )
             )
         else:

@@ -109,7 +109,8 @@ npm run dev     # http://localhost:5173
 | `manage.py watch_replays` | Vigila `REPLAY_DIR` e importa cada partida al terminar. `--once` hace una pasada. |
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
-| `manage.py test tests` | Corre la suite (98 tests). |
+| `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
+| `manage.py test tests` | Corre la suite (110 tests). |
 
 ## Configuracion
 
@@ -135,7 +136,9 @@ parser esta hecho para degradar bien en vez de reventar:
 - **Mapa revampeado (ID nuevo)**: aparece como `Unknown(<id>)`. Corre
   `manage.py unknown_ids`: te muestra los sitios de bomba que vio en ese mapa
   (con eso lo identificas al tiro) y con `--write` te deja la entrada lista en
-  `data/overrides.json` para rellenar.
+  `data/overrides.json` para rellenar. Despues `manage.py retag` etiqueta el
+  historial ya importado en segundos: los IDs estan en la base, asi que no hay
+  que volver a leer un solo `.rec`.
 - **Cambio de formato binario**: ahi si hay que trabajar. `docs/formato-rec.md`
   documenta la estructura del `.rec`, los patrones de bytes y como diagnosticar
   cual dejo de funcionar.
@@ -178,12 +181,13 @@ backend/
   replays/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
+    retag.py            re-etiqueta IDs ya importados sin reparsear
     analytics/
       metrics.py        metricas derivadas por ronda
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                98 tests (parser, metricas, agregados, coach, API)
+  tests/                110 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
 docs/                   formato del .rec, metricas y roadmap
 data/                   SQLite y overrides (no se versiona)

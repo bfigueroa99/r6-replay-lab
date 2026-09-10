@@ -58,6 +58,19 @@ Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 
 ## Backlog
 
+> **Nota de orden**: los items #1 y #2 se dieron vuelta. El #1 (UI) necesita el
+> re-etiquetado del #2 para poder decir que quedo listo, asi que el #2 se hizo
+> primero. El numero de cada item se mantiene para no romper las referencias.
+
+### 2. `manage.py retag` [x]
+
+Hecho: `replays/retag.py` vuelve a resolver `Match.map_name` / `map_slug` desde
+`map_id` y `RoundPlayer.operator` desde `operator_id`, sin tocar los `.rec`.
+Nunca degrada una etiqueta buena a `Unknown(...)`. Comando `manage.py retag`
+con `--dry-run`, y `unknown_ids --write` ahora escribe en `OVERRIDES_PATH` (antes
+ignoraba la variable) y apunta a `retag` en vez de a `import_replays --force`.
+12 tests nuevos.
+
 ### 1. Etiquetar mapas y operadores desconocidos desde la UI
 
 Hoy 5 IDs de mapa y 1 de operador salen como `Unknown(<id>)`: casi la mitad del
@@ -67,17 +80,12 @@ existe, pero obliga a editar JSON a mano.
 - Pagina "Datos" que liste cada ID desconocido con los sitios de bomba vistos
   (que es lo que delata el mapa) y las fechas en que aparecio.
 - `POST /api/overrides/` que escriba `data/overrides.json`.
-- Al guardar, re-etiquetar lo ya importado sin reimportar (item #2).
+- Al guardar, llamar a `replays.retag.retag()` (item #2, ya hecho) para que el
+  historial se actualice sin reimportar. Ojo: el server cachea `overrides.json`,
+  asi que hay que recargarlo (`overrides.load(force=True)`, que `retag()` ya
+  hace) para que el cambio se vea sin reiniciar.
 - **Listo cuando**: se puede pasar de `Unknown(398899676157)` a un nombre real
   desde el navegador y el historial se agrupa solo.
-
-### 2. `manage.py retag`
-
-Re-aplica `overrides.json` sobre `Match.map_name` / `map_slug` y
-`RoundPlayer.operator` de lo ya importado. Hoy la unica forma es `--force` sobre
-todas las carpetas, que reparsea 5-9 MB por ronda para cambiar un string.
-
-- **Listo cuando**: `retag` corrige nombres en segundos y es idempotente.
 
 ### 3. Nemesis: duelos por rival
 

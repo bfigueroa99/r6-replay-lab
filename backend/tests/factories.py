@@ -27,12 +27,14 @@ def make_match(
     opponent_score: int = 2,
     match_type: str = "Ranked",
     index: int = 0,
+    map_id: int = 0,
 ) -> Match:
     played_at = played_at or datetime(2026, 9, 1, 20, 0) + timedelta(hours=index)
     return Match.objects.create(
         match_id=f"match-{index}-{map_name}",
         folder=f"Match-{index}",
         played_at=played_at,
+        map_id=map_id,
         map_name=map_name,
         map_slug=map_name.lower().replace(" ", "-"),
         match_type=match_type,
@@ -73,6 +75,7 @@ def make_round_player(
     is_me: bool = True,
     side: str | None = None,
     operator: str = "Zofia",
+    operator_id: int = 0,
     kills: int = 1,
     died: bool = True,
     headshots: int = 0,
@@ -96,6 +99,7 @@ def make_round_player(
         is_me=is_me,
         won=rnd.my_team_won if won is None else won,
         operator=operator,
+        operator_id=operator_id,
         spawn=spawn,
         kills=kills,
         died=died,
