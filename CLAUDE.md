@@ -16,6 +16,7 @@ cd backend; python manage.py test tests    # suite completa, tiene que quedar en
 cd backend; python manage.py runserver     # sirve el build de React en la misma URL
 cd frontend; npm run build                 # obligatorio si tocas frontend/src
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
+cd frontend; npm run desktop               # app de escritorio (Electron)
 ```
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
@@ -25,8 +26,10 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 
 - **`pydissect/` no importa Django.** Es un parser independiente; recibe rutas y
   devuelve dicts. Si necesitas config, pasala como argumento.
-- **Sin dependencias nuevas** salvo que no haya alternativa razonable. Hoy son
-  dos: `django` y `zstandard`. Nada de DRF, pandas ni requests.
+- **Sin dependencias nuevas** salvo que no haya alternativa razonable. El
+  backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
+  requests. En el frontend, `electron` es devDependency y solo la usa la app de
+  escritorio: la UI web tiene que seguir funcionando sin ella.
 - **La API es de lectura.** Vistas planas con `JsonResponse`, un solo POST
   (`/api/import/`). No agregues serializers ni viewsets.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
@@ -61,5 +64,9 @@ No propongas features que dependan de esto (esta documentado en el README):
 - **Overlay in-game. Nunca.** Ni ventana flotante, ni hook al juego, ni captura
   de pantalla, ni lectura de memoria. Es la linea que separa esto de stats.cc y
   de cualquier cosa que Ubisoft pueda leer como cheat.
+  La app de Electron **no** es un overlay ni el primer paso hacia uno: es una
+  ventana normal con marco, sin always-on-top y sin transparencia. Si alguna
+  iteracion propone `alwaysOnTop`, `transparent` o `setIgnoreMouseEvents`, la
+  respuesta es no.
 - Cuentas, login, telemetria, sincronizacion a la nube.
 - Integracion con la API de Ubisoft.

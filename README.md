@@ -70,8 +70,8 @@ npm run build
 O corre `.\scripts\setup.ps1`, que hace todo lo de arriba (menos el `init-git`).
 
 Los scripts de `scripts/` son todos PowerShell y asumen el venv en `.venv`:
-`setup.ps1`, `init-git.ps1`, `import.ps1`, `start.ps1`, `watch.ps1`, `dev.ps1`,
-`test.ps1`.
+`setup.ps1`, `init-git.ps1`, `import.ps1`, `start.ps1`, `desktop.ps1`,
+`watch.ps1`, `dev.ps1`, `test.ps1`.
 
 ## Uso
 
@@ -85,6 +85,32 @@ python manage.py runserver
 ```
 
 Abre <http://127.0.0.1:8000>.
+
+### App de escritorio
+
+Si prefieres una ventana propia en vez de una pestana del navegador, hay una app
+de Electron que envuelve la misma UI:
+
+```powershell
+cd frontend
+npm run desktop        # o .\scripts\desktop.ps1
+```
+
+El proceso principal levanta Django solo, espera a que la API responda y recien
+ahi muestra la ventana. Si ya tenias un `runserver` corriendo en otra consola, lo
+reutiliza y **no** te lo mata al cerrar. El menu tiene un acceso directo a tu
+carpeta `MatchReplay`.
+
+Que quede claro, porque es la duda obvia: **no es un overlay**. Es una ventana
+normal, sin always-on-top, sin transparencia y sin ningun tipo de hook al juego.
+Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
+
+Para desarrollar la UI dentro de la ventana, con hot reload:
+
+```powershell
+cd frontend
+npm run desktop:dev    # apunta a Vite en :5173; Django tiene que estar corriendo
+```
 
 Para que importe solo cada vez que termines una partida, deja esto corriendo en
 otra consola:
@@ -189,6 +215,7 @@ backend/
     views.py, urls.py   API JSON
   tests/                110 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
+  electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap
 data/                   SQLite y overrides (no se versiona)
 ```

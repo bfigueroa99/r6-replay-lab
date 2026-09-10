@@ -71,6 +71,20 @@ con `--dry-run`, y `unknown_ids --write` ahora escribe en `OVERRIDES_PATH` (ante
 ignoraba la variable) y apunta a `retag` en vez de a `import_replays --force`.
 12 tests nuevos.
 
+### 18. App de escritorio con Electron [x]
+
+Pedido directo del usuario, hecho fuera de orden. `frontend/electron/` envuelve
+la misma UI en una ventana: el proceso principal levanta Django, espera a que
+`/api/health/` responda y recien ahi muestra la ventana (mientras tanto se ve
+`loading.html`, no un error de conexion). Si ya hay un `runserver` corriendo lo
+reutiliza y no lo mata al cerrar; si lo levanto el, lo baja con el arbol
+completo. Menu con acceso a la carpeta de replays, links externos al navegador,
+`contextIsolation` + `sandbox` y preload que no expone nada mas que un flag.
+`npm run desktop`, `npm run desktop:dev` (contra Vite) y `scripts/desktop.ps1`.
+
+**No es un overlay**: ventana con marco, sin always-on-top ni transparencia.
+Sigue valiendo el no-goal de mas arriba.
+
 ### 1. Etiquetar mapas y operadores desconocidos desde la UI
 
 Hoy 5 IDs de mapa y 1 de operador salen como `Unknown(<id>)`: casi la mitad del
@@ -229,6 +243,16 @@ propio juego.
 
 - Lazy load de las paginas con graficos, o chunk aparte para recharts.
 - **Listo cuando**: la carga inicial baja de 250 kB sin perder funcionalidad.
+
+### 19. Empaquetar la app de escritorio
+
+Hoy `npm run desktop` necesita el repo, el venv y `npm install`. Un `.exe`
+distribuible es otra cosa: hay que meter CPython y las dependencias adentro
+(electron-builder + PyInstaller o similar), decidir donde vive la base de datos
+fuera del repo y firmar el binario. Vale la pena solo si la app va a salir de
+este PC.
+
+- **Listo cuando**: existe un instalador que corre en una maquina sin Python.
 
 ## Ideas descartadas
 
