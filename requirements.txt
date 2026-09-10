@@ -1,0 +1,6 @@
+# Backend. El parser solo necesita zstandard; Django es para la API y la base.
+Django>=5.0,<6.0
+zstandard>=0.22
+
+# Nada mas: no hay dependencias de red, ni binarios externos, ni DRF.
+# Los tests corren con el runner de Django (`manage.py test tests`).

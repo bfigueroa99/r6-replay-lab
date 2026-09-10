@@ -1,0 +1,546 @@
+"""Motor de insights: convierte los agregados en cosas concretas que corregir.
+
+Reglas explicitas, con muestra minima en cada una para no sacar conclusiones de
+tres rondas. Cada insight trae el numero, la referencia con la que se compara y
+que hacer al respecto.
+"""
+
+from __future__ import annotations
+
+from . import aggregates as agg
+
+SEVERITY_ORDER = {"alta": 0, "media": 1, "baja": 2, "positivo": 3}
+
+
+def _insight(
+    key: str,
+    severity: str,
+    title: str,
+    detail: str,
+    action: str,
+    *,
+    metric: str = "",
+    value=None,
+    baseline=None,
+    sample: int = 0,
+    scope: str = "general",
+) -> dict:
+    return {
+        "key": key,
+        "severity": severity,
+        "title": title,
+        "detail": detail,
+        "action": action,
+        "metric": metric,
+        "value": value,
+        "baseline": baseline,
+        "sample": sample,
+        "scope": scope,
+    }
+
+
+def build_insights(**filters) -> dict:
+    """Devuelve los insights ordenados por severidad."""
+    over = agg.overview(**filters)
+    overall = over["overall"]
+    attack = over["attack"]
+    defense = over["defense"]
+    insights: list[dict] = []
+
+    if (overall.get("rounds") or 0) < 20:
+        return {
+            "insights": [
+                _insight(
+                    "sin-datos",
+                    "baja",
+                    "Falta volumen para sacar conclusiones",
+                    f"Tienes {overall.get('rounds') or 0} rondas importadas. "
+                    "Con menos de 20 cualquier porcentaje es ruido.",
+                    "Juega e importa unas cuantas partidas mas y vuelve a mirar esto.",
+                    metric="rounds",
+                    value=overall.get("rounds") or 0,
+                    baseline=20,
+                    sample=overall.get("rounds") or 0,
+                )
+            ],
+            "totals": overall,
+        }
+
+    insights += _opening_duels(overall, attack, defense)
+    insights += _trades(overall)
+    insights += _early_deaths(attack, defense)
+    insights += _sides(attack, defense)
+    insights += _aim(overall)
+    insights += _impact(overall)
+    insights += _maps(overall, **filters)
+    insights += _sites(overall, **filters)
+    insights += _operators(overall, **filters)
+    insights += _spawns(overall, **filters)
+    insights += _round_flow(**filters)
+    insights += _form(overall, **filters)
+
+    insights.sort(key=lambda i: (SEVERITY_ORDER.get(i["severity"], 9), -(i["sample"] or 0)))
+    return {"insights": insights, "totals": overall}
+
+
+# --------------------------------------------------------------------- reglas
+
+
+def _opening_duels(overall, attack, defense) -> list[dict]:
+    out = []
+    duels = overall.get("opening_duels") or 0
+    wr = overall.get("opening_winrate")
+    if duels >= 20 and wr is not None:
+        if wr < 45:
+            out.append(
+                _insight(
+                    "duelos-apertura",
+                    "alta" if wr < 38 else "media",
+                    f"Pierdes el {100 - wr:.0f}% de los duelos de apertura",
+                    f"Ganaste {overall['opening_kills']} de {duels} primeros duelos. "
+                    f"Cuando ganas la apertura la ronda se te va en "
+                    f"{overall.get('winrate_after_opening_kill') or 0:.0f}% de victorias; "
+                    f"cuando la pierdes, {overall.get('winrate_after_opening_death') or 0:.0f}%.",
+                    "Deja de tomar el primer duelo sin apoyo: pide que alguien te siga a "
+                    "distancia de trade, o cede el primer contacto y juega el refrag.",
+                    metric="opening_winrate",
+                    value=wr,
+                    baseline=50,
+                    sample=duels,
+                )
+            )
+        elif wr >= 58:
+            out.append(
+                _insight(
+                    "duelos-apertura-fuerte",
+                    "positivo",
+                    f"Ganas el {wr:.0f}% de los duelos de apertura",
+                    f"{overall['opening_kills']} de {duels}. Es tu mejor herramienta.",
+                    "Pide explicitamente el rol de entry/primer contacto y que te sigan "
+                    "para tradear.",
+                    metric="opening_winrate",
+                    value=wr,
+                    baseline=50,
+                    sample=duels,
+                )
+            )
+
+    for label, row in (("ataque", attack), ("defensa", defense)):
+        d = row.get("opening_duels") or 0
+        w = row.get("opening_winrate")
+        if d >= 15 and w is not None and w < 40:
+            out.append(
+                _insight(
+                    f"duelos-apertura-{label}",
+                    "media",
+                    f"En {label} los primeros duelos se te van ({w:.0f}%)",
+                    f"{row['opening_kills']} de {d} duelos ganados en {label}.",
+                    (
+                        "En ataque: usa dron antes de cruzar y no pelees a la salida del spawn."
+                        if label == "ataque"
+                        else "En defensa: no hagas roam agresivo los primeros 20 segundos, "
+                        "consolida y usa camara."
+                    ),
+                    metric="opening_winrate",
+                    value=w,
+                    baseline=50,
+                    sample=d,
+                    scope=label,
+                )
+            )
+    return out
+
+
+def _trades(overall) -> list[dict]:
+    deaths = overall.get("deaths") or 0
+    untraded = overall.get("untraded_death_pct")
+    if deaths >= 30 and untraded is not None and untraded > 65:
+        return [
+            _insight(
+                "muertes-sin-trade",
+                "alta" if untraded > 78 else "media",
+                f"El {untraded:.0f}% de tus muertes no las venga nadie",
+                f"{overall['untraded_deaths']} de {deaths} muertes quedaron sin trade. "
+                "Eso significa que te mueres lejos del equipo o primero de todos.",
+                "Juega a menos de 5 segundos de un compañero: si te matan, el que te sigue "
+                "tiene que poder ver al asesino sin rotar medio mapa.",
+                metric="untraded_death_pct",
+                value=untraded,
+                baseline=60,
+                sample=deaths,
+            )
+        ]
+    if deaths >= 30 and untraded is not None and untraded < 45:
+        return [
+            _insight(
+                "muertes-tradeadas",
+                "positivo",
+                f"Solo el {untraded:.0f}% de tus muertes queda sin vengar",
+                "Estas jugando pegado al equipo; tus muertes cuestan poco.",
+                "Manten esa distancia y aprovechala para forzar duelos que te favorezcan.",
+                metric="untraded_death_pct",
+                value=untraded,
+                baseline=60,
+                sample=deaths,
+            )
+        ]
+    return []
+
+
+def _early_deaths(attack, defense) -> list[dict]:
+    out = []
+    for label, row, limit in (("ataque", attack, 50), ("defensa", defense, 45)):
+        avg = row.get("avg_death_elapsed")
+        deaths = row.get("deaths") or 0
+        if deaths >= 20 and avg is not None and avg < limit:
+            out.append(
+                _insight(
+                    f"muerte-temprana-{label}",
+                    "media",
+                    f"En {label} mueres a los {avg:.0f}s promedio",
+                    f"Sobre {deaths} muertes. La ronda dura ~3 minutos: te estas quedando "
+                    "fuera de la mayor parte de la ronda.",
+                    (
+                        "En ataque, gasta los primeros 40s en dronear y abrir paredes, no en "
+                        "buscar pelea."
+                        if label == "ataque"
+                        else "En defensa, arma el sitio primero y sal a roamear despues de que "
+                        "sepas de donde vienen."
+                    ),
+                    metric="avg_death_elapsed",
+                    value=avg,
+                    baseline=limit,
+                    sample=deaths,
+                    scope=label,
+                )
+            )
+    return out
+
+
+def _sides(attack, defense) -> list[dict]:
+    a, d = attack.get("winrate"), defense.get("winrate")
+    ar, dr = attack.get("rounds") or 0, defense.get("rounds") or 0
+    if a is None or d is None or min(ar, dr) < 25:
+        return []
+    gap = a - d
+    if abs(gap) < 12:
+        return []
+    weak, strong = ("ataque", "defensa") if gap < 0 else ("defensa", "ataque")
+    weak_wr, strong_wr = (a, d) if gap < 0 else (d, a)
+    return [
+        _insight(
+            "desbalance-lados",
+            "media",
+            f"Tu {weak} rinde {abs(gap):.0f} puntos menos que tu {strong}",
+            f"{weak}: {weak_wr:.0f}% de rondas ganadas · {strong}: {strong_wr:.0f}%.",
+            (
+                "Dedica una sesion a revisar ejecuciones de ataque: sitios donde entras, "
+                "quien abre, quien tradea."
+                if weak == "ataque"
+                else "Revisa tus setups de defensa: refuerzos, angulos y donde te paras "
+                "en los sitios que mas juegas."
+            ),
+            metric="winrate",
+            value=weak_wr,
+            baseline=strong_wr,
+            sample=min(ar, dr),
+            scope=weak,
+        )
+    ]
+
+
+def _aim(overall) -> list[dict]:
+    kills = overall.get("kills") or 0
+    hs = overall.get("hs_pct")
+    if kills < 40 or hs is None:
+        return []
+    if hs < 25:
+        return [
+            _insight(
+                "headshots",
+                "media",
+                f"Solo {hs:.0f}% de tus bajas son headshot",
+                f"{overall['headshots']} de {kills} bajas. En Siege la cabeza mata de un tiro: "
+                "un hs% bajo suele ser crosshair placement, no puntería.",
+                "Apunta a la altura de cabeza mientras te mueves y haz 10 minutos de "
+                "campo de tiro antes de jugar ranked.",
+                metric="hs_pct",
+                value=hs,
+                baseline=30,
+                sample=kills,
+            )
+        ]
+    if hs >= 45:
+        return [
+            _insight(
+                "headshots-fuerte",
+                "positivo",
+                f"{hs:.0f}% de headshots",
+                f"{overall['headshots']} de {kills} bajas. Tu mecanica no es el problema.",
+                "Si el winrate no acompaña, el trabajo esta en decisiones y posicion, no en aim.",
+                metric="hs_pct",
+                value=hs,
+                baseline=30,
+                sample=kills,
+            )
+        ]
+    return []
+
+
+def _impact(overall) -> list[dict]:
+    out = []
+    rounds = overall.get("rounds") or 0
+    kst = overall.get("kst_pct")
+    if rounds >= 40 and kst is not None and kst < 65:
+        out.append(
+            _insight(
+                "kst",
+                "alta" if kst < 55 else "media",
+                f"Aportas algo en solo el {kst:.0f}% de las rondas",
+                f"KST = rondas donde matas, sobrevives o tu muerte se tradea. "
+                f"{overall['kst_rounds']} de {rounds}. El resto son rondas en las que el "
+                "equipo jugo con uno menos.",
+                "Antes que buscar mas kills, apunta a no morir gratis: sobrevivir ya cuenta.",
+                metric="kst_pct",
+                value=kst,
+                baseline=70,
+                sample=rounds,
+            )
+        )
+    clutch = overall.get("clutch_rounds") or 0
+    if rounds >= 40 and clutch == 0:
+        out.append(
+            _insight(
+                "sin-clutches",
+                "baja",
+                "No tienes rondas 1vX ganadas",
+                f"En {rounds} rondas no cerraste ninguna quedandote solo.",
+                "Cuando quedes ultimo, juega el reloj y separa los duelos: uno a la vez, "
+                "nunca dos angulos abiertos.",
+                metric="clutch_rounds",
+                value=0,
+                baseline=1,
+                sample=rounds,
+            )
+        )
+    return out
+
+
+def _maps(overall, **filters) -> list[dict]:
+    base = overall.get("winrate")
+    if base is None:
+        return []
+    rows = [r for r in agg.by_map(min_rounds=15, **filters) if r.get("winrate") is not None]
+    if len(rows) < 2:
+        return []
+    out = []
+    worst = min(rows, key=lambda r: r["winrate"])
+    if worst["winrate"] < base - 10:
+        out.append(
+            _insight(
+                "mapa-debil",
+                "media",
+                f"{worst['map']} es tu peor mapa ({worst['winrate']:.0f}%)",
+                f"{worst['rounds']} rondas jugadas, contra un {base:.0f}% general. "
+                f"Ataque {worst.get('attack_winrate') or 0:.0f}% · "
+                f"defensa {worst.get('defense_winrate') or 0:.0f}%.",
+                f"Elige un solo sitio de {worst['map']} y aprendetelo completo: refuerzos, "
+                "rotaciones y dos angulos de defensa. Es mas rentable que estudiar el mapa entero.",
+                metric="winrate",
+                value=worst["winrate"],
+                baseline=base,
+                sample=worst["rounds"],
+                scope=worst["map"],
+            )
+        )
+    best = max(rows, key=lambda r: r["winrate"])
+    if best["winrate"] > base + 10:
+        out.append(
+            _insight(
+                "mapa-fuerte",
+                "positivo",
+                f"{best['map']} es tu mapa ({best['winrate']:.0f}%)",
+                f"{best['rounds']} rondas, {best['winrate'] - base:+.0f} puntos sobre tu promedio.",
+                "Cuando puedas votar o banear, empuja para jugar este mapa.",
+                metric="winrate",
+                value=best["winrate"],
+                baseline=base,
+                sample=best["rounds"],
+                scope=best["map"],
+            )
+        )
+    return out
+
+
+def _sites(overall, **filters) -> list[dict]:
+    base = overall.get("winrate")
+    rows = [r for r in agg.by_site(min_rounds=8, **filters) if r.get("winrate") is not None]
+    if base is None or not rows:
+        return []
+    worst = min(rows, key=lambda r: r["winrate"])
+    if worst["winrate"] >= base - 15:
+        return []
+    return [
+        _insight(
+            "sitio-debil",
+            "media",
+            f"{worst['site']} en {worst['map']}: {worst['winrate']:.0f}% de rondas ganadas",
+            f"{worst['rounds']} rondas en ese sitio, {base - worst['winrate']:.0f} puntos bajo "
+            "tu promedio.",
+            "Anota que hacen distinto los equipos que te ganan ahi: por donde entran y que "
+            "pared abren primero. Es el sitio con mas retorno para estudiar.",
+            metric="winrate",
+            value=worst["winrate"],
+            baseline=base,
+            sample=worst["rounds"],
+            scope=f"{worst['map']} · {worst['site']}",
+        )
+    ]
+
+
+def _operators(overall, **filters) -> list[dict]:
+    base_wr = overall.get("winrate")
+    base_kpr = overall.get("kpr")
+    rows = [r for r in agg.by_operator(min_rounds=12, **filters) if r.get("winrate") is not None]
+    if base_wr is None or not rows:
+        return []
+    out = []
+    bad = [
+        r
+        for r in rows
+        if r["winrate"] < base_wr - 12 or (base_kpr and (r.get("kpr") or 0) < base_kpr * 0.7)
+    ]
+    if bad:
+        worst = min(bad, key=lambda r: r["winrate"])
+        out.append(
+            _insight(
+                "operador-debil",
+                "media",
+                f"Con {worst['operator']} rindes por debajo de tu promedio",
+                f"{worst['rounds']} rondas · {worst['winrate']:.0f}% ganadas · "
+                f"{worst.get('kpr') or 0:.2f} kills por ronda (tu promedio: {base_kpr:.2f}).",
+                f"O te dedicas a aprender {worst['operator']} de verdad (utilidad incluida) o "
+                "lo saltas y te quedas con tu pool corto.",
+                metric="winrate",
+                value=worst["winrate"],
+                baseline=base_wr,
+                sample=worst["rounds"],
+                scope=worst["operator"],
+            )
+        )
+    good = [r for r in rows if r["winrate"] > base_wr + 10]
+    if good:
+        best = max(good, key=lambda r: r["winrate"])
+        out.append(
+            _insight(
+                "operador-fuerte",
+                "positivo",
+                f"{best['operator']} es tu mejor operador ({best['winrate']:.0f}%)",
+                f"{best['rounds']} rondas · {best.get('kpr') or 0:.2f} kills por ronda.",
+                "Priorizalo en el pick y arma tu pool alrededor de ese rol.",
+                metric="winrate",
+                value=best["winrate"],
+                baseline=base_wr,
+                sample=best["rounds"],
+                scope=best["operator"],
+            )
+        )
+    return out
+
+
+def _spawns(overall, **filters) -> list[dict]:
+    rows = [r for r in agg.by_spawn(min_rounds=8, **filters) if r.get("winrate") is not None]
+    if len(rows) < 3:
+        return []
+    base = overall.get("winrate") or 0
+    worst = min(rows, key=lambda r: r["winrate"])
+    if worst["winrate"] >= base - 18:
+        return []
+    return [
+        _insight(
+            "spawn-debil",
+            "baja",
+            f"Atacando desde {worst['spawn']} ({worst['map']}) ganas {worst['winrate']:.0f}%",
+            f"{worst['rounds']} rondas desde ese spawn.",
+            "Cambia la ruta de entrada desde ese spawn: si siempre vas por el mismo lado, "
+            "la defensa ya lo tiene resuelto.",
+            metric="winrate",
+            value=worst["winrate"],
+            baseline=base,
+            sample=worst["rounds"],
+            scope=f"{worst['map']} · {worst['spawn']}",
+        )
+    ]
+
+
+def _round_flow(**filters) -> list[dict]:
+    rows = [r for r in agg.by_round_number(**filters) if (r.get("rounds") or 0) >= 8]
+    if len(rows) < 4:
+        return []
+    early = [r for r in rows if r["round_number"] < 3]
+    late = [r for r in rows if r["round_number"] >= 6]
+    if not early or not late:
+        return []
+    e = sum(r["rounds_won"] for r in early) / max(sum(r["rounds"] for r in early), 1) * 100
+    l = sum(r["rounds_won"] for r in late) / max(sum(r["rounds"] for r in late), 1) * 100
+    sample = sum(r["rounds"] for r in late)
+    if e - l < 15:
+        return []
+    return [
+        _insight(
+            "rondas-finales",
+            "media",
+            f"Te caes en las rondas finales ({l:.0f}% vs {e:.0f}% al principio)",
+            f"Primeras 3 rondas: {e:.0f}% ganadas. Ronda 7 en adelante: {l:.0f}% "
+            f"({sample} rondas).",
+            "Cuando el marcador esta apretado, simplifica: menos jugadas nuevas, mas "
+            "ejecucion del setup que ya te funciono en la primera mitad.",
+            metric="winrate",
+            value=round(l, 1),
+            baseline=round(e, 1),
+            sample=sample,
+        )
+    ]
+
+
+def _form(overall, **filters) -> list[dict]:
+    series = agg.trend_by_match(limit=10, **filters)
+    if len(series) < 6:
+        return []
+    recent = series[-5:]
+    rounds = sum(r["rounds"] for r in recent)
+    won = sum(r["rounds_won"] for r in recent)
+    if not rounds:
+        return []
+    wr = won / rounds * 100
+    base = overall.get("winrate") or 0
+    if wr < base - 12:
+        return [
+            _insight(
+                "bajon",
+                "baja",
+                f"Ultimas 5 partidas: {wr:.0f}% de rondas ganadas",
+                f"Tu promedio historico es {base:.0f}%. Puede ser varianza o puede ser cansancio.",
+                "Si son tres derrotas seguidas, corta la sesion. El tilt cuesta mas MMR que "
+                "cualquier error mecanico.",
+                metric="winrate",
+                value=round(wr, 1),
+                baseline=base,
+                sample=rounds,
+            )
+        ]
+    if wr > base + 12:
+        return [
+            _insight(
+                "racha",
+                "positivo",
+                f"Ultimas 5 partidas: {wr:.0f}% de rondas ganadas",
+                f"Vas {wr - base:+.0f} puntos sobre tu promedio.",
+                "Aprovecha la racha, pero fijate un tope de partidas para no devolverlo todo.",
+                metric="winrate",
+                value=round(wr, 1),
+                baseline=base,
+                sample=rounds,
+            )
+        ]
+    return []

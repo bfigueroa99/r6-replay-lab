@@ -1,0 +1,27 @@
+Analizador completo de replays de Rainbow Six Siege
+
+Aplicacion local (Django + React) que parsea los .rec de Siege y calcula las
+metricas que el juego no muestra, con un motor de insights que dice que
+corregir.
+
+- pydissect: parser del formato Dissect (.rec) en Python puro, sin binarios
+  externos. Port de la logica de r6-dissect (MIT) con soporte para las
+  temporadas nuevas: nombres de operadores desde la cabecera, lados deducidos
+  por mayoria y overrides para IDs de mapas revampeados.
+- Metricas por ronda: duelos de apertura, entry kills, trades y muertes sin
+  trade, momento de la muerte, KST, clutches y multikills.
+- Agregaciones por mapa, sitio, spawn, operador, lado y numero de ronda, con
+  muestra minima configurable.
+- Coach: reglas explicitas que comparan contra el promedio propio y exigen
+  muestra antes de opinar, cada una con el numero, la referencia y la accion.
+- Importacion idempotente y watcher que importa cada partida al terminar.
+- Frontend React con dashboards, mapa de calor por zonas y timeline por ronda.
+- 92 tests: parser sobre .rec sinteticos construidos byte a byte, metricas,
+  agregaciones, coach, API e integracion contra replays reales.
+
+Limitaciones del formato documentadas en docs/formato-rec.md: no hay
+coordenadas de las bajas, y plants/defuses y asistencias dejaron de ser
+legibles en Y11S3.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01QpXJhxvKqV1FnaW5LEG6Nr

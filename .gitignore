@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Datos locales: base de datos, overrides y logs.
+# Se usa data/* (no data/) para poder dejar el .gitkeep versionado.
+data/*
+!data/.gitkeep
+*.sqlite3
+*.log
+
+# Configuracion local
+.env
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Django
+staticfiles/
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Replays: nunca al repo, pesan 5-9 MB cada uno
+*.rec
