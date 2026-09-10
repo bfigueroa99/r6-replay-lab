@@ -159,7 +159,9 @@ Vale la pena ser explicito, porque son limitaciones del formato, no del codigo:
   de los rivales salen del kill feed, no de su scoreboard.
 
 `docs/formato-rec.md` explica el detalle tecnico de cada punto y por donde
-seguir si alguien quiere resolverlos.
+seguir si alguien quiere resolverlos. Lo que si esta en carpeta, con lo que
+hacen las herramientas parecidas y lo que se descarto a proposito, esta en
+`docs/roadmap.md`.
 
 ## Estructura
 
@@ -183,7 +185,7 @@ backend/
     views.py, urls.py   API JSON
   tests/                98 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
-docs/                   formato del .rec y definicion de cada metrica
+docs/                   formato del .rec, metricas y roadmap
 data/                   SQLite y overrides (no se versiona)
 ```
 
