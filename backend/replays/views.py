@@ -47,14 +47,24 @@ def _filters(request: HttpRequest) -> dict:
     return out
 
 
-def _min_rounds(request: HttpRequest, default: int | None = None) -> int:
-    raw = request.GET.get("min_rounds")
+def _int_param(request: HttpRequest, key: str, default: int, *, minimum: int, maximum: int) -> int:
+    """Entero de la query string, acotado al rango. Si no es valido, el default.
+
+    El acotado no es cosmetico: sin el, un `?limit=-1` termina como slice
+    negativo en el ORM y Django responde 500.
+    """
+    raw = request.GET.get(key)
     if raw:
         try:
-            return max(int(raw), 1)
+            default = int(raw)
         except ValueError:
             pass
-    return default if default is not None else settings.MIN_ROUNDS_DEFAULT
+    return max(minimum, min(default, maximum))
+
+
+def _min_rounds(request: HttpRequest, default: int | None = None) -> int:
+    fallback = default if default is not None else settings.MIN_ROUNDS_DEFAULT
+    return _int_param(request, "min_rounds", fallback, minimum=1, maximum=10_000)
 
 
 def _ok(payload: dict, status: int = 200) -> JsonResponse:
@@ -141,10 +151,7 @@ def operators(request: HttpRequest) -> JsonResponse:
 @require_GET
 def trends(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
-    try:
-        limit = int(request.GET.get("limit", 40))
-    except ValueError:
-        limit = 40
+    limit = _int_param(request, "limit", 40, minimum=1, maximum=200)
     return _ok(
         {
             "by_day": agg.trend_by_day(**filters),
@@ -170,11 +177,8 @@ def teammates(request: HttpRequest) -> JsonResponse:
 
 @require_GET
 def match_list(request: HttpRequest) -> JsonResponse:
-    try:
-        limit = min(int(request.GET.get("limit", 50)), 200)
-        offset = max(int(request.GET.get("offset", 0)), 0)
-    except ValueError:
-        limit, offset = 50, 0
+    limit = _int_param(request, "limit", 50, minimum=1, maximum=200)
+    offset = _int_param(request, "offset", 0, minimum=0, maximum=1_000_000)
 
     qs = Match.objects.all()
     if request.GET.get("map"):
@@ -182,10 +186,13 @@ def match_list(request: HttpRequest) -> JsonResponse:
     if request.GET.get("match_type"):
         qs = qs.filter(match_type=request.GET["match_type"])
     total = qs.count()
+    page = list(qs[offset : offset + limit])
 
+    # Solo se agregan las partidas de esta pagina: agregar todo el historial
+    # para mostrar 50 filas escanea la tabla entera en cada request.
     mine = {
         row["round__match_id"]: row
-        for row in RoundPlayer.objects.filter(is_me=True)
+        for row in RoundPlayer.objects.filter(is_me=True, round__match__in=page)
         .values("round__match_id")
         .annotate(
             kills=Sum("kills"),
@@ -197,7 +204,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
     }
 
     rows = []
-    for match in qs[offset : offset + limit]:
+    for match in page:
         stats = mine.get(match.id, {})
         rows.append(
             {

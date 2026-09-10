@@ -8,6 +8,7 @@ import MapsPage from './pages/Maps.jsx'
 import MatchDetail from './pages/MatchDetail.jsx'
 import Matches from './pages/Matches.jsx'
 import Operators from './pages/Operators.jsx'
+import Teammates from './pages/Teammates.jsx'
 import Trends from './pages/Trends.jsx'
 
 const LINKS = [
@@ -15,6 +16,7 @@ const LINKS = [
   { to: '/coach', label: 'Coach' },
   { to: '/mapas', label: 'Mapas y sitios' },
   { to: '/operadores', label: 'Operadores' },
+  { to: '/companeros', label: 'Compañeros' },
   { to: '/tendencias', label: 'Tendencias' },
   { to: '/partidas', label: 'Partidas' },
 ]
@@ -80,6 +82,7 @@ export default function App() {
           <Route path="/coach" element={<Coach {...context} />} />
           <Route path="/mapas" element={<MapsPage {...context} />} />
           <Route path="/operadores" element={<Operators {...context} />} />
+          <Route path="/companeros" element={<Teammates {...context} />} />
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />

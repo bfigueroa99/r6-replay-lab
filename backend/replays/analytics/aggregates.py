@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import date
 
-from django.db.models import Avg, Count, Q, QuerySet, Sum
+from django.db.models import Avg, Count, Exists, OuterRef, Q, QuerySet, Sum
 
-from ..models import Match, Round, RoundPlayer
+from ..models import Round, RoundPlayer, match_result
 
 # --------------------------------------------------------------------- filtros
 
@@ -154,24 +154,37 @@ def overview(**filters) -> dict:
     }
 
 
+#: Campos de Match que viajan en el group by de `recent_form`. Todos dependen
+#: funcionalmente del match, asi que agruparlos no cambia las filas.
+_MATCH_FIELDS = (
+    "round__match_id",
+    "round__match__played_at",
+    "round__match__map_name",
+    "round__match__my_score",
+    "round__match__opponent_score",
+    "round__match__won",
+)
+
+
 def recent_form(limit: int = 10, **filters) -> list[dict]:
     """Ultimas partidas: resultado y aporte propio."""
     qs = base_queryset(**filters)
-    match_ids = list(
-        qs.values_list("round__match_id", flat=True).order_by("-round__match__played_at").distinct()
-    )[:limit]
     out = []
-    for match in Match.objects.filter(id__in=match_ids).order_by("-played_at"):
-        mine = qs.filter(round__match_id=match.id)
-        row = totals(mine)
+    for raw in (
+        qs.values(*_MATCH_FIELDS).annotate(**AGGREGATES).order_by("-round__match__played_at")[:limit]
+    ):
+        row = derive(dict(raw))
+        my_score = row["round__match__my_score"]
+        opp_score = row["round__match__opponent_score"]
+        won = row["round__match__won"]
         out.append(
             {
-                "id": match.id,
-                "map": match.map_name,
-                "played_at": match.played_at.isoformat(),
-                "score": f"{match.my_score}-{match.opponent_score}",
-                "result": match.result,
-                "won": match.won,
+                "id": row["round__match_id"],
+                "map": row["round__match__map_name"],
+                "played_at": row["round__match__played_at"].isoformat(),
+                "score": f"{my_score}-{opp_score}",
+                "result": match_result(won, my_score, opp_score),
+                "won": won,
                 "kills": row["kills"],
                 "deaths": row["deaths"],
                 "kd": row["kd"],
@@ -271,30 +284,40 @@ def trend_by_match(limit: int = 40, **filters) -> list[dict]:
 
 
 def teammate_synergy(min_rounds: int = 10, **filters) -> list[dict]:
-    """Winrate de rondas segun con quien las jugaste (solo companeros)."""
-    mine = base_queryset(**filters)
-    round_ids = list(mine.values_list("round_id", flat=True))
-    my_teams = dict(mine.values_list("round_id", "team_index"))
-    rows: dict[int, dict] = {}
-    qs = (
-        RoundPlayer.objects.filter(round_id__in=round_ids, is_me=False)
-        .values("player_id", "username", "round_id", "team_index", "won")
+    """Winrate de rondas segun con quien las jugaste (solo companeros).
+
+    El nombre sale de Player y no de RoundPlayer: si alguien se cambio el nick
+    a mitad del historial sigue siendo una sola fila.
+    """
+    # Correlacionada en vez de un IN con todos los round_id: con un historial
+    # largo esa lista se vuelve enorme y SQLite tiene tope de parametros.
+    me_in_round = base_queryset(**filters).filter(
+        round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
     )
-    for r in qs:
-        if r["team_index"] != my_teams.get(r["round_id"]):
-            continue
-        row = rows.setdefault(
-            r["player_id"], {"player_id": r["player_id"], "username": r["username"], "rounds": 0, "rounds_won": 0}
+    rows = (
+        RoundPlayer.objects.filter(is_me=False)
+        .filter(Exists(me_in_round))
+        .values("player_id", "player__username")
+        .annotate(
+            rounds=Count("id"),
+            rounds_won=Count("id", filter=Q(won=True)),
+            kills=Sum("kills"),
         )
-        row["rounds"] += 1
-        row["rounds_won"] += 1 if r["won"] else 0
-    out = []
-    for row in rows.values():
-        if row["rounds"] < min_rounds:
-            continue
-        row["winrate"] = _pct(row["rounds_won"], row["rounds"])
-        out.append(row)
-    return sorted(out, key=lambda r: (-r["rounds"], r["username"]))
+        .filter(rounds__gte=min_rounds)
+        .order_by("-rounds", "player__username")
+    )
+    return [
+        {
+            "player_id": r["player_id"],
+            "username": r["player__username"],
+            "rounds": r["rounds"],
+            "rounds_won": r["rounds_won"],
+            "kills": r["kills"] or 0,
+            "kpr": _ratio(r["kills"] or 0, r["rounds"]),
+            "winrate": _pct(r["rounds_won"], r["rounds"]),
+        }
+        for r in rows
+    ]
 
 
 def clutch_detail(**filters) -> list[dict]:
@@ -321,7 +344,9 @@ def data_health(**filters) -> dict:
     rounds = Round.objects.filter(players__in=qs).distinct()
     return {
         "rounds": qs.count(),
-        "matches": Match.objects.count(),
+        # con filtros activos, contar todos los Match reportaria partidas
+        # que no estan en la muestra que se esta mirando
+        "matches": qs.values("round__match_id").distinct().count(),
         "rounds_without_site": rounds.filter(site="").count(),
         "rounds_uncertain_win_condition": rounds.filter(win_condition_certain=False).count(),
         "rounds_possible_plant": rounds.filter(possible_plant=True).count(),

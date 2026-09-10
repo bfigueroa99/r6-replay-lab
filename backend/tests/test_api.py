@@ -127,6 +127,45 @@ class PopulatedApiTests(TestCase):
             )
 
 
+class ParametrosInvalidosTests(TestCase):
+    """La query string viene del usuario: ningun valor raro puede dar 500."""
+
+    def setUp(self):
+        for i in range(3):
+            match = make_match(index=i)
+            for n in range(2):
+                make_round_player(make_round(match, n))
+
+    def test_limites_negativos_o_absurdos_no_revientan(self):
+        urls = [
+            "/api/matches/?limit=-5",
+            "/api/matches/?limit=0&offset=-3",
+            "/api/matches/?limit=abc&offset=xyz",
+            "/api/trends/?limit=-1",
+            "/api/trends/?limit=0",
+            "/api/maps/?min_rounds=-2",
+            "/api/teammates/?min_rounds=0",
+            "/api/overview/?days=-5",
+            "/api/overview/?since=no-es-una-fecha",
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_el_limite_se_acota_al_rango(self):
+        data = self.client.get("/api/matches/?limit=-5").json()
+        self.assertEqual(data["limit"], 1)
+        self.assertEqual(len(data["matches"]), 1)
+        self.assertEqual(self.client.get("/api/matches/?limit=9999").json()["limit"], 200)
+        self.assertEqual(self.client.get("/api/matches/?offset=-9").json()["offset"], 0)
+
+    def test_las_partidas_de_la_pagina_traen_sus_propias_stats(self):
+        """El agregado se limita a la pagina, asi que no puede mezclar partidas."""
+        page = self.client.get("/api/matches/?limit=1").json()["matches"]
+        self.assertEqual(len(page), 1)
+        self.assertEqual(page[0]["my_kills"], 2)  # 2 rondas x 1 kill de esa partida
+
+
 class ImportEndpointTests(TestCase):
     def test_import_status_no_falla_sin_carpeta(self):
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):

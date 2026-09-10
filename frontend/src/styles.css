@@ -105,13 +105,18 @@ main { padding: 20px; max-width: 1400px; width: 100%; margin: 0 auto; flex: 1; }
   letter-spacing: 0.5px;
   color: var(--muted);
 }
-.filters select,
+/* El estilo del select es global: tambien se usa fuera de la barra de filtros
+   (por ejemplo el selector de muestra minima en Companeros). */
+select,
 .filters input:not([type='checkbox']) {
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 6px;
   padding: 6px 8px;
+}
+.filters select,
+.filters input:not([type='checkbox']) {
   min-width: 130px;
 }
 .filters .check {

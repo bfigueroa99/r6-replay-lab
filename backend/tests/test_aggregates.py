@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
+from replays.models import Player, RoundPlayer
 
 from .factories import make_match, make_round, make_round_player
 
@@ -114,6 +115,15 @@ class QuerysetTests(TestCase):
         self.assertEqual(health["rounds"], 6)
         self.assertFalse(health["assists_available"])
 
+    def test_salud_de_datos_respeta_los_filtros(self):
+        """Rondas y partidas tienen que hablar de la misma muestra."""
+        otra = make_match(map_name="Villa", index=1)
+        make_round_player(make_round(otra, 0))
+        self.assertEqual(agg.data_health()["matches"], 2)
+        filtrada = agg.data_health(map="villa")
+        self.assertEqual(filtrada["matches"], 1)
+        self.assertEqual(filtrada["rounds"], 1)
+
 
 class TrendTests(TestCase):
     def setUp(self):
@@ -156,3 +166,21 @@ class SynergyTests(TestCase):
         self.assertIn("amigo", names)
         self.assertNotIn("rival", names)
         self.assertEqual(rows[0]["winrate"], 75.0)
+        self.assertEqual(rows[0]["rounds"], 4)
+        self.assertEqual(rows[0]["kpr"], 1.0)
+
+    def test_muestra_minima(self):
+        self.assertEqual(agg.teammate_synergy(min_rounds=5), [])
+
+    def test_un_cambio_de_nick_no_parte_la_fila(self):
+        """Se agrupa por jugador, no por el nombre que tenia en esa ronda."""
+        amigo = Player.objects.get(username="amigo")
+        ids = list(RoundPlayer.objects.filter(player=amigo).order_by("id").values_list("id", flat=True))
+        RoundPlayer.objects.filter(id__in=ids[2:]).update(username="amigo-nuevo")
+        amigo.username = "amigo-nuevo"
+        amigo.save()
+
+        rows = agg.teammate_synergy(min_rounds=1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["username"], "amigo-nuevo")
+        self.assertEqual(rows[0]["rounds"], 4)

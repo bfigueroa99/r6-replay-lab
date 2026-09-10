@@ -26,7 +26,8 @@ con reloj y headshot, y el resultado de la ronda.
 **Metricas que el juego no te muestra.** Duelos de apertura y que pasa con la
 ronda cuando los ganas o los pierdes, trades y muertes sin trade, momento exacto
 en que mueres, KST, clutches, multikills, winrate por mapa / sitio / spawn /
-operador / lado / numero de ronda.
+operador / lado / numero de ronda, y con que companeros de escuadra ganas mas
+rondas.
 
 **Coach.** Un motor de reglas explicitas que compara cada metrica con tu propio
 promedio y exige muestra minima antes de opinar (20 rondas en general, 8-15 por
@@ -108,7 +109,7 @@ npm run dev     # http://localhost:5173
 | `manage.py watch_replays` | Vigila `REPLAY_DIR` e importa cada partida al terminar. `--once` hace una pasada. |
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
-| `manage.py test tests` | Corre la suite (92 tests). |
+| `manage.py test tests` | Corre la suite (98 tests). |
 
 ## Configuracion
 
@@ -180,7 +181,7 @@ backend/
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                92 tests (parser, metricas, agregados, coach, API)
+  tests/                98 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
 docs/                   formato del .rec y definicion de cada metrica
 data/                   SQLite y overrides (no se versiona)

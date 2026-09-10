@@ -10,6 +10,16 @@ DEFENSE = "Defense"
 SIDE_CHOICES = [(ATTACK, "Ataque"), (DEFENSE, "Defensa")]
 
 
+def match_result(won: bool | None, my_score: int, opponent_score: int) -> str:
+    """Etiqueta del resultado. Fuera del modelo para poder usarla sobre filas
+    de un `values()` sin instanciar el Match completo."""
+    if won is None:
+        return "incompleta"
+    if my_score == opponent_score:
+        return "empate"
+    return "victoria" if won else "derrota"
+
+
 class Player(models.Model):
     """Un jugador, identificado por su profileID de Ubisoft (estable)."""
 
@@ -67,11 +77,7 @@ class Match(models.Model):
 
     @property
     def result(self) -> str:
-        if self.won is None:
-            return "incompleta"
-        if self.my_score == self.opponent_score:
-            return "empate"
-        return "victoria" if self.won else "derrota"
+        return match_result(self.won, self.my_score, self.opponent_score)
 
 
 class Round(models.Model):

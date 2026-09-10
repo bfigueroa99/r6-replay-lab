@@ -60,6 +60,7 @@ quien lo mato era de tu equipo. La ventana de 3 s es la misma que usa r6-dissect
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
+| **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 
 ## Sobre el mapa de calor
 
