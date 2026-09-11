@@ -72,6 +72,7 @@ function Table({ rows }) {
             </div>
           ),
         },
+        { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica. Ver docs/metricas.md para la formula y los pesos.' },
         { key: 'kills', label: 'Bajas' },
         { key: 'kpr', label: 'KPR', digits: 2 },
         { key: 'kd', label: 'K/D', digits: 2 },

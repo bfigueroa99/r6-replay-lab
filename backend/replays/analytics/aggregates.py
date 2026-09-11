@@ -5,7 +5,22 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from django.conf import settings
-from django.db.models import Avg, Count, Exists, F, OuterRef, Q, QuerySet, Subquery, Sum
+from django.db.models import (
+    Avg,
+    Case,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 
@@ -43,6 +58,64 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
 
 # --------------------------------------------------------------------- helpers
 
+# --------------------------------------------------------------------- rating
+
+#: Puntos que aporta cada cosa en una ronda. Son un **juicio**, no una medicion:
+#: estan puestos por el impacto que tiene cada evento en ganar la ronda, y se
+#: dejan a la vista para que se puedan discutir y cambiar. La escala es relativa
+#: a la baja, que vale 1.
+RATING_WEIGHTS = {
+    # piso para que una ronda mala no termine en negativo
+    "base": 1.0,
+    "kill": 1.0,
+    # seguir vivo vale, pero mucho menos que una baja
+    "survived": 0.3,
+    # el primer duelo es el que mas mueve la ronda
+    "opening_kill": 0.5,
+    "opening_death": -0.5,
+    # tradear es una baja que ademas deshace una perdida
+    "trade_kill": 0.3,
+    # la muerte mas cara: tu equipo queda con uno menos, gratis
+    "untraded_death": -0.4,
+    # cerrar la ronda solo es excepcional
+    "clutch": 0.7,
+}
+
+
+def _peso(condicion: Q, peso: float):
+    return Case(When(condicion, then=Value(peso)), default=Value(0.0), output_field=FloatField())
+
+
+def rating_points_expr():
+    """Puntos de una ronda, calculados en SQL.
+
+    Es una funcion y no una constante a proposito: Django deja estado en las
+    expresiones al resolverlas, y compartir una misma instancia entre dos
+    consultas termina en "is an aggregate". Cada consulta arma la suya.
+    """
+    return ExpressionWrapper(
+        Value(RATING_WEIGHTS["base"])
+        + F("kills") * RATING_WEIGHTS["kill"]
+        + F("trade_kills") * RATING_WEIGHTS["trade_kill"]
+        + _peso(Q(survived=True), RATING_WEIGHTS["survived"])
+        + _peso(Q(opening_kill=True), RATING_WEIGHTS["opening_kill"])
+        + _peso(Q(opening_death=True), RATING_WEIGHTS["opening_death"])
+        + _peso(Q(untraded_death=True), RATING_WEIGHTS["untraded_death"])
+        + _peso(Q(one_vx__gt=0), RATING_WEIGHTS["clutch"]),
+        output_field=FloatField(),
+    )
+
+
+def rating_baseline() -> float | None:
+    """Los puntos promedio del jugador en **todo** su historial: el 1.00.
+
+    Va sin filtros a proposito. Si el promedio se recalculara con cada filtro,
+    el rating de un mapa y el de un operador no serian comparables entre si, que
+    es justamente para lo unico que sirve este numero.
+    """
+    return RoundPlayer.objects.filter(is_me=True).aggregate(v=Avg(rating_points_expr()))["v"] or None
+
+
 # Los alias no pueden repetir nombres de campos del modelo: si `kills` fuera a
 # la vez alias y campo, Django no podria resolver los filtros que usan `kills`.
 AGGREGATES = {
@@ -65,6 +138,7 @@ AGGREGATES = {
     "won_after_opening_kill": Count("id", filter=Q(opening_kill=True, won=True)),
     "won_after_opening_death": Count("id", filter=Q(opening_death=True, won=True)),
     "avg_death_elapsed": Avg("death_elapsed"),
+    "rating_points": Avg(rating_points_expr()),
 }
 
 
@@ -80,8 +154,8 @@ def _ratio(part, whole, digits: int = 2) -> float | None:
     return round(part / whole, digits)
 
 
-def derive(row: dict) -> dict:
-    """Renombra los alias internos y agrega porcentajes y ratios."""
+def derive(row: dict, baseline: float | None = None) -> dict:
+    """Renombra los alias internos y agrega porcentajes, ratios y el rating."""
     rounds = row.get("rounds") or 0
     kills = row.pop("kills_sum", 0) or 0
     headshots = row.pop("headshots_sum", 0) or 0
@@ -121,19 +195,25 @@ def derive(row: dict) -> dict:
             ),
         }
     )
+    puntos = row.get("rating_points")
+    row["rating_points"] = round(puntos, 3) if puntos is not None else None
+    row["rating"] = _ratio(puntos, baseline) if (puntos is not None and baseline) else None
     return row
 
 
-def totals(qs: QuerySet[RoundPlayer]) -> dict:
+def totals(qs: QuerySet[RoundPlayer], baseline: float | None = None) -> dict:
     row = dict(qs.aggregate(**AGGREGATES))
     row["matches"] = qs.values("round__match_id").distinct().count()
-    return derive(row)
+    return derive(row, baseline if baseline is not None else rating_baseline())
 
 
 def group_by(qs: QuerySet[RoundPlayer], *fields: str, labels: tuple[str, ...] | None = None,
-             min_rounds: int = 1, order: str = "-rounds") -> list[dict]:
+             min_rounds: int = 1, order: str = "-rounds",
+             baseline: float | None = None) -> list[dict]:
     """Agrupa por uno o mas campos y devuelve filas con metricas derivadas."""
     labels = labels or fields
+    if baseline is None:
+        baseline = rating_baseline()
     rows = []
     for raw in qs.values(*fields).annotate(**AGGREGATES).order_by(order):
         if (raw.get("rounds") or 0) < min_rounds:
@@ -141,7 +221,7 @@ def group_by(qs: QuerySet[RoundPlayer], *fields: str, labels: tuple[str, ...] | 
         row = dict(raw)
         for field, label in zip(fields, labels):
             row[label] = row.pop(field)
-        rows.append(derive(row))
+        rows.append(derive(row, baseline))
     return rows
 
 
@@ -149,10 +229,11 @@ def group_by(qs: QuerySet[RoundPlayer], *fields: str, labels: tuple[str, ...] | 
 
 def overview(**filters) -> dict:
     qs = base_queryset(**filters)
-    attack = totals(qs.filter(side="Attack"))
-    defense = totals(qs.filter(side="Defense"))
+    baseline = rating_baseline()
+    attack = totals(qs.filter(side="Attack"), baseline)
+    defense = totals(qs.filter(side="Defense"), baseline)
     return {
-        "overall": totals(qs),
+        "overall": totals(qs, baseline),
         "attack": attack,
         "defense": defense,
         "recent_form": recent_form(**filters),
@@ -174,11 +255,12 @@ _MATCH_FIELDS = (
 def recent_form(limit: int = 10, **filters) -> list[dict]:
     """Ultimas partidas: resultado y aporte propio."""
     qs = base_queryset(**filters)
+    baseline = rating_baseline()
     out = []
     for raw in (
         qs.values(*_MATCH_FIELDS).annotate(**AGGREGATES).order_by("-round__match__played_at")[:limit]
     ):
-        row = derive(dict(raw))
+        row = derive(dict(raw), baseline)
         my_score = row["round__match__my_score"]
         opp_score = row["round__match__opponent_score"]
         won = row["round__match__won"]
@@ -193,6 +275,7 @@ def recent_form(limit: int = 10, **filters) -> list[dict]:
                 "kills": row["kills"],
                 "deaths": row["deaths"],
                 "kd": row["kd"],
+                "rating": row["rating"],
                 "rounds": row["rounds"],
             }
         )
@@ -256,6 +339,7 @@ def by_round_number(**filters) -> list[dict]:
 
 def trend_by_day(**filters) -> list[dict]:
     qs = base_queryset(**filters)
+    baseline = rating_baseline()
     rows = []
     for raw in (
         qs.values("round__match__played_at__date").annotate(**AGGREGATES).order_by(
@@ -265,13 +349,14 @@ def trend_by_day(**filters) -> list[dict]:
         row = dict(raw)
         day = row.pop("round__match__played_at__date")
         row["day"] = day.isoformat() if isinstance(day, date) else str(day)
-        rows.append(derive(row))
+        rows.append(derive(row, baseline))
     return rows
 
 
 def trend_by_match(limit: int = 40, **filters) -> list[dict]:
     """Serie por partida, en orden cronologico, para ver evolucion."""
     qs = base_queryset(**filters)
+    baseline = rating_baseline()
     rows = []
     for raw in (
         qs.values(
@@ -284,7 +369,7 @@ def trend_by_match(limit: int = 40, **filters) -> list[dict]:
         row["match_id"] = row.pop("round__match_id")
         row["played_at"] = row.pop("round__match__played_at").isoformat()
         row["map"] = row.pop("round__match__map_name")
-        rows.append(derive(row))
+        rows.append(derive(row, baseline))
     return list(reversed(rows))
 
 
@@ -398,23 +483,30 @@ def _position_map() -> dict[int, int]:
     }
 
 
-def _fold(rows: list[dict]) -> dict:
+#: Claves de AGGREGATES que son promedios y no sumas: al plegar filas hay que
+#: ponderarlas por su muestra en vez de sumarlas.
+_PROMEDIOS = {"avg_death_elapsed": "deaths", "rating_points": "rounds"}
+
+
+def _fold(rows: list[dict], baseline: float | None = None) -> dict:
     """Suma filas ya agregadas por partida en una sola.
 
-    Todo es conteo o suma menos `avg_death_elapsed`, que es un promedio: se
-    pondera por muertes en vez de promediar promedios.
+    Todo es conteo o suma menos los promedios de `_PROMEDIOS`, que se ponderan
+    por su muestra en vez de promediar promedios.
     """
-    total = {clave: 0 for clave in AGGREGATES if clave != "avg_death_elapsed"}
-    acumulado = peso = 0.0
+    total = {clave: 0 for clave in AGGREGATES if clave not in _PROMEDIOS}
+    acumulado = {clave: [0.0, 0.0] for clave in _PROMEDIOS}  # [suma, peso]
     for row in rows:
         for clave in total:
             total[clave] += row.get(clave) or 0
-        muertes = row.get("deaths") or 0
-        if row.get("avg_death_elapsed") and muertes:
-            acumulado += row["avg_death_elapsed"] * muertes
-            peso += muertes
-    total["avg_death_elapsed"] = (acumulado / peso) if peso else None
-    return derive(total)
+        for clave, campo_peso in _PROMEDIOS.items():
+            peso = row.get(campo_peso) or 0
+            if row.get(clave) is not None and peso:
+                acumulado[clave][0] += row[clave] * peso
+                acumulado[clave][1] += peso
+    for clave, (suma, peso) in acumulado.items():
+        total[clave] = (suma / peso) if peso else None
+    return derive(total, baseline if baseline is not None else rating_baseline())
 
 
 def _por_partida(**filters) -> dict[int, dict]:

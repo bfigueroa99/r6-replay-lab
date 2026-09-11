@@ -143,6 +143,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               { key: 'kills', label: 'K' },
               { key: 'deaths', label: 'D' },
               { key: 'kd', label: 'K/D', digits: 2 },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
               {
                 key: 'played_at',
                 label: 'Cuando',

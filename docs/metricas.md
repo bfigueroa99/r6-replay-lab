@@ -16,6 +16,57 @@ aca esta la definicion exacta.
 | **HS%** | headshots / bajas. El replay marca el headshot en cada kill. |
 | **Sobrevives** | Rondas donde no moriste / rondas jugadas. |
 
+## Rating
+
+Un solo numero que resume cuanto aportaste en una ronda, para poder comparar
+cortes entre si sin mirar ocho columnas.
+
+**El 1.00 es tu propio promedio.** No hay un promedio global de jugadores en
+este proyecto (solo existen tus replays), asi que la referencia eres tu: 1.20 en
+un mapa significa que ahi rindes un 20% sobre tu ronda tipica. El promedio se
+calcula sobre **todo** tu historial y no cambia con los filtros; si cambiara, el
+rating de un mapa y el de un operador no serian comparables entre si.
+
+### Como se calcula
+
+Cada ronda suma puntos:
+
+| Evento | Puntos | Por que |
+|---|---|---|
+| Base | **+1.0** | Piso, para que una ronda mala no termine en negativo. |
+| Baja | **+1.0** | La unidad de la escala: todo lo demas se mide contra una baja. |
+| Sobrevivir | **+0.3** | Vale, pero mucho menos que una baja: seguir vivo es poder retomar o cerrar. |
+| Ganar la apertura | **+0.5** | El primer duelo es el que mas mueve la ronda. |
+| Perder la apertura | **-0.5** | Simetrico. |
+| Trade kill | **+0.3** | Es una baja que ademas deshace una perdida de tu equipo. |
+| Muerte sin trade | **-0.4** | La mas cara: tu equipo queda con uno menos, gratis. |
+| Clutch (1vX ganado) | **+0.7** | Cerrar la ronda solo es excepcional. |
+
+```
+rating = puntos promedio del corte / puntos promedio de todo tu historial
+```
+
+Una ronda tipica (una baja, muerte sin trade) son 1.6 puntos. La peor ronda
+posible (perder la apertura y morir sin trade) son 0.1. Una ronda de 3 bajas con
+apertura, trade y clutch, 5.8.
+
+### Lo que hay que tener claro
+
+- **Los pesos son un juicio, no una medicion.** Estan puestos por el impacto que
+  cada evento tiene en ganar la ronda, y se dejan a la vista en
+  `RATING_WEIGHTS` (`analytics/aggregates.py`) justamente para que se puedan
+  discutir y cambiar. Si los cambias, los numeros historicos cambian con ellos.
+- **No es el rating de nadie mas.** No es el de Siege.GG ni el de ningun sitio:
+  se inspira en la idea, pero la formula y los pesos son de aca.
+- **No compara jugadores.** Esta normalizado contra ti mismo, asi que el rating
+  de otra persona calculado igual no seria comparable con el tuyo.
+- **No incluye si la ronda se gano.** Es aporte individual: el resultado de la
+  ronda depende de otras cuatro personas. Para eso esta el winrate, y mirar los
+  dos juntos es lo interesante: rating alto con winrate bajo significa que estas
+  rindiendo y perdiendo igual.
+- **Como numero suelto no dice nada**: el rating de todo tu historial es 1.00 por
+  definicion. Sirve en las tablas, comparando cortes.
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
@@ -95,6 +146,7 @@ mostrar algo util.
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
 | **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
+| **Rating** | Aporte por ronda contra tu propio promedio. Aparece en casi todas las tablas. Ver la seccion Rating. |
 | **Rival** | Duelos contra una persona o contra un operador rival. Ver la seccion Duelos. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 

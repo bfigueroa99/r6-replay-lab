@@ -137,7 +137,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (158 tests). |
+| `manage.py test tests` | Corre la suite (172 tests). |
 
 ## Configuracion
 
@@ -217,7 +217,7 @@ backend/
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                158 tests (parser, metricas, agregados, coach, API)
+  tests/                172 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap
@@ -235,6 +235,10 @@ Las definiciones completas estan en `docs/metricas.md`. Las que mas se usan:
 - **KST**: rondas donde mataste, sobreviviste o tu muerte se tradeo. Es KOST sin
   la O, porque los eventos de objetivo no estan disponibles.
 - **KPR**: bajas por ronda.
+- **Rating**: un solo numero de aporte por ronda, normalizado contra tu propio
+  promedio (1.00 es tu ronda tipica). Los pesos estan a la vista en
+  `docs/metricas.md`: son un juicio, no una medicion, y no es el rating de
+  ningun sitio.
 
 ## Credito
 

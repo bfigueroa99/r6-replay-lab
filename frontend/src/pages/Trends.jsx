@@ -79,15 +79,17 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             <LineChart data={byMatch} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
               <CartesianGrid stroke="#263041" strokeDasharray="3 3" />
               <XAxis dataKey="n" {...AXIS} />
-              <YAxis domain={[0, 100]} {...AXIS} />
+              <YAxis yAxisId="pct" domain={[0, 100]} {...AXIS} />
+              <YAxis yAxisId="rating" orientation="right" domain={[0, 'auto']} {...AXIS} />
               <Tooltip
                 {...TOOLTIP}
                 labelFormatter={(n) => byMatch[n - 1]?.label || ''}
-                formatter={(v, n) => [fmt(v, 0), n]}
+                formatter={(v, n) => [fmt(v, n === 'Rating' ? 2 : 0), n]}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="winrate" name="Rondas ganadas %" stroke="#ff8a3d" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="kst_pct" name="KST %" stroke="#3fb950" strokeWidth={2} dot={false} />
+              <Line yAxisId="pct" type="monotone" dataKey="winrate" name="Rondas ganadas %" stroke="#ff8a3d" strokeWidth={2} dot={false} />
+              <Line yAxisId="pct" type="monotone" dataKey="kst_pct" name="KST %" stroke="#3fb950" strokeWidth={2} dot={false} />
+              <Line yAxisId="rating" type="monotone" dataKey="rating" name="Rating" stroke="#d29922" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -119,6 +121,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'matches', label: 'Partidas' },
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%' },
@@ -148,6 +151,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'hours', label: 'Duro', render: (row) => `${row.hours}h` },
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },

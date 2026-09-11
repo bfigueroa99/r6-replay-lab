@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 from django.conf import settings
-from django.db.models import Count, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
 from django.http import Http404, HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -228,14 +228,18 @@ def match_list(request: HttpRequest) -> JsonResponse:
         row["round__match_id"]: row
         for row in RoundPlayer.objects.filter(is_me=True, round__match__in=page)
         .values("round__match_id")
+        # el alias no puede llamarse `kills`: el F("kills") del rating lo
+        # resolveria contra la anotacion (un agregado) en vez del campo
         .annotate(
-            kills=Sum("kills"),
+            kills_sum=Sum("kills"),
             deaths=Count("id", filter=Q(died=True)),
             rounds=Count("id"),
             opening_kills=Count("id", filter=Q(opening_kill=True)),
             opening_deaths=Count("id", filter=Q(opening_death=True)),
+            rating_points=Avg(agg.rating_points_expr()),
         )
     }
+    baseline = agg.rating_baseline()
 
     rows = []
     for match in page:
@@ -256,10 +260,15 @@ def match_list(request: HttpRequest) -> JsonResponse:
                 "won": match.won,
                 "result": match.result,
                 "rounds": match.rounds_count,
-                "my_kills": stats.get("kills") or 0,
+                "my_kills": stats.get("kills_sum") or 0,
                 "my_deaths": stats.get("deaths") or 0,
                 "my_opening_kills": stats.get("opening_kills") or 0,
                 "my_opening_deaths": stats.get("opening_deaths") or 0,
+                "my_rating": (
+                    round(stats["rating_points"] / baseline, 2)
+                    if baseline and stats.get("rating_points")
+                    else None
+                ),
             }
         )
     return _ok({"total": total, "limit": limit, "offset": offset, "matches": rows})

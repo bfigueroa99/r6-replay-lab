@@ -42,6 +42,7 @@ export default function Matches({ runImport, importing }) {
               render: (row) => <ResultChip won={row.won}>{row.result}</ResultChip>,
             },
             { key: 'rounds', label: 'Rondas' },
+            { key: 'my_rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica. Ver docs/metricas.md para la formula y los pesos.' },
             { key: 'my_kills', label: 'Bajas' },
             { key: 'my_deaths', label: 'Muertes' },
             {

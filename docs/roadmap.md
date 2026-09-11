@@ -158,18 +158,31 @@ pliegan en Python por posicion (`_fold`). Todo es suma menos
 `avg_death_elapsed`, que es promedio y se pondera por muertes en vez de
 promediar promedios; eso tambien tiene test.
 
-### 5. Rating compuesto por ronda y partida
+### 5. Rating compuesto por ronda y partida [x]
 
-Un solo numero que resuma el aporte, al estilo del rating de Siege.GG, calculado
-sobre las metricas que ya existen (KPR, KST, aperturas, trades, supervivencia) y
-normalizado contra el **propio promedio del jugador**, no contra un promedio
-global que aca no existe.
+Hecho: `RATING_WEIGHTS` + `rating_points_expr()` en `aggregates.py`, formula y
+pesos documentados en `docs/metricas.md` con el por que de cada uno. El rating
+entro en `AGGREGATES`, asi que aparece gratis en todos los agregados: mapas,
+operadores, sitios, spawns, numero de ronda, sesiones, posicion en la sesion,
+serie por partida y lista de partidas.
 
-- Formula explicita y documentada en `docs/metricas.md`, con los pesos a la
-  vista y justificados.
-- Rating por ronda -> promedio por partida -> serie temporal en Tendencias.
-- **Listo cuando**: la formula esta escrita, tiene tests con casos limite y se ve
-  en la UI sin presentarse como un numero oficial de nadie.
+Decisiones que quedaron escritas:
+
+- El 1.00 es el promedio del jugador sobre **todo** su historial, y no se
+  recalcula con los filtros: si cambiara, el rating de un mapa y el de un
+  operador no serian comparables. Tiene test.
+- No entra si la ronda se gano: es aporte individual. Mirar rating y winrate
+  juntos es lo interesante, y en los datos del usuario ya aparece el caso: Bank
+  tiene rating 1.16 con winrate 31.6% (rinde y pierde igual).
+- No se puso como KPI del Resumen: el rating global es 1.00 por definicion, asi
+  que como numero suelto no dice nada. Va en las tablas, que es donde compara.
+
+Dos trampas que costaron y quedaron comentadas en el codigo: la expresion se
+arma con una funcion y no como constante de modulo (Django deja estado al
+resolverla y compartir la instancia termina en "is an aggregate"), y en
+`match_list` hubo que renombrar el alias `kills` porque el `F("kills")` del
+rating lo resolvia contra la anotacion en vez del campo. 14 tests nuevos,
+incluidos los casos limite de la formula.
 
 ### 6. Export CSV de cualquier tabla
 
