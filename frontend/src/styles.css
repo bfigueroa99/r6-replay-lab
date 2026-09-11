@@ -377,6 +377,16 @@ td.dim { color: var(--muted); }
 .round-tab.loss .dot { background: var(--bad); }
 .round-tab.active { border-color: var(--accent); background: var(--accent-soft); }
 
+.resumen {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-soft);
+  border-radius: 0 6px 6px 0;
+  color: #c3ccd8;
+  line-height: 1.6;
+}
+
 .timeline { position: relative; padding-left: 14px; border-left: 2px solid var(--border); margin: 0; }
 .timeline li { list-style: none; position: relative; padding: 7px 0; }
 .timeline li::before {

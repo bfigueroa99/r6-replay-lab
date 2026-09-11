@@ -17,6 +17,7 @@ from . import export as exportador
 from . import unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
+from .analytics.narrative import describe_round
 from .ingest import find_match_folders, scan_and_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
 from .retag import retag
@@ -337,26 +338,26 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             }
             for e in rnd.events.all()
         ]
-        rounds.append(
-            {
-                "number": rnd.number,
-                "label": f"R{rnd.number + 1}",
-                "site": rnd.site,
-                "my_side": rnd.my_side,
-                "my_team_won": rnd.my_team_won,
-                "win_condition": rnd.win_condition,
-                "win_condition_certain": rnd.win_condition_certain,
-                "score_before": rnd.score_before,
-                "score_after": rnd.score_after,
-                "clock_start": rnd.clock_start,
-                "clock_end": rnd.clock_end,
-                "duration": rnd.duration,
-                "possible_plant": rnd.possible_plant,
-                "teams": rnd.teams,
-                "players": players,
-                "events": events,
-            }
-        )
+        datos = {
+            "number": rnd.number,
+            "label": f"R{rnd.number + 1}",
+            "site": rnd.site,
+            "my_side": rnd.my_side,
+            "my_team_won": rnd.my_team_won,
+            "win_condition": rnd.win_condition,
+            "win_condition_certain": rnd.win_condition_certain,
+            "score_before": rnd.score_before,
+            "score_after": rnd.score_after,
+            "clock_start": rnd.clock_start,
+            "clock_end": rnd.clock_end,
+            "duration": rnd.duration,
+            "possible_plant": rnd.possible_plant,
+            "teams": rnd.teams,
+            "players": players,
+            "events": events,
+        }
+        datos["summary"] = describe_round(datos)
+        rounds.append(datos)
 
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))

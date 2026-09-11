@@ -228,15 +228,23 @@ Dos decisiones:
 
 14 tests nuevos.
 
-### 8. Resumen narrativo por ronda
+### 8. Resumen narrativo por ronda [x]
 
-En `MatchDetail`, dos o tres frases generadas de los eventos: quien abrio, si
-hubo trade, cuanto duro el 4v5, como se cerro. Las herramientas web lo venden
-como "takeaways"; aca sale casi gratis porque los eventos ya estan anotados.
+Hecho: `analytics/narrative.py`, una funcion pura sobre el mismo dict que la API
+ya arma para el detalle. Cada frase se escribe solo si su dato existe; una ronda
+sin eventos devuelve lista vacia en vez de texto de relleno.
 
-- Texto derivado, nunca inventado: si un dato no esta, no se menciona.
-- **Listo cuando**: cada ronda del detalle tiene su parrafo y se entiende sin
-  leer el timeline evento por evento.
+La frase que mas aporta no estaba en el item: **cuantos segundos se jugaron en
+inferioridad**, recorriendo el feed con la cuenta de vivos por equipo. En los
+datos del usuario aparecen rondas con 122 de 178 segundos en 4v5, que explica la
+derrota mejor que cualquier metrica individual.
+
+Detalle de redaccion que hubo que corregir mirando la salida real: el trade de
+la apertura se enmarca segun quien perdio el duelo. "Nadie la vengo" cuando la
+muerte es propia, "El rival no la vengo" cuando la apertura la gano tu equipo:
+la misma frase para los dos casos leia como un reproche cuando era una ventaja.
+
+18 tests nuevos, todos sobre que no afirme lo que no sabe.
 
 ### 9. Distribucion del momento de la muerte
 

@@ -151,6 +151,22 @@ mostrar algo util.
 | **Con y sin** | Tus numeros en las rondas que compartiste con alguien, contra el resto de tu historial. Es la unica forma de ver si con esa persona rindes distinto, pero el lado "sin" suele tener poca muestra: la app lo avisa bajo 20 rondas. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 
+## Resumen de la ronda
+
+El detalle de cada partida trae dos o tres frases por ronda, generadas de los
+eventos. No hay nada inventado: cada frase se escribe solo si su dato existe, y
+si no existe simplemente no aparece. Lo que puede decir:
+
+| Frase | De donde sale |
+|---|---|
+| Quien se llevo el primer duelo y cuando | Primer evento de baja de la ronda. Si no trae asesino (evento `Death` suelto) lo dice en vez de suponer uno. |
+| Si esa muerte se vengo, y con cuanto margen | El flag `traded` del evento y la baja que la vengo dentro de la ventana de trade. |
+| **Segundos jugados en inferioridad** | Se recorre el feed llevando la cuenta de vivos por equipo. Es el numero que explica por que se pierde una ronda sin que nadie juegue mal despues del 4v5. |
+| Que hiciste tu | Tu fila del scoreboard de esa ronda: bajas, trades, clutch, si moriste y cuando. |
+| Como se cerro | `win_condition`. Si el replay no lo expone (temporadas nuevas), lo dice asi, con el plant marcado como probable. |
+
+No se guarda en la base: es texto derivado y cambia si cambian las metricas.
+
 ## Sobre el mapa de calor
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de

@@ -138,7 +138,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (200 tests). |
+| `manage.py test tests` | Corre la suite (218 tests). |
 
 ### Sacar los datos
 
@@ -236,8 +236,9 @@ backend/
       metrics.py        metricas derivadas por ronda
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
+      narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                200 tests (parser, metricas, agregados, coach, API)
+  tests/                218 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

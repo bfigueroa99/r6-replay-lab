@@ -100,6 +100,9 @@ export default function MatchDetail() {
               {round.win_condition_certain ? '' : ' (inferida)'}
               {round.possible_plant ? ' · plant probable' : ''}
             </p>
+            {round.summary?.length ? (
+              <p className="resumen">{round.summary.join(' ')}</p>
+            ) : null}
             <Timeline round={round} />
           </div>
 
