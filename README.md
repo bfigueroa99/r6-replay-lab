@@ -28,7 +28,8 @@ ronda cuando los ganas o los pierdes, trades y muertes sin trade, momento exacto
 en que mueres, KST, clutches, multikills, winrate por mapa / sitio / spawn /
 operador / lado / numero de ronda, con que companeros de escuadra ganas mas
 rondas, contra que operadores rivales pierdes los duelos y como se cae tu
-rendimiento segun cuantas partidas llevas en la sesion.
+rendimiento segun cuantas partidas llevas en la sesion. Cualquier nombre de la
+app lleva al perfil de esa persona: cuanto rindes con ella y sin ella.
 
 **Coach.** Un motor de reglas explicitas que compara cada metrica con tu propio
 promedio y exige muestra minima antes de opinar (20 rondas en general, 8-15 por
@@ -137,7 +138,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (186 tests). |
+| `manage.py test tests` | Corre la suite (200 tests). |
 
 ### Sacar los datos
 
@@ -236,7 +237,7 @@ backend/
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                186 tests (parser, metricas, agregados, coach, API)
+  tests/                200 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

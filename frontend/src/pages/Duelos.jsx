@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
@@ -120,7 +121,12 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       >
         <DataTable
           columns={[
-            { key: 'username', label: 'Rival', left: true },
+            {
+              key: 'username',
+              label: 'Rival',
+              left: true,
+              render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+            },
             { key: 'duels', label: 'Duelos' },
             { key: 'kills', label: 'Le ganas' },
             { key: 'deaths', label: 'Te gana' },

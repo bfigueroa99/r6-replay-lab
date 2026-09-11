@@ -761,6 +761,124 @@ def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
 
 
+# --------------------------------------------------------------------- jugador
+
+
+def _sin_rating(fila: dict) -> dict:
+    """Le saca el rating a las filas de otra persona.
+
+    El 1.00 es el promedio del jugador principal; aplicado a otro no significa
+    nada, asi que es mejor no mostrarlo que mostrarlo mal.
+    """
+    fila["rating"] = None
+    fila["rating_points"] = None
+    return fila
+
+
+def player_profile(player_id: int, **filters) -> dict | None:
+    """Todo lo que sabemos de una persona dentro de tus partidas."""
+    player = Player.objects.filter(pk=player_id).first()
+    if not player:
+        return None
+
+    mine = base_queryset(**filters)
+    baseline = rating_baseline()
+
+    en_mi_ronda = RoundPlayer.objects.filter(player_id=player_id, round_id=OuterRef("round_id"))
+    de_companero = en_mi_ronda.filter(team_index=OuterRef("team_index"))
+
+    con = mine.filter(Exists(de_companero))
+    sin = mine.exclude(Exists(de_companero))
+    contra = mine.filter(Exists(en_mi_ronda)).exclude(Exists(de_companero))
+
+    # sus propias filas, limitadas a las rondas que yo jugue
+    suyas = RoundPlayer.objects.filter(player_id=player_id).filter(
+        Exists(mine.filter(round_id=OuterRef("round_id")))
+    )
+
+    duelos = next(
+        (d for d in nemesis(min_duels=1, **filters) if d["player_id"] == player_id), None
+    )
+
+    return {
+        "player": {
+            "id": player.id,
+            "username": player.username,
+            "aliases": player.aliases,
+            "is_me": player.is_me,
+            "first_seen": player.first_seen.isoformat() if player.first_seen else None,
+            "last_seen": player.last_seen.isoformat() if player.last_seen else None,
+        },
+        "rounds_together": con.count(),
+        "rounds_against": contra.count(),
+        "with": totals(con, baseline),
+        "without": totals(sin, baseline),
+        "against": totals(contra, baseline),
+        "theirs": _sin_rating(totals(suyas, baseline)),
+        "their_operators": [
+            _sin_rating(fila)
+            for fila in group_by(
+                suyas.exclude(operator=""),
+                "operator",
+                "side",
+                labels=("operator", "side"),
+                min_rounds=1,
+                baseline=baseline,
+            )
+        ],
+        "duels": duelos,
+        "matches": _partidas_compartidas(suyas),
+    }
+
+
+def _partidas_compartidas(suyas: QuerySet[RoundPlayer]) -> list[dict]:
+    """Partidas donde se cruzaron, y de que lado estuvo en cada una."""
+    partidas: dict[int, dict] = {}
+    for row in suyas.annotate(mi_equipo=_MI_EQUIPO).values(
+        "round__match_id",
+        "round__match__map_name",
+        "round__match__played_at",
+        "round__match__my_score",
+        "round__match__opponent_score",
+        "round__match__won",
+        "team_index",
+        "mi_equipo",
+    ):
+        match_id = row["round__match_id"]
+        fila = partidas.get(match_id)
+        if fila is None:
+            my_score = row["round__match__my_score"]
+            opp_score = row["round__match__opponent_score"]
+            fila = partidas[match_id] = {
+                "id": match_id,
+                "map": row["round__match__map_name"],
+                "played_at": row["round__match__played_at"].isoformat(),
+                "score": f"{my_score}-{opp_score}",
+                "won": row["round__match__won"],
+                "result": match_result(row["round__match__won"], my_score, opp_score),
+                "rounds": 0,
+                "as_teammate": 0,
+                "as_rival": 0,
+            }
+        fila["rounds"] += 1
+        if row["team_index"] == row["mi_equipo"]:
+            fila["as_teammate"] += 1
+        else:
+            fila["as_rival"] += 1
+
+    for fila in partidas.values():
+        # los equipos se dan vuelta entre mitades, pero el equipo no cambia:
+        # si aparece de los dos lados es que entro por un abandono
+        fila["role"] = (
+            "companero"
+            if fila["as_rival"] == 0
+            else "rival"
+            if fila["as_teammate"] == 0
+            else "ambos"
+        )
+    return sorted(partidas.values(), key=lambda f: f["played_at"], reverse=True)
+
+
 def data_health(**filters) -> dict:
     """Que tan completa es la data importada (para no mentirle a la UI)."""
     qs = base_queryset(**filters)

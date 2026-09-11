@@ -107,7 +107,17 @@ export default function MatchDetail() {
             <h3 style={{ marginTop: 0 }}>Jugadores de la ronda</h3>
             <DataTable
               columns={[
-                { key: 'username', label: 'Jugador' },
+                {
+                  key: 'username',
+                  label: 'Jugador',
+                  left: true,
+                  render: (row) =>
+                    row.player_id ? (
+                      <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
+                    ) : (
+                      row.username
+                    ),
+                },
                 { key: 'operator', label: 'Operador', left: true },
                 { key: 'kills', label: 'K' },
                 { key: 'died', label: 'Murio', render: (row) => (row.died ? 'si' : 'no') },
@@ -145,7 +155,17 @@ export default function MatchDetail() {
       <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las metricas derivadas.">
         <DataTable
           columns={[
-            { key: 'username', label: 'Jugador' },
+            {
+              key: 'username',
+              label: 'Jugador',
+              left: true,
+              render: (row) =>
+                row.player_id ? (
+                  <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
+                ) : (
+                  row.username
+                ),
+            },
             { key: 'team_index', label: 'Equipo', render: (row) => (row.team_index === match.my_team_index ? 'tuyo' : 'rival') },
             { key: 'rounds', label: 'Rondas' },
             { key: 'kills', label: 'Bajas' },

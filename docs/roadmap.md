@@ -207,14 +207,26 @@ el identificador quede primero (si no, el nombre del mapa salia en la columna
 UTC-4 bautizaba con el dia siguiente cualquier descarga despues de las 20:00.
 14 tests nuevos.
 
-### 7. Pagina de jugador
+### 7. Pagina de jugador [x]
 
-Perfil de un companero o rival dentro de tus partidas: rondas juntos y en contra,
-winrate compartido, sus operadores, tu rendimiento con y sin esa persona.
+Hecho: `/jugadores/:id` con tu rendimiento con esa persona, sin ella y contra
+ella; sus propios numeros y operadores en las rondas compartidas; los duelos
+directos si los hubo; y la lista de partidas marcando de que lado estuvo en cada
+una (companero, rival o ambos, que pasa cuando entra por un abandono). Los
+nombres enlazan desde Companeros, Duelos, el scoreboard de la partida y la lista
+de jugadores de cada ronda.
 
-- Ruta `/jugadores/:id`, enlazada desde Companeros, el scoreboard y el nemesis.
-- **Listo cuando**: se puede hacer click en cualquier nombre de la app y ver todo
-  lo que sabemos de esa persona.
+Dos decisiones:
+
+- **Las stats de la otra persona van sin rating.** El 1.00 es el promedio del
+  jugador principal; aplicado a otro no significa nada, y mostrarlo mal es peor
+  que no mostrarlo. Tiene test.
+- **El lado "sin esa persona" casi siempre tiene poca muestra.** Con el
+  companero habitual del usuario son 133 rondas contra 18, asi que la pagina
+  avisa cuando alguno de los dos lados baja de 20 rondas en vez de dejar que la
+  diferencia se lea como un hecho.
+
+14 tests nuevos.
 
 ### 8. Resumen narrativo por ronda
 

@@ -148,6 +148,7 @@ mostrar algo util.
 | **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
 | **Rating** | Aporte por ronda contra tu propio promedio. Aparece en casi todas las tablas. Ver la seccion Rating. |
 | **Rival** | Duelos contra una persona o contra un operador rival. Ver la seccion Duelos. |
+| **Con y sin** | Tus numeros en las rondas que compartiste con alguien, contra el resto de tu historial. Es la unica forma de ver si con esa persona rindes distinto, pero el lado "sin" suele tener poca muestra: la app lo avisa bajo 20 rondas. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 
 ## Sobre el mapa de calor

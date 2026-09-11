@@ -6,6 +6,7 @@ import Coach from './pages/Coach.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Datos from './pages/Datos.jsx'
 import Duelos from './pages/Duelos.jsx'
+import Jugador from './pages/Jugador.jsx'
 import MapsPage from './pages/Maps.jsx'
 import MatchDetail from './pages/MatchDetail.jsx'
 import Matches from './pages/Matches.jsx'
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />
+          <Route path="/jugadores/:id" element={<Jugador />} />
           <Route path="/datos" element={<Datos />} />
           <Route
             path="*"

@@ -72,7 +72,12 @@ export default function Teammates({ filters, setFilters, runImport, importing })
       >
         <DataTable
           columns={[
-            { key: 'username', label: 'Compañero', left: true },
+            {
+              key: 'username',
+              label: 'Compañero',
+              left: true,
+              render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+            },
             { key: 'rounds', label: 'Rondas juntos' },
             {
               key: 'winrate',

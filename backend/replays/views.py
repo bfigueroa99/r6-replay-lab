@@ -181,6 +181,15 @@ def teammates(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def player_detail(request: HttpRequest, pk: int) -> JsonResponse:
+    """Perfil de un companero o rival dentro de tus partidas."""
+    payload = agg.player_profile(pk, **_filters(request))
+    if payload is None:
+        raise Http404("jugador no encontrado")
+    return _ok(payload)
+
+
+@require_GET
 def sessions(request: HttpRequest) -> JsonResponse:
     """Sesiones de juego y como se mueve el rendimiento dentro de una."""
     filters = _filters(request)
