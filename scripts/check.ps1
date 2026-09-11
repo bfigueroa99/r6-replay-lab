@@ -14,7 +14,7 @@ if (-not (Test-Path $python)) { throw "Falta el entorno virtual. Corre .\scripts
 
 $fallos = @()
 
-Write-Host "`n[1/3] ruff" -ForegroundColor Cyan
+Write-Host "`n[1/4] ruff" -ForegroundColor Cyan
 $ruff = "$repo\.venv\Scripts\ruff.exe"
 if (Test-Path $ruff) {
     & $ruff check "$repo\backend"
@@ -23,20 +23,28 @@ if (Test-Path $ruff) {
     Write-Host "  ruff no esta instalado: pip install -r requirements-dev.txt" -ForegroundColor Yellow
 }
 
-Write-Host "`n[2/3] tests" -ForegroundColor Cyan
+Write-Host "`n[2/4] tests del backend" -ForegroundColor Cyan
 Push-Location "$repo\backend"
 & $python manage.py test tests
 if ($LASTEXITCODE -ne 0) { $fallos += 'tests' }
 Pop-Location
 
-Write-Host "`n[3/3] build del frontend" -ForegroundColor Cyan
+Write-Host "`n[3/4] tests del frontend" -ForegroundColor Cyan
+if (Test-Path "$repo\frontend\node_modules") {
+    Push-Location "$repo\frontend"
+    npm test
+    if ($LASTEXITCODE -ne 0) { $fallos += 'tests del frontend' }
+    Pop-Location
+} else {
+    Write-Host "  falta node_modules: corre 'npm install' en frontend\" -ForegroundColor Yellow
+}
+
+Write-Host "`n[4/4] build del frontend" -ForegroundColor Cyan
 if (Test-Path "$repo\frontend\node_modules") {
     Push-Location "$repo\frontend"
     npm run build
     if ($LASTEXITCODE -ne 0) { $fallos += 'build' }
     Pop-Location
-} else {
-    Write-Host "  falta node_modules: corre 'npm install' en frontend\" -ForegroundColor Yellow
 }
 
 Write-Host ""

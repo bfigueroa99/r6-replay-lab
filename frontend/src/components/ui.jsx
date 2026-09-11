@@ -94,12 +94,18 @@ function celdaCsv(col, row) {
 const escaparCsv = (texto) =>
   /[";\r\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto
 
-export function descargarCsv(columns, rows, nombre) {
+/** El contenido del archivo, separado del acto de bajarlo para poder probarlo. */
+export function csvText(columns, rows) {
   const cols = columns.filter((col) => col.csv !== false)
   const lineas = [cols.map((col) => escaparCsv(col.label || col.key)).join(';')]
-  rows.forEach((row) => lineas.push(cols.map((col) => escaparCsv(celdaCsv(col, row))).join(';')))
+  for (const row of rows || []) {
+    lineas.push(cols.map((col) => escaparCsv(celdaCsv(col, row))).join(';'))
+  }
+  return lineas.join('\r\n')
+}
 
-  const blob = new Blob([`\ufeff${lineas.join('\r\n')}`], { type: 'text/csv;charset=utf-8' })
+export function descargarCsv(columns, rows, nombre) {
+  const blob = new Blob([`\ufeff${csvText(columns, rows)}`], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const enlace = document.createElement('a')
   enlace.href = url
@@ -122,6 +128,31 @@ export function descargarCsv(columns, rows, nombre) {
  * Con `csvName` aparece el boton de descarga, que exporta exactamente lo que se
  * ve: las mismas columnas, en el orden en que estan ordenadas.
  */
+/**
+ * Orden de la tabla. Los nulos van siempre al final, en las dos direcciones: un
+ * "sin datos" no es ni el mejor ni el peor, y verlos arriba al invertir el
+ * orden es lo que hace desconfiar de una tabla.
+ */
+export function ordenarFilas(rows, sort) {
+  const copia = [...(rows || [])]
+  copia.sort((a, b) => {
+    const av = a[sort.key]
+    const bv = b[sort.key]
+    const aNull = av === null || av === undefined
+    const bNull = bv === null || bv === undefined
+    if (aNull && bNull) return 0
+    if (aNull) return 1
+    if (bNull) return -1
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return sort.dir === 'asc'
+        ? String(av).localeCompare(String(bv))
+        : String(bv).localeCompare(String(av))
+    }
+    return sort.dir === 'asc' ? av - bv : bv - av
+  })
+  return copia
+}
+
 export function DataTable({
   columns,
   rows,
@@ -133,25 +164,7 @@ export function DataTable({
 }) {
   const [sort, setSort] = useState(initialSort || { key: columns[0].key, dir: 'desc' })
 
-  const sorted = useMemo(() => {
-    const copy = [...(rows || [])]
-    copy.sort((a, b) => {
-      const av = a[sort.key]
-      const bv = b[sort.key]
-      const aNull = av === null || av === undefined
-      const bNull = bv === null || bv === undefined
-      if (aNull && bNull) return 0
-      if (aNull) return 1
-      if (bNull) return -1
-      if (typeof av === 'string' || typeof bv === 'string') {
-        return sort.dir === 'asc'
-          ? String(av).localeCompare(String(bv))
-          : String(bv).localeCompare(String(av))
-      }
-      return sort.dir === 'asc' ? av - bv : bv - av
-    })
-    return copy
-  }, [rows, sort])
+  const sorted = useMemo(() => ordenarFilas(rows, sort), [rows, sort])
 
   if (!rows || rows.length === 0) return <p className="note">{empty}</p>
 

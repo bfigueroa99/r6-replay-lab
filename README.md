@@ -80,6 +80,7 @@ Para trabajar en el codigo, ademas:
 ```powershell
 pip install -r requirements-dev.txt   # ruff, nada mas
 .\scripts\check.ps1                  # lint + tests + build, en un comando
+cd frontend; npm test                 # solo los tests del frontend
 ```
 
 `check.ps1` es lo unico que hay que pasar antes de commitear. Corre `ruff check`
@@ -258,7 +259,7 @@ backend/
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
   tests/                291 tests (parser, metricas, agregados, coach, API)
-frontend/               React + Vite + recharts
+frontend/               React + Vite + recharts (26 tests con vitest)
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap
 data/                   SQLite y overrides (no se versiona)

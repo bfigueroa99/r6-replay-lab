@@ -384,13 +384,28 @@ Dos decisiones:
 Django y npm escriben su salida normal en stderr, y con 'Stop' PowerShell la
 toma como error y corta en la primera linea.
 
-### 15. Tests de frontend
+### 15. Tests de frontend [x]
 
-No hay ninguno. Los candidatos obvios son la logica pura: `qs()` en `api.js`, el
-orden de `DataTable`, `fmt` / `pct` y `winrateColor`.
+Hecho: 26 tests con vitest corriendo en **node, sin jsdom**. Cubren `qs()`, el
+formateo de numeros que pueden venir null (`fmt` / `pct` / `ratio`), la rampa de
+color del winrate, el orden de las tablas y la generacion del CSV.
 
-- Vitest, evitando jsdom si se puede.
-- **Listo cuando**: `npm test` corre y cubre esa logica.
+Para poder probar sin DOM hubo que sacar dos cosas de adentro de los
+componentes, y las dos ganaron con la mudanza:
+
+- `ordenarFilas(rows, sort)`, que estaba dentro de un `useMemo`. Es donde vive
+  la regla de que los nulos van al final **en las dos direcciones**: un "sin
+  datos" no es ni el mejor ni el peor, y verlos arriba al invertir el orden es
+  lo que hace desconfiar de una tabla. Ahora esa regla tiene test.
+- `csvText(columns, rows)`, separado de `descargarCsv`, que se queda con el
+  Blob y el enlace. El contenido del archivo (punto y coma, coma decimal,
+  escapado de comillas) es logica; bajarlo es DOM.
+
+Nota de versiones: vitest 5 pide vite >= 6 y el proyecto esta en vite 5.4, asi
+que se fijo `vitest@2.1.9`. No se sube la herramienta de build para poder
+agregar tests.
+
+`npm test` entro tambien a `scripts/check.ps1` (ahora 4 pasos) y al workflow.
 
 ### 16. Backup de la base
 

@@ -15,6 +15,7 @@ Corre entero en el PC del usuario: sin servicios externos, sin cuentas, sin red.
 cd backend; python manage.py test tests    # suite completa, tiene que quedar en verde
 cd backend; python manage.py runserver     # sirve el build de React en la misma URL
 cd frontend; npm run build                 # obligatorio si tocas frontend/src
+cd frontend; npm test                      # logica pura del frontend (vitest)
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
 .\scripts\check.ps1                        # lint + tests + build antes de commitear
