@@ -432,12 +432,26 @@ Queda anotado como posible siguiente paso un boton en la pagina Datos: quien
 vive en la app de escritorio no abre una consola, y un backup que no se corre no
 sirve de nada.
 
-### 17. Bundle mas liviano
+### 17. Bundle mas liviano [x]
 
-585 kB minificados, casi todo `recharts` cargado en la primera pantalla.
+Hecho: **610 kB -> 184 kB** en la carga inicial (60 kB con gzip). Cada pagina es
+su propio chunk de 2 a 11 kB, y `recharts` quedo en uno aparte de 383 kB que
+solo se baja cuando hay un grafico en pantalla.
 
-- Lazy load de las paginas con graficos, o chunk aparte para recharts.
-- **Listo cuando**: la carga inicial baja de 250 kB sin perder funcionalidad.
+Hicieron falta las dos cosas, no una:
+
+- `React.lazy` por ruta. Solo el Resumen entra en el bundle inicial, que es la
+  pantalla de partida.
+- Sacar el grafico del Resumen a `components/EvolucionChart.jsx`, tambien lazy.
+  Sin esto la pantalla de entrada seguia arrastrando recharts y el numero no
+  bajaba: el lazy por ruta no sirve si la ruta inicial es la que importa la
+  libreria pesada.
+
+Verificado en el navegador, y ahi aparecio lo unico que se rompio: al sacar el
+grafico del Dashboard se fue tambien el import de `fmt`, que el panel de salud
+de datos seguia usando. **El build no dijo nada y los tests tampoco** (es un
+error de runtime en una pagina que no se renderiza en los tests); lo mostro la
+consola del navegador.
 
 ### 19. Empaquetar la app de escritorio
 

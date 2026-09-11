@@ -1,14 +1,5 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
@@ -24,11 +15,9 @@ import {
   ratio,
 } from '../components/ui.jsx'
 
-const CHART_AXIS = { stroke: '#8b98a9', fontSize: 11 }
-const TOOLTIP_STYLE = {
-  contentStyle: { background: '#171e29', border: '1px solid #263041', borderRadius: 8 },
-  labelStyle: { color: '#8b98a9' },
-}
+// recharts son casi 400 kB y esta pantalla se ve completa sin el grafico: se
+// carga aparte para que el Resumen pinte antes.
+const EvolucionChart = lazy(() => import('../components/EvolucionChart.jsx'))
 
 export default function Dashboard({ filters, setFilters, runImport, importing }) {
   const overview = useApi('/overview/', filters)
@@ -160,23 +149,9 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
 
       {series.length > 2 ? (
         <Panel title="Evolucion por partida" hint="Rondas ganadas y kills por ronda, en orden cronologico.">
-          <div style={{ height: 240 }}>
-            <ResponsiveContainer>
-              <LineChart data={series} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
-                <CartesianGrid stroke="#263041" strokeDasharray="3 3" />
-                <XAxis dataKey="n" {...CHART_AXIS} />
-                <YAxis yAxisId="wr" domain={[0, 100]} {...CHART_AXIS} />
-                <YAxis yAxisId="kpr" orientation="right" domain={[0, 'auto']} {...CHART_AXIS} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  labelFormatter={(n) => series[n - 1]?.label || ''}
-                  formatter={(value, name) => [fmt(value, name === 'KPR' ? 2 : 0), name]}
-                />
-                <Line yAxisId="wr" type="monotone" dataKey="winrate" name="Rondas ganadas %" stroke="#ff8a3d" strokeWidth={2} dot={false} />
-                <Line yAxisId="kpr" type="monotone" dataKey="kpr" name="KPR" stroke="#4aa8ff" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <Suspense fallback={<Loading>Cargando grafico...</Loading>}>
+            <EvolucionChart series={series} />
+          </Suspense>
         </Panel>
       ) : null}
 

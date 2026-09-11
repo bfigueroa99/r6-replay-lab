@@ -1,18 +1,23 @@
-import React, { useCallback, useState } from 'react'
+import React, { Suspense, lazy, useCallback, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 
 import { get, post, useApi } from './api.js'
-import Coach from './pages/Coach.jsx'
 import Dashboard from './pages/Dashboard.jsx'
-import Datos from './pages/Datos.jsx'
-import Duelos from './pages/Duelos.jsx'
-import Jugador from './pages/Jugador.jsx'
-import MapsPage from './pages/Maps.jsx'
-import MatchDetail from './pages/MatchDetail.jsx'
-import Matches from './pages/Matches.jsx'
-import Operators from './pages/Operators.jsx'
-import Teammates from './pages/Teammates.jsx'
-import Trends from './pages/Trends.jsx'
+import { Loading } from './components/ui.jsx'
+
+// El Resumen entra en el bundle inicial porque es la pantalla de partida. El
+// resto se carga al entrar: son 9 paginas y dos de ellas arrastran recharts,
+// que pesa mas que todo lo demas junto.
+const Coach = lazy(() => import('./pages/Coach.jsx'))
+const Datos = lazy(() => import('./pages/Datos.jsx'))
+const Duelos = lazy(() => import('./pages/Duelos.jsx'))
+const Jugador = lazy(() => import('./pages/Jugador.jsx'))
+const MapsPage = lazy(() => import('./pages/Maps.jsx'))
+const MatchDetail = lazy(() => import('./pages/MatchDetail.jsx'))
+const Matches = lazy(() => import('./pages/Matches.jsx'))
+const Operators = lazy(() => import('./pages/Operators.jsx'))
+const Teammates = lazy(() => import('./pages/Teammates.jsx'))
+const Trends = lazy(() => import('./pages/Trends.jsx'))
 
 const LINKS = [
   { to: '/', label: 'Resumen' },
@@ -116,7 +121,8 @@ export default function App() {
           </div>
         ) : null}
         {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
-        <Routes>
+        <Suspense fallback={<Loading />}>
+          <Routes>
           <Route path="/" element={<Dashboard {...context} />} />
           <Route path="/coach" element={<Coach {...context} />} />
           <Route path="/mapas" element={<MapsPage {...context} />} />
@@ -139,7 +145,8 @@ export default function App() {
               </div>
             }
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

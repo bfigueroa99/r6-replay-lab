@@ -277,6 +277,8 @@ backend/
     views.py, urls.py   API JSON
   tests/                306 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts (26 tests con vitest)
+  components/           tabla, filtros, graficos, helpers de formato
+  pages/                una por ruta, cada una en su propio chunk
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap
 data/                   SQLite y overrides (no se versiona)
