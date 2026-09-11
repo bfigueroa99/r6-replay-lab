@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "desktop": "electron .",
-    "desktop:dev": "electron . --url=http://localhost:5173 --dev"
+    "desktop:dev": "electron . --url=http://localhost:5173 --dev",
+    "desktop:pack": "electron-builder --win --config electron-builder.json"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -22,7 +23,9 @@
   "devDependencies": {
     "@vitejs/plugin-react": "4.3.4",
     "electron": "44.3.0",
+    "electron-builder": "26.15.3",
     "vite": "5.4.11",
     "vitest": "2.1.9"
-  }
+  },
+  "description": "Analizador local de replays de Rainbow Six Siege"
 }

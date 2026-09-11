@@ -20,6 +20,13 @@ data/*
 node_modules/
 frontend/dist/
 
+# Empaquetado: el ejecutable, el instalador y las caches de las herramientas.
+# Son cientos de MB y se regeneran con scripts\package.ps1.
+packaging/dist/
+packaging/build/
+packaging/installer/
+packaging/.cache/
+
 # Django
 staticfiles/
 

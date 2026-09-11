@@ -453,15 +453,55 @@ de datos seguia usando. **El build no dijo nada y los tests tampoco** (es un
 error de runtime en una pagina que no se renderiza en los tests); lo mostro la
 consola del navegador.
 
-### 19. Empaquetar la app de escritorio
+### 19. Empaquetar la app de escritorio [x]
 
-Hoy `npm run desktop` necesita el repo, el venv y `npm install`. Un `.exe`
-distribuible es otra cosa: hay que meter CPython y las dependencias adentro
-(electron-builder + PyInstaller o similar), decidir donde vive la base de datos
-fuera del repo y firmar el binario. Vale la pena solo si la app va a salir de
-este PC.
+Hecho: `scripts/package.ps1` deja
+`packaging/installer/R6ReplayLab-0.1.0-setup.exe`, 135 MB, con un Python
+completo adentro.
 
-- **Listo cuando**: existe un instalador que corre en una maquina sin Python.
+Tres piezas:
+
+- `backend/serve.py`: el entry point del `.exe`. Prepara la carpeta del usuario,
+  corre `migrate` (idempotente, crea la base en el primer arranque) y levanta el
+  servidor. Sigue siendo el `runserver` de Django y no un WSGI de produccion: es
+  un usuario en su propia maquina, y meter waitress seria una dependencia mas
+  para nada.
+- `packaging/backend.spec`: PyInstaller. Django importa medio mundo por nombre
+  (apps, migraciones, backends de base y de plantillas) y nada de eso se ve
+  siguiendo los `import`, asi que van explicitos con `collect_submodules`. El
+  `frontend/dist` viaja **adentro** del ejecutable y lo sirve Django, igual que
+  desde el repo: la arquitectura no cambia entre desarrollo e instalado.
+- `settings.py` ahora distingue los dos modos. Empaquetado, el bundle es de solo
+  lectura y se borra al cerrar, asi que la base, el `.env` y los overrides van a
+  `%APPDATA%/r6-replay-lab`. En el repo todo sigue colgando de la raiz.
+
+**Verificado, no supuesto.** El `.exe` del backend importo un replay real de
+verdad (5 rondas, jugador detectado), lo que prueba que el parser y la extension
+en C de zstandard funcionan dentro del bundle. Despues la app instalada
+(`win-unpacked`) arranco, levanto su propio backend, sirvio el SPA desde el
+bundle, creo su base en `%APPDATA%` y al cerrar la ventana se llevo el backend
+sin dejar huerfanos.
+
+Dos cosas que costaron:
+
+- electron-builder fallaba con `EXDEV: cross-device link not permitted` al
+  descomprimir sus herramientas. La causa no era el disco: `%LOCALAPPDATA%` en
+  este equipo esta marcado como **cifrado (EFS)**, y renombrar carpetas cruzando
+  ese borde falla. El script pone la cache dentro del repo.
+- Al terminar, electron-builder intentaba armar el update info, buscaba el
+  remoto del repo y reventaba. `"publish": null`: esta app no tiene servidor de
+  updates.
+
+Lo que **no** quedo resuelto y hay que decirlo:
+
+- **El instalador no esta firmado.** Windows muestra SmartScreen la primera vez.
+  Firmar necesita un certificado de codigo, que se paga.
+- **Solo se probo en esta maquina.** Trae su propio interprete, asi que no
+  depende de que haya Python; lo que no se pudo probar es una maquina sin las
+  runtimes de Visual C++.
+- **No hay forma de cambiar `REPLAY_DIR` desde la UI.** Instalada, la unica
+  manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
+  este PC de verdad, eso deberia ser una pantalla de configuracion.
 
 ## Ideas descartadas
 

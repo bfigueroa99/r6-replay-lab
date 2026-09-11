@@ -1,21 +1,47 @@
 """Configuracion de Django para R6 Replay Lab.
 
-Todo lo configurable vive en el archivo .env de la raiz del repo (copia
-.env.example). No hay servicios externos: SQLite y listo.
+Todo lo configurable vive en el archivo .env (copia .env.example). No hay
+servicios externos: SQLite y listo.
+
+Corre de dos formas y hay que distinguirlas, porque los archivos van a lugares
+distintos:
+
+- **desde el repo** (desarrollo): todo cuelga de la raiz del repo.
+- **empaquetado** con PyInstaller: los archivos de la app viven dentro del
+  bundle, que es de solo lectura y se borra al cerrar, asi que la base, el .env
+  y los overrides tienen que ir a la carpeta del usuario.
 """
 
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
+
+#: True cuando corre dentro del ejecutable empaquetado.
+FROZEN = bool(getattr(sys, "frozen", False))
 
 BASE_DIR = Path(__file__).resolve().parent.parent          # backend/
 REPO_DIR = BASE_DIR.parent                                  # raiz del repo
 
+if FROZEN:
+    #: Archivos que viajan con la app (frontend compilado, plantillas).
+    BUNDLE_DIR = Path(getattr(sys, "_MEIPASS", REPO_DIR))
+    #: Donde el usuario tiene sus datos. Nunca dentro del bundle: se borra.
+    USER_DIR = Path(
+        os.environ.get("APPDATA") or Path.home() / ".local" / "share"
+    ) / "r6-replay-lab"
+else:
+    BUNDLE_DIR = REPO_DIR
+    USER_DIR = REPO_DIR
+
+#: El build de React que sirve la vista del SPA.
+FRONTEND_DIST = BUNDLE_DIR / "frontend" / "dist"
+
 
 def _load_env() -> None:
     """Lector de .env minimo, para no depender de python-dotenv."""
-    env_file = REPO_DIR / ".env"
+    env_file = USER_DIR / ".env"
     if not env_file.exists():
         return
     for line in env_file.read_text(encoding="utf-8").splitlines():
@@ -91,7 +117,7 @@ TEMPLATES = [
 
 # --------------------------------------------------------------------- datos
 
-DATA_DIR = Path(env("DATA_DIR", str(REPO_DIR / "data")))
+DATA_DIR = Path(env("DATA_DIR", str(USER_DIR / "data")))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASES = {
@@ -119,7 +145,7 @@ USE_TZ = False
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [d for d in [REPO_DIR / "frontend" / "dist"] if d.exists()]
+STATICFILES_DIRS = [d for d in [FRONTEND_DIST] if d.exists()]
 
 # --------------------------------------------------------------------- app
 

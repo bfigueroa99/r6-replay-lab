@@ -65,18 +65,45 @@ function note(line) {
 }
 
 /**
- * Levanta `manage.py runserver`. Con --noreload a proposito: el autoreloader
- * lanza un proceso hijo propio que sobrevive a que matemos al padre.
+ * Como arrancar el backend segun donde estemos.
+ *
+ * Instalada, la app trae su propio ejecutable con Python adentro y no hay repo
+ * ni venv. Desde el repo se usa el venv, que es lo que uno quiere mientras
+ * desarrolla: los cambios en el codigo se ven sin reempaquetar.
  */
-function startDjango() {
-  const child = spawn(pythonPath(), ['manage.py', 'runserver', `${HOST}:${PORT}`, '--noreload'], {
+function backendCommand() {
+  if (app.isPackaged) {
+    return {
+      cmd: path.join(process.resourcesPath, 'backend', 'r6-backend.exe'),
+      args: [],
+      cwd: path.join(process.resourcesPath, 'backend'),
+    }
+  }
+  // --noreload a proposito: el autoreloader lanza un proceso hijo propio que
+  // sobrevive a que matemos al padre.
+  return {
+    cmd: pythonPath(),
+    args: ['manage.py', 'runserver', `${HOST}:${PORT}`, '--noreload'],
     cwd: BACKEND,
-    env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
+  }
+}
+
+function startDjango() {
+  const { cmd, args, cwd } = backendCommand()
+  const child = spawn(cmd, args, {
+    cwd,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',
+      PYTHONIOENCODING: 'utf-8',
+      R6_HOST: HOST,
+      R6_PORT: String(PORT),
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   child.stdout.on('data', note)
   child.stderr.on('data', note)
-  child.on('error', (err) => note(`no se pudo ejecutar Python: ${err.message}`))
+  child.on('error', (err) => note(`no se pudo ejecutar el backend: ${err.message}`))
   return child
 }
 

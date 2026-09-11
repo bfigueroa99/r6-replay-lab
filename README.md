@@ -73,7 +73,7 @@ O corre `.\scripts\setup.ps1`, que hace todo lo de arriba (menos el `init-git`).
 
 Los scripts de `scripts/` son todos PowerShell y asumen el venv en `.venv`:
 `setup.ps1`, `init-git.ps1`, `import.ps1`, `start.ps1`, `desktop.ps1`,
-`watch.ps1`, `dev.ps1`, `test.ps1`, `check.ps1`.
+`watch.ps1`, `dev.ps1`, `test.ps1`, `check.ps1`, `package.ps1`.
 
 Para trabajar en el codigo, ademas:
 
@@ -119,6 +119,25 @@ carpeta `MatchReplay`.
 Que quede claro, porque es la duda obvia: **no es un overlay**. Es una ventana
 normal, sin always-on-top, sin transparencia y sin ningun tipo de hook al juego.
 Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
+
+#### Instalador
+
+```powershell
+.\scripts\package.ps1
+```
+
+Deja `packaging\installer\R6ReplayLab-0.1.0-setup.exe` (unos 135 MB). Adentro
+va un Python completo, asi que **corre en una maquina sin Python instalado**: el
+frontend compilado viaja dentro del ejecutable del backend y Django lo sirve
+igual que desde el repo.
+
+La app instalada guarda sus datos en `%APPDATA%6-replay-lab`, no donde este
+instalada: Program Files es de solo lectura. Ahi va la base, los overrides y el
+`.env` si quieres cambiar `REPLAY_DIR`.
+
+El instalador **no esta firmado**, asi que Windows muestra SmartScreen la
+primera vez (Mas informacion -> Ejecutar de todas formas). Firmarlo necesita un
+certificado de codigo, que se paga.
 
 Para desarrollar la UI dentro de la ventana, con hot reload:
 
@@ -252,7 +271,9 @@ hacen las herramientas parecidas y lo que se descarto a proposito, esta en
 ## Estructura
 
 ```
+packaging/              spec de PyInstaller para el .exe del backend
 backend/
+  serve.py              punto de entrada del backend empaquetado
   pydissect/            parser del formato .rec (independiente de Django)
     reader.py           lector binario, zstd chunked, escaneo de patrones
     header.py           cabecera en texto plano, nombres, roles de equipo

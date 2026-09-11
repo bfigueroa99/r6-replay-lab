@@ -1,0 +1,33 @@
+{
+  "appId": "cl.benjamin.r6replaylab",
+  "productName": "R6 Replay Lab",
+  "copyright": "MIT",
+  "directories": {
+    "output": "../packaging/installer",
+    "buildResources": "electron"
+  },
+  "files": [
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "../packaging/dist/r6-backend",
+      "to": "backend"
+    }
+  ],
+  "win": {
+    "target": [
+      "nsis"
+    ],
+    "artifactName": "R6ReplayLab-${version}-setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "shortcutName": "R6 Replay Lab"
+  },
+  "publish": null
+}

@@ -6,3 +6,7 @@
 # que siga asi: lo que entra aca no viaja con la aplicacion.
 
 ruff>=0.16,<1.0
+
+# Solo para armar el instalador de escritorio (scripts\package.ps1). Mete un
+# Python completo dentro del .exe; no hace falta para correr la app.
+pyinstaller>=6.10,<7.0

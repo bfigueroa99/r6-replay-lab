@@ -5,14 +5,15 @@ from django.contrib import admin
 from django.http import FileResponse, HttpResponse
 from django.urls import include, path, re_path
 
-INDEX = settings.REPO_DIR / "frontend" / "dist" / "index.html"
+DIST = settings.FRONTEND_DIST
+INDEX = DIST / "index.html"
 
 
 def spa(request, path: str = ""):
     """Sirve el build de React si existe; si no, explica como levantarlo."""
     if path:
-        candidate = (settings.REPO_DIR / "frontend" / "dist" / path).resolve()
-        dist = (settings.REPO_DIR / "frontend" / "dist").resolve()
+        candidate = (DIST / path).resolve()
+        dist = DIST.resolve()
         if candidate.is_file() and str(candidate).startswith(str(dist)):
             return FileResponse(open(candidate, "rb"))
     if INDEX.exists():
