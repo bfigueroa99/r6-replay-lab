@@ -28,6 +28,7 @@ from django.db.models import (
 )
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
+from .metrics import trade_window
 
 # --------------------------------------------------------------------- filtros
 
@@ -1132,6 +1133,7 @@ def data_health(**filters) -> dict:
         "rounds_without_site": rounds.filter(site="").count(),
         "rounds_uncertain_win_condition": rounds.filter(win_condition_certain=False).count(),
         "rounds_possible_plant": rounds.filter(possible_plant=True).count(),
+        "trade_window": trade_window(),
         "assists_available": qs.filter(assists__gt=0).exists(),
         "score_available": qs.filter(score__gt=0).exists(),
     }

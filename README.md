@@ -138,7 +138,8 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (250 tests). |
+| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
+| `manage.py test tests` | Corre la suite (266 tests). |
 
 ### Sacar los datos
 
@@ -169,6 +170,7 @@ Todo vive en `.env` (ver `.env.example`):
 | `WATCH_INTERVAL_SECONDS` | `20` | Cada cuanto revisa el watcher. |
 | `MIN_ROUNDS_DEFAULT` | `5` | Muestra minima para que un agregado aparezca en las tablas. |
 | `SESSION_GAP_MINUTES` | `120` | Minutos sin jugar para cortar una sesion. |
+| `TRADE_WINDOW_SECONDS` | `3` | Segundos para considerar vengada una muerte. Cambiarlo pide `manage.py recompute`. |
 | `SQLITE_PATH` | `data/db.sqlite3` | Base de datos. |
 | `OVERRIDES_PATH` | `data/overrides.json` | Nombres para IDs de temporadas nuevas. |
 
@@ -230,6 +232,7 @@ backend/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
     export.py           agregados a CSV
+    recompute.py        rehace los trades con otra ventana, sin reparsear
     retag.py            re-etiqueta IDs ya importados sin reparsear
     unknowns.py         IDs sin nombre y el archivo de etiquetas
     analytics/
@@ -238,7 +241,7 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                250 tests (parser, metricas, agregados, coach, API)
+  tests/                266 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

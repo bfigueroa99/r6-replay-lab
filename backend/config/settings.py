@@ -145,6 +145,11 @@ MIN_ROUNDS_DEFAULT = env_int("MIN_ROUNDS_DEFAULT", 5)
 #: Minutos sin jugar para considerar que empezo otra sesion.
 SESSION_GAP_MINUTES = env_int("SESSION_GAP_MINUTES", 120)
 
+#: Segundos para considerar que una muerte fue vengada. r6-dissect usa 3; las
+#: planillas de Pro League usan hasta 10. Cambiarlo obliga a `manage.py
+#: recompute`, porque los trades se guardan calculados al importar.
+TRADE_WINDOW_SECONDS = float(env("TRADE_WINDOW_SECONDS", "3") or 3)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

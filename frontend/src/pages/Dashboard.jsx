@@ -201,6 +201,11 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               infiere (el replay ya no expone los eventos del defuser).
             </li>
             <li>{health.rounds_possible_plant} rondas con plant probable segun el reloj.</li>
+            <li>
+              Trades calculados con una ventana de <b>{fmt(health.trade_window, 0)}s</b>. Se cambia
+              en el <code>.env</code> con <code>TRADE_WINDOW_SECONDS</code>, y despues hay que
+              correr <code>manage.py recompute</code>.
+            </li>
             {health.rounds_without_site ? <li>{health.rounds_without_site} rondas sin sitio detectado.</li> : null}
             {!health.assists_available ? (
               <li>Asistencias no disponibles en esta version del juego.</li>

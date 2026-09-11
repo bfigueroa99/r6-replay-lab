@@ -99,8 +99,16 @@ quien muere lo pierde. Si la primera muerte no tiene asesino registrado (evento
 
 ## Trades
 
-Un trade es que **mataron a tu asesino dentro de 3 segundos** de tu muerte, y que
-quien lo mato era de tu equipo. La ventana de 3 s es la misma que usa r6-dissect.
+Un trade es que **mataron a tu asesino dentro de la ventana** de tu muerte, y que
+quien lo mato era de tu equipo. La ventana son 3 segundos por defecto, igual que
+r6-dissect, y se cambia con `TRADE_WINDOW_SECONDS` en el `.env`; las planillas de
+Pro League usan hasta 10.
+
+El numero mueve bastante: sobre el historial de prueba, pasar de 3 a 10 segundos
+baja las muertes sin trade de 97.3% a 91.2% y sube el KST de 45.5% a 49.1%. Como
+los trades se guardan calculados al importar, despues de cambiarlo hay que correr
+`manage.py recompute`, que no vuelve a leer los `.rec`. La app dice siempre con
+que ventana estan calculados los numeros que muestra.
 
 | Metrica | Definicion |
 |---|---|

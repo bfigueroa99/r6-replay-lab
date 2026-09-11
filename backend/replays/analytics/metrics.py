@@ -9,8 +9,8 @@ Definiciones (documentadas a proposito, para que los numeros se puedan auditar)
 opening_kill   la primera baja de la ronda la hizo este jugador
 opening_death  este jugador fue la primera baja de la ronda
 entry_kill     la primera baja de su equipo la hizo este jugador
-trade_kills    mato al asesino de un compañero dentro de TRADE_WINDOW segundos
-was_traded     un compañero vengo su muerte dentro de TRADE_WINDOW segundos
+trade_kills    mato al asesino de un compañero dentro de la ventana de trade
+was_traded     un compañero vengo su muerte dentro de la ventana de trade
 untraded_death murio y nadie lo vengo (la muerte mas caras del juego)
 death_elapsed  segundos jugados de la fase de accion hasta su muerte
 kst            aporto en la ronda: mato, sobrevivio o su muerte fue tradeada
@@ -18,7 +18,10 @@ kst            aporto en la ronda: mato, sobrevivio o su muerte fue tradeada
 
 from __future__ import annotations
 
-TRADE_WINDOW = 3.0  # segundos, igual que r6-dissect
+from django.conf import settings
+
+#: Default si Django no esta configurado (los tests del parser corren sueltos).
+TRADE_WINDOW = 3.0
 
 KILL = "Kill"
 DEATH = "Death"
@@ -36,7 +39,55 @@ def _clock_start(round_data: dict, events: list[dict]) -> float:
     return max((e["clock"] for e in events), default=0.0)
 
 
-def analyse_round(round_data: dict) -> dict:
+def trade_window() -> float:
+    """Ventana de trade configurada. Vive en settings para poder cambiarla."""
+    return float(getattr(settings, "TRADE_WINDOW_SECONDS", TRADE_WINDOW) or TRADE_WINDOW)
+
+
+def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, window: float) -> None:
+    """Marca trades sobre eventos y jugadores ya normalizados.
+
+    Unica implementacion de la regla: la usan el import (`analyse_round`) y el
+    recalculo (`manage.py recompute`). Si estuviera duplicada, cambiar la
+    ventana daria numeros distintos segun por donde pasaste.
+
+    Resetea antes de contar: al achicar la ventana hay que poder **sacar**
+    trades que antes valian.
+    """
+    for m in metrics.values():
+        m["was_traded"] = False
+        m["trade_kills"] = 0
+    for e in kill_events:
+        e["traded"] = False
+
+    for i, e in enumerate(kill_events):
+        killer, victim = e["actor"], e["target"]
+        victim_team = team_of.get(victim)
+        if victim_team is None:
+            continue
+        for later in kill_events[i + 1 :]:
+            gap = e["clock"] - later["clock"]  # el reloj baja: gap >= 0 es "despues"
+            if gap < 0 or gap > window:
+                if gap > window:
+                    break
+                continue
+            if later["target"] != killer:
+                continue
+            if team_of.get(later["actor"]) != victim_team:
+                continue
+            e["traded"] = True
+            if victim in metrics:
+                metrics[victim]["was_traded"] = True
+            if later["actor"] in metrics:
+                metrics[later["actor"]]["trade_kills"] += 1
+            break
+
+    for m in metrics.values():
+        m["untraded_death"] = bool(m.get("died")) and not m["was_traded"]
+        m["kst"] = bool(m.get("kills") or m.get("survived") or m["was_traded"])
+
+
+def analyse_round(round_data: dict, window: float | None = None) -> dict:
     """Devuelve eventos anotados + metricas por jugador para una ronda."""
     players = round_data.get("players", [])
     teams = round_data.get("teams", [{}, {}])
@@ -142,31 +193,7 @@ def analyse_round(round_data: dict) -> dict:
         m["survived"] = False
 
     # ---------------------------------------------------------------- trades
-    for i, e in enumerate(kill_events):
-        killer, victim = e["actor"], e["target"]
-        victim_team = team_of.get(victim)
-        if victim_team is None:
-            continue
-        for later in kill_events[i + 1 :]:
-            gap = e["clock"] - later["clock"]  # el reloj baja: gap >= 0 es "despues"
-            if gap < 0 or gap > TRADE_WINDOW:
-                if gap > TRADE_WINDOW:
-                    break
-                continue
-            if later["target"] != killer:
-                continue
-            if team_of.get(later["actor"]) != victim_team:
-                continue
-            e["traded"] = True
-            if victim in metrics:
-                metrics[victim]["was_traded"] = True
-            if later["actor"] in metrics:
-                metrics[later["actor"]]["trade_kills"] += 1
-            break
-
-    for m in metrics.values():
-        m["untraded_death"] = m["died"] and not m["was_traded"]
-        m["kst"] = bool(m["kills"] or m["survived"] or m["was_traded"])
+    annotate_trades(kill_events, team_of, metrics, trade_window() if window is None else window)
 
     # ---------------------------------------------------------------- resultado
     winner = None

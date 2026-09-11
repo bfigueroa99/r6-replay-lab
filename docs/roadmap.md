@@ -295,17 +295,28 @@ La banda solo se puede calcular para proporciones; en K/D, KPR y rating la
 flecha muestra direccion pero no afirma que el cambio sea real, y "mueres a los"
 va sin juicio (ver item #9). 16 tests nuevos, la mitad sobre la banda.
 
-### 11. Ventana de trade configurable
+### 11. Ventana de trade configurable [x]
 
-`TRADE_WINDOW = 3.0` esta fija en `metrics.py`. Otras herramientas usan 10s, y el
-numero cambia bastante los porcentajes de trade. Que sea configurable obliga
-ademas a poder recalcular sin reimportar.
+Hecho: `TRADE_WINDOW_SECONDS` en el `.env`, `manage.py recompute` (con
+`--window` y `--dry-run`), y la ventana a la vista en el panel de salud de datos
+del Resumen y en `/api/health/`.
 
-- `TRADE_WINDOW_SECONDS` en `.env`.
-- `manage.py recompute` que recalcula las metricas derivadas de las rondas ya
-  importadas.
-- La UI dice con que ventana estan calculados los numeros que muestra.
-- **Listo cuando**: cambiar la ventana y correr `recompute` actualiza toda la app.
+La regla de trade se saco a `metrics.annotate_trades()` y la llaman los dos
+caminos, el import y el recalculo. Duplicarla habria significado que cambiar la
+ventana diera numeros distintos segun por donde pasaste.
+
+`annotate_trades` resetea antes de contar, y eso tiene test propio: achicar la
+ventana tiene que poder **sacar** trades que antes valian, no solo sumar. Sin el
+reset, ir de 10s a 3s dejaba los trades viejos pegados.
+
+Verificado end to end sobre una copia de la base real: con 3s las muertes sin
+trade son 97.3% y el KST 45.5%; con 10s pasan a 91.2% y 49.1%; volviendo a 3s
+quedan exactamente los numeros originales. 145 filas de jugador y 77 eventos se
+mueven en cada pasada.
+
+Dato que salio de ahi: aun con la ventana de 10 segundos, el 91% de las muertes
+del usuario sigue sin vengarse. El problema que marca el coach no era un
+artefacto de una ventana estricta. 16 tests nuevos.
 
 ### 12. Rango de fechas explicito en los filtros
 

@@ -90,6 +90,7 @@ def health(request: HttpRequest) -> JsonResponse:
             "ok": True,
             "parser_version": pydissect.__version__,
             "replay_dir": settings.REPLAY_DIR,
+            "trade_window": settings.TRADE_WINDOW_SECONDS,
             "replay_dir_folders": len(find_match_folders(settings.REPLAY_DIR)),
             "player": me.username if me else None,
             "matches": Match.objects.count(),
