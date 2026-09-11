@@ -16,6 +16,7 @@ urlpatterns = [
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),
     path("duels/", views.duels, name="duels"),
+    path("sessions/", views.sessions, name="sessions"),
     path("matches/", views.match_list, name="match-list"),
     path("matches/<int:pk>/", views.match_detail, name="match-detail"),
     path("unknown/", views.unknown, name="unknown"),

@@ -135,17 +135,28 @@ que enfrentaste a ese operador. Lo segundo seria mejor senal ("cuando enfrentas
 a Thorn mueres el X% de las rondas") y necesita cruzar con las rondas donde ese
 operador estuvo en el equipo rival.
 
-### 4. Sesiones de juego y curva de fatiga
+### 4. Sesiones de juego y curva de fatiga [x]
 
-Agrupar partidas por sesion (corte con mas de 2 horas sin jugar) y medir como se
-mueve el rendimiento *dentro* de la sesion.
+Hecho: corte por `SESSION_GAP_MINUTES` (120 por defecto, configurable), panel
+**Curva de la sesion** y tabla de sesiones en Tendencias, selector de sesion en
+la barra de filtros y regla `fatiga-sesion` en el coach.
 
-- Winrate, KPR y muertes sin trade por posicion en la sesion (1a partida, 2a...).
-- Filtro "esta sesion" en la barra de filtros.
-- Regla del coach: si a partir de la partida N el winrate cae mas de X puntos con
-  muestra suficiente, decirlo con el numero.
-- **Listo cuando**: se puede responder "juego peor despues de la tercera?" con
-  datos y no con sensacion.
+El corte de sesion se calcula sobre **todo** el historial y no sobre lo
+filtrado: si filtras por mapa, esa partida sigue siendo la tercera de su noche.
+Tiene test.
+
+El corte de la 3a partida en el coach esta fijo a proposito: probar varios
+cortes y quedarse con el que mas conviene es la forma barata de encontrar
+patrones que no existen. Umbral de 10 puntos y 30 rondas de cada lado.
+
+En los datos del usuario la curva existe y es clara: 52% en la 1a partida de la
+sesion, 43% en la 2a, 46% en la 3a, 30% en la 4a y 29% de la 5a en adelante, con
+el KPR cayendo de 0.48 a 0.05 en la 4a. 14 tests nuevos.
+
+Detalle de implementacion: los agregados se piden una sola vez por partida y se
+pliegan en Python por posicion (`_fold`). Todo es suma menos
+`avg_death_elapsed`, que es promedio y se pondera por muertes en vez de
+promediar promedios; eso tambien tiene test.
 
 ### 5. Rating compuesto por ronda y partida
 

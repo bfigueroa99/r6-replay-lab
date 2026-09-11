@@ -77,6 +77,7 @@ def build_insights(**filters) -> dict:
     insights += _operators(overall, **filters)
     insights += _spawns(overall, **filters)
     insights += _round_flow(**filters)
+    insights += _sesiones(**filters)
     insights += _duelos_por_operador(**filters)
     insights += _nemesis(**filters)
     insights += _form(overall, **filters)
@@ -501,6 +502,61 @@ def _round_flow(**filters) -> list[dict]:
             value=round(l, 1),
             baseline=round(e, 1),
             sample=sample,
+        )
+    ]
+
+
+#: Desde que partida de la sesion se considera "tarde". Es la pregunta natural
+#: ("me quedo una mas?"), y fijarla evita salir a buscar el corte que mas
+#: conviene entre varios, que es una forma barata de encontrar patrones falsos.
+CORTE_SESION = 3
+
+
+def _sesiones(**filters) -> list[dict]:
+    """Compara el arranque de la sesion contra la parte tardia."""
+    rows = agg.by_session_position(**filters)
+    if len(rows) < CORTE_SESION:
+        return []
+
+    temprano = [r for r in rows if r["position"] < CORTE_SESION]
+    tarde = [r for r in rows if r["position"] >= CORTE_SESION]
+    if not temprano or not tarde:
+        return []
+
+    def resumen(filas):
+        rondas = sum(r["rounds"] for r in filas)
+        ganadas = sum(r["rounds_won"] for r in filas)
+        kills = sum(r["kills"] for r in filas)
+        return rondas, (ganadas / rondas * 100 if rondas else 0), (kills / rondas if rondas else 0)
+
+    rondas_temprano, wr_temprano, kpr_temprano = resumen(temprano)
+    rondas_tarde, wr_tarde, kpr_tarde = resumen(tarde)
+    if min(rondas_temprano, rondas_tarde) < 30:
+        return []
+
+    caida = wr_temprano - wr_tarde
+    if caida < 10:
+        return []
+
+    kpr = ""
+    if kpr_temprano and kpr_tarde < kpr_temprano * 0.8:
+        kpr = f" Tus bajas por ronda tambien bajan, de {kpr_temprano:.2f} a {kpr_tarde:.2f}."
+
+    return [
+        _insight(
+            "fatiga-sesion",
+            "media" if caida >= 15 else "baja",
+            f"De la {CORTE_SESION}a partida en adelante ganas {caida:.0f} puntos menos",
+            f"Primeras {CORTE_SESION - 1} partidas de cada sesion: {wr_temprano:.0f}% de rondas "
+            f"ganadas sobre {rondas_temprano} rondas. De la {CORTE_SESION}a en adelante: "
+            f"{wr_tarde:.0f}% sobre {rondas_tarde}.{kpr}",
+            f"Fijate un tope de {CORTE_SESION - 1} partidas por sesion, o corta cuando notes que "
+            "la segunda derrota seguida vino sin que pasara nada raro. Seguir jugando cansado "
+            "cuesta mas MMR que cualquier error mecanico.",
+            metric="winrate",
+            value=round(wr_tarde, 1),
+            baseline=round(wr_temprano, 1),
+            sample=rondas_tarde,
         )
     ]
 

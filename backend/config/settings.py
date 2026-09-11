@@ -142,6 +142,9 @@ WATCH_INTERVAL_SECONDS = env_int("WATCH_INTERVAL_SECONDS", 20)
 #: Muestra minima por defecto para que un agregado aparezca en la UI.
 MIN_ROUNDS_DEFAULT = env_int("MIN_ROUNDS_DEFAULT", 5)
 
+#: Minutos sin jugar para considerar que empezo otra sesion.
+SESSION_GAP_MINUTES = env_int("SESSION_GAP_MINUTES", 120)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

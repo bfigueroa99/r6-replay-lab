@@ -24,6 +24,7 @@ const TOOLTIP = {
 
 export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
+  const sesiones = useApi('/sessions/', filters)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -39,6 +40,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     ...row,
     ronda: `R${row.round_number + 1}`,
   }))
+  const porPosicion = sesiones.data?.by_position || []
+  const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
   return (
     <>
@@ -49,7 +52,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </div>
       </div>
 
-      <Filters value={filters} onChange={setFilters} />
+      <Filters value={filters} onChange={setFilters} showSession />
 
       <Panel title="Por dia de juego" hint="Cada punto es una sesion. Sirve para ver si mejoras o si solo tuviste un buen dia.">
         <div style={{ height: 260 }}>
@@ -89,6 +92,72 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
           </ResponsiveContainer>
         </div>
       </Panel>
+
+      {porPosicion.length > 2 ? (
+        <Panel
+          title="Curva de la sesion"
+          hint={`Como rindes segun si fue tu primera partida de la noche o la quinta. Una sesion se corta despues de ${horas} horas sin jugar (SESSION_GAP_MINUTES en el .env).`}
+        >
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer>
+              <BarChart data={porPosicion} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
+                <CartesianGrid stroke="#263041" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" {...AXIS} />
+                <YAxis domain={[0, 100]} {...AXIS} />
+                <Tooltip
+                  {...TOOLTIP}
+                  labelFormatter={(l) => `${l} partida de la sesion`}
+                  formatter={(v, n) => [fmt(v, 0), n]}
+                />
+                <RBar dataKey="winrate" name="Rondas ganadas %" fill="#ff8a3d" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Partida', sortable: false },
+              { key: 'matches', label: 'Partidas' },
+              { key: 'rounds', label: 'Rondas' },
+              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+              { key: 'kpr', label: 'KPR', digits: 2 },
+              { key: 'kd', label: 'K/D', digits: 2 },
+              { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%' },
+              {
+                key: 'avg_death_elapsed',
+                label: 'Mueres a los',
+                render: (row) => (row.avg_death_elapsed ? `${Math.round(row.avg_death_elapsed)}s` : '—'),
+              },
+            ]}
+            rows={porPosicion}
+            initialSort={{ key: 'position', dir: 'asc' }}
+            rowKey={(row) => row.position}
+          />
+        </Panel>
+      ) : null}
+
+      {sesiones.data?.sessions?.length ? (
+        <Panel title="Sesiones" hint="Cada bloque de juego, de la mas reciente hacia atras.">
+          <DataTable
+            columns={[
+              {
+                key: 'start',
+                label: 'Cuando',
+                render: (row) => row.start.slice(5, 16).replace('T', ' '),
+              },
+              { key: 'matches', label: 'Partidas' },
+              { key: 'hours', label: 'Duro', render: (row) => `${row.hours}h` },
+              { key: 'rounds', label: 'Rondas' },
+              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+              { key: 'kd', label: 'K/D', digits: 2 },
+              { key: 'kpr', label: 'KPR', digits: 2 },
+              { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
+            ]}
+            rows={sesiones.data.sessions}
+            initialSort={{ key: 'start', dir: 'desc' }}
+            rowKey={(row) => row.index}
+          />
+        </Panel>
+      ) : null}
 
       <Panel
         title="Por numero de ronda"

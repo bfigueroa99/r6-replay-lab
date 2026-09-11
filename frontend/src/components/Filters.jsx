@@ -9,11 +9,21 @@ const RANGES = [
   { value: '90', label: 'Ultimos 90 dias' },
 ]
 
+/** "09-09 15:34 · 6 partidas" */
+const etiquetaSesion = (s) =>
+  `${s.start.slice(5, 16).replace('T', ' ')} · ${s.matches} partida${s.matches === 1 ? '' : 's'}`
+
 /**
  * Barra de filtros compartida. El estado vive en App para que se mantenga al
  * cambiar de pagina.
  */
-export default function Filters({ value, onChange, showOperator = true, showSite = false }) {
+export default function Filters({
+  value,
+  onChange,
+  showOperator = true,
+  showSite = false,
+  showSession = false,
+}) {
   const { data } = useApi('/filters/')
   const set = (key) => (event) => onChange({ ...value, [key]: event.target.value })
 
@@ -62,6 +72,20 @@ export default function Filters({ value, onChange, showOperator = true, showSite
             {(data?.sites || []).map((site) => (
               <option key={site} value={site}>
                 {site}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      {showSession ? (
+        <label>
+          Sesion
+          <select value={value.session ?? ''} onChange={set('session')}>
+            <option value="">Todas</option>
+            {(data?.sessions || []).map((s) => (
+              <option key={s.index} value={s.index}>
+                {etiquetaSesion(s)}
               </option>
             ))}
           </select>

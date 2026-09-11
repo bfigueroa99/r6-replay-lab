@@ -39,6 +39,9 @@ def _filters(request: HttpRequest) -> dict:
                 out[key] = datetime.fromisoformat(value)
             except ValueError:
                 pass
+    session = request.GET.get("session")
+    if session not in (None, ""):
+        out["session"] = session
     days = request.GET.get("days")
     if days and "since" not in out:
         try:
@@ -114,6 +117,7 @@ def filter_options(request: HttpRequest) -> JsonResponse:
                 {m for m in Match.objects.values_list("match_type", flat=True).distinct() if m}
             ),
             "sides": ["Attack", "Defense"],
+            "sessions": agg.session_options(),
         }
     )
 
@@ -171,6 +175,19 @@ def teammates(request: HttpRequest) -> JsonResponse:
         {
             "synergy": agg.teammate_synergy(min_rounds=_min_rounds(request, 10), **filters),
             "clutches": agg.clutch_detail(**filters),
+        }
+    )
+
+
+@require_GET
+def sessions(request: HttpRequest) -> JsonResponse:
+    """Sesiones de juego y como se mueve el rendimiento dentro de una."""
+    filters = _filters(request)
+    return _ok(
+        {
+            "gap_minutes": settings.SESSION_GAP_MINUTES,
+            "sessions": agg.sessions(**filters),
+            "by_position": agg.by_session_position(**filters),
         }
     )
 

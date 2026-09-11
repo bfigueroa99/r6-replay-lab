@@ -16,6 +16,22 @@ aca esta la definicion exacta.
 | **HS%** | headshots / bajas. El replay marca el headshot en cada kill. |
 | **Sobrevives** | Rondas donde no moriste / rondas jugadas. |
 
+## Sesiones
+
+Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
+`SESSION_GAP_MINUTES` (120 por defecto) sin empezar una partida. El corte se
+calcula sobre **todo** el historial, no sobre lo filtrado: si filtras por mapa,
+esa partida sigue siendo la tercera de su noche.
+
+| Metrica | Definicion |
+|---|---|
+| **Posicion en la sesion** | Si fue tu 1a, 2a, 3a... partida de ese bloque. De la 5a en adelante se juntan en un tramo: las sesiones largas son pocas y cada posicion suelta no junta muestra. |
+| **Curva de la sesion** | Las metricas de siempre (winrate, KPR, aperturas, momento de la muerte) cortadas por posicion. Responde "juego peor despues de la tercera" con el numero. |
+| **Caida de sesion** | Diferencia en puntos de winrate entre las 2 primeras partidas y de la 3a en adelante. El coach opina desde 30 rondas de cada lado y 10 puntos de diferencia. |
+
+El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
+con el que mas conviene es la forma barata de encontrar patrones que no existen.
+
 ## Duelos de apertura
 
 La **primera baja de la ronda** define el duelo de apertura. Quien mata lo gana,
@@ -78,6 +94,7 @@ mostrar algo util.
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
+| **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
 | **Rival** | Duelos contra una persona o contra un operador rival. Ver la seccion Duelos. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 

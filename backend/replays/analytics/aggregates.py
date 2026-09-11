@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
+from django.conf import settings
 from django.db.models import Avg, Count, Exists, F, OuterRef, Q, QuerySet, Subquery, Sum
 
-from ..models import Event, Player, Round, RoundPlayer, match_result
+from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 
 # --------------------------------------------------------------------- filtros
 
-FILTER_KEYS = ("side", "map", "operator", "site", "match_type", "since", "until", "ranked_only")
+FILTER_KEYS = (
+    "side", "map", "operator", "site", "match_type", "since", "until", "ranked_only", "session",
+)
 
 
 def base_queryset(**filters) -> QuerySet[RoundPlayer]:
@@ -33,6 +36,8 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
         qs = qs.filter(round__match__played_at__gte=filters["since"])
     if filters.get("until"):
         qs = qs.filter(round__match__played_at__lte=filters["until"])
+    if filters.get("session") not in (None, ""):
+        qs = qs.filter(round__match_id__in=session_match_ids(filters["session"]))
     return qs
 
 
@@ -336,6 +341,140 @@ def clutch_detail(**filters) -> list[dict]:
         }
         for rp in qs[:50]
     ]
+
+
+# --------------------------------------------------------------------- sesiones
+
+
+def _sessions_raw() -> list[dict]:
+    """Sesiones de juego, de la mas nueva a la mas vieja.
+
+    Una sesion se corta cuando pasan mas de `SESSION_GAP_MINUTES` sin jugar. Se
+    calcula sobre **todas** las partidas y no sobre las filtradas: si filtras por
+    mapa, esa partida sigue siendo la tercera de su noche.
+    """
+    gap = timedelta(minutes=settings.SESSION_GAP_MINUTES)
+    sesiones: list[dict] = []
+    for match_id, played_at in Match.objects.order_by("played_at").values_list(
+        "id", "played_at"
+    ):
+        if not sesiones or played_at - sesiones[-1]["end"] > gap:
+            sesiones.append({"start": played_at, "end": played_at, "match_ids": []})
+        sesiones[-1]["end"] = played_at
+        sesiones[-1]["match_ids"].append(match_id)
+
+    sesiones.reverse()  # la mas reciente primero: es la que interesa mirar
+    for i, sesion in enumerate(sesiones):
+        sesion["index"] = i
+    return sesiones
+
+
+def session_match_ids(index) -> list[int]:
+    """Partidas de una sesion. 0 es la mas reciente."""
+    try:
+        index = int(index)
+    except (TypeError, ValueError):
+        return []
+    sesiones = _sessions_raw()
+    if 0 <= index < len(sesiones):
+        return sesiones[index]["match_ids"]
+    return []
+
+
+def session_options(limit: int = 30) -> list[dict]:
+    """Sesiones para el selector de la barra de filtros."""
+    return [
+        {"index": s["index"], "start": s["start"].isoformat(), "matches": len(s["match_ids"])}
+        for s in _sessions_raw()[:limit]
+    ]
+
+
+def _position_map() -> dict[int, int]:
+    """match_id -> si fue la 1a, 2a, 3a... partida de su sesion."""
+    return {
+        match_id: posicion
+        for sesion in _sessions_raw()
+        for posicion, match_id in enumerate(sesion["match_ids"], start=1)
+    }
+
+
+def _fold(rows: list[dict]) -> dict:
+    """Suma filas ya agregadas por partida en una sola.
+
+    Todo es conteo o suma menos `avg_death_elapsed`, que es un promedio: se
+    pondera por muertes en vez de promediar promedios.
+    """
+    total = {clave: 0 for clave in AGGREGATES if clave != "avg_death_elapsed"}
+    acumulado = peso = 0.0
+    for row in rows:
+        for clave in total:
+            total[clave] += row.get(clave) or 0
+        muertes = row.get("deaths") or 0
+        if row.get("avg_death_elapsed") and muertes:
+            acumulado += row["avg_death_elapsed"] * muertes
+            peso += muertes
+    total["avg_death_elapsed"] = (acumulado / peso) if peso else None
+    return derive(total)
+
+
+def _por_partida(**filters) -> dict[int, dict]:
+    qs = base_queryset(**filters)
+    return {
+        row["round__match_id"]: row
+        for row in qs.values("round__match_id").annotate(**AGGREGATES)
+    }
+
+
+def sessions(limit: int = 30, **filters) -> list[dict]:
+    """Resumen de cada sesion de juego, de la mas reciente hacia atras."""
+    por_partida = _por_partida(**filters)
+    salida = []
+    for sesion in _sessions_raw()[:limit]:
+        filas = [por_partida[mid] for mid in sesion["match_ids"] if mid in por_partida]
+        if not filas:
+            continue
+        fila = _fold(filas)
+        fila.update(
+            {
+                "index": sesion["index"],
+                "start": sesion["start"].isoformat(),
+                "end": sesion["end"].isoformat(),
+                "matches": len(filas),
+                "hours": round(
+                    (sesion["end"] - sesion["start"]).total_seconds() / 3600, 1
+                ),
+            }
+        )
+        salida.append(fila)
+    return salida
+
+
+def by_session_position(max_position: int = 5, **filters) -> list[dict]:
+    """Rendimiento segun si fue tu 1a, 2a, 3a... partida de la sesion.
+
+    De `max_position` en adelante se juntan en un solo tramo: las sesiones
+    largas son pocas y cada posicion suelta no junta muestra.
+    """
+    posiciones = _position_map()
+    buckets: dict[int, list[dict]] = {}
+    for match_id, row in _por_partida(**filters).items():
+        posicion = posiciones.get(match_id)
+        if not posicion:
+            continue
+        buckets.setdefault(min(posicion, max_position), []).append(row)
+
+    salida = []
+    for posicion in sorted(buckets):
+        fila = _fold(buckets[posicion])
+        fila.update(
+            {
+                "position": posicion,
+                "label": f"{posicion}a" if posicion < max_position else f"{max_position}a+",
+                "matches": len(buckets[posicion]),
+            }
+        )
+        salida.append(fila)
+    return salida
 
 
 # --------------------------------------------------------------------- duelos
