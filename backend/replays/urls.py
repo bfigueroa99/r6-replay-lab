@@ -26,4 +26,5 @@ urlpatterns = [
     path("overrides/", views.save_overrides, name="overrides"),
     path("import/", views.run_import, name="import"),
     path("import/status/", views.import_status, name="import-status"),
+    path("import/progress/", views.import_progress, name="import-progress"),
 ]

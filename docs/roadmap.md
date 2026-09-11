@@ -335,13 +335,28 @@ elegir "entre dos fechas" y escribir la primera hay un momento en que no hay nad
 que mandar a la API, y sin ese estado el selector se volvia solo a "todo el
 historial". 11 tests nuevos.
 
-### 13. Importacion con progreso
+### 13. Importacion con progreso [x]
 
-`POST /api/import/` es bloqueante y sin feedback: con 30 carpetas el boton queda
-colgado sin decir nada.
+Hecho: `POST /api/import/` lanza la importacion en un hilo y vuelve enseguida,
+`GET /api/import/progress/` dice como va, y el boton muestra "Importando 3 de
+12" con la carpeta que esta leyendo debajo.
 
-- Reportar avance por carpeta, con polling sobre `ImportLog`, que ya existe.
-- **Listo cuando**: el boton muestra "importando 3 de 12" y que carpeta va.
+Cambio sobre lo planeado: no se hace polling sobre `ImportLog` sino sobre un
+estado propio (`ImportJob`). `ImportLog` tiene una fila por carpeta ya
+intentada, pero no sabe cuantas faltan, y sin el total no hay "3 de 12".
+
+Dos detalles que salieron de probarlo contra los replays reales:
+
+- La lista de carpetas se arma en el request y no en el hilo. En la primera
+  version el POST volvia con `total: 0` porque el hilo todavia no habia
+  alcanzado a calcularla, y el boton mostraba "importando..." sin numero.
+- Cada partida tarda varios segundos en parsear (5-9 MB por ronda), asi que una
+  importacion de 30 carpetas dejaba el boton congelado por minutos. Ahora se ve
+  avanzar carpeta por carpeta.
+
+`run_import_job` es sincrono y separado de `start_import` justamente para poder
+probarlo: en los tests de Django un hilo abre otra conexion y no ve los datos de
+la transaccion. 14 tests nuevos.
 
 ### 14. Lint y verificacion local
 

@@ -18,7 +18,7 @@ from . import unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
-from .ingest import find_match_folders, scan_and_import
+from .ingest import find_match_folders, import_job, start_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
 from .retag import retag
 
@@ -540,29 +540,27 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
 @csrf_exempt
 @require_POST
 def run_import(request: HttpRequest) -> JsonResponse:
-    """Escanea la carpeta de replays e importa lo nuevo."""
-    force = request.GET.get("force", "").lower() in ("1", "true", "si", "yes")
-    try:
-        limit = int(request.GET.get("limit", 0)) or None
-    except ValueError:
-        limit = None
+    """Lanza la importacion en segundo plano y vuelve enseguida.
 
-    results = scan_and_import(
+    Antes bloqueaba hasta terminar: con 30 carpetas el boton quedaba minutos
+    colgado sin decir nada. El avance se consulta en `/api/import/progress/`.
+    """
+    force = request.GET.get("force", "").lower() in ("1", "true", "si", "yes")
+    limit = _int_param(request, "limit", 0, minimum=0, maximum=1000) or None
+
+    job = start_import(
         settings.REPLAY_DIR,
         quiet_seconds=settings.IMPORT_QUIET_SECONDS,
         force=force,
         limit=limit,
     )
-    return _ok(
-        {
-            "imported": [
-                {"folder": r.folder, "ok": r.ok, "rounds": r.rounds, "message": r.message}
-                for r in results
-            ],
-            "count": len([r for r in results if r.ok]),
-            "errors": len([r for r in results if not r.ok]),
-        }
-    )
+    return _ok(job.as_dict())
+
+
+@require_GET
+def import_progress(request: HttpRequest) -> JsonResponse:
+    """Como va la importacion lanzada desde la API."""
+    return _ok(import_job().as_dict())
 
 
 @require_GET

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 
-import { post, useApi } from './api.js'
+import { get, post, useApi } from './api.js'
 import Coach from './pages/Coach.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Datos from './pages/Datos.jsx'
@@ -26,31 +26,55 @@ const LINKS = [
   { to: '/datos', label: 'Datos' },
 ]
 
+/** Cada cuanto se pregunta como va la importacion, y hasta cuando insistir. */
+const POLL_MS = 700
+const POLL_MAX = Math.round((20 * 60 * 1000) / POLL_MS)
+
+const espera = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export default function App() {
   const [filters, setFilters] = useState({})
   const [importing, setImporting] = useState(false)
+  const [progreso, setProgreso] = useState(null)
   const [flash, setFlash] = useState(null)
   const health = useApi('/health/')
 
   const runImport = useCallback(async () => {
     setImporting(true)
     setFlash(null)
+    setProgreso(null)
     try {
-      const result = await post('/import/')
-      const ok = result.count || 0
+      // el POST lanza la importacion y vuelve enseguida; el avance va aparte
+      let job = await post('/import/')
+      for (let i = 0; job.running && i < POLL_MAX; i += 1) {
+        setProgreso(job)
+        await espera(POLL_MS)
+        job = await get('/import/progress/')
+      }
+
+      const ok = job.count || 0
       setFlash(
-        ok
-          ? `Importadas ${ok} partida(s).`
-          : 'No habia partidas nuevas para importar.' +
-              (result.errors ? ` ${result.errors} con error.` : ''),
+        job.error
+          ? `Error al importar: ${job.error}`
+          : ok
+            ? `Importadas ${ok} partida(s).` + (job.errors ? ` ${job.errors} con error.` : '')
+            : 'No habia partidas nuevas para importar.' +
+              (job.errors ? ` ${job.errors} con error.` : ''),
       )
       health.reload()
     } catch (err) {
       setFlash(`Error al importar: ${err.message}`)
     } finally {
       setImporting(false)
+      setProgreso(null)
     }
   }, [health])
+
+  const etiquetaImport = !importing
+    ? 'Importar replays'
+    : progreso?.total
+      ? `Importando ${Math.min(progreso.done + 1, progreso.total)} de ${progreso.total}`
+      : 'Importando...'
 
   const context = { filters, setFilters, runImport, importing, health: health.data }
 
@@ -74,13 +98,23 @@ export default function App() {
               {health.data.matches} partidas · {health.data.rounds} rondas
             </span>
           ) : null}
-          <button className="btn primary small" onClick={runImport} disabled={importing}>
-            {importing ? 'Importando...' : 'Importar replays'}
+          <button
+            className="btn primary small"
+            onClick={runImport}
+            disabled={importing}
+            title={progreso?.current ? `Leyendo ${progreso.current}` : undefined}
+          >
+            {etiquetaImport}
           </button>
         </div>
       </header>
 
       <main>
+        {progreso?.current ? (
+          <div className="panel" style={{ marginBottom: 14 }}>
+            Leyendo <b>{progreso.current}</b> · {progreso.done} de {progreso.total} listas.
+          </div>
+        ) : null}
         {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
         <Routes>
           <Route path="/" element={<Dashboard {...context} />} />

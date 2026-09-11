@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -313,19 +315,159 @@ def _parse_ts(value) -> datetime:
 # --------------------------------------------------------------------- escaneo
 
 
-def scan_and_import(
+def pending_folders(
     root: str | Path, *, quiet_seconds: float = 60.0, force: bool = False, limit: int | None = None
-) -> list[ImportResult]:
-    """Importa todas las carpetas nuevas de `root`."""
-    results: list[ImportResult] = []
+) -> list[Path]:
+    """Carpetas que se van a importar. Se calcula antes para saber el total.
+
+    Sin esto no se puede decir "3 de 12": el total solo se sabria al terminar.
+    """
     known = set(Match.objects.values_list("folder", flat=True))
+    out: list[Path] = []
     for folder in find_match_folders(root):
         if folder.name in known and not force:
             continue
         if not folder_is_settled(folder, quiet_seconds):
             log.info("%s todavia se esta escribiendo, se salta", folder.name)
             continue
-        results.append(import_match_folder(folder, force=force))
-        if limit and len(results) >= limit:
+        out.append(folder)
+        if limit and len(out) >= limit:
             break
+    return out
+
+
+def import_folders(
+    folders: list[Path],
+    *,
+    force: bool = False,
+    on_progress: Callable[[int, int, str], None] | None = None,
+) -> list[ImportResult]:
+    """Importa una lista ya decidida de carpetas.
+
+    `on_progress(hechas, total, carpeta)` se llama **antes** de cada una, que es
+    lo que permite mostrar cual se esta leyendo y no solo cuantas van.
+    """
+    results: list[ImportResult] = []
+    for i, folder in enumerate(folders):
+        if on_progress:
+            on_progress(i, len(folders), folder.name)
+        results.append(import_match_folder(folder, force=force))
+    if on_progress:
+        on_progress(len(folders), len(folders), "")
     return results
+
+
+def scan_and_import(
+    root: str | Path,
+    *,
+    quiet_seconds: float = 60.0,
+    force: bool = False,
+    limit: int | None = None,
+    on_progress: Callable[[int, int, str], None] | None = None,
+) -> list[ImportResult]:
+    """Importa todas las carpetas nuevas de `root`.
+
+    `on_progress(hechas, total, carpeta)` se llama **antes** de cada carpeta, que
+    es lo que permite mostrar cual se esta leyendo y no solo cuantas van.
+    """
+    folders = pending_folders(root, quiet_seconds=quiet_seconds, force=force, limit=limit)
+    return import_folders(folders, force=force, on_progress=on_progress)
+
+
+# --------------------------------------------------------------------- en segundo plano
+
+
+@dataclass
+class ImportJob:
+    """Estado de una importacion, para poder mirarla mientras corre."""
+
+    running: bool = False
+    total: int = 0
+    done: int = 0
+    current: str = ""
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    error: str = ""
+    results: list[ImportResult] = field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return {
+            "running": self.running,
+            "total": self.total,
+            "done": self.done,
+            "current": self.current,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+            "error": self.error,
+            "imported": [
+                {"folder": r.folder, "ok": r.ok, "rounds": r.rounds, "message": r.message}
+                for r in self.results
+            ],
+            "count": len([r for r in self.results if r.ok]),
+            "errors": len([r for r in self.results if not r.ok]),
+        }
+
+
+_job = ImportJob()
+_job_lock = threading.Lock()
+
+
+def import_job() -> ImportJob:
+    """El estado de la ultima importacion lanzada desde la API."""
+    return _job
+
+
+def run_import_job(folders: list[Path], *, force: bool = False) -> ImportJob:
+    """Importa las carpetas actualizando el estado global. Sincrono.
+
+    Separado de `start_import` para poder probarlo sin hilos: en los tests de
+    Django un hilo abre otra conexion y no ve los datos de la transaccion.
+    """
+
+    def progreso(done: int, total: int, folder: str) -> None:
+        _job.done, _job.total, _job.current = done, total, folder
+
+    try:
+        _job.results = import_folders(folders, force=force, on_progress=progreso)
+    except Exception as exc:  # noqa: BLE001 - queda en el estado, no tumba el hilo
+        log.exception("fallo la importacion en segundo plano")
+        _job.error = f"{type(exc).__name__}: {exc}"
+    finally:
+        _job.running = False
+        _job.current = ""
+        _job.finished_at = timezone.now()
+    return _job
+
+
+def start_import(
+    root: str | Path,
+    *,
+    quiet_seconds: float = 60.0,
+    force: bool = False,
+    limit: int | None = None,
+) -> ImportJob:
+    """Lanza la importacion en un hilo y vuelve enseguida.
+
+    Con 30 carpetas el POST tardaba minutos y el boton quedaba colgado sin decir
+    nada. Si ya hay una corriendo, no se lanza otra.
+
+    La lista de carpetas se arma **aca** y no en el hilo, para que el POST ya
+    vuelva con el total: si no, el boton muestra "importando..." sin numero
+    hasta que el hilo alcance a calcularlo.
+    """
+    global _job
+    with _job_lock:
+        if _job.running:
+            return _job
+        folders = pending_folders(root, quiet_seconds=quiet_seconds, force=force, limit=limit)
+        _job = ImportJob(running=True, started_at=timezone.now(), total=len(folders))
+
+    hilo = threading.Thread(
+        target=run_import_job,
+        args=(folders,),
+        kwargs={"force": force},
+        daemon=True,
+        name="r6-import",
+    )
+    hilo.start()
+    return _job
