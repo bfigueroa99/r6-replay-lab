@@ -246,16 +246,30 @@ la misma frase para los dos casos leia como un reproche cuando era una ventaja.
 
 18 tests nuevos, todos sobre que no afirme lo que no sabe.
 
-### 9. Distribucion del momento de la muerte
+### 9. Distribucion del momento de la muerte [x]
 
-Hoy solo esta el promedio ("mueres a los 98s"). Un promedio esconde la forma:
-morir siempre a los 100s no es lo mismo que morir mitad a los 20 y mitad a los
-170.
+Hecho: panel "Cuando mueres" en Tendencias, con histograma apilado por lado en
+tramos de 30s, el cruce con muertes sin trade por tramo, y cuatro tarjetas con
+los dos extremos de cada lado. Reglas nuevas del coach:
+`muertes-tempranas-{lado}` y `sin-tiempo-ataque`.
 
-- Histograma por tramos del reloj, separado por lado.
-- Cruce con "muerte sin trade": en que tramos ademas nadie te venga.
-- **Listo cuando**: el histograma esta en Tendencias y el coach lo usa para
-  distinguir "sales muy temprano" de "te quedas sin tiempo".
+**Los dos extremos miden ejes distintos, y eso fue el hallazgo del item.**
+"Sales muy temprano" son los primeros 30 **segundos jugados**; "te quedas sin
+tiempo" son las muertes con menos de 30 **segundos de reloj**. No es lo mismo y
+el promedio tapa los dos.
+
+Calibracion contra los datos reales, otra vez antes de escribir la regla: la
+distribucion del usuario esta cargada al final (43% de las muertes despues de
+los 120s, apenas 10% en los primeros 30). La primera version de la regla iba a
+marcar "mueres muy tarde" con un umbral de 40% sobre los ultimos tramos, pero la
+distribucion de muertes en Siege **es** naturalmente tardia (mientras mas
+sobrevives, mas chance de morir tarde) y este proyecto no tiene un promedio
+poblacional con que comparar. Habria sido marcar como problema una forma normal.
+
+La regla que quedo usa el reloj restante, que si es interpretable sin baseline:
+morir en ataque con menos de 30s de reloj significa que la ronda ya no daba para
+plantar. Con los datos del usuario dispara: 15 de 52 muertes en ataque (29%).
+16 tests nuevos.
 
 ### 10. Comparar dos periodos
 

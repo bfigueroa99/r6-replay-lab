@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from django.conf import settings
+from django.db.models.functions import Floor
 from django.db.models import (
     Avg,
     Case,
@@ -13,6 +14,7 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     FloatField,
+    IntegerField,
     OuterRef,
     Q,
     QuerySet,
@@ -759,6 +761,93 @@ def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
         )
         salida.append(fila)
     return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
+
+
+# --------------------------------------------------------------------- muertes
+
+#: Ancho de los tramos del histograma y desde donde se juntan en el ultimo.
+DEATH_BUCKET = 30
+DEATH_CAP = 150
+
+
+def deaths_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) -> list[dict]:
+    """En que momento de la ronda mueres, en tramos de `bucket` segundos.
+
+    El promedio esconde la forma: morir siempre a los 100s no es lo mismo que
+    morir la mitad de las veces a los 20 y la otra mitad a los 170, y las dos
+    cosas se arreglan distinto.
+    """
+    qs = base_queryset(**filters).exclude(death_elapsed=None)
+    crudas = (
+        qs.annotate(
+            tramo=ExpressionWrapper(
+                Floor(F("death_elapsed") / bucket) * bucket, output_field=IntegerField()
+            )
+        )
+        .values("tramo", "side")
+        .annotate(deaths=Count("id"), untraded=Count("id", filter=Q(untraded_death=True)))
+        .order_by("tramo")
+    )
+
+    tramos: dict[int, dict] = {}
+    for cruda in crudas:
+        # todo lo que pasa del tope se junta en el ultimo tramo: son pocas
+        # muertes y separadas no dicen nada
+        inicio = min(int(cruda["tramo"] or 0), cap)
+        fila = tramos.setdefault(
+            inicio,
+            {
+                "start": inicio,
+                "end": None if inicio >= cap else inicio + bucket,
+                "label": f"{inicio}s+" if inicio >= cap else f"{inicio}-{inicio + bucket}s",
+                "deaths": 0,
+                "untraded": 0,
+                "attack": 0,
+                "defense": 0,
+            },
+        )
+        fila["deaths"] += cruda["deaths"]
+        fila["untraded"] += cruda["untraded"]
+        if cruda["side"] == "Attack":
+            fila["attack"] += cruda["deaths"]
+        elif cruda["side"] == "Defense":
+            fila["defense"] += cruda["deaths"]
+
+    total = sum(f["deaths"] for f in tramos.values())
+    salida = []
+    for inicio in sorted(tramos):
+        fila = tramos[inicio]
+        fila["pct"] = _pct(fila["deaths"], total)
+        fila["untraded_pct"] = _pct(fila["untraded"], fila["deaths"])
+        salida.append(fila)
+    return salida
+
+
+#: Segundos de reloj que quedan para considerar que la ronda ya estaba decidida.
+#: Es un sexto de los 180s: morir ahi en ataque significa que la ejecucion nunca
+#: llego a pasar.
+CLOCK_TAIL = 30
+
+
+def death_timing(**filters) -> dict:
+    """Los dos extremos de la distribucion, que son los que se pueden accionar.
+
+    `first30` mira los segundos **jugados** (saliste muy temprano) y `last30`
+    los segundos **que quedaban en el reloj** (la ronda ya estaba decidida). Son
+    ejes distintos a proposito: el mismo promedio puede esconder los dos.
+    """
+    qs = base_queryset(**filters).exclude(death_elapsed=None)
+    salida = {}
+    for lado, clave in (("Attack", "attack"), ("Defense", "defense")):
+        fila = qs.filter(side=lado).aggregate(
+            deaths=Count("id"),
+            first30=Count("id", filter=Q(death_elapsed__lt=DEATH_BUCKET)),
+            last30=Count("id", filter=Q(death_clock__lt=CLOCK_TAIL, death_clock__isnull=False)),
+        )
+        fila["first30_pct"] = _pct(fila["first30"], fila["deaths"])
+        fila["last30_pct"] = _pct(fila["last30"], fila["deaths"])
+        salida[clave] = fila
+    return salida
 
 
 # --------------------------------------------------------------------- jugador

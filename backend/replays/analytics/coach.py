@@ -78,6 +78,7 @@ def build_insights(**filters) -> dict:
     insights += _spawns(overall, **filters)
     insights += _round_flow(**filters)
     insights += _sesiones(**filters)
+    insights += _momento_de_la_muerte(**filters)
     insights += _duelos_por_operador(**filters)
     insights += _nemesis(**filters)
     insights += _form(overall, **filters)
@@ -217,6 +218,73 @@ def _early_deaths(attack, defense) -> list[dict]:
                     scope=label,
                 )
             )
+    return out
+
+
+#: Con menos muertes de un lado, los porcentajes de la distribucion son ruido.
+MUESTRA_MUERTES = 25
+
+
+def _momento_de_la_muerte(**filters) -> list[dict]:
+    """Los dos extremos de la distribucion: salir temprano y quedarse sin tiempo.
+
+    Son problemas distintos con arreglos opuestos, y el promedio de
+    `avg_death_elapsed` los tapa a los dos: quien muere mitad a los 20 y mitad a
+    los 170 tiene el mismo promedio que quien muere siempre a los 95.
+    """
+    timing = agg.death_timing(**filters)
+    out = []
+
+    for clave, label in (("attack", "ataque"), ("defense", "defensa")):
+        fila = timing[clave]
+        if fila["deaths"] < MUESTRA_MUERTES:
+            continue
+
+        # un sexto de la ronda son los primeros 30s: mas de un cuarto de las
+        # muertes ahi es concentracion, no reparto normal
+        if (fila["first30_pct"] or 0) >= 25:
+            out.append(
+                _insight(
+                    f"muertes-tempranas-{label}",
+                    "media",
+                    f"En {label} el {fila['first30_pct']:.0f}% de tus muertes es en los primeros 30s",
+                    f"{fila['first30']} de {fila['deaths']} muertes en {label} pasan antes de que "
+                    "la ronda se arme. Mueres con informacion de nadie y con el equipo todavia "
+                    "agrupado.",
+                    (
+                        "En ataque: dronea antes de cruzar y no pelees el spawnpeek."
+                        if label == "ataque"
+                        else "En defensa: no salgas a roamear en los primeros segundos; consolida "
+                        "el sitio y sal cuando sepas de donde vienen."
+                    ),
+                    metric="first30_pct",
+                    value=fila["first30_pct"],
+                    baseline=25,
+                    sample=fila["deaths"],
+                    scope=label,
+                )
+            )
+
+    ataque = timing["attack"]
+    if ataque["deaths"] >= MUESTRA_MUERTES and (ataque["last30_pct"] or 0) >= 25:
+        out.append(
+            _insight(
+                "sin-tiempo-ataque",
+                "media",
+                f"En ataque mueres con el reloj casi agotado el {ataque['last30_pct']:.0f}% de las veces",
+                f"{ataque['last30']} de {ataque['deaths']} muertes en ataque pasan con menos de "
+                f"{agg.CLOCK_TAIL} segundos de reloj. A esa altura la ronda ya no da para plantar: "
+                "la ejecucion nunca llego a empezar.",
+                "Ponle hora al ataque: dronea y abre los primeros 60 segundos, pero entra antes "
+                "del minuto y medio aunque la informacion no este completa. Llegar tarde al sitio "
+                "es perder la ronda sin pelearla.",
+                metric="last30_pct",
+                value=ataque["last30_pct"],
+                baseline=25,
+                sample=ataque["deaths"],
+                scope="ataque",
+            )
+        )
     return out
 
 

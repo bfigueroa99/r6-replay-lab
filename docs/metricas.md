@@ -133,6 +133,9 @@ mostrar algo util.
 | **KST** | Rondas donde mataste, sobreviviste o tu muerte se tradeo, sobre el total. Es el clasico KOST **sin la O** de objetivo, porque los eventos de plant/defuse no estan disponibles (ver `formato-rec.md`). Bajo 65% significa que hay muchas rondas donde tu equipo jugo con uno menos. |
 | **1vX (clutch)** | Rondas donde quedaste ultimo de tu equipo y ganaste. El `X` es la cantidad de rivales vivos cuando quedaste solo. Se calcula con la misma logica que r6-dissect. |
 | **Multikill** | Rondas con 2 o mas bajas. |
+| **Cuando mueres** | La distribucion completa, en tramos de 30 segundos y separada por lado. El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir mitad a los 20 y mitad a los 170, y las dos cosas se arreglan distinto. |
+| **Sales muy temprano** | Muertes en los primeros 30 **segundos jugados**. La ronda todavia no se arma: mueres sin informacion. El coach opina desde 25 muertes del lado y un 25% concentrado ahi (el reparto uniforme daria 17%). |
+| **Te quedas sin tiempo** | Muertes con menos de 30 segundos **de reloj**. Es otro eje: no importa cuanto jugaste, importa que la ronda ya estaba decidida. En ataque significa que la ejecucion nunca llego a empezar. |
 | **Mueres a los** | Promedio de segundos de la fase de accion hasta tu muerte. Se saca del reloj de la ronda: `reloj_inicial - reloj_de_tu_muerte`. Un promedio bajo (menos de 45-50 s) significa que te estas perdiendo la mayor parte de la ronda. |
 
 ## Cortes

@@ -40,6 +40,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     ...row,
     ronda: `R${row.round_number + 1}`,
   }))
+  const muertes = data.deaths_by_time || []
+  const timing = data.death_timing
   const porPosicion = sesiones.data?.by_position || []
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
@@ -161,6 +163,78 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'start', dir: 'desc' }}
             rowKey={(row) => row.index}
             csvName="sesiones"
+          />
+        </Panel>
+      ) : null}
+
+      {muertes.length ? (
+        <Panel
+          title="Cuando mueres"
+          hint={
+            'El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir ' +
+            'la mitad de las veces a los 20 y la otra mitad a los 170, y las dos cosas se ' +
+            'arreglan distinto. Los segundos son de fase de accion, no del reloj de la ronda.'
+          }
+        >
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart data={muertes} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
+                <CartesianGrid stroke="#263041" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" {...AXIS} />
+                <YAxis {...AXIS} />
+                <Tooltip {...TOOLTIP} formatter={(v, n) => [fmt(v, 0), n]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <RBar dataKey="attack" name="Ataque" stackId="lado" fill="#ff8a3d" radius={[0, 0, 0, 0]} />
+                <RBar dataKey="defense" name="Defensa" stackId="lado" fill="#4aa8ff" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {timing ? (
+            <div className="kpis" style={{ marginTop: 12 }}>
+              {[
+                { lado: 'Ataque', fila: timing.attack },
+                { lado: 'Defensa', fila: timing.defense },
+              ].map(({ lado, fila }) => (
+                <React.Fragment key={lado}>
+                  <div className="stat">
+                    <div className="label">{lado}: sales muy temprano</div>
+                    <div className="value">{fmt(fila.first30_pct, 0, '%')}</div>
+                    <div className="sub">
+                      {fila.first30} de {fila.deaths} muertes en los primeros 30s de accion
+                    </div>
+                  </div>
+                  <div className="stat">
+                    <div className="label">{lado}: te quedas sin tiempo</div>
+                    <div className="value">{fmt(fila.last30_pct, 0, '%')}</div>
+                    <div className="sub">
+                      {fila.last30} de {fila.deaths} con menos de 30s de reloj
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          ) : null}
+
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Tramo', sortable: false, left: true },
+              { key: 'deaths', label: 'Muertes' },
+              { key: 'pct', label: 'Del total', digits: 0, suffix: '%' },
+              { key: 'attack', label: 'Ataque' },
+              { key: 'defense', label: 'Defensa' },
+              {
+                key: 'untraded_pct',
+                label: 'Sin trade',
+                digits: 0,
+                suffix: '%',
+                help: 'De las muertes de ese tramo, cuantas quedaron sin vengar.',
+              },
+            ]}
+            rows={muertes}
+            initialSort={{ key: 'start', dir: 'asc' }}
+            rowKey={(row) => row.start}
+            csvName="cuando-mueres"
           />
         </Panel>
       ) : null}
