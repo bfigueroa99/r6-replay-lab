@@ -175,6 +175,20 @@ def teammates(request: HttpRequest) -> JsonResponse:
     )
 
 
+@require_GET
+def duels(request: HttpRequest) -> JsonResponse:
+    """Duelos: contra quien y contra que operadores ganas y pierdes."""
+    filters = _filters(request)
+    min_duels = _int_param(request, "min_duels", 3, minimum=1, maximum=1000)
+    return _ok(
+        {
+            "totals": agg.duel_totals(**filters),
+            "nemesis": agg.nemesis(min_duels=min_duels, **filters),
+            "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
+        }
+    )
+
+
 # --------------------------------------------------------------------- partidas
 
 

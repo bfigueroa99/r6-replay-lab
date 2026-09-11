@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import date
 
-from django.db.models import Avg, Count, Exists, OuterRef, Q, QuerySet, Sum
+from django.db.models import Avg, Count, Exists, F, OuterRef, Q, QuerySet, Subquery, Sum
 
-from ..models import Round, RoundPlayer, match_result
+from ..models import Event, Player, Round, RoundPlayer, match_result
 
 # --------------------------------------------------------------------- filtros
 
@@ -336,6 +336,198 @@ def clutch_detail(**filters) -> list[dict]:
         }
         for rp in qs[:50]
     ]
+
+
+# --------------------------------------------------------------------- duelos
+
+#: El equipo del jugador en la ronda del evento.
+_MI_EQUIPO = Subquery(
+    RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values("team_index")[:1]
+)
+
+#: Primer evento de baja de la ronda: el que define el duelo de apertura.
+_PRIMER_EVENTO = Subquery(
+    Event.objects.filter(
+        kind__in=(Event.KILL, Event.DEATH), round_id=OuterRef("round_id")
+    )
+    .order_by("order")
+    .values("id")[:1]
+)
+
+
+def _mis_bajas(mine: QuerySet[RoundPlayer]) -> QuerySet[Event]:
+    """Eventos de baja de las rondas que pasan los filtros."""
+    return Event.objects.filter(kind=Event.KILL).filter(
+        Exists(mine.filter(round_id=OuterRef("round_id")))
+    )
+
+
+def _solo_rivales(qs: QuerySet[Event], campo: str) -> QuerySet[Event]:
+    """Descarta los teamkills: el otro tiene que estar en el equipo contrario.
+
+    Importa porque la misma persona puede ser companero en unas rondas y rival
+    en otras, y matarte por error no es ganarte un duelo.
+    """
+    return (
+        qs.annotate(
+            mi_equipo=_MI_EQUIPO,
+            equipo_rival=Subquery(
+                RoundPlayer.objects.filter(
+                    round_id=OuterRef("round_id"), player_id=OuterRef(campo)
+                ).values("team_index")[:1]
+            ),
+            op_rival=Subquery(
+                RoundPlayer.objects.filter(
+                    round_id=OuterRef("round_id"), player_id=OuterRef(campo)
+                ).values("operator")[:1]
+            ),
+        )
+        .exclude(equipo_rival=None)
+        .exclude(equipo_rival=F("mi_equipo"))
+    )
+
+
+def _me_ids() -> list[int]:
+    return list(Player.objects.filter(is_me=True).values_list("id", flat=True))
+
+
+def _duelos(mine: QuerySet[RoundPlayer], me_ids: list[int]):
+    """Las dos direcciones del duelo: los que me matan y los que mato."""
+    base = _mis_bajas(mine)
+    contra_mi = _solo_rivales(base.filter(target_id__in=me_ids), "actor_id")
+    a_favor = _solo_rivales(base.filter(actor_id__in=me_ids), "target_id")
+    return contra_mi, a_favor
+
+
+def nemesis(min_duels: int = 3, **filters) -> list[dict]:
+    """Duelos contra cada rival: quien te gana, a quien le ganas.
+
+    Se agrupa por jugador (profileID) y no por el nick de esa ronda. En ranked
+    solo casi nadie se repite: con pocos duelos esto es anecdota, no patron, y
+    por eso el coach pide mucha mas muestra que la tabla.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    contra_mi, a_favor = _duelos(base_queryset(**filters), me_ids)
+
+    rows: dict[int, dict] = {}
+
+    def sumar(qs, id_field: str, name_field: str, clave: str) -> None:
+        for raw in qs.values(id_field, name_field).annotate(n=Count("id")):
+            pid = raw[id_field]
+            if pid is None or pid in me_ids:
+                continue
+            fila = rows.setdefault(
+                pid,
+                {
+                    "player_id": pid,
+                    "username": raw[name_field],
+                    "deaths": 0,
+                    "kills": 0,
+                    "opening_deaths": 0,
+                    "opening_kills": 0,
+                },
+            )
+            fila[clave] = raw["n"]
+
+    sumar(contra_mi, "actor_id", "actor__username", "deaths")
+    sumar(a_favor, "target_id", "target__username", "kills")
+    sumar(contra_mi.filter(id=_PRIMER_EVENTO), "actor_id", "actor__username", "opening_deaths")
+    sumar(a_favor.filter(id=_PRIMER_EVENTO), "target_id", "target__username", "opening_kills")
+
+    salida = []
+    for fila in rows.values():
+        duels = fila["deaths"] + fila["kills"]
+        if duels < min_duels:
+            continue
+        aperturas = fila["opening_deaths"] + fila["opening_kills"]
+        fila.update(
+            {
+                "duels": duels,
+                "balance": fila["kills"] - fila["deaths"],
+                "winrate": _pct(fila["kills"], duels),
+                "opening_duels": aperturas,
+                "opening_winrate": _pct(fila["opening_kills"], aperturas),
+                "maps": [],
+            }
+        )
+        salida.append(fila)
+
+    _agregar_mapas(salida, contra_mi, a_favor)
+    return sorted(salida, key=lambda r: (-r["duels"], r["balance"], r["username"]))
+
+
+def _agregar_mapas(salida: list[dict], contra_mi, a_favor) -> None:
+    """En que mapas te cruzaste con cada rival. Solo para los que sobrevivieron."""
+    if not salida:
+        return
+    ids = [fila["player_id"] for fila in salida]
+    mapas: dict[int, set] = {pid: set() for pid in ids}
+    for qs, campo in ((contra_mi, "actor_id"), (a_favor, "target_id")):
+        for pid, nombre in qs.filter(**{f"{campo}__in": ids}).values_list(
+            campo, "round__match__map_name"
+        ):
+            if nombre:
+                mapas[pid].add(nombre)
+    for fila in salida:
+        fila["maps"] = sorted(mapas[fila["player_id"]])
+
+
+def duel_totals(**filters) -> dict:
+    """Tu balance global de duelos, que es la referencia de las tablas."""
+    me_ids = _me_ids()
+    if not me_ids:
+        return {"kills": 0, "deaths": 0, "duels": 0, "winrate": None}
+    contra_mi, a_favor = _duelos(base_queryset(**filters), me_ids)
+    deaths = contra_mi.count()
+    kills = a_favor.count()
+    return {
+        "kills": kills,
+        "deaths": deaths,
+        "duels": kills + deaths,
+        "winrate": _pct(kills, kills + deaths),
+    }
+
+
+def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
+    """Contra que operadores pierdes y ganas los duelos.
+
+    El operador sale del `RoundPlayer` del rival en esa ronda: el kill feed del
+    `.rec` no trae el operador en el evento.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    contra_mi, a_favor = _duelos(base_queryset(**filters), me_ids)
+
+    rows: dict[str, dict] = {}
+
+    def sumar(qs, clave: str) -> None:
+        for raw in qs.exclude(op_rival="").values("op_rival").annotate(n=Count("id")):
+            nombre = raw["op_rival"]
+            if not nombre:
+                continue
+            fila = rows.setdefault(nombre, {"operator": nombre, "deaths": 0, "kills": 0})
+            fila[clave] = raw["n"]
+
+    sumar(contra_mi, "deaths")
+    sumar(a_favor, "kills")
+
+    salida = []
+    for fila in rows.values():
+        duels = fila["deaths"] + fila["kills"]
+        if duels < min_duels:
+            continue
+        fila.update(
+            {
+                "duels": duels,
+                "balance": fila["kills"] - fila["deaths"],
+                "winrate": _pct(fila["kills"], duels),
+            }
+        )
+        salida.append(fila)
+    return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
 
 
 def data_health(**filters) -> dict:

@@ -41,6 +41,24 @@ quien lo mato era de tu equipo. La ventana de 3 s es la misma que usa r6-dissect
 | **Muerte sin trade** | Moriste y nadie te vengo. Es la muerte que realmente pierde rondas: tu equipo queda 4v5 gratis. Un porcentaje sobre 65% casi siempre significa que juegas muy separado o muy adelantado. |
 | **Trade kills** | Veces que **tu** mataste al asesino de un compañero dentro de la ventana. |
 
+## Duelos
+
+Un duelo es una baja entre tu y alguien del **equipo contrario**, en cualquiera
+de las dos direcciones. Sale del kill feed, no del scoreboard.
+
+| Metrica | Definicion |
+|---|---|
+| **Duelo** | Una baja tuya sobre un rival, o de un rival sobre ti. Los teamkills no cuentan: se descartan comparando el equipo de los dos en esa ronda, porque la misma persona puede ser companero en unas rondas y rival en otras. |
+| **Duelos ganados %** | Bajas a favor / duelos. No es lo mismo que el K/D: aca no entran las muertes sin asesino registrado. |
+| **Balance** | Bajas a favor menos bajas en contra, contra ese rival u operador. |
+| **Duelo de apertura** | El duelo fue la primera baja de la ronda. Perder siempre el primer contacto contra la misma persona es un problema distinto a perder duelos en general. |
+| **Operador rival** | El operador que tenia el rival **en esa ronda**, sacado de su fila del scoreboard: el kill feed del `.rec` no trae el operador dentro del evento. |
+
+En ranked solo los rivales casi no se repiten, asi que la tabla por persona es
+anecdota antes que patron: el coach solo opina desde 8 duelos contra la misma
+persona. La tabla por operador si junta muestra rapido, y es la que suele
+mostrar algo util.
+
 ## Impacto
 
 | Metrica | Definicion |
@@ -60,6 +78,7 @@ quien lo mato era de tu equipo. La ventana de 3 s es la misma que usa r6-dissect
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
+| **Rival** | Duelos contra una persona o contra un operador rival. Ver la seccion Duelos. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
 
 ## Sobre el mapa de calor

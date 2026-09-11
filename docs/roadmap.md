@@ -109,17 +109,31 @@ pendientes. 20 tests nuevos.
 > vez etiquetado todo queda vacia para siempre. Con las dos cosas es una pagina
 > que sigue sirviendo.
 
-### 3. Nemesis: duelos por rival
+### 3. Nemesis: duelos por rival [x]
 
-Del kill feed sale quien te mata y a quien matas, con identidad estable
-(`profileID`). Ningun tracker de API puede hacer esto, porque no ve tus rondas.
+Hecho: pagina **Duelos**, con el total de duelos y dos tablas. Los teamkills se
+descartan comparando el equipo de los dos en esa ronda, y se agrupa por
+`profileID` y no por el nick de la ronda. Reglas nuevas del coach:
+`operador-rival` y `nemesis`, las dos comparadas contra tu winrate global de
+duelos.
 
-- Tabla: rival, veces que te mato, veces que lo mataste, balance, en que mapas.
-- Solo rivales con muestra suficiente (5 duelos o mas).
-- Distinguir el duelo de apertura del resto: no es lo mismo perder siempre el
-  primer contacto contra la misma persona.
-- **Listo cuando**: hay una vista de nemesis y una regla del coach del estilo
-  "pierdes 8 de 10 duelos de apertura contra X".
+**Ajuste sobre lo planeado**: se calibro contra los datos reales antes de
+escribir la tabla, y en ranked solo el maximo era **5 duelos** contra un mismo
+rival en 28 partidas. Con el umbral de 5 que decia este item la vista quedaba
+con una fila. Asi que la tabla por persona baja a 3 duelos y se rotula como
+anecdota, y se agrego una tabla **por operador rival** que junta muestra mucho
+mas rapido: el operador sale del `RoundPlayer` del rival en esa ronda, porque el
+evento del kill feed no lo trae. Esa es la que muestra algo util: en los datos
+del usuario, Thorn le gana 8 de 9 duelos contra un promedio de 35%.
+
+La regla `nemesis` mantiene el umbral honesto (8 duelos contra la misma persona)
+y por lo tanto **no dispara** con estos datos. Es el comportamiento correcto, y
+esta cubierta con tests sinteticos. 14 tests nuevos.
+
+Pendiente anotado: la tasa por operador esta sobre duelos, no sobre rondas en
+que enfrentaste a ese operador. Lo segundo seria mejor senal ("cuando enfrentas
+a Thorn mueres el X% de las rondas") y necesita cruzar con las rondas donde ese
+operador estuvo en el equipo rival.
 
 ### 4. Sesiones de juego y curva de fatiga
 

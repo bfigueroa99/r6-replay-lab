@@ -5,6 +5,7 @@ import { post, useApi } from './api.js'
 import Coach from './pages/Coach.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Datos from './pages/Datos.jsx'
+import Duelos from './pages/Duelos.jsx'
 import MapsPage from './pages/Maps.jsx'
 import MatchDetail from './pages/MatchDetail.jsx'
 import Matches from './pages/Matches.jsx'
@@ -18,6 +19,7 @@ const LINKS = [
   { to: '/mapas', label: 'Mapas y sitios' },
   { to: '/operadores', label: 'Operadores' },
   { to: '/companeros', label: 'Compañeros' },
+  { to: '/duelos', label: 'Duelos' },
   { to: '/tendencias', label: 'Tendencias' },
   { to: '/partidas', label: 'Partidas' },
   { to: '/datos', label: 'Datos' },
@@ -85,6 +87,7 @@ export default function App() {
           <Route path="/mapas" element={<MapsPage {...context} />} />
           <Route path="/operadores" element={<Operators {...context} />} />
           <Route path="/companeros" element={<Teammates {...context} />} />
+          <Route path="/duelos" element={<Duelos {...context} />} />
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />

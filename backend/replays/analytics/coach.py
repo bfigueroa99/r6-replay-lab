@@ -77,6 +77,8 @@ def build_insights(**filters) -> dict:
     insights += _operators(overall, **filters)
     insights += _spawns(overall, **filters)
     insights += _round_flow(**filters)
+    insights += _duelos_por_operador(**filters)
+    insights += _nemesis(**filters)
     insights += _form(overall, **filters)
 
     insights.sort(key=lambda i: (SEVERITY_ORDER.get(i["severity"], 9), -(i["sample"] or 0)))
@@ -499,6 +501,81 @@ def _round_flow(**filters) -> list[dict]:
             value=round(l, 1),
             baseline=round(e, 1),
             sample=sample,
+        )
+    ]
+
+
+def _duelos_por_operador(**filters) -> list[dict]:
+    """Operadores rivales contra los que pierdes mucho mas que tu promedio.
+
+    Es la unica lectura por rival con muestra decente en ranked solo: la gente
+    no se repite, los operadores si.
+    """
+    totals = agg.duel_totals(**filters)
+    base = totals.get("winrate")
+    if base is None or totals["duels"] < 60:
+        return []
+    rows = [
+        r
+        for r in agg.duels_by_operator(min_duels=8, **filters)
+        if r.get("winrate") is not None and r["winrate"] <= base - 15
+    ]
+    if not rows:
+        return []
+    peor = min(rows, key=lambda r: (r["winrate"], -r["duels"]))
+    return [
+        _insight(
+            "operador-rival",
+            "media",
+            f"Contra {peor['operator']} pierdes {peor['deaths']} de {peor['duels']} duelos",
+            f"Ganas el {peor['winrate']:.0f}% de los duelos contra {peor['operator']}, "
+            f"cuando tu promedio contra cualquiera es {base:.0f}%.",
+            f"Revisa esas muertes: si te mata la utilidad de {peor['operator']} el problema es "
+            "no limpiarla antes de entrar; si es duelo directo, es el angulo desde el que "
+            "tomas el contacto.",
+            metric="winrate",
+            value=peor["winrate"],
+            baseline=base,
+            sample=peor["duels"],
+            scope=peor["operator"],
+        )
+    ]
+
+
+def _nemesis(**filters) -> list[dict]:
+    """Un rival puntual que te gana siempre. En ranked solo casi nunca aplica."""
+    totals = agg.duel_totals(**filters)
+    base = totals.get("winrate")
+    if base is None:
+        return []
+    rows = [
+        r
+        for r in agg.nemesis(min_duels=8, **filters)
+        if r.get("winrate") is not None and r["winrate"] <= 25
+    ]
+    if not rows:
+        return []
+    peor = min(rows, key=lambda r: (r["winrate"], -r["duels"]))
+    aperturas = ""
+    if (peor["opening_duels"] or 0) >= 3 and (peor["opening_winrate"] or 0) < 50:
+        aperturas = (
+            f" {peor['opening_deaths']} de esos {peor['opening_duels']} fueron el primer "
+            "duelo de la ronda."
+        )
+    return [
+        _insight(
+            "nemesis",
+            "baja",
+            f"{peor['username']} te gana {peor['deaths']} de {peor['duels']} duelos",
+            f"Tu promedio contra cualquiera es {base:.0f}%; contra esta persona, "
+            f"{peor['winrate']:.0f}%.{aperturas}",
+            "Si te lo vuelves a cruzar, no tomes el primer contacto contra el: deja que "
+            "alguien mas abra y juega el trade.",
+            metric="winrate",
+            value=peor["winrate"],
+            baseline=base,
+            sample=peor["duels"],
+            scope=peor["username"],
         )
     ]
 
