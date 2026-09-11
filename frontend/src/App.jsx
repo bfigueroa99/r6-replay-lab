@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import { post, useApi } from './api.js'
 import Coach from './pages/Coach.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Datos from './pages/Datos.jsx'
 import MapsPage from './pages/Maps.jsx'
 import MatchDetail from './pages/MatchDetail.jsx'
 import Matches from './pages/Matches.jsx'
@@ -19,6 +20,7 @@ const LINKS = [
   { to: '/companeros', label: 'Compañeros' },
   { to: '/tendencias', label: 'Tendencias' },
   { to: '/partidas', label: 'Partidas' },
+  { to: '/datos', label: 'Datos' },
 ]
 
 export default function App() {
@@ -86,6 +88,7 @@ export default function App() {
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />
+          <Route path="/datos" element={<Datos />} />
           <Route
             path="*"
             element={

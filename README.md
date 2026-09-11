@@ -136,7 +136,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (110 tests). |
+| `manage.py test tests` | Corre la suite (130 tests). |
 
 ## Configuracion
 
@@ -159,12 +159,13 @@ parser esta hecho para degradar bien en vez de reventar:
 - **Operador nuevo**: el nombre sale de la cabecera del propio replay
   (campo `rolename`), y su lado se deduce por mayoria de los operadores
   conocidos de su equipo. No hay que tocar codigo.
-- **Mapa revampeado (ID nuevo)**: aparece como `Unknown(<id>)`. Corre
-  `manage.py unknown_ids`: te muestra los sitios de bomba que vio en ese mapa
-  (con eso lo identificas al tiro) y con `--write` te deja la entrada lista en
-  `data/overrides.json` para rellenar. Despues `manage.py retag` etiqueta el
-  historial ya importado en segundos: los IDs estan en la base, asi que no hay
-  que volver a leer un solo `.rec`.
+- **Mapa revampeado (ID nuevo)**: aparece como `Unknown(<id>)`. La pagina
+  **Datos** de la app los lista con los sitios de bomba que vio en cada uno (con
+  eso lo identificas al tiro): le pones el nombre, lo guardas y el historial ya
+  importado se reetiqueta solo. Por consola es lo mismo en dos pasos:
+  `manage.py unknown_ids --write` deja las entradas en `data/overrides.json` y
+  `manage.py retag` las aplica. En los dos casos no se vuelve a leer un solo
+  `.rec`: los IDs ya estan en la base.
 - **Cambio de formato binario**: ahi si hay que trabajar. `docs/formato-rec.md`
   documenta la estructura del `.rec`, los patrones de bytes y como diagnosticar
   cual dejo de funcionar.
@@ -208,12 +209,13 @@ backend/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
     retag.py            re-etiqueta IDs ya importados sin reparsear
+    unknowns.py         IDs sin nombre y el archivo de etiquetas
     analytics/
       metrics.py        metricas derivadas por ronda
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                110 tests (parser, metricas, agregados, coach, API)
+  tests/                130 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

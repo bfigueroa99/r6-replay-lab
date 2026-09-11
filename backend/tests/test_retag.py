@@ -33,6 +33,12 @@ class OverridesTestCase(TestCase):
         os.environ[overrides.ENV_VAR] = str(self.path)
         self.addCleanup(self._restaurar_env, previo)
         self.addCleanup(overrides.load, True)
+
+        # pydissect lee la variable de entorno y unknowns.py lee el setting:
+        # en produccion settings.py los ata, en los tests hay que atarlos aca.
+        ctx = self.settings(OVERRIDES_PATH=self.path)
+        ctx.enable()
+        self.addCleanup(ctx.disable)
         overrides.load(force=True)
 
     def _restaurar_env(self, previo: str | None) -> None:
@@ -151,8 +157,7 @@ class UnknownIdsCommandTests(OverridesTestCase):
 
     def test_write_usa_overrides_path_y_deja_las_entradas_listas(self):
         out = StringIO()
-        with self.settings(OVERRIDES_PATH=self.path):
-            call_command("unknown_ids", "--write", stdout=out)
+        call_command("unknown_ids", "--write", stdout=out)
 
         data = json.loads(self.path.read_text(encoding="utf-8"))
         self.assertEqual(data["maps"][str(MAPA_NUEVO)], "")
@@ -161,6 +166,5 @@ class UnknownIdsCommandTests(OverridesTestCase):
 
     def test_muestra_los_sitios_que_delatan_el_mapa(self):
         out = StringIO()
-        with self.settings(OVERRIDES_PATH=self.path):
-            call_command("unknown_ids", stdout=out)
+        call_command("unknown_ids", stdout=out)
         self.assertIn("2F Dormitory, 2F Games Room", out.getvalue())

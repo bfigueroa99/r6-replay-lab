@@ -1,7 +1,8 @@
-"""API JSON. Sin DRF a proposito: son vistas de lectura y un POST de import."""
+"""API JSON. Sin DRF a proposito: son vistas de lectura y dos POST locales."""
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 
 from django.conf import settings
@@ -12,10 +13,12 @@ from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
 
+from . import unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
 from .ingest import find_match_folders, scan_and_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
+from .retag import retag
 
 
 # --------------------------------------------------------------------- helpers
@@ -363,6 +366,61 @@ def _match_scoreboard(match: Match) -> list[dict]:
         )
         out.append(row)
     return out
+
+
+# --------------------------------------------------------------------- etiquetas
+
+
+@require_GET
+def unknown(request: HttpRequest) -> JsonResponse:
+    """IDs que el parser no supo nombrar, con las pistas para identificarlos."""
+    return _ok(
+        {
+            "maps": unknowns.unknown_maps(),
+            "operators": unknowns.unknown_operators(),
+            "overrides_path": str(unknowns.overrides_path()),
+        }
+    )
+
+
+@csrf_exempt
+@require_POST
+def save_overrides(request: HttpRequest) -> JsonResponse:
+    """Guarda etiquetas en overrides.json y reetiqueta lo ya importado.
+
+    Escribe un archivo del disco, asi que valida antes de tocar nada: la app es
+    local, pero eso no es excusa para dejar entrar cualquier cosa.
+    """
+    try:
+        payload = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    if not isinstance(payload, dict):
+        return _ok({"error": "se esperaba un objeto JSON"}, status=400)
+
+    try:
+        maps = unknowns.clean_labels(payload.get("maps"))
+        operators = unknowns.clean_labels(payload.get("operators"))
+    except unknowns.LabelError as exc:
+        return _ok({"error": str(exc)}, status=400)
+
+    if not maps and not operators:
+        return _ok({"error": "no mandaste ninguna etiqueta"}, status=400)
+
+    unknowns.write_overrides(maps, operators)
+    # retag recarga el cache de overrides, que si no queda viejo hasta reiniciar
+    result = retag()
+    return _ok(
+        {
+            "saved": {"maps": maps, "operators": operators},
+            "matches": result.matches,
+            "round_players": result.round_players,
+            "changes": [
+                {"kind": c.kind, "old": c.old, "new": c.new, "rows": c.rows}
+                for c in result.changes
+            ],
+        }
+    )
 
 
 # --------------------------------------------------------------------- import

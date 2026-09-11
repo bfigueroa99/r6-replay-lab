@@ -60,7 +60,8 @@ Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 
 > **Nota de orden**: los items #1 y #2 se dieron vuelta. El #1 (UI) necesita el
 > re-etiquetado del #2 para poder decir que quedo listo, asi que el #2 se hizo
-> primero. El numero de cada item se mantiene para no romper las referencias.
+> primero. El #18 (Electron) entro fuera de orden porque lo pidio el usuario.
+> El numero de cada item se mantiene para no romper las referencias.
 
 ### 2. `manage.py retag` [x]
 
@@ -85,21 +86,28 @@ completo. Menu con acceso a la carpeta de replays, links externos al navegador,
 **No es un overlay**: ventana con marco, sin always-on-top ni transparencia.
 Sigue valiendo el no-goal de mas arriba.
 
-### 1. Etiquetar mapas y operadores desconocidos desde la UI
+### 1. Etiquetar mapas y operadores desconocidos desde la UI [x]
 
-Hoy 5 IDs de mapa y 1 de operador salen como `Unknown(<id>)`: casi la mitad del
-historial queda sin nombre y sin agrupar. El comando `unknown_ids --write`
-existe, pero obliga a editar JSON a mano.
+Hecho: pagina **Datos** con los IDs sin nombre, cada uno con sus sitios de bomba
+(la pista que delata el mapa), cuantas partidas y rondas arrastra y desde cuando
+aparece. Los operadores muestran ademas el lado, que parte el universo en dos.
+Se escriben todos juntos con un boton, `POST /api/overrides/` valida y guarda, y
+`retag()` reetiqueta lo ya importado en la misma request.
 
-- Pagina "Datos" que liste cada ID desconocido con los sitios de bomba vistos
-  (que es lo que delata el mapa) y las fechas en que aparecio.
-- `POST /api/overrides/` que escriba `data/overrides.json`.
-- Al guardar, llamar a `replays.retag.retag()` (item #2, ya hecho) para que el
-  historial se actualice sin reimportar. Ojo: el server cachea `overrides.json`,
-  asi que hay que recargarlo (`overrides.load(force=True)`, que `retag()` ya
-  hace) para que el cambio se vea sin reiniciar.
-- **Listo cuando**: se puede pasar de `Unknown(398899676157)` a un nombre real
-  desde el navegador y el historial se agrupa solo.
+Verificado end to end sobre una copia de la base real: `Unknown(398899676157)`
+-> nombre -> el historial se agrupa solo (11 rondas bajo el slug nuevo) y el ID
+desaparece de la lista.
+
+De paso: `unknowns.py` centraliza el descubrimiento (lo comparten el comando y
+la API) y arregla un bug del `unknown_ids` viejo, que repetia el mismo sitio
+varias veces porque el `ordering` del Meta de `Round` rompe el `.distinct()`.
+La pagina tambien muestra el estado de importacion (`/api/import/status/`, otro
+endpoint que existia y no consumia nadie): carpetas en disco, importadas y
+pendientes. 20 tests nuevos.
+
+> La pagina se llevo el estado de importacion ademas del etiquetado, porque una
+> vez etiquetado todo queda vacia para siempre. Con las dos cosas es una pagina
+> que sigue sirviendo.
 
 ### 3. Nemesis: duelos por rival
 

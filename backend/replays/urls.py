@@ -17,6 +17,8 @@ urlpatterns = [
     path("teammates/", views.teammates, name="teammates"),
     path("matches/", views.match_list, name="match-list"),
     path("matches/<int:pk>/", views.match_detail, name="match-detail"),
+    path("unknown/", views.unknown, name="unknown"),
+    path("overrides/", views.save_overrides, name="overrides"),
     path("import/", views.run_import, name="import"),
     path("import/status/", views.import_status, name="import-status"),
 ]

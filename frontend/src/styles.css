@@ -30,6 +30,38 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 
+/* ------------------------------------------------------------------- datos */
+
+.unknown {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+.unknown + .unknown { margin-top: 10px; }
+.unknown-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.unknown-id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid #ff8a3d33;
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+.unknown-sites { display: flex; gap: 5px; flex-wrap: wrap; }
+.unknown input { width: 100%; max-width: 320px; }
+.flash {
+  border-left: 3px solid var(--good);
+  background: #3fb95012;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.flash.bad { border-left-color: var(--bad); background: #f8514912; }
+
 /* ------------------------------------------------------------------ layout */
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }
@@ -105,10 +137,10 @@ main { padding: 20px; max-width: 1400px; width: 100%; margin: 0 auto; flex: 1; }
   letter-spacing: 0.5px;
   color: var(--muted);
 }
-/* El estilo del select es global: tambien se usa fuera de la barra de filtros
-   (por ejemplo el selector de muestra minima en Companeros). */
+/* Selects e inputs se estilan globalmente: tambien se usan fuera de la barra de
+   filtros (el selector de muestra minima en Companeros, las etiquetas en Datos). */
 select,
-.filters input:not([type='checkbox']) {
+input:not([type='checkbox']) {
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);

@@ -20,10 +20,23 @@ export async function get(path, params) {
   return response.json()
 }
 
-export async function post(path, params) {
-  const response = await fetch(`${BASE}${path}${qs(params)}`, { method: 'POST' })
+export async function post(path, params, body) {
+  const options = { method: 'POST' }
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json' }
+    options.body = JSON.stringify(body)
+  }
+  const response = await fetch(`${BASE}${path}${qs(params)}`, options)
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} en ${path}`)
+    // el backend manda {"error": "..."} en los 400; es mas util que el status
+    let detail = `${response.status} ${response.statusText} en ${path}`
+    try {
+      const data = await response.json()
+      if (data?.error) detail = data.error
+    } catch {
+      /* la respuesta no traia JSON */
+    }
+    throw new Error(detail)
   }
   return response.json()
 }
