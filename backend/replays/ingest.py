@@ -100,7 +100,8 @@ def import_match_folder(folder: str | Path, *, force: bool = False) -> ImportRes
     entry = ImportLog.objects.create(folder=folder.name)
     try:
         result = _import(folder, force=force)
-    except Exception as exc:  # noqa: BLE001 - se registra y se sigue
+    # amplio a proposito: una carpeta corrupta se registra y no corta el resto
+    except Exception as exc:
         log.exception("fallo importando %s", folder)
         entry.ok = False
         entry.message = f"{type(exc).__name__}: {exc}"
@@ -429,7 +430,8 @@ def run_import_job(folders: list[Path], *, force: bool = False) -> ImportJob:
 
     try:
         _job.results = import_folders(folders, force=force, on_progress=progreso)
-    except Exception as exc:  # noqa: BLE001 - queda en el estado, no tumba el hilo
+    # amplio a proposito: lo que falle queda en el estado y no tumba el hilo
+    except Exception as exc:
         log.exception("fallo la importacion en segundo plano")
         _job.error = f"{type(exc).__name__}: {exc}"
     finally:

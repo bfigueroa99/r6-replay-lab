@@ -1,0 +1,41 @@
+# Lint del backend. Se corre con `.\scripts\check.ps1` o `ruff check backend`.
+#
+# El set de reglas es corto a proposito: lo que atrapa errores de verdad
+# (pyflakes), lo que mantiene los imports ordenados, y poco mas. Un linter que
+# pelea por gustos termina apagado.
+
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", "frontend", "data", "**/migrations"]
+
+[lint]
+select = [
+    "F",    # pyflakes: nombres sin definir, imports sin usar, f-strings rotos
+    "E",    # pycodestyle: errores de formato
+    "W",    # pycodestyle: warnings
+    "I",    # isort: orden de imports
+    "UP",   # pyupgrade: sintaxis vieja para el Python que se usa
+    "B",    # bugbear: trampas reales (mutables por defecto, except amplio...)
+    "C4",   # comprehensions innecesarias
+    "RUF",  # reglas propias de ruff
+]
+ignore = [
+    # el proyecto escribe en espanol y los identificadores llevan tildes en
+    # ningun lado, pero los textos de usuario si: no es ambiguedad, es idioma
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # En Django, `class Meta: ordering = [...]` e `indexes = [...]` son listas
+    # por definicion del framework. RUF012 los marca a todos: es ruido, no un
+    # riesgo de estado compartido.
+    "RUF012",
+]
+
+[lint.per-file-ignores]
+# Los tests arman datos a proposito y repiten constantes; el ruido no aporta.
+"backend/tests/*" = ["E501"]
+# settings.py es configuracion plana, no codigo con logica.
+"backend/config/settings.py" = ["E501"]
+
+[lint.isort]
+known-first-party = ["config", "pydissect", "replays", "tests"]

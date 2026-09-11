@@ -22,7 +22,10 @@ class MatchAdmin(admin.ModelAdmin):
 class RoundPlayerInline(admin.TabularInline):
     model = RoundPlayer
     extra = 0
-    fields = ("username", "side", "operator", "kills", "died", "opening_kill", "opening_death", "kst")
+    fields = (
+        "username", "side", "operator", "kills", "died",
+        "opening_kill", "opening_death", "kst",
+    )
     readonly_fields = fields
 
 

@@ -53,6 +53,10 @@ class Command(BaseCommand):
                 )
             )
         elif options["dry_run"]:
-            self.stdout.write(self.style.WARNING(f"[dry-run] con {window:g}s cambiarian {resumen}."))
+            self.stdout.write(
+                self.style.WARNING(f"[dry-run] con {window:g}s cambiarian {resumen}.")
+            )
         else:
-            self.stdout.write(self.style.SUCCESS(f"Con ventana de {window:g}s se actualizaron {resumen}."))
+            self.stdout.write(
+                self.style.SUCCESS(f"Con ventana de {window:g}s se actualizaron {resumen}.")
+            )

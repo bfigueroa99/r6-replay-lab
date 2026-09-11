@@ -73,7 +73,8 @@ class Match(models.Model):
         verbose_name_plural = "matches"
 
     def __str__(self) -> str:
-        return f"{self.map_name} {self.my_score}-{self.opponent_score} ({self.played_at:%d-%m %H:%M})"
+        marcador = f"{self.my_score}-{self.opponent_score}"
+        return f"{self.map_name} {marcador} ({self.played_at:%d-%m %H:%M})"
 
     @property
     def result(self) -> str:

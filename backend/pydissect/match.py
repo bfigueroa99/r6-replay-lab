@@ -37,7 +37,7 @@ class MatchReader:
         self.paths = list_replay_files(self.folder)
         self.rounds: list[Reader] = []
 
-    def read(self) -> "MatchReader":
+    def read(self) -> MatchReader:
         for path in self.paths:
             log.debug("leyendo %s", path.name)
             reader = Reader.from_path(path)
@@ -49,7 +49,7 @@ class MatchReader:
     def to_dict(self) -> dict:
         """Estructura equivalente al JSON de r6-dissect, mas campos derivados."""
         rounds = []
-        for reader, path in zip(self.rounds, self.paths):
+        for reader, path in zip(self.rounds, self.paths, strict=True):
             rounds.append(round_to_dict(reader, path))
         return {
             "matchID": rounds[0]["matchID"] if rounds else "",
@@ -134,7 +134,11 @@ def round_to_dict(reader: Reader, path: Path | None = None) -> dict:
         "openingKill": ok,
         "openingDeath": od,
         "trades": [
-            {"first": a.get("username", ""), "second": b.get("username", ""), "time": b.get("time", "")}
+            {
+                "first": a.get("username", ""),
+                "second": b.get("username", ""),
+                "time": b.get("time", ""),
+            }
             for a, b in trades(reader)
         ],
         "inferredOperatorSides": h.get("inferredOperatorSides", {}),

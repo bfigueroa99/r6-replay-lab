@@ -22,7 +22,6 @@ from .ingest import find_match_folders, import_job, start_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
 from .retag import retag
 
-
 # --------------------------------------------------------------------- helpers
 
 

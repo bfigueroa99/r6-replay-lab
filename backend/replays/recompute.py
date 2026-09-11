@@ -70,10 +70,10 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
     eventos_kill = [e for e in eventos if e.kind == KILL]
     eventos_cambiados = [
         evento
-        for evento, calculado in zip(eventos_kill, kill_events)
+        for evento, calculado in zip(eventos_kill, kill_events, strict=True)
         if evento.traded != calculado["traded"]
     ]
-    for evento, calculado in zip(eventos_kill, kill_events):
+    for evento, calculado in zip(eventos_kill, kill_events, strict=True):
         evento.traded = calculado["traded"]
 
     if not dry_run:

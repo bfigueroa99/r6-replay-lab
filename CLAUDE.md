@@ -17,6 +17,7 @@ cd backend; python manage.py runserver     # sirve el build de React en la misma
 cd frontend; npm run build                 # obligatorio si tocas frontend/src
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
+.\scripts\check.ps1                        # lint + tests + build antes de commitear
 ```
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es

@@ -154,7 +154,9 @@ def read_header(r) -> dict:
         "matchType": match_type_id,
         "map": map_id,
         "site": "",
-        "recordingPlayerID": int(props["recordingplayerid"]) if props.get("recordingplayerid") else 0,
+        "recordingPlayerID": (
+            int(props["recordingplayerid"]) if props.get("recordingplayerid") else 0
+        ),
         "recordingProfileID": props.get("recordingprofileid", ""),
         "additionalTags": props.get("additionaltags", ""),
         "gamemode": gamemode_id,

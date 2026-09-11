@@ -38,7 +38,9 @@ class Command(BaseCommand):
             return
 
         for change in result.changes:
-            self.stdout.write(f"  {change.kind}: {change.old} -> {change.new} ({change.rows} filas)")
+            self.stdout.write(
+                f"  {change.kind}: {change.old} -> {change.new} ({change.rows} filas)"
+            )
 
         resumen = f"{result.matches} partidas y {result.round_players} rondas de jugador"
         if dry_run:

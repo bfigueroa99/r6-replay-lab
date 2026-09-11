@@ -47,7 +47,9 @@ class Command(BaseCommand):
         except (AttributeError, ValueError):  # Windows en algunos contextos
             pass
 
-        self.stdout.write(self.style.SUCCESS(f"Vigilando {root} cada {interval}s. Ctrl+C para salir."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Vigilando {root} cada {interval}s. Ctrl+C para salir.")
+        )
         pending_notice: set[str] = set()
 
         while self.running:

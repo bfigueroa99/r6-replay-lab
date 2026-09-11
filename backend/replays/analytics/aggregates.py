@@ -6,18 +6,17 @@ import math
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
-from django.db.models.functions import Floor
 from django.db.models import (
     Avg,
     Case,
     Count,
     Exists,
     ExpressionWrapper,
-    Max,
-    Min,
     F,
     FloatField,
     IntegerField,
+    Max,
+    Min,
     OuterRef,
     Q,
     QuerySet,
@@ -26,6 +25,7 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.functions import Floor
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from .metrics import trade_window
@@ -119,7 +119,8 @@ def rating_baseline() -> float | None:
     el rating de un mapa y el de un operador no serian comparables entre si, que
     es justamente para lo unico que sirve este numero.
     """
-    return RoundPlayer.objects.filter(is_me=True).aggregate(v=Avg(rating_points_expr()))["v"] or None
+    promedio = RoundPlayer.objects.filter(is_me=True).aggregate(v=Avg(rating_points_expr()))
+    return promedio["v"] or None
 
 
 # Los alias no pueden repetir nombres de campos del modelo: si `kills` fuera a
@@ -225,7 +226,7 @@ def group_by(qs: QuerySet[RoundPlayer], *fields: str, labels: tuple[str, ...] | 
         if (raw.get("rounds") or 0) < min_rounds:
             continue
         row = dict(raw)
-        for field, label in zip(fields, labels):
+        for field, label in zip(fields, labels, strict=True):
             row[label] = row.pop(field)
         rows.append(derive(row, baseline))
     return rows

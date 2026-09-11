@@ -358,13 +358,31 @@ Dos detalles que salieron de probarlo contra los replays reales:
 probarlo: en los tests de Django un hilo abre otra conexion y no ve los datos de
 la transaccion. 14 tests nuevos.
 
-### 14. Lint y verificacion local
+### 14. Lint y verificacion local [x]
 
-- `ruff` con configuracion minima y el repo limpio.
-- `scripts/check.ps1`: tests + build + lint en un comando.
-- Workflow de GitHub Actions listo para cuando el repo tenga remoto.
-- **Listo cuando**: `.\scripts\check.ps1` es lo unico que hay que correr antes de
-  commitear.
+Hecho: `ruff.toml` con un set corto de reglas, `requirements-dev.txt` (ruff y
+nada mas, para que el runtime siga en dos dependencias), `scripts/check.ps1` con
+lint + tests + build, y `.github/workflows/ci.yml` listo para cuando haya remoto.
+
+De los 36 hallazgos iniciales, 11 eran RUF012 sobre `class Meta: ordering = [...]`
+de Django: son listas por definicion del framework, no estado compartido
+peligroso, asi que la regla se ignora con el motivo escrito. Los otros 25 se
+arreglaron: 12 lineas largas, 4 `zip()` sin `strict=` (que ahora revienta si las
+longitudes dejan de coincidir, que es lo que uno quiere), una variable `l` que se
+confunde con un 1, un `int(round(...))` redundante y los imports desordenados.
+
+Dos decisiones:
+
+- **`ruff format` no entra.** Reformatearia 23 archivos para pelear con un
+  estilo que ya es consistente. El linter busca errores; el formateador impone
+  gustos.
+- **El autofix borro los `# noqa: BLE001 - se registra y se sigue`** junto con su
+  explicacion. El `except Exception` amplio sigue siendo deliberado, asi que la
+  razon volvio como comentario normal arriba de cada uno.
+
+`check.ps1` usa `$ErrorActionPreference = 'Continue'` y mira `$LASTEXITCODE`:
+Django y npm escriben su salida normal en stderr, y con 'Stop' PowerShell la
+toma como error y corta en la primera linea.
 
 ### 15. Tests de frontend
 

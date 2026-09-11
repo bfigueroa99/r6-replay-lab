@@ -17,7 +17,7 @@ conocidos y en cada coincidencia se leen los campos que siguen.
 from __future__ import annotations
 
 import logging
-from typing import Callable, Iterator
+from collections.abc import Callable, Iterator
 
 import zstandard
 
@@ -96,7 +96,7 @@ class Reader:
         self._register_listeners()
 
     @classmethod
-    def from_path(cls, path) -> "Reader":
+    def from_path(cls, path) -> Reader:
         with open(path, "rb") as fh:
             return cls(fh.read())
 

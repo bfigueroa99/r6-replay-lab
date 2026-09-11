@@ -73,7 +73,19 @@ O corre `.\scripts\setup.ps1`, que hace todo lo de arriba (menos el `init-git`).
 
 Los scripts de `scripts/` son todos PowerShell y asumen el venv en `.venv`:
 `setup.ps1`, `init-git.ps1`, `import.ps1`, `start.ps1`, `desktop.ps1`,
-`watch.ps1`, `dev.ps1`, `test.ps1`.
+`watch.ps1`, `dev.ps1`, `test.ps1`, `check.ps1`.
+
+Para trabajar en el codigo, ademas:
+
+```powershell
+pip install -r requirements-dev.txt   # ruff, nada mas
+.\scripts\check.ps1                  # lint + tests + build, en un comando
+```
+
+`check.ps1` es lo unico que hay que pasar antes de commitear. Corre `ruff check`
+pero no `ruff format`: el linter busca errores, el formateador impone gustos y
+reescribiria medio repo. El mismo chequeo esta en
+`.github/workflows/ci.yml`, listo para el dia que el repo tenga un remoto.
 
 ## Uso
 

@@ -1,0 +1,8 @@
+# Herramientas de desarrollo. No hacen falta para correr la app.
+#
+#   pip install -r requirements-dev.txt
+#
+# El runtime sigue siendo dos dependencias (ver requirements.txt) y la idea es
+# que siga asi: lo que entra aca no viaja con la aplicacion.
+
+ruff>=0.16,<1.0

@@ -154,7 +154,7 @@ def build_dataset(
     round_counter = 0
     for i in range(matches):
         map_name = maps[i % len(maps)]
-        won_rounds = int(round(rounds_per_match * my_winrate))
+        won_rounds = round(rounds_per_match * my_winrate)
         match = make_match(
             map_name=map_name,
             index=i,

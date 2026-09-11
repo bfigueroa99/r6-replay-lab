@@ -178,7 +178,8 @@ def _cierre(rnd: dict) -> str | None:
     if not rnd.get("win_condition_certain"):
         texto = "El replay de esta temporada no expone como se cerro la ronda"
         if rnd.get("possible_plant"):
-            texto += f", pero el reloj paro en {_segundos(rnd.get('clock_end') or 0)}: plant probable"
+            reloj = _segundos(rnd.get("clock_end") or 0)
+            texto += f", pero el reloj paro en {reloj}: plant probable"
         return texto + "."
     return None
 

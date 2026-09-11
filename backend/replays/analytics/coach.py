@@ -247,7 +247,8 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                 _insight(
                     f"muertes-tempranas-{label}",
                     "media",
-                    f"En {label} el {fila['first30_pct']:.0f}% de tus muertes es en los primeros 30s",
+                    f"En {label} el {fila['first30_pct']:.0f}% de tus muertes es en los "
+                    "primeros 30s",
                     f"{fila['first30']} de {fila['deaths']} muertes en {label} pasan antes de que "
                     "la ronda se arme. Mueres con informacion de nadie y con el equipo todavia "
                     "agrupado.",
@@ -271,7 +272,8 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
             _insight(
                 "sin-tiempo-ataque",
                 "media",
-                f"En ataque mueres con el reloj casi agotado el {ataque['last30_pct']:.0f}% de las veces",
+                f"En ataque mueres con el reloj casi agotado el "
+                f"{ataque['last30_pct']:.0f}% de las veces",
                 f"{ataque['last30']} de {ataque['deaths']} muertes en ataque pasan con menos de "
                 f"{agg.CLOCK_TAIL} segundos de reloj. A esa altura la ronda ya no da para plantar: "
                 "la ejecucion nunca llego a empezar.",
@@ -552,23 +554,23 @@ def _round_flow(**filters) -> list[dict]:
     late = [r for r in rows if r["round_number"] >= 6]
     if not early or not late:
         return []
-    e = sum(r["rounds_won"] for r in early) / max(sum(r["rounds"] for r in early), 1) * 100
-    l = sum(r["rounds_won"] for r in late) / max(sum(r["rounds"] for r in late), 1) * 100
+    al_inicio = sum(r["rounds_won"] for r in early) / max(sum(r["rounds"] for r in early), 1) * 100
+    al_final = sum(r["rounds_won"] for r in late) / max(sum(r["rounds"] for r in late), 1) * 100
     sample = sum(r["rounds"] for r in late)
-    if e - l < 15:
+    if al_inicio - al_final < 15:
         return []
     return [
         _insight(
             "rondas-finales",
             "media",
-            f"Te caes en las rondas finales ({l:.0f}% vs {e:.0f}% al principio)",
-            f"Primeras 3 rondas: {e:.0f}% ganadas. Ronda 7 en adelante: {l:.0f}% "
-            f"({sample} rondas).",
+            f"Te caes en las rondas finales ({al_final:.0f}% vs {al_inicio:.0f}% al principio)",
+            f"Primeras 3 rondas: {al_inicio:.0f}% ganadas. Ronda 7 en adelante: "
+            f"{al_final:.0f}% ({sample} rondas).",
             "Cuando el marcador esta apretado, simplifica: menos jugadas nuevas, mas "
             "ejecucion del setup que ya te funciono en la primera mitad.",
             metric="winrate",
-            value=round(l, 1),
-            baseline=round(e, 1),
+            value=round(al_final, 1),
+            baseline=round(al_inicio, 1),
             sample=sample,
         )
     ]
