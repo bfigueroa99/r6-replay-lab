@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Bar as RBar,
   BarChart,
@@ -22,9 +22,30 @@ const TOOLTIP = {
   labelStyle: { color: '#8b98a9' },
 }
 
+const VENTANAS = [
+  { by: 'matches', n: 5, label: '5 partidas' },
+  { by: 'matches', n: 10, label: '10 partidas' },
+  { by: 'matches', n: 20, label: '20 partidas' },
+  { by: 'days', n: 7, label: '7 dias' },
+  { by: 'days', n: 30, label: '30 dias' },
+]
+
+/** Flecha con color segun si la metrica mejoro, empeoro o no se movio. */
+function Delta({ metric }) {
+  if (metric.delta === null || metric.delta === undefined) return <span className="dim">—</span>
+  const signo = metric.delta > 0 ? '+' : ''
+  const texto = `${signo}${fmt(metric.delta, Math.abs(metric.delta) < 1 ? 2 : 1)}${metric.suffix}`
+  if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
+  if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
+  return <span className="chip">{texto}</span>
+}
+
 export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
   const sesiones = useApi('/sessions/', filters)
+  const [ventana, setVentana] = useState(1)
+  const rango = VENTANAS[ventana]
+  const progreso = useApi('/compare/', { ...filters, by: rango.by, n: rango.n })
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -55,6 +76,67 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       </div>
 
       <Filters value={filters} onChange={setFilters} showSession />
+
+      {progreso.data ? (
+        <Panel
+          title="Progreso"
+          hint={
+            'Lo reciente contra lo inmediatamente anterior. La banda de ruido es cuanto se mueve ' +
+            'sola una metrica con esta cantidad de rondas: si el cambio no la pasa, no es un ' +
+            'cambio. Solo se calcula para porcentajes; en el resto la flecha es solo la direccion.'
+          }
+          right={
+            <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              Ventana
+              <select value={ventana} onChange={(e) => setVentana(Number(e.target.value))}>
+                {VENTANAS.map((v, i) => (
+                  <option key={v.label} value={i}>
+                    Ultimas {v.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          }
+        >
+          {progreso.data.enough_sample ? null : (
+            <div className="flash bad" style={{ marginTop: 0 }}>
+              Muestra insuficiente: {progreso.data.current.rounds} rondas contra{' '}
+              {progreso.data.previous.rounds}, y hacen falta {progreso.data.min_rounds} de cada
+              lado. Los numeros estan abajo, pero no alcanzan para decir que algo cambio.
+            </div>
+          )}
+
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Metrica', sortable: false, left: true },
+              {
+                key: 'previous',
+                label: progreso.data.previous.label,
+                render: (row) => fmt(row.previous, row.suffix === '' ? 2 : 0, row.suffix),
+                csv: (row) => row.previous,
+              },
+              {
+                key: 'current',
+                label: progreso.data.current.label,
+                render: (row) => fmt(row.current, row.suffix === '' ? 2 : 0, row.suffix),
+                csv: (row) => row.current,
+              },
+              { key: 'delta', label: 'Cambio', render: (row) => <Delta metric={row} /> },
+              {
+                key: 'noise',
+                label: 'Ruido',
+                help: 'Error estandar de la diferencia: el tamano tipico de un cambio que no significa nada.',
+                render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
+                dim: true,
+              },
+            ]}
+            rows={progreso.data.metrics}
+            initialSort={{ key: 'label', dir: 'asc' }}
+            rowKey={(row) => row.key}
+            csvName="progreso"
+          />
+        </Panel>
+      ) : null}
 
       <Panel title="Por dia de juego" hint="Cada punto es una sesion. Sirve para ver si mejoras o si solo tuviste un buen dia.">
         <div style={{ height: 260 }}>

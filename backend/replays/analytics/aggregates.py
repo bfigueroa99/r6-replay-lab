@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+import math
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.db.models.functions import Floor
@@ -12,6 +13,8 @@ from django.db.models import (
     Count,
     Exists,
     ExpressionWrapper,
+    Max,
+    Min,
     F,
     FloatField,
     IntegerField,
@@ -761,6 +764,155 @@ def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
         )
         salida.append(fila)
     return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
+
+
+# --------------------------------------------------------------------- progreso
+
+#: Metricas que se comparan entre periodos, con hacia donde es mejor.
+#: `neutral` significa que subir no es ni bueno ni malo: morir mas tarde puede
+#: ser que sobrevivas mas o que llegues tarde a todo (ver item #9).
+#: (clave, etiqueta, sufijo, direccion, campo con el tamano de muestra).
+#: El ultimo campo solo lo tienen las proporciones: con el se calcula la banda
+#: de ruido. En las demas no se puede con esta informacion y queda en None.
+COMPARE_METRICS = (
+    ("winrate", "Rondas ganadas", "%", "up", "rounds"),
+    ("rating", "Rating", "", "up", None),
+    ("kd", "K/D", "", "up", None),
+    ("kpr", "KPR", "", "up", None),
+    ("opening_winrate", "Duelos de apertura", "%", "up", "opening_duels"),
+    ("kst_pct", "KST", "%", "up", "rounds"),
+    ("hs_pct", "Headshots", "%", "up", "kills"),
+    ("survival_pct", "Sobrevives", "%", "up", "rounds"),
+    ("untraded_death_pct", "Muertes sin trade", "%", "down", "deaths"),
+    ("avg_death_elapsed", "Mueres a los", "s", "neutral", None),
+)
+
+#: Rondas minimas por lado para que la comparacion diga algo.
+COMPARE_MIN_ROUNDS = 20
+
+#: Las fechas y la sesion las define la propia comparacion.
+_FILTROS_DE_TIEMPO = ("since", "until", "session")
+
+
+def _sin_filtros_de_tiempo(filters: dict) -> dict:
+    return {k: v for k, v in filters.items() if k not in _FILTROS_DE_TIEMPO}
+
+
+def _ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
+    """Error estandar de la diferencia entre dos proporciones, en puntos.
+
+    Es el tamano tipico de una diferencia que **no significa nada**. Sin este
+    numero, un salto de 9 puntos de winrate con 50 rondas por lado se lee como
+    progreso cuando esta dentro de lo que se mueve solo.
+    """
+    if p_actual is None or p_previo is None or not n_actual or not n_previo:
+        return None
+    varianza = 0.0
+    for p, n in ((p_actual / 100, n_actual), (p_previo / 100, n_previo)):
+        varianza += p * (1 - p) / n
+    return round(math.sqrt(varianza) * 100, 1)
+
+
+def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
+    """Ultimas n partidas y las n anteriores."""
+    ids = list(
+        base_queryset(**filters)
+        .values_list("round__match_id", flat=True)
+        .order_by("-round__match__played_at")
+        .distinct()
+    )
+    # distinct() sobre un values_list ordenado por otra columna no garantiza
+    # unicidad en SQLite, asi que se deduplica aca conservando el orden
+    vistos, ordenados = set(), []
+    for match_id in ids:
+        if match_id not in vistos:
+            vistos.add(match_id)
+            ordenados.append(match_id)
+    return ordenados[:n], ordenados[n : n * 2]
+
+
+def _resumen(qs, baseline, etiqueta: str) -> dict:
+    fila = totals(qs, baseline)
+    fila["label"] = etiqueta
+    rango = qs.aggregate(desde=Min("round__match__played_at"), hasta=Max("round__match__played_at"))
+    fila["from"] = rango["desde"].isoformat() if rango["desde"] else None
+    fila["to"] = rango["hasta"].isoformat() if rango["hasta"] else None
+    return fila
+
+
+def compare_periods(
+    by: str = "matches", n: int = 10, min_rounds: int = COMPARE_MIN_ROUNDS, **filters
+) -> dict:
+    """Compara el periodo reciente contra el inmediatamente anterior.
+
+    Dos modos porque sirven para cosas distintas: `matches` (ultimas n partidas
+    contra las n anteriores) siempre tiene muestra de los dos lados si jugaste
+    2n partidas, y `days` responde "como vengo este mes" cuando se juega
+    seguido. Los filtros de fecha que vengan en la request se ignoran: el
+    periodo lo define esta funcion.
+    """
+    filters = _sin_filtros_de_tiempo(filters)
+    baseline = rating_baseline()
+
+    if by == "days":
+        corte = datetime.now()
+        inicio_actual = corte - timedelta(days=n)
+        inicio_previo = corte - timedelta(days=n * 2)
+        actual = base_queryset(since=inicio_actual, **filters)
+        previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
+        etiquetas = (f"Ultimos {n} dias", f"Los {n} dias anteriores")
+    else:
+        recientes, anteriores = _periodo_por_partidas(filters, n)
+        actual = base_queryset(**filters).filter(round__match_id__in=recientes)
+        previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
+        etiquetas = (f"Ultimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
+
+    fila_actual = _resumen(actual, baseline, etiquetas[0])
+    fila_previa = _resumen(previo, baseline, etiquetas[1])
+    suficiente = min(fila_actual["rounds"], fila_previa["rounds"]) >= min_rounds
+
+    metricas = []
+    for clave, label, sufijo, direccion, campo_muestra in COMPARE_METRICS:
+        ahora, antes = fila_actual.get(clave), fila_previa.get(clave)
+        delta = None if (ahora is None or antes is None) else round(ahora - antes, 2)
+        ruido = (
+            _ruido(ahora, fila_actual.get(campo_muestra), antes, fila_previa.get(campo_muestra))
+            if campo_muestra
+            else None
+        )
+
+        veredicto = None
+        if delta is not None and direccion != "neutral" and delta != 0:
+            if ruido is not None and abs(delta) <= ruido:
+                # se movio menos de lo que se mueve solo: no es un cambio
+                veredicto = "ruido"
+            else:
+                mejoro = delta > 0 if direccion == "up" else delta < 0
+                veredicto = "mejor" if mejoro else "peor"
+
+        metricas.append(
+            {
+                "key": clave,
+                "label": label,
+                "suffix": sufijo,
+                "direction": direccion,
+                "current": ahora,
+                "previous": antes,
+                "delta": delta,
+                "noise": ruido,
+                "verdict": veredicto,
+            }
+        )
+
+    return {
+        "by": by,
+        "n": n,
+        "min_rounds": min_rounds,
+        "enough_sample": suficiente,
+        "current": fila_actual,
+        "previous": fila_previa,
+        "metrics": metricas,
+    }
 
 
 # --------------------------------------------------------------------- muertes

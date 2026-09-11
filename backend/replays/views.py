@@ -193,6 +193,17 @@ def player_detail(request: HttpRequest, pk: int) -> JsonResponse:
 
 
 @require_GET
+def compare(request: HttpRequest) -> JsonResponse:
+    """Progreso: el periodo reciente contra el inmediatamente anterior."""
+    by = "days" if request.GET.get("by") == "days" else "matches"
+    n = _int_param(request, "n", 30 if by == "days" else 10, minimum=1, maximum=365)
+    min_rounds = _int_param(
+        request, "min_rounds", agg.COMPARE_MIN_ROUNDS, minimum=1, maximum=10_000
+    )
+    return _ok(agg.compare_periods(by=by, n=n, min_rounds=min_rounds, **_filters(request)))
+
+
+@require_GET
 def sessions(request: HttpRequest) -> JsonResponse:
     """Sesiones de juego y como se mueve el rendimiento dentro de una."""
     filters = _filters(request)

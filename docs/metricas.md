@@ -177,6 +177,30 @@ posiciones sobre el minimapa. El "mapa de calor" de la app es una matriz
 mapa x sitio (y mapa x spawn) coloreada por winrate, que es la granularidad
 espacial real que entrega el formato.
 
+## Progreso
+
+Comparar lo reciente contra lo inmediatamente anterior es la unica forma honesta
+de decir "mejore". Dos modos: por **partidas** (las ultimas N contra las N
+anteriores, que siempre tiene muestra de los dos lados si jugaste 2N) y por
+**dias**.
+
+| Metrica | Definicion |
+|---|---|
+| **Cambio** | La diferencia entre los dos periodos, en puntos o en la unidad de la metrica. |
+| **Banda de ruido** | Error estandar de la diferencia entre las dos proporciones: `sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)`. Es **cuanto se mueve sola** una metrica con esa cantidad de rondas. Si el cambio no pasa la banda, la app lo marca como ruido y no como mejora ni empeora. |
+
+Un ejemplo real de por que hace falta: 10 partidas contra las 10 anteriores dio
+un winrate 9.3 puntos mas bajo. Suena a bajon, pero con ~50 rondas por lado la
+banda es de 9.6 puntos: ese cambio no existe. En la misma comparacion, KST bajo
+15.2 con banda de 9.6, y ese si.
+
+La banda solo se calcula para porcentajes. En K/D, KPR, rating y "mueres a los"
+no se puede con esta informacion, asi que la flecha muestra la direccion pero no
+afirma que el cambio sea real.
+
+**"Mueres a los" no se juzga**: subir puede ser que sobrevivas mas o que llegues
+tarde a todo, asi que se muestra sin flecha de bueno o malo.
+
 ## Muestra minima
 
 Los agregados de la UI filtran por `min_rounds` y el coach exige muestra antes de

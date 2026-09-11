@@ -271,13 +271,29 @@ morir en ataque con menos de 30s de reloj significa que la ronda ya no daba para
 plantar. Con los datos del usuario dispara: 15 de 52 muertes en ataque (29%).
 16 tests nuevos.
 
-### 10. Comparar dos periodos
+### 10. Comparar dos periodos [x]
 
-"Ultimos 30 dias vs los 30 anteriores": diff de cada metrica con su delta y la
-muestra de cada lado. Es la unica forma honesta de decir "mejoraste".
+Hecho: panel "Progreso" arriba de Tendencias, `GET /api/compare/`, y diez
+metricas con su delta.
 
-- **Listo cuando**: hay una vista de comparacion que no afirma nada cuando la
-  muestra de cualquiera de los dos lados es chica.
+**Dos cambios sobre lo planeado, los dos por el mismo motivo: 30 dias contra 30
+no dice nada con este historial.** El usuario tiene 8 dias de replays, asi que
+el modo por dias deja el periodo anterior vacio. Se agrego el modo por
+**partidas** (las ultimas N contra las N anteriores), que siempre tiene muestra
+de los dos lados si jugaste 2N, y quedo de default. El modo por dias sigue
+disponible en el selector.
+
+El segundo cambio es el que mas aporta: **banda de ruido**. La comparacion de 10
+contra 10 partidas daba un winrate 9.3 puntos mas bajo, que leido solo parece un
+bajon. El error estandar de la diferencia de proporciones con ~50 rondas por
+lado es 9.6 puntos: ese cambio no existe. Ahora cada porcentaje trae su banda y
+el veredicto es `ruido` cuando el cambio no la pasa. En la misma comparacion,
+KST bajo 15.2 con banda 9.6 y ese si se marca como real: el problema no era el
+winrate, era que esta aportando en menos rondas.
+
+La banda solo se puede calcular para proporciones; en K/D, KPR y rating la
+flecha muestra direccion pero no afirma que el cambio sea real, y "mueres a los"
+va sin juicio (ver item #9). 16 tests nuevos, la mitad sobre la banda.
 
 ### 11. Ventana de trade configurable
 
