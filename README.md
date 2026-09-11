@@ -137,7 +137,25 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (172 tests). |
+| `manage.py test tests` | Corre la suite (186 tests). |
+
+### Sacar los datos
+
+Cada tabla de la app tiene un boton **Descargar CSV** que baja exactamente lo que
+estas viendo: las mismas columnas, con los filtros y el orden aplicados. Ese
+archivo va con punto y coma y coma decimal, que es lo que Excel en espanol abre
+sin preguntar nada.
+
+Para scripts hay un endpoint aparte, con CSV estandar (coma, punto decimal):
+
+```powershell
+curl "http://127.0.0.1:8000/api/export/?table=maps&ranked_only=1" -o mapas.csv
+curl "http://127.0.0.1:8000/api/export/"      # lista las tablas disponibles
+```
+
+Acepta los mismos filtros que el resto de la API (`side`, `map`, `operator`,
+`site`, `match_type`, `since`, `until`, `days`, `session`, `ranked_only`) y
+`sep=;` si lo quieres con punto y coma.
 
 ## Configuracion
 
@@ -210,6 +228,7 @@ backend/
   replays/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
+    export.py           agregados a CSV
     retag.py            re-etiqueta IDs ya importados sin reparsear
     unknowns.py         IDs sin nombre y el archivo de etiquetas
     analytics/
@@ -217,7 +236,7 @@ backend/
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
     views.py, urls.py   API JSON
-  tests/                172 tests (parser, metricas, agregados, coach, API)
+  tests/                186 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

@@ -41,21 +41,21 @@ export default function Operators({ filters, setFilters, runImport, importing })
       ].map((group) =>
         group.rows.length ? (
           <Panel key={group.title} title={group.title}>
-            <Table rows={group.rows} />
+            <Table rows={group.rows} nombre={`operadores-${group.title.toLowerCase()}`} />
           </Panel>
         ) : null,
       )}
 
       {!attack.length && !defense.length ? (
         <Panel title="Todos">
-          <Table rows={rows} />
+          <Table rows={rows} nombre="operadores" />
         </Panel>
       ) : null}
     </>
   )
 }
 
-function Table({ rows }) {
+function Table({ rows, nombre }) {
   return (
     <DataTable
       columns={[
@@ -84,6 +84,7 @@ function Table({ rows }) {
       rows={rows}
       initialSort={{ key: 'rounds', dir: 'desc' }}
       rowKey={(row) => `${row.operator}-${row.side}`}
+      csvName={nombre}
     />
   )
 }

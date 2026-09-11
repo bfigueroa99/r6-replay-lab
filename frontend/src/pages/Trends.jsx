@@ -134,6 +134,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rows={porPosicion}
             initialSort={{ key: 'position', dir: 'asc' }}
             rowKey={(row) => row.position}
+            csvName="curva-de-sesion"
           />
         </Panel>
       ) : null}
@@ -159,6 +160,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rows={sesiones.data.sessions}
             initialSort={{ key: 'start', dir: 'desc' }}
             rowKey={(row) => row.index}
+            csvName="sesiones"
           />
         </Panel>
       ) : null}
@@ -190,6 +192,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
           rows={byRound}
           initialSort={{ key: 'ronda', dir: 'asc' }}
           rowKey={(row) => row.ronda}
+          csvName="por-numero-de-ronda"
         />
       </Panel>
     </>

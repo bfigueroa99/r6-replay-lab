@@ -239,6 +239,7 @@ input:not([type='checkbox']) {
 /* ------------------------------------------------------------------ tablas */
 
 .table-wrap { overflow-x: auto; }
+.table-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th, td { padding: 8px 10px; text-align: right; white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }

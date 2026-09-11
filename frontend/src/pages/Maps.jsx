@@ -57,6 +57,7 @@ export default function MapsPage({ filters, setFilters, runImport, importing }) 
           rows={data.maps}
           initialSort={{ key: 'rounds', dir: 'desc' }}
           rowKey={(row) => row.map}
+          csvName="mapas"
         />
       </Panel>
 
@@ -82,6 +83,7 @@ export default function MapsPage({ filters, setFilters, runImport, importing }) 
           rows={data.sites}
           initialSort={{ key: 'rounds', dir: 'desc' }}
           rowKey={(row) => `${row.map}-${row.site}`}
+          csvName="sitios"
         />
       </Panel>
 

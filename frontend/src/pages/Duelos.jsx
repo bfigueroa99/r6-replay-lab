@@ -105,6 +105,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rows={operators}
           initialSort={{ key: 'duels', dir: 'desc' }}
           rowKey={(row) => row.operator}
+          csvName="duelos-por-operador"
           empty={`Ningun operador llega a ${minDuels} duelos con estos filtros.`}
         />
       </Panel>
@@ -145,6 +146,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rows={nemesis}
           initialSort={{ key: 'duels', dir: 'desc' }}
           rowKey={(row) => row.player_id}
+          csvName="duelos-por-rival"
           empty={`Nadie llega a ${minDuels} duelos contigo con estos filtros.`}
         />
       </Panel>

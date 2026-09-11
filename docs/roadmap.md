@@ -184,15 +184,28 @@ resolverla y compartir la instancia termina en "is an aggregate"), y en
 rating lo resolvia contra la anotacion en vez del campo. 14 tests nuevos,
 incluidos los casos limite de la formula.
 
-### 6. Export CSV de cualquier tabla
+### 6. Export CSV de cualquier tabla [x]
 
-Es lo que ofrecen las herramientas de replay web y aca no hay nada equivalente.
+Hecho por los dos lados, y a proposito con formatos distintos:
 
-- `?format=csv` en los endpoints de agregados (`/maps/`, `/operators/`,
-  `/trends/`, `/teammates/`).
-- Boton de descarga en `DataTable`, que exporte exactamente lo que se ve, con
-  los filtros y el orden aplicados.
-- **Listo cuando**: cualquier tabla de la app se abre en Excel en dos clicks.
+- **Boton en `DataTable`**: basta pasarle `csvName` y aparece. Exporta las
+  columnas visibles con sus etiquetas, en el orden en que esta ordenada la
+  tabla y con los filtros aplicados. Punto y coma, coma decimal y BOM, que es lo
+  que Excel en espanol abre sin preguntar. Una columna puede traer
+  `csv: (row) => valor` o `csv: false` para ajustar que se exporta.
+- **`GET /api/export/?table=...`**: CSV estandar (coma, punto decimal, sin BOM),
+  el que espera pandas. `sep=;` lo cambia. Sin `table` lista las 13 disponibles.
+
+Cambio sobre lo planeado: en vez de `?format=csv` en cada endpoint hay un
+endpoint unico con `?table=`. `/trends/` devuelve tres tablas distintas, asi que
+`?format=csv` ahi no tenia una respuesta unica; con nombres explicitos ademas se
+exportan tablas que no tienen endpoint propio (sesiones, rivales, clutches).
+
+Dos detalles que se vieron probando: las columnas del CSV se reordenan para que
+el identificador quede primero (si no, el nombre del mapa salia en la columna
+16), y el nombre del archivo usa la fecha local y no `toISOString()`, que en
+UTC-4 bautizaba con el dia siguiente cualquier descarga despues de las 20:00.
+14 tests nuevos.
 
 ### 7. Pagina de jugador
 

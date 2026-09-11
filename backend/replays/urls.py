@@ -19,6 +19,7 @@ urlpatterns = [
     path("sessions/", views.sessions, name="sessions"),
     path("matches/", views.match_list, name="match-list"),
     path("matches/<int:pk>/", views.match_detail, name="match-detail"),
+    path("export/", views.export_table, name="export"),
     path("unknown/", views.unknown, name="unknown"),
     path("overrides/", views.save_overrides, name="overrides"),
     path("import/", views.run_import, name="import"),

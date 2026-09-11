@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import date, datetime
 
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
-from django.http import Http404, HttpRequest, JsonResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
 
+from . import export as exportador
 from . import unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
@@ -406,6 +407,38 @@ def _match_scoreboard(match: Match) -> list[dict]:
         )
         out.append(row)
     return out
+
+
+# --------------------------------------------------------------------- export
+
+
+@require_GET
+def export_table(request: HttpRequest) -> HttpResponse | JsonResponse:
+    """Baja un agregado como CSV. Sin `table`, lista los disponibles.
+
+    CSV estandar (coma, punto decimal, sin BOM) porque este es el camino de
+    scripting; el boton de la UI arma el suyo pensado para Excel en espanol.
+    `sep=;` fuerza punto y coma si hace falta.
+    """
+    table = request.GET.get("table", "")
+    if not table:
+        return _ok({"tables": exportador.table_names()})
+    if table not in exportador.TABLES:
+        return _ok(
+            {"error": f"tabla desconocida: {table}", "tables": exportador.table_names()},
+            status=400,
+        )
+
+    titulo, _ = exportador.TABLES[table]
+    rows = exportador.export(table, **_filters(request))
+    delimiter = ";" if request.GET.get("sep") == ";" else ","
+
+    response = HttpResponse(
+        exportador.to_csv(rows, delimiter), content_type="text/csv; charset=utf-8"
+    )
+    nombre = f"r6-{titulo}-{date.today():%Y%m%d}.csv"
+    response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return response
 
 
 # --------------------------------------------------------------------- etiquetas

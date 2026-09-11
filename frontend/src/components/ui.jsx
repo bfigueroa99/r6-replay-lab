@@ -74,9 +74,63 @@ export function winrateColor(value, low = 35, high = 65) {
 }
 
 /**
- * Tabla ordenable. `columns` = [{ key, label, render?, digits?, suffix?, help?, align? }]
+ * CSV pensado para Excel en espanol: punto y coma, coma decimal y BOM para que
+ * las tildes no salgan rotas. El endpoint /api/export/ hace el CSV estandar,
+ * que es el que quiere pandas.
+ *
+ * Una columna puede traer `csv: (row) => valor` para exportar algo distinto de
+ * lo que muestra, o `csv: false` para quedarse fuera del archivo.
  */
-export function DataTable({ columns, rows, initialSort, rowKey, rowClass, empty = 'Sin datos.' }) {
+function celdaCsv(col, row) {
+  if (typeof col.csv === 'function') return col.csv(row)
+  const valor = row[col.key]
+  if (valor === null || valor === undefined) return ''
+  if (Array.isArray(valor)) return valor.join(' / ')
+  if (typeof valor === 'boolean') return valor ? 'si' : 'no'
+  if (typeof valor === 'number') return String(valor).replace('.', ',')
+  return String(valor)
+}
+
+const escaparCsv = (texto) =>
+  /[";\r\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto
+
+export function descargarCsv(columns, rows, nombre) {
+  const cols = columns.filter((col) => col.csv !== false)
+  const lineas = [cols.map((col) => escaparCsv(col.label || col.key)).join(';')]
+  rows.forEach((row) => lineas.push(cols.map((col) => escaparCsv(celdaCsv(col, row))).join(';')))
+
+  const blob = new Blob([`\ufeff${lineas.join('\r\n')}`], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  // fecha local y no toISOString(): en UTC-4 un archivo bajado a las 21:00 se
+  // llamaria con el dia siguiente
+  const hoy = new Date()
+  const fecha = [hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate()]
+    .map((parte) => String(parte).padStart(2, '0'))
+    .join('-')
+  enlace.download = `${nombre}-${fecha}.csv`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Tabla ordenable. `columns` = [{ key, label, render?, digits?, suffix?, help?, align? }]
+ *
+ * Con `csvName` aparece el boton de descarga, que exporta exactamente lo que se
+ * ve: las mismas columnas, en el orden en que estan ordenadas.
+ */
+export function DataTable({
+  columns,
+  rows,
+  initialSort,
+  rowKey,
+  rowClass,
+  csvName,
+  empty = 'Sin datos.',
+}) {
   const [sort, setSort] = useState(initialSort || { key: columns[0].key, dir: 'desc' })
 
   const sorted = useMemo(() => {
@@ -108,6 +162,17 @@ export function DataTable({ columns, rows, initialSort, rowKey, rowClass, empty 
 
   return (
     <div className="table-wrap">
+      {csvName ? (
+        <div className="table-tools">
+          <button
+            className="btn small"
+            onClick={() => descargarCsv(columns, sorted, csvName)}
+            title="Baja esta tabla tal como se ve, para abrirla en Excel"
+          >
+            Descargar CSV
+          </button>
+        </div>
+      ) : null}
       <table>
         <thead>
           <tr>

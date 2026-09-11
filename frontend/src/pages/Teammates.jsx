@@ -104,6 +104,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           rows={rows}
           initialSort={{ key: 'rounds', dir: 'desc' }}
           rowKey={(row) => row.player_id}
+          csvName="companeros"
           empty={`Nadie llega a ${minRounds} rondas contigo con estos filtros.`}
         />
       </Panel>
@@ -134,6 +135,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           rows={clutches}
           initialSort={{ key: 'played_at', dir: 'desc' }}
           rowKey={(row) => `${row.match_id}-${row.round}`}
+          csvName="clutches"
           empty="Todavia no ganaste ninguna ronda quedandote solo."
         />
       </Panel>

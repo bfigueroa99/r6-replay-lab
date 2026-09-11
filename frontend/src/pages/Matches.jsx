@@ -54,6 +54,7 @@ export default function Matches({ runImport, importing }) {
           rows={data.matches}
           initialSort={{ key: 'played_at', dir: 'desc' }}
           rowKey={(row) => row.id}
+          csvName="partidas"
         />
 
         {data.total > PAGE ? (
