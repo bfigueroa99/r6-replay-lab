@@ -31,6 +31,13 @@ rondas, contra que operadores rivales pierdes los duelos y como se cae tu
 rendimiento segun cuantas partidas llevas en la sesion. Cualquier nombre de la
 app lleva al perfil de esa persona: cuanto rindes con ella y sin ella.
 
+**Posicionamiento.** En que zonas quedas fuera de posicion mas que en el resto
+de tu historial y en cuales te sostienes, por sitio de bomba y por spawn. Cada
+zona se compara contra el resto de tus rondas y solo se marca cuando la
+diferencia pasa la banda de ruido; si no la pasa lo dice, en vez de darle un
+veredicto a diez rondas. **No es un heatmap de posiciones**: el `.rec` no trae
+coordenadas y la pagina abre diciendolo.
+
 **Coach.** Un motor de reglas explicitas que compara cada metrica con tu propio
 promedio y exige muestra minima antes de opinar (20 rondas en general, 8-15 por
 mapa/sitio/operador). Cada punto trae el numero, con que se compara, cuantas
@@ -250,7 +257,8 @@ parser esta hecho para degradar bien en vez de reventar:
 Vale la pena ser explicito, porque son limitaciones del formato, no del codigo:
 
 - **No hay coordenadas de las bajas.** El `.rec` no expone posiciones, asi que
-  no existe heatmap sobre el minimapa. El mapa de calor de la app es por zona
+  no existe heatmap sobre el minimapa, ni posiciones dentro de un sitio, ni
+  angulos. El mapa de calor y la pestana de posicionamiento trabajan por zona
   del juego: sitio de bomba y spawn de ataque, que es la granularidad real que
   entrega el replay.
 - **Plants y defuses no se detectan en las temporadas nuevas.** El paquete del
@@ -316,6 +324,8 @@ Las definiciones completas estan en `docs/metricas.md`. Las que mas se usan:
 - **KST**: rondas donde mataste, sobreviviste o tu muerte se tradeo. Es KOST sin
   la O, porque los eventos de objetivo no estan disponibles.
 - **KPR**: bajas por ronda.
+- **Fuera de posicion**: rondas donde moriste, sin bajas y sin que nadie te
+  vengara, sobre rondas jugadas. Es la metrica de la pestana Posicionamiento.
 - **Rating**: un solo numero de aporte por ronda, normalizado contra tu propio
   promedio (1.00 es tu ronda tipica). Los pesos estan a la vista en
   `docs/metricas.md`: son un juicio, no una medicion, y no es el rating de

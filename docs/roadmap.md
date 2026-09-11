@@ -53,7 +53,8 @@ falta:
 
 Y lo que **ninguno** tiene, porque solo sale de tu propio historial acumulado:
 nemesis por rival (#3), sesiones de juego con curva de fatiga (#4), perfil de un
-jugador cruzado con tus partidas (#7) y comparacion entre dos periodos (#10).
+jugador cruzado con tus partidas (#7), comparacion entre dos periodos (#10) y las
+zonas donde quedas fuera de posicion (#20).
 Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 
 ## Backlog
@@ -502,6 +503,64 @@ Lo que **no** quedo resuelto y hay que decirlo:
 - **No hay forma de cambiar `REPLAY_DIR` desde la UI.** Instalada, la unica
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
+
+### 20. Pestana de posicionamiento [x]
+
+Pedido directo del usuario: "en que partes del mapa suelo dormir y que lugares
+son buenos para posicionarse". Hecho al nivel que el formato permite, que **no**
+es el que pedia la pregunta literal.
+
+**Lo primero que hubo que resolver es el alcance.** "Partes del mapa" suena a
+posiciones, y el `.rec` no trae coordenadas (esta en los no-goals y en las ideas
+descartadas de mas abajo). La granularidad real es zona: sitio de bomba y spawn
+de ataque. La pagina abre diciendo exactamente eso en vez de dejar que el titulo
+prometa un heatmap que no existe.
+
+Metrica nueva, **fuera de posicion**: rondas donde moriste, sin bajas y sin que
+nadie te vengara, sobre rondas jugadas. Las tres condiciones juntas son lo que
+distingue quedar mal parado de morir peleando: si te llevaste a alguien
+aportaste, y si te tradearon estabas con el equipo. Entro en `AGGREGATES`, asi
+que aparece en todos los agregados y en los CSV sin trabajo extra, y no necesito
+migracion ni `recompute` porque se arma de columnas que ya existian.
+
+Tres decisiones que quedaron escritas:
+
+- **El porcentaje va sobre rondas y no sobre muertes**, que es la diferencia con
+  `untraded_death_pct`. La pregunta es cada cuanto te pasa por ronda jugada, y
+  las rondas que sobreviviste cuentan.
+- **Cada zona se compara contra el resto del historial, no contra el total.** La
+  zona esta dentro del total, asi que incluirla es compararla en parte consigo
+  misma; restarla deja las dos muestras independientes que la banda de ruido
+  supone. Tiene test propio.
+- **La tabla no se parte por lado.** Un sitio dividido en ataque y defensa deja
+  la mitad de rondas por fila, y con estas muestras eso es quedarse sin nada. El
+  corte por lado vive en el filtro general.
+- **Un spawn se compara contra el resto de tu ataque y no contra todo.** Esto
+  salio de mirar la salida real y no de pensarlo antes: en ataque se queda fuera
+  de posicion mucho mas seguido que en defensa, asi que con el promedio general
+  como referencia un spawn normal aparecia marcado por ser de ataque. En los
+  datos de prueba, Valley pasaba de "+14, te agarran ahi" a "+2.7, sin señal",
+  que es lo correcto. Un sitio si va contra el total, porque se juega de los dos
+  lados.
+
+**La banda de ruido del item #10 es lo que hace que la pestana no mienta.** Sin
+ella una zona de 27 rondas con 10 puntos de diferencia se lee como un hallazgo;
+la banda ahi es de 10 puntos, asi que no lo es. El veredicto solo habla cuando la
+diferencia la pasa, y cuando no dice **"Sin señal"** y no "normal": no sabemos que
+la zona sea corriente, sabemos que no alcanza para decirlo.
+
+Verificado en el navegador contra una base sembrada con forma conocida (196
+rondas, 28 partidas): los dos sitios sembrados lejos del promedio salen marcados
+en la direccion correcta, los dos sembrados cerca salen como ruido, y la banda se
+angosta de ±10 con 27 rondas a ±6 con 40. Sin errores de consola.
+
+De paso, `signed()` en `ui.jsx` para los deltas, que redondea antes de decidir el
+signo: `-0.4` con cero decimales imprimia `-0`. 26 tests de backend y 11 de
+frontend.
+
+Pendiente anotado: la pagina mira la zona, no el momento. Cruzar "fuera de
+posicion" con los tramos del item #9 diria ademas **cuando** dentro de la ronda
+pasa, que probablemente es mas accionable que el sitio solo.
 
 ## Ideas descartadas
 

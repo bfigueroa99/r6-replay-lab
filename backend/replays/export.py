@@ -24,6 +24,14 @@ TABLES = {
     "sites": ("sitios", lambda **f: agg.by_site(min_rounds=1, **f)),
     "spawns": ("spawns", lambda **f: agg.by_spawn(min_rounds=1, **f)),
     "operators": ("operadores", lambda **f: agg.by_operator(min_rounds=1, **f)),
+    "positioning_sites": (
+        "posicion-sitios",
+        lambda **f: agg.positioning(min_rounds=1, **f)["sites"],
+    ),
+    "positioning_spawns": (
+        "posicion-spawns",
+        lambda **f: agg.positioning(min_rounds=1, **f)["spawns"],
+    ),
     "rounds": ("por-ronda", agg.by_round_number),
     "days": ("por-dia", agg.trend_by_day),
     "matches": ("por-partida", lambda **f: agg.trend_by_match(limit=1000, **f)),
@@ -46,6 +54,7 @@ def table_names() -> list[str]:
 _PRIMERAS = (
     "map", "slug", "site", "spawn", "operator", "side", "username", "player_id",
     "label", "position", "round_number", "day", "start", "end", "hours",
+    "verdict", "caught_out_pct", "caught_out_delta", "noise",
     "match_id", "played_at", "matches", "rounds", "rounds_won", "winrate",
     "rating", "kills", "deaths", "kd", "kpr",
 )
