@@ -562,6 +562,68 @@ Pendiente anotado: la pagina mira la zona, no el momento. Cruzar "fuera de
 posicion" con los tramos del item #9 diria ademas **cuando** dentro de la ronda
 pasa, que probablemente es mas accionable que el sitio solo.
 
+### 21. Tests end to end [x]
+
+Pedido del usuario: "Actions no funciona, ocupa e2e". Con el CI caido a nivel de
+runner (los dos jobs mueren en 3 segundos sin producir logs, y pasa igual en
+`main`), la verificacion que corre de verdad es la de la maquina. Asi que la
+maquina ahora corre el navegador.
+
+**Por que hacia falta, con evidencia del propio repo.** El item #17 dejo escrito
+el caso: al sacar el grafico del Resumen se fue tambien el import de `fmt` que el
+panel de salud seguia usando, *"el build no dijo nada y los tests tampoco"*, y lo
+mostro la consola del navegador. Antes de dar esto por bueno se reprodujo ese
+bug a proposito (sacando `pct` de los imports de Posicionamiento):
+
+| | resultado |
+|---|---|
+| `npm run build` | pasa |
+| `npm test` (36 unitarios) | pasa |
+| `npm run e2e` | **falla**, y senala la pagina |
+
+Esa tabla es la razon de ser del item. Una suite e2e que solo se ve pasar no
+prueba nada; esta se vio fallar por el motivo correcto.
+
+Que hay:
+
+- `manage.py seed_demo`: historial sintetico y **deterministico** (29 partidas,
+  203 rondas). Los numeros estan elegidos a mano, no al azar, porque las pruebas
+  afirman cifras exactas: un sitio que queda `dormidero`, uno `solido`, cuatro
+  que no pasan la banda de ruido y uno de 4 rondas que existe solo para que el
+  corte por muestra minima tenga algo que cortar. Se niega a escribir sobre una
+  base con partidas salvo `--force`.
+- `frontend/e2e/`: 24 pruebas en Chromium contra la app real, Django sirviendo el
+  build en la misma URL. Sin mocks: la cadena completa del ORM al DOM.
+- Las diez paginas del menu, cada una verificando que **no ensucia la consola**,
+  mas navegacion por el menu (que es lo que carga los chunks lazy), detalle de
+  partida, perfil de jugador y la ruta inexistente.
+- La pestana de posicionamiento en detalle: los veredictos, que el delta y la
+  banda en pantalla sean los que devuelve la API, el selector de muestra, el
+  filtro de lado, y que el CSV que se baja traiga el veredicto.
+- Paso 5 de `check.ps1` (con `-SinE2E` para saltarlo) y job nuevo en `ci.yml`
+  para cuando Actions vuelva.
+
+Tres cosas que costaron:
+
+- **Playwright arranca el `webServer` antes del `globalSetup`**, asi que preparar
+  la base ahi llegaba tarde y Django moria con "unable to open database file".
+  La preparacion se movio a `e2e/servidor.js`, que migra, siembra y recien
+  entonces levanta el server. De paso encadenar tres comandos en Node evita
+  depender de si el shell es cmd, PowerShell o bash.
+- **El seed cortaba las partidas sobre la lista plana de rondas**, asi que un
+  corte que cruzaba de mapa dejaba una partida etiquetada "Border" con seis
+  rondas en sitios de Bank. Ahora se corta dentro de cada mapa. Lo encontro
+  mirar la salida, no una prueba: era dato imposible que el e2e habria terminado
+  dando por bueno.
+- **`@playwright/test` se fijo en 1.56.0** y `setup.ps1` baja Chromium en un
+  bloque con `ErrorActionPreference` propio: el script corre con `Stop` y npx
+  escribe su avance en stderr, que habria abortado el setup entero por una
+  descarga ruidosa.
+
+Pendiente anotado: el e2e no prueba la app de Electron, solo la web. Playwright
+sabe manejar Electron y seria el mismo seed; lo que faltaria es decidir si vale
+el minuto extra en cada `check.ps1`.
+
 ## Ideas descartadas
 
 | Idea | Por que no |

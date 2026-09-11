@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "desktop": "electron .",
     "desktop:dev": "electron . --url=http://localhost:5173 --dev",
-    "desktop:pack": "electron-builder --win --config electron-builder.json"
+    "desktop:pack": "electron-builder --win --config electron-builder.json",
+    "e2e": "vite build && playwright test",
+    "e2e:ui": "vite build && playwright test --ui",
+    "e2e:browser": "playwright install chromium"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -21,6 +24,7 @@
     "recharts": "2.15.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.56.0",
     "@vitejs/plugin-react": "4.3.4",
     "electron": "44.3.0",
     "electron-builder": "26.15.3",

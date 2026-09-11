@@ -168,6 +168,23 @@ cd frontend
 npm run dev     # http://localhost:5173
 ```
 
+### Verificar que todo sigue en pie
+
+```powershell
+.\scripts\check.ps1            # lint, tests del backend y del frontend, build y e2e
+.\scripts\check.ps1 -SinE2E    # lo mismo sin el end to end, cuando tienes apuro
+```
+
+El ultimo paso es el que mira la app de verdad: levanta Django con una base
+sembrada aparte (nunca la tuya), compila el frontend y maneja la aplicacion en
+Chromium, pagina por pagina, fallando si alguna ensucia la consola. Es la unica
+red que caza un error de runtime en una pantalla que ningun test unitario
+renderiza; ya paso una vez y esta contado en `docs/roadmap.md`.
+
+El navegador se baja una sola vez (`.\scripts\setup.ps1` ya lo hace; si no,
+`cd frontend; npm run e2e:browser`). Para escribir o depurar pruebas,
+`npm run e2e:ui` abre el modo interactivo de Playwright.
+
 ### Comandos
 
 | Comando | Para que |
