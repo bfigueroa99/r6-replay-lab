@@ -152,7 +152,8 @@ npm run dev     # http://localhost:5173
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
 | `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (291 tests). |
+| `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
+| `manage.py test tests` | Corre la suite (306 tests). |
 
 ### Sacar los datos
 
@@ -190,6 +191,21 @@ Todo vive en `.env` (ver `.env.example`):
 | `TRADE_WINDOW_SECONDS` | `3` | Segundos para considerar vengada una muerte. Cambiarlo pide `manage.py recompute`. |
 | `SQLITE_PATH` | `data/db.sqlite3` | Base de datos. |
 | `OVERRIDES_PATH` | `data/overrides.json` | Nombres para IDs de temporadas nuevas. |
+
+### Copias de seguridad
+
+```powershell
+cd backend
+python manage.py backup
+```
+
+Deja `data/backups/db-20260910-231155.sqlite3` y conserva las 10 ultimas. Vale
+la pena hacerlo seguido, porque **rehacer el historial no siempre es posible**:
+el juego va borrando los replays viejos de `MatchReplay`, y lo que ya
+importaste puede no existir mas en disco.
+
+Usa la API de backup online de SQLite y no una copia de archivo, asi que sale
+consistente aunque el server este corriendo.
 
 ## Cada temporada rompe algo
 
@@ -249,6 +265,7 @@ backend/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
     export.py           agregados a CSV
+    backup.py           copia de la base con la API online de SQLite
     recompute.py        rehace los trades con otra ventana, sin reparsear
     retag.py            re-etiqueta IDs ya importados sin reparsear
     unknowns.py         IDs sin nombre y el archivo de etiquetas
@@ -258,7 +275,7 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                291 tests (parser, metricas, agregados, coach, API)
+  tests/                306 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts (26 tests con vitest)
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

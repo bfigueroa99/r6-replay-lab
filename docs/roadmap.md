@@ -407,13 +407,30 @@ agregar tests.
 
 `npm test` entro tambien a `scripts/check.ps1` (ahora 4 pasos) y al workflow.
 
-### 16. Backup de la base
+### 16. Backup de la base [x]
 
-`manage.py backup` que copie el SQLite con timestamp a `data/backups/`.
-Reimportar todo el historial cuesta minutos, y los replays viejos los borra el
-propio juego.
+Hecho: `manage.py backup` con `--keep`, `--out` y `--list`, documentado en el
+README.
 
-- **Listo cuando**: hay un backup con un comando y esta documentado en el README.
+**No es `shutil.copy`.** Copiar un SQLite como archivo mientras alguien escribe
+deja una base rota a la mitad; se usa la API de backup online de SQLite, que da
+una copia consistente aunque el server este corriendo. El test no mira el
+tamano del archivo: lo abre, corre `PRAGMA integrity_check` y cuenta las filas,
+que es lo unico que importa de un backup.
+
+Tres cosas que salieron de escribir los tests:
+
+- `--out` llega como string y `existing_backups` asumia `Path`: reventaba al
+  listar. Lo cazo el test del comando.
+- Dos copias en el mismo segundo caian en el mismo nombre y la segunda pisaba a
+  la primera en silencio. Ahora la segunda lleva sufijo.
+- La rotacion ordenaba por nombre, y con ese sufijo el orden alfabetico pone la
+  copia nueva antes que la vieja: habria borrado la equivocada. Ahora ordena por
+  fecha del archivo.
+
+Queda anotado como posible siguiente paso un boton en la pagina Datos: quien
+vive en la app de escritorio no abre una consola, y un backup que no se corre no
+sirve de nada.
 
 ### 17. Bundle mas liviano
 
