@@ -318,12 +318,22 @@ Dato que salio de ahi: aun con la ventana de 10 segundos, el 91% de las muertes
 del usuario sigue sin vengarse. El problema que marca el coach no era un
 artefacto de una ventana estricta. 16 tests nuevos.
 
-### 12. Rango de fechas explicito en los filtros
+### 12. Rango de fechas explicito en los filtros [x]
 
-Hoy solo hay "ultimos N dias". Falta desde / hasta, que la API ya soporta
-(`since` y `until`).
+Hecho: la barra de filtros tiene "Entre dos fechas..." en el selector de
+periodo, y al elegirlo aparecen desde y hasta. Elegir cualquier otro periodo
+limpia el rango, y viceversa, para que no queden dos filtros de tiempo peleando.
 
-- **Listo cuando**: se puede aislar una noche puntual o un mes cerrado.
+El bug que habia que arreglar no estaba en la UI sino en la API: `until` se
+parseaba con `fromisoformat`, asi que `until=2026-09-08` era la medianoche del 8
+y **dejaba fuera todo ese dia**, justo lo contrario de lo que espera quien lo
+escribe. Ahora una fecha sin hora se estira al final del dia; si viene con hora,
+se respeta tal cual. Los dos casos tienen test.
+
+El modo rango vive en un estado local del componente y no en los filtros: entre
+elegir "entre dos fechas" y escribir la primera hay un momento en que no hay nada
+que mandar a la API, y sin ese estado el selector se volvia solo a "todo el
+historial". 11 tests nuevos.
 
 ### 13. Importacion con progreso
 

@@ -139,7 +139,7 @@ npm run dev     # http://localhost:5173
 | `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
 | `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
-| `manage.py test tests` | Corre la suite (266 tests). |
+| `manage.py test tests` | Corre la suite (277 tests). |
 
 ### Sacar los datos
 
@@ -158,6 +158,10 @@ curl "http://127.0.0.1:8000/api/export/"      # lista las tablas disponibles
 Acepta los mismos filtros que el resto de la API (`side`, `map`, `operator`,
 `site`, `match_type`, `since`, `until`, `days`, `session`, `ranked_only`) y
 `sep=;` si lo quieres con punto y coma.
+
+`since` y `until` aceptan fecha sola (`2026-09-08`) o fecha y hora. Una fecha
+sola en `until` significa **el dia completo**: `since=2026-09-08&until=2026-09-08`
+es esa noche y nada mas.
 
 ## Configuracion
 
@@ -241,7 +245,7 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                266 tests (parser, metricas, agregados, coach, API)
+  tests/                277 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts
   electron/             app de escritorio (proceso principal y preload)
 docs/                   formato del .rec, metricas y roadmap

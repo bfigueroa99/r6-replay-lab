@@ -1,12 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import { useApi } from '../api.js'
+
+const RANGO_EXACTO = 'rango'
 
 const RANGES = [
   { value: '', label: 'Todo el historial' },
   { value: '7', label: 'Ultimos 7 dias' },
   { value: '30', label: 'Ultimos 30 dias' },
   { value: '90', label: 'Ultimos 90 dias' },
+  { value: RANGO_EXACTO, label: 'Entre dos fechas...' },
 ]
 
 /** "09-09 15:34 · 6 partidas" */
@@ -26,6 +29,26 @@ export default function Filters({
 }) {
   const { data } = useApi('/filters/')
   const set = (key) => (event) => onChange({ ...value, [key]: event.target.value })
+
+  // el modo vive aca y no en los filtros: hay un momento, entre elegir "entre
+  // dos fechas" y escribir la primera, en el que no hay nada que mandar a la API
+  const [rangoAbierto, setRangoAbierto] = useState(Boolean(value.since || value.until))
+
+  const elegirPeriodo = (event) => {
+    const elegido = event.target.value
+    setRangoAbierto(elegido === RANGO_EXACTO)
+    onChange({
+      ...value,
+      days: elegido === RANGO_EXACTO ? '' : elegido,
+      since: '',
+      until: '',
+    })
+  }
+
+  const limpiar = () => {
+    setRangoAbierto(false)
+    onChange({})
+  }
 
   return (
     <div className="filters">
@@ -94,7 +117,10 @@ export default function Filters({
 
       <label>
         Periodo
-        <select value={value.days || ''} onChange={set('days')}>
+        <select
+          value={rangoAbierto ? RANGO_EXACTO : value.days || ''}
+          onChange={elegirPeriodo}
+        >
           {RANGES.map((r) => (
             <option key={r.value} value={r.value}>
               {r.label}
@@ -102,6 +128,19 @@ export default function Filters({
           ))}
         </select>
       </label>
+
+      {rangoAbierto ? (
+        <>
+          <label>
+            Desde
+            <input type="date" value={value.since || ''} onChange={set('since')} max={value.until || undefined} />
+          </label>
+          <label>
+            Hasta
+            <input type="date" value={value.until || ''} onChange={set('until')} min={value.since || undefined} />
+          </label>
+        </>
+      ) : null}
 
       <label className="check">
         <input
@@ -113,7 +152,7 @@ export default function Filters({
       </label>
 
       {Object.values(value).some(Boolean) ? (
-        <button className="btn small" onClick={() => onChange({})}>
+        <button className="btn small" onClick={limpiar}>
           Limpiar
         </button>
       ) : null}

@@ -26,6 +26,21 @@ from .retag import retag
 # --------------------------------------------------------------------- helpers
 
 
+def _fecha(valor: str, *, fin_del_dia: bool = False) -> datetime | None:
+    """Fecha de la query string. Una fecha sin hora es el dia completo.
+
+    Sin esto `until=2026-09-08` significa la medianoche del 8 y deja fuera todo
+    ese dia, que es justo lo contrario de lo que espera quien lo escribe.
+    """
+    try:
+        fecha = datetime.fromisoformat(valor.strip())
+    except ValueError:
+        return None
+    if fin_del_dia and len(valor.strip()) == 10:
+        return fecha.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return fecha
+
+
 def _filters(request: HttpRequest) -> dict:
     out: dict = {}
     for key in ("side", "map", "operator", "site", "match_type"):
@@ -34,13 +49,12 @@ def _filters(request: HttpRequest) -> dict:
             out[key] = value
     if request.GET.get("ranked_only"):
         out["ranked_only"] = request.GET["ranked_only"].lower() in ("1", "true", "si", "yes")
-    for key in ("since", "until"):
+    for key, hasta_el_final in (("since", False), ("until", True)):
         value = request.GET.get(key)
         if value:
-            try:
-                out[key] = datetime.fromisoformat(value)
-            except ValueError:
-                pass
+            fecha = _fecha(value, fin_del_dia=hasta_el_final)
+            if fecha is not None:
+                out[key] = fecha
     session = request.GET.get("session")
     if session not in (None, ""):
         out["session"] = session
