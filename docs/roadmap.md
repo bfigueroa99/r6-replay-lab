@@ -4,16 +4,116 @@ Backlog de desarrollo. Lo consume el loop de Claude Code: cada iteracion toma
 **el primer item sin marcar**, lo implementa completo (backend + frontend +
 tests + docs), deja la suite en verde y hace un commit.
 
-Reglas del loop:
+## Reglas del loop
 
-- Un item por iteracion. Si un item resulta ser mas grande de lo que parece, se
-  parte en dos y se deja el resto anotado aca.
-- `cd backend; python manage.py test tests` en verde antes de cada commit.
-  `cd frontend; npm run build` si se toco `frontend/src`.
-- Metrica nueva -> fila nueva en `docs/metricas.md`.
-- Marcar el item como hecho (`### 3. ~~Nemesis~~ [x]`) con una linea de que
-  quedo implementado, y commitear el roadmap junto con el codigo.
-- Cuando no queden items sin marcar, el loop se detiene.
+Cada regla de aca la dejo escrita un item concreto, y el numero esta puesto para
+poder ir a ver que paso. No son principios generales de ingenieria: son las
+veces que este proyecto se equivoco.
+
+### Una iteracion
+
+1. **Un item, el primero sin marcar.** Si resulta mas grande de lo que parece se
+   parte, y la mitad que no se hizo entra como **item nuevo al final del
+   backlog**, con su numero. No como nota al pie de otro item: ahi se pierde.
+2. **Mirar los datos reales antes de escribir la vista.** Los umbrales elegidos
+   imaginando los datos salen mal. El #3 iba con 5 duelos de muestra minima y la
+   tabla quedaba con una fila, porque el maximo real contra un mismo rival eran
+   5 duelos en 28 partidas. El #9 iba a marcar "mueres muy tarde" hasta que los
+   datos mostraron que morir tarde es la forma normal del juego. Primero se
+   consulta, despues se escribe.
+3. **Implementar completo**: backend + frontend + tests + docs. Un item no es
+   "el endpoint": es el numero llegando a la pantalla, con su fila en
+   `docs/metricas.md` si es una metrica.
+4. **Verificar** de verdad, que no es correr los tests (seccion siguiente).
+5. **Cerrar el item**: marcarlo `[x]` en el titulo (`### 3. Nemesis: duelos por
+   rival [x]`, sin tachar el texto) y escribir abajo que quedo implementado, que
+   se cambio respecto de lo planeado y **que no quedo resuelto**.
+6. **Un commit** con el codigo y el roadmap juntos.
+
+### Verificar no es correr los tests
+
+`.\scripts\check.ps1` (lint, tests de backend, tests de frontend, build y e2e)
+es el piso. La suite no baja de verde nunca, pero verde no es lo mismo que
+verificado:
+
+- **El #17 es la prueba de por que.** Al sacar el grafico del Resumen se fue
+  tambien un import que el panel de salud seguia usando. El build no dijo nada y
+  los tests tampoco, porque era un error de runtime en una pagina que ningun
+  test renderizaba. Lo mostro la consola del navegador.
+- Desde el #21 eso esta automatizado: `npm run e2e` maneja la app en Chromium y
+  falla si alguna pagina ensucia la consola. **Una pagina nueva entra ahi**, o el
+  agujero del #17 queda abierto de nuevo.
+- Cuando el cambio toca datos ya importados (#1, #11), se prueba **sobre una
+  copia de la base real** y se deja escrito el antes y el despues. Esos numeros
+  valen mas que cualquier test sintetico.
+- **Un test que nunca se vio fallar no prueba nada.** El #21 rompio el codigo a
+  proposito para ver caer la suite antes de darla por buena.
+
+> **El CI de GitHub no cuenta hoy.** Los jobs mueren a los 3 segundos sin
+> producir logs, en `main` y en cualquier rama: es una falla a nivel de runner
+> (facturacion de Actions), no del workflow. Mientras siga asi, `check.ps1` en la
+> maquina no es una verificacion mas: es la unica. Un rojo en GitHub con
+> `check.ps1` verde no bloquea nada, y no hay que salir a arreglarlo desde el
+> codigo.
+
+### Honestidad con los numeros
+
+Es lo que separa este proyecto de un tracker cualquiera, y es lo mas facil de
+arruinar sin darse cuenta:
+
+- **Toda comparacion de porcentajes viaja con su banda de ruido** (#10). Con ~50
+  rondas por lado, 9 puntos de winrate no son nada. Si el cambio no pasa la
+  banda, la app lo dice; no lo pinta de verde ni de rojo.
+- **"Sin señal" no es "normal"** (#20). Que la muestra no alcance para afirmar
+  algo no es lo mismo que saber que no pasa nada, y la etiqueta no puede
+  confundir las dos cosas.
+- **Sin referencia no hay veredicto** (#9). Aca solo existen tus replays: no hay
+  promedio poblacional. Una metrica que solo se puede juzgar comparandola contra
+  "los demas jugadores" no se juzga, se muestra.
+- **No se prueban umbrales hasta que uno dispare** (#4). Elegir el corte que mas
+  conviene es la forma barata de encontrar patrones que no existen. El umbral se
+  fija por una razon y se deja fijo, aunque con los datos de hoy no dispare: en
+  el #3 la regla `nemesis` no salta, y esta bien que no salte.
+- **Mejor no mostrar que mostrar mal** (#7, #8). El rating de otra persona no
+  significa nada, asi que va vacio. Una ronda sin eventos devuelve lista vacia y
+  no texto de relleno. Si la muestra es chica, se avisa en la pantalla.
+
+### Cuando el pedido no se puede
+
+El `.rec` no trae lo que no trae, y la lista esta en `CLAUDE.md`. Cuando un item
+pide algo que depende de eso:
+
+- **No se entrega una version mas chica en silencio.** Se hace la mejor version
+  honesta y **la pantalla dice de entrada que es lo que no puede mostrar**. El
+  #20 pedia "en que partes del mapa" y el formato no tiene coordenadas, asi que
+  la pagina abre explicando que la granularidad real es la zona.
+- El cierre del item deja escrito el desvio y por que.
+
+### El plan es una hipotesis
+
+Los items se escriben antes de ver los datos, asi que se equivocan seguido, y no
+es un problema: **el #3, el #6, el #10 y el #13 se apartaron de lo planeado y los
+cuatro quedaron mejor.** Cuando la realidad no coincide con el item, gana la
+realidad y el desvio se escribe en el cierre. Lo que no se hace es cumplir el
+item a la letra sabiendo que el resultado no sirve.
+
+### Cuando el loop se detiene
+
+Antes de decir que no queda nada, se revisan los items ya marcados: varios
+cierran con un **"Pendiente anotado"** que es trabajo real y no una nota
+decorativa. Si hay alguno vivo, se promueve a item nuevo con su numero, y en el
+item viejo se anota **(promovido al #N)** para que el proximo barrido no lo
+promueva otra vez.
+
+No todo pendiente es un item. El #19 dejo escrito que el instalador no esta
+firmado y que solo se probo en una maquina: eso no se resuelve programando
+(hace falta un certificado que se paga, y otro PC), asi que queda como
+limitacion conocida y no como trabajo pendiente. Se promueve lo que el loop
+puede efectivamente hacer.
+
+El loop se detiene cuando no quedan items sin marcar **ni** pendientes anotados
+sin promover. Esta regla existe porque la version anterior de estas reglas se
+detuvo con cuatro pendientes escritos adentro de items ya cerrados.
 
 ## No-goals
 
@@ -61,8 +161,14 @@ Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 
 > **Nota de orden**: los items #1 y #2 se dieron vuelta. El #1 (UI) necesita el
 > re-etiquetado del #2 para poder decir que quedo listo, asi que el #2 se hizo
-> primero. El #18 (Electron) entro fuera de orden porque lo pidio el usuario.
-> El numero de cada item se mantiene para no romper las referencias.
+> primero. El #18 (Electron), el #20 (posicionamiento) y el #21 (e2e) entraron
+> fuera de orden porque los pidio el usuario. El numero de cada item se mantiene
+> para no romper las referencias.
+>
+> Del #22 al #26 no son ideas nuevas: son los **"Pendiente anotado"** que habian
+> quedado escritos adentro de items ya cerrados, promovidos a items propios como
+> manda la seccion "Cuando el loop se detiene". Estaban invisibles para el loop,
+> que por eso se detuvo creyendo que no quedaba nada.
 
 ### 2. `manage.py retag` [x]
 
@@ -131,7 +237,7 @@ La regla `nemesis` mantiene el umbral honesto (8 duelos contra la misma persona)
 y por lo tanto **no dispara** con estos datos. Es el comportamiento correcto, y
 esta cubierta con tests sinteticos. 14 tests nuevos.
 
-Pendiente anotado: la tasa por operador esta sobre duelos, no sobre rondas en
+Pendiente anotado (promovido al #22): la tasa por operador esta sobre duelos, no sobre rondas en
 que enfrentaste a ese operador. Lo segundo seria mejor senal ("cuando enfrentas
 a Thorn mueres el X% de las rondas") y necesita cruzar con las rondas donde ese
 operador estuvo en el equipo rival.
@@ -429,7 +535,7 @@ Tres cosas que salieron de escribir los tests:
   copia nueva antes que la vieja: habria borrado la equivocada. Ahora ordena por
   fecha del archivo.
 
-Queda anotado como posible siguiente paso un boton en la pagina Datos: quien
+Queda anotado (promovido al #23) un boton en la pagina Datos: quien
 vive en la app de escritorio no abre una consola, y un backup que no se corre no
 sirve de nada.
 
@@ -500,9 +606,14 @@ Lo que **no** quedo resuelto y hay que decirlo:
 - **Solo se probo en esta maquina.** Trae su propio interprete, asi que no
   depende de que haya Python; lo que no se pudo probar es una maquina sin las
   runtimes de Visual C++.
-- **No hay forma de cambiar `REPLAY_DIR` desde la UI.** Instalada, la unica
-  manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
-  este PC de verdad, eso deberia ser una pantalla de configuracion.
+- **No hay forma de cambiar `REPLAY_DIR` desde la UI** (promovido al #24).
+  Instalada, la unica manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si
+  la app va a salir de este PC de verdad, eso deberia ser una pantalla de
+  configuracion.
+
+De los tres, el unico que el loop puede resolver es el ultimo: firmar el
+instalador necesita un certificado que se paga, y probar en otra maquina
+necesita otra maquina. Los dos primeros quedan como limitaciones conocidas.
 
 ### 20. Pestana de posicionamiento [x]
 
@@ -558,7 +669,7 @@ De paso, `signed()` en `ui.jsx` para los deltas, que redondea antes de decidir e
 signo: `-0.4` con cero decimales imprimia `-0`. 26 tests de backend y 11 de
 frontend.
 
-Pendiente anotado: la pagina mira la zona, no el momento. Cruzar "fuera de
+Pendiente anotado (promovido al #25): la pagina mira la zona, no el momento. Cruzar "fuera de
 posicion" con los tramos del item #9 diria ademas **cuando** dentro de la ronda
 pasa, que probablemente es mas accionable que el sitio solo.
 
@@ -620,9 +731,79 @@ Tres cosas que costaron:
   escribe su avance en stderr, que habria abortado el setup entero por una
   descarga ruidosa.
 
-Pendiente anotado: el e2e no prueba la app de Electron, solo la web. Playwright
+Pendiente anotado (promovido al #26): el e2e no prueba la app de Electron, solo la web. Playwright
 sabe manejar Electron y seria el mismo seed; lo que faltaria es decidir si vale
 el minuto extra en cada `check.ps1`.
+
+### 22. Rondas en que enfrentaste a cada operador
+
+Sale del pendiente del #3. Hoy la tabla de duelos por operador rival mide sobre
+**duelos**: de los duelos que tuviste contra Thorn, ganaste el X%. La senal mas
+util es la otra, sobre **rondas**: cuando Thorn esta en el equipo rival, mueres
+el X% de las rondas. Lo segundo dice algo sobre como te condiciona ese operador
+aunque nunca lo enfrentes de frente; lo primero solo habla de los tiroteos que
+ya pasaron.
+
+Necesita cruzar con las rondas donde ese operador estuvo del otro lado, que es
+un dato que ya esta en `RoundPlayer` (el rival tiene su fila con su operador).
+Las dos tasas conviven: son preguntas distintas y las dos valen.
+
+Ojo con la muestra: en el #3 el maximo real contra un mismo rival eran 5 duelos
+en 28 partidas. Por operador hay bastante mas, pero hay que mirar los numeros
+reales antes de fijar el corte.
+
+### 23. Boton de backup en la pagina Datos
+
+Sale del pendiente del #16. `manage.py backup` existe y funciona, pero quien usa
+la app de escritorio no abre una consola, y un backup que no se corre no sirve
+de nada.
+
+Un boton en **Datos** que llame al backup, muestre donde quedo el archivo y
+liste las copias que ya hay (`--list` ya devuelve eso). Es el segundo POST de la
+API despues de `/api/import/` y `/api/overrides/`, asi que vale releer la regla
+de "la API es de lectura" en `CLAUDE.md` antes: es una excepcion consciente, no
+una puerta abierta a mas escritura.
+
+### 24. Pantalla de configuracion para REPLAY_DIR
+
+Sale de lo que quedo abierto en el #19. Instalada, la unica forma de cambiar la
+carpeta de replays es crear un `.env` a mano en `%APPDATA%/r6-replay-lab`. Para
+alguien que instalo un `.exe` eso no existe.
+
+Una pantalla que lea y escriba esa configuracion, valide que la carpeta tenga
+pinta de `MatchReplay` (que haya carpetas `Match-*`) y avise si no. Cuidado con
+el modo empaquetado: el bundle es de solo lectura y la configuracion vive en
+`%APPDATA%`, cosa que `settings.py` ya distingue.
+
+Esto es lo que separa "la app funciona en el PC en que se compilo" de "la app se
+puede instalar en otro lado".
+
+### 25. Cruzar el posicionamiento con el momento de la ronda
+
+Sale del pendiente del #20. La pestana de posicionamiento mira **donde** quedas
+fuera de posicion; el #9 mira **cuando** mueres. Cruzarlas diria "en B Church te
+agarran, y te agarran en los primeros 30 segundos", que es bastante mas
+accionable que cualquiera de las dos por separado.
+
+La union natural son los tramos de 30s del #9 por zona. El problema es la
+muestra: una zona de 30 rondas partida en cinco tramos deja seis por tramo, y
+ahi no hay nada que afirmar. Antes de escribir la vista hay que mirar si con los
+datos reales queda algo, y si no queda, decirlo y cerrar el item sin la vista.
+Es un resultado valido.
+
+### 26. Decidir si el e2e cubre tambien la app de Electron
+
+Sale del pendiente del #21. El e2e prueba la UI web; la app de escritorio no la
+prueba nadie, y es la que mas partes moviles tiene (levanta Django, espera al
+health, reutiliza un server existente, lo baja al cerrar).
+
+Playwright sabe manejar Electron (`_electron.launch`) y el seed seria el mismo.
+Lo que hay que decidir primero es si vale el minuto extra en cada
+`check.ps1`: puede que la respuesta sea un job aparte que no corre siempre, o
+una sola prueba de humo que verifique que la ventana abre y sirve el SPA.
+
+**Este item se cierra igual si la conclusion es que no vale la pena**, siempre
+que quede escrito por que.
 
 ## Ideas descartadas
 

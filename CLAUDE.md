@@ -1,7 +1,13 @@
 # CLAUDE.md
 
-Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (backlog) y
+Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` y
 `docs/formato-rec.md` (limites del formato).
+
+`docs/roadmap.md` no es solo el backlog: arriba de todo estan las **reglas del
+loop**, que son como se trabaja aca (que cuenta como verificado, que no se puede
+afirmar con esta muestra, que hacer cuando el pedido no se puede). Cada regla
+sale de una vez que el proyecto se equivoco, con el numero del item para ir a
+ver. Leelas antes de tomar un item.
 
 ## Que es
 
