@@ -178,6 +178,40 @@ si no existe simplemente no aparece. Lo que puede decir:
 
 No se guarda en la base: es texto derivado y cambia si cambian las metricas.
 
+## Posicionamiento
+
+Responde dos preguntas: **donde te agarran fuera de posicion** y **donde te
+sostienes**. La granularidad es la unica que entrega el formato, la zona: sitio
+de bomba y spawn de ataque. No hay coordenadas, asi que no hay posiciones dentro
+del sitio, ni angulos, ni habitaciones (ver la seccion de abajo).
+
+| Metrica | Definicion |
+|---|---|
+| **Fuera de posicion** | Rondas donde **moriste, sin bajas y sin que nadie te vengara**, sobre las rondas jugadas de esa zona. Las tres condiciones juntas: si te llevaste a alguien aportaste, y si te tradearon estabas con el equipo. |
+| **vs el resto** | Diferencia en puntos contra el resto de tu historial, **sin contar esa zona**. |
+| **Banda** | La misma banda de ruido de Progreso, entre la zona y el resto. |
+| **Veredicto** | `Te agarran ahi` / `Te sostienes` cuando la diferencia pasa la banda; `Sin señal` cuando no. |
+
+Tres decisiones que vale la pena tener a la vista:
+
+- **El porcentaje va sobre rondas, no sobre muertes.** Es la diferencia con
+  "muertes sin trade", que va sobre muertes. La pregunta aca es cada cuanto te
+  pasa por ronda jugada, y las rondas que sobreviviste cuentan.
+- **La comparacion es contra el resto y no contra el total.** La zona esta dentro
+  del total, asi que compararla contra el es compararla en parte consigo misma.
+  Restarla deja dos muestras independientes, que es lo que la banda supone.
+- **Un spawn se compara solo contra el resto de tu ataque.** En ataque se queda
+  fuera de posicion bastante mas seguido que en defensa, asi que medir un spawn
+  contra un promedio que incluye defensa lo marca por ser de ataque y no por ser
+  ese spawn. Un sitio si va contra el total, porque se juega de los dos lados.
+- **`Sin señal` no quiere decir "normal".** Quiere decir que con esa muestra no
+  se puede afirmar nada de esa zona. Son cosas distintas y la etiqueta no las
+  confunde a proposito.
+
+La tabla no se parte por lado: con estas muestras, dividir un sitio en ataque y
+defensa deja la mitad de rondas en cada fila. Para mirar un lado se usa el filtro
+general, que aplica a toda la pagina.
+
 ## Sobre el mapa de calor
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de
@@ -222,5 +256,6 @@ opinar:
 | Mapa | 15 rondas en ese mapa |
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
+| Zona de posicionamiento | 8 rondas **y** pasar la banda de ruido |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.

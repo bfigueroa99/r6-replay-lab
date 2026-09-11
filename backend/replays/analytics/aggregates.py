@@ -141,6 +141,9 @@ AGGREGATES = {
     "kst_rounds": Count("id", filter=Q(kst=True)),
     "clutch_rounds": Count("id", filter=Q(one_vx__gt=0)),
     "multikill_rounds": Count("id", filter=Q(kills__gte=2)),
+    # moriste, no aportaste nada y nadie te vengo: la definicion de
+    # quedar fuera de posicion. Ver docs/metricas.md.
+    "caught_out_rounds": Count("id", filter=Q(died=True, kills=0, untraded_death=True)),
     "triple_plus_rounds": Count("id", filter=Q(kills__gte=3)),
     "won_after_opening_kill": Count("id", filter=Q(opening_kill=True, won=True)),
     "won_after_opening_death": Count("id", filter=Q(opening_death=True, won=True)),
@@ -194,6 +197,9 @@ def derive(row: dict, baseline: float | None = None) -> dict:
             "untraded_death_pct": _pct(row.get("untraded_deaths") or 0, deaths),
             "traded_pct": _pct(traded, deaths),
             "multikill_pct": _pct(row.get("multikill_rounds") or 0, rounds),
+            # sobre rondas y no sobre muertes: la pregunta es cada cuanto te
+            # agarran fuera de posicion, y las rondas que sobreviviste cuentan
+            "caught_out_pct": _pct(row.get("caught_out_rounds") or 0, rounds),
             "clutch_pct": _pct(row.get("clutch_rounds") or 0, rounds),
             "winrate_after_opening_kill": _pct(row.get("won_after_opening_kill") or 0, ok),
             "winrate_after_opening_death": _pct(row.get("won_after_opening_death") or 0, od),
@@ -1002,6 +1008,110 @@ def death_timing(**filters) -> dict:
         fila["last30_pct"] = _pct(fila["last30"], fila["deaths"])
         salida[clave] = fila
     return salida
+
+
+# -------------------------------------------------------------------- posicion
+
+#: Rondas minimas para que una zona entre en la tabla. Con menos que esto la
+#: banda de ruido se come cualquier diferencia y la fila solo agrega ruido
+#: visual: no es que el dato sea malo, es que no alcanza para decir nada.
+POSITION_MIN_ROUNDS = 5
+
+
+def _veredicto(rows: list[dict], dormidas_total: int, rondas_total: int) -> list[dict]:
+    """Marca cada zona comparandola contra **el resto** de tus rondas.
+
+    Contra el resto y no contra el total a proposito: la zona esta dentro del
+    total, asi que compararla contra el es compararla en parte consigo misma, y
+    la banda de ruido supone dos muestras independientes. Restarla deja esas
+    dos muestras de verdad, y ademas hace la comparacion mas exigente cuando la
+    zona pesa mucho en el historial.
+    """
+    for fila in rows:
+        rondas = fila.get("rounds") or 0
+        dormidas = fila.get("caught_out_rounds") or 0
+        resto_rondas = rondas_total - rondas
+        resto_pct = _pct(dormidas_total - dormidas, resto_rondas)
+        propia_pct = fila.get("caught_out_pct")
+
+        fila["rest_caught_out_pct"] = resto_pct
+        fila["rest_rounds"] = resto_rondas
+        banda = _ruido(propia_pct, rondas, resto_pct, resto_rondas)
+        fila["noise"] = banda
+        fila["caught_out_delta"] = (
+            round(propia_pct - resto_pct, 1)
+            if (propia_pct is not None and resto_pct is not None)
+            else None
+        )
+
+        delta = fila["caught_out_delta"]
+        if delta is None or banda is None or abs(delta) <= banda:
+            # dentro de lo que se mueve solo: no se afirma nada
+            fila["verdict"] = "ruido"
+        elif delta > 0:
+            fila["verdict"] = "dormidero"
+        else:
+            fila["verdict"] = "solido"
+    return rows
+
+
+def positioning(min_rounds: int = POSITION_MIN_ROUNDS, **filters) -> dict:
+    """Donde te agarran fuera de posicion y donde te sostienes.
+
+    La granularidad espacial es la unica que entrega el `.rec`: sitio de bomba
+    y spawn de ataque. No hay coordenadas, asi que no hay posiciones dentro del
+    sitio ni angulos ni habitaciones.
+
+    El corte por lado no va en la tabla de sitios sino en el filtro general: un
+    sitio partido en ataque y defensa deja la mitad de rondas en cada fila, y
+    con estas muestras eso es quedarse sin nada que mirar.
+    """
+    qs = base_queryset(**filters)
+    baseline = rating_baseline()
+    general = totals(qs, baseline)
+    dormidas = general.get("caught_out_rounds") or 0
+    rondas = general.get("rounds") or 0
+
+    sitios = group_by(
+        qs.exclude(round__site=""),
+        "round__match__map_name",
+        "round__site",
+        labels=("map", "site"),
+        min_rounds=min_rounds,
+        baseline=baseline,
+    )
+    ataque = qs.filter(side="Attack")
+    spawns = group_by(
+        ataque.exclude(spawn=""),
+        "round__match__map_name",
+        "spawn",
+        labels=("map", "spawn"),
+        min_rounds=min_rounds,
+        baseline=baseline,
+    )
+    # los lados van sin minimo: son dos filas que siempre tienen muestra y son
+    # la referencia con la que se leen las otras dos tablas
+    lados = group_by(qs, "side", labels=("side",), min_rounds=1, baseline=baseline)
+
+    # Los spawns se comparan contra el resto de tu **ataque**, no contra todo.
+    # En ataque quedas fuera de posicion bastante mas seguido que en defensa, asi
+    # que medir un spawn contra un promedio que incluye defensa lo hace ver mal
+    # por ser de ataque y no por ser ese spawn: un spawn perfectamente normal
+    # aparecia marcado. Un sitio si va contra el total, porque se juega de los
+    # dos lados.
+    solo_ataque = totals(ataque, baseline)
+
+    return {
+        "overall": general,
+        "sites": _veredicto(sitios, dormidas, rondas),
+        "spawns": _veredicto(
+            spawns,
+            solo_ataque.get("caught_out_rounds") or 0,
+            solo_ataque.get("rounds") or 0,
+        ),
+        "sides": _veredicto(lados, dormidas, rondas),
+        "min_rounds": min_rounds,
+    }
 
 
 # --------------------------------------------------------------------- jugador

@@ -12,6 +12,7 @@ urlpatterns = [
     path("overview/", views.overview, name="overview"),
     path("coach/", views.coach, name="coach"),
     path("maps/", views.maps, name="maps"),
+    path("positioning/", views.positioning, name="positioning"),
     path("operators/", views.operators, name="operators"),
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),

@@ -1,7 +1,13 @@
 # CLAUDE.md
 
-Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (backlog) y
+Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` y
 `docs/formato-rec.md` (limites del formato).
+
+`docs/roadmap.md` no es solo el backlog: arriba de todo estan las **reglas del
+loop**, que son como se trabaja aca (que cuenta como verificado, que no se puede
+afirmar con esta muestra, que hacer cuando el pedido no se puede). Cada regla
+sale de una vez que el proyecto se equivoco, con el numero del item para ir a
+ver. Leelas antes de tomar un item.
 
 ## Que es
 
@@ -16,9 +22,12 @@ cd backend; python manage.py test tests    # suite completa, tiene que quedar en
 cd backend; python manage.py runserver     # sirve el build de React en la misma URL
 cd frontend; npm run build                 # obligatorio si tocas frontend/src
 cd frontend; npm test                      # logica pura del frontend (vitest)
+cd frontend; npm run e2e                   # end to end sobre la app real (playwright)
+cd frontend; npm run e2e:browser           # baja Chromium, una sola vez
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
-.\scripts\check.ps1                        # lint + tests + build antes de commitear
+.\scripts\check.ps1                        # lint + tests + build + e2e antes de commitear
+.\scripts\check.ps1 -SinE2E                # lo mismo pero sin el e2e
 ```
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
@@ -47,6 +56,11 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 - Los comentarios explican *por que*, no *que*. Si el codigo ya lo dice, sobra.
 - Tests en espanol, nombres descriptivos (`test_un_cambio_de_nick_no_parte_la_fila`).
 - Cada feature nueva llega con tests. La suite no baja de verde nunca.
+- Una pagina nueva entra tambien al e2e (`frontend/e2e/`). El build y los tests
+  unitarios no ven un error de runtime en una pantalla que nadie renderiza; el
+  e2e maneja la app en Chromium y falla si la consola se ensucia. Sus datos
+  salen de `manage.py seed_demo`, que es deterministico: si cambias ese comando
+  cambias los numeros que afirman las pruebas.
 
 ## Lo que el formato .rec NO entrega
 

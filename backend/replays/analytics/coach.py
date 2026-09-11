@@ -76,6 +76,7 @@ def build_insights(**filters) -> dict:
     insights += _sites(overall, **filters)
     insights += _operators(overall, **filters)
     insights += _spawns(overall, **filters)
+    insights += _posicion(**filters)
     insights += _round_flow(**filters)
     insights += _sesiones(**filters)
     insights += _momento_de_la_muerte(**filters)
@@ -544,6 +545,67 @@ def _spawns(overall, **filters) -> list[dict]:
             scope=f"{worst['map']} · {worst['spawn']}",
         )
     ]
+
+
+#: Rondas minimas para opinar de una zona. Mas alto que el de la tabla: la
+#: tabla puede mostrar una fila marcada "ruido" y que eso sea informacion, pero
+#: el coach solo deberia hablar cuando hay algo que decir.
+POSICION_MIN_ROUNDS = 8
+
+
+def _posicion(**filters) -> list[dict]:
+    """Zonas donde te agarran fuera de posicion mas (o menos) que en el resto.
+
+    Solo mira las zonas cuyo veredicto ya paso la banda de ruido: la comparacion
+    y el umbral viven en `aggregates.positioning()`, aca solo se redacta.
+    """
+    datos = agg.positioning(min_rounds=POSICION_MIN_ROUNDS, **filters)
+    out = []
+
+    dormideros = [z for z in datos["sites"] if z["verdict"] == "dormidero"]
+    if dormideros:
+        peor = max(dormideros, key=lambda z: z["caught_out_delta"])
+        out.append(
+            _insight(
+                "zona-dormidero",
+                "media",
+                f"En {peor['site']} ({peor['map']}) te agarran fuera de posicion "
+                f"el {peor['caught_out_pct']:.0f}% de las rondas",
+                f"{peor['rounds']} rondas ahi, {peor['caught_out_delta']:+.0f} puntos contra el "
+                f"{peor['rest_caught_out_pct']:.0f}% del resto de tu historial. La diferencia pasa "
+                f"la banda de ruido (±{peor['noise']:.0f}).",
+                "Cambia donde tomas el primer duelo en ese sitio y juega mas cerca de un "
+                "compañero: morir sin aportar y sin que nadie te vengue es la muerte mas cara.",
+                metric="caught_out_pct",
+                value=peor["caught_out_pct"],
+                baseline=peor["rest_caught_out_pct"],
+                sample=peor["rounds"],
+                scope=f"{peor['map']} · {peor['site']}",
+            )
+        )
+
+    solidas = [z for z in datos["sites"] if z["verdict"] == "solido"]
+    if solidas:
+        mejor = min(solidas, key=lambda z: z["caught_out_delta"])
+        out.append(
+            _insight(
+                "zona-solida",
+                "positivo",
+                f"En {mejor['site']} ({mejor['map']}) te sostienes",
+                f"{mejor['rounds']} rondas con {mejor['caught_out_pct']:.0f}% de rondas fuera de "
+                f"posicion, {abs(mejor['caught_out_delta']):.0f} puntos bajo el resto de tu "
+                "historial.",
+                "Fijate que haces distinto ahi (desde donde miras, con quien juegas) y "
+                "llevatelo a los sitios que te cuestan.",
+                metric="caught_out_pct",
+                value=mejor["caught_out_pct"],
+                baseline=mejor["rest_caught_out_pct"],
+                sample=mejor["rounds"],
+                scope=f"{mejor['map']} · {mejor['site']}",
+            )
+        )
+
+    return out
 
 
 def _round_flow(**filters) -> list[dict]:

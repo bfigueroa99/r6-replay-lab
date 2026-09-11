@@ -52,6 +52,34 @@ export function ResultChip({ won, children }) {
   return <span className={`chip ${won ? 'win' : 'loss'}`}>{children || (won ? 'Ganada' : 'Perdida')}</span>
 }
 
+/** Numero con signo explicito: +6 y -6 se leen distinto de un 6 pelado. */
+export const signed = (value, digits = 0, suffix = '') => {
+  if (value === null || value === undefined) return '—'
+  const texto = Number(value).toFixed(digits)
+  // -0.4 redondeado a cero decimales es "-0", que se lee como un signo perdido.
+  // El signo se decide sobre el numero ya redondeado, no sobre el original.
+  const limpio = Number(texto) === 0 ? Math.abs(Number(texto)).toFixed(digits) : texto
+  return `${Number(limpio) > 0 ? '+' : ''}${limpio}${suffix}`
+}
+
+/**
+ * Como se presenta el veredicto de una zona.
+ *
+ * "Sin señal" y no "normal": cuando la diferencia no pasa la banda de ruido no
+ * sabemos que la zona sea corriente, sabemos que no alcanza la muestra para
+ * decir nada. Son cosas distintas y la etiqueta no las puede confundir.
+ */
+export const VEREDICTO = {
+  dormidero: { label: 'Te agarran ahí', tone: 'loss' },
+  solido: { label: 'Te sostienes', tone: 'win' },
+  ruido: { label: 'Sin señal', tone: '' },
+}
+
+export function VerdictChip({ verdict }) {
+  const v = VEREDICTO[verdict] || VEREDICTO.ruido
+  return <span className={`chip ${v.tone}`}>{v.label}</span>
+}
+
 /** Barra horizontal 0-100 que colorea segun el valor. */
 export function Bar({ value, max = 100 }) {
   if (value === null || value === undefined) return <span className="dim">—</span>

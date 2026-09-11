@@ -166,6 +166,13 @@ def maps(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def positioning(request: HttpRequest) -> JsonResponse:
+    filters = _filters(request)
+    min_rounds = _min_rounds(request, agg.POSITION_MIN_ROUNDS)
+    return _ok(agg.positioning(min_rounds=min_rounds, **filters))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})

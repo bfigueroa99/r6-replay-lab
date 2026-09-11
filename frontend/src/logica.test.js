@@ -10,7 +10,17 @@
 import { describe, expect, it } from 'vitest'
 
 import { qs } from './api.js'
-import { csvText, fmt, ordenarFilas, pct, ratio, winrateColor } from './components/ui.jsx'
+import {
+  VEREDICTO,
+  csvText,
+  fmt,
+  ordenarFilas,
+  pct,
+  ratio,
+  signed,
+  winrateColor,
+} from './components/ui.jsx'
+import { destacados } from './pages/Posicionamiento.jsx'
 
 describe('qs', () => {
   it('arma la query string', () => {
@@ -162,5 +172,70 @@ describe('csvText', () => {
 
   it('sin filas devuelve solo la cabecera', () => {
     expect(csvText(columnas, null)).toBe('Mapa;Ganadas')
+  })
+})
+
+describe('signed', () => {
+  it('le pone el signo a los positivos', () => {
+    expect(signed(6)).toBe('+6')
+    expect(signed(6.4, 1, ' pts')).toBe('+6.4 pts')
+  })
+
+  it('deja el menos que ya trae el numero', () => {
+    expect(signed(-6)).toBe('-6')
+  })
+
+  it('el cero va sin signo: no subio ni bajo', () => {
+    expect(signed(0)).toBe('0')
+  })
+
+  it('un null no se inventa un cero', () => {
+    expect(signed(null)).toBe('—')
+    expect(signed(undefined)).toBe('—')
+  })
+
+  it('no deja un "-0" cuando el redondeo se come la diferencia', () => {
+    expect(signed(-0.4)).toBe('0')
+    expect(signed(0.4)).toBe('0')
+  })
+})
+
+describe('VEREDICTO', () => {
+  it('cubre los tres veredictos que manda la API', () => {
+    expect(Object.keys(VEREDICTO).sort()).toEqual(['dormidero', 'ruido', 'solido'])
+  })
+
+  it('el ruido no afirma que la zona sea normal', () => {
+    // "sin señal" y no "normal": no sabemos que la zona sea corriente, sabemos
+    // que la muestra no alcanza para decirlo
+    expect(VEREDICTO.ruido.label).toBe('Sin señal')
+    expect(VEREDICTO.ruido.tone).toBe('')
+  })
+})
+
+describe('destacados', () => {
+  const zona = (site, verdict, delta) => ({ site, verdict, caught_out_delta: delta })
+
+  it('elige el peor dormidero y el mejor solido', () => {
+    const { peor, mejor } = destacados([
+      zona('A', 'dormidero', 12),
+      zona('B', 'dormidero', 31),
+      zona('C', 'solido', -9),
+      zona('D', 'solido', -22),
+    ])
+    expect(peor.site).toBe('B')
+    expect(mejor.site).toBe('D')
+  })
+
+  it('ignora las zonas que no pasaron la banda de ruido', () => {
+    // una diferencia enorme marcada como ruido no puede ganarle a una chica
+    // que si paso la banda: el veredicto manda, no el delta
+    const { peor } = destacados([zona('A', 'ruido', 80), zona('B', 'dormidero', 11)])
+    expect(peor.site).toBe('B')
+  })
+
+  it('sin zonas concluyentes no inventa una', () => {
+    expect(destacados([zona('A', 'ruido', 40)])).toEqual({ peor: null, mejor: null })
+    expect(destacados([])).toEqual({ peor: null, mejor: null })
   })
 })

@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
 
 // El Resumen entra en el bundle inicial porque es la pantalla de partida. El
-// resto se carga al entrar: son 9 paginas y dos de ellas arrastran recharts,
+// resto se carga al entrar: son 10 paginas y dos de ellas arrastran recharts,
 // que pesa mas que todo lo demas junto.
 const Coach = lazy(() => import('./pages/Coach.jsx'))
 const Datos = lazy(() => import('./pages/Datos.jsx'))
@@ -16,6 +16,7 @@ const MapsPage = lazy(() => import('./pages/Maps.jsx'))
 const MatchDetail = lazy(() => import('./pages/MatchDetail.jsx'))
 const Matches = lazy(() => import('./pages/Matches.jsx'))
 const Operators = lazy(() => import('./pages/Operators.jsx'))
+const Posicionamiento = lazy(() => import('./pages/Posicionamiento.jsx'))
 const Teammates = lazy(() => import('./pages/Teammates.jsx'))
 const Trends = lazy(() => import('./pages/Trends.jsx'))
 
@@ -23,6 +24,7 @@ const LINKS = [
   { to: '/', label: 'Resumen' },
   { to: '/coach', label: 'Coach' },
   { to: '/mapas', label: 'Mapas y sitios' },
+  { to: '/posicionamiento', label: 'Posicionamiento' },
   { to: '/operadores', label: 'Operadores' },
   { to: '/companeros', label: 'Compañeros' },
   { to: '/duelos', label: 'Duelos' },
@@ -126,6 +128,7 @@ export default function App() {
           <Route path="/" element={<Dashboard {...context} />} />
           <Route path="/coach" element={<Coach {...context} />} />
           <Route path="/mapas" element={<MapsPage {...context} />} />
+          <Route path="/posicionamiento" element={<Posicionamiento {...context} />} />
           <Route path="/operadores" element={<Operators {...context} />} />
           <Route path="/companeros" element={<Teammates {...context} />} />
           <Route path="/duelos" element={<Duelos {...context} />} />
