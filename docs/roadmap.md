@@ -503,6 +503,41 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 20. Etiquetar modos de juego desconocidos
+
+`GAME_MODES` en `backend/pydissect/constants.py` solo tiene 4 ids (Bomb,
+SecureArea, Hostage, QuickMatchBomb), y a diferencia de `map_name()` y
+`operator_name()`, `gamemode_name()` no llama a `record_unknown()` cuando el id
+no esta en la tabla: un modo nuevo queda mostrando `Unknown(id)` para siempre,
+sin forma de ponerle nombre. Se agrega el mismo mecanismo que ya existe para
+mapas y operadores: registrar el id desconocido, que aparezca en
+`manage.py unknown_ids` (con el `matchtype` y cuantas partidas arrastra, ya que
+un modo no tiene sitio de bomba que lo delate) y que la pagina **Datos**
+permita ponerle nombre igual que a un mapa. Se verifica importando (o con un
+test que arme el header con un `gamemodeid` ficticio) y viendo que aparece en
+la lista de desconocidos en vez de quedar invisible, y que etiquetarlo lo saca
+de esa lista.
+
+Motivo (`docs/mercado.md`, revision 2026-09-13): Y11S3 trajo un modo arcade 3v3
+nuevo. Sin esto, el `gamemodeid` de cualquier modo futuro queda sin forma de
+identificarse desde la UI.
+
+### 21. Filtro por modo de partida en la barra de filtros
+
+Hoy `gamemode` y `match_type` solo se muestran como texto en el detalle de la
+partida (`MatchDetail.jsx`); no hay forma de incluir o excluir un modo de los
+agregados, a diferencia de mapa u operador que si tienen selector. Se agrega
+un filtro por `gamemode` (y/o `match_type`) en la barra de filtros, propagado a
+las mismas paginas que ya reciben el resto de filtros. Se verifica filtrando
+por un modo y confirmando que Resumen, Tendencias y las tablas de agregados
+solo cuentan las partidas de ese modo.
+
+Motivo (`docs/mercado.md`, revision 2026-09-13): el modo arcade 3v3 de Y11S3 es
+estructuralmente distinto (rondas mas cortas, probablemente sin objetivo de
+bomba). Sin filtro para sacarlo, contamina el promedio de rating (#5, que se
+calcula sobre "todo el historial") y el corte de sesiones/fatiga (#4, tambien
+sobre el historial completo).
+
 ## Ideas descartadas
 
 | Idea | Por que no |
