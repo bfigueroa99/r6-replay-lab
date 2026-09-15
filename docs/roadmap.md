@@ -503,6 +503,26 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 20. Investigar timeline de uso de utilidad por ronda
+
+Origen: `docs/mercado.md`, revision 2026-09-15. R6 Replay, que parsea el mismo
+`.rec` que este proyecto, muestra uso de utilidad (dron, gadgets) junto al kill
+feed en su "Match Event Timeline". `docs/formato-rec.md` no tiene documentado
+ningun patron de bytes para esto todavia. Se construye igual que se investigo
+plant/defuse: comparar rondas con y sin uso de gadgets conocidos (dron
+lanzado, jammer o trampa colocada) y diffear los bytes cercanos a esos
+momentos buscando un patron estable, ya sea con ground truth grabado a
+proposito o con varias rondas reales. Si aparece un patron, se agrega el
+listener a `pydissect` y los eventos se suman a la timeline de ronda que ya
+existe (item #8), como un evento tactico mas, igual naturaleza que el kill
+feed o el sitio de bomba: esto no es arma, dano ni precision de disparo, que
+siguen prohibidos. Se verifica con un test contra un `.rec` real que compare
+la cantidad de eventos detectados contra un conteo manual del replay. Si no
+aparece un patron estable, se documenta el intento en `docs/formato-rec.md`
+(seccion "Lo que se rompio en las temporadas nuevas" o una nueva, segun
+corresponda) igual que ya se hizo con plant/defuse, y no se agrega nada a la
+UI: el item queda cerrado por infeasible, no se reintenta sin una pista nueva.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
@@ -514,3 +534,4 @@ Lo que **no** quedo resuelto y hay que decirlo:
 | Scouting de rivales fuera de tus partidas | Idem. |
 | Workspaces de equipo, scrims compartidos | Es una app local y de un jugador. |
 | Subir replays a un servidor para parsear | Todo corre en el PC, a proposito. |
+| Operadores baneados en pick/ban (pedido en r6-dissect #127) | Sin evidencia de que el `.rec` traiga ese dato; ver `docs/mercado.md` 2026-09-15. |
