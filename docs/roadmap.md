@@ -63,6 +63,11 @@ Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 > primero. El #18 (Electron) entro fuera de orden porque lo pidio el usuario.
 > El numero de cada item se mantiene para no romper las referencias.
 
+> **Proximo numero libre: 24.** Lo actualiza quien agregue el siguiente item
+> (loop local o revision de mercado), para que dos revisiones no propongan el
+> mismo numero. Paso con el #20 entre las PRs de mercado del 2026-09-13 y del
+> 2026-09-15, todavia sin resolver a la fecha de este commit.
+
 ### 2. `manage.py retag` [x]
 
 Hecho: `replays/retag.py` vuelve a resolver `Match.map_name` / `map_slug` desde
@@ -502,6 +507,36 @@ Lo que **no** quedo resuelto y hay que decirlo:
 - **No hay forma de cambiar `REPLAY_DIR` desde la UI.** Instalada, la unica
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
+
+### 22. Notas y marcadores por ronda
+
+Origen: `docs/mercado.md`, revision 2026-09-16, adaptado de "Bookmarks &
+Notes System" de R6 Replay (sin la parte de compartir, que es multi-usuario y
+esta fuera de alcance). Se construye una nota de texto libre por ronda,
+guardada en un modelo nuevo ligado a `Round` (no a `Match`, porque el
+hallazgo suele ser de una ronda puntual) y editable desde la pagina de
+detalle de la ronda que ya existe. No hace falta ningun dato que el `.rec` no
+traiga: es metadata que escribe el usuario, no algo que se parsea. Se
+verifica con un test que guarda, edita y borra una nota sobre una ronda real
+y confirma que sigue asociada despues de un `retag()` (que no debe tocarla) y
+que no aparece en ninguna tabla agregada ni en el CSV, porque es texto libre,
+no una metrica.
+
+### 23. Metricas por tercio de ronda segun el reloj
+
+Origen: `docs/mercado.md`, revision 2026-09-16, adaptado de "3-Stage Round
+Analysis" de R6 Replay. Se construye partiendo `clock_max` (el reloj al
+empezar la fase de accion, que el parser ya calcula) en tres tercios iguales
+y clasificando cada evento del kill feed segun en cual cayo, para sacar
+kills, muertes y trades por tercio, agregable por mapa/operador igual que el
+resto de `docs/metricas.md`. A proposito **no** se ancla a plant/defuse como
+hace R6 Replay con sus fases "Early/Mid/Execute": ese dato ya no es confiable
+desde Y11S3 (ver `docs/formato-rec.md`), y forzar una fase "Execute" sobre
+`possible_plant` heredaria una inferencia en una metrica que se muestra como
+si fuera dura. El corte por reloj es mas humilde pero no miente. Se verifica
+con un test que arma una ronda sintetica con eventos conocidos en cada tercio
+y confirma el conteo exacto, mas un caso limite en el borde entre dos
+tercios.
 
 ## Ideas descartadas
 
