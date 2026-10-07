@@ -40,9 +40,34 @@ inventar.
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
 cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
 
-## Instalacion
+## Descargar y usar
 
-Necesitas Python 3.11+ y Node 18+.
+No hace falta instalar Python ni Node. Baja el `.exe` de la ultima
+[Release](https://github.com/bfigueroa99/r6-replay-lab/releases/latest):
+
+| Archivo | Que hace |
+|---|---|
+| `R6ReplayLab-x.y.z-portable.exe` | Doble clic y listo. No instala nada ni toca el registro. Tarda unos segundos mas en abrir porque se descomprime en `%TEMP%` cada vez. |
+| `R6ReplayLab-x.y.z-setup.exe` | Instalador normal: acceso directo en el escritorio y entrada en "Agregar o quitar programas". |
+
+Las dos variantes son la misma app: una ventana con la UI, y adentro un Python
+completo con el parser y la API. Al abrir, **busca sola la carpeta
+`MatchReplay`** de Siege (Steam, Ubisoft Connect, bibliotecas secundarias y
+las rutas tipicas de cada unidad). Dale a *Importar replays* y ya.
+
+Los datos van a `%APPDATA%\r6-replay-lab`: la base, las etiquetas de IDs
+desconocidos y un `.env` opcional. Si la app no encuentra tu `MatchReplay`
+(lo dice en la pagina Datos), crea ahi un `.env` con
+`REPLAY_DIR=D:\ruta\a\MatchReplay` y vuelve a abrirla.
+
+El `.exe` **no esta firmado**: la primera vez Windows muestra SmartScreen
+(*Mas informacion* -> *Ejecutar de todas formas*). Firmarlo necesita un
+certificado de codigo, que se paga.
+
+## Instalacion desde el codigo
+
+Para desarrollar, o si prefieres correrlo con tu propio Python. Necesitas
+Python 3.11+ y Node 18+.
 
 ```powershell
 cd r6-replay-lab
@@ -57,7 +82,7 @@ pip install -r requirements.txt
 
 # 2. configuracion
 copy .env.example .env
-#    edita REPLAY_DIR si tu Siege no esta en la ruta por defecto
+#    fija REPLAY_DIR solo si la app no encuentra tu MatchReplay sola
 
 # 3. base de datos
 cd backend
@@ -120,24 +145,32 @@ Que quede claro, porque es la duda obvia: **no es un overlay**. Es una ventana
 normal, sin always-on-top, sin transparencia y sin ningun tipo de hook al juego.
 Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
 
-#### Instalador
+#### Armar el .exe
 
 ```powershell
 .\scripts\package.ps1
 ```
 
-Deja `packaging\installer\R6ReplayLab-0.1.0-setup.exe` (unos 135 MB). Adentro
-va un Python completo, asi que **corre en una maquina sin Python instalado**: el
-frontend compilado viaja dentro del ejecutable del backend y Django lo sirve
-igual que desde el repo.
+Deja en `packaging\installer\` el instalador (`-setup.exe`) y el portable
+(`-portable.exe`), unos 135 MB cada uno. Adentro va un Python completo, asi que
+**corren en una maquina sin Python instalado**: el frontend compilado viaja
+dentro del ejecutable del backend y Django lo sirve igual que desde el repo.
 
-La app instalada guarda sus datos en `%APPDATA%6-replay-lab`, no donde este
-instalada: Program Files es de solo lectura. Ahi va la base, los overrides y el
-`.env` si quieres cambiar `REPLAY_DIR`.
+Para publicar no hace falta armarlo a mano. `.github/workflows/release.yml`
+corre ese mismo script en un runner de Windows:
 
-El instalador **no esta firmado**, asi que Windows muestra SmartScreen la
-primera vez (Mas informacion -> Ejecutar de todas formas). Firmarlo necesita un
-certificado de codigo, que se paga.
+```powershell
+# sube "version" en frontend\package.json, commitea, y despues:
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Unos minutos despues los dos `.exe` cuelgan de la Release en GitHub. Desde la
+pestana Actions tambien se puede lanzar a mano ("Run workflow") para probar una
+rama: compila y deja los `.exe` como artefacto, sin publicar.
+
+La app empaquetada guarda sus datos en `%APPDATA%\r6-replay-lab`, no donde
+este instalada: Program Files es de solo lectura.
 
 Para desarrollar la UI dentro de la ventana, con hot reload:
 
@@ -202,7 +235,7 @@ Todo vive en `.env` (ver `.env.example`):
 
 | Variable | Default | Que hace |
 |---|---|---|
-| `REPLAY_DIR` | ruta de Steam por defecto | Carpeta `MatchReplay` de Siege. |
+| `REPLAY_DIR` | se detecta sola | Carpeta `MatchReplay` de Siege. Sin fijar, se busca en Steam, Ubisoft Connect y las rutas tipicas de cada unidad. |
 | `IMPORT_QUIET_SECONDS` | `60` | Segundos sin cambios en los `.rec` para considerar terminada una partida. |
 | `WATCH_INTERVAL_SECONDS` | `20` | Cada cuanto revisa el watcher. |
 | `MIN_ROUNDS_DEFAULT` | `5` | Muestra minima para que un agregado aparezca en las tablas. |

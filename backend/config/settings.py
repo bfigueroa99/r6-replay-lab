@@ -18,6 +18,8 @@ import os
 import sys
 from pathlib import Path
 
+from config import replay_dir
+
 #: True cuando corre dentro del ejecutable empaquetado.
 FROZEN = bool(getattr(sys, "frozen", False))
 
@@ -153,10 +155,12 @@ STATICFILES_DIRS = [d for d in [FRONTEND_DIST] if d.exists()]
 OVERRIDES_PATH = Path(env("OVERRIDES_PATH", str(DATA_DIR / "overrides.json")))
 os.environ.setdefault("PYDISSECT_OVERRIDES", str(OVERRIDES_PATH))
 
-#: Carpeta donde Siege deja los replays.
-REPLAY_DIR = env(
-    "REPLAY_DIR",
-    r"D:\Program Files (x86)\Steam\steamapps\common\Tom Clancy's Rainbow Six Siege\MatchReplay",
+#: Carpeta donde Siege deja los replays. Si el .env no la fija, se busca sola
+#: (Steam, Ubisoft Connect y las rutas tipicas de cada unidad): la app instalada
+#: tiene que mostrar partidas al primer doble clic, sin editar nada.
+REPLAY_DIR = env("REPLAY_DIR") or str(
+    replay_dir.detectar()
+    or r"C:\Program Files (x86)\Steam\steamapps\common\Tom Clancy's Rainbow Six Siege\MatchReplay"
 )
 
 #: Segundos sin cambios en los .rec para considerar que la partida termino.

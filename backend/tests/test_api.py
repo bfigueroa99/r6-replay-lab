@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 
 from django.test import TestCase
 
@@ -204,3 +205,14 @@ class SpaTests(TestCase):
             else response.content
         )
         self.assertNotIn(b"SECRET_KEY", body)
+
+
+class CarpetaDeReplaysTests(TestCase):
+    """La UI tiene que poder decir si la carpeta vigilada existe o no."""
+
+    def test_health_y_status_dicen_si_la_carpeta_existe(self):
+        with self.settings(REPLAY_DIR="/no/existe/MatchReplay"):
+            self.assertFalse(self.client.get("/api/health/").json()["replay_dir_exists"])
+            self.assertFalse(self.client.get("/api/import/status/").json()["replay_dir_exists"])
+        with tempfile.TemporaryDirectory() as tmp, self.settings(REPLAY_DIR=tmp):
+            self.assertTrue(self.client.get("/api/health/").json()["replay_dir_exists"])

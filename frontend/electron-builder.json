@@ -18,16 +18,20 @@
   ],
   "win": {
     "target": [
-      "nsis"
-    ],
-    "artifactName": "R6ReplayLab-${version}-setup.${ext}"
+      "nsis",
+      "portable"
+    ]
   },
   "nsis": {
+    "artifactName": "R6ReplayLab-${version}-setup.${ext}",
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "shortcutName": "R6 Replay Lab"
+  },
+  "portable": {
+    "artifactName": "R6ReplayLab-${version}-portable.${ext}"
   },
   "publish": null
 }

@@ -503,6 +503,33 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 20. Un .exe que se descarga y se abre [x]
+
+Hecho. El item 19 dejo el instalador, pero armarlo pedia el repo, el venv,
+PyInstaller y npm: nadie que no fuera el autor podia "apretar un .exe". Tres
+piezas lo cierran:
+
+- **`.github/workflows/release.yml`.** Con `git push origin v0.2.0` un runner de
+  Windows corre `scripts\package.ps1` (el mismo script, sin bifurcar) y cuelga
+  los `.exe` de la Release. Antes verifica que el tag coincida con la version de
+  `frontend/package.json`, para no publicar un `v0.2.0` que por dentro diga
+  `0.1.0`. "Run workflow" a mano compila una rama sin publicar.
+- **Target `portable`** en electron-builder, ademas del instalador NSIS. Es el
+  "doble clic y listo" literal: un solo `.exe` que no instala nada. Se
+  descomprime en `%TEMP%` cada vez que abre, asi que tarda unos segundos mas;
+  el que lo use seguido prefiere el instalador.
+- **`config/replay_dir.py`**: la carpeta `MatchReplay` se detecta sola. Lee las
+  bibliotecas de Steam (`libraryfolders.vdf`), la carpeta de juegos de Ubisoft
+  Connect (`settings.yml`) y prueba las rutas tipicas en cada unidad. Sin esto
+  el `.exe` en otro PC arrancaba apuntando a `D:\...` del autor y mostraba cero
+  carpetas. `REPLAY_DIR` en el `.env` sigue ganando si esta fijado, y la pagina
+  Datos avisa cuando la carpeta no existe (`replay_dir_exists` en la API).
+
+Lo que sigue sin resolver, igual que en el 19: el `.exe` no esta firmado
+(SmartScreen) y no hay pantalla de configuracion para fijar `REPLAY_DIR` desde
+la UI; con la autodeteccion hace falta mucho menos, pero el caso raro sigue
+siendo editar un `.env` a mano.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
