@@ -12,6 +12,7 @@ import {
   anguloFinal,
   colorGajo,
   easeOutCubic,
+  etiquetaAlReves,
   gajoBajoPuntero,
   normalizarAjustes,
   operadoresEnRueda,
@@ -117,6 +118,21 @@ describe('easeOutCubic', () => {
 
   it('frena al final: la segunda mitad avanza menos que la primera', () => {
     expect(easeOutCubic(0.5)).toBeGreaterThan(0.5)
+  })
+})
+
+describe('etiquetaAlReves', () => {
+  it('a la derecha se lee tal cual, a la izquierda hay que girarla', () => {
+    expect(etiquetaAlReves(0)).toBe(false)
+    expect(etiquetaAlReves(Math.PI / 4)).toBe(false)
+    expect(etiquetaAlReves(Math.PI)).toBe(true)
+    expect(etiquetaAlReves((3 * Math.PI) / 4)).toBe(true)
+  })
+
+  it('da igual cuantas vueltas lleve la rueda', () => {
+    expect(etiquetaAlReves(Math.PI + 7 * VUELTA)).toBe(true)
+    expect(etiquetaAlReves(-Math.PI)).toBe(true)
+    expect(etiquetaAlReves(0.3 - 4 * VUELTA)).toBe(false)
   })
 })
 

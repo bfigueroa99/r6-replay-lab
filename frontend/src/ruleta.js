@@ -76,6 +76,16 @@ export function anguloFinal(desde, azar = Math.random) {
 /** Arranca rapido y frena suave, como una rueda de verdad. */
 export const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
 
+/**
+ * Una etiqueta radial apunta del centro al borde. En la mitad izquierda de la
+ * rueda eso la deja cabeza abajo; hay que girarla media vuelta y dibujarla
+ * desde el borde hacia el centro para que se siga leyendo de izquierda a
+ * derecha.
+ */
+export function etiquetaAlReves(angulo) {
+  return Math.cos(angulo) < 0
+}
+
 const MATIZ = { Attack: 24, Defense: 212 }
 
 /** Alterna dos tonos del color del lado para que se distingan los gajos vecinos. */

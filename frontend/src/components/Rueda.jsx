@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 
-import { PUNTERO, VUELTA, colorGajo, tamanoLetra } from '../ruleta.js'
+import { PUNTERO, VUELTA, colorGajo, etiquetaAlReves, tamanoLetra } from '../ruleta.js'
 
 /**
  * La rueda dibujada en canvas. Recibe el angulo ya calculado: la animacion la
@@ -98,18 +98,21 @@ export function dibujarRueda(ctx, lado, operadores, angulo, resaltado) {
     ctx.strokeStyle = elegido ? '#ffffff' : 'rgba(0,0,0,0.35)'
     ctx.stroke()
 
+    const medio = desde + gajo / 2
+    const alReves = etiquetaAlReves(medio)
     ctx.save()
     ctx.translate(cx, cy)
-    ctx.rotate(desde + gajo / 2)
-    ctx.textAlign = 'right'
+    ctx.rotate(alReves ? medio + Math.PI : medio)
+    ctx.textAlign = alReves ? 'left' : 'right'
     ctx.textBaseline = 'middle'
     ctx.font = `700 ${letra}px "Segoe UI", Inter, system-ui, sans-serif`
     ctx.lineJoin = 'round'
     ctx.lineWidth = 3
+    const x = alReves ? -(radio - 14) : radio - 14
     ctx.strokeStyle = elegido ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)'
-    ctx.strokeText(operadores[i].name, radio - 14, 0)
+    ctx.strokeText(operadores[i].name, x, 0)
     ctx.fillStyle = elegido ? '#1a1005' : '#f3f6f9'
-    ctx.fillText(operadores[i].name, radio - 14, 0)
+    ctx.fillText(operadores[i].name, x, 0)
     ctx.restore()
   }
 
