@@ -43,7 +43,11 @@ y `estado.sh` deciden el rol y leen el estado. Desde el item 30 el backlog
 vive en `docs/backlog/` (una ficha por item, ver su README) y en la rama
 `claude/equipo-dev/backlog`; `docs/roadmap.md` queda como historia. Cada item
 es una rama y un PR; `check.sh` en verde antes de empujar codigo; maximo 3
-items con codigo esperando al humano; el humano mergea. Si cambias una regla
+items con codigo en el pipeline; el release manager mergea por PR lo que paso
+dev, revision y QA en sesiones distintas, y el humano mergea lo que la nube no
+puede verificar (Electron, `.ps1`, instalador) o toca las reglas del equipo.
+`docs/backlog/SIN_MERGE` en la rama `backlog` veta el merge automatico; `PAUSA`
+detiene al equipo. Si cambias una regla
 de este archivo, revisa que el playbook no la contradiga.
 
 ## Reglas de arquitectura

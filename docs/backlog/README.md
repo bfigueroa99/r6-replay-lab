@@ -12,7 +12,8 @@ items terminados.
   `disenado` y `descartado`, mas `ESTADO.md` (el tablero) y, si existe, el
   marcador `PAUSA`. Nunca tiene PR, nunca se mergea, no cuenta para la cola.
 - **Rama `claude/equipo-dev/NN-slug`**: el trabajo de un item. Nace cuando un
-  Dev reclama la ficha y termina cuando el humano la mergea.
+  Dev reclama la ficha y termina cuando el release manager la mergea (o el
+  humano, en los casos de abajo).
 
 ## Estados
 
@@ -28,13 +29,24 @@ la ficha esta en `main`.
 Cada turno lo regenera: cola con estados y links de compare, orden de merge
 sugerido, ramas borrables con el comando listo, preguntas para el humano.
 
+## Quien mergea
+
+El **release manager** mergea por PR lo que paso dev, revision y QA en tres
+sesiones distintas, con `check.sh` en verde sobre la rama ya fusionada con
+`main`, sin pedidos tuyos sin responder y sin veto. Despues borra esa rama.
+
+Lo mergeas vos cuando el cambio toca lo que la nube no puede verificar o las
+reglas del propio equipo: `frontend/electron/`, `packaging/`, `scripts/*.ps1`,
+`.github/`, `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/` y las plantillas de
+esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge: ...)` y
+aparecen en `ESTADO.md` con el motivo. Da igual merge, squash o rebase: el
+equipo detecta los tres. Borra la rama al mergear.
+
 ## Lo que hace el humano
 
-- **Mergear** las ramas `entregado` (o abrir el PR desde el link de compare
-  si la sesion no tenia herramientas de GitHub). Da igual merge, squash o
-  rebase: el equipo detecta los tres.
-- **Borrar la rama** al mergear (o activar "Automatically delete head
-  branches" en el repo). El equipo nunca borra ramas, solo las lista.
+- **Vetar el merge automatico**: crear `docs/backlog/SIN_MERGE` en la rama
+  `backlog` desde la web. El equipo sigue trabajando pero deja todo en
+  `entregado` para que lo mergees vos. Borrar el archivo lo reactiva.
 - **Pedir algo**: un commit propio en la rama del item, o texto bajo
   `## Para el equipo` en `ESTADO.md` (editable desde la web). El equipo
   responde en la ficha y en el tablero en su proximo turno.

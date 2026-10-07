@@ -26,8 +26,14 @@ aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
    es verde.
 4. **Independencia.** Una misma sesion firma como mucho una de estas etapas
    sobre la misma ficha: implementar, revisar, probar.
-5. **El humano mergea.** El equipo nunca mergea, nunca empuja a `main`, nunca
-   hace force-push, nunca borra ramas.
+5. **El release manager mergea.** Un item entra a `main` solo por PR y solo
+   cuando paso la puerta de merge: dev, revisor y QA en tres sesiones
+   distintas, `check.sh` en verde sobre la rama ya fusionada con `main`, sin
+   pedidos del humano sin responder y sin veto. Lo que la nube no puede
+   verificar (Electron, `.ps1`, instalador) y lo que toca las reglas del
+   propio equipo lo mergea el humano. Nadie empuja a `main` directo, nadie
+   hace force-push, y la unica rama que se borra es la que se acaba de
+   mergear.
 6. **No inventar trabajo.** Si no hay nada con valor para quien usa la app,
    el turno termina y lo dice.
 
@@ -93,8 +99,11 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
 
 ## Prioridades sobre el turno
 
-- **P1. Pausa.** Si `estado.sh` dice `PAUSA`, el turno termina con un
-  informe de una linea y cero pushes. Es el boton del humano.
+- **P1. Pausa y veto.** Si `estado.sh` dice `PAUSA`, el turno termina con
+  un informe de una linea y cero pushes. Si dice `SIN_MERGE`
+  (`docs/backlog/SIN_MERGE` en la rama `backlog`), todo sigue igual pero
+  nadie mergea: lo aprobado queda `entregado` para el humano. Son los dos
+  botones del humano.
 - **P2. Pedido del humano sin responder**, cualquiera sea el rol: commit con
   autor distinto de `Claude` en una rama del equipo (lo lista `estado.sh`),
   texto nuevo bajo `## Para el equipo` de `ESTADO.md`, comentarios de PR si
@@ -199,7 +208,9 @@ fechadas debajo.
 
 Rama de trabajo del equipo = rama `origin/claude/*` no mergeada
 efectivamente que agrega una ficha `docs/backlog/NN-*.md`, salvo `backlog`.
-La identidad es la ficha, no el nombre de la rama.
+La identidad es la ficha, no el nombre de la rama. El limite existe para que
+el pipeline no se llene de codigo a medio verificar y para que lo que espera
+al humano siga siendo poco.
 
 - **COLA (tope 3)**: ramas de trabajo con algun commit en los ultimos 14 dias
   o con ficha `entregado` aunque esten quietas (un PR que espera al humano
@@ -237,15 +248,43 @@ La identidad es la ficha, no el nombre de la rama.
   existe); recortar la ficha a unas 80 lineas (Revision condensada al
   veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
   ultimo commit con el titulo del PR como mensaje; `estado: entregado`;
-  push. (4) Con herramientas: abrir el PR con `## PR` tal cual y
-  `subscribe_pr_activity`; sin herramientas: `entregado (PR pendiente de
-  abrir)`. (5) Merge de prueba por pares entre ramas abiertas y lista de
-  ramas borrables.
-- **Salida:** pushes a las ramas entregadas y mantenidas; PRs si hay
-  herramientas; `ESTADO.md` completo; informe diario.
+  push. (4) Con herramientas: abrir el PR con `## PR` tal cual (si no
+  existe) y `subscribe_pr_activity`; sin herramientas: `entregado (PR
+  pendiente de abrir)`. (5) **Puerta de merge** sobre cada `entregado`, de
+  la mas vieja a la mas nueva; si falla una condicion, la ficha queda
+  `entregado (PR pendiente de merge: <motivo>)` y el motivo va a
+  `ESTADO.md`:
+  - a. No hay `SIN_MERGE` ni `PAUSA`.
+  - b. `turnos:` tiene `dev`, `revisor` y `qa` de tres sesiones distintas y
+    el estado venia de `aprobado`.
+  - c. Sin commits del humano sin responder en la rama; en el PR, sin
+    "changes requested" ni comentario humano sin respuesta; `## Para el
+    humano` de la ficha sin preguntas abiertas (solo avisos informativos).
+  - d. El diff (`git diff --name-only origin/main...<rama>`) no toca lo que
+    el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
+    `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
+    `docs/backlog/ESTADO.plantilla.md`, `frontend/electron/`,
+    `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
+    `.github/`.
+  - e. Hay herramientas de GitHub y el PR esta abierto contra `main`
+    (la regla de `main` exige PR; no hay push directo).
+  - f. `origin/main` ya esta fusionado en la rama y empujado, y `check.sh`
+    completo (con e2e) termino en `Todo en verde.` sobre ese commit exacto
+    en esta misma sesion.
+  Merge: `mcp__github__merge_pull_request` con metodo `merge`, titulo del
+  commit = titulo del PR, cuerpo = `## Que cambia` del PR. Despues `git
+  fetch origin main`, confirmar que la ficha existe en `origin/main`, borrar
+  la rama recien mergeada (`git push origin --delete <rama>`, la unica rama
+  que el equipo borra) y, si el espejo de la ficha sigue en `backlog`,
+  quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
+  las ramas que sigan abiertas y lista de ramas borrables.
+- **Salida:** merges a `main` de lo que paso la puerta; pushes a las ramas
+  entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
+  informe diario.
 - **Turno bien hecho:** ninguna rama con conflicto contra main; toda
-  `aprobado` de ayer esta `entregado` con `## PR` legible en 2 minutos;
-  `ESTADO.md` dice que mergear primero y que borrar, con los comandos.
+  `aprobado` de ayer esta mergeada, o `entregado` con el motivo exacto por el
+  que no; `ESTADO.md` dice que le queda al humano y que borrar, con los
+  comandos.
 - **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
 - **Sin trabajo:** mantenimiento, `ESTADO.md` e informe. Es el unico rol que
   siempre produce algo.
@@ -425,7 +464,7 @@ La identidad es la ficha, no el nombre de la rama.
 
 **Turno:** <rol> (franja N | pedido | por cola vacia | relevo de <rol>)
 **Playbook:** <ref>@<sha corto>
-**Entregado:** <ficha NN: estado anterior -> nuevo, rama> | nada, porque <motivo>
+**Entregado:** <ficha NN: estado anterior -> nuevo, rama> | mergeado a main: <PR #n, ficha NN> | nada, porque <motivo>
 **Mantenimiento:** <P2/P3/P4 atendidos> | nada pendiente
 **Cola:** COLA=<n>/3 TOTAL=<n>/5 | papel: <n> propuesto, <n> disenado
 **GitHub:** con herramientas (<PRs tocados>) | sin herramientas
@@ -437,7 +476,8 @@ La identidad es la ficha, no el nombre de la rama.
 ## Transicion
 
 - Mientras este playbook no este en `main`, `$REF` apunta a la rama donde
-  vive y `ESTADO.md` e informe lo dicen en `playbook:`.
+  vive y `ESTADO.md` e informe lo dicen en `playbook:`. El PR del playbook
+  (#11) lo mergea el humano: toca las reglas del equipo.
 - Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
   `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
   nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
@@ -454,8 +494,10 @@ La identidad es la ficha, no el nombre de la rama.
 
 ## Lo que el equipo nunca hace
 
-- Mergear, aprobar o cerrar PRs. Empujar a `main`. Force-push. Rebase de
-  ramas publicadas. Borrar ramas, propias o ajenas.
+- Mergear fuera del turno de Release o sin pasar la puerta de merge. Aprobar
+  PRs formalmente. Cerrar PRs. Empujar a `main` directo. Force-push. Rebase
+  de ramas publicadas. Borrar ramas, salvo la que el Release acaba de
+  mergear.
 - Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
   Cualquier forma de overlay in-game.

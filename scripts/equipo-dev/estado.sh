@@ -32,6 +32,8 @@ done
 
 echo "== pausa"
 if git cat-file -e "$B:docs/backlog/PAUSA" 2>/dev/null; then echo "PAUSA"; else echo "no"; fi
+echo "== sin_merge (veto del humano al merge automatico)"
+if git cat-file -e "$B:docs/backlog/SIN_MERGE" 2>/dev/null; then echo "SIN_MERGE"; else echo "no"; fi
 
 echo "== papel (rama backlog)"
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
