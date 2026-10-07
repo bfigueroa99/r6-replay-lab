@@ -128,11 +128,17 @@ de las dos direcciones. Sale del kill feed, no del scoreboard.
 | **Balance** | Bajas a favor menos bajas en contra, contra ese rival u operador. |
 | **Duelo de apertura** | El duelo fue la primera baja de la ronda. Perder siempre el primer contacto contra la misma persona es un problema distinto a perder duelos en general. |
 | **Operador rival** | El operador que tenia el rival **en esa ronda**, sacado de su fila del scoreboard: el kill feed del `.rec` no trae el operador dentro del evento. |
+| **Rondas contra un operador** | Rondas tuyas (con los filtros) en que ese operador estuvo en el equipo contrario, haya habido duelo o no. El equipo se lee ronda por ronda comparando `team_index`. Desde 10 rondas. |
+| **Mueres (contra un operador)** | Rondas en que moriste / rondas contra ese operador. |
+| **Ganas la ronda (contra un operador)** | Rondas ganadas / rondas contra ese operador. |
+| **vs. promedio** | Puntos de diferencia entre la tasa contra ese operador y la misma tasa sobre **todas** tus rondas filtradas. En "Mueres" es mejor negativo; en "Ganas" es mejor positivo. No trae banda de ruido: con 10 a 30 rondas, 10 o 15 puntos todavia pueden ser azar. |
 
 En ranked solo los rivales casi no se repiten, asi que la tabla por persona es
 anecdota antes que patron: el coach solo opina desde 8 duelos contra la misma
 persona. La tabla por operador si junta muestra rapido, y es la que suele
-mostrar algo util.
+mostrar algo util. La de rondas contra cada operador responde otra pregunta:
+la de duelos habla de los tiroteos que ya pasaron, la de rondas de como te
+condiciona ese operador aunque nunca lo enfrentes de frente.
 
 ## Impacto
 
@@ -178,12 +184,12 @@ si no existe simplemente no aparece. Lo que puede decir:
 
 No se guarda en la base: es texto derivado y cambia si cambian las metricas.
 
-## Sobre el mapa de calor
+## Sobre la granularidad espacial
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de
-posiciones sobre el minimapa. El "mapa de calor" de la app es una matriz
-mapa x sitio (y mapa x spawn) coloreada por winrate, que es la granularidad
-espacial real que entrega el formato.
+posiciones sobre el minimapa. Lo mas fino que entrega el formato es sitio de
+bomba y spawn de ataque: con eso trabajan el Coach y las tablas `maps`, `sites`
+y `spawns` de la exportacion CSV.
 
 ## Progreso
 

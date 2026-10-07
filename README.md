@@ -37,12 +37,43 @@ mapa/sitio/operador). Cada punto trae el numero, con que se compara, cuantas
 rondas lo respaldan y que hacer al respecto. Si no hay datos, lo dice en vez de
 inventar.
 
+**Ruleta de operadores.** Una rueda al estilo de r6roulette.de para cuando no
+sabes con quien jugar: eliges lado, giras (o pulsas espacio) y sale uno. Puedes
+sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
+y dejar solo la rueda en pantalla para capturarla en OBS. Es una pagina normal
+del navegador, no un overlay.
+
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
 cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
 
-## Instalacion
+## Descargar y usar
 
-Necesitas Python 3.11+ y Node 18+.
+No hace falta instalar Python ni Node. Baja el `.exe` de la ultima
+[Release](https://github.com/bfigueroa99/r6-replay-lab/releases/latest):
+
+| Archivo | Que hace |
+|---|---|
+| `R6ReplayLab-x.y.z-portable.exe` | Doble clic y listo. No instala nada ni toca el registro. Tarda unos segundos mas en abrir porque se descomprime en `%TEMP%` cada vez. |
+| `R6ReplayLab-x.y.z-setup.exe` | Instalador normal: acceso directo en el escritorio y entrada en "Agregar o quitar programas". |
+
+Las dos variantes son la misma app: una ventana con la UI, y adentro un Python
+completo con el parser y la API. Al abrir, **busca sola la carpeta
+`MatchReplay`** de Siege (Steam, Ubisoft Connect, bibliotecas secundarias y
+las rutas tipicas de cada unidad). Dale a *Importar replays* y ya.
+
+Los datos van a `%APPDATA%\r6-replay-lab`: la base, las etiquetas de IDs
+desconocidos y un `.env` opcional. Si la app no encuentra tu `MatchReplay`
+(lo dice en la pagina Datos), crea ahi un `.env` con
+`REPLAY_DIR=D:\ruta\a\MatchReplay` y vuelve a abrirla.
+
+El `.exe` **no esta firmado**: la primera vez Windows muestra SmartScreen
+(*Mas informacion* -> *Ejecutar de todas formas*). Firmarlo necesita un
+certificado de codigo, que se paga.
+
+## Instalacion desde el codigo
+
+Para desarrollar, o si prefieres correrlo con tu propio Python. Necesitas
+Python 3.11+ y Node 18+.
 
 ```powershell
 cd r6-replay-lab
@@ -57,7 +88,7 @@ pip install -r requirements.txt
 
 # 2. configuracion
 copy .env.example .env
-#    edita REPLAY_DIR si tu Siege no esta en la ruta por defecto
+#    fija REPLAY_DIR solo si la app no encuentra tu MatchReplay sola
 
 # 3. base de datos
 cd backend
@@ -78,15 +109,34 @@ Los scripts de `scripts/` son todos PowerShell y asumen el venv en `.venv`:
 Para trabajar en el codigo, ademas:
 
 ```powershell
-pip install -r requirements-dev.txt   # ruff, nada mas
-.\scripts\check.ps1                  # lint + tests + build, en un comando
+pip install -r requirements-dev.txt   # ruff y pyinstaller
+.\scripts\check.ps1                  # lint + tests + build + e2e, en un comando
+.\scripts\check.ps1 -SinE2E          # lo mismo sin el end to end, cuando tienes apuro
 cd frontend; npm test                 # solo los tests del frontend
 ```
 
 `check.ps1` es lo unico que hay que pasar antes de commitear. Corre `ruff check`
 pero no `ruff format`: el linter busca errores, el formateador impone gustos y
-reescribiria medio repo. El mismo chequeo esta en
-`.github/workflows/ci.yml`, listo para el dia que el repo tenga un remoto.
+reescribiria medio repo.
+
+El ultimo paso es el que mira la app de verdad: levanta Django con una base
+sembrada aparte (nunca la tuya), compila el frontend y maneja la aplicacion en
+Chromium, pagina por pagina, fallando si alguna ensucia la consola. Es la unica
+red que caza un error de runtime en una pantalla que ningun test unitario
+renderiza; ya paso una vez y esta contado en `docs/roadmap.md`. El navegador se
+baja una sola vez (`.\scripts\setup.ps1` ya lo hace; si no,
+`cd frontend; npm run e2e:browser`). Para escribir o depurar pruebas,
+`npm run e2e:ui` abre el modo interactivo de Playwright.
+
+El mismo chequeo esta en `.github/workflows/ci.yml`, pero GitHub Actions no
+asigna runners en esta cuenta (ver *Publicar una version*): la verificacion que
+cuenta es la de tu maquina.
+
+`main` no recibe push directo: todo entra por pull request, y la rama no se
+puede borrar ni reescribir con force push. La regla vive en
+`.github/rulesets/main.json` y se carga en GitHub desde Settings → Rules →
+Rulesets → New ruleset → Import a ruleset. GitHub no lee ese archivo solo: si
+cambias la regla en la web, exportala y reemplaza el archivo.
 
 ## Uso
 
@@ -120,24 +170,39 @@ Que quede claro, porque es la duda obvia: **no es un overlay**. Es una ventana
 normal, sin always-on-top, sin transparencia y sin ningun tipo de hook al juego.
 Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
 
-#### Instalador
+#### Armar el .exe
 
 ```powershell
 .\scripts\package.ps1
 ```
 
-Deja `packaging\installer\R6ReplayLab-0.1.0-setup.exe` (unos 135 MB). Adentro
-va un Python completo, asi que **corre en una maquina sin Python instalado**: el
-frontend compilado viaja dentro del ejecutable del backend y Django lo sirve
-igual que desde el repo.
+Deja en `packaging\installer\` el instalador (`-setup.exe`) y el portable
+(`-portable.exe`), unos 135 MB cada uno. Adentro va un Python completo, asi que
+**corren en una maquina sin Python instalado**: el frontend compilado viaja
+dentro del ejecutable del backend y Django lo sirve igual que desde el repo.
 
-La app instalada guarda sus datos en `%APPDATA%6-replay-lab`, no donde este
-instalada: Program Files es de solo lectura. Ahi va la base, los overrides y el
-`.env` si quieres cambiar `REPLAY_DIR`.
+#### Publicar una version
 
-El instalador **no esta firmado**, asi que Windows muestra SmartScreen la
-primera vez (Mas informacion -> Ejecutar de todas formas). Firmarlo necesita un
-certificado de codigo, que se paga.
+```powershell
+# sube "version" en frontend\package.json, commitea en main, y despues:
+.\scripts\release.ps1
+```
+
+El script no publica nada en rojo: corre `check.ps1` entero (lint, tests, build
+y **e2e**), arma los dos `.exe` con `package.ps1`, crea el tag `v<version>`, lo
+pushea y sube la Release con los archivos. Para subirla usa el CLI de GitHub
+(`winget install GitHub.cli`); si no esta, abre la pagina de la Release con el
+tag puesto y te deja los `.exe` listos para arrastrar. Con `-SoloArmar`
+verifica y empaqueta sin tocar git ni GitHub.
+
+Todo esto corre en tu PC a proposito. Hay un workflow equivalente en
+`.github/workflows/release.yml` (push de un tag `v*` en un runner de Windows),
+pero GitHub Actions no asigna runners en esta cuenta: los jobs mueren en
+segundos sin ejecutar nada, y pasa igual en `main`. Mientras eso siga asi, el
+CI de GitHub no cuenta como verificacion y la release sale de aca.
+
+La app empaquetada guarda sus datos en `%APPDATA%\r6-replay-lab`, no donde
+este instalada: Program Files es de solo lectura.
 
 Para desarrollar la UI dentro de la ventana, con hot reload:
 
@@ -202,7 +267,7 @@ Todo vive en `.env` (ver `.env.example`):
 
 | Variable | Default | Que hace |
 |---|---|---|
-| `REPLAY_DIR` | ruta de Steam por defecto | Carpeta `MatchReplay` de Siege. |
+| `REPLAY_DIR` | se detecta sola | Carpeta `MatchReplay` de Siege. Sin fijar, se busca en Steam, Ubisoft Connect y las rutas tipicas de cada unidad. |
 | `IMPORT_QUIET_SECONDS` | `60` | Segundos sin cambios en los `.rec` para considerar terminada una partida. |
 | `WATCH_INTERVAL_SECONDS` | `20` | Cada cuanto revisa el watcher. |
 | `MIN_ROUNDS_DEFAULT` | `5` | Muestra minima para que un agregado aparezca en las tablas. |
@@ -250,9 +315,9 @@ parser esta hecho para degradar bien en vez de reventar:
 Vale la pena ser explicito, porque son limitaciones del formato, no del codigo:
 
 - **No hay coordenadas de las bajas.** El `.rec` no expone posiciones, asi que
-  no existe heatmap sobre el minimapa. El mapa de calor de la app es por zona
-  del juego: sitio de bomba y spawn de ataque, que es la granularidad real que
-  entrega el replay.
+  no existe heatmap sobre el minimapa. La granularidad espacial real que entrega
+  el replay es sitio de bomba y spawn de ataque, y asi se exporta a CSV y la
+  usa el Coach.
 - **Plants y defuses no se detectan en las temporadas nuevas.** El paquete del
   timer del defuser cambio y ya no trae el string del contador. Se infiere: si
   el reloj de la ronda se corta muy arriba y el equipo perdedor no fue barrido,
@@ -296,7 +361,7 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                306 tests (parser, metricas, agregados, coach, API)
+  tests/                305 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts (26 tests con vitest)
   components/           tabla, filtros, graficos, helpers de formato
   pages/                una por ruta, cada una en su propio chunk

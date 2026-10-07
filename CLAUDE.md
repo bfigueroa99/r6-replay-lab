@@ -16,11 +16,19 @@ cd backend; python manage.py test tests    # suite completa, tiene que quedar en
 cd backend; python manage.py runserver     # sirve el build de React en la misma URL
 cd frontend; npm run build                 # obligatorio si tocas frontend/src
 cd frontend; npm test                      # logica pura del frontend (vitest)
+cd frontend; npm run e2e                   # end to end sobre la app real (playwright)
+cd frontend; npm run e2e:browser           # baja Chromium, una sola vez
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
-.\scripts\check.ps1                        # lint + tests + build antes de commitear
-./scripts/check.sh                         # lo mismo en Linux/macOS y en sesiones cloud
+.\scripts\check.ps1                        # lint + tests + build + e2e antes de commitear
+.\scripts\check.ps1 -SinE2E                # lo mismo pero sin el e2e
+./scripts/check.sh                         # lo mismo en Linux/macOS y en sesiones cloud (SIN_E2E=1 lo salta)
+.\scripts\release.ps1                      # verifica, empaqueta, taggea y publica la Release
 ```
+
+GitHub Actions **no funciona en esta cuenta**: los jobs mueren sin runner, en
+`main` tambien. Un CI rojo no dice nada y uno verde no va a pasar. La
+verificacion es `check.ps1` en la maquina, y el e2e es la parte que ve la app.
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
@@ -61,6 +69,11 @@ de este archivo, revisa que el playbook no la contradiga.
 - Los comentarios explican *por que*, no *que*. Si el codigo ya lo dice, sobra.
 - Tests en espanol, nombres descriptivos (`test_un_cambio_de_nick_no_parte_la_fila`).
 - Cada feature nueva llega con tests. La suite no baja de verde nunca.
+- Una pagina nueva entra tambien al e2e (`frontend/e2e/`). El build y los tests
+  unitarios no ven un error de runtime en una pantalla que nadie renderiza; el
+  e2e maneja la app en Chromium y falla si la consola se ensucia. Sus datos
+  salen de `manage.py seed_demo`, que es deterministico: si cambias ese comando
+  cambias los numeros que afirman las pruebas.
 
 ## Lo que el formato .rec NO entrega
 

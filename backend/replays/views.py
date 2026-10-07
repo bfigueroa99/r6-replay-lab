@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime
+from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
@@ -12,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
+from pydissect.constants import OPERATOR_SIDES
 
 from . import export as exportador
 from . import unknowns
@@ -103,6 +105,7 @@ def health(request: HttpRequest) -> JsonResponse:
             "ok": True,
             "parser_version": pydissect.__version__,
             "replay_dir": settings.REPLAY_DIR,
+            "replay_dir_exists": Path(settings.REPLAY_DIR).is_dir(),
             "trade_window": settings.TRADE_WINDOW_SECONDS,
             "replay_dir_folders": len(find_match_folders(settings.REPLAY_DIR)),
             "player": me.username if me else None,
@@ -153,22 +156,34 @@ def coach(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
-def maps(request: HttpRequest) -> JsonResponse:
-    filters = _filters(request)
-    min_rounds = _min_rounds(request, 1)
-    return _ok(
-        {
-            "maps": agg.by_map(min_rounds=min_rounds, **filters),
-            "sites": agg.by_site(min_rounds=min_rounds, **filters),
-            "spawns": agg.by_spawn(min_rounds=min_rounds, **filters),
-        }
-    )
-
-
-@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
+
+
+def _catalogo_operadores() -> list[dict]:
+    """Todos los operadores conocidos con su lado, para la ruleta.
+
+    Parte de la tabla del parser y le suma los que aparecen en las rondas
+    importadas: un operador de una temporada mas nueva que el parser, etiquetado
+    via overrides, ya trae el lado resuelto por mayoria de su equipo.
+    """
+    lados = dict(OPERATOR_SIDES)
+    vistos = (
+        RoundPlayer.objects.exclude(operator="")
+        .exclude(operator__startswith=unknowns.UNKNOWN_PREFIX)
+        .exclude(side="")
+        .values_list("operator", "side")
+        .distinct()
+    )
+    for nombre, lado in vistos:
+        lados.setdefault(nombre, lado)
+    return [{"name": nombre, "side": lados[nombre]} for nombre in sorted(lados, key=str.lower)]
+
+
+@require_GET
+def operator_catalog(request: HttpRequest) -> JsonResponse:
+    return _ok({"operators": _catalogo_operadores()})
 
 
 @require_GET
@@ -240,6 +255,10 @@ def duels(request: HttpRequest) -> JsonResponse:
             "totals": agg.duel_totals(**filters),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
+            "faced": agg.rounds_vs_operator(
+                min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
+                **filters,
+            ),
         }
     )
 
@@ -569,6 +588,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
     return _ok(
         {
             "replay_dir": settings.REPLAY_DIR,
+            "replay_dir_exists": Path(settings.REPLAY_DIR).is_dir(),
             "folders_on_disk": len(folders),
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
