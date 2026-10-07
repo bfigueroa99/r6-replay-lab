@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
+from pydissect.constants import OPERATOR_SIDES
 
 from . import export as exportador
 from . import unknowns
@@ -158,6 +159,31 @@ def coach(request: HttpRequest) -> JsonResponse:
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
+
+
+def _catalogo_operadores() -> list[dict]:
+    """Todos los operadores conocidos con su lado, para la ruleta.
+
+    Parte de la tabla del parser y le suma los que aparecen en las rondas
+    importadas: un operador de una temporada mas nueva que el parser, etiquetado
+    via overrides, ya trae el lado resuelto por mayoria de su equipo.
+    """
+    lados = dict(OPERATOR_SIDES)
+    vistos = (
+        RoundPlayer.objects.exclude(operator="")
+        .exclude(operator__startswith=unknowns.UNKNOWN_PREFIX)
+        .exclude(side="")
+        .values_list("operator", "side")
+        .distinct()
+    )
+    for nombre, lado in vistos:
+        lados.setdefault(nombre, lado)
+    return [{"name": nombre, "side": lados[nombre]} for nombre in sorted(lados, key=str.lower)]
+
+
+@require_GET
+def operator_catalog(request: HttpRequest) -> JsonResponse:
+    return _ok({"operators": _catalogo_operadores()})
 
 
 @require_GET

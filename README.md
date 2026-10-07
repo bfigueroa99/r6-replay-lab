@@ -37,6 +37,12 @@ mapa/sitio/operador). Cada punto trae el numero, con que se compara, cuantas
 rondas lo respaldan y que hacer al respecto. Si no hay datos, lo dice en vez de
 inventar.
 
+**Ruleta de operadores.** Una rueda al estilo de r6roulette.de para cuando no
+sabes con quien jugar: eliges lado, giras (o pulsas espacio) y sale uno. Puedes
+sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
+y dejar solo la rueda en pantalla para capturarla en OBS. Es una pagina normal
+del navegador, no un overlay.
+
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
 cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
 

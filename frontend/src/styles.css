@@ -406,3 +406,126 @@ td.dim { color: var(--muted); }
   .topbar { height: auto; padding: 10px 12px; }
   th, td { padding: 6px 7px; }
 }
+
+/* ------------------------------------------------------------------ ruleta */
+
+.ruleta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 900px) { .ruleta { grid-template-columns: 1fr; } }
+
+.ruleta-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 16px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.lados {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.lado-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lado-btn:hover { color: var(--text); }
+.lado-btn:disabled { cursor: default; opacity: 0.6; }
+.lado-btn.active { background: var(--panel-2); color: var(--text); border-color: var(--border); }
+.lado-btn.active.Attack { color: var(--atk); border-color: #ff8a3d55; }
+.lado-btn.active.Defense { color: var(--def); border-color: #4aa8ff55; }
+
+.rueda-wrap { width: 100%; max-width: 560px; display: flex; justify-content: center; }
+.rueda {
+  display: block;
+  cursor: pointer;
+  border-radius: 50%;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
+  transition: filter 0.3s;
+}
+.rueda:hover, .rueda:focus-visible { filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 14px #ff8a3d55); outline: none; }
+.rueda.girando { cursor: default; }
+
+.btn.girar {
+  padding: 10px 42px;
+  font-size: 16px;
+  letter-spacing: 2px;
+  border-radius: 999px;
+}
+
+.resultado {
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.resultado-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+.resultado-nombre {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--accent);
+  animation: resultado-pop 0.35s ease-out;
+}
+@keyframes resultado-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.ajuste { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; color: var(--muted); font-size: 13px; }
+.ajuste:last-child { margin-bottom: 0; }
+.ajuste b { color: var(--text); }
+.ajuste input[type='range'] { accent-color: var(--accent); width: 100%; }
+.ajuste.check { flex-direction: row; align-items: flex-start; gap: 8px; }
+.ajuste.check input { accent-color: var(--accent); width: 15px; height: 15px; margin: 2px 0 0; flex-shrink: 0; }
+
+.pool + .pool { margin-top: 12px; }
+.pool-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+.pool-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.pool-chip {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pool-chip.atk { border-color: #ff8a3d55; background: #ff8a3d12; }
+.pool-chip.def { border-color: #4aa8ff55; background: #4aa8ff12; }
+.pool-chip:hover { border-color: var(--accent); }
+.pool-chip.fuera { opacity: 0.35; text-decoration: line-through; background: transparent; }
+
+.historial { margin: 0; padding: 0 0 0 20px; display: grid; gap: 4px; }
+.historial li { display: flex; align-items: center; gap: 8px; }
+.historial li:first-child span:first-child { color: var(--accent); font-weight: 700; }
+
+/* Modo streamer: la misma pagina sin barra ni paneles, solo la rueda. No es
+   una ventana flotante ni se superpone al juego: se captura como cualquier
+   ventana del navegador. */
+body.streamer .topbar,
+body.streamer .ruleta-aside,
+body.streamer .ruleta-head p,
+body.streamer .ruleta-head h1 { display: none; }
+body.streamer .ruleta { grid-template-columns: 1fr; justify-items: center; }
+body.streamer .ruleta-centro { background: transparent; border-color: transparent; }
+body.streamer .ruleta-head { justify-content: flex-end; }
