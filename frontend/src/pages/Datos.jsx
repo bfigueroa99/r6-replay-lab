@@ -167,6 +167,13 @@ export default function Datos() {
         title="Importacion"
         hint={`Carpeta vigilada: ${status.data?.replay_dir || '—'}`}
       >
+        {status.data && !status.data.replay_dir_exists ? (
+          <p className="note" style={{ marginTop: 0 }}>
+            Esa carpeta no existe en este PC. Si Siege está instalado en otro lado, crea un
+            archivo <code>.env</code> en la carpeta de datos de la app con{' '}
+            <code>REPLAY_DIR=ruta\a\MatchReplay</code> y vuelve a abrir la app.
+          </p>
+        ) : null}
         <div className="kpis" style={{ marginBottom: 14 }}>
           <div className="stat">
             <div className="label">Carpetas en disco</div>
