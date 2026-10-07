@@ -503,6 +503,67 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 20. Un .exe que se descarga y se abre [x]
+
+Hecho. El item 19 dejo el instalador, pero armarlo pedia el repo, el venv,
+PyInstaller y npm: nadie que no fuera el autor podia "apretar un .exe". Tres
+piezas lo cierran:
+
+- **`.github/workflows/release.yml`.** Con `git push origin v0.2.0` un runner de
+  Windows corre `scripts\package.ps1` (el mismo script, sin bifurcar) y cuelga
+  los `.exe` de la Release. Antes verifica que el tag coincida con la version de
+  `frontend/package.json`, para no publicar un `v0.2.0` que por dentro diga
+  `0.1.0`. "Run workflow" a mano compila una rama sin publicar.
+- **Target `portable`** en electron-builder, ademas del instalador NSIS. Es el
+  "doble clic y listo" literal: un solo `.exe` que no instala nada. Se
+  descomprime en `%TEMP%` cada vez que abre, asi que tarda unos segundos mas;
+  el que lo use seguido prefiere el instalador.
+- **`config/replay_dir.py`**: la carpeta `MatchReplay` se detecta sola. Lee las
+  bibliotecas de Steam (`libraryfolders.vdf`), la carpeta de juegos de Ubisoft
+  Connect (`settings.yml`) y prueba las rutas tipicas en cada unidad. Sin esto
+  el `.exe` en otro PC arrancaba apuntando a `D:\...` del autor y mostraba cero
+  carpetas. `REPLAY_DIR` en el `.env` sigue ganando si esta fijado, y la pagina
+  Datos avisa cuando la carpeta no existe (`replay_dir_exists` en la API).
+
+Lo que sigue sin resolver, igual que en el 19: el `.exe` no esta firmado
+(SmartScreen) y no hay pantalla de configuracion para fijar `REPLAY_DIR` desde
+la UI; con la autodeteccion hace falta mucho menos, pero el caso raro sigue
+siendo editar un `.env` a mano.
+
+**Correccion al dia siguiente:** el workflow de release esta bien escrito pero
+no corre. GitHub Actions no asigna runners en esta cuenta: los jobs mueren en
+2-4 segundos sin un solo step ni log, en `main` tambien, en los 12 runs que
+tiene el repo. El PR que trajo esto se mergeo quitando la regla de proteccion
+que exigia ese CI. Asi que la release vuelve al PC: `scripts/release.ps1` corre
+`check.ps1` con el e2e del item 21, arma los `.exe`, taggea, pushea y sube la
+Release con `gh` (o abre la pagina con el tag puesto si no esta instalado). El
+workflow queda por si Actions vuelve; no se depende de el.
+
+### 21. Tests end to end [x]
+
+Hecho. Viene del PR #1 (borrador, septiembre), que lo traia junto con la pagina
+de posicionamiento; aca entra solo la parte del e2e, adaptada al menu actual, y
+la pagina queda para cuando ese PR se retome sobre esto.
+
+- `manage.py seed_demo`: historial sintetico y deterministico (29 partidas, 203
+  rondas). Se niega a escribir sobre una base con partidas salvo `--force`, con
+  test propio: es lo unico que podria borrarle datos a alguien.
+- `frontend/e2e/`: Playwright sobre la app real, Django sirviendo el build en la
+  misma URL, sin mocks. `servidor.js` migra, siembra y recien ahi levanta el
+  server (Playwright arranca el `webServer` antes del `globalSetup`, asi que
+  prepararla ahi llegaba tarde). `humo.spec.js`: las ocho paginas del menu sin
+  ensuciar la consola, la navegacion que carga los chunks lazy, detalle de
+  partida, perfil, ruta inexistente, y el aviso de Datos cuando la carpeta de
+  replays no existe (item 20).
+- Paso 5 de `check.ps1` (con `-SinE2E`), `setup.ps1` baja Chromium, job en
+  `ci.yml` para si Actions vuelve.
+
+Por que importa, con evidencia del repo: el item 17 dejo escrito que al sacar un
+grafico se fue un import que otro panel usaba, "el build no dijo nada y los
+tests tampoco", y lo mostro la consola del navegador. Esta suite es esa
+consola, automatizada. Y con Actions muerto, es la verificacion que corre de
+verdad.
+
 ## Ideas descartadas
 
 | Idea | Por que no |

@@ -178,12 +178,12 @@ si no existe simplemente no aparece. Lo que puede decir:
 
 No se guarda en la base: es texto derivado y cambia si cambian las metricas.
 
-## Sobre el mapa de calor
+## Sobre la granularidad espacial
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de
-posiciones sobre el minimapa. El "mapa de calor" de la app es una matriz
-mapa x sitio (y mapa x spawn) coloreada por winrate, que es la granularidad
-espacial real que entrega el formato.
+posiciones sobre el minimapa. Lo mas fino que entrega el formato es sitio de
+bomba y spawn de ataque: con eso trabajan el Coach y las tablas `maps`, `sites`
+y `spawns` de la exportacion CSV.
 
 ## Progreso
 

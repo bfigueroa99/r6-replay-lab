@@ -58,7 +58,6 @@ class RangoTests(TestCase):
 
     def test_llega_a_todos_los_endpoints(self):
         for url in (
-            "/api/maps/?since=2026-09-08&min_rounds=1",
             "/api/operators/?since=2026-09-08&min_rounds=1",
             "/api/export/?table=maps&since=2026-09-08",
             "/api/coach/?since=2026-09-08",

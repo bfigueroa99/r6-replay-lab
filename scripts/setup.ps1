@@ -27,6 +27,17 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
     Set-Location "$repo\frontend"
     npm install
     npm run build
+    # El navegador del e2e: ~130 MB, una sola vez. Va aislado porque este script
+    # corre con ErrorActionPreference 'Stop' y npx escribe su avance en stderr:
+    # sin el 'Continue' local, una descarga ruidosa abortaria todo el setup.
+    # Y si de verdad falla tampoco corta: la app anda igual sin poder correr el e2e.
+    & {
+        $ErrorActionPreference = 'Continue'
+        npx playwright install chromium
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '   No pude bajar Chromium para el e2e. Despues: cd frontend; npm run e2e:browser' -ForegroundColor Yellow
+        }
+    }
     Set-Location $repo
 } else {
     Write-Host '   npm no esta en el PATH. Instala Node 18+ y corre: cd frontend; npm install; npm run build' -ForegroundColor Yellow

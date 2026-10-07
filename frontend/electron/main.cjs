@@ -255,13 +255,15 @@ if (!app.requestSingleInstanceLock()) {
       return
     }
 
+    // Instalada no hay venv ni scripts: el consejo tiene que ser otro.
+    const consejo = app.isPackaged
+      ? `Si otro programa usa el puerto ${PORT}, cierralo y vuelve a abrir la app.`
+      : 'Revisa que el venv este creado y las migraciones corridas (scripts\\setup.ps1).'
     const { response } = await dialog.showMessageBox(win, {
       type: 'error',
       message: 'El backend no respondio',
       detail:
-        `No hubo respuesta en ${APP_URL}.\n\n` +
-        'Revisa que el venv este creado y las migraciones corridas ' +
-        '(scripts\\setup.ps1).\n\n' +
+        `No hubo respuesta en ${APP_URL}.\n\n${consejo}\n\n` +
         `Ultimas lineas:\n${logTail.slice(-12).join('\n') || '(sin salida)'}`,
       buttons: ['Salir', 'Reintentar'],
       defaultId: 1,

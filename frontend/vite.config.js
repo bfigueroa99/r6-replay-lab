@@ -1,3 +1,4 @@
+import { configDefaults } from 'vitest/config'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -12,4 +13,7 @@ export default defineConfig({
     },
   },
   build: { outDir: 'dist', emptyOutDir: true },
+  // los *.spec.js de e2e/ son de Playwright, no de vitest: sin esto vitest los
+  // carga, no entiende `test` de @playwright/test y marca el archivo como fallido
+  test: { exclude: [...configDefaults.exclude, 'e2e/**'] },
 })

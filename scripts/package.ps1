@@ -5,10 +5,14 @@
 #   1. build del frontend           -> frontend\dist
 #   2. PyInstaller sobre el backend -> packaging\dist\r6-backend (lleva dist adentro)
 #   3. electron-builder             -> packaging\installer\R6ReplayLab-*-setup.exe
+#                                      y R6ReplayLab-*-portable.exe
 #
-# Tarda varios minutos y el resultado pesa unos 135 MB: adentro va un Python
+# Tarda varios minutos y cada .exe pesa unos 135 MB: adentro va un Python
 # completo, Chromium y el frontend. Necesita las herramientas de desarrollo
 # (pip install -r requirements-dev.txt) y npm install en frontend\.
+#
+# No hace falta correrlo para publicar: .github\workflows\release.yml corre
+# este mismo script en un runner de Windows al pushear un tag v*.
 $ErrorActionPreference = 'Continue'
 $repo = Split-Path -Parent $PSScriptRoot
 $python = "$repo\.venv\Scripts\python.exe"
@@ -42,14 +46,14 @@ npm run desktop:pack
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "fallo electron-builder" }
 Pop-Location
 
-$setup = Get-ChildItem "$repo\packaging\installer\*-setup.exe" -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+$exes = Get-ChildItem "$repo\packaging\installer\*.exe" -ErrorAction SilentlyContinue
 Write-Host ""
-if ($setup) {
-    Write-Host ("Instalador listo: {0} ({1:N0} MB)" -f $setup.FullName, ($setup.Length / 1MB)) `
-        -ForegroundColor Green
+if ($exes) {
+    foreach ($exe in $exes) {
+        Write-Host ("Listo: {0} ({1:N0} MB)" -f $exe.FullName, ($exe.Length / 1MB)) -ForegroundColor Green
+    }
     Write-Host "Sin firmar: Windows va a mostrar SmartScreen la primera vez." -ForegroundColor Yellow
 } else {
-    Write-Host "No se encontro el instalador." -ForegroundColor Red
+    Write-Host "No se encontro ningun .exe en packaging\installer." -ForegroundColor Red
     exit 1
 }

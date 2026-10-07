@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime
+from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
@@ -104,6 +105,7 @@ def health(request: HttpRequest) -> JsonResponse:
             "ok": True,
             "parser_version": pydissect.__version__,
             "replay_dir": settings.REPLAY_DIR,
+            "replay_dir_exists": Path(settings.REPLAY_DIR).is_dir(),
             "trade_window": settings.TRADE_WINDOW_SECONDS,
             "replay_dir_folders": len(find_match_folders(settings.REPLAY_DIR)),
             "player": me.username if me else None,
@@ -151,19 +153,6 @@ def overview(request: HttpRequest) -> JsonResponse:
 @require_GET
 def coach(request: HttpRequest) -> JsonResponse:
     return _ok(build_insights(**_filters(request)))
-
-
-@require_GET
-def maps(request: HttpRequest) -> JsonResponse:
-    filters = _filters(request)
-    min_rounds = _min_rounds(request, 1)
-    return _ok(
-        {
-            "maps": agg.by_map(min_rounds=min_rounds, **filters),
-            "sites": agg.by_site(min_rounds=min_rounds, **filters),
-            "spawns": agg.by_spawn(min_rounds=min_rounds, **filters),
-        }
-    )
 
 
 @require_GET
@@ -595,6 +584,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
     return _ok(
         {
             "replay_dir": settings.REPLAY_DIR,
+            "replay_dir_exists": Path(settings.REPLAY_DIR).is_dir(),
             "folders_on_disk": len(folders),
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],

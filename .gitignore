@@ -20,6 +20,13 @@ data/*
 node_modules/
 frontend/dist/
 
+# End to end: la base sembrada, los reportes y los rastros de las fallas.
+frontend/e2e/.tmp/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.playwright/
+
 # Empaquetado: el ejecutable, el instalador y las caches de las herramientas.
 # Son cientos de MB y se regeneran con scripts\package.ps1.
 packaging/dist/
