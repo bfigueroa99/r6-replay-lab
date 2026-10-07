@@ -1,19 +1,28 @@
 # Roadmap
 
-Backlog de desarrollo. Lo consume el loop de Claude Code: cada iteracion toma
-**el primer item sin marcar**, lo implementa completo (backend + frontend +
-tests + docs), deja la suite en verde y hace un commit.
+Backlog de desarrollo. Lo consume el equipo de desarrollo autonomo
+(`.claude/skills/equipo-dev/SKILL.md`), que corre cada 3 horas: cada iteracion
+toma **el primer item sin marcar** que pase los filtros, lo implementa completo
+(backend + frontend + tests + docs), deja la suite en verde y abre un PR. Si no
+quedan items sin marcar, el equipo busca trabajo real (bugs, huecos de tests,
+deuda anotada en los items hechos, robustez del parser) y lo agrega aca como
+item nuevo antes de hacerlo.
 
 Reglas del loop:
 
-- Un item por iteracion. Si un item resulta ser mas grande de lo que parece, se
-  parte en dos y se deja el resto anotado aca.
-- `cd backend; python manage.py test tests` en verde antes de cada commit.
-  `cd frontend; npm run build` si se toco `frontend/src`.
+- Un item por iteracion, un PR por iteracion. Si un item resulta ser mas grande
+  de lo que parece, se parte en dos y se deja el resto anotado aca.
+- `./scripts/check.sh` (o `.\scripts\check.ps1` en Windows) en verde antes de
+  cada push: lint, tests de backend y frontend, build.
 - Metrica nueva -> fila nueva en `docs/metricas.md`.
-- Marcar el item como hecho (`### 3. ~~Nemesis~~ [x]`) con una linea de que
-  quedo implementado, y commitear el roadmap junto con el codigo.
-- Cuando no queden items sin marcar, el loop se detiene.
+- Marcar el item como hecho (`### 3. Nemesis [x]`) con dos o tres lineas de que
+  quedo implementado y que no, y commitear el roadmap junto con el codigo.
+- Candidatos que aparecen en el camino: items nuevos sin marcar, cortos, con
+  el siguiente numero libre. Maximo dos por iteracion.
+- Las secciones "Lo que falta" / "Deuda" de los items hechos son backlog
+  valido: el equipo las puede tomar como tarea.
+- Con 3 PRs del equipo abiertos, el loop no abre trabajo nuevo hasta que el
+  humano mergee o cierre alguno.
 
 ## No-goals
 

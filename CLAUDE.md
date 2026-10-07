@@ -19,10 +19,20 @@ cd frontend; npm test                      # logica pura del frontend (vitest)
 cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
 .\scripts\check.ps1                        # lint + tests + build antes de commitear
+./scripts/check.sh                         # lo mismo en Linux/macOS y en sesiones cloud
 ```
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
+
+## Equipo de desarrollo autonomo
+
+Una rutina programada corre cada 3 horas una sesion cloud que actua como un
+equipo completo (product owner, devs, QA, revisor, release manager). Su
+playbook es `.claude/skills/equipo-dev/SKILL.md`: un cambio por iteracion,
+`check.sh` en verde, un PR con prefijo `[equipo-dev]`, maximo 3 PRs abiertos
+a la vez, y el humano mergea. Si cambias una regla de este archivo, revisa
+que el playbook no la contradiga.
 
 ## Reglas de arquitectura
 
