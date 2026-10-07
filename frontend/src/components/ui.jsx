@@ -1,4 +1,17 @@
 import React, { useMemo, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+
+/**
+ * Un `Link` que conserva los filtros de la URL. Los filtros viven en la query
+ * string, asi que un enlace interno escrito a mano (`/jugadores/3`) los
+ * perderia: abrir un companero desde "Border" tiene que seguir siendo en
+ * Border. Si el destino ya trae su propia busqueda, manda la del destino.
+ */
+export function Enlace({ to, ...props }) {
+  const { search } = useLocation()
+  const destino = typeof to === 'string' && !to.includes('?') ? { pathname: to, search } : to
+  return <Link to={destino} {...props} />
+}
 
 /** Formatea numeros que pueden venir null desde la API. */
 export const fmt = (value, digits = 0, suffix = '') =>
@@ -231,13 +244,22 @@ export function Loading({ children = 'Cargando...' }) {
   return <p className="loading">{children}</p>
 }
 
+/** Un fallo de red (no hay backend) se explica distinto a un error que si respondio. */
+export const esFalloDeRed = (error) => /fetch|network|conexi/i.test(String(error))
+
 export function ErrorBox({ error }) {
   if (!error) return null
+  const sinBackend = esFalloDeRed(error)
   return (
     <div className="error">
-      <b>No pude leer la API.</b> {String(error)}
+      <b>{sinBackend ? 'No pude conectar con la API.' : 'La API respondió con un error.'}</b>{' '}
+      {String(error)}
       <br />
-      <span className="note">Revisa que Django este corriendo en el puerto 8000.</span>
+      <span className="note">
+        {sinBackend
+          ? 'Revisa que Django esté corriendo en el puerto 8000.'
+          : 'Si acabas de importar o cambiar el .env, prueba recargar. Si sigue, el detalle está en la consola del backend.'}
+      </span>
     </div>
   )
 }

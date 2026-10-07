@@ -43,8 +43,15 @@ sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
 y dejar solo la rueda en pantalla para capturarla en OBS. Es una pagina normal
 del navegador, no un overlay.
 
-**Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
-cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
+**Importacion automatica.** Mientras la app esta abierta revisa la carpeta cada
+30 segundos e importa sola cada partida en cuanto termina (la que estas jugando
+se espera). Se apaga en la pagina Datos. Si prefieres una consola,
+`manage.py watch_replays` hace lo mismo sin la UI. Nada de arrastrar archivos.
+
+**Filtros que se comparten.** Lado, mapa, operador, sitio, sesion y periodo
+viven en la URL: recargar no los pierde, el menu los conserva al cambiar de
+pagina y el enlace se puede pegar tal cual. Cada senal del Coach trae un
+**Ver esas rondas** que abre el Resumen con los filtros que la respaldan.
 
 ## Descargar y usar
 
@@ -59,7 +66,9 @@ No hace falta instalar Python ni Node. Baja el `.exe` de la ultima
 Las dos variantes son la misma app: una ventana con la UI, y adentro un Python
 completo con el parser y la API. Al abrir, **busca sola la carpeta
 `MatchReplay`** de Siege (Steam, Ubisoft Connect, bibliotecas secundarias y
-las rutas tipicas de cada unidad). Dale a *Importar replays* y ya.
+las rutas tipicas de cada unidad) e importa sola lo que encuentre; mientras
+este abierta, cada partida nueva entra al terminar. El boton *Importar replays*
+sigue ahi para forzarlo.
 
 Los datos van a `%APPDATA%\r6-replay-lab`: la base, las etiquetas de IDs
 desconocidos y un `.env` opcional. Si la app no encuentra tu `MatchReplay`
@@ -211,8 +220,9 @@ cd frontend
 npm run desktop:dev    # apunta a Vite en :5173; Django tiene que estar corriendo
 ```
 
-Para que importe solo cada vez que termines una partida, deja esto corriendo en
-otra consola:
+La app importa sola mientras esta abierta. Si quieres que lo haga tambien con la
+app cerrada (una tarea programada, por ejemplo), deja esto corriendo en otra
+consola:
 
 ```powershell
 python manage.py watch_replays

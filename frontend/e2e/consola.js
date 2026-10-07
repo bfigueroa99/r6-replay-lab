@@ -17,8 +17,14 @@ export function vigilarConsola(page) {
     // favicon y compania no importan; lo que importa es que la app pida algo
     // suyo y no este
     const url = request.url()
+    const motivo = request.failure()?.errorText
+    // ERR_ABORTED es el navegador cortando un fetch porque la prueba recargo o
+    // navego a otra pagina con la peticion en vuelo: lo provoca el test, no la
+    // app, y aparecia al azar segun cuanto tardara Django. Un 404 o un 500
+    // llegan como respuesta, no por aca, asi que seguirian cazandose.
+    if (motivo === 'net::ERR_ABORTED') return
     if (url.includes('/api/') || url.includes('/assets/')) {
-      errores.push(`request fallida: ${url} (${request.failure()?.errorText})`)
+      errores.push(`request fallida: ${url} (${motivo})`)
     }
   })
   return errores

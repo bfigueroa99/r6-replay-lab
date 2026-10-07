@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import {
   DataTable,
+  Enlace,
   ErrorBox,
   Loading,
   Panel,
@@ -17,12 +18,28 @@ export default function MatchDetail() {
   const { id } = useParams()
   const { data, error, loading } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
+  const total = data?.rounds?.length || 0
+
+  // las flechas cambian de ronda: revisar una partida son nueve clics en
+  // pestanas chicas, y con el teclado es un gesto
+  useEffect(() => {
+    if (!total) return undefined
+    const onKey = (event) => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target?.tagName)) return
+      if (event.key === 'ArrowRight') setSelected((i) => Math.min(i + 1, total - 1))
+      else if (event.key === 'ArrowLeft') setSelected((i) => Math.max(i - 1, 0))
+      else return
+      event.preventDefault()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [total])
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
   if (!data) return null
 
-  const { match, rounds, scoreboard, my_totals: mine } = data
+  const { match, rounds, scoreboard, my_totals: mine, previous: anterior, next: siguiente } = data
   const round = rounds[Math.min(selected, rounds.length - 1)]
 
   return (
@@ -38,9 +55,21 @@ export default function MatchDetail() {
             {match.game_version}
           </p>
         </div>
-        <Link className="btn small" to="/partidas">
-          Volver
-        </Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {anterior ? (
+            <Enlace className="btn small" to={`/partidas/${anterior.id}`} title={`${anterior.map} ${anterior.score}`}>
+              ← Anterior
+            </Enlace>
+          ) : null}
+          {siguiente ? (
+            <Enlace className="btn small" to={`/partidas/${siguiente.id}`} title={`${siguiente.map} ${siguiente.score}`}>
+              Siguiente →
+            </Enlace>
+          ) : null}
+          <Enlace className="btn small" to="/partidas">
+            Volver
+          </Enlace>
+        </div>
       </div>
 
       {match.warnings?.length ? (
@@ -68,7 +97,7 @@ export default function MatchDetail() {
         />
       </div>
 
-      <Panel title="Rondas" hint="Clic en una ronda para ver su timeline.">
+      <Panel title="Rondas" hint="Clic en una ronda para ver su timeline. Las flechas ← → también cambian de ronda.">
         <div className="round-tabs">
           {rounds.map((r, i) => (
             <button
@@ -116,7 +145,7 @@ export default function MatchDetail() {
                   left: true,
                   render: (row) =>
                     row.player_id ? (
-                      <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
+                      <Enlace to={`/jugadores/${row.player_id}`}>{row.username}</Enlace>
                     ) : (
                       row.username
                     ),
@@ -164,7 +193,7 @@ export default function MatchDetail() {
               left: true,
               render: (row) =>
                 row.player_id ? (
-                  <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
+                  <Enlace to={`/jugadores/${row.player_id}`}>{row.username}</Enlace>
                 ) : (
                   row.username
                 ),
@@ -197,26 +226,38 @@ export default function MatchDetail() {
 
 function Timeline({ round }) {
   const mineTeam = new Set(round.players.filter((p) => p.team_index === myTeam(round)).map((p) => p.username))
+  const yo = round.players.find((p) => p.is_me)?.username
+  // el operador de cada quien en esta ronda: el feed del .rec no lo trae en el
+  // evento, pero el scoreboard de la ronda si
+  const operadorDe = Object.fromEntries(round.players.map((p) => [p.username, p.operator]))
 
   if (!round.events.length) {
     return <p className="note">Esta ronda no registro eventos en el feed.</p>
   }
 
+  const Quien = ({ nombre }) => (
+    <span className={`who ${nombre === yo ? 'yo' : ''}`}>
+      {nombre}
+      {operadorDe[nombre] ? <span className="op"> ({operadorDe[nombre]})</span> : null}
+    </span>
+  )
+
   return (
     <ul className="timeline">
       {round.events.map((event) => {
         const actorIsMine = mineTeam.has(event.actor)
-        const cls = event.kind === 'Kill' ? (actorIsMine ? 'mine' : 'against') : ''
+        const meToca = event.actor === yo || event.target === yo
+        const cls = `${event.kind === 'Kill' ? (actorIsMine ? 'mine' : 'against') : ''} ${meToca ? 'me' : ''}`
         return (
-          <li key={event.order} className={cls}>
+          <li key={event.order} className={cls.trim()}>
             <span className="clock">{event.clock_raw || '—'}</span>
             {event.kind === 'Kill' ? (
               <>
-                <span className="who">{event.actor}</span> mato a <span className="who">{event.target}</span>
+                <Quien nombre={event.actor} /> mato a <Quien nombre={event.target} />
               </>
             ) : event.kind === 'Death' ? (
               <>
-                <span className="who">{event.actor}</span> murio
+                <Quien nombre={event.actor} /> murio
               </>
             ) : (
               <>

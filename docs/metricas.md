@@ -15,6 +15,7 @@ aca esta la definicion exacta.
 | **KPR** | bajas / rondas. Mas honesto que el K/D porque no premia esconderse. Referencia razonable en ranked: 0.7-0.9. |
 | **HS%** | headshots / bajas. El replay marca el headshot en cada kill. |
 | **Sobrevives** | Rondas donde no moriste / rondas jugadas. |
+| **Racha** | Partidas seguidas con el mismo resultado, de la mas reciente hacia atras y sobre las partidas que pasan los filtros. Un empate o una partida incompleta la corta: no es ni victoria ni derrota, y seguir contando a traves de el seria inventar. El Resumen la muestra desde 2 partidas. |
 
 ## Rating
 
@@ -161,6 +162,7 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | **Sitio** | El sitio de bomba, tal como lo nombra el juego (`2F Gym, 2F Bedroom`). En defensa es tu setup; en ataque es lo que estas atacando. |
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
+| **Pick rate** | Rondas con ese operador / todas tus rondas de **su lado** que pasan los filtros. El denominador no cambia con la muestra minima de la tabla: sacar los operadores de pocas rondas no infla a los que quedan. |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
 | **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
 | **Rating** | Aporte por ronda contra tu propio promedio. Aparece en casi todas las tablas. Ver la seccion Rating. |

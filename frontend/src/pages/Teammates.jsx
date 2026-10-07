@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
@@ -7,6 +6,7 @@ import {
   Bar,
   DataTable,
   EmptyState,
+  Enlace,
   ErrorBox,
   Loading,
   Panel,
@@ -76,7 +76,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
               key: 'username',
               label: 'Compañero',
               left: true,
-              render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+              render: (row) => <Enlace to={`/jugadores/${row.player_id}`}>{row.username}</Enlace>,
             },
             { key: 'rounds', label: 'Rondas juntos' },
             {
@@ -124,9 +124,9 @@ export default function Teammates({ filters, setFilters, runImport, importing })
               key: 'played_at',
               label: 'Cuando',
               render: (row) => (
-                <Link to={`/partidas/${row.match_id}`}>
+                <Enlace to={`/partidas/${row.match_id}`}>
                   {row.played_at.slice(5, 16).replace('T', ' ')}
-                </Link>
+                </Enlace>
               ),
             },
             { key: 'match', label: 'Mapa' },

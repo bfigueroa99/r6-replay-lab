@@ -198,3 +198,35 @@ class OrderingTests(TestCase):
         for insight in build_insights()["insights"]:
             self.assertTrue(insight["action"], insight["key"])
             self.assertTrue(insight["title"], insight["key"])
+
+
+class EnlacesTests(TestCase):
+    """Cada senal trae los filtros que dejan a la vista las rondas que la respaldan."""
+
+    def test_todas_traen_el_campo_aunque_este_vacio(self):
+        seed(24)
+        for insight in build_insights()["insights"]:
+            self.assertIn("filters", insight)
+            self.assertIsInstance(insight["filters"], dict)
+
+    def test_el_peor_mapa_apunta_a_su_slug(self):
+        seed(20, index=0, map_name="Club House", won_round=True)
+        seed(20, index=1, map_name="Border", won_round=False)
+        insight = find(build_insights(), "mapa-debil")
+        self.assertIsNotNone(insight)
+        self.assertEqual(insight["filters"], {"map": "border"})
+        self.assertEqual(find(build_insights(), "mapa-fuerte")["filters"], {"map": "club-house"})
+
+    def test_el_desbalance_apunta_al_lado_flojo(self):
+        seed(30, index=0, side="Attack", won_round=True)
+        seed(30, index=1, side="Defense", won_round=False)
+        insight = find(build_insights(), "desbalance-lados")
+        self.assertIsNotNone(insight)
+        self.assertEqual(insight["filters"], {"side": "Defense"})
+
+    def test_el_operador_debil_apunta_al_operador(self):
+        seed(20, index=0, operator="Zofia", won_round=True, kills=2)
+        seed(20, index=1, operator="Ash", won_round=False, kills=0)
+        insight = find(build_insights(), "operador-debil")
+        self.assertIsNotNone(insight)
+        self.assertEqual(insight["filters"], {"operator": "Ash"})

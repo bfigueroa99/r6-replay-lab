@@ -1,12 +1,13 @@
 import React, { Suspense, lazy } from 'react'
-import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
+import { EnlaceInsight } from '../components/Insight.jsx'
 import {
   Bar,
   DataTable,
   EmptyState,
+  Enlace,
   ErrorBox,
   Loading,
   Panel,
@@ -32,7 +33,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
     return <EmptyState onImport={runImport} importing={importing} />
   }
 
-  const { attack, defense, recent_form: form, data_health: health } = overview.data
+  const { attack, defense, recent_form: form, data_health: health, streak: racha } = overview.data
   const topInsights = (coach.data?.insights || []).filter((i) => i.severity !== 'positivo').slice(0, 3)
   const series = (trends.data?.by_match || []).map((row, i) => ({
     ...row,
@@ -47,6 +48,17 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           <h1>Resumen</h1>
           <p>
             {total.matches} partidas · {total.rounds} rondas analizadas
+            {racha?.length >= 2 ? (
+              <>
+                {' · '}
+                <span
+                  className={`chip ${racha.result === 'victoria' ? 'win' : 'loss'}`}
+                  title="Partidas seguidas con el mismo resultado, de la más reciente hacia atrás. Un empate la corta."
+                >
+                  racha: {racha.length} {racha.result === 'victoria' ? 'victorias' : 'derrotas'}
+                </span>
+              </>
+            ) : null}
           </p>
         </div>
       </div>
@@ -108,17 +120,17 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           />
         </Panel>
 
-        <Panel title="Ultimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
+        <Panel title="Ultimas partidas" right={<Enlace className="btn small" to="/partidas">Ver todas</Enlace>}>
           <div className="form-row" style={{ marginBottom: 12 }}>
             {form.map((match) => (
-              <Link
+              <Enlace
                 key={match.id}
                 to={`/partidas/${match.id}`}
                 className={`form-dot ${match.won === null ? 'draw' : match.won ? 'win' : 'loss'}`}
                 title={`${match.map} ${match.score} · ${match.kills}/${match.deaths} · ${match.played_at.slice(0, 16).replace('T', ' ')}`}
               >
                 {match.won === null ? '=' : match.won ? 'V' : 'D'}
-              </Link>
+              </Enlace>
             ))}
           </div>
           <DataTable
@@ -126,7 +138,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               {
                 key: 'map',
                 label: 'Mapa',
-                render: (row) => <Link to={`/partidas/${row.id}`}>{row.map}</Link>,
+                render: (row) => <Enlace to={`/partidas/${row.id}`}>{row.map}</Enlace>,
               },
               { key: 'score', label: 'Marcador', sortable: false },
               { key: 'kills', label: 'K' },
@@ -156,12 +168,15 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       ) : null}
 
       {topInsights.length ? (
-        <Panel title="Lo que hay que corregir" right={<Link className="btn small" to="/coach">Ver todo el analisis</Link>}>
+        <Panel title="Lo que hay que corregir" right={<Enlace className="btn small" to="/coach">Ver todo el analisis</Enlace>}>
           {topInsights.map((insight) => (
             <div key={insight.key} className={`insight ${insight.severity}`}>
               <h3>{insight.title}</h3>
               <p>{insight.detail}</p>
               <div className="action">{insight.action}</div>
+              <div className="meta">
+                <EnlaceInsight insight={insight} filters={filters} />
+              </div>
             </div>
           ))}
         </Panel>

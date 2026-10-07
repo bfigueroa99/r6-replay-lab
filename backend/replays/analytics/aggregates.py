@@ -244,7 +244,39 @@ def overview(**filters) -> dict:
         "attack": attack,
         "defense": defense,
         "recent_form": recent_form(**filters),
+        "streak": streak(**filters),
     }
+
+
+def streak(**filters) -> dict:
+    """Racha actual: cuantas partidas seguidas llevas con el mismo resultado.
+
+    Se cuenta sobre las partidas que pasan los filtros, de la mas reciente hacia
+    atras, y se corta en la primera con otro resultado. Un empate o una partida
+    incompleta no es ni victoria ni derrota: corta la racha igual que un cambio
+    de resultado, porque seguir contando a traves de el seria inventar.
+    """
+    filas = (
+        base_queryset(**filters)
+        .values_list("round__match_id", "round__match__won", "round__match__played_at")
+        .order_by("-round__match__played_at", "-round__match_id")
+    )
+    resultado: str | None = None
+    largo = 0
+    visto: set[int] = set()
+    for match_id, won, _ in filas:
+        if match_id in visto:
+            continue
+        visto.add(match_id)
+        actual = None if won is None else ("victoria" if won else "derrota")
+        if resultado is None:
+            if actual is None:
+                break
+            resultado = actual
+        if actual != resultado:
+            break
+        largo += 1
+    return {"result": resultado if largo else None, "length": largo}
 
 
 #: Campos de Match que viajan en el group by de `recent_form`. Todos dependen
@@ -316,15 +348,28 @@ def by_site(min_rounds: int = 1, **filters) -> list[dict]:
     return group_by(
         qs,
         "round__match__map_name",
+        "round__match__map_slug",
         "round__site",
-        labels=("map", "site"),
+        labels=("map", "slug", "site"),
         min_rounds=min_rounds,
     )
 
 
 def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
+    """Tus operadores, con que tan seguido eliges cada uno dentro de su lado.
+
+    El pick rate se calcula contra **todas** las rondas de ese lado que pasan
+    los filtros, no solo las de los operadores que superan `min_rounds`: si no,
+    sacar los operadores de poca muestra inflaria el porcentaje de los demas.
+    """
     qs = base_queryset(**filters).exclude(operator="")
-    return group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    por_lado = {
+        fila["side"]: fila["n"] for fila in qs.values("side").annotate(n=Count("id"))
+    }
+    rows = group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    for row in rows:
+        row["pick_pct"] = _pct(row["rounds"], por_lado.get(row["side"]))
+    return rows
 
 
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
@@ -333,8 +378,9 @@ def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     return group_by(
         qs,
         "round__match__map_name",
+        "round__match__map_slug",
         "spawn",
-        labels=("map", "spawn"),
+        labels=("map", "slug", "spawn"),
         min_rounds=min_rounds,
     )
 

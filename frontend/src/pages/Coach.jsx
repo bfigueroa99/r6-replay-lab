@@ -3,6 +3,7 @@ import React from 'react'
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
 import { EmptyState, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import { EnlaceInsight } from '../components/Insight.jsx'
 
 const GROUPS = [
   { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
@@ -47,6 +48,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
                   <b>Que hacer:</b> {insight.action}
                 </div>
                 <div className="meta">
+                  <EnlaceInsight insight={insight} filters={filters} />
                   {insight.metric ? (
                     <span>
                       {insight.metric}: <b>{format(insight.value)}</b>

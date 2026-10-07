@@ -11,6 +11,9 @@ from . import aggregates as agg
 
 SEVERITY_ORDER = {"alta": 0, "media": 1, "baja": 2, "positivo": 3}
 
+#: La etiqueta en espanol de cada lado -> el valor que entiende el filtro `side`.
+_SIDE = {"ataque": "Attack", "defensa": "Defense"}
+
 
 def _insight(
     key: str,
@@ -24,7 +27,14 @@ def _insight(
     baseline=None,
     sample: int = 0,
     scope: str = "general",
+    filters: dict | None = None,
 ) -> dict:
+    """Arma un insight.
+
+    `filters` son los filtros de la API que dejan a la vista **las rondas que
+    respaldan la frase** (el mapa, el lado, el operador). La UI los convierte en
+    un enlace: una senal que no se puede ir a mirar es una opinion mas.
+    """
     return {
         "key": key,
         "severity": severity,
@@ -36,6 +46,7 @@ def _insight(
         "baseline": baseline,
         "sample": sample,
         "scope": scope,
+        "filters": {k: v for k, v in (filters or {}).items() if v},
     }
 
 
@@ -150,6 +161,7 @@ def _opening_duels(overall, attack, defense) -> list[dict]:
                     baseline=50,
                     sample=d,
                     scope=label,
+                    filters={"side": _SIDE[label]},
                 )
             )
     return out
@@ -216,6 +228,7 @@ def _early_deaths(attack, defense) -> list[dict]:
                     baseline=limit,
                     sample=deaths,
                     scope=label,
+                    filters={"side": _SIDE[label]},
                 )
             )
     return out
@@ -263,6 +276,7 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                     baseline=25,
                     sample=fila["deaths"],
                     scope=label,
+                    filters={"side": _SIDE[label]},
                 )
             )
 
@@ -285,6 +299,7 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                 baseline=25,
                 sample=ataque["deaths"],
                 scope="ataque",
+                filters={"side": "Attack"},
             )
         )
     return out
@@ -318,6 +333,7 @@ def _sides(attack, defense) -> list[dict]:
             baseline=strong_wr,
             sample=min(ar, dr),
             scope=weak,
+            filters={"side": _SIDE[weak]},
         )
     ]
 
@@ -424,6 +440,7 @@ def _maps(overall, **filters) -> list[dict]:
                 baseline=base,
                 sample=worst["rounds"],
                 scope=worst["map"],
+                filters={"map": worst["slug"]},
             )
         )
     best = max(rows, key=lambda r: r["winrate"])
@@ -440,6 +457,7 @@ def _maps(overall, **filters) -> list[dict]:
                 baseline=base,
                 sample=best["rounds"],
                 scope=best["map"],
+                filters={"map": best["slug"]},
             )
         )
     return out
@@ -467,6 +485,7 @@ def _sites(overall, **filters) -> list[dict]:
             baseline=base,
             sample=worst["rounds"],
             scope=f"{worst['map']} · {worst['site']}",
+            filters={"map": worst["slug"], "site": worst["site"]},
         )
     ]
 
@@ -499,6 +518,7 @@ def _operators(overall, **filters) -> list[dict]:
                 baseline=base_wr,
                 sample=worst["rounds"],
                 scope=worst["operator"],
+                filters={"operator": worst["operator"]},
             )
         )
     good = [r for r in rows if r["winrate"] > base_wr + 10]
@@ -516,6 +536,7 @@ def _operators(overall, **filters) -> list[dict]:
                 baseline=base_wr,
                 sample=best["rounds"],
                 scope=best["operator"],
+                filters={"operator": best["operator"]},
             )
         )
     return out
@@ -542,6 +563,7 @@ def _spawns(overall, **filters) -> list[dict]:
             baseline=base,
             sample=worst["rounds"],
             scope=f"{worst['map']} · {worst['spawn']}",
+            filters={"map": worst["slug"], "side": "Attack"},
         )
     ]
 

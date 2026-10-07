@@ -585,6 +585,56 @@ dar por bueno el corte de 10, y si alguna diferencia pasa una banda de ruido
 como la del #10. Si pasa, una regla del coach del estilo de `operador-rival`
 pero sobre rondas.
 
+### 29. Filtros en la URL [x]
+
+Hecho: la barra de filtros escribe en la query string (`/?map=border&side=Attack`)
+en vez de en un estado de React. Recargar no los pierde, el menu los conserva al
+cambiar de pagina, el enlace se puede pegar en un chat y el boton de atras hace
+lo que uno espera. `frontend/src/filtros.js` traduce en los dos sentidos (17
+tests) y `Enlace` (en `ui.jsx`) es el `Link` que los conserva en los enlaces
+internos: abrir un companero desde "Border" sigue siendo en Border, y la pagina
+de jugador ahora respeta los filtros igual que las demas.
+
+### 30. Senales del coach que llevan a sus rondas [x]
+
+Hecho: cada insight trae `filters` (el mapa, el lado, el operador, el sitio) y
+la UI lo convierte en **Ver esas rondas →**, que abre el Resumen con esos
+filtros encima de los activos. Las de rival (`operador-rival`, `nemesis`) van a
+Duelos, porque el rival no es un filtro de la API. Una senal que no se puede ir
+a mirar es una opinion mas; esta era la queja mas facil de arreglar del #8.
+`by_site` y `by_spawn` ahora traen el `slug` del mapa (lo necesita el enlace).
+
+### 31. Vigia: la app importa sola [x]
+
+Hecho: mientras la app esta abierta pregunta cada 30 s a `/api/import/status/`
+si hay carpetas **listas** (`ready`: pendientes y con `IMPORT_QUIET_SECONDS` sin
+cambios, para no importar la partida que se esta jugando) y lanza la misma
+importacion del boton. Es `manage.py watch_replays` sin consola, que es lo que
+la app instalada necesitaba: abrirla y ver la ultima partida. Viene encendido y
+se apaga en Datos (se guarda en localStorage). Lo intentado se recuerda por
+sesion para que una carpeta corrupta no dispare una importacion fallida cada
+media minuto. Al terminar una importacion con cambios, `invalidar()` sube la
+version de los datos y todo `useApi` vuelve a leer: antes el Resumen quedaba
+con los numeros viejos hasta cambiar de pagina.
+
+### 32. Partidas con filtros y vecinas [x]
+
+Hecho: la lista de partidas entiende mapa, periodo, sesion y ranked (los mismos
+de la barra; lado y operador no aplican a una partida) mas `result`
+(victoria, derrota, empate). El detalle trae `previous` y `next` para saltar a
+la partida anterior o siguiente sin volver a la lista, las flechas ← → cambian
+de ronda, el timeline marca los eventos donde estas tu y pone el operador de
+cada quien al lado del nombre.
+
+### 33. Racha, pick rate y detalles de la UI [x]
+
+Hecho: `streak` en el overview (fila en `metricas.md`) y chip en el Resumen;
+`pick_pct` en `by_operator` (fila en `metricas.md`) y columna en Operadores;
+barra de progreso en la cabecera mientras haya una peticion en vuelo, para que
+cambiar un filtro no deje la tabla vieja sin ninguna senal; el aviso de error
+distingue "no hay backend" de "el backend respondio un error"; el flash de la
+importacion se puede cerrar.
+
 ## Ideas descartadas
 
 | Idea | Por que no |

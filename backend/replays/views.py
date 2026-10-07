@@ -7,7 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from django.conf import settings
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Count, Q, QuerySet, Sum
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -20,7 +20,7 @@ from . import unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
-from .ingest import find_match_folders, import_job, start_import
+from .ingest import find_match_folders, import_job, pending_folders, start_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
 from .retag import retag
 
@@ -271,11 +271,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
     limit = _int_param(request, "limit", 50, minimum=1, maximum=200)
     offset = _int_param(request, "offset", 0, minimum=0, maximum=1_000_000)
 
-    qs = Match.objects.all()
-    if request.GET.get("map"):
-        qs = qs.filter(map_slug=request.GET["map"])
-    if request.GET.get("match_type"):
-        qs = qs.filter(match_type=request.GET["match_type"])
+    qs = _matches_filtradas(_filters(request), request.GET.get("result", ""))
     total = qs.count()
     page = list(qs[offset : offset + limit])
 
@@ -329,6 +325,36 @@ def match_list(request: HttpRequest) -> JsonResponse:
             }
         )
     return _ok({"total": total, "limit": limit, "offset": offset, "matches": rows})
+
+
+#: Resultado de la partida -> filtro sobre `won`. Una incompleta tambien tiene
+#: `won` en None, asi que "empate" las incluye: la UI lo dice en la fila.
+_RESULTADOS = {"victoria": Q(won=True), "derrota": Q(won=False), "empate": Q(won=None)}
+
+
+def _matches_filtradas(filters: dict, result: str = "") -> QuerySet[Match]:
+    """Los mismos filtros de la barra, aplicados a las partidas y no a las rondas.
+
+    Lado, operador y sitio no aplican: una partida tiene los dos lados y diez
+    operadores. Lo que si, se lee igual que en `aggregates.base_queryset`, para
+    que la lista de partidas y el resumen cuenten las mismas.
+    """
+    qs = Match.objects.all()
+    if filters.get("map"):
+        qs = qs.filter(map_slug=filters["map"])
+    if filters.get("match_type"):
+        qs = qs.filter(match_type=filters["match_type"])
+    if filters.get("ranked_only"):
+        qs = qs.filter(match_type="Ranked")
+    if filters.get("since"):
+        qs = qs.filter(played_at__gte=filters["since"])
+    if filters.get("until"):
+        qs = qs.filter(played_at__lte=filters["until"])
+    if filters.get("session") not in (None, ""):
+        qs = qs.filter(id__in=agg.session_match_ids(filters["session"]))
+    if result in _RESULTADOS:
+        qs = qs.filter(_RESULTADOS[result])
+    return qs
 
 
 @require_GET
@@ -408,8 +434,25 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
 
+    # la partida anterior y la siguiente en el tiempo, para pasar de una a otra
+    # sin volver a la lista. El desempate por id es para dos partidas con el
+    # mismo timestamp, que en la practica no pasa pero en los tests si.
+    misma_hora = Q(played_at=match.played_at)
+    anterior = (
+        Match.objects.filter(Q(played_at__lt=match.played_at) | (misma_hora & Q(id__lt=match.id)))
+        .order_by("-played_at", "-id")
+        .first()
+    )
+    siguiente = (
+        Match.objects.filter(Q(played_at__gt=match.played_at) | (misma_hora & Q(id__gt=match.id)))
+        .order_by("played_at", "id")
+        .first()
+    )
+
     return _ok(
         {
+            "previous": _vecina(anterior),
+            "next": _vecina(siguiente),
             "match": {
                 "id": match.id,
                 "match_id": match.match_id,
@@ -432,6 +475,16 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "my_totals": my_totals,
         }
     )
+
+
+def _vecina(match: Match | None) -> dict | None:
+    if match is None:
+        return None
+    return {
+        "id": match.id,
+        "map": match.map_name,
+        "score": f"{match.my_score}-{match.opponent_score}",
+    }
 
 
 def _match_scoreboard(match: Match) -> list[dict]:
@@ -585,6 +638,11 @@ def import_progress(request: HttpRequest) -> JsonResponse:
 def import_status(request: HttpRequest) -> JsonResponse:
     folders = find_match_folders(settings.REPLAY_DIR)
     known = set(Match.objects.values_list("folder", flat=True))
+    # `pending` es todo lo que falta; `ready` lo que ya se puede importar, que
+    # deja fuera la partida que se esta jugando ahora mismo. La UI que importa
+    # sola mira `ready`: si mirara `pending` dispararia una importacion vacia
+    # cada vez que revisa mientras juegas.
+    listas = pending_folders(settings.REPLAY_DIR, quiet_seconds=settings.IMPORT_QUIET_SECONDS)
     return _ok(
         {
             "replay_dir": settings.REPLAY_DIR,
@@ -592,6 +650,8 @@ def import_status(request: HttpRequest) -> JsonResponse:
             "folders_on_disk": len(folders),
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
+            "ready": [f.name for f in listas][:50],
+            "quiet_seconds": settings.IMPORT_QUIET_SECONDS,
             "log": [_import_log_row(e) for e in ImportLog.objects.all()[:25]],
         }
     )

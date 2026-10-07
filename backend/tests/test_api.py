@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+from pathlib import Path
 
 from django.test import TestCase
 
@@ -245,3 +246,85 @@ class CarpetaDeReplaysTests(TestCase):
             self.assertFalse(self.client.get("/api/import/status/").json()["replay_dir_exists"])
         with tempfile.TemporaryDirectory() as tmp, self.settings(REPLAY_DIR=tmp):
             self.assertTrue(self.client.get("/api/health/").json()["replay_dir_exists"])
+
+
+class FiltrosDePartidasTests(TestCase):
+    """La lista de partidas entiende los mismos filtros que el resto, mas el resultado."""
+
+    def setUp(self):
+        for i, (mapa, ganada) in enumerate(
+            (("Bank", True), ("Bank", False), ("Border", True), ("Border", None))
+        ):
+            match = make_match(
+                map_name=mapa,
+                index=i,
+                my_score=4 if ganada else 3 if ganada is None else 1,
+                opponent_score=1 if ganada else 3 if ganada is None else 4,
+                match_type="Ranked" if i < 3 else "QuickMatch",
+            )
+            match.won = ganada
+            match.save()
+            make_round_player(make_round(match, 0, won=bool(ganada)))
+
+    def _ids(self, query: str) -> int:
+        return self.client.get(f"/api/matches/?{query}").json()["total"]
+
+    def test_por_mapa(self):
+        self.assertEqual(self._ids("map=bank"), 2)
+
+    def test_por_resultado(self):
+        self.assertEqual(self._ids("result=victoria"), 2)
+        self.assertEqual(self._ids("result=derrota"), 1)
+        self.assertEqual(self._ids("result=empate"), 1)
+        self.assertEqual(self._ids("result=cualquiera"), 4)
+
+    def test_solo_ranked(self):
+        self.assertEqual(self._ids("ranked_only=1"), 3)
+
+    def test_por_fecha(self):
+        # las partidas van una hora despues de la anterior desde las 20:00
+        self.assertEqual(self._ids("since=2026-09-01T22:00"), 2)
+        self.assertEqual(self._ids("until=2026-09-01"), 4)
+
+    def test_combinados(self):
+        self.assertEqual(self._ids("map=border&result=victoria"), 1)
+
+
+class CarpetasListasTests(TestCase):
+    """El estado de importacion separa lo pendiente de lo que ya se puede importar."""
+
+    def test_una_partida_en_curso_esta_pendiente_pero_no_lista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp) / "Match-en-curso"
+            carpeta.mkdir()
+            (carpeta / "R01.rec").write_bytes(b"x")
+            with self.settings(REPLAY_DIR=tmp, IMPORT_QUIET_SECONDS=3600):
+                data = self.client.get("/api/import/status/").json()
+                self.assertEqual(data["pending"], ["Match-en-curso"])
+                self.assertEqual(data["ready"], [])
+                self.assertEqual(data["quiet_seconds"], 3600)
+            with self.settings(REPLAY_DIR=tmp, IMPORT_QUIET_SECONDS=0):
+                data = self.client.get("/api/import/status/").json()
+                self.assertEqual(data["ready"], ["Match-en-curso"])
+
+
+class PartidasVecinasTests(TestCase):
+    """El detalle enlaza la partida anterior y la siguiente en el tiempo."""
+
+    def setUp(self):
+        self.partidas = [make_match(index=i, map_name=m) for i, m in enumerate(("Bank", "Border", "Villa"))]
+        for match in self.partidas:
+            make_round_player(make_round(match, 0))
+
+    def _detalle(self, match):
+        return self.client.get(f"/api/matches/{match.id}/").json()
+
+    def test_la_del_medio_tiene_las_dos(self):
+        data = self._detalle(self.partidas[1])
+        self.assertEqual(data["previous"]["map"], "Bank")
+        self.assertEqual(data["next"]["map"], "Villa")
+        self.assertEqual(data["next"]["score"], "4-2")
+
+    def test_los_extremos_no_inventan_vecinas(self):
+        self.assertIsNone(self._detalle(self.partidas[0])["previous"])
+        self.assertIsNone(self._detalle(self.partidas[-1])["next"])

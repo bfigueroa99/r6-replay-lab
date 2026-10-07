@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, pct } from '../components/ui.jsx'
+import { Bar, DataTable, EmptyState, Enlace, ErrorBox, Loading, Panel, pct } from '../components/ui.jsx'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
@@ -177,7 +176,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               key: 'username',
               label: 'Rival',
               left: true,
-              render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+              render: (row) => <Enlace to={`/jugadores/${row.player_id}`}>{row.username}</Enlace>,
             },
             { key: 'duels', label: 'Duelos' },
             { key: 'kills', label: 'Le ganas' },

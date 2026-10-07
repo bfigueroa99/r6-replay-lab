@@ -184,3 +184,29 @@ class SynergyTests(TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["username"], "amigo-nuevo")
         self.assertEqual(rows[0]["rounds"], 4)
+
+
+class PickRateTests(TestCase):
+    """Que tan seguido eliges cada operador dentro de su lado."""
+
+    def setUp(self):
+        match = make_match(map_name="Bank", index=0)
+        for n in range(4):
+            make_round_player(make_round(match, n, side="Attack"), operator="Zofia")
+        make_round_player(make_round(match, 4, side="Attack"), operator="Ash")
+        make_round_player(make_round(match, 5, side="Defense"), side="Defense", operator="Mute")
+
+    def test_es_sobre_las_rondas_del_lado(self):
+        filas = {r["operator"]: r for r in agg.by_operator(min_rounds=1)}
+        self.assertEqual(filas["Zofia"]["pick_pct"], 80.0)
+        self.assertEqual(filas["Ash"]["pick_pct"], 20.0)
+        self.assertEqual(filas["Mute"]["pick_pct"], 100.0)
+
+    def test_la_muestra_minima_no_infla_a_los_que_quedan(self):
+        filas = {r["operator"]: r for r in agg.by_operator(min_rounds=2)}
+        self.assertNotIn("Ash", filas)
+        self.assertEqual(filas["Zofia"]["pick_pct"], 80.0)
+
+    def test_los_sitios_y_spawns_traen_el_slug_del_mapa(self):
+        self.assertEqual(agg.by_site(min_rounds=1)[0]["slug"], "bank")
+        self.assertEqual(agg.by_spawn(min_rounds=1)[0]["slug"], "bank")

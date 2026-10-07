@@ -63,6 +63,13 @@ function Table({ rows, nombre }) {
         { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
         { key: 'rounds', label: 'Rondas' },
         {
+          key: 'pick_pct',
+          label: 'Pick',
+          digits: 0,
+          suffix: '%',
+          help: 'Qué tan seguido eliges este operador: rondas con él sobre todas tus rondas de ese lado, con los filtros activos.',
+        },
+        {
           key: 'winrate',
           label: 'Ganadas',
           render: (row) => (

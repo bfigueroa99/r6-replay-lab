@@ -13,7 +13,7 @@ const rango = (row) =>
     ? fecha(row.first_seen)
     : `${fecha(row.first_seen)} a ${fecha(row.last_seen)}`
 
-export default function Datos() {
+export default function Datos({ vigilar, setVigilar }) {
   const unknown = useApi('/unknown/')
   const status = useApi('/import/status/')
   const [labels, setLabels] = useState({ maps: {}, operators: {} })
@@ -166,7 +166,26 @@ export default function Datos() {
       <Panel
         title="Importacion"
         hint={`Carpeta vigilada: ${status.data?.replay_dir || '—'}`}
+        right={
+          setVigilar ? (
+            <label className="check vigia-toggle" title="Es lo mismo que manage.py watch_replays, pero desde la app.">
+              <input
+                type="checkbox"
+                checked={Boolean(vigilar)}
+                onChange={(event) => setVigilar(event.target.checked)}
+              />
+              Importar sola mientras la app esté abierta
+            </label>
+          ) : null
+        }
       >
+        {setVigilar ? (
+          <p className="note" style={{ marginTop: 0 }}>
+            {vigilar
+              ? `La app revisa la carpeta cada 30 s e importa cada partida nueva en cuanto lleva ${status.data?.quiet_seconds ?? 60} s sin cambios (la que estás jugando se espera). Lo que falle queda en el registro de abajo.`
+              : 'Apagado: las partidas nuevas se importan solo con el botón de arriba.'}
+          </p>
+        ) : null}
         {status.data && !status.data.replay_dir_exists ? (
           <p className="note" style={{ marginTop: 0 }}>
             Esa carpeta no existe en este PC. Si Siege está instalado en otro lado, crea un
@@ -187,9 +206,13 @@ export default function Datos() {
             <div className="label">Pendientes</div>
             <div className="value">{status.data?.pending?.length ?? '—'}</div>
             <div className="sub">
-              {status.data?.pending?.length
-                ? 'Dale a Importar replays arriba'
-                : 'Nada esperando'}
+              {!status.data?.pending?.length
+                ? 'Nada esperando'
+                : status.data.ready?.length < status.data.pending.length
+                  ? `${status.data.pending.length - status.data.ready.length} todavía escribiéndose`
+                  : vigilar
+                    ? 'Se importan solas en la próxima revisión'
+                    : 'Dale a Importar replays arriba'}
             </div>
           </div>
         </div>

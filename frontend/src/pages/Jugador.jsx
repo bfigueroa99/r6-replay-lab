@@ -1,10 +1,13 @@
 import React from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import Filters from '../components/Filters.jsx'
+import { conFiltros, hayFiltros } from '../filtros.js'
 import {
   Bar,
   DataTable,
+  Enlace,
   ErrorBox,
   Loading,
   Panel,
@@ -20,9 +23,11 @@ const fecha = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().join('-') : 
 /** Con menos de 20 rondas la comparacion es ruido, y hay que decirlo. */
 const MUESTRA_MINIMA = 20
 
-export default function Jugador() {
+export default function Jugador({ filters = {}, setFilters }) {
   const { id } = useParams()
-  const { data, error, loading } = useApi(`/players/${id}/`)
+  // los mismos filtros que el resto: "con esta persona en Border" es una
+  // pregunta tan valida como "con esta persona"
+  const { data, error, loading } = useApi(`/players/${id}/`, filters)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -54,10 +59,12 @@ export default function Jugador() {
             {player.aliases?.length ? ` · antes: ${player.aliases.join(', ')}` : ''}
           </p>
         </div>
-        <Link className="btn small" to="/companeros">
+        <Enlace className="btn small" to={conFiltros('/companeros', filters)}>
           Volver
-        </Link>
+        </Enlace>
       </div>
+
+      {setFilters ? <Filters value={filters} onChange={setFilters} showOperator={false} /> : null}
 
       <Panel
         title="Tu rendimiento con y sin"
@@ -179,7 +186,7 @@ export default function Jugador() {
               key: 'played_at',
               label: 'Cuando',
               render: (row) => (
-                <Link to={`/partidas/${row.id}`}>{row.played_at.slice(5, 16).replace('T', ' ')}</Link>
+                <Enlace to={`/partidas/${row.id}`}>{row.played_at.slice(5, 16).replace('T', ' ')}</Enlace>
               ),
             },
             { key: 'map', label: 'Mapa' },
@@ -211,7 +218,8 @@ export default function Jugador() {
 
       <p className="note">
         Todo lo de esta pagina sale de tus propios replays: son las rondas que jugaste con o contra
-        esa persona, no su historial completo. {fmt(data.matches.length)} partidas compartidas.
+        esa persona, no su historial completo. {fmt(data.matches.length)} partidas compartidas
+        {hayFiltros(filters) ? ' con los filtros activos' : ''}.
       </p>
     </>
   )

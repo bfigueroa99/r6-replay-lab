@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { useApi } from '../api.js'
 
@@ -23,9 +23,11 @@ const etiquetaSesion = (s) =>
 export default function Filters({
   value,
   onChange,
+  showSide = true,
   showOperator = true,
   showSite = false,
   showSession = false,
+  children,
 }) {
   const { data } = useApi('/filters/')
   const set = (key) => (event) => onChange({ ...value, [key]: event.target.value })
@@ -33,6 +35,12 @@ export default function Filters({
   // el modo vive aca y no en los filtros: hay un momento, entre elegir "entre
   // dos fechas" y escribir la primera, en el que no hay nada que mandar a la API
   const [rangoAbierto, setRangoAbierto] = useState(Boolean(value.since || value.until))
+  // si las fechas llegan despues de montar (un enlace, el boton de atras), el
+  // selector tiene que mostrarlas aunque nadie haya elegido "entre dos fechas"
+  useEffect(() => {
+    if (value.since || value.until) setRangoAbierto(true)
+    else if (value.days) setRangoAbierto(false)
+  }, [value.since, value.until, value.days])
 
   const elegirPeriodo = (event) => {
     const elegido = event.target.value
@@ -52,14 +60,16 @@ export default function Filters({
 
   return (
     <div className="filters">
-      <label>
-        Lado
-        <select value={value.side || ''} onChange={set('side')}>
-          <option value="">Ataque y defensa</option>
-          <option value="Attack">Solo ataque</option>
-          <option value="Defense">Solo defensa</option>
-        </select>
-      </label>
+      {showSide ? (
+        <label>
+          Lado
+          <select value={value.side || ''} onChange={set('side')}>
+            <option value="">Ataque y defensa</option>
+            <option value="Attack">Solo ataque</option>
+            <option value="Defense">Solo defensa</option>
+          </select>
+        </label>
+      ) : null}
 
       <label>
         Mapa
@@ -150,6 +160,8 @@ export default function Filters({
         />
         Solo ranked
       </label>
+
+      {children}
 
       {Object.values(value).some(Boolean) ? (
         <button className="btn small" onClick={limpiar}>
