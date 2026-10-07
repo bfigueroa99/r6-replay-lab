@@ -45,17 +45,31 @@ python3 -c "import django, zstandard" 2>/dev/null || \
 Leer `CLAUDE.md` y `docs/roadmap.md` completos. `docs/metricas.md` y
 `docs/formato-rec.md` solo si la tarea toca metricas o el parser.
 
-Estado en GitHub (herramientas `mcp__github__*`, repo `bfigueroa99/r6-replay-lab`):
+Estado del equipo. Hay dos fuentes y se usan las dos:
 
-- PRs abiertos cuyo titulo empieza con `[equipo-dev]`: son del equipo.
-- PRs abiertos de otros (`mercado/*`, `claude/loop-*`, ramas del humano): **no
-  se tocan**. Se pueden leer como fuente de ideas, nada mas.
-- Los ultimos 5 PRs del equipo, abiertos o cerrados: dicen que areas se
-  trabajaron hace poco (ver rotacion en la fase 2).
+- **Git, siempre disponible.** Las ramas del equipo son `claude/equipo-dev/*`.
+  Trabajo en curso = ramas con ese prefijo que no estan mergeadas en `main`:
 
-Rama de trabajo: la que la sesion indique en sus instrucciones. Si no indica
-ninguna, crear `claude/equipo-dev/<slug-corto>` desde `origin/main`. Siempre
-arrancar desde `origin/main` actualizado, nunca encima de otro PR del equipo.
+  ```bash
+  git fetch origin 'refs/heads/claude/equipo-dev/*:refs/remotes/origin/claude/equipo-dev/*'
+  git branch -r --list 'origin/claude/equipo-dev/*' --no-merged origin/main
+  git log -1 --format='%ci %s' origin/claude/equipo-dev/<rama>   # ultimo commit
+  git log --format='%s' origin/main -- docs/roadmap.md | head -5  # areas recientes
+  ```
+
+- **GitHub, solo si la sesion trae las herramientas `mcp__github__*`** (repo
+  `bfigueroa99/r6-replay-lab`): PRs abiertos cuyo titulo empieza con
+  `[equipo-dev]`, su CI, sus conflictos y los comentarios del humano. Si las
+  herramientas no estan, **no es un bloqueador y no se pierde la iteracion
+  buscandolas**: el equipo trabaja con git solo, no abre PR ni mira CI, y lo
+  dice en una linea del informe. No hay `gh` en las sesiones cloud.
+
+PRs y ramas de otros (`mercado/*`, `claude/loop-*`, ramas del humano): **no se
+tocan**. Se pueden leer como fuente de ideas, nada mas.
+
+Rama de trabajo: `claude/equipo-dev/<area>-<slug>` creada desde `origin/main`
+actualizado, nunca encima de otra rama del equipo. Si las instrucciones de la
+sesion imponen otra rama, se usa esa, y el PR lleva el prefijo igual.
 
 ## Fase 1. Mantenimiento (release manager)
 
@@ -67,15 +81,26 @@ Para cada PR abierto del equipo, del mas viejo al mas nuevo:
 | CI rojo | Reproducir localmente, arreglar la causa, `check.sh`, push. "Flaky" no es diagnostico. |
 | Comentario humano sin responder | Pedido chico y local: implementar y responder. Pedido grande o de diseno: responder con una propuesta concreta y no empujar codigo. |
 | Verde, mergeable, sin pendientes | Nada. |
+| Rama del equipo no mergeada y sin PR (la sesion que la hizo no tenia GitHub) | Si ahora hay herramientas: abrirle el PR con el titulo y cuerpo del mensaje de su ultimo commit. |
+
+Sin herramientas de GitHub, el mantenimiento se reduce a lo que git permite:
+merge de prueba de `origin/main` sobre cada rama del equipo no mergeada; si
+hay conflicto, se resuelve, `check.sh` en verde y push. CI y comentarios
+quedan para una iteracion que si las tenga.
 
 Si un PR del equipo lleva mas de 14 dias sin actividad del humano, no se cierra
 ni se insiste: se deja verde y se menciona en el informe final.
 
 ## Fase 2. Puerta de trabajo nuevo (product owner)
 
-**Limite de trabajo en curso: 3 PRs abiertos del equipo.** Con 3 o mas, la
-iteracion termina aca con el informe. La cola la vacia el humano mergeando o
-cerrando; abrir mas PRs solo la hace menos revisable.
+**Limite de trabajo en curso: 3.** Cuentan las ramas `claude/equipo-dev/*`
+no mergeadas en `main` con algun commit en los ultimos 14 dias (tengan PR o
+no) y, si hay herramientas de GitHub, los PRs abiertos `[equipo-dev]` que
+vivan en otras ramas. Con 3 o mas, la iteracion termina aca con el informe.
+La cola la vacia el humano mergeando, cerrando o borrando ramas; abrir mas
+solo la hace menos revisable. Las ramas del equipo sin actividad en 14 dias
+no cuentan, pero se listan en el informe para que el humano decida: el equipo
+nunca borra ramas.
 
 Con menos de 3, elegir **una** tarea. Fuentes, en orden de prioridad:
 
@@ -196,10 +221,15 @@ Con sus hallazgos:
    roadmap viaja en el mismo commit que el codigo.
 2. `git push -u origin <rama>`.
 3. PR contra `main` con titulo `[equipo-dev][area] Titulo corto` y el cuerpo
-   de `plantilla-pr.md` de esta carpeta, completo. Sin PR no hay entrega: los
-   commits sueltos en una rama no los ve nadie.
+   de `plantilla-pr.md` de esta carpeta, completo.
 4. `subscribe_pr_activity` sobre el PR nuevo, para atender CI y comentarios
    mientras la sesion viva.
+
+Sin herramientas de GitHub: el ultimo commit de la rama lleva como mensaje el
+titulo del PR y el cuerpo completo de la plantilla, para que la proxima
+iteracion con herramientas (o el humano, con el boton "Compare & pull
+request" que GitHub muestra para ramas recien empujadas) abra el PR sin
+reconstruir nada. El informe dice que la rama quedo lista y sin PR.
 
 ## Fase 9. Informe
 
@@ -212,7 +242,8 @@ entenderse solo. Formato fijo:
 **Entregado:** [titulo del PR](url) | nada, porque <motivo en una linea>
 **Area:** backend | frontend | parser | tests | docs | infra
 **Mantenimiento:** <PR #n: que se hizo> | sin PRs pendientes
-**Cola del equipo:** <n> PRs abiertos (<numeros>)
+**Cola del equipo:** <n> en curso (<PRs o ramas>) | abandonadas: <ramas sin actividad en 14 dias> | ninguna
+**GitHub:** con herramientas | sin herramientas (rama <nombre> lista, PR pendiente de abrir)
 **Descartado esta vez:** <candidato> porque <filtro que fallo>
 **Para el humano:** <decision o pregunta> | nada
 **Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok)
@@ -231,3 +262,4 @@ informe igual se escribe, con `Entregado: nada, cola llena`.
 - Cualquier forma de overlay in-game.
 - Subir archivos `.rec`, bases `.sqlite3` o `.env` al repo.
 - Abrir mas de un PR por iteracion, o abrir uno con `check.sh` en rojo.
+- Borrar ramas remotas, propias o ajenas.
