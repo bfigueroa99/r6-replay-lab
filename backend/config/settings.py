@@ -1,7 +1,8 @@
 """Configuracion de Django para R6 Replay Lab.
 
-Todo lo configurable vive en el archivo .env (copia .env.example). No hay
-servicios externos: SQLite y listo.
+Todo lo configurable vive en el archivo .env (copia .env.example). SQLite y
+listo; el unico servicio externo es la API de Ubisoft, y solo si el .env trae
+una cuenta.
 
 Corre de dos formas y hay que distinguirlas, porque los archivos van a lugares
 distintos:
@@ -179,6 +180,15 @@ SESSION_GAP_MINUTES = env_int("SESSION_GAP_MINUTES", 120)
 #: planillas de Pro League usan hasta 10. Cambiarlo obliga a `manage.py
 #: recompute`, porque los trades se guardan calculados al importar.
 TRADE_WINDOW_SECONDS = float(env("TRADE_WINDOW_SECONDS", "3") or 3)
+
+#: Cuenta de Ubisoft para consultar rango y MMR. Vacias = la app no sale a la
+#: red. Solo se usan para pedir un ticket; lo que se guarda es el ticket.
+UBI_EMAIL = env("UBI_EMAIL")
+UBI_PASSWORD = env("UBI_PASSWORD")
+
+#: Donde queda el ticket de Ubisoft entre consultas, para no loguear en cada una
+#: (Ubisoft bloquea la IP si se loguea muy seguido).
+UBI_SESION_PATH = Path(env("UBI_SESION_PATH", str(DATA_DIR / "ubisoft-sesion.json")))
 
 LOGGING = {
     "version": 1,

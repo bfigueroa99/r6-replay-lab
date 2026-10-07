@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { vigilarConsola } from './consola.js'
+import { BASE_URL } from './entorno.js'
 
 /** Ruta -> el h1 que tiene que aparecer. Son las ocho del menu. */
 const PAGINAS = [
@@ -61,6 +62,43 @@ test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   await expect(page).toHaveURL(/\/jugadores\/\d+$/)
   await expect(page.locator('h1')).not.toBeEmpty()
 
+  expect(errores).toEqual([])
+})
+
+test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const afuera = []
+  page.on('request', (request) => {
+    if (!request.url().startsWith(BASE_URL)) afuera.push(request.url())
+  })
+
+  await page.goto('/')
+  await page.locator('.topbar').getByRole('link', { name: 'BearF99' }).click()
+  await expect(page).toHaveURL(/\/jugadores\/\d+$/)
+  await expect(page.locator('h1')).toContainText('BearF99')
+
+  // el profileID sale de seed_demo, que lo deriva del nick
+  const pid = '14c9dacd-69a1-5ae1-80d8-ce1b96f8948f'
+  await expect(page.getByRole('link', { name: /stats\.cc/ })).toHaveAttribute(
+    'href',
+    `https://stats.cc/siege/BearF99/${pid}`,
+  )
+  await expect(page.getByRole('link', { name: /R6 Tracker/ })).toHaveAttribute(
+    'href',
+    `https://r6.tracker.network/r6siege/profile/ubi/${pid}/overview`,
+  )
+
+  // la consulta guardada por el seed se ve; sin cuenta no hay boton para repetirla
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Temporada en Ubisoft' }),
+  })
+  await expect(panel).toContainText('Oro 1')
+  await expect(panel).toContainText('2950 MMR')
+  await expect(panel).toContainText('Consultado el 01-09-2026 12:00 · temporada Y10S2.')
+  await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
+  await expect(panel.getByRole('button')).toHaveCount(0)
+
+  expect(afuera, 'la app pidio algo fuera de localhost').toEqual([])
   expect(errores).toEqual([])
 })
 

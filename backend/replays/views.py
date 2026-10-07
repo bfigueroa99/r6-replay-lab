@@ -1,4 +1,4 @@
-"""API JSON. Sin DRF a proposito: son vistas de lectura y dos POST locales."""
+"""API JSON. Sin DRF a proposito: son vistas de lectura y tres POST locales."""
 
 from __future__ import annotations
 
@@ -13,10 +13,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
+from externo import ubisoft
 from pydissect.constants import OPERATOR_SIDES
 
 from . import export as exportador
-from . import unknowns
+from . import perfil_externo, unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
@@ -109,6 +110,8 @@ def health(request: HttpRequest) -> JsonResponse:
             "trade_window": settings.TRADE_WINDOW_SECONDS,
             "replay_dir_folders": len(find_match_folders(settings.REPLAY_DIR)),
             "player": me.username if me else None,
+            "player_id": me.id if me else None,
+            "ubisoft_configurado": perfil_externo.configurado(),
             "matches": Match.objects.count(),
             "rounds": Round.objects.count(),
             "last_import": _import_log_row(ImportLog.objects.first()),
@@ -218,7 +221,35 @@ def player_detail(request: HttpRequest, pk: int) -> JsonResponse:
     payload = agg.player_profile(pk, **_filters(request))
     if payload is None:
         raise Http404("jugador no encontrado")
+    payload["externo"] = perfil_externo.resumen(Player.objects.get(pk=pk))
     return _ok(payload)
+
+
+@csrf_exempt
+@require_POST
+def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
+    """Trae rango y temporada desde la API de Ubisoft y los deja guardados.
+
+    Es POST porque sale a internet y escribe la base: un GET que hace eso lo
+    dispara cualquier prefetch del navegador.
+    """
+    player = Player.objects.filter(pk=pk).first()
+    if player is None:
+        raise Http404("jugador no encontrado")
+    if not perfil_externo.configurado():
+        return _ok(
+            {"error": "Falta configurar UBI_EMAIL y UBI_PASSWORD en el .env."}, status=400
+        )
+    if not perfil_externo.consultable(player):
+        return _ok(
+            {"error": "Este jugador no trae profileID en el replay; no hay a quién consultar."},
+            status=400,
+        )
+    try:
+        perfil_externo.actualizar(player)
+    except ubisoft.ErrorUbisoft as exc:
+        return _ok({"error": str(exc)}, status=502)
+    return _ok(perfil_externo.resumen(player)["ubisoft"])
 
 
 @require_GET
