@@ -60,7 +60,8 @@ Ahi esta la diferencia del proyecto, no en igualar la planilla de nadie.
 
 > **Nota de orden**: los items #1 y #2 se dieron vuelta. El #1 (UI) necesita el
 > re-etiquetado del #2 para poder decir que quedo listo, asi que el #2 se hizo
-> primero. El #18 (Electron) entro fuera de orden porque lo pidio el usuario.
+> primero. El #18 (Electron) y el #29 (todo desde un .exe) entraron fuera de
+> orden porque los pidio el usuario.
 > El numero de cada item se mantiene para no romper las referencias.
 
 ### 2. `manage.py retag` [x]
@@ -584,6 +585,70 @@ Mirar con los datos reales cuantas rondas junta cada operador rival antes de
 dar por bueno el corte de 10, y si alguna diferencia pasa una banda de ruido
 como la del #10. Si pasa, una regla del coach del estilo de `operador-rival`
 pero sobre rondas.
+
+### 29. Todo desde un .exe [x]
+
+Pedido directo del usuario: "que sea mas facil el setup, la instalacion y
+etc, haciendolo todo desde un .exe". Hecho fuera de orden. El #20 ya dejaba un
+`.exe` que abria la app, pero tres cosas seguian pidiendo consola o editar
+archivos a mano, y la app instalada no tiene ni consola ni `manage.py`:
+
+- **La carpeta de replays.** Si la autodeteccion fallaba, la salida era crear
+  un `.env` en `%APPDATA%` (lo que el #19 y el #20 dejaron pendiente). Ahora
+  hay una pagina **Ajustes**: en la app de escritorio, *Elegir carpeta…* abre el
+  selector nativo; en el navegador se escribe la ruta. Se guarda en el mismo
+  `.env` (`config/envfile.py` cambia solo esa linea y respeta los comentarios)
+  y se aplica en caliente. Si se elige la carpeta del juego o la biblioteca en
+  vez de `MatchReplay`, baja sola (`replay_dir.normalizar`).
+- **La importacion automatica.** `watch_replays` era un comando de consola. Ahora
+  `serve.py` (lo que corre el `.exe`, y tambien `npm run desktop` y
+  `start.ps1`) deja un hilo vigilando la carpeta (`replays/vigilante.py`): al
+  abrir la app importa lo que jugaste desde la ultima vez, y despues cada
+  partida al terminar. Usa el mismo `ImportJob` que el boton, asi que nunca
+  corren dos a la vez, y la cabecera lo muestra ("Importando sola 1 de 2") y
+  avisa al terminar. `AUTO_IMPORT` la apaga, desde Ajustes o el `.env`.
+- **Las copias de la base.** El #16 dejaba anotado el boton; ahora esta en
+  Ajustes (`POST /api/backup/`), y `serve.py` hace una copia sola al arrancar si
+  la ultima tiene mas de una semana y hay partidas.
+
+Y el instalador paso a ser **uno solo, de un clic**: NSIS `oneClick`, por
+usuario (sin pedir admin), abre la app al terminar, y correr uno nuevo encima
+actualiza sin tocar `%APPDATA%`. El `-portable.exe` se saco: dos archivos para
+elegir eran justo la friccion que se queria sacar, y se descomprimia en `%TEMP%`
+en cada arranque. `package.ps1` ahora borra `packaging\installer` antes de
+armar, porque `release.ps1` subia todo `*.exe` que hubiera ahi y un portable
+viejo habria terminado colgado de la Release nueva.
+
+Tres cosas que salieron de probarlo:
+
+- Una carpeta que no se puede leer no queda en `Match`, y el vigilante la habria
+  reintentado cada 20 segundos para siempre: un parseo entero y un `ImportLog`
+  nuevo en cada pasada. Se recuerda que ya se intento y solo se reintenta si
+  cambian sus `.rec`.
+- El vigilante tampoco puede dejar un trabajo vacio en cada pasada: borraria
+  el resultado de la ultima importacion de verdad, que es lo que muestra la UI.
+  `reserve_import(..., even_if_empty=False)`.
+- El e2e corria con el `.env` y la carpeta `data/` del desarrollador. Con Ajustes
+  escribiendo el `.env` y las copias rotando `data/backups`, una corrida habria
+  pisado los del usuario. Ahora tiene los suyos en `e2e/.tmp/` (`R6_ENV_FILE`,
+  `DATA_DIR`), y la carpeta de replays fijada a una que no existe: antes se
+  buscaba sola, y en un PC con Siege instalado el test "Datos avisa cuando la
+  carpeta no existe" dependia de la maquina.
+
+Los POST nuevos exigen `Content-Type: application/json`: son `csrf_exempt`
+como los otros, y un formulario de cualquier pagina abierta en el navegador
+puede postear a `127.0.0.1`, pero no con JSON sin un preflight que Django no
+contesta.
+
+**Verificado:** 389 tests del backend, 62 de vitest y 22 e2e (5 nuevos de
+Ajustes). La app de Electron se manejo de verdad con Playwright: el selector
+nativo guardo la carpeta (bajando de la carpeta padre a `MatchReplay`), el
+vigilante tomo la partida (un `.rec` falso) en la pasada siguiente, la cabecera
+aviso que no se pudo leer, no se reintento en las pasadas de despues, y el
+backend murio con la ventana. **No
+verificado:** el instalador NSIS en si. electron-builder valida el bloque
+`nsis` (una clave inventada lo hace fallar) pero armar el `.exe` pide Windows;
+la primera corrida de `package.ps1` en el PC es la que lo prueba.
 
 ## Ideas descartadas
 

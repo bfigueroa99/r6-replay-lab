@@ -2,7 +2,7 @@
 #
 # Dos formas de dispararlo:
 #   - push de un tag `v*` (ej. `git tag v0.1.0 && git push origin v0.1.0`):
-#     compila y publica una Release con el instalador y el portable.
+#     compila y publica una Release con el instalador de un clic.
 #   - "Run workflow" a mano desde la pestana Actions: compila y deja los .exe
 #     como artefacto del run, sin publicar nada. Sirve para probar una rama.
 #
@@ -61,7 +61,7 @@ jobs:
         shell: pwsh
         run: ..\.venv\Scripts\python.exe manage.py test tests
 
-      - name: Instalador y portable
+      - name: Instalador
         shell: pwsh
         env:
           # no hay certificado de firma: que electron-builder ni lo busque
@@ -71,18 +71,19 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: R6ReplayLab-windows
-          path: packaging/installer/*.exe
+          path: packaging/installer/R6ReplayLab-*-setup.exe
           if-no-files-found: error
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: packaging/installer/*.exe
+          files: packaging/installer/R6ReplayLab-*-setup.exe
           generate_release_notes: true
           body: |
-            **Para usarla:** descarga `R6ReplayLab-*-portable.exe` y hazle doble clic.
-            No instala nada. Si prefieres acceso directo en el escritorio, usa el `-setup.exe`.
+            **Para usarla:** descarga `R6ReplayLab-*-setup.exe` y hazle doble clic.
+            Se instala sin preguntar nada, deja un acceso directo y abre la app.
+            La carpeta de replays, la importacion automatica y las copias se manejan en Ajustes.
 
             El ejecutable no esta firmado: la primera vez Windows muestra SmartScreen
             (*Mas informacion* -> *Ejecutar de todas formas*).

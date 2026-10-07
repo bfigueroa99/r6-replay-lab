@@ -5,9 +5,12 @@
 #   1. build del frontend           -> frontend\dist
 #   2. PyInstaller sobre el backend -> packaging\dist\r6-backend (lleva dist adentro)
 #   3. electron-builder             -> packaging\installer\R6ReplayLab-*-setup.exe
-#                                      y R6ReplayLab-*-portable.exe
 #
-# Tarda varios minutos y cada .exe pesa unos 135 MB: adentro va un Python
+# Sale un solo .exe, el instalador de un clic: no pregunta nada, instala para
+# el usuario (sin pedir admin), deja los accesos directos y abre la app. Correr
+# uno nuevo encima actualiza sin tocar los datos de %APPDATA%.
+#
+# Tarda varios minutos y el .exe pesa unos 135 MB: adentro va un Python
 # completo, Chromium y el frontend. Necesita las herramientas de desarrollo
 # (pip install -r requirements-dev.txt) y npm install en frontend\.
 #
@@ -29,6 +32,12 @@ if (-not (Test-Path $pyinstaller)) {
 $env:ELECTRON_BUILDER_CACHE = "$repo\packaging\.cache"
 New-Item -ItemType Directory -Force $env:ELECTRON_BUILDER_CACHE | Out-Null
 
+# De cero de verdad: release.ps1 sube lo que haya aca, y un .exe de una version
+# vieja (o el -portable.exe que se armaba antes) terminaria colgado de la Release.
+if (Test-Path "$repo\packaging\installer") {
+    Remove-Item "$repo\packaging\installer" -Recurse -Force
+}
+
 Write-Host "`n[1/3] build del frontend" -ForegroundColor Cyan
 Push-Location "$repo\frontend"
 npm run build
@@ -46,7 +55,7 @@ npm run desktop:pack
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "fallo electron-builder" }
 Pop-Location
 
-$exes = Get-ChildItem "$repo\packaging\installer\*.exe" -ErrorAction SilentlyContinue
+$exes = Get-ChildItem "$repo\packaging\installer\R6ReplayLab-*-setup.exe" -ErrorAction SilentlyContinue
 Write-Host ""
 if ($exes) {
     foreach ($exe in $exes) {

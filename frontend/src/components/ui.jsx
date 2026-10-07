@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 /** Formatea numeros que pueden venir null desde la API. */
 export const fmt = (value, digits = 0, suffix = '') =>
@@ -245,13 +246,13 @@ export function ErrorBox({ error }) {
 export function EmptyState({ onImport, importing }) {
   return (
     <div className="empty-state">
-      <h2>Todavia no hay replays importados</h2>
+      <h2>Todavía no hay replays importados</h2>
       <p>
-        Apunta <code>REPLAY_DIR</code> en el <code>.env</code> a tu carpeta <code>MatchReplay</code> y
-        dale a importar.
+        Dale a importar para leer tus partidas de <code>MatchReplay</code>. Con la importación
+        automática prendida, cada partida nueva entra sola al terminar.
       </p>
       <p className="note">
-        Tambien puedes correr <code>python manage.py import_replays</code> desde <code>backend/</code>.
+        ¿No aparece nada? Revisa la carpeta de replays en <Link to="/ajustes">Ajustes</Link>.
       </p>
       {onImport ? (
         <button className="btn primary" onClick={onImport} disabled={importing}>
