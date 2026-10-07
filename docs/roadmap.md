@@ -503,6 +503,8 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 21. Una ronda ilegible no tumba la partida [en curso 2026-10-07T18:40Z]
+
 ## Ideas descartadas
 
 | Idea | Por que no |
