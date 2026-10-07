@@ -103,15 +103,28 @@ Los scripts de `scripts/` son todos PowerShell y asumen el venv en `.venv`:
 Para trabajar en el codigo, ademas:
 
 ```powershell
-pip install -r requirements-dev.txt   # ruff, nada mas
-.\scripts\check.ps1                  # lint + tests + build, en un comando
+pip install -r requirements-dev.txt   # ruff y pyinstaller
+.\scripts\check.ps1                  # lint + tests + build + e2e, en un comando
+.\scripts\check.ps1 -SinE2E          # lo mismo sin el end to end, cuando tienes apuro
 cd frontend; npm test                 # solo los tests del frontend
 ```
 
 `check.ps1` es lo unico que hay que pasar antes de commitear. Corre `ruff check`
 pero no `ruff format`: el linter busca errores, el formateador impone gustos y
-reescribiria medio repo. El mismo chequeo esta en
-`.github/workflows/ci.yml`, listo para el dia que el repo tenga un remoto.
+reescribiria medio repo.
+
+El ultimo paso es el que mira la app de verdad: levanta Django con una base
+sembrada aparte (nunca la tuya), compila el frontend y maneja la aplicacion en
+Chromium, pagina por pagina, fallando si alguna ensucia la consola. Es la unica
+red que caza un error de runtime en una pantalla que ningun test unitario
+renderiza; ya paso una vez y esta contado en `docs/roadmap.md`. El navegador se
+baja una sola vez (`.\scripts\setup.ps1` ya lo hace; si no,
+`cd frontend; npm run e2e:browser`). Para escribir o depurar pruebas,
+`npm run e2e:ui` abre el modo interactivo de Playwright.
+
+El mismo chequeo esta en `.github/workflows/ci.yml`, pero GitHub Actions no
+asigna runners en esta cuenta (ver *Publicar una version*): la verificacion que
+cuenta es la de tu maquina.
 
 ## Uso
 
@@ -156,18 +169,25 @@ Deja en `packaging\installer\` el instalador (`-setup.exe`) y el portable
 **corren en una maquina sin Python instalado**: el frontend compilado viaja
 dentro del ejecutable del backend y Django lo sirve igual que desde el repo.
 
-Para publicar no hace falta armarlo a mano. `.github/workflows/release.yml`
-corre ese mismo script en un runner de Windows:
+#### Publicar una version
 
 ```powershell
-# sube "version" en frontend\package.json, commitea, y despues:
-git tag v0.2.0
-git push origin v0.2.0
+# sube "version" en frontend\package.json, commitea en main, y despues:
+.\scripts\release.ps1
 ```
 
-Unos minutos despues los dos `.exe` cuelgan de la Release en GitHub. Desde la
-pestana Actions tambien se puede lanzar a mano ("Run workflow") para probar una
-rama: compila y deja los `.exe` como artefacto, sin publicar.
+El script no publica nada en rojo: corre `check.ps1` entero (lint, tests, build
+y **e2e**), arma los dos `.exe` con `package.ps1`, crea el tag `v<version>`, lo
+pushea y sube la Release con los archivos. Para subirla usa el CLI de GitHub
+(`winget install GitHub.cli`); si no esta, abre la pagina de la Release con el
+tag puesto y te deja los `.exe` listos para arrastrar. Con `-SoloArmar`
+verifica y empaqueta sin tocar git ni GitHub.
+
+Todo esto corre en tu PC a proposito. Hay un workflow equivalente en
+`.github/workflows/release.yml` (push de un tag `v*` en un runner de Windows),
+pero GitHub Actions no asigna runners en esta cuenta: los jobs mueren en
+segundos sin ejecutar nada, y pasa igual en `main`. Mientras eso siga asi, el
+CI de GitHub no cuenta como verificacion y la release sale de aca.
 
 La app empaquetada guarda sus datos en `%APPDATA%\r6-replay-lab`, no donde
 este instalada: Program Files es de solo lectura.
