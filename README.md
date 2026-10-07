@@ -132,6 +132,12 @@ El mismo chequeo esta en `.github/workflows/ci.yml`, pero GitHub Actions no
 asigna runners en esta cuenta (ver *Publicar una version*): la verificacion que
 cuenta es la de tu maquina.
 
+`main` no recibe push directo: todo entra por pull request, y la rama no se
+puede borrar ni reescribir con force push. La regla vive en
+`.github/rulesets/main.json` y se carga en GitHub desde Settings → Rules →
+Rulesets → New ruleset → Import a ruleset. GitHub no lee ese archivo solo: si
+cambias la regla en la web, exportala y reemplaza el archivo.
+
 ## Uso
 
 ```powershell
