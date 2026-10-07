@@ -26,10 +26,16 @@ anotada en Y) y que alternativas se descartaron en una linea cada una.
 Migraciones, `recompute`, instalador, rendimiento con bases grandes. Y lo que
 quedo afuera a proposito, con el item del roadmap donde quedo anotado.
 
+## Como probarlo en 2 minutos
+
+Comandos exactos, en orden, y que tiene que verse. Si algo solo se puede
+verificar en el PC (migraciones, recompute, parser, Electron, `.ps1`), va
+aparte bajo "Verificar en el PC".
+
 ## Para el humano
 
 Decisiones que necesitan su criterio, o `Nada`.
 
 ## Candidatos descubiertos
 
-Items que se agregaron al roadmap sin marcar, o `Ninguno`.
+Fichas nuevas que quedaron en `propuesto` en la rama `backlog`, o `Ninguno`.

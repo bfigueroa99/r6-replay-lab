@@ -1,28 +1,13 @@
 # Roadmap
 
-Backlog de desarrollo. Lo consume el equipo de desarrollo autonomo
-(`.claude/skills/equipo-dev/SKILL.md`), que corre cada 3 horas: cada iteracion
-toma **el primer item sin marcar** que pase los filtros, lo implementa completo
-(backend + frontend + tests + docs), deja la suite en verde y abre un PR. Si no
-quedan items sin marcar, el equipo busca trabajo real (bugs, huecos de tests,
-deuda anotada en los items hechos, robustez del parser) y lo agrega aca como
-item nuevo antes de hacerlo.
-
-Reglas del loop:
-
-- Un item por iteracion, un PR por iteracion. Si un item resulta ser mas grande
-  de lo que parece, se parte en dos y se deja el resto anotado aca.
-- `./scripts/check.sh` (o `.\scripts\check.ps1` en Windows) en verde antes de
-  cada push: lint, tests de backend y frontend, build.
-- Metrica nueva -> fila nueva en `docs/metricas.md`.
-- Marcar el item como hecho (`### 3. Nemesis [x]`) con dos o tres lineas de que
-  quedo implementado y que no, y commitear el roadmap junto con el codigo.
-- Candidatos que aparecen en el camino: items nuevos sin marcar, cortos, con
-  el siguiente numero libre. Maximo dos por iteracion.
-- Las secciones "Lo que falta" / "Deuda" de los items hechos son backlog
-  valido: el equipo las puede tomar como tarea.
-- Con 3 PRs del equipo abiertos, el loop no abre trabajo nuevo hasta que el
-  humano mergee o cierre alguno.
+Historia del backlog hasta el item 19. **Desde el item 30, el backlog vive en
+`docs/backlog/`** (una ficha por item, ver `docs/backlog/README.md`) y lo
+trabaja el equipo de desarrollo autonomo (`.claude/skills/equipo-dev/SKILL.md`)
+por turnos: product owner, arquitecto, dev, revisor, QA y release manager, una
+sesion cada 3 horas. Este archivo ya no se edita: las secciones "Lo que falta"
+y "Deuda" de los items hechos son la primera fuente de trabajo del product
+owner, y los numeros 20 a 29 quedan tomados o reservados por los candidatos de
+las ramas `mercado/*`, `claude/loop-*` y los PRs anteriores del equipo.
 
 ## No-goals
 

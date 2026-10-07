@@ -27,12 +27,16 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 
 ## Equipo de desarrollo autonomo
 
-Una rutina programada corre cada 3 horas una sesion cloud que actua como un
-equipo completo (product owner, devs, QA, revisor, release manager). Su
-playbook es `.claude/skills/equipo-dev/SKILL.md`: un cambio por iteracion,
-`check.sh` en verde, un PR con prefijo `[equipo-dev]`, maximo 3 PRs abiertos
-a la vez, y el humano mergea. Si cambias una regla de este archivo, revisa
-que el playbook no la contradiga.
+Una rutina programada corre cada 3 horas una sesion cloud que es **un turno de
+un rol** del equipo: release manager, product owner, arquitecto, dev, revisor
+o QA, segun la franja horaria UTC. El playbook es
+`.claude/skills/equipo-dev/SKILL.md`; los scripts `scripts/equipo-dev/turno.sh`
+y `estado.sh` deciden el rol y leen el estado. Desde el item 30 el backlog
+vive en `docs/backlog/` (una ficha por item, ver su README) y en la rama
+`claude/equipo-dev/backlog`; `docs/roadmap.md` queda como historia. Cada item
+es una rama y un PR; `check.sh` en verde antes de empujar codigo; maximo 3
+items con codigo esperando al humano; el humano mergea. Si cambias una regla
+de este archivo, revisa que el playbook no la contradiga.
 
 ## Reglas de arquitectura
 

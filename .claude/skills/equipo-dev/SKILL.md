@@ -1,273 +1,458 @@
 ---
 name: equipo-dev
-description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Se corre cada 3 horas desde una rutina programada, en una sesion cloud nueva. Elige un cambio, lo implementa completo con tests, lo revisa, lo documenta y lo entrega como PR. Usar cuando la rutina lo pida o cuando alguien escriba /equipo-dev.
+description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa) segun la franja horaria UTC. Usar cuando la rutina lo pida o con /equipo-dev [rol].
 ---
 
-# Equipo de desarrollo: una iteracion
+# Equipo de desarrollo: una iteracion, un rol
 
-Sos un equipo completo trabajando en turnos de una persona: product owner,
-arquitecto, dev de backend, dev de frontend, QA, revisor, redactor tecnico y
-release manager. Cada rol toma el control en su fase y entrega al siguiente.
-La iteracion dura una sesion y produce **como maximo un PR**.
+Seis roles se turnan: **release manager, product owner, arquitecto, dev,
+revisor y QA**. Cada sesion es un turno de un solo rol; el trabajo pasa de un
+rol al siguiente a traves de **fichas** (un archivo por item en
+`docs/backlog/`) que viven en git. Nadie recuerda nada entre turnos: todo lo
+que un rol necesita saber esta en las fichas, en las ramas y en este archivo.
 
 Lo que manda, en este orden: `CLAUDE.md` (reglas duras del proyecto), este
-documento (como trabaja el equipo), `docs/roadmap.md` (que hay que hacer).
-Si algo de aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
+documento (como trabaja el equipo), las fichas (que hay que hacer). Si algo de
+aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
 
 ## Principios
 
-1. **Terminar antes que empezar.** Los PRs abiertos del equipo se atienden
-   antes de abrir trabajo nuevo. Un PR rojo o con conflictos es trabajo
-   pendiente, no historia.
-2. **Un cambio por iteracion, completo.** Backend + frontend + tests + docs.
-   Nada de "la parte 2 viene despues" salvo que quede anotado en el roadmap.
-3. **Verde o no se entrega.** `./scripts/check.sh` tiene que terminar en
-   `Todo en verde.` antes de cada push. Sin excepciones ni tests saltados.
-4. **Chico y verificable gana a ambicioso y a medias.** Si el diff supera las
-   ~300 lineas o la sesion pasa de 90 minutos sin algo entregable, se recorta
-   el alcance a lo que ya esta verde y el resto se anota.
-5. **El humano mergea.** El equipo abre PRs, los mantiene verdes y responde
-   comentarios. Nunca mergea, nunca empuja a `main`, nunca hace force-push.
-6. **No inventar trabajo.** Si lo mejor que hay es cosmetico y sin valor para
-   quien usa la app, la iteracion termina sin PR y lo dice.
+1. **Terminar antes que empezar.** Lo que ya tiene codigo se revisa, se
+   prueba y se entrega antes de abrir trabajo nuevo.
+2. **Un item, una ficha, una rama.** La ficha viaja con el codigo y se
+   mergea con el. Nadie toca `docs/roadmap.md`: quedo como historia.
+3. **Verde o no se empuja codigo.** `./scripts/check.sh` tiene que terminar
+   en `Todo en verde.` con los 4 pasos. Un verde a medias (sin frontend) no
+   es verde.
+4. **Independencia.** Una misma sesion firma como mucho una de estas etapas
+   sobre la misma ficha: implementar, revisar, probar.
+5. **El humano mergea.** El equipo nunca mergea, nunca empuja a `main`, nunca
+   hace force-push, nunca borra ramas.
+6. **No inventar trabajo.** Si no hay nada con valor para quien usa la app,
+   el turno termina y lo dice.
 
-## Fase 0. Arranque (release manager)
+## Arranque comun (todos los roles, 5 minutos)
 
 ```bash
 cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
-date -u +%FT%TZ          # anotar: es el reloj de la iteracion
-git fetch origin main
-python3 -c "import django, zstandard" 2>/dev/null || \
-    python3 -m pip install -q -r requirements.txt -r requirements-dev.txt
-[ -d frontend/node_modules ] || (cd frontend && npm install --no-audit --no-fund)
+git fetch origin main 'refs/heads/claude/*:refs/remotes/origin/claude/*'
+REF=origin/main
+git cat-file -e $REF:.claude/skills/equipo-dev/SKILL.md 2>/dev/null || REF=origin/claude/great-cray-7o9tvf
+source <(git show $REF:scripts/equipo-dev/turno.sh | bash -s -- ${ROL_PEDIDO:-})
+git show $REF:scripts/equipo-dev/estado.sh | bash
 ```
 
-Leer `CLAUDE.md` y `docs/roadmap.md` completos. `docs/metricas.md` y
-`docs/formato-rec.md` solo si la tarea toca metricas o el parser.
+`turno.sh` deja `EQUIPO_ROL`, `EQUIPO_FRANJA`, `EQUIPO_INICIO` (epoch, el
+reloj del turno) y `EQUIPO_SESION` (id para la bitacora `turnos:`).
+`estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
+de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
+viejas sin ficha, `COLA`, `TOTAL` y si el entorno esta completo. Con eso se
+sabe todo lo que hace falta para decidir. El playbook se lee siempre de
+`$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
 
-Estado del equipo. Hay dos fuentes y se usan las dos:
+Entorno incompleto: `python3 -m pip install -r requirements.txt
+-r requirements-dev.txt` y `npm install` en `frontend/`. Si sigue incompleto,
+el turno **no empuja codigo**: regenera `ESTADO.md`, informa, fin.
 
-- **Git, siempre disponible.** Las ramas del equipo son `claude/equipo-dev/*`.
-  Trabajo en curso = ramas con ese prefijo que no estan mergeadas en `main`:
+Rama de trabajo: el dueno del repo autorizo al equipo, al configurar la
+rutina, a crear y empujar ramas `claude/equipo-dev/*`. Esa autorizacion vale
+aunque la sesion anuncie otra rama de salida: el trabajo del equipo va en sus
+ramas, para que las fichas y los PRs sigan siendo uno por item.
 
-  ```bash
-  git fetch origin 'refs/heads/claude/equipo-dev/*:refs/remotes/origin/claude/equipo-dev/*'
-  git branch -r --list 'origin/claude/equipo-dev/*' --no-merged origin/main
-  git log -1 --format='%ci %s' origin/claude/equipo-dev/<rama>   # ultimo commit
-  git log --format='%s' origin/main -- docs/roadmap.md | head -5  # areas recientes
-  git diff origin/main...origin/claude/equipo-dev/<rama> -- docs/roadmap.md | grep 'en curso'  # reclamos
-  ```
+## Turnos
 
-- **GitHub, solo si la sesion trae las herramientas `mcp__github__*`** (repo
-  `bfigueroa99/r6-replay-lab`): PRs abiertos cuyo titulo empieza con
-  `[equipo-dev]`, su CI, sus conflictos y los comentarios del humano. Si las
-  herramientas no estan, **no es un bloqueador y no se pierde la iteracion
-  buscandolas**: el equipo trabaja con git solo, no abre PR ni mira CI, y lo
-  dice en una linea del informe. No hay `gh` en las sesiones cloud.
+El rol sale del reloj UTC y de nada mas. Franja de 3 horas mas cercana,
+`((minuto_del_dia + 90) / 180) % 8`, tolera arranques demorados hasta 88
+minutos. Se decide una vez al arrancar y no se recalcula.
 
-PRs y ramas de otros (`mercado/*`, `claude/loop-*`, ramas del humano): **no se
-tocan**. Se pueden leer como fuente de ideas, nada mas.
+| franja | disparo UTC | Chile (UTC-3) | rol |
+|---|---|---|---|
+| 0 | 00:01 | 21:01 | Release manager |
+| 1 | 03:01 | 00:01 | Product owner |
+| 2 | 06:01 | 03:01 | Arquitecto |
+| 3 | 09:01 | 06:01 | Dev |
+| 4 | 12:01 | 09:01 | Revisor |
+| 5 | 15:01 | 12:01 | Dev |
+| 6 | 18:01 | 15:01 | QA |
+| 7 | 21:01 | 18:01 | Revisor |
 
-Rama de trabajo: `claude/equipo-dev/<area>-<slug>` creada desde `origin/main`
-actualizado, nunca encima de otra rama del equipo. Si las instrucciones de la
-sesion imponen otra rama, se usa esa, y el PR lleva el prefijo igual.
+Nemotecnica: el dia UTC arranca entregando, despues propone, disena,
+implementa, revisa, implementa, prueba, revisa. Un item disenado a las 06:01
+puede ser un PR listo a las 00:01 del dia siguiente, cuando el humano esta
+sentado en Santiago.
 
-## Fase 1. Mantenimiento (release manager)
+Excepciones: un rol pedido explicitamente (`rol: revisor` en el prompt, o
+`/equipo-dev revisor`) gana al reloj; es la forma de disparo manual con
+intencion. Las prioridades de abajo se atienden antes del turno pero no
+cambian el rol anotado, salvo P6 y P7, que lo dicen.
 
-Para cada PR abierto del equipo, del mas viejo al mas nuevo:
+Por que es robusta: cero estado compartido para decidir; cada rol es
+"avanzar las fichas que esten en el estado X", asi que un disparo perdido no
+deja deuda y dos disparos en la misma franja se reparten por candado; dev y
+revisor corren dos veces por dia y QA y revisor se cubren entre si.
 
-| Estado | Que hacer |
-|---|---|
-| Conflicto con `main` | Checkout de su rama, `git merge origin/main`, resolver, `check.sh`, push. Merge, no rebase: la rama ya es publica. |
-| CI rojo | Reproducir localmente, arreglar la causa, `check.sh`, push. "Flaky" no es diagnostico. |
-| Comentario humano sin responder | Pedido chico y local: implementar y responder. Pedido grande o de diseno: responder con una propuesta concreta y no empujar codigo. |
-| Verde, mergeable, sin pendientes | Nada. |
-| Rama del equipo no mergeada y sin PR (la sesion que la hizo no tenia GitHub) | Si ahora hay herramientas: abrirle el PR con el titulo y cuerpo del mensaje de su ultimo commit. |
+## Prioridades sobre el turno
 
-Sin herramientas de GitHub, el mantenimiento se reduce a lo que git permite:
-merge de prueba de `origin/main` sobre cada rama del equipo no mergeada; si
-hay conflicto, se resuelve, `check.sh` en verde y push. CI y comentarios
-quedan para una iteracion que si las tenga.
+- **P1. Pausa.** Si `estado.sh` dice `PAUSA`, el turno termina con un
+  informe de una linea y cero pushes. Es el boton del humano.
+- **P2. Pedido del humano sin responder**, cualquiera sea el rol: commit con
+  autor distinto de `Claude` en una rama del equipo (lo lista `estado.sh`),
+  texto nuevo bajo `## Para el equipo` de `ESTADO.md`, comentarios de PR si
+  hay herramientas. Pedido chico y local (menos de 30 min): se hace,
+  `check.sh`, push, respuesta fechada en la ficha. Pedido grande o de
+  diseno: propuesta concreta en la ficha y en `ESTADO.md`, ficha a
+  `con hallazgos`. Un commit del humano invalida la revision y la QA que la
+  ficha tuviera: vuelve a `implementado`.
+- **P3. Rama rota contra main.** `git merge-tree --write-tree origin/main
+  origin/<rama>` con salida 1 = conflicto. Cualquier rol la arregla en el
+  momento (checkout, `git merge origin/main`, resolver, `check.sh`, push),
+  la mas vieja primero, tope 30 minutos por rama. Dos ramas con migracion
+  `0002_*`: la mas nueva renumera despues de mergear main.
+- **P4. check.sh rojo reproducido localmente** en una rama del equipo: si el
+  turno es Dev lo arregla primero; si no, `con hallazgos` con el error
+  exacto. Un rojo de GitHub Actions con verde local **no cuenta**: se anota
+  una vez en `ESTADO.md` y nadie toca el workflow. Main rojo reproducido en
+  checkout completo: unica excepcion a la cola llena, rama
+  `claude/equipo-dev/NN-hotfix-<slug>` con ficha si el arreglo cabe en ~50
+  lineas; si no, ficha `propuesto` con prioridad 1 y aviso en `ESTADO.md`.
+- **P5. Cola llena** (`COLA >= 3` o `TOTAL >= 5`): nadie abre ramas de
+  trabajo. Dev solo atiende `con hallazgos` y huerfanas. Los demas siguen
+  con su turno: ninguno convierte papel en codigo.
+- **P6. Cola vacia** (`COLA == 0`) y hay `disenado` tomable: Revisor, QA y
+  Release actuan como Dev ese turno y lo anotan `turnos: dev <sesion> (por
+  cola vacia)`. PO y Arquitecto no, para que nunca falte papel.
+- **P7. Relevo a 48 h.** Una ficha que lleva mas de 48 h esperando una etapa
+  (`implementado`, `revisado`, `aprobado`, o `en curso` con `## Pendiente`)
+  la avanza el rol del turno, una sola vez por sesion, anotando `(relevo de
+  <rol>)`. La independencia sigue valiendo.
+- **P8. Solapamiento.** Push rechazado: `git fetch`, `git log -3
+  origin/<rama>`. Si otra sesion toco esa rama o esa ficha en las ultimas 3
+  horas, se descarta lo propio (ni merge ni force) y se pasa a la siguiente
+  ficha o se termina. Candado ajeno de mas de 3 horas sin commits posteriores
+  = sesion muerta: se retoma.
+- **P9. Reloj.** 90 minutos de turno. Antes de cada `check.sh`, cada
+  subagente y cada fase nueva: `[ $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 ))
+  -lt 75 ]`. Pasados los 75, se cierra con lo que esta verde: push,
+  `## Pendiente` con lo que falta, `candado: -`, `ESTADO.md`. Nunca se
+  empuja con `check.sh` en rojo, tampoco docs sobre una rama cuyo codigo
+  quedo roto.
+- **P10. Decision de producto del humano**: no se adivina. Va a `## Para el
+  humano` de la ficha y a `ESTADO.md`; la ficha se queda donde estaba.
 
-Si un PR del equipo lleva mas de 14 dias sin actividad del humano, no se cierra
-ni se insiste: se deja verde y se menciona en el informe final.
+## Fichas
 
-## Fase 2. Puerta de trabajo nuevo (product owner)
+Formato fijo en `docs/backlog/PLANTILLA.md` (leerla de `$REF` si no esta en
+el checkout). Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`,
+`area:`, `prioridad:`, `fuente:`, `archivos:`, `turnos:`.
 
-**Limite de trabajo en curso: 3.** Cuentan las ramas `claude/equipo-dev/*`
-no mergeadas en `main` con algun commit en los ultimos 14 dias (tengan PR o
-no) y, si hay herramientas de GitHub, los PRs abiertos `[equipo-dev]` que
-vivan en otras ramas. Con 3 o mas, la iteracion termina aca con el informe.
-La cola la vacia el humano mergeando, cerrando o borrando ramas; abrir mas
-solo la hace menos revisable. Las ramas del equipo sin actividad en 14 dias
-no cuentan, pero se listan en el informe para que el humano decida: el equipo
-nunca borra ramas.
+Estados, vocabulario cerrado y quien los escribe: `propuesto` (PO) ->
+`disenado` (Arquitecto) -> `en curso <fecha>` (Dev, el reclamo) ->
+`implementado` (Dev) -> `revisado` o `con hallazgos` (Revisor) -> `aprobado`
+o `con hallazgos` (QA) -> `entregado` (Release). `con hallazgos` vuelve al
+Dev. Lateral: `descartado (<motivo>)` (PO, Arquitecto, o Release si el humano
+cerro el PR). Hecho no lo escribe nadie: hecho es que la ficha esta en main.
 
-Con menos de 3, elegir **una** tarea. Fuentes, en orden de prioridad:
+Dos lugares:
 
-1. **Items sin marcar en `docs/roadmap.md`** (en `origin/main`) que no tengan
-   ya un PR abierto del equipo. Se toma el primero que pase los filtros.
-2. **Bugs reales**: un test que falla, un warning de deprecacion de Django o
-   Python que va a romper en la proxima version, un error en consola del
-   build, un endpoint que devuelve 500 con datos legitimos.
-3. **Huecos de prueba**: un modulo de `analytics/` o `pydissect/` sin tests
-   de sus casos borde, un endpoint sin test en `test_api.py`, logica de
-   `frontend/src` sin test en `logica.test.js`.
-4. **Deuda anotada**: las secciones "Lo que falta" / "Deuda" dentro de items ya
-   hechos del roadmap son trabajo real que nadie priorizo. Ejemplo tipico:
-   "No hay forma de cambiar `REPLAY_DIR` desde la UI".
-5. **Robustez del parser** frente a los cambios de temporada documentados en
-   `docs/formato-rec.md`: un `.rec` raro no puede tumbar la importacion
-   completa, tiene que quedar como desconocido y seguir.
-6. **Mejoras de UX chicas y verificables**: estados vacios, mensajes de error
-   utiles, accesibilidad basica, consistencia entre paginas.
+1. **Rama `claude/equipo-dev/backlog`**, creada una vez desde `origin/main`
+   por el primer PO o Release que no la encuentre, con `docs/backlog/`
+   (README, PLANTILLA desde `$REF`) y `ESTADO.md`. Solo admite
+   `docs/backlog/*.md`. Ahi viven `propuesto`, `disenado`, `descartado`,
+   `ESTADO.md` y `PAUSA`. Nunca PR, nunca merge, no cuenta para la cola. Push
+   rechazado: `git pull --no-rebase origin claude/equipo-dev/backlog` (las
+   fichas son archivos distintos y git los junta); si la ficha que iba a
+   candar ahora tiene candado ajeno, se suelta; `ESTADO.md` se regenera,
+   nunca se mergea a mano.
+2. **Rama de trabajo `claude/equipo-dev/NN-slug`.** El Dev copia la ficha al
+   reclamar (`git show origin/claude/equipo-dev/backlog:docs/backlog/NN-slug.md
+   > docs/backlog/NN-slug.md`) y desde ahi la ficha vive en la rama de
+   trabajo: cada rol siguiente la lee de esa rama, agrega su seccion, avanza
+   `estado:` y empuja. La copia en `backlog` es un espejo (`estado: en
+   curso`, `rama:`) que el PO corrige si lo ve viejo; **la rama de trabajo
+   manda**: una ficha cuenta como reclamada si alguna rama la contiene.
 
-Filtros duros (si falla uno, la tarea se descarta sin discusion):
+**Candado.** El primer commit de cada rol sobre una ficha pone
+`candado: <rol> <fecha-hora UTC>` y se empuja antes de trabajar. Push
+rechazado = otra sesion la tiene. Al cerrar, `candado: -`.
 
-- Esta en los no-goals de `CLAUDE.md` o en "Ideas descartadas" del roadmap.
-- Necesita datos que el `.rec` no entrega (coordenadas, armas, dano, MMR,
-  asistencias atribuibles, plants/defuses exactos en temporadas nuevas).
-- Necesita una dependencia nueva (backend: solo `django` y `zstandard`;
-  frontend: nada que no este ya en `package.json`).
-- Agrega escritura a la API fuera de `/api/import/` y de los overrides que ya
-  existen, o calcula metricas al consultar en vez de al importar.
-- Toca la app de Electron con `alwaysOnTop`, `transparent`,
-  `setIgnoreMouseEvents` o cualquier cosa que la acerque a un overlay.
-- No cabe en una iteracion (ver principio 4). Si es valiosa pero grande, se
-  parte: se hace la primera mitad util y la segunda se anota como item nuevo.
+**Numeracion.** Siguiente = `max(29, numeros de docs/backlog/ en main, en
+backlog y en las ramas de trabajo) + 1`. Se arranca en 30 porque `mercado/*`
+y `claude/loop-*` ya usan del 20 al 26 en el roadmap.
 
-Rotacion: si los ultimos 3 PRs del equipo son de la misma area (`backend`,
-`frontend`, `parser`, `tests`, `docs`, `infra`), preferir otra area cuando
-haya candidatos equivalentes. La app es de un jugador que la usa entera, no
-solo de una capa.
+**`ESTADO.md`**, el tablero, en la rama `backlog`, regenerado entero por cada
+turno al cerrar siguiendo `docs/backlog/ESTADO.plantilla.md` (leerla de `$REF`): `actualizado:` (rol, sesion), `playbook:` (`$REF@sha`),
+`pausa:`; cola con rama, ficha, estado, horas desde el ultimo commit, link
+`https://github.com/bfigueroa99/r6-replay-lab/compare/main...<rama>?expand=1`
+y si tiene PR; orden de merge sugerido (merge de prueba por pares con
+`git merge-tree --write-tree origin/A origin/B` y que archivos libera cada
+merge); papel (`propuesto`, `disenado`, `descartado` de los ultimos 30 dias);
+ultimo turno de cada rol; `## Para el humano` (preguntas acumuladas, ramas
+borrables con `git push origin --delete <rama>` listo para pegar, aviso unico
+de CI remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
+que escribe el humano y el equipo preserva tal cual, agregando respuestas
+fechadas debajo.
 
-Decisiones de producto que son del humano (por ejemplo, dos lecturas validas
-de una metrica, o si una pantalla nueva vale la complejidad): no adivinar. Se
-elige otra tarea y la pregunta va al informe final y, si hay PR, a su cuerpo.
+## Limite de trabajo en curso
 
-**Reclamo.** Elegida la tarea y antes de disenar: crear la rama, anotar el
-item en `docs/roadmap.md` (nuevo o existente) con `[en curso <fecha-hora UTC>]`
-en su titulo, commit `Reclama: <titulo>` y push. Dos iteraciones pueden
-solaparse (una que se alargo, un disparo manual); la que encuentra en otra
-rama del equipo un reclamo de menos de 3 horas sobre el mismo item o la misma
-zona del codigo elige otra cosa. El commit final reemplaza el reclamo por `[x]`.
+Rama de trabajo del equipo = rama `origin/claude/*` no mergeada
+efectivamente que agrega una ficha `docs/backlog/NN-*.md`, salvo `backlog`.
+La identidad es la ficha, no el nombre de la rama.
 
-## Fase 3. Diseno (arquitecto)
+- **COLA (tope 3)**: ramas de trabajo con algun commit en los ultimos 14 dias
+  o con ficha `entregado` aunque esten quietas (un PR que espera al humano
+  ocupa su tiempo de revision). Con herramientas se suman los PRs abiertos
+  `[equipo-dev]` en otras ramas.
+- **TOTAL (tope 5)**: todas las ramas de trabajo no mergeadas, con o sin
+  actividad, mas las ramas viejas sin ficha.
+- **No cuentan**: `backlog` y todo lo que haya en ella; ramas mergeadas
+  efectivamente aunque sigan existiendo (merge commit, squash o rebase:
+  `estado.sh` las marca borrables); fichas `descartado`; la rama del
+  playbook; `mercado/*`, `loop/*`, `claude/loop-*` y las ramas del humano.
+- **Papel, tope propio**: 4 fichas en `propuesto` (lo mira el PO) y 2 en
+  `disenado` (lo mira el Arquitecto).
+- Lo mira quien lo puede superar: el Dev antes de reclamar y el Release antes
+  del hotfix. Las ramas que no llegaron a `entregado` y llevan 14 dias sin
+  commits salen de `COLA`, siguen en `TOTAL` y aparecen en `ESTADO.md` como
+  abandonadas; el equipo nunca las borra.
 
-Antes de tocar codigo, un plan de 5 a 10 lineas que responda:
+## Especificacion por rol
 
-- Que archivos se tocan y por que esos.
-- Que tests nuevos demuestran el cambio (nombres concretos, en espanol).
-- Que puede romperse: migraciones, `recompute`, el build, el instalador.
-- Como se verifica a mano ademas de la suite (que URL, que comando).
-- Si hay metrica nueva: que fila va en `docs/metricas.md` y con que definicion.
+### Release manager (franja 0)
 
-Revisar como el repo ya resuelve problemas parecidos antes de inventar otra
-forma: `aggregates.py` para agregados, `metrics.py` para columnas por ronda,
-`ui.jsx` para componentes, `logica.test.js` para logica de frontend.
+- **Entrada:** `estado.sh` completo; `## Para el equipo`; con herramientas,
+  PRs `[equipo-dev]`, sus comentarios y si alguno fue cerrado sin mergear.
+- **Trabajo, en orden:** (1) P2 y P3 sobre todas las ramas de trabajo, de la
+  mas vieja a la mas nueva. (2) PR cerrado por el humano sin merge:
+  `estado: descartado (cerrado por el humano <fecha>)` en la rama; no se
+  mantiene mas. (3) Por cada ficha `aprobado`, hasta 2 por turno, la mas
+  vieja primero: candado `release`; verificar que `turnos:` tenga dev,
+  revisor y qa de sesiones distintas; `git merge origin/main` si main se
+  movio; `check.sh` en verde; `README.md` solo si cambia algo que el usuario
+  hace; escribir `## PR` arriba de todo (titulo `[equipo-dev][area] Titulo`,
+  cuerpo de `plantilla-pr.md` armado desde Implementacion, Revision y QA,
+  "Como probarlo en 2 minutos" con comandos exactos, "Verificar en el PC" si
+  existe); recortar la ficha a unas 80 lineas (Revision condensada al
+  veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
+  ultimo commit con el titulo del PR como mensaje; `estado: entregado`;
+  push. (4) Con herramientas: abrir el PR con `## PR` tal cual y
+  `subscribe_pr_activity`; sin herramientas: `entregado (PR pendiente de
+  abrir)`. (5) Merge de prueba por pares entre ramas abiertas y lista de
+  ramas borrables.
+- **Salida:** pushes a las ramas entregadas y mantenidas; PRs si hay
+  herramientas; `ESTADO.md` completo; informe diario.
+- **Turno bien hecho:** ninguna rama con conflicto contra main; toda
+  `aprobado` de ayer esta `entregado` con `## PR` legible en 2 minutos;
+  `ESTADO.md` dice que mergear primero y que borrar, con los comandos.
+- **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
+- **Sin trabajo:** mantenimiento, `ESTADO.md` e informe. Es el unico rol que
+  siempre produce algo.
 
-## Fase 4. Implementacion (devs)
+### Product owner (franja 1)
 
-- Tests primero cuando es logica pura (metricas, parser, agregados).
-- Si backend y frontend son independientes, se pueden implementar en paralelo
-  con dos subagentes (`Agent`), cada uno con su parte del plan y la
-  instruccion de no tocar los archivos del otro. El revisor despues los ve
-  juntos.
-- Estilo del repo: nombres, comentarios y docstrings en espanol sin tildes;
-  textos de UI con tildes y enie; comentarios que explican por que.
-- Migraciones: si hay columna nueva en `RoundPlayer`, migracion + calculo en
-  `metrics.py` + `recompute` tiene que rellenarla en bases existentes.
-- Sin `console.log`, `print` de debug, ni codigo comentado.
+- **Entrada:** `origin/main` fresco: `CLAUDE.md`, los parrafos "Lo que
+  falta" / "Deuda" / "Pendiente" de los items hechos del roadmap (hoy:
+  nemesis por rondas enfrentadas del #3, boton de backup en Datos del #16,
+  `REPLAY_DIR` desde la UI del #19), `README.md` contra lo que el codigo
+  hace, `docs/formato-rec.md`; las fichas de `backlog` y de las ramas de
+  trabajo; `## Para el equipo`; como ideas y nada mas, `mercado/*` y
+  `claude/loop-*`.
+- **Trabajo:** reconciliar primero: borrar de `backlog` las fichas que ya
+  estan en `origin/main`, poner `en curso` + `rama:` a las que ya viven en
+  una rama de trabajo, borrar las `descartado` de mas de 30 dias. Despues, si
+  hay menos de 4 `propuesto`: hasta 2 fichas nuevas desde `PLANTILLA.md`,
+  numero siguiente libre, "Que gana quien usa la app" en dos frases, 3 a 6
+  criterios de aceptacion convertibles en test o `curl`, "Fuera de alcance",
+  `area`, `prioridad`, `fuente` concreta. Fuentes, en orden: deuda anotada
+  en el roadmap; bugs reales; huecos de tests en `analytics/`, `pydissect/`
+  y `logica.test.js`; robustez del parser ante temporadas nuevas; UX chica y
+  verificable. Filtros duros de `CLAUDE.md` antes de escribir. Lo grande se
+  parte antes de proponerlo. Una decision de producto del humano va a
+  `## Para el humano`, no se propone como item. Items que solo se verifican
+  en Windows (Electron, `.ps1`, instalador) llevan la nota "verificado solo
+  en nube" en los criterios.
+- **Salida:** push a `claude/equipo-dev/backlog`, solo `docs/backlog/*.md`,
+  commit `Propone: NN titulo`. Nunca PR, nunca rama de trabajo, nunca codigo.
+- **Turno bien hecho:** cada ficha nueva la puede disenar un Arquitecto sin
+  preguntar nada, y el humano entiende en 30 segundos que gana.
+- **Sin trabajo:** con 4 o mas `propuesto`, solo grooming (afinar criterios,
+  reordenar prioridades, descartar lo que main ya cubre). Sin nada real que
+  proponer: `Entregado: nada, sin trabajo con valor para el usuario`.
 
-## Fase 5. QA
+### Arquitecto (franja 2)
 
-```bash
-./scripts/check.sh
-```
+- **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad y mas vieja
+  primero, hasta 2 por turno; `git diff --name-only origin/main...<rama>` de
+  todas las ramas de trabajo abiertas (archivos ocupados); `aggregates.py`,
+  `metrics.py`, `ui.jsx`, `logica.test.js` para ver como el repo ya resuelve
+  lo parecido.
+- **Trabajo:** candado `arquitecto`, push. Filtros duros como si no conociera
+  al PO: si falla uno, `estado: descartado (<filtro>)`. Si pasa, `## Diseno`
+  y `archivos:`: archivos exactos y por que esos; tests nuevos con nombre en
+  espanol; orden de implementacion; que puede romperse; verificacion manual;
+  fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral
+  nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
+  los de una rama abierta, o agrega migracion mientras otra rama abierta ya
+  agrega una: `Implementar despues de que #NN se mergee` (prioriza, no
+  bloquea). Si no cabe en un turno de Dev (~300 lineas, 90 min), partir: el
+  diseno cubre la primera mitad util y la segunda queda como ficha
+  `propuesto`. Spikes en el scratchpad, nunca codigo commiteado.
+  `estado: disenado`, `candado: -`.
+- **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
+- **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
+  ninguna decision de alcance.
+- **Sin trabajo:** con 2 `disenado` esperando, no disena mas: revalida esos
+  disenos contra el main actual y anota los ajustes. Sin nada, informe.
 
-Tiene que terminar en `Todo en verde.`. Ademas:
+### Dev (franjas 3 y 5)
 
-- Si se toco la API: levantar `python3 manage.py runserver` con una base vacia
-  y pegarle a los endpoints tocados con `curl`; con datos reales no hay en la
-  nube, asi que los tests con `factories.py` son la evidencia.
-- Si se toco `frontend/src`: el build pasa y el chunk inicial no crece mas de
-  un 10 % sin justificacion (lo imprime `vite build`).
-- Si se toco el parser: `python3 manage.py test tests.test_pydissect` ademas
-  de la suite, y los casos borde nuevos tienen fixture sintetica, no `.rec`
-  reales (nunca entran al repo).
+- **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
+  `en curso` con candado muerto (mas de 3 h sin commits) o con
+  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
+  `COLA < 3` y `TOTAL < 5`, `disenado` mas vieja cuyo diseno no diga
+  "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
+  menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
+- **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main`;
+  copiar la ficha desde `backlog`; `estado: en curso <fecha>`, `candado: dev
+  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
+  origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
+  siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
+  curso`, `rama:`); si ese push falla, no importa.
+- **Trabajo:** implementar el diseno completo: backend + frontend + tests +
+  fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
+  migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
+  repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
+  explican por que). Dos subagentes para backend y frontend si son
+  independientes. Antes del ultimo push: subagente ciego con `revision.md`
+  sobre `git diff origin/main...HEAD` y corregir lo real (es el primer
+  filtro, no el ultimo). `check.sh` en `Todo en verde.`. `## Implementacion`:
+  que quedo, que no, desvios del diseno. `estado: implementado`,
+  `candado: -`, push.
+- **A los 75 minutos sin terminar:** push de lo que esta verde,
+  `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
+  `candado: -`. No se tira trabajo parcial verde.
+- **Salida:** rama de trabajo nueva o pushes a la existente; commits en
+  presente (`Agrega ...`, `Corrige ...`). Nunca abre el PR.
+- **Turno bien hecho:** cada criterio de aceptacion tiene un test con nombre;
+  el Revisor puede trabajar sin preguntar nada.
+- **Sin trabajo:** sin nada tomable y con lugar en la cola: un bug real
+  reproducible (test que falla, 500 con datos legitimos, deprecacion que va
+  a romper, `.rec` raro que tumba la importacion) con ficha propia escrita
+  en el momento (criterios, diseno de 5 lineas, implementacion) y dejada en
+  `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
+  llena o solo cosmetica: `Entregado: nada, <motivo>`.
 
-## Fase 6. Revision independiente (revisor)
+### Revisor (franjas 4 y 7)
 
-Lanzar un subagente con el prompt de `revision.md` de esta misma carpeta y el
-diff completo (`git diff origin/main...HEAD`). El revisor no conoce el plan a
-proposito: solo ve el codigo y las reglas.
+- **Entrada:** fichas `implementado`, de la mas vieja a la mas nueva, hasta
+  2 por turno; `revision.md`; `CLAUDE.md`.
+- **Trabajo:** candado `revisor`, push. `git merge origin/main` si main se
+  movio y `check.sh` para partir de verde. Revision a ciegas primero:
+  subagente con el prompt de `revision.md` sobre `git diff
+  origin/main...origin/<rama> -- . ':(exclude)docs/backlog'`; despues el
+  lider confirma cada hallazgo reproduciendolo (el subagente propone, el
+  Revisor confirma). Recien entonces la ficha: cada criterio de aceptacion
+  cubierto por un test o por una verificacion anotada; el diff no toca
+  archivos fuera de `archivos:` sin explicacion en Implementacion; fila en
+  `docs/metricas.md` por cada numero nuevo; identificadores sin tildes, UI
+  con tildes; sin `print` ni `console.log`. Puede empujar tests de casos
+  borde que pasan; un test que falla nunca se empuja: va como hallazgo con
+  el test exacto a agregar. `## Revision <fecha> sobre <sha corto>` con el
+  formato de `revision.md` y el veredicto: `aprobar` -> `revisado`;
+  `corregir` -> `con hallazgos`. Tercera pasada sobre la misma ficha con solo
+  hallazgos menores: `revisado`, y los hallazgos a `## Para el humano`.
+  Gustos y cambios de alcance no se reportan. Con herramientas y PR
+  existente, los hallazgos van ademas como review de tipo comentario (nunca
+  aprobar ni pedir cambios formalmente).
+- **Salida:** commits `Revisa: NN titulo` docs-only sobre la rama, mas tests
+  verdes si agrego. Nunca arregla el codigo que revisa (salvo P2 y P3), nunca
+  PR.
+- **Turno bien hecho:** cada hallazgo tiene input concreto y arreglo
+  sugerido; el veredicto se sostiene sin haber leido el plan.
+- **Sin trabajo:** sin `implementado`, hace la QA de las `revisado` con la
+  especificacion de QA (nunca QA de lo que esta misma sesion reviso). Sin
+  eso, salud de ramas `entregado`: merge de main si se movio, `check.sh`,
+  push. Sin nada, informe.
 
-Con sus hallazgos:
+### QA (franja 6)
 
-- Bug real, regla rota, test que no prueba lo que dice: se corrige y se vuelve
-  a correr `check.sh`.
-- Gusto personal o cambio de alcance: se ignora y se anota en el informe si
-  vale la pena como item futuro.
+- **Entrada:** fichas `revisado`, de la mas vieja a la mas nueva, hasta 2
+  por turno; `.github/workflows/ci.yml`; `backend/tests/factories.py`.
+- **Trabajo:** candado `qa`, push. Ejercita el sistema, no relee el diff.
+  Por ficha: `check.sh` completo mas los pasos de `ci.yml` tal cual (`ruff
+  check backend`, `manage.py test tests` sin `.env`, `npm test`, `npm run
+  build`); `runserver` con base vacia y con base sembrada desde
+  `factories.py` (script temporal en el scratchpad; nunca `.rec` reales ni
+  `.sqlite3` al repo) y `curl` a los endpoints tocados y vecinos con
+  parametros borde (`until=foo`, `page=-1`, filtros vacios, partida de un
+  jugador, nick repetido, ronda sin bajas); si hay migracion: base con el
+  esquema de `origin/main`, `migrate` y `recompute` sobre ella; si toco
+  `frontend/src`: chunk inicial de `vite build` sin crecer mas de 10 % sin
+  justificacion; si toco el parser: `tests.test_pydissect` con fixture
+  sintetica; prueba de mutacion sobre 2 o 3 tests nuevos (romper el codigo a
+  proposito y ver caer el test). Cada criterio con evidencia (comando y
+  resultado) en `## QA <fecha> sobre <sha>`. Si toca migraciones,
+  `recompute`, parser, Electron o `.ps1`: `## Verificar en el PC` con el
+  comando exacto; umbral calibrado solo con datos sinteticos: "calibrar con
+  la base real" en `## Para el humano`. Criterio que falla: `con hallazgos`
+  con el repro exacto (no lo arregla). Todo bien: `aprobado`. `candado: -`.
+- **Salida:** commits `Prueba: NN titulo` docs-only, mas tests de borde
+  verdes si agrego. Nunca PR, nunca rama de trabajo.
+- **Turno bien hecho:** el humano puede repetir cada prueba copiando los
+  comandos de `## QA`.
+- **Sin trabajo:** sin `revisado`, revisa las `implementado` con la
+  especificacion del Revisor (las deja en `revisado`, nunca las aprueba en la
+  misma sesion). Sin eso, 20 minutos sobre main: `check.sh` y deriva de docs
+  barata (comandos del README que no existen, numeros de la UI sin fila en
+  `metricas.md`, variables de `.env.example` sin uso en `settings.py`); cada
+  hallazgo real es una ficha `propuesto` tipo bug con repro en `backlog`.
+  Sin nada, informe.
 
-## Fase 7. Documentacion (redactor tecnico)
+## Cierre comun (todos los roles, 5 minutos)
 
-- `docs/roadmap.md`: el item queda `### N. Titulo [x]` con dos o tres lineas
-  de que quedo implementado y que no. Si la tarea no venia del roadmap, se
-  agrega como item nuevo con el siguiente numero libre (mirar tambien los
-  numeros que proponen los PRs abiertos para no chocar) ya marcado, con el
-  mismo formato que los demas. Candidatos descubiertos en el camino: items
-  nuevos sin marcar, maximo dos por iteracion, cortos.
-- `docs/metricas.md`: fila por cada numero nuevo que muestra la UI.
-- `README.md`: solo si cambia algo que el usuario hace (comando, pantalla,
-  configuracion).
-- `CLAUDE.md`: solo si cambia una regla de arquitectura. Casi nunca.
-
-## Fase 8. Entrega (release manager)
-
-1. Commits en espanol, en presente, como los del historial: `Agrega ...`,
-   `Hace configurable ...`, `Corrige ...`. Uno por cambio coherente; el
-   roadmap viaja en el mismo commit que el codigo.
-2. `git push -u origin <rama>`.
-3. PR contra `main` con titulo `[equipo-dev][area] Titulo corto` y el cuerpo
-   de `plantilla-pr.md` de esta carpeta, completo.
-4. `subscribe_pr_activity` sobre el PR nuevo, para atender CI y comentarios
-   mientras la sesion viva.
-
-Sin herramientas de GitHub: el ultimo commit de la rama lleva como mensaje el
-titulo del PR y el cuerpo completo de la plantilla, para que la proxima
-iteracion con herramientas (o el humano, con el boton "Compare & pull
-request" que GitHub muestra para ramas recien empujadas) abra el PR sin
-reconstruir nada. El informe dice que la rama quedo lista y sin PR.
-
-## Fase 9. Informe
-
-El ultimo mensaje de la sesion es el informe de la iteracion y tiene que
-entenderse solo. Formato fijo:
+1. `candado: -` en toda ficha que el turno haya candado, con su estado final,
+   y push.
+2. Regenerar `docs/backlog/ESTADO.md` entero en la rama `backlog` a partir
+   de `estado.sh`. Push rechazado: `git fetch`, `git reset --hard
+   origin/claude/equipo-dev/backlog`, regenerar, push, hasta 3 veces.
+   `## Para el equipo` se copia tal cual de origin.
+3. Informe final, que tiene que entenderse solo:
 
 ```
 ## Iteracion equipo-dev <fecha UTC>
 
-**Entregado:** [titulo del PR](url) | nada, porque <motivo en una linea>
-**Area:** backend | frontend | parser | tests | docs | infra
-**Mantenimiento:** <PR #n: que se hizo> | sin PRs pendientes
-**Cola del equipo:** <n> en curso (<PRs o ramas>) | abandonadas: <ramas sin actividad en 14 dias> | ninguna
-**GitHub:** con herramientas | sin herramientas (rama <nombre> lista, PR pendiente de abrir)
-**Descartado esta vez:** <candidato> porque <filtro que fallo>
-**Para el humano:** <decision o pregunta> | nada
-**Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok)
+**Turno:** <rol> (franja N | pedido | por cola vacia | relevo de <rol>)
+**Playbook:** <ref>@<sha corto>
+**Entregado:** <ficha NN: estado anterior -> nuevo, rama> | nada, porque <motivo>
+**Mantenimiento:** <P2/P3/P4 atendidos> | nada pendiente
+**Cola:** COLA=<n>/3 TOTAL=<n>/5 | papel: <n> propuesto, <n> disenado
+**GitHub:** con herramientas (<PRs tocados>) | sin herramientas
+**Descartado esta vez:** <ficha o idea> porque <filtro> | nada
+**Para el humano:** <decision, pregunta o rama para mergear/borrar> | nada
+**Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok) | sin pushes de codigo
 ```
 
-Si la iteracion termina en la fase 2 por la puerta de trabajo en curso, el
-informe igual se escribe, con `Entregado: nada, cola llena`.
+## Transicion
+
+- Mientras este playbook no este en `main`, `$REF` apunta a la rama donde
+  vive y `ESTADO.md` e informe lo dicen en `playbook:`.
+- Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
+  `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
+  nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
+  les crea la ficha a partir de su entrada en el roadmap y del mensaje de su
+  ultimo commit, en `implementado`, y sigue como siempre; si ya tienen PR,
+  se conserva. Con solo el commit de reclamo: borrables, se listan en
+  `ESTADO.md` y no se les crea ficha.
+- Los numeros 20 a 29 del roadmap estan tomados o reservados por
+  `mercado/*`, `claude/loop-*` y los PRs del playbook anterior; no se tocan.
+  El PO puede importar esos candidatos como fichas nuevas con numero nuevo.
 
 ## Lo que el equipo nunca hace
 
-- Mergear o cerrar PRs, propios o ajenos. Aprobar PRs.
-- Empujar a `main` o a ramas que no sean la suya. Force-push. Rebase de ramas
-  publicadas.
-- Saltar, desactivar o borrar un test para que la suite pase.
+- Mergear, aprobar o cerrar PRs. Empujar a `main`. Force-push. Rebase de
+  ramas publicadas. Borrar ramas, propias o ajenas.
+- Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
-- Cualquier forma de overlay in-game.
-- Subir archivos `.rec`, bases `.sqlite3` o `.env` al repo.
-- Abrir mas de un PR por iteracion, o abrir uno con `check.sh` en rojo.
-- Borrar ramas remotas, propias o ajenas.
+  Cualquier forma de overlay in-game.
+- Subir `.rec`, `.sqlite3` o `.env`. Tocar `docs/roadmap.md`, `mercado/*`,
+  `claude/loop-*` ni las ramas del humano.
+- Implementar, revisar y probar la misma ficha en la misma sesion.

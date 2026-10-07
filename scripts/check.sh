@@ -48,8 +48,12 @@ if [ -d "$repo/frontend/node_modules" ]; then
     echo "[4/4] build del frontend"
     (cd "$repo/frontend" && npm run build) || fallos+=(build)
 else
+    # A diferencia de check.ps1, aca falta de node_modules es un fallo: en la
+    # nube un verde a medias se confunde con un verde, y el equipo autonomo
+    # solo empuja codigo con los cuatro pasos pasados.
     echo
     echo "[3/4] [4/4] falta frontend/node_modules: corre 'npm install' en frontend/"
+    fallos+=("frontend sin instalar")
 fi
 
 echo
