@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (backlog) y
+Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (historia; el backlog vivo esta en
+`docs/backlog/`) y
 `docs/formato-rec.md` (limites del formato).
 
 ## Que es
@@ -58,8 +59,8 @@ de este archivo, revisa que el playbook no la contradiga.
   backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
   requests. En el frontend, `electron` es devDependency y solo la usa la app de
   escritorio: la UI web tiene que seguir funcionando sin ella.
-- **La API es de lectura.** Vistas planas con `JsonResponse`, un solo POST
-  (`/api/import/`). No agregues serializers ni viewsets.
+- **La API es de lectura.** Vistas planas con `JsonResponse` y dos POST
+  (`/api/import/` y `/api/overrides/`). No agregues serializers ni viewsets.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
   escribe columnas en `RoundPlayer`, y `analytics/aggregates.py` solo agrega.
 - **Todo numero que muestra la UI tiene definicion en `docs/metricas.md`.** Si

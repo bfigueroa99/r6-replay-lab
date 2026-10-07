@@ -12,8 +12,8 @@ interno (tests, deuda), que riesgo baja.
 
 ## Por que esto y no otra cosa
 
-De donde salio la tarea (item #N del roadmap, bug encontrado en X, deuda
-anotada en Y) y que alternativas se descartaron en una linea cada una.
+De donde salio la tarea (ficha NN; bug encontrado en X; deuda anotada en
+el item #N del roadmap) y que alternativas se descartaron en una linea cada una.
 
 ## Como se probo
 
@@ -24,7 +24,7 @@ anotada en Y) y que alternativas se descartaron en una linea cada una.
 ## Riesgos y lo que no entra
 
 Migraciones, `recompute`, instalador, rendimiento con bases grandes. Y lo que
-quedo afuera a proposito, con el item del roadmap donde quedo anotado.
+quedo afuera a proposito, con la ficha `propuesto` donde quedo anotado.
 
 ## Como probarlo en 2 minutos
 

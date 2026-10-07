@@ -7,7 +7,7 @@ area: backend
 prioridad: 3
 fuente: -
 archivos: -
-turnos: po 20261008T0305Z
+turnos: po <sesion>
 
 ## PR
 

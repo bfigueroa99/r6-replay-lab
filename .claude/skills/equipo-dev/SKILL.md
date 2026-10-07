@@ -44,12 +44,21 @@ cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
 git fetch origin main 'refs/heads/claude/*:refs/remotes/origin/claude/*'
 REF=origin/main
 git cat-file -e $REF:.claude/skills/equipo-dev/SKILL.md 2>/dev/null || REF=origin/claude/great-cray-7o9tvf
-source <(git show $REF:scripts/equipo-dev/turno.sh | bash -s -- ${ROL_PEDIDO:-})
+git show $REF:scripts/equipo-dev/turno.sh | bash -s --        # con un rol al final solo si lo pidieron
 git show $REF:scripts/equipo-dev/estado.sh | bash
 ```
 
-`turno.sh` deja `EQUIPO_ROL`, `EQUIPO_FRANJA`, `EQUIPO_INICIO` (epoch, el
-reloj del turno) y `EQUIPO_SESION` (id para la bitacora `turnos:`).
+`turno.sh` escribe `.git/equipo-dev.env` (nunca se commitea) con `EQUIPO_ROL`,
+`EQUIPO_FRANJA`, `EQUIPO_INICIO` (epoch), `EQUIPO_SESION` (id del turno,
+formato `AAAAMMDDTHHMMZ`, va en `turnos:` y en `ESTADO.md`), `EQUIPO_CIERRE`
+(hora UTC `HH:MM` a la que hay que cerrar) y `EQUIPO_REF`, lo imprime entero y
+resume todo en una linea `# turno:`. **Las variables no sobreviven entre
+comandos ni llegan a los subagentes**: cada comando que las use empieza con
+`source "$(git rev-parse --git-dir)/equipo-dev.env"`, y a un subagente se le
+pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
+`$EQUIPO_REF` o el literal de la linea `# turno:`. Un rol pedido
+(`/equipo-dev revisor`, o `rol: revisor` en el disparo) va como ultimo
+argumento de `turno.sh`, en minuscula.
 `estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
 de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
 viejas sin ficha, `COLA`, `TOTAL` y si el entorno esta completo. Con eso se
@@ -103,7 +112,9 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   un informe de una linea y cero pushes. Si dice `SIN_MERGE`
   (`docs/backlog/SIN_MERGE` en la rama `backlog`), todo sigue igual pero
   nadie mergea: lo aprobado queda `entregado` para el humano. Son los dos
-  botones del humano.
+  botones del humano, y se vuelven a mirar (`git fetch origin` y
+  `git cat-file -e`) antes de cada push de codigo: si aparecieron a mitad de
+  turno, se sueltan los candados y se cierra.
 - **P2. Pedido del humano sin responder**, cualquiera sea el rol: commit con
   autor distinto de `Claude` en una rama del equipo (lo lista `estado.sh`),
   texto nuevo bajo `## Para el equipo` de `ESTADO.md`, comentarios de PR si
@@ -125,7 +136,8 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   `claude/equipo-dev/NN-hotfix-<slug>` con ficha si el arreglo cabe en ~50
   lineas; si no, ficha `propuesto` con prioridad 1 y aviso en `ESTADO.md`.
 - **P5. Cola llena** (`COLA >= 3` o `TOTAL >= 5`): nadie abre ramas de
-  trabajo. Dev solo atiende `con hallazgos` y huerfanas. Los demas siguen
+  trabajo. Dev solo atiende `con hallazgos` y huerfanas (fichas `en curso`
+  con candado muerto o con `## Pendiente`). Los demas siguen
   con su turno: ninguno convierte papel en codigo.
 - **P6. Cola vacia** (`COLA == 0`) y hay `disenado` tomable: Revisor, QA y
   Release actuan como Dev ese turno y lo anotan `turnos: dev <sesion> (por
@@ -138,10 +150,13 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   origin/<rama>`. Si otra sesion toco esa rama o esa ficha en las ultimas 3
   horas, se descarta lo propio (ni merge ni force) y se pasa a la siguiente
   ficha o se termina. Candado ajeno de mas de 3 horas sin commits posteriores
-  = sesion muerta: se retoma.
+  **sobre esa ficha** (`git log -1 --format=%ci <rama> -- docs/backlog/NN-slug.md`;
+  los commits de `ESTADO.md` no cuentan) = sesion muerta: se retoma.
 - **P9. Reloj.** 90 minutos de turno. Antes de cada `check.sh`, cada
-  subagente y cada fase nueva: `[ $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 ))
-  -lt 75 ]`. Pasados los 75, se cierra con lo que esta verde: push,
+  subagente y cada fase nueva: `source "$(git rev-parse --git-dir)/equipo-dev.env"
+  && echo "minuto $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 )) de 90, cierre a las
+  $EQUIPO_CIERRE UTC"`. Pasado el minuto 75 (o la hora de cierre, si el archivo
+  se perdio: compararla con `date -u +%H:%M`), se cierra con lo que esta verde: push,
   `## Pendiente` con lo que falta, `candado: -`, `ESTADO.md`. Nunca se
   empuja con `check.sh` en rojo, tampoco docs sobre una rama cuyo codigo
   quedo roto.
@@ -150,9 +165,11 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
 
 ## Fichas
 
-Formato fijo en `docs/backlog/PLANTILLA.md` (leerla de `$REF` si no esta en
-el checkout). Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`,
-`area:`, `prioridad:`, `fuente:`, `archivos:`, `turnos:`.
+Formato fijo en `docs/backlog/PLANTILLA.md` (leerla siempre de `$REF`).
+Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`, `area:`,
+`prioridad:`, `fuente:`, `archivos:`, `turnos:`. `turnos:` es una sola linea
+con pares `rol sesion` separados por coma, en orden cronologico:
+`turnos: po 20261008T0305Z, arquitecto 20261008T0610Z, dev 20261008T0905Z`.
 
 Estados, vocabulario cerrado y quien los escribe: `propuesto` (PO) ->
 `disenado` (Arquitecto) -> `en curso <fecha>` (Dev, el reclamo) ->
@@ -169,14 +186,18 @@ Dos lugares:
    `PLANTILLA.md` y `ESTADO.plantilla.md` desde `$REF` si no estan, escribir
    `ESTADO.md`, commit `Crea la rama backlog`, push). Sin ella no hay donde
    anotar hallazgos ni tablero, asi que no se posterga. Solo admite
-   `docs/backlog/*.md`. Ahi viven `propuesto`, `disenado`, `descartado`,
-   `ESTADO.md` y `PAUSA`. Nunca PR, nunca merge, no cuenta para la cola. Push
-   rechazado: `git pull --no-rebase origin claude/equipo-dev/backlog` (las
-   fichas son archivos distintos y git los junta); si la ficha que iba a
-   candar ahora tiene candado ajeno, se suelta; `ESTADO.md` se regenera,
-   nunca se mergea a mano.
-2. **Rama de trabajo `claude/equipo-dev/NN-slug`.** El Dev copia la ficha al
-   reclamar (`git show origin/claude/equipo-dev/backlog:docs/backlog/NN-slug.md
+   archivos dentro de `docs/backlog/`. Ahi viven `propuesto`, `disenado`, `descartado`,
+   `ESTADO.md`, `PAUSA` y `SIN_MERGE`, mas el espejo `en curso` de las fichas
+   reclamadas. Nunca PR, nunca merge, no cuenta para la cola. **Push
+   rechazado en `backlog`, receta unica:** `git fetch origin`, `git merge
+   origin/claude/equipo-dev/backlog`; si una ficha queda en conflicto gana la
+   version de origin (`git checkout --theirs -- <ficha>`: otra sesion la
+   cando primero y se suelta); `ESTADO.md` se regenera entero en vez de
+   resolverse; commit, push, hasta 3 intentos.
+2. **Rama de trabajo `claude/equipo-dev/NN-slug`**, llamada exactamente como
+   la ficha `docs/backlog/NN-slug.md`: asi dos sesiones que eligen la misma
+   ficha chocan en el mismo push. El Dev copia la ficha al reclamar
+   (`mkdir -p docs/backlog && git show origin/claude/equipo-dev/backlog:docs/backlog/NN-slug.md
    > docs/backlog/NN-slug.md`) y desde ahi la ficha vive en la rama de
    trabajo: cada rol siguiente la lee de esa rama, agrega su seccion, avanza
    `estado:` y empuja. La copia en `backlog` es un espejo (`estado: en
@@ -212,8 +233,9 @@ La identidad es la ficha, no el nombre de la rama. El limite existe para que
 el pipeline no se llene de codigo a medio verificar y para que lo que espera
 al humano siga siendo poco.
 
-- **COLA (tope 3)**: ramas de trabajo con algun commit en los ultimos 14 dias
-  o con ficha `entregado` aunque esten quietas (un PR que espera al humano
+- **COLA (tope 3)**: ramas de trabajo (y ramas del playbook anterior con
+  codigo) con algun commit en los ultimos 14 dias o con ficha `entregado`
+  aunque esten quietas (un PR que espera al humano
   ocupa su tiempo de revision). Con herramientas se suman los PRs abiertos
   `[equipo-dev]` en otras ramas.
 - **TOTAL (tope 5)**: todas las ramas de trabajo no mergeadas, con o sin
@@ -240,7 +262,9 @@ al humano siga siendo poco.
   `estado: descartado (cerrado por el humano <fecha>)` en la rama; no se
   mantiene mas. (3) Por cada ficha `aprobado`, hasta 2 por turno, la mas
   vieja primero: candado `release`; verificar que `turnos:` tenga dev,
-  revisor y qa de sesiones distintas; `git merge origin/main` si main se
+  revisor y qa de sesiones distintas (si falta la revision independiente la
+  ficha vuelve a `implementado`, si falta la QA independiente vuelve a
+  `revisado`, se anota en la ficha y se pasa a la siguiente); `git merge origin/main` si main se
   movio; `check.sh` en verde; `README.md` solo si cambia algo que el usuario
   hace; escribir `## PR` arriba de todo (titulo `[equipo-dev][area] Titulo`,
   cuerpo de `plantilla-pr.md` armado desde Implementacion, Revision y QA,
@@ -248,9 +272,11 @@ al humano siga siendo poco.
   existe); recortar la ficha a unas 80 lineas (Revision condensada al
   veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
   ultimo commit con el titulo del PR como mensaje; `estado: entregado`;
-  push. (4) Con herramientas: abrir el PR con `## PR` tal cual (si no
-  existe) y `subscribe_pr_activity`; sin herramientas: `entregado (PR
-  pendiente de abrir)`. (5) **Puerta de merge** sobre cada `entregado`, de
+  push. (4) Con herramientas: abrir el PR con `## PR` tal cual a toda ficha
+  `entregado` que no lo tenga (incluidas las `entregado (PR pendiente de
+  abrir)` que dejo un turno sin herramientas); sin herramientas: `entregado
+  (PR pendiente de abrir)`. No se usa `subscribe_pr_activity`: la sesion
+  termina con el turno y nadie atenderia esos avisos. (5) **Puerta de merge** sobre cada `entregado`, de
   la mas vieja a la mas nueva; si falla una condicion, la ficha queda
   `entregado (PR pendiente de merge: <motivo>)` y el motivo va a
   `ESTADO.md`:
@@ -291,16 +317,18 @@ al humano siga siendo poco.
 
 ### Product owner (franja 1)
 
-- **Entrada:** `origin/main` fresco: `CLAUDE.md`, los parrafos "Lo que
-  falta" / "Deuda" / "Pendiente" de los items hechos del roadmap (hoy:
+- **Entrada:** `origin/main` fresco: `CLAUDE.md`, las notas de pendientes y deuda que dejan los items hechos del roadmap (al
+  final de cada item, con nombres como "Pendiente", "Lo que falta" o "Deuda";
+  hoy:
   nemesis por rondas enfrentadas del #3, boton de backup en Datos del #16,
   `REPLAY_DIR` desde la UI del #19), `README.md` contra lo que el codigo
   hace, `docs/formato-rec.md`; las fichas de `backlog` y de las ramas de
   trabajo; `## Para el equipo`; como ideas y nada mas, `mercado/*` y
   `claude/loop-*`.
-- **Trabajo:** reconciliar primero: borrar de `backlog` las fichas que ya
-  estan en `origin/main`, poner `en curso` + `rama:` a las que ya viven en
-  una rama de trabajo, borrar las `descartado` de mas de 30 dias. Despues, si
+- **Trabajo:** reconciliar primero: quitar de `backlog` las fichas que ya
+  estan en `origin/main` y poner `en curso` + `rama:` a las que ya viven en
+  una rama de trabajo. Las `descartado` no se borran: son historia y
+  reservan su numero. Despues, si
   hay menos de 4 `propuesto`: hasta 2 fichas nuevas desde `PLANTILLA.md`,
   numero siguiente libre, "Que gana quien usa la app" en dos frases, 3 a 6
   criterios de aceptacion convertibles en test o `curl`, "Fuera de alcance",
@@ -353,8 +381,9 @@ al humano siga siendo poco.
   `COLA < 3` y `TOTAL < 5`, `disenado` mas vieja cuyo diseno no diga
   "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
   menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
-- **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main`;
-  copiar la ficha desde `backlog`; `estado: en curso <fecha>`, `candado: dev
+- **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main` (el
+  mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
+  `backlog`; `estado: en curso <fecha>`, `candado: dev
   <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
   origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
   siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
@@ -365,8 +394,9 @@ al humano siga siendo poco.
   repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
   explican por que). Dos subagentes para backend y frontend si son
   independientes. Antes del ultimo push: subagente ciego con `revision.md`
-  sobre `git diff origin/main...HEAD` y corregir lo real (es el primer
-  filtro, no el ultimo). `check.sh` en `Todo en verde.`. `## Implementacion`:
+  sobre `git diff origin/main...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
+  filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
+  es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
   que quedo, que no, desvios del diseno. `estado: implementado`,
   `candado: -`, push.
 - **A los 75 minutos sin terminar:** push de lo que esta verde,
@@ -503,4 +533,5 @@ al humano siga siendo poco.
   Cualquier forma de overlay in-game.
 - Subir `.rec`, `.sqlite3` o `.env`. Tocar `docs/roadmap.md`, `mercado/*`,
   `claude/loop-*` ni las ramas del humano.
-- Implementar, revisar y probar la misma ficha en la misma sesion.
+- Hacer mas de una de estas etapas sobre la misma ficha en la misma sesion:
+  implementar, revisar, probar.

@@ -10,7 +10,8 @@ items terminados.
 
 - **Rama `claude/equipo-dev/backlog`**: el papel. Fichas en `propuesto`,
   `disenado` y `descartado`, mas `ESTADO.md` (el tablero) y, si existe, el
-  marcador `PAUSA`. Nunca tiene PR, nunca se mergea, no cuenta para la cola.
+  marcador `PAUSA`, el veto `SIN_MERGE` y un espejo `en curso` de cada ficha
+  reclamada. Nunca tiene PR, nunca se mergea, no cuenta para la cola.
 - **Rama `claude/equipo-dev/NN-slug`**: el trabajo de un item. Nace cuando un
   Dev reclama la ficha y termina cuando el release manager la mergea (o el
   humano, en los casos de abajo).
@@ -51,4 +52,5 @@ equipo detecta los tres. Borra la rama al mergear.
   `## Para el equipo` en `ESTADO.md` (editable desde la web). El equipo
   responde en la ficha y en el tablero en su proximo turno.
 - **Pausar**: crear el archivo `docs/backlog/PAUSA` en la rama `backlog`
-  desde la web de GitHub. Todo turno termina sin tocar nada mientras exista.
+  desde la web de GitHub. Ningun turno nuevo hace nada mientras exista, y uno
+  que ya arranco lo ve antes de su proximo push y cierra.

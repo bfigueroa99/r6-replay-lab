@@ -33,7 +33,9 @@ echo "[1/5] ruff"
 if [ -n "$ruff" ]; then
     "$ruff" check "$repo/backend" || fallos+=(ruff)
 else
+    # Sin lint no hay verde: en la nube un verde a medias pasa por verde.
     echo "  ruff no esta instalado: pip install -r requirements-dev.txt"
+    fallos+=(ruff)
 fi
 
 echo
@@ -72,7 +74,7 @@ fi
 
 echo
 if [ "${#fallos[@]}" -gt 0 ]; then
-    echo "Fallo: $(IFS=', '; echo "${fallos[*]}")"
+    echo "Fallo: $(printf '%s, ' "${fallos[@]}" | sed 's/, $//')"
     exit 1
 fi
 echo "Todo en verde."
