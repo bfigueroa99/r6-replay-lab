@@ -16,6 +16,7 @@ const MapsPage = lazy(() => import('./pages/Maps.jsx'))
 const MatchDetail = lazy(() => import('./pages/MatchDetail.jsx'))
 const Matches = lazy(() => import('./pages/Matches.jsx'))
 const Operators = lazy(() => import('./pages/Operators.jsx'))
+const Ruleta = lazy(() => import('./pages/Ruleta.jsx'))
 const Teammates = lazy(() => import('./pages/Teammates.jsx'))
 const Trends = lazy(() => import('./pages/Trends.jsx'))
 
@@ -28,6 +29,7 @@ const LINKS = [
   { to: '/duelos', label: 'Duelos' },
   { to: '/tendencias', label: 'Tendencias' },
   { to: '/partidas', label: 'Partidas' },
+  { to: '/ruleta', label: 'Ruleta' },
   { to: '/datos', label: 'Datos' },
 ]
 
@@ -133,6 +135,7 @@ export default function App() {
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />
           <Route path="/jugadores/:id" element={<Jugador />} />
+          <Route path="/ruleta" element={<Ruleta />} />
           <Route path="/datos" element={<Datos />} />
           <Route
             path="*"

@@ -21,6 +21,7 @@ class EmptyApiTests(TestCase):
         "/api/coach/",
         "/api/maps/",
         "/api/operators/",
+        "/api/operators/catalog/",
         "/api/trends/",
         "/api/teammates/",
         "/api/matches/",
@@ -125,6 +126,41 @@ class PopulatedApiTests(TestCase):
             self.assertEqual(
                 set(insight) >= {"key", "severity", "title", "detail", "action"}, True
             )
+
+
+class CatalogoOperadoresTests(TestCase):
+    """El catalogo alimenta la ruleta: tiene que estar completo aunque no haya replays."""
+
+    def test_con_la_base_vacia_trae_la_tabla_del_parser(self):
+        data = self.client.get("/api/operators/catalog/").json()
+        nombres = {o["name"]: o["side"] for o in data["operators"]}
+        self.assertEqual(nombres["Ash"], "Attack")
+        self.assertEqual(nombres["Mute"], "Defense")
+        self.assertGreater(len(nombres), 60)
+        self.assertNotIn("Recruit", nombres)
+
+    def test_viene_ordenado_por_nombre(self):
+        data = self.client.get("/api/operators/catalog/").json()
+        nombres = [o["name"] for o in data["operators"]]
+        self.assertEqual(nombres, sorted(nombres, key=str.lower))
+
+    def test_suma_operadores_nuevos_vistos_en_las_rondas(self):
+        match = make_match(map_name="Bank", index=0)
+        rnd = make_round(match, 0, side="Defense")
+        make_round_player(rnd, side="Defense", operator="Nuevita")
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, side="Attack", operator="Unknown(123)")
+        data = self.client.get("/api/operators/catalog/").json()
+        nombres = {o["name"]: o["side"] for o in data["operators"]}
+        self.assertEqual(nombres["Nuevita"], "Defense")
+        self.assertNotIn("Unknown(123)", nombres)
+
+    def test_un_operador_conocido_no_cambia_de_lado_por_una_ronda_rara(self):
+        match = make_match(map_name="Bank", index=0)
+        rnd = make_round(match, 0, side="Attack")
+        make_round_player(rnd, side="Attack", operator="Mute")
+        data = self.client.get("/api/operators/catalog/").json()
+        nombres = {o["name"]: o["side"] for o in data["operators"]}
+        self.assertEqual(nombres["Mute"], "Defense")
 
 
 class ParametrosInvalidosTests(TestCase):

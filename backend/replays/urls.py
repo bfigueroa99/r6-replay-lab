@@ -13,6 +13,7 @@ urlpatterns = [
     path("coach/", views.coach, name="coach"),
     path("maps/", views.maps, name="maps"),
     path("operators/", views.operators, name="operators"),
+    path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),
     path("duels/", views.duels, name="duels"),

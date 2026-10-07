@@ -37,6 +37,12 @@ mapa/sitio/operador). Cada punto trae el numero, con que se compara, cuantas
 rondas lo respaldan y que hacer al respecto. Si no hay datos, lo dice en vez de
 inventar.
 
+**Ruleta de operadores.** Una rueda al estilo de r6roulette.de para cuando no
+sabes con quien jugar: eliges lado, giras (o pulsas espacio) y sale uno. Puedes
+sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
+y poner un fondo liso para recortarlo con chroma en OBS. Es una pagina normal
+del navegador, no un overlay.
+
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
 cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
 
@@ -131,7 +137,8 @@ va un Python completo, asi que **corre en una maquina sin Python instalado**: el
 frontend compilado viaja dentro del ejecutable del backend y Django lo sirve
 igual que desde el repo.
 
-La app instalada guarda sus datos en `%APPDATA%6-replay-lab`, no donde este
+La app instalada guarda sus datos en `%APPDATA%
+6-replay-lab`, no donde este
 instalada: Program Files es de solo lectura. Ahi va la base, los overrides y el
 `.env` si quieres cambiar `REPLAY_DIR`.
 
