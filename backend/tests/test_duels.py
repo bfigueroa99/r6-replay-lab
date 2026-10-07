@@ -176,3 +176,101 @@ class CoachDuelosTests(TestCase):
         payload = build_insights()
         self.assertIsNone(find(payload, "nemesis"))
         self.assertIsNone(find(payload, "operador-rival"))
+
+
+class RondasPorOperadorTests(TestCase):
+    """La tasa sobre rondas, no sobre duelos: el operador estuvo del otro lado."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+
+    def _ronda(self, numero, rivales, *, muero=True, gano=False, side="Attack"):
+        rnd = make_round(self.match, numero, won=gano, side=side)
+        make_round_player(rnd, died=muero)
+        for i, operador in enumerate(rivales):
+            make_round_player(
+                rnd, username=f"rival{i}", is_me=False, team_index=1, operator=operador
+            )
+        return rnd
+
+    def test_cuenta_rondas_aunque_no_haya_duelo(self):
+        """Ningun evento de baja: el operador igual estuvo en la ronda."""
+        self._ronda(0, ["Thorn", "Mira"], muero=True)
+        self._ronda(1, ["Thorn"], muero=False, gano=True)
+
+        datos = agg.rounds_vs_operator(min_rounds=1)
+        filas = {r["operator"]: r for r in datos["operators"]}
+        self.assertEqual(filas["Thorn"]["rounds"], 2)
+        self.assertEqual(filas["Thorn"]["deaths"], 1)
+        self.assertEqual(filas["Thorn"]["death_rate"], 50.0)
+        self.assertEqual(filas["Thorn"]["winrate"], 50.0)
+        self.assertEqual(filas["Mira"]["rounds"], 1)
+        self.assertEqual(filas["Mira"]["death_rate"], 100.0)
+        self.assertEqual(filas["Mira"]["winrate"], 0.0)
+
+    def test_la_diferencia_es_contra_las_mismas_rondas_filtradas(self):
+        self._ronda(0, ["Thorn"], muero=True)
+        self._ronda(1, ["Ash"], muero=False, gano=True)
+        self._ronda(2, ["Ash"], muero=False, gano=True)
+        self._ronda(3, ["Ash"], muero=True)
+
+        datos = agg.rounds_vs_operator(min_rounds=1)
+        self.assertEqual(datos["base"]["rounds"], 4)
+        self.assertEqual(datos["base"]["death_rate"], 50.0)
+        self.assertEqual(datos["base"]["winrate"], 50.0)
+        thorn = next(r for r in datos["operators"] if r["operator"] == "Thorn")
+        self.assertEqual(thorn["death_rate_delta"], 50.0)
+        self.assertEqual(thorn["winrate_delta"], -50.0)
+
+    def test_los_companeros_no_cuentan_como_rivales(self):
+        rnd = self._ronda(0, ["Thorn"])
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, operator="Ash")
+
+        ops = [r["operator"] for r in agg.rounds_vs_operator(min_rounds=1)["operators"]]
+        self.assertEqual(ops, ["Thorn"])
+
+    def test_el_equipo_se_lee_por_ronda(self):
+        """Si cambias de equipo entre rondas, el rival de una es el companero de otra."""
+        rnd = make_round(self.match, 0)
+        make_round_player(rnd, team_index=1)
+        make_round_player(rnd, username="otro", is_me=False, team_index=0, operator="Thorn")
+        make_round_player(rnd, username="amigo", is_me=False, team_index=1, operator="Ash")
+        rnd = make_round(self.match, 1)
+        make_round_player(rnd, team_index=0)
+        make_round_player(rnd, username="otro", is_me=False, team_index=0, operator="Thorn")
+        make_round_player(rnd, username="amigo", is_me=False, team_index=1, operator="Ash")
+
+        filas = {r["operator"]: r["rounds"] for r in agg.rounds_vs_operator(min_rounds=1)["operators"]}
+        self.assertEqual(filas, {"Thorn": 1, "Ash": 1})
+
+    def test_muestra_minima(self):
+        for n in range(3):
+            self._ronda(n, ["Thorn"])
+        self._ronda(3, ["Mira"])
+
+        ops = [r["operator"] for r in agg.rounds_vs_operator(min_rounds=3)["operators"]]
+        self.assertEqual(ops, ["Thorn"])
+        self.assertEqual(agg.rounds_vs_operator(min_rounds=3)["base"]["rounds"], 4)
+
+    def test_respeta_los_filtros(self):
+        self._ronda(0, ["Thorn"], side="Attack")
+        self._ronda(1, ["Ash"], side="Defense")
+
+        ops = [r["operator"] for r in agg.rounds_vs_operator(min_rounds=1, side="Defense")["operators"]]
+        self.assertEqual(ops, ["Ash"])
+
+    def test_operador_vacio_no_hace_fila(self):
+        self._ronda(0, [""])
+        self.assertEqual(agg.rounds_vs_operator(min_rounds=1)["operators"], [])
+
+    def test_sin_datos_no_revienta(self):
+        datos = agg.rounds_vs_operator()
+        self.assertEqual(datos["operators"], [])
+        self.assertEqual(datos["base"]["rounds"], 0)
+        self.assertIsNone(datos["base"]["death_rate"])
+
+    def test_endpoint(self):
+        self._ronda(0, ["Thorn"])
+        data = self.client.get("/api/duels/?min_rounds=1").json()
+        self.assertEqual(data["faced"]["operators"][0]["operator"], "Thorn")
+        self.assertEqual(data["faced"]["base"]["rounds"], 1)

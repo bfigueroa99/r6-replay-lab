@@ -768,6 +768,78 @@ def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
 
 
+def rounds_vs_operator(min_rounds: int = 10, **filters) -> dict:
+    """Cuanto mueres y cuanto ganas en las rondas con cada operador del otro lado.
+
+    Es la otra mitad de `duels_by_operator`: aquella mira los tiroteos que ya
+    pasaron, esta mira la ronda entera. Un operador que te condiciona sin
+    matarte (un Mira que te corta la entrada, un Jager que te come la utilidad)
+    solo aparece aca. La referencia son las mismas rondas filtradas, para que
+    la diferencia contra tu promedio sea sobre la misma base.
+    """
+    mias = {
+        rid: (died, won, equipo)
+        for rid, died, won, equipo in base_queryset(**filters).values_list(
+            "round_id", "died", "won", "team_index"
+        )
+    }
+    total = len(mias)
+    base = {
+        "rounds": total,
+        "deaths": sum(1 for died, _, _ in mias.values() if died),
+        "rounds_won": sum(1 for _, won, _ in mias.values() if won),
+    }
+    base["death_rate"] = _pct(base["deaths"], total)
+    base["winrate"] = _pct(base["rounds_won"], total)
+    if not mias:
+        return {"base": base, "operators": []}
+
+    # un operador por equipo y ronda, pero un set evita contar dos veces si un
+    # modo casual lo repite
+    rondas_por_op: dict[str, set[int]] = {}
+    rivales = (
+        RoundPlayer.objects.filter(round_id__in=list(mias), is_me=False)
+        .exclude(operator="")
+        .values_list("round_id", "team_index", "operator")
+    )
+    for rid, equipo, operador in rivales:
+        if equipo == mias[rid][2]:
+            continue
+        rondas_por_op.setdefault(operador, set()).add(rid)
+
+    salida = []
+    for operador, rids in rondas_por_op.items():
+        rondas = len(rids)
+        if rondas < min_rounds:
+            continue
+        muertes = sum(1 for rid in rids if mias[rid][0])
+        ganadas = sum(1 for rid in rids if mias[rid][1])
+        death_rate = _pct(muertes, rondas)
+        winrate = _pct(ganadas, rondas)
+        salida.append(
+            {
+                "operator": operador,
+                "rounds": rondas,
+                "deaths": muertes,
+                "death_rate": death_rate,
+                "death_rate_delta": _delta(death_rate, base["death_rate"]),
+                "rounds_won": ganadas,
+                "winrate": winrate,
+                "winrate_delta": _delta(winrate, base["winrate"]),
+            }
+        )
+    return {
+        "base": base,
+        "operators": sorted(salida, key=lambda r: (-r["rounds"], r["operator"])),
+    }
+
+
+def _delta(valor: float | None, referencia: float | None) -> float | None:
+    if valor is None or referencia is None:
+        return None
+    return round(valor - referencia, 1)
+
+
 # --------------------------------------------------------------------- progreso
 
 #: Metricas que se comparan entre periodos, con hacia donde es mejor.
