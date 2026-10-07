@@ -55,6 +55,7 @@ Estado del equipo. Hay dos fuentes y se usan las dos:
   git branch -r --list 'origin/claude/equipo-dev/*' --no-merged origin/main
   git log -1 --format='%ci %s' origin/claude/equipo-dev/<rama>   # ultimo commit
   git log --format='%s' origin/main -- docs/roadmap.md | head -5  # areas recientes
+  git diff origin/main...origin/claude/equipo-dev/<rama> -- docs/roadmap.md | grep 'en curso'  # reclamos
   ```
 
 - **GitHub, solo si la sesion trae las herramientas `mcp__github__*`** (repo
@@ -143,6 +144,13 @@ solo de una capa.
 Decisiones de producto que son del humano (por ejemplo, dos lecturas validas
 de una metrica, o si una pantalla nueva vale la complejidad): no adivinar. Se
 elige otra tarea y la pregunta va al informe final y, si hay PR, a su cuerpo.
+
+**Reclamo.** Elegida la tarea y antes de disenar: crear la rama, anotar el
+item en `docs/roadmap.md` (nuevo o existente) con `[en curso <fecha-hora UTC>]`
+en su titulo, commit `Reclama: <titulo>` y push. Dos iteraciones pueden
+solaparse (una que se alargo, un disparo manual); la que encuentra en otra
+rama del equipo un reclamo de menos de 3 horas sobre el mismo item o la misma
+zona del codigo elige otra cosa. El commit final reemplaza el reclamo por `[x]`.
 
 ## Fase 3. Diseno (arquitecto)
 
