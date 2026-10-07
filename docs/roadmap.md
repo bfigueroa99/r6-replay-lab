@@ -503,6 +503,13 @@ Lo que **no** quedo resuelto y hay que decirlo:
   manera es crear un `.env` en `%APPDATA%/r6-replay-lab`. Si la app va a salir de
   este PC de verdad, eso deberia ser una pantalla de configuracion.
 
+### 27. Rondas en que enfrentaste a cada operador [en curso 2026-10-07 18:29 UTC]
+
+Sale del pendiente del #3 (y del candidato #22 del PR #1, que nunca se
+mergeo). La tabla de duelos por operador mide sobre **duelos**; falta la tasa
+sobre **rondas**: cuando ese operador esta en el equipo rival, cuantas rondas
+mueres y cuantas ganas.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
