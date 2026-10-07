@@ -20,7 +20,6 @@ class EmptyApiTests(TestCase):
         "/api/filters/",
         "/api/overview/",
         "/api/coach/",
-        "/api/maps/",
         "/api/operators/",
         "/api/trends/",
         "/api/teammates/",
@@ -106,12 +105,6 @@ class PopulatedApiTests(TestCase):
         self.assertTrue(data["scoreboard"])
         self.assertEqual(data["my_totals"]["rounds"], 6)
 
-    def test_mapas_sitios_y_spawns(self):
-        data = self.client.get("/api/maps/?min_rounds=1").json()
-        self.assertEqual({r["map"] for r in data["maps"]}, {"Club House", "Border"})
-        self.assertTrue(data["sites"])
-        self.assertTrue(data["spawns"])
-
     def test_trends(self):
         data = self.client.get("/api/trends/").json()
         self.assertTrue(data["by_match"])
@@ -144,7 +137,7 @@ class ParametrosInvalidosTests(TestCase):
             "/api/matches/?limit=abc&offset=xyz",
             "/api/trends/?limit=-1",
             "/api/trends/?limit=0",
-            "/api/maps/?min_rounds=-2",
+            "/api/operators/?min_rounds=-2",
             "/api/teammates/?min_rounds=0",
             "/api/overview/?days=-5",
             "/api/overview/?since=no-es-una-fecha",

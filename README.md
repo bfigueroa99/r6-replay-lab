@@ -283,9 +283,9 @@ parser esta hecho para degradar bien en vez de reventar:
 Vale la pena ser explicito, porque son limitaciones del formato, no del codigo:
 
 - **No hay coordenadas de las bajas.** El `.rec` no expone posiciones, asi que
-  no existe heatmap sobre el minimapa. El mapa de calor de la app es por zona
-  del juego: sitio de bomba y spawn de ataque, que es la granularidad real que
-  entrega el replay.
+  no existe heatmap sobre el minimapa. La granularidad espacial real que entrega
+  el replay es sitio de bomba y spawn de ataque, y asi se exporta a CSV y la
+  usa el Coach.
 - **Plants y defuses no se detectan en las temporadas nuevas.** El paquete del
   timer del defuser cambio y ya no trae el string del contador. Se infiere: si
   el reloj de la ronda se corta muy arriba y el equipo perdedor no fue barrido,
@@ -329,7 +329,7 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                306 tests (parser, metricas, agregados, coach, API)
+  tests/                305 tests (parser, metricas, agregados, coach, API)
 frontend/               React + Vite + recharts (26 tests con vitest)
   components/           tabla, filtros, graficos, helpers de formato
   pages/                una por ruta, cada una en su propio chunk

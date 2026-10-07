@@ -155,19 +155,6 @@ def coach(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
-def maps(request: HttpRequest) -> JsonResponse:
-    filters = _filters(request)
-    min_rounds = _min_rounds(request, 1)
-    return _ok(
-        {
-            "maps": agg.by_map(min_rounds=min_rounds, **filters),
-            "sites": agg.by_site(min_rounds=min_rounds, **filters),
-            "spawns": agg.by_spawn(min_rounds=min_rounds, **filters),
-        }
-    )
-
-
-@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})

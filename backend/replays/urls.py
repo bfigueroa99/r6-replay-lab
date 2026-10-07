@@ -11,7 +11,6 @@ urlpatterns = [
     path("filters/", views.filter_options, name="filters"),
     path("overview/", views.overview, name="overview"),
     path("coach/", views.coach, name="coach"),
-    path("maps/", views.maps, name="maps"),
     path("operators/", views.operators, name="operators"),
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),
