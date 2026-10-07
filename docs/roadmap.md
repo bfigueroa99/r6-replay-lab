@@ -20,7 +20,9 @@ Reglas del loop:
 - **Overlay in-game, en ninguna forma.** Ni ventana flotante, ni hook, ni
   captura de pantalla, ni lectura de memoria del juego. Es una decision del
   proyecto, no una tarea pendiente.
-- API de Ubisoft, cuentas, nube, telemetria.
+- Cuentas o login de la propia app, nube, telemetria. La API de Ubisoft entra
+  solo como consulta opcional y explicita (ver #29), nunca como base de una
+  metrica sobre tus replays.
 - Cualquier cosa que necesite datos que el `.rec` no trae (ver `CLAUDE.md`).
 
 ## Que hacen los competidores
@@ -30,8 +32,10 @@ Dos familias distintas, y solo una es comparable:
 **Trackers de API** ([stats.cc](https://stats.cc/siege),
 [R6 Tracker](https://r6.tracker.network/)): leen la API de Ubisoft. MMR,
 historial de temporadas, leaderboards, rango de los rivales del lobby. Nada de
-eso se puede replicar leyendo replays, y no es el objetivo. Lo unico que si
-aplica de ellos: **comparacion con companeros de escuadra** ("con quien deberias
+eso se puede replicar leyendo replays. Desde el #29 el perfil de cada jugador
+enlaza a los dos y trae rango, MMR y K/D de la temporada actual de la misma API
+de Ubisoft, pero el objetivo sigue siendo lo que solo sale de tus replays. Lo
+que si aplica de ellos: **comparacion con companeros de escuadra** ("con quien deberias
 jugar mas"), ya implementado, y el breakdown por operador / mapa / modo, que ya
 existe.
 
@@ -585,6 +589,33 @@ dar por bueno el corte de 10, y si alguna diferencia pasa una banda de ruido
 como la del #10. Si pasa, una regla del coach del estilo de `operador-rival`
 pero sobre rondas.
 
+### 29. El jugador fuera de tus replays: stats.cc, R6 Tracker y Ubisoft [x]
+
+Hecho: el perfil de cada jugador (y el tuyo, que ahora se abre desde tu nombre
+en la cabecera) enlaza a **stats.cc** y **R6 Tracker** con su profileID, y trae
+un panel **Temporada en Ubisoft** con rango, MMR, rango maximo, K/D, partidas
+ganadas por playlist, nivel y horas jugadas. Cliente propio en
+`backend/externo/ubisoft.py`, sin dependencias nuevas (urllib), con los
+endpoints y el AppId que mantiene siegeapi. `POST /api/players/<id>/ubisoft/`
+consulta y guarda en `PerfilUbisoft`; abrir el perfil solo lee lo guardado. El
+ticket se cachea en `data/ubisoft-sesion.json` para no loguear en cada consulta,
+y se renueva solo si Ubisoft lo da por vencido. 34 tests nuevos (backend con un
+Ubisoft falso, vitest y e2e), ninguno sale a la red.
+
+Lo que no entra:
+
+- **Scraping de stats.cc / R6 Tracker.** Los dos estan detras de Cloudflare y
+  devuelven 403 a cualquier cliente que no sea un navegador. Pasar esa barrera
+  es evadir su proteccion anti bots, y ademas no hace falta: sus numeros vienen
+  de la misma API de Ubisoft que se consulta directo.
+- **Cuentas con verificacion en dos pasos.** La API no acepta el segundo paso
+  sin el flujo web de Ubisoft; la app lo dice y sugiere una cuenta secundaria.
+- **Historial de temporadas viejas y consola.** `full_profiles` solo trae la
+  temporada actual de PC.
+- **No se probo contra la API real** desde la nube (sin cuenta y sin red hacia
+  Ubisoft). La forma de las respuestas sale de siegeapi 6.3.5; si Ubisoft la
+  cambio, el panel muestra el error en vez de numeros.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
@@ -592,7 +623,8 @@ pero sobre rondas.
 | Overlay in-game | No-goal del proyecto. |
 | Heatmap de posiciones sobre el minimapa | El `.rec` no trae coordenadas. |
 | Stats de armas, precision, dano | No estan en el formato. |
-| MMR, rango, historial de temporada | Solo via API de Ubisoft. |
-| Scouting de rivales fuera de tus partidas | Idem. |
+| Historial de temporadas viejas | `full_profiles` solo trae la actual; el #29 cubre esa. |
+| Scouting de rivales que no estan en tus partidas | El perfil existe para quien aparece en tus replays. |
+| Scraping de stats.cc / R6 Tracker | Cloudflare los cierra a clientes que no son navegador; ver #29. |
 | Workspaces de equipo, scrims compartidos | Es una app local y de un jugador. |
 | Subir replays a un servidor para parsear | Todo corre en el PC, a proposito. |

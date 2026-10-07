@@ -38,4 +38,4 @@ ignore = [
 "backend/config/settings.py" = ["E501"]
 
 [lint.isort]
-known-first-party = ["config", "pydissect", "replays", "tests"]
+known-first-party = ["config", "externo", "pydissect", "replays", "tests"]

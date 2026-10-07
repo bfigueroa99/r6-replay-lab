@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useState } from 'react'
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { Link, NavLink, Route, Routes } from 'react-router-dom'
 
 import { get, post, useApi } from './api.js'
 import Dashboard from './pages/Dashboard.jsx'
@@ -97,7 +97,13 @@ export default function App() {
           ))}
         </nav>
         <div className="topbar-right">
-          {health.data?.player ? <span className="chip">{health.data.player}</span> : null}
+          {health.data?.player_id ? (
+            <Link className="chip" to={`/jugadores/${health.data.player_id}`} title="Tu perfil">
+              {health.data.player}
+            </Link>
+          ) : health.data?.player ? (
+            <span className="chip">{health.data.player}</span>
+          ) : null}
           {health.data ? (
             <span className="note">
               {health.data.matches} partidas · {health.data.rounds} rondas
