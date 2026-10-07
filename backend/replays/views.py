@@ -227,6 +227,10 @@ def duels(request: HttpRequest) -> JsonResponse:
             "totals": agg.duel_totals(**filters),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
+            "faced": agg.rounds_vs_operator(
+                min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
+                **filters,
+            ),
         }
     )
 
