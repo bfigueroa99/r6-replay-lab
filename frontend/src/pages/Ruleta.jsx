@@ -49,16 +49,13 @@ export default function Ruleta() {
     }
   }, [ajustes])
 
-  // modo streamer: fondo liso de un color para recortar con chroma en OBS.
-  // Es la pagina normal con otro fondo, no una ventana flotante.
+  // modo streamer: solo la rueda y el resultado, sin barra ni paneles, para
+  // capturar la ventana en OBS. Es la pagina normal con menos cosas, no una
+  // ventana flotante.
   useEffect(() => {
     document.body.classList.toggle('streamer', ajustes.streamer)
-    document.body.style.setProperty('--streamer-bg', ajustes.fondo)
-    return () => {
-      document.body.classList.remove('streamer')
-      document.body.style.removeProperty('--streamer-bg')
-    }
-  }, [ajustes.streamer, ajustes.fondo])
+    return () => document.body.classList.remove('streamer')
+  }, [ajustes.streamer])
 
   const catalogo = data?.operators
   const operadores = useMemo(
@@ -220,17 +217,6 @@ export default function Ruleta() {
                 onChange={(e) => cambiar({ quitarElegido: e.target.checked })}
               />
               <span>Quitar de la rueda al que salga (para repartir en el equipo)</span>
-            </label>
-            <label className="ajuste">
-              <span>Fondo del modo streamer</span>
-              <span className="color-row">
-                <input
-                  type="color"
-                  value={ajustes.fondo}
-                  onChange={(e) => cambiar({ fondo: e.target.value })}
-                />
-                <code>{ajustes.fondo}</code>
-              </span>
             </label>
           </Panel>
 

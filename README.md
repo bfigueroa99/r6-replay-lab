@@ -40,7 +40,7 @@ inventar.
 **Ruleta de operadores.** Una rueda al estilo de r6roulette.de para cuando no
 sabes con quien jugar: eliges lado, giras (o pulsas espacio) y sale uno. Puedes
 sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
-y poner un fondo liso para recortarlo con chroma en OBS. Es una pagina normal
+y dejar solo la rueda en pantalla para capturarla en OBS. Es una pagina normal
 del navegador, no un overlay.
 
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en

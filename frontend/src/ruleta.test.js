@@ -149,13 +149,11 @@ describe('normalizarAjustes', () => {
       lado: 'Defense',
       duracion: '7',
       quitarElegido: 'si',
-      fondo: 'verde',
       excluidos: ['Ash', 3, 'Ash', ''],
     })
     expect(ajustes.lado).toBe('Defense')
     expect(ajustes.duracion).toBe(7)
     expect(ajustes.quitarElegido).toBe(false)
-    expect(ajustes.fondo).toBe(AJUSTES_DEFAULT.fondo)
     expect(ajustes.excluidos).toEqual(['Ash'])
   })
 

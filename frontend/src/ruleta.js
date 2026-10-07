@@ -20,7 +20,6 @@ export const AJUSTES_DEFAULT = {
   duracion: 4,
   quitarElegido: false,
   streamer: false,
-  fondo: '#00ff00',
   excluidos: [],
 }
 
@@ -38,7 +37,6 @@ export function normalizarAjustes(raw) {
   if (Number.isFinite(duracion)) base.duracion = Math.min(10, Math.max(1, duracion))
   if (typeof raw.quitarElegido === 'boolean') base.quitarElegido = raw.quitarElegido
   if (typeof raw.streamer === 'boolean') base.streamer = raw.streamer
-  if (typeof raw.fondo === 'string' && /^#[0-9a-f]{6}$/i.test(raw.fondo)) base.fondo = raw.fondo
   if (Array.isArray(raw.excluidos)) {
     base.excluidos = [...new Set(raw.excluidos.filter((n) => typeof n === 'string' && n))]
   }

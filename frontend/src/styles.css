@@ -528,9 +528,6 @@ td.dim { color: var(--muted); }
 .ajuste input[type='range'] { accent-color: var(--accent); width: 100%; }
 .ajuste.check { flex-direction: row; align-items: flex-start; gap: 8px; }
 .ajuste.check input { accent-color: var(--accent); width: 15px; height: 15px; margin: 2px 0 0; flex-shrink: 0; }
-.color-row { display: flex; align-items: center; gap: 8px; }
-.color-row input[type='color'] { width: 42px; height: 28px; padding: 2px; cursor: pointer; }
-.color-row code { font-size: 12px; }
 
 .pool + .pool { margin-top: 12px; }
 .pool-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
@@ -554,10 +551,9 @@ td.dim { color: var(--muted); }
 .historial li { display: flex; align-items: center; gap: 8px; }
 .historial li:first-child span:first-child { color: var(--accent); font-weight: 700; }
 
-/* Modo streamer: la misma pagina con un fondo liso para recortar con chroma.
-   No es una ventana flotante ni se superpone al juego: se captura como
-   cualquier ventana del navegador. */
-body.streamer { background: var(--streamer-bg, #00ff00); }
+/* Modo streamer: la misma pagina sin barra ni paneles, solo la rueda. No es
+   una ventana flotante ni se superpone al juego: se captura como cualquier
+   ventana del navegador. */
 body.streamer .topbar,
 body.streamer .ruleta-aside,
 body.streamer .ruleta-head p,
@@ -565,9 +561,3 @@ body.streamer .ruleta-head h1 { display: none; }
 body.streamer .ruleta { grid-template-columns: 1fr; justify-items: center; }
 body.streamer .ruleta-centro { background: transparent; border-color: transparent; }
 body.streamer .ruleta-head { justify-content: flex-end; }
-body.streamer .resultado {
-  background: rgba(13, 17, 23, 0.88);
-  border-radius: 14px;
-  padding: 10px 28px 14px;
-}
-body.streamer .resultado-label { color: #c3ccd8; }
