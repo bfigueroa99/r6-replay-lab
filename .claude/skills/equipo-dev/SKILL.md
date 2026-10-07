@@ -155,8 +155,11 @@ cerro el PR). Hecho no lo escribe nadie: hecho es que la ficha esta en main.
 Dos lugares:
 
 1. **Rama `claude/equipo-dev/backlog`**, creada una vez desde `origin/main`
-   por el primer PO o Release que no la encuentre, con `docs/backlog/`
-   (README, PLANTILLA desde `$REF`) y `ESTADO.md`. Solo admite
+   por el primer turno de **cualquier rol** que no la encuentre (`git
+   checkout -b claude/equipo-dev/backlog origin/main`, copiar `README.md`,
+   `PLANTILLA.md` y `ESTADO.plantilla.md` desde `$REF` si no estan, escribir
+   `ESTADO.md`, commit `Crea la rama backlog`, push). Sin ella no hay donde
+   anotar hallazgos ni tablero, asi que no se posterga. Solo admite
    `docs/backlog/*.md`. Ahi viven `propuesto`, `disenado`, `descartado`,
    `ESTADO.md` y `PAUSA`. Nunca PR, nunca merge, no cuenta para la cola. Push
    rechazado: `git pull --no-rebase origin claude/equipo-dev/backlog` (las
@@ -438,10 +441,13 @@ La identidad es la ficha, no el nombre de la rama.
 - Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
   `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
   nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
-  les crea la ficha a partir de su entrada en el roadmap y del mensaje de su
-  ultimo commit, en `implementado`, y sigue como siempre; si ya tienen PR,
-  se conserva. Con solo el commit de reclamo: borrables, se listan en
-  `ESTADO.md` y no se les crea ficha.
+  (o QA en su fallback) les crea la ficha a partir de su entrada en el
+  roadmap y del mensaje de su ultimo commit, en `implementado`, y sigue como
+  siempre; si ya tienen PR abierto, el PR se conserva y la sesion que las
+  hizo ya termino, asi que no aplica la espera de 3 horas de P8 (sin
+  herramientas para ver el PR, vale la regla general: commits de menos de 3
+  horas = posible sesion viva). Con solo el commit de reclamo: borrables, se
+  listan en `ESTADO.md` y no se les crea ficha.
 - Los numeros 20 a 29 del roadmap estan tomados o reservados por
   `mercado/*`, `claude/loop-*` y los PRs del playbook anterior; no se tocan.
   El PO puede importar esos candidatos como fichas nuevas con numero nuevo.
