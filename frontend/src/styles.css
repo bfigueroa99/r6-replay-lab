@@ -323,38 +323,6 @@ td.dim { color: var(--muted); }
 .insight .action b { color: var(--accent); }
 .insight .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
 
-/* ------------------------------------------------------------------ heatmap */
-
-.heat { display: grid; gap: 3px; font-size: 11px; }
-.heat-row { display: grid; gap: 3px; align-items: stretch; }
-.heat-label {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  color: var(--muted);
-  background: var(--panel-2);
-  border-radius: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.heat-cell {
-  min-height: 42px;
-  border-radius: 4px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  line-height: 1.2;
-  padding: 3px;
-  border: 1px solid #ffffff08;
-}
-.heat-cell.empty { background: #131924; color: #3a4553; }
-.heat-cell b { font-size: 13px; }
-.heat-cell small { opacity: 0.75; }
-.heat-legend { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: 11px; }
-.heat-scale { display: flex; height: 8px; width: 160px; border-radius: 4px; overflow: hidden; }
-.heat-scale > i { flex: 1; }
-
 /* ------------------------------------------------------------------ timeline */
 
 .round-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
