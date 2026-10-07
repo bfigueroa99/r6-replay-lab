@@ -22,7 +22,7 @@ aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
 2. **Un item, una ficha, una rama.** La ficha viaja con el codigo y se
    mergea con el. Nadie toca `docs/roadmap.md`: quedo como historia.
 3. **Verde o no se empuja codigo.** `./scripts/check.sh` tiene que terminar
-   en `Todo en verde.` con los 4 pasos. Un verde a medias (sin frontend) no
+   en `Todo en verde.` con todos sus pasos (lint, tests, build, e2e). Un verde a medias no
    es verde.
 4. **Independencia.** Una misma sesion firma como mucho una de estas etapas
    sobre la misma ficha: implementar, revisar, probar.
