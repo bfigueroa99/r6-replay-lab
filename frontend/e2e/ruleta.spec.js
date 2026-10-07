@@ -34,7 +34,7 @@ test('sacar un operador lo deja fuera de la rueda y sobrevive a recargar', async
   await page.getByRole('button', { name: 'Ataque', exact: true }).first().click()
 
   const antes = await page.locator('.resultado-label').textContent()
-  await page.locator('.pool-chip', { hasText: 'Ash' }).click()
+  await page.getByRole('button', { name: 'Ash', exact: true }).click()
   await expect(page.locator('.pool-chip.fuera')).toHaveText(['Ash'])
   await expect(page.locator('.resultado-label')).not.toHaveText(antes)
 
