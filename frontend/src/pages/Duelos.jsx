@@ -18,6 +18,19 @@ function Balance({ value }) {
   return <span className={`chip ${value > 0 ? 'win' : 'loss'}`}>{value > 0 ? `+${value}` : value}</span>
 }
 
+/** Diferencia en puntos contra tu promedio. `mejorSiSube` decide el color. */
+function Diferencia({ value, mejorSiSube }) {
+  if (value === null || value === undefined) return <span className="dim">—</span>
+  if (Math.round(value) === 0) return <span className="chip">0</span>
+  const bueno = mejorSiSube ? value > 0 : value < 0
+  return (
+    <span className={`chip ${bueno ? 'win' : 'loss'}`}>
+      {value > 0 ? '+' : ''}
+      {value.toFixed(0)}
+    </span>
+  )
+}
+
 export default function Duelos({ filters, setFilters, runImport, importing }) {
   const [minDuels, setMinDuels] = useState(3)
   const { data, error, loading } = useApi('/duels/', { ...filters, min_duels: minDuels })
@@ -31,6 +44,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const base = totals.winrate
   const nemesis = data.nemesis || []
   const operators = data.operators || []
+  const faced = data.faced || { base: {}, operators: [] }
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -108,6 +122,44 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.operator}
           csvName="duelos-por-operador"
           empty={`Ningun operador llega a ${minDuels} duelos con estos filtros.`}
+        />
+      </Panel>
+
+      <Panel
+        title="Rondas contra cada operador"
+        hint={
+          'Todas las rondas en que ese operador estuvo del otro lado, haya o no un duelo. Mide ' +
+          'lo que te condiciona sin matarte: un Mira que corta la entrada o un Jäger que se come ' +
+          `tu utilidad. La comparación es contra tus ${faced.base.rounds ?? 0} rondas con estos ` +
+          `filtros (mueres en el ${pct(faced.base.death_rate)}, ganas el ` +
+          `${pct(faced.base.winrate)}). Desde 10 rondas; con tan poca muestra, una diferencia ` +
+          'de 10 o 15 puntos todavía puede ser ruido.'
+        }
+      >
+        <DataTable
+          columns={[
+            { key: 'operator', label: 'Operador', left: true },
+            { key: 'rounds', label: 'Rondas' },
+            { key: 'death_rate', label: 'Mueres', render: (row) => pct(row.death_rate) },
+            {
+              key: 'death_rate_delta',
+              label: 'Mueres vs. promedio',
+              help: 'Puntos de diferencia entre cuánto mueres con este operador enfrente y cuánto mueres en todas tus rondas filtradas.',
+              render: (row) => <Diferencia value={row.death_rate_delta} mejorSiSube={false} />,
+            },
+            { key: 'winrate', label: 'Ganas la ronda', render: (row) => pct(row.winrate) },
+            {
+              key: 'winrate_delta',
+              label: 'Ganas vs. promedio',
+              help: 'Puntos de diferencia entre el winrate de estas rondas y el de todas tus rondas filtradas.',
+              render: (row) => <Diferencia value={row.winrate_delta} mejorSiSube />,
+            },
+          ]}
+          rows={faced.operators}
+          initialSort={{ key: 'rounds', dir: 'desc' }}
+          rowKey={(row) => row.operator}
+          csvName="rondas-por-operador-rival"
+          empty="Ningún operador rival llega a 10 rondas con estos filtros."
         />
       </Panel>
 

@@ -33,6 +33,10 @@ TABLES = {
     "clutches": ("clutches", agg.clutch_detail),
     "nemesis": ("rivales", lambda **f: agg.nemesis(min_duels=1, **f)),
     "duel_operators": ("duelos-por-operador", lambda **f: agg.duels_by_operator(min_duels=1, **f)),
+    "faced_operators": (
+        "rondas-por-operador-rival",
+        lambda **f: agg.rounds_vs_operator(min_rounds=1, **f)["operators"],
+    ),
 }
 
 

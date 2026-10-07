@@ -564,6 +564,27 @@ tests tampoco", y lo mostro la consola del navegador. Esta suite es esa
 consola, automatizada. Y con Actions muerto, es la verificacion que corre de
 verdad.
 
+### 27. Rondas en que enfrentaste a cada operador [x]
+
+Hecho: panel **Rondas contra cada operador** en Duelos, `faced` dentro de
+`GET /api/duels/` (con `min_rounds`, 10 por defecto) y tabla exportable
+`faced_operators`. Sale del pendiente del #3: la tabla de duelos mide los
+tiroteos, esta mide la ronda entera con ese operador del otro lado (cuanto
+mueres y cuanto ganas) y lo compara contra tus rondas con los mismos filtros.
+El rival se decide por `team_index` en cada ronda, no por el lado ni por la
+persona. 9 tests nuevos.
+
+Lo que no entra: no hay banda de ruido en la diferencia (como si la tiene el
+#10) ni regla del coach; y el corte de 10 rondas no se calibro contra datos
+reales, porque en la nube no hay. Ver #28.
+
+### 28. Calibrar la tabla de rondas por operador rival
+
+Mirar con los datos reales cuantas rondas junta cada operador rival antes de
+dar por bueno el corte de 10, y si alguna diferencia pasa una banda de ruido
+como la del #10. Si pasa, una regla del coach del estilo de `operador-rival`
+pero sobre rondas.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
