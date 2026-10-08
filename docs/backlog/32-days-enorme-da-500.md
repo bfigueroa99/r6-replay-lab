@@ -1,13 +1,13 @@
 # 32. Un ?days= enorme da 500 en nueve endpoints
 
-estado: implementado
-candado: revisor 2026-10-08 21:05 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/32-days-enorme-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main dc0188b con `seed_demo`: `GET /api/overview/?days=1000000` responde 500 (`OverflowError: date value out of range` en `replays/views.py:_filters`, que solo atrapa `ValueError`). Lo mismo en coach, operators, trends, teammates, duels, sessions, compare y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_api.py
-turnos: dev 20261008T1502Z
+turnos: dev 20261008T1502Z, revisor 20261008T2102Z
 
 ## PR
 
@@ -23,10 +23,10 @@ declara como regla.
 
 ## Criterios de aceptacion
 
-- [ ] `GET /api/overview/?days=1000000` responde 200 (test).
-- [ ] `GET /api/overview/?days=99999999999` responde 200 en los nueve endpoints que usan `_filters` (test con subTest).
-- [ ] Un `days` desbordado se ignora: la respuesta es igual a la que se obtiene sin `days` (test).
-- [ ] `days=7` sigue filtrando como antes (test existente o nuevo).
+- [x] `GET /api/overview/?days=1000000` responde 200 (test).
+- [x] `GET /api/overview/?days=99999999999` responde 200 en los nueve endpoints que usan `_filters` (test con subTest).
+- [x] Un `days` desbordado se ignora: la respuesta es igual a la que se obtiene sin `days` (test).
+- [x] `days=7` sigue filtrando como antes (test existente o nuevo).
 
 ## Fuera de alcance
 
@@ -62,3 +62,26 @@ sin recompute, sin frontend.
 - Desvio: no hay arquitecto ni PO en `turnos:` porque es un bug encontrado por el
   Dev sin trabajo tomable, segun el playbook.
 - `check.sh` en verde: 369 tests backend, 53 frontend, build, 17 e2e.
+
+## Revision 2026-10-08 sobre 1441c1d
+
+Revisor 20261008T2102Z. Revision ciega del diff (`views.py` + `test_api.py`, sin `docs/backlog`) y confirmacion propia.
+
+- Sin hallazgos. El `except (ValueError, OverflowError)` cubre los dos desbordes
+  (constructor de `timedelta` con `99999999999`; resta con `datetime.now()` con `1000000`)
+  y tambien los negativos que pasan el anio 9999 (`-2932896`, `-99999999999`).
+  `days=-1000000` deja un `since` en el anio 4764: respuesta vacia, sin 500 (fuera de alcance, como dice la ficha).
+- Otros caminos de fecha desde la query string, revisados: `_fecha` (`since=0001-01-01`,
+  `until=9999-12-31` dan 200), `compare?by=days` acota `n` a 365 con `_int_param`,
+  `session` enorme devuelve `[]`. Ninguno da 500.
+- Criterios: los cuatro cubiertos por `test_un_days_enorme_no_revienta_ningun_endpoint`
+  (10 endpoints x 2 valores), `test_un_days_desbordado_se_ignora_como_cualquier_valor_invalido`
+  y `test_un_days_normal_sigue_filtrando`.
+- Mutaciones: volver a `except ValueError` -> 21 errores en `ParametrosInvalidosTests`;
+  ignorar `days` siempre -> falla `test_un_days_normal_sigue_filtrando`.
+- Diff dentro de `archivos:`; sin metrica nueva (no hace falta fila en `metricas.md`);
+  sin tildes en identificadores; sin `print`.
+- `check.sh` en verde sobre bb61b8f (main dc0188b ya incluido): 369 tests backend
+  (4 skipped, los de siempre), 53 frontend, build, 17 e2e.
+
+Veredicto: aprobar -> `revisado`.
