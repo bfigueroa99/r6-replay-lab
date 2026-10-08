@@ -141,6 +141,20 @@ class RoundEndTests(SimpleTestCase):
         events.round_end(r)
         self.assertEqual(resultado(r), [(True, TIME), (False, "")])
 
+    def test_y9s4_gana_el_equipo_1_si_el_marcador_del_0_no_sube(self):
+        # con la defensa en el equipo 0, antes de Y9S4 ganaria el 0 por tiempo
+        r = LectorFalso(version=Y9S4, roles=(DEFENSE, ATTACK), score=(0, 1))
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(False, ""), (True, TIME)])
+
+    def test_y9s4_el_marcador_se_compara_contra_el_inicial_de_la_ronda(self):
+        # desde la segunda ronda el equipo 0 puede traer puntos sin haber ganado esta
+        r = LectorFalso(version=Y9S4, roles=(DEFENSE, ATTACK), score=(2, 2))
+        r.teams[0]["startingScore"] = 2
+        r.teams[1]["startingScore"] = 1
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(False, ""), (True, TIME)])
+
     def test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador(self):
         r = LectorFalso()
         r.match_feedback = [kill("B0", "A0", usernameFromScoreboard="B1")]

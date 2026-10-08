@@ -1,13 +1,13 @@
 # 30. Tests de quien gana la ronda y por que
 
-estado: implementado
-candado: revisor 2026-10-08 12:03 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/30-tests-ganador-de-ronda
 area: parser
 prioridad: 2
 fuente: hueco de tests en pydissect: `events.round_end` y `events.read_defuser_timer` no tienen ningun test (main dc0188b; el unico que los ejercita es `RealReplayTests`, que se salta sin `R6_TEST_REPLAY`)
 archivos: backend/tests/test_round_end.py
-turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z
+turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z
 
 ## PR
 
@@ -201,9 +201,41 @@ No se toco `pydissect/` (fuera de alcance). El bug de Y9S4 con
 Verificacion: `check.sh` -> `Todo en verde.` (377 tests backend, 53 vitest,
 build ok, 17 e2e) sobre a65069c.
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-08 sobre 0de3a3c
 
-(Revisor)
+(Revisor 20261008T1202Z. Revision ciega con `revision.md` sobre el diff sin
+`docs/backlog`; cada hallazgo confirmado con mutacion por el lider.)
+
+Hallazgos:
+
+- [test] backend/tests/test_round_end.py (tests de Y9S4)
+  Que pasa: los tres tests de Y9S4 usan `score=(1, 0)` con `startingScore=0`:
+  siempre gana el equipo 0 y nunca se compara contra un marcador inicial
+  distinto de cero.
+  Como reproducirlo: en `pydissect/events.py`, `team0_won = True` o
+  `team0_won = r.teams[0]["score"] > 0` dejan la suite de la rama en verde. La
+  segunda es un bug realista: desde la segunda ronda el equipo que ya trae
+  puntos apareceria ganando rondas que perdio.
+  Arreglo: lo agrega el revisor (tests de casos borde, pasan en main):
+  `test_y9s4_gana_el_equipo_1_si_el_marcador_del_0_no_sube` (`score=(0, 1)`,
+  defensa en el 0 para que la logica previa diera lo contrario) y
+  `test_y9s4_el_marcador_se_compara_contra_el_inicial_de_la_ronda` (2 -> 2
+  contra 1 -> 2). Con `team0_won = True` caen los dos; con `score > 0` cae el
+  segundo; sin mutacion pasan.
+
+Sin hallazgos de reglas, formato ni estilo: un solo archivo de test nuevo,
+dentro de `archivos:`, sin tildes en identificadores, sin `print`, sin tocar
+`pydissect/`. Nota sin hallazgo: los cambios al conteo de `sizes` (equipos de
+menos de 5) no los detecta ningun test, pero ninguno lo promete.
+
+Criterios de aceptacion: los seis cubiertos por tests con nombre (ver
+Implementacion), ahora 13 tests en el archivo.
+
+`check.sh` -> `Todo en verde.` sobre 0de3a3c (antes de agregar tests) y
+sobre el commit de esta revision.
+
+Veredicto: aprobar (el unico hallazgo quedo cubierto por los tests que agrego
+el revisor) -> `revisado`.
 
 ## QA <fecha> sobre <sha>
 
