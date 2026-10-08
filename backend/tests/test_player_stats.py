@@ -67,6 +67,17 @@ class PlayerRoundStatsTests(SimpleTestCase):
         # solo la kill a A2 llega con B4 solo, mas A1, A3 y A4 vivos
         self.assertEqual(con_1vx(stats.player_round_stats(r)), {"B4": 4})
 
+    def test_la_kill_con_un_companero_vivo_no_cuenta_para_el_1vx(self):
+        r = LectorFalso(ganador=1)
+        r.match_feedback = [kill("A1", f"B{n}") for n in range(3)]
+        r.match_feedback.append(kill("B4", "A0"))
+        r.match_feedback += [kill("A1", "B3"), kill("B4", "A1")]
+        filas = stats.player_round_stats(r)
+
+        # la kill a A0 llega con B3 todavia vivo: solo cuenta la de A1, mas A2..A4
+        self.assertEqual(con_1vx(filas), {"B4": 4})
+        self.assertEqual(de(filas, "B4")["kills"], 2)
+
     def test_uno_contra_uno_ganado_vale_uno(self):
         r = LectorFalso(ganador=0)
         r.match_feedback = [kill("A0", f"B{n}") for n in range(4)]

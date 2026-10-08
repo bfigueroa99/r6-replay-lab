@@ -1,13 +1,13 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
-estado: implementado
-candado: revisor 2026-10-08 12:03 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/31-tests-stats-por-jugador
 area: parser
 prioridad: 3
 fuente: hueco de tests en pydissect: `stats.player_round_stats` (incluido el calculo de 1vX) y `stats.player_match_stats` no tienen ningun test unitario (main dc0188b)
 archivos: backend/tests/test_player_stats.py
-turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z
+turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z
 
 ## PR
 
@@ -170,9 +170,43 @@ No se toco `pydissect/`. El caso dudoso de `PLAYER_LEAVE` sigue en
 Verificacion: `check.sh` -> `Todo en verde.` (376 tests backend, 53 vitest,
 build ok, 17 e2e) sobre e6e030e.
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-08 sobre c7cd309
 
-(Revisor)
+(Revisor 20261008T1202Z. Revision ciega con `revision.md` sobre el diff sin
+`docs/backlog`; cada hallazgo confirmado con mutacion por el lider. Los
+valores esperados de 1vX se recalcularon a mano contra `stats.py` y
+coinciden.)
+
+Hallazgos:
+
+- [test] backend/tests/test_player_stats.py
+  (`test_las_kills_antes_de_quedar_solo_no_cuentan_para_el_1vx`)
+  Que pasa: la unica kill "antes de quedar solo" ocurre con el equipo ganador
+  completo (5 vivos), asi que el limite real del umbral (un companero vivo)
+  no se prueba.
+  Como reproducirlo: en `pydissect/stats.py`, `team_left < 2` -> `< 3` o
+  `<= 4` deja los 10 tests de la rama en verde; B4 cobraria una kill hecha
+  con B3 todavia vivo.
+  Arreglo: lo agrega el revisor (test de caso borde, pasa en main):
+  `test_la_kill_con_un_companero_vivo_no_cuenta_para_el_1vx` (gana el 1; A1
+  mata B0..B2; B4 mata A0 con B3 vivo; A1 mata B3; B4 mata A1 -> `1vX == 4`,
+  `kills == 2`). Con `< 3` y con `<= 4` cae; sin mutacion pasa.
+
+Sin hallazgos de reglas, formato ni estilo: un solo archivo de test nuevo,
+dentro de `archivos:`, sin tildes en identificadores, sin `print`, sin tocar
+`pydissect/`. Nota sin hallazgo: las ramas `DEATH` y `PLAYER_LEAVE` del
+conteo de 1vX (suicidio o desconexion de un companero) no tienen test; ningun
+test lo promete y el caso de `PLAYER_LEAVE` ya esta en `## Para el humano`.
+
+Criterios de aceptacion: los seis cubiertos por tests con nombre (ver
+Implementacion; los desvios del criterio de la PO estan justificados alli y
+los numeros nuevos se verificaron). 11 tests en el archivo.
+
+`check.sh` -> `Todo en verde.` sobre c7cd309 (antes de agregar el test) y
+sobre el commit de esta revision.
+
+Veredicto: aprobar (el unico hallazgo quedo cubierto por el test que agrego
+el revisor) -> `revisado`.
 
 ## QA <fecha> sobre <sha>
 
