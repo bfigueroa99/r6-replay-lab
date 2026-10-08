@@ -1,14 +1,19 @@
 # CLAUDE.md
 
-Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (historia; el backlog vivo esta en
-`docs/backlog/`) y
+Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (backlog) y
 `docs/formato-rec.md` (limites del formato).
 
 ## Que es
 
 Analizador local de replays de Rainbow Six Siege. Parser propio en Python puro
 (`backend/pydissect/`), Django + SQLite para la API, React + Vite para la UI.
-Corre entero en el PC del usuario: sin servicios externos, sin cuentas, sin red.
+Corre entero en el PC del usuario: sin servicios externos, sin cuentas propias.
+
+La unica salida a la red es opcional y explicita: el panel **Temporada en
+Ubisoft** del perfil de un jugador consulta la API de Ubisoft
+(`backend/externo/`) si el usuario puso su cuenta en el `.env` y aprieta el
+boton. Los enlaces a stats.cc y R6 Tracker los abre el navegador; la app no
+hace esas requests.
 
 ## Comandos
 
@@ -23,7 +28,6 @@ cd frontend; npm run dev                   # hot reload en :5173, proxea /api
 cd frontend; npm run desktop               # app de escritorio (Electron)
 .\scripts\check.ps1                        # lint + tests + build + e2e antes de commitear
 .\scripts\check.ps1 -SinE2E                # lo mismo pero sin el e2e
-./scripts/check.sh                         # lo mismo en Linux/macOS y en sesiones cloud (SIN_E2E=1 lo salta)
 .\scripts\release.ps1                      # verifica, empaqueta, taggea y publica la Release
 ```
 
@@ -34,33 +38,26 @@ verificacion es `check.ps1` en la maquina, y el e2e es la parte que ve la app.
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
 
-## Equipo de desarrollo autonomo
-
-Una rutina programada corre cada 3 horas una sesion cloud que es **un turno de
-un rol** del equipo: release manager, product owner, arquitecto, dev, revisor
-o QA, segun la franja horaria UTC. El playbook es
-`.claude/skills/equipo-dev/SKILL.md`; los scripts `scripts/equipo-dev/turno.sh`
-y `estado.sh` deciden el rol y leen el estado. Desde el item 30 el backlog
-vive en `docs/backlog/` (una ficha por item, ver su README) y en la rama
-`claude/equipo-dev/backlog`; `docs/roadmap.md` queda como historia. Cada item
-es una rama y un PR; `check.sh` en verde antes de empujar codigo; maximo 3
-items con codigo en el pipeline; el release manager mergea por PR lo que paso
-dev, revision y QA en sesiones distintas, y el humano mergea lo que la nube no
-puede verificar (Electron, `.ps1`, instalador) o toca las reglas del equipo.
-`docs/backlog/SIN_MERGE` en la rama `backlog` veta el merge automatico; `PAUSA`
-detiene al equipo. Si cambias una regla
-de este archivo, revisa que el playbook no la contradiga.
-
 ## Reglas de arquitectura
 
 - **`pydissect/` no importa Django.** Es un parser independiente; recibe rutas y
   devuelve dicts. Si necesitas config, pasala como argumento.
+- **`externo/` tampoco.** Es el cliente de Ubisoft y los enlaces a trackers; el
+  abridor de red entra como argumento. `replays/perfil_externo.py` es la capa
+  Django (credenciales, cache del ticket, modelo `PerfilUbisoft`).
+- **Nada sale a la red sin un clic.** Abrir una pagina nunca consulta a
+  Ubisoft: lo hace el POST del boton, y lo que vuelve se guarda con su fecha.
+  Ningun test sale a internet: se reemplaza `perfil_externo.abrir`.
+- **Sin scraping de stats.cc ni R6 Tracker.** Estan detras de Cloudflare y
+  responden 403 a todo lo que no es un navegador; esquivar eso es evadir su
+  proteccion. Sus numeros salen de la API de Ubisoft, que se consulta directo.
 - **Sin dependencias nuevas** salvo que no haya alternativa razonable. El
   backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
   requests. En el frontend, `electron` es devDependency y solo la usa la app de
   escritorio: la UI web tiene que seguir funcionando sin ella.
-- **La API es de lectura.** Vistas planas con `JsonResponse` y dos POST
-  (`/api/import/` y `/api/overrides/`). No agregues serializers ni viewsets.
+- **La API es de lectura.** Vistas planas con `JsonResponse` y tres POST
+  (`/api/import/`, `/api/overrides/`, `/api/players/<id>/ubisoft/`). No agregues
+  serializers ni viewsets.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
   escribe columnas en `RoundPlayer`, y `analytics/aggregates.py` solo agrega.
 - **Todo numero que muestra la UI tiene definicion en `docs/metricas.md`.** Si
@@ -91,7 +88,10 @@ No propongas features que dependan de esto (esta documentado en el README):
   atribuir.
 - **Armas, dano, disparos, precision.**
 - **MMR, rango, historial de temporada, stats de rivales fuera de tus partidas.**
-  Eso vive en la API de Ubisoft, que este proyecto no usa a proposito.
+  Eso vive en la API de Ubisoft. El panel opcional de Ubisoft muestra rango,
+  MMR y K/D de la **temporada actual** de un jugador, pero ninguna metrica sobre
+  tus replays puede depender de el: sin cuenta configurada tiene que funcionar
+  todo igual.
 
 ## No-goals
 
@@ -102,5 +102,6 @@ No propongas features que dependan de esto (esta documentado en el README):
   ventana normal con marco, sin always-on-top y sin transparencia. Si alguna
   iteracion propone `alwaysOnTop`, `transparent` o `setIgnoreMouseEvents`, la
   respuesta es no.
-- Cuentas, login, telemetria, sincronizacion a la nube.
-- Integracion con la API de Ubisoft.
+- Cuentas o login de la propia app, telemetria, sincronizacion a la nube.
+- Credenciales de Ubisoft en la base o en el frontend: viven solo en el `.env`,
+  y lo unico que se guarda es el ticket de sesion (`data/ubisoft-sesion.json`).

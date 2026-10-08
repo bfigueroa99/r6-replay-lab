@@ -13,12 +13,14 @@ historial por una letra.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from replays.models import Event, Match, Player, Round, RoundPlayer
+from externo import ubisoft
+from replays.models import Event, Match, PerfilUbisoft, Player, Round, RoundPlayer
 
 ME = "BearF99"
 COMPANEROS = ("Chamo", "Seba", "Nico", "Pauli")
@@ -54,6 +56,15 @@ RONDAS_POR_PARTIDA = 7
 INICIO = datetime(2026, 8, 1, 20, 0)
 
 
+def _pid(nick: str) -> str:
+    """Un profileID con forma de UUID, como los reales, y siempre el mismo.
+
+    Con forma real porque la pagina del jugador solo arma los enlaces a
+    stats.cc y R6 Tracker cuando el id lo es, y el e2e los afirma.
+    """
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"r6-replay-lab/demo/{nick}"))
+
+
 class Command(BaseCommand):
     help = "Carga un historial sintetico y deterministico para los tests e2e."
 
@@ -76,14 +87,14 @@ class Command(BaseCommand):
             Match.objects.all().delete()
             Player.objects.all().delete()
 
-        yo = Player.objects.create(profile_id="pid-me", username=ME, is_me=True)
+        yo = Player.objects.create(profile_id=_pid(ME), username=ME, is_me=True)
         companeros = [
-            Player.objects.create(profile_id=f"pid-c{i}", username=n)
-            for i, n in enumerate(COMPANEROS)
+            Player.objects.create(profile_id=_pid(n), username=n)
+            for n in COMPANEROS
         ]
         rivales = [
-            Player.objects.create(profile_id=f"pid-r{i}", username=n)
-            for i, n in enumerate(RIVALES)
+            Player.objects.create(profile_id=_pid(n), username=n)
+            for n in RIVALES
         ]
 
         rondas = self._plan()
@@ -92,11 +103,58 @@ class Command(BaseCommand):
         yo.first_seen = INICIO
         yo.last_seen = INICIO + timedelta(hours=len(rondas))
         yo.save()
+        self._perfil_ubisoft(yo)
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Sembradas {Match.objects.count()} partidas y {total} rondas."
             )
+        )
+
+    def _perfil_ubisoft(self, yo: Player) -> None:
+        """Una consulta a Ubisoft ya guardada, como si la hubieras hecho antes.
+
+        El e2e corre sin cuenta de Ubisoft y sin red, asi que sin esto el panel
+        con datos no lo renderizaria nadie. Pasa por el mismo `tableros` que la
+        respuesta real para que la forma no se aparte de la de verdad.
+        """
+
+        def tablero(board_id, rank, puntos, bajas, muertes, ganadas, perdidas, abandonos):
+            perfil = {"rank": rank, "rank_points": puntos, "season_id": 38}
+            if rank:
+                perfil.update(max_rank=rank + 1, max_rank_points=puntos + 120)
+            return {
+                "board_id": board_id,
+                "full_profiles": [
+                    {
+                        "profile": perfil,
+                        "season_statistics": {
+                            "kills": bajas,
+                            "deaths": muertes,
+                            "match_outcomes": {
+                                "wins": ganadas,
+                                "losses": perdidas,
+                                "abandons": abandonos,
+                            },
+                        },
+                    }
+                ],
+            }
+
+        respuesta = {
+            "platform_families_full_profiles": [
+                {
+                    "board_ids_full_profiles": [
+                        tablero("ranked", 20, 2950, 300, 250, 30, 20, 1),
+                        tablero("standard", 0, 0, 90, 100, 8, 12, 0),
+                    ]
+                }
+            ]
+        }
+        PerfilUbisoft.objects.create(
+            player=yo,
+            datos={"tableros": ubisoft.tableros(respuesta), "nivel": 212, "horas": 500},
+            consultado=datetime(2026, 9, 1, 12, 0),
         )
 
     def _plan(self) -> dict[str, list[dict]]:

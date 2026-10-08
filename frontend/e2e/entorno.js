@@ -43,5 +43,9 @@ export function entornoDjango() {
     TRADE_WINDOW_SECONDS: '3',
     SESSION_GAP_MINUTES: '120',
     MIN_ROUNDS_DEFAULT: '5',
+    // vacias a proposito: si el .env del usuario trae su cuenta de Ubisoft, el
+    // e2e ofreceria el boton de consultar y un clic saldria a internet
+    UBI_EMAIL: '',
+    UBI_PASSWORD: '',
   }
 }

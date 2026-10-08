@@ -215,6 +215,24 @@ afirma que el cambio sea real.
 **"Mueres a los" no se juzga**: subir puede ser que sobrevivas mas o que llegues
 tarde a todo, asi que se muestra sin flecha de bueno o malo.
 
+## Temporada en Ubisoft
+
+El panel del perfil de un jugador. **No sale de tus replays**: es lo que
+devuelve la API de Ubisoft (`full_profiles`, la misma que leen stats.cc y R6
+Tracker) para la temporada actual de PC, guardado con la fecha de la consulta.
+Cubre todas sus partidas, no solo las que jugo contigo.
+
+| Metrica | Definicion |
+|---|---|
+| **Rango** | El rango actual en Ranked, por su id en la tabla de Ranked 2.0 (Cobre 5 ... Diamante 1, Campeones). |
+| **MMR** | `rank_points` de Ranked: los puntos que ves en el juego. |
+| **Maximo de la temporada** | El rango y los puntos mas altos que alcanzo esta temporada. |
+| **K/D** | bajas / muertes de la temporada en esa playlist. Sin muertes no hay K/D. |
+| **Partidas ganadas** | ganadas / (ganadas + perdidas). Los abandonos cuentan como partida jugada pero no entran al porcentaje. |
+| **Partidas** | ganadas + perdidas + abandonos. Una playlist sin partidas no se muestra. |
+| **Nivel** | Nivel de la cuenta (`rewards/public_profile`). Si Ubisoft no lo devuelve, sale `—`. |
+| **Horas jugadas** | `PTotalTimePlayed` en horas, redondeado. Incluye todos los modos de la cuenta. |
+
 ## Muestra minima
 
 Los agregados de la UI filtran por `min_rounds` y el coach exige muestra antes de

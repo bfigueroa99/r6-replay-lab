@@ -15,8 +15,9 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
+from externo import enlaces
 from replays.management.commands.seed_demo import PERFIL
-from replays.models import Match, Player, Round, RoundPlayer
+from replays.models import Match, PerfilUbisoft, Player, Round, RoundPlayer
 
 from .factories import make_match
 
@@ -80,3 +81,18 @@ class FormaTests(TestCase):
         rnd = Round.objects.first()
         self.assertGreaterEqual(rnd.players.filter(team_index=0, is_me=False).count(), 2)
         self.assertGreaterEqual(rnd.players.filter(team_index=1).count(), 3)
+
+    def test_los_profile_id_tienen_forma_real_y_no_cambian(self):
+        """El e2e afirma la URL de stats.cc con este id exacto."""
+        yo = Player.objects.get(is_me=True)
+        self.assertEqual(yo.profile_id, "14c9dacd-69a1-5ae1-80d8-ce1b96f8948f")
+        for player in Player.objects.all():
+            self.assertTrue(enlaces.es_profile_id(player.profile_id), player.username)
+
+    def test_trae_una_consulta_a_ubisoft_guardada(self):
+        """Sin red en el e2e, es la unica forma de que el panel con datos se renderice."""
+        perfil = PerfilUbisoft.objects.get(player__is_me=True)
+        ranked = perfil.datos["tableros"]["ranked"]
+        self.assertEqual(ranked["rango"], "Oro 1")
+        self.assertEqual(ranked["temporada"], "Y10S2")
+        self.assertEqual(PerfilUbisoft.objects.count(), 1)
