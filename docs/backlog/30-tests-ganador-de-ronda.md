@@ -1,7 +1,7 @@
 # 30. Tests de quien gana la ronda y por que
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-08 06:02 UTC
 rama: -
 area: parser
 prioridad: 2

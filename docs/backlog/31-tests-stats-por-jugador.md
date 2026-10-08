@@ -1,7 +1,7 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-08 06:02 UTC
 rama: -
 area: parser
 prioridad: 3
