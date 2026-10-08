@@ -118,16 +118,28 @@ class RoundEndTests(SimpleTestCase):
                 events.round_end(r)
                 self.assertEqual(resultado(r), esperado)
 
+    # En los tests de Y9S4 el feed apunta al otro equipo que el marcador: asi el
+    # resultado solo puede salir del marcador y no de la logica previa a Y9S4.
+
     def test_y9s4_el_marcador_decide_y_la_eliminacion_da_la_condicion(self):
+        # mueren los diez: antes de Y9S4 ganaria el equipo 1 por caer primero el 0
         r = LectorFalso(version=Y9S4, score=(1, 0))
-        r.match_feedback = [kill("A0", f"B{n}") for n in range(5)]
+        r.match_feedback = [kill("B0", f"A{n}") for n in range(5)]
+        r.match_feedback += [{"type": DEATH, "username": f"B{n}"} for n in range(5)]
         events.round_end(r)
         self.assertEqual(resultado(r), [(True, KILLED_OPPONENTS), (False, "")])
 
     def test_y9s4_sin_eliminacion_la_condicion_es_tiempo(self):
-        r = LectorFalso(version=Y9S4, score=(0, 1))
+        # antes de Y9S4 ganaria la defensa (equipo 1) por tiempo
+        r = LectorFalso(version=Y9S4, roles=(ATTACK, DEFENSE), score=(1, 0))
         events.round_end(r)
-        self.assertEqual(resultado(r), [(False, ""), (True, TIME)])
+        self.assertEqual(resultado(r), [(True, TIME), (False, "")])
+
+    def test_y9s4_el_marcador_gana_aunque_el_feed_diga_eliminacion(self):
+        r = LectorFalso(version=Y9S4, roles=(ATTACK, DEFENSE), score=(1, 0))
+        r.match_feedback = [kill("B0", f"A{n}") for n in range(5)]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, TIME), (False, "")])
 
     def test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador(self):
         r = LectorFalso()
