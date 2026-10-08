@@ -11,19 +11,37 @@
 # uno nuevo encima actualiza sin tocar los datos de %APPDATA%.
 #
 # Tarda varios minutos y el .exe pesa unos 135 MB: adentro va un Python
-# completo, Chromium y el frontend. Necesita las herramientas de desarrollo
-# (pip install -r requirements-dev.txt) y npm install en frontend\.
+# completo, Chromium y el frontend.
 #
-# No hace falta correrlo para publicar: .github\workflows\release.yml corre
-# este mismo script en un runner de Windows al pushear un tag v*.
+# Se prepara solo: si falta el venv, PyInstaller o node_modules, los instala.
+# En un clon recien bajado basta con Python 3.11+ y Node 18+ en el PATH; no
+# hace falta haber corrido setup.ps1 antes.
 $ErrorActionPreference = 'Continue'
 $repo = Split-Path -Parent $PSScriptRoot
 $python = "$repo\.venv\Scripts\python.exe"
-if (-not (Test-Path $python)) { throw "Falta el entorno virtual. Corre .\scripts\setup.ps1 primero." }
-
 $pyinstaller = "$repo\.venv\Scripts\pyinstaller.exe"
+
+Write-Host "`n[0/3] herramientas" -ForegroundColor Cyan
+if (-not (Test-Path $python)) {
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        throw "No hay Python en el PATH. Instala Python 3.11+ (winget install Python.Python.3.12) y vuelve a correr esto."
+    }
+    python -m venv "$repo\.venv"
+    if ($LASTEXITCODE -ne 0) { throw "No se pudo crear el entorno virtual en .venv" }
+}
 if (-not (Test-Path $pyinstaller)) {
-    throw "Falta PyInstaller: pip install -r requirements-dev.txt"
+    & $python -m pip install --quiet -r "$repo\requirements.txt" -r "$repo\requirements-dev.txt"
+    if ($LASTEXITCODE -ne 0) { throw "No se pudieron instalar las dependencias de Python" }
+}
+if (-not (Test-Path "$repo\frontend\node_modules\electron-builder")) {
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        throw "No hay npm en el PATH. Instala Node 18+ (winget install OpenJS.NodeJS.LTS) y vuelve a correr esto."
+    }
+    Push-Location "$repo\frontend"
+    npm ci
+    $npmOk = $LASTEXITCODE -eq 0
+    Pop-Location
+    if (-not $npmOk) { throw "fallo npm ci en frontend\" }
 }
 
 # electron-builder descomprime sus herramientas en %LOCALAPPDATA%, que en este

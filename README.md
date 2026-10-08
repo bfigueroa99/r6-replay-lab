@@ -192,7 +192,9 @@ Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
 .\scripts\package.ps1
 ```
 
-Deja en `packaging\installer\` un solo `.exe`, el instalador de un clic
+Se prepara solo: si falta el venv, las dependencias o `node_modules`, los
+instala, asi que en un clon recien bajado basta con tener Python 3.11+ y
+Node 18+. Deja en `packaging\installer\` un solo `.exe`, el instalador de un clic
 (`-setup.exe`), de unos 135 MB. Adentro va un Python completo, asi que **corre
 en una maquina sin Python instalado**: el frontend compilado viaja dentro del
 ejecutable del backend y Django lo sirve igual que desde el repo. Antes se

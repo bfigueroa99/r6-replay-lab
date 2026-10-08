@@ -645,10 +645,22 @@ Ajustes). La app de Electron se manejo de verdad con Playwright: el selector
 nativo guardo la carpeta (bajando de la carpeta padre a `MatchReplay`), el
 vigilante tomo la partida (un `.rec` falso) en la pasada siguiente, la cabecera
 aviso que no se pudo leer, no se reintento en las pasadas de despues, y el
-backend murio con la ventana. **No
-verificado:** el instalador NSIS en si. electron-builder valida el bloque
-`nsis` (una clave inventada lo hace fallar) pero armar el `.exe` pide Windows;
-la primera corrida de `package.ps1` en el PC es la que lo prueba.
+backend murio con la ventana.
+
+**El .exe, armado sin Windows.** Con Wine (64 y 32 bits) y el Python de Windows
+del paquete NuGet, PyInstaller armo el backend de Windows y electron-builder el
+instalador NSIS, de 133 MB. El backend que va adentro se corrio bajo Wine: migro,
+sirvio la UI, prendio el vigilante y guardo una ruta `C:\...` desde Ajustes.
+Lo que Wine no deja probar: el instalador se queda en su chequeo de "la app
+esta abierta?", que usa PowerShell (Wine no lo trae), y Chromium se cuelga al
+crear la ventana. Eso lo prueba el doble clic en Windows.
+
+Salio un bug de verdad en el camino: `note()` en `main.cjs` escribe el log del
+backend en `process.stdout`, y sin una consola valida ese write tira `EBADF`
+dentro del handler de datos del hijo, lo que cortaba el arranque en la primera
+linea de log. Se protege con un try: el log es un extra. Y `package.ps1` ahora
+se prepara solo (venv, dependencias, `npm ci`): en un clon recien bajado basta
+con Python y Node en el PATH.
 
 ## Ideas descartadas
 

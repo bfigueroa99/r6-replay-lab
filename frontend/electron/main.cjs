@@ -61,7 +61,14 @@ function note(line) {
   if (!text) return
   logTail.push(text)
   if (logTail.length > 40) logTail.shift()
-  process.stdout.write(`[django] ${text}\n`)
+  // Sin consola (doble clic en el acceso directo) stdout puede ser un handle
+  // invalido, y el write tira EBADF dentro del handler de datos del backend:
+  // eso cortaba el arranque en la primera linea de log. El log es un extra.
+  try {
+    process.stdout.write(`[django] ${text}\n`)
+  } catch {
+    /* sin consola no hay donde escribir, y no pasa nada */
+  }
 }
 
 /**
