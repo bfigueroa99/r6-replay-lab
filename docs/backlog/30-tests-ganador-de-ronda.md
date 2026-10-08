@@ -1,8 +1,8 @@
 # 30. Tests de quien gana la ronda y por que
 
-estado: disenado
+estado: en curso 2026-10-08
 candado: -
-rama: -
+rama: claude/equipo-dev/30-tests-ganador-de-ronda
 area: parser
 prioridad: 2
 fuente: hueco de tests en pydissect: `events.round_end` y `events.read_defuser_timer` no tienen ningun test (main dc0188b; el unico que los ejercita es `RealReplayTests`, que se salta sin `R6_TEST_REPLAY`)

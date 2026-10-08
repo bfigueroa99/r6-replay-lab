@@ -1,8 +1,8 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
-estado: disenado
+estado: en curso 2026-10-08
 candado: -
-rama: -
+rama: claude/equipo-dev/31-tests-stats-por-jugador
 area: parser
 prioridad: 3
 fuente: hueco de tests en pydissect: `stats.player_round_stats` (incluido el calculo de 1vX) y `stats.player_match_stats` no tienen ningun test unitario (main dc0188b)
