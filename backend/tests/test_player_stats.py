@@ -58,6 +58,15 @@ class PlayerRoundStatsTests(SimpleTestCase):
         self.assertEqual(de(filas, "B4")["kills"], 3)
         self.assertIs(de(filas, "B4")["died"], False)
 
+    def test_las_kills_antes_de_quedar_solo_no_cuentan_para_el_1vx(self):
+        r = LectorFalso(ganador=1)
+        r.match_feedback = [kill("B4", "A0")]
+        r.match_feedback += [kill("A1", f"B{n}") for n in range(4)]
+        r.match_feedback.append(kill("B4", "A2"))
+
+        # solo la kill a A2 llega con B4 solo, mas A1, A3 y A4 vivos
+        self.assertEqual(con_1vx(stats.player_round_stats(r)), {"B4": 4})
+
     def test_uno_contra_uno_ganado_vale_uno(self):
         r = LectorFalso(ganador=0)
         r.match_feedback = [kill("A0", f"B{n}") for n in range(4)]
@@ -82,7 +91,9 @@ class PlayerRoundStatsTests(SimpleTestCase):
         filas = stats.player_round_stats(r)
 
         self.assertEqual(de(filas, "A0")["headshotPercentage"], 50.0)
-        self.assertEqual(de(filas, "A1")["headshotPercentage"], 0.0)
+
+    def test_porcentaje_de_headshots_sin_kills_no_divide_por_cero(self):
+        self.assertEqual(stats.headshot_percentage(0, 0), 0.0)
 
     def test_las_asistencias_salen_del_marcador(self):
         r = LectorFalso()
@@ -92,15 +103,18 @@ class PlayerRoundStatsTests(SimpleTestCase):
 
 class PlayerMatchStatsTests(SimpleTestCase):
     def test_agregado_de_dos_rondas(self):
-        r = LectorFalso()
-        r.match_feedback = [kill("A0", "B0", headshot=True), kill("A0", "B1")]
-        ronda = stats.player_round_stats(r)
-        a0 = de(stats.player_match_stats([ronda, ronda]), "A0")
+        r1 = LectorFalso()
+        r1.match_feedback = [kill("A0", "B0", headshot=True)]
+        r2 = LectorFalso()
+        r2.match_feedback = [kill("A0", f"B{n}") for n in range(3)]
+        rondas = [stats.player_round_stats(r) for r in (r1, r2)]
+        a0 = de(stats.player_match_stats(rondas), "A0")
 
         self.assertEqual(a0["rounds"], 2)
         self.assertEqual(a0["kills"], 4)
-        self.assertEqual(a0["headshots"], 2)
-        self.assertEqual(a0["headshotPercentage"], 50.0)
+        self.assertEqual(a0["headshots"], 1)
+        # sobre el total de kills, no el promedio de las rondas (que daria 50)
+        self.assertEqual(a0["headshotPercentage"], 25.0)
         self.assertEqual(a0["deaths"], 0)
 
     def test_agregado_cuenta_muertes_y_asistencias(self):
