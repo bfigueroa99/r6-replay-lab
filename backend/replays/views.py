@@ -1,4 +1,4 @@
-"""API JSON. Sin DRF a proposito: son vistas de lectura y tres POST locales."""
+"""API JSON. Sin DRF a proposito: vistas de lectura y unos pocos POST locales."""
 
 from __future__ import annotations
 
@@ -10,17 +10,18 @@ from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 import pydissect
 from externo import ubisoft
 from pydissect.constants import OPERATOR_SIDES
 
+from . import ajustes, perfil_externo, unknowns
 from . import export as exportador
-from . import perfil_externo, unknowns
 from .analytics import aggregates as agg
 from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
+from .backup import backup_database
 from .ingest import find_match_folders, import_job, start_import
 from .models import ImportLog, Match, Player, Round, RoundPlayer
 from .retag import retag
@@ -93,6 +94,17 @@ def _min_rounds(request: HttpRequest, default: int | None = None) -> int:
 
 def _ok(payload: dict, status: int = 200) -> JsonResponse:
     return JsonResponse(payload, status=status, json_dumps_params={"ensure_ascii": False})
+
+
+def _es_json(request: HttpRequest) -> bool:
+    """Los POST que cambian la configuracion exigen JSON de verdad.
+
+    Son `csrf_exempt` porque la app es local y sin sesiones, pero un formulario
+    de cualquier pagina abierta en el navegador puede postear a 127.0.0.1. Lo
+    que no puede es mandar `application/json` sin un preflight que Django no
+    contesta, asi que exigirlo cierra esa puerta sin meter tokens.
+    """
+    return request.content_type == "application/json"
 
 
 # --------------------------------------------------------------------- generales
@@ -579,6 +591,54 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
                 {"kind": c.kind, "old": c.old, "new": c.new, "rows": c.rows}
                 for c in result.changes
             ],
+        }
+    )
+
+
+# --------------------------------------------------------------------- ajustes
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def app_settings(request: HttpRequest) -> JsonResponse:
+    """La configuracion que se cambia desde la app: carpeta e importacion automatica.
+
+    El POST manda solo lo que cambia (`{"replay_dir": ...}`, `{"auto_import":
+    false}`), lo escribe en el `.env` y lo aplica sin reiniciar. Devuelve el
+    estado completo, igual que el GET.
+    """
+    if request.method == "POST":
+        if not _es_json(request):
+            return _ok({"error": "se esperaba application/json"}, status=415)
+        try:
+            payload = json.loads(request.body or b"{}")
+        except json.JSONDecodeError:
+            return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+        try:
+            ajustes.aplicar(payload)
+        except ajustes.AjusteInvalido as exc:
+            return _ok({"error": str(exc)}, status=400)
+        except OSError as exc:
+            return _ok({"error": f"No se pudo guardar {settings.ENV_FILE}: {exc}"}, status=500)
+    return _ok(ajustes.estado())
+
+
+@csrf_exempt
+@require_POST
+def make_backup(request: HttpRequest) -> JsonResponse:
+    """Copia de la base ahora mismo, la misma que `manage.py backup`."""
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
+    try:
+        result = backup_database()
+    except FileNotFoundError as exc:
+        return _ok({"error": str(exc)}, status=409)
+    return _ok(
+        {
+            "name": result.path.name,
+            "size": result.size,
+            "removed": [p.name for p in result.removed],
+            "backups": ajustes.copias(),
         }
     )
 
