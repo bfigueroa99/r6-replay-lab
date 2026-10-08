@@ -1,7 +1,7 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
 estado: revisado
-candado: -
+candado: qa 2026-10-08 18:03 UTC
 rama: claude/equipo-dev/31-tests-stats-por-jugador
 area: parser
 prioridad: 3
