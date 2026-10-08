@@ -1,13 +1,13 @@
 # 30. Tests de quien gana la ronda y por que
 
-estado: revisado
-candado: qa 2026-10-08 18:03 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/30-tests-ganador-de-ronda
 area: parser
 prioridad: 2
 fuente: hueco de tests en pydissect: `events.round_end` y `events.read_defuser_timer` no tienen ningun test (main dc0188b; el unico que los ejercita es `RealReplayTests`, que se salta sin `R6_TEST_REPLAY`)
 archivos: backend/tests/test_round_end.py
-turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z
+turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z, qa 20261008T1802Z
 
 ## PR
 
@@ -237,13 +237,72 @@ sobre el commit de esta revision.
 Veredicto: aprobar (el unico hallazgo quedo cubierto por los tests que agrego
 el revisor) -> `revisado`.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-08 sobre 6e48e43
 
-(QA)
+(QA 20261008T1802Z. La rama ya contiene `origin/main` dc0188b; sin `.env`.)
+
+Suite y pasos de `ci.yml`, tal cual:
+
+- `./scripts/check.sh` (el de `origin/claude/great-cray-7o9tvf`) sobre
+  6e48e43 -> `Todo en verde.`: ruff `All checks passed!`, `Ran 379 tests ...
+  OK (skipped=4)`, vitest 53 passed, build ok, e2e 17 passed. Ese script
+  corre `ruff check backend`, `manage.py test tests` sin `.env`, `npm test`
+  y `npm run build`, los pasos de `ci.yml`.
+- `cd backend && python manage.py test tests.test_round_end tests.test_pydissect -v 2`
+  -> 31 tests ok, 1 skipped (`RealReplayTests`, sin `R6_TEST_REPLAY`): la
+  fixture sintetica del parser sigue verde.
+
+Endpoints y base: la rama solo agrega un archivo de test; no toca vistas,
+modelos, migraciones, `frontend/src` ni `pydissect/`. `runserver` + `curl`,
+migracion y tamano del chunk no aplican (el e2e de `check.sh` levanto la app
+sembrada y paso).
+
+Criterios:
+
+- [x] previo a Y9S4, 5 muertes -> `..._cinco_muertes_da_la_ronda_al_rival_por_eliminacion`
+      y `..._muertes_por_death_tambien_cuentan` ok.
+- [x] plant / desactivar -> `..._plant_sin_desactivar_gana_el_que_planto`,
+      `..._desactivar_despues_del_plant_gana_el_que_desactivo` ok.
+- [x] defensa por tiempo, los dos ordenes de roles -> `..._sin_muertes_ni_defuser_gana_la_defensa_por_tiempo` ok.
+- [x] Y9S4+ en bomba -> los cinco `test_y9s4_*` ok.
+- [x] reloj del defuser -> `test_defuser_plant_y_despues_desactivar`,
+      `test_defuser_con_id_desconocido_no_agrega_eventos` ok.
+- [x] autor corregido por el marcador -> `test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador` ok.
+
+Mutaciones propias en `backend/pydissect/events.py` (distintas de las del Dev
+y el Revisor; cada una con `manage.py test tests.test_round_end` y
+revertida, `git status` limpio despues):
+
+| mutacion | cae |
+|---|---|
+| no copiar `usernameFromScoreboard` a `username` | `test_kill_corregida_...` |
+| `DEATH` no suma muertes | 2 tests |
+| sin `return` despues del plant (sigue a la regla de tiempo) | `..._plant_sin_desactivar_gana_el_que_planto` |
+| eliminacion Y9S4 con `>` en vez de `>=` | `test_y9s4_el_marcador_decide_y_la_eliminacion_da_la_condicion` |
+| tiempo siempre al equipo 1 (`i = 1`) | `..._gana_la_defensa_por_tiempo` (subTest `Defense, Attack`) |
+| el reloj no agrega `*_START` | `test_defuser_plant_y_despues_desactivar` |
+| `DISABLE_COMPLETE` sin `return` | `..._desactivar_despues_del_plant_gana_el_que_desactivo` |
+| cualquier timer completa (`if not timer.startswith("0.00")` -> `if False`) | `test_defuser_plant_y_despues_desactivar` |
+| Y9S4 sin el chequeo `gamemode == BOMB` | **ninguno** con los tests de la rama |
+| Y9S4 sin `and not any(t["winCondition"] ...)` | ninguno: mutante equivalente (en Y9S4 solo el plant y el disable ponen condicion, y los dos hacen `return` antes) |
+
+Para la del modo agregue el test de borde
+`test_y9s4_fuera_de_bomba_el_marcador_decide_sin_inventar_condicion`
+(Y9S4, `SecureArea`, `score=(1, 0)`, A0 mata B0..B4 ->
+`[(True, ""), (False, "")]`). Pasa sobre main; sin el chequeo del modo cae
+(pone `KilledOpponents`). Afirma lo que el codigo ya hace a proposito: las
+condiciones de victoria se deducen con reglas de bomba. `ruff check backend`
+limpio, `ruff format --check` sin cambios. 14 tests en el archivo.
+
+`check.sh` -> `Todo en verde.` tambien sobre el commit de esta QA.
+
+Veredicto: `aprobado`.
 
 ## Verificar en el PC
 
-(QA, solo si toca migraciones, recompute, parser, Electron o `.ps1`.)
+No hace falta: solo agrega tests; no toca parser, migraciones, `recompute`,
+Electron ni `.ps1`. Para repetir: `cd backend; python manage.py test
+tests.test_round_end -v 2` -> 14 tests ok.
 
 ## Pendiente
 

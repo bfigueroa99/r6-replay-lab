@@ -155,6 +155,14 @@ class RoundEndTests(SimpleTestCase):
         events.round_end(r)
         self.assertEqual(resultado(r), [(False, ""), (True, TIME)])
 
+    def test_y9s4_fuera_de_bomba_el_marcador_decide_sin_inventar_condicion(self):
+        # TIME y KILLED_OPPONENTS se deducen con reglas de bomba; en otro modo no aplican
+        r = LectorFalso(version=Y9S4, score=(1, 0))
+        r.header["gamemode"] = 1983085217  # SecureArea
+        r.match_feedback = [kill("A0", f"B{n}") for n in range(5)]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, ""), (False, "")])
+
     def test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador(self):
         r = LectorFalso()
         r.match_feedback = [kill("B0", "A0", usernameFromScoreboard="B1")]
