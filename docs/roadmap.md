@@ -1,19 +1,15 @@
 # Roadmap
 
-Backlog de desarrollo. Lo consume el loop de Claude Code: cada iteracion toma
-**el primer item sin marcar**, lo implementa completo (backend + frontend +
-tests + docs), deja la suite en verde y hace un commit.
-
-Reglas del loop:
-
-- Un item por iteracion. Si un item resulta ser mas grande de lo que parece, se
-  parte en dos y se deja el resto anotado aca.
-- `cd backend; python manage.py test tests` en verde antes de cada commit.
-  `cd frontend; npm run build` si se toco `frontend/src`.
-- Metrica nueva -> fila nueva en `docs/metricas.md`.
-- Marcar el item como hecho (`### 3. ~~Nemesis~~ [x]`) con una linea de que
-  quedo implementado, y commitear el roadmap junto con el codigo.
-- Cuando no queden items sin marcar, el loop se detiene.
+Historia del backlog hasta el item 19. **Desde el item 30, el backlog vive en
+`docs/backlog/`** (una ficha por item, ver `docs/backlog/README.md`) y lo
+trabaja el equipo de desarrollo autonomo (`.claude/skills/equipo-dev/SKILL.md`)
+por turnos: product owner, arquitecto, dev, revisor, QA y release manager, una
+sesion cada 3 horas. Este archivo ya no se edita: las secciones "Lo que falta"
+y "Deuda" de los items hechos son la primera fuente de trabajo del product
+owner, y los numeros 20 a 29 quedan tomados o reservados por los candidatos de
+las ramas `mercado/*`, `claude/loop-*` y los PRs anteriores del equipo. Si queda
+algun item sin marcar aca (hoy el #28), el product owner lo importa como ficha
+con numero nuevo en vez de marcarlo en este archivo.
 
 ## No-goals
 
