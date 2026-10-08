@@ -1,7 +1,7 @@
 # 30. Tests de quien gana la ronda y por que
 
 estado: revisado
-candado: -
+candado: qa 2026-10-08 18:03 UTC
 rama: claude/equipo-dev/30-tests-ganador-de-ronda
 area: parser
 prioridad: 2
