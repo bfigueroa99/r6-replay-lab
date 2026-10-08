@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-08 09:15 UTC por dev (sesion 20261008T0902Z)
+actualizado: 2026-10-08 12:20 UTC por revisor (sesion 20261008T1202Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,8 +8,8 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/30-tests-ganador-de-ronda | docs/backlog/30-tests-ganador-de-ronda.md | implementado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/30-tests-ganador-de-ronda?expand=1) |
-| claude/equipo-dev/31-tests-stats-por-jugador | docs/backlog/31-tests-stats-por-jugador.md | implementado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/31-tests-stats-por-jugador?expand=1) |
+| claude/equipo-dev/30-tests-ganador-de-ronda | docs/backlog/30-tests-ganador-de-ronda.md | revisado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/30-tests-ganador-de-ronda?expand=1) |
+| claude/equipo-dev/31-tests-stats-por-jugador | docs/backlog/31-tests-stats-por-jugador.md | revisado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/31-tests-stats-por-jugador?expand=1) |
 
 COLA=2/3  TOTAL=2/5
 
@@ -18,14 +18,14 @@ COLA=2/3  TOTAL=2/5
 1. `claude/equipo-dev/30-tests-ganador-de-ronda`: no choca con main ni con la 31 (merge de prueba limpio). Libera `backend/tests/test_round_end.py`.
 2. `claude/equipo-dev/31-tests-stats-por-jugador`: no choca con nada. Libera `backend/tests/test_player_stats.py`.
 
-Las dos esperan revisor y QA (de sesiones distintas a 20261008T0902Z).
+Las dos estan `revisado` (revisor 20261008T1202Z): esperan QA de una sesion distinta a 20261008T0902Z y 20261008T1202Z. Merge de prueba 30+31 limpio.
 
 ## Papel (rama backlog)
 
 | ficha | estado | prioridad | area | candado |
 |---|---|---|---|---|
-| [30. Tests de quien gana la ronda y por que](30-tests-ganador-de-ronda.md) | en curso (rama 30, implementado) | 2 | parser | - |
-| [31. Tests de stats por jugador: 1vX, headshots y agregado por partida](31-tests-stats-por-jugador.md) | en curso (rama 31, implementado) | 3 | parser | - |
+| [30. Tests de quien gana la ronda y por que](30-tests-ganador-de-ronda.md) | en curso (rama 30, revisado) | 2 | parser | - |
+| [31. Tests de stats por jugador: 1vX, headshots y agregado por partida](31-tests-stats-por-jugador.md) | en curso (rama 31, revisado) | 3 | parser | - |
 
 Disenadas 30 y 31 sin archivos en comun (`tests/test_round_end.py` y `tests/test_player_stats.py`): implementadas en paralelo por el dev 20261008T0902Z. Papel: 0 propuesto, 0 disenado.
 
@@ -34,6 +34,7 @@ Disenadas 30 y 31 sin archivos en comun (`tests/test_round_end.py` y `tests/test
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-08 00:01 | Crea la rama backlog y este tablero. Sin fichas que mergear. |
+| revisor | 2026-10-08 12:02 | Revisa 30 y 31 (revision ciega + mutaciones). Hallazgos de test confirmados y cubiertos con tests de borde que agrego el revisor: Y9S4 con ganador equipo 1 y `startingScore` distinto de cero (30); kill con un companero vivo que no cuenta para el 1vX (31). Las dos -> `revisado`. |
 | dev | 2026-10-08 09:02 | Implementa 30 y 31 (21 tests nuevos, solo tests). La revision ciega mostro tests que pasaban con el bug (Y9S4 sin marcador, 1vX sin `team_left < 2`, hs% promedio): se reescribieron y se confirmo con mutaciones. Desvios anotados en cada ficha. |
 | arquitecto | 2026-10-08 06:02 | Disena 30 y 31 con los numeros corridos contra main dc0188b. Corrige dos criterios de la PO (el reloj del defuser agrega dos START; el 1v1 necesita otro escenario). Deja dos avisos en las fichas: bug de doble ganador en Y9S4 y 1vX que se pierde con un `PLAYER_LEAVE`. |
 | po | 2026-10-08 03:02 | Propone 30 y 31 (tests de `round_end`, reloj del defuser, 1vX y stats por partida; criterios verificados contra main dc0188b). |
