@@ -1,7 +1,7 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
-estado: en curso 2026-10-08
-candado: dev 2026-10-08 09:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/31-tests-stats-por-jugador
 area: parser
 prioridad: 3
@@ -124,7 +124,51 @@ tests 1, 2 y 4; quitar la suma de rivales vivos y ver caer 1 y 4.
 
 ## Implementacion
 
-(Dev)
+(Dev 20261008T0902Z, sobre main dc0188b, commits a39852f y e6e030e)
+
+Quedo: `backend/tests/test_player_stats.py` con `LectorFalso` (`players` y
+`teams` tomados de `Reader`), `PlayerRoundStatsTests` (8) y
+`PlayerMatchStatsTests` (2). 10 tests verdes; ningun archivo fuera de
+`archivos:`.
+
+Criterio -> test:
+- ultimo vivo que gana (B4, `1vX == 5`, 3 kills, vivo) ->
+  `test_ultimo_vivo_que_gana_suma_sus_kills_y_los_rivales_vivos`.
+- 1v1 ganado -> `test_uno_contra_uno_ganado_vale_uno` (escenario del diseno,
+  no el ambiguo de la PO).
+- ganador sin bajas -> `test_sin_bajas_en_el_ganador_no_hay_1vx`.
+- ultimo del ganador que muere (`last_death_was_winner`) ->
+  `test_el_ultimo_del_ganador_que_muere_igual_cobra_el_1vx`.
+- hs% por ronda y sin kills -> `test_porcentaje_de_headshots_por_ronda`,
+  `test_porcentaje_de_headshots_sin_kills_no_divide_por_cero`.
+- agregado por partida -> `test_agregado_de_dos_rondas`,
+  `test_agregado_cuenta_muertes_y_asistencias`; asistencias del marcador ->
+  `test_las_asistencias_salen_del_marcador`.
+
+Desvios del diseno (por la revision ciega, cada uno confirmado con mutacion):
+- Test nuevo `test_las_kills_antes_de_quedar_solo_no_cuentan_para_el_1vx`
+  (B4 mata a A0 con su equipo entero, despues queda solo y mata a A2 ->
+  `1vX == 4`). Sin el, cambiar `team_left < 2` por nada dejaba toda la suite
+  verde: en los otros escenarios todas las kills del clutcher son posteriores
+  a quedar solo.
+- `test_agregado_de_dos_rondas` usa dos rondas distintas (1 kill con HS y 3
+  sin -> `25.0`) en vez de la misma dos veces (`50.0`): con rondas iguales no
+  se distingue hs% sobre el total de un promedio de los hs% por ronda. Por eso
+  el criterio de la PO (`headshots == 2`, `50.0`) queda como `headshots == 1`,
+  `25.0`.
+- El 0.0 sin kills se prueba directo sobre `headshot_percentage(0, 0)`: en
+  la fila de un jugador sin kills nunca se llama y el 0.0 es solo el inicial.
+- Test 7 del diseno partido en dos (asistencias del marcador por un lado,
+  agregado de muertes y asistencias por otro).
+
+Mutaciones corridas (y revertidas): `team_left < 2` -> `< 1` tira 3 tests;
+`team_left < 2` -> sin condicion tira 1; quitar la suma de rivales vivos tira 2.
+
+No se toco `pydissect/`. El caso dudoso de `PLAYER_LEAVE` sigue en
+`## Para el humano`, sin test.
+
+Verificacion: `check.sh` -> `Todo en verde.` (376 tests backend, 53 vitest,
+build ok, 17 e2e) sobre e6e030e.
 
 ## Revision <fecha> sobre <sha>
 
