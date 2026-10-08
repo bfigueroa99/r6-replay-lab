@@ -9,7 +9,7 @@ from __future__ import annotations
 from django.test import SimpleTestCase
 
 from pydissect import Reader, stats
-from pydissect.constants import KILL
+from pydissect.constants import DEATH, KILL
 
 NOMBRES = [f"{letra}{n}" for letra in "AB" for n in range(5)]
 
@@ -77,6 +77,15 @@ class PlayerRoundStatsTests(SimpleTestCase):
         # la kill a A0 llega con B3 todavia vivo: solo cuenta la de A1, mas A2..A4
         self.assertEqual(con_1vx(filas), {"B4": 4})
         self.assertEqual(de(filas, "B4")["kills"], 2)
+
+    def test_un_companero_muerto_sin_asesino_tambien_deja_solo_al_clutcher(self):
+        r = LectorFalso(ganador=1)
+        r.match_feedback = [kill("A0", f"B{n}") for n in range(3)]
+        r.match_feedback.append({"type": DEATH, "username": "B3"})
+        r.match_feedback += [kill("B4", f"A{n}") for n in range(5)]
+
+        # B3 muere sin KILL (suicidio o caida): las 5 kills de B4 ya son con el solo
+        self.assertEqual(con_1vx(stats.player_round_stats(r)), {"B4": 5})
 
     def test_uno_contra_uno_ganado_vale_uno(self):
         r = LectorFalso(ganador=0)

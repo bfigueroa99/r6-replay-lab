@@ -1,13 +1,13 @@
 # 31. Tests de stats por jugador: 1vX, headshots y agregado por partida
 
-estado: revisado
-candado: qa 2026-10-08 18:03 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/31-tests-stats-por-jugador
 area: parser
 prioridad: 3
 fuente: hueco de tests en pydissect: `stats.player_round_stats` (incluido el calculo de 1vX) y `stats.player_match_stats` no tienen ningun test unitario (main dc0188b)
 archivos: backend/tests/test_player_stats.py
-turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z
+turnos: po 20261008T0302Z, arquitecto 20261008T0602Z, dev 20261008T0902Z, revisor 20261008T1202Z, qa 20261008T1802Z
 
 ## PR
 
@@ -208,13 +208,75 @@ sobre el commit de esta revision.
 Veredicto: aprobar (el unico hallazgo quedo cubierto por el test que agrego
 el revisor) -> `revisado`.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-08 sobre 10126b8
 
-(QA)
+(QA 20261008T1802Z. La rama ya contiene `origin/main` dc0188b; sin `.env`.)
+
+Suite y pasos de `ci.yml`, tal cual:
+
+- `./scripts/check.sh` (el de `origin/claude/great-cray-7o9tvf`) sobre
+  10126b8 -> `Todo en verde.`: ruff `All checks passed!`, `Ran 377 tests ...
+  OK (skipped=4)`, vitest 53 passed, build ok, e2e 17 passed. Ese mismo
+  script corre `ruff check backend`, `manage.py test tests` sin `.env`,
+  `npm test` y `npm run build`, que son los pasos de `ci.yml`.
+- `cd backend && python manage.py test tests.test_player_stats -v 2` -> 11
+  tests ok (12 con el que agrega esta QA).
+
+Endpoints y base: la rama solo agrega un archivo de test; no toca vistas,
+modelos, migraciones, `frontend/src` ni `pydissect/`. `runserver` + `curl`,
+migracion y tamano del chunk no aplican (el e2e de `check.sh` ya levanto la
+app sembrada y paso).
+
+Criterios (cada uno con su test; los numeros los recalcule a mano contra
+`stats.py` y coinciden):
+
+- [x] ultimo vivo que gana: `B4` con `1vX == 5`, `kills == 3`, vivo ->
+      `test_ultimo_vivo_que_gana_suma_sus_kills_y_los_rivales_vivos` ok.
+- [x] 1v1 ganado -> `test_uno_contra_uno_ganado_vale_uno` ok (escenario del
+      diseno; el de la PO era ambiguo, ver Diseno).
+- [x] ganador sin bajas -> `test_sin_bajas_en_el_ganador_no_hay_1vx` ok.
+- [x] ultimo del ganador que muere -> `test_el_ultimo_del_ganador_que_muere_igual_cobra_el_1vx` ok.
+- [x] hs% por ronda y sin kills -> `test_porcentaje_de_headshots_por_ronda`,
+      `test_porcentaje_de_headshots_sin_kills_no_divide_por_cero` ok.
+- [x] agregado por partida -> `test_agregado_de_dos_rondas` (25.0, desvio
+      justificado en Implementacion), `test_agregado_cuenta_muertes_y_asistencias`,
+      `test_las_asistencias_salen_del_marcador` ok.
+
+Mutaciones propias en `backend/pydissect/stats.py` (distintas de las del Dev
+y el Revisor; cada una con `manage.py test tests.test_player_stats` y
+revertida, `git status` limpio despues):
+
+| mutacion | cae |
+|---|---|
+| `winning_team = 0` fijo | 3 tests |
+| `elif not winners_alive and last_death_was_winner` -> `elif False` | `test_el_ultimo_del_ganador_que_muere_igual_cobra_el_1vx` |
+| KILL no marca `died` a la victima | 5 |
+| quitar el filtro `u.get("username") != username` (cuenta kills de todos) | 5 |
+| rivales vivos cuenta tambien a los muertos | 5 |
+| el agregado no suma `deaths` | `test_agregado_cuenta_muertes_y_asistencias` |
+| hs% agregado = hs% de la ultima ronda | `test_agregado_de_dos_rondas` |
+| `assists` ignora `assistsFromRound` | `test_las_asistencias_salen_del_marcador` |
+| headshot no suma | 2 |
+| `DEATH` no baja `team_left` (`(DEATH, PLAYER_LEAVE)` -> `(PLAYER_LEAVE,)`) | **ninguno** con los tests de la rama |
+
+La ultima sobrevivia: un companero del clutcher que muere sin KILL
+(suicidio, caida) no tenia test. Agregue el test de borde
+`test_un_companero_muerto_sin_asesino_tambien_deja_solo_al_clutcher` (gana
+el 1; A0 mata B0..B2; B3 `DEATH`; B4 mata A0..A4 -> `1vX == 5`). Pasa sobre
+main; con esa mutacion cae (B4 queda en 0), y tambien cae si `DEATH` no
+marca `died`. `ruff check backend` limpio y `ruff format --check` sin
+cambios. La rama `PLAYER_LEAVE` sigue sin test a proposito: su caso dudoso
+esta en `## Para el humano`.
+
+`check.sh` -> `Todo en verde.` tambien sobre el commit de esta QA.
+
+Veredicto: `aprobado`.
 
 ## Verificar en el PC
 
-(QA, solo si toca migraciones, recompute, parser, Electron o `.ps1`.)
+No hace falta: solo agrega tests; no toca parser, migraciones, `recompute`,
+Electron ni `.ps1`. Si se quiere repetir: `cd backend; python manage.py test
+tests.test_player_stats -v 2` -> 12 tests ok.
 
 ## Pendiente
 
