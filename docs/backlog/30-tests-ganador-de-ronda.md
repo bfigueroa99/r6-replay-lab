@@ -1,13 +1,13 @@
 # 30. Tests de quien gana la ronda y por que
 
-estado: propuesto
-candado: arquitecto 2026-10-08 06:02 UTC
+estado: disenado
+candado: -
 rama: -
 area: parser
 prioridad: 2
 fuente: hueco de tests en pydissect: `events.round_end` y `events.read_defuser_timer` no tienen ningun test (main dc0188b; el unico que los ejercita es `RealReplayTests`, que se salta sin `R6_TEST_REPLAY`)
-archivos: -
-turnos: po 20261008T0302Z
+archivos: backend/tests/test_round_end.py
+turnos: po 20261008T0302Z, arquitecto 20261008T0602Z
 
 ## PR
 
@@ -60,7 +60,104 @@ Todos con un lector falso (objeto con `players`, `teams`, `header`,
 
 ## Diseno
 
-(Arquitecto)
+(Arquitecto 20261008T0602Z, sobre main dc0188b. Cada numero de abajo se corrio
+en un spike contra el parser de main; ninguno es supuesto.)
+
+**Archivos:** uno solo, nuevo: `backend/tests/test_round_end.py`. No se toca
+`pydissect/` (fuera de alcance) ni `test_pydissect.py`, para que esta ficha y
+la 31 se puedan implementar en paralelo sin pisarse. Sin migracion, sin
+frontend, sin fila en `docs/metricas.md` (no hay numero nuevo).
+
+**Lector falso** (clase `LectorFalso` en el mismo archivo, ~25 lineas). Reusa
+los accesos del `Reader` real tomandolos como atributos de clase, asi el test
+ejercita exactamente la misma logica de indices y propiedades:
+
+```python
+class LectorFalso:
+    players = Reader.players            # properties sobre self.header
+    teams = Reader.teams
+    code_version = Reader.code_version
+    player_index_by_id = Reader.player_index_by_id
+    player_index_by_username = Reader.player_index_by_username
+    skip = Reader.skip                  # primitivas sobre self.b / self.offset
+    bytes = Reader.bytes
+    int = Reader.int
+    string = Reader.string
+```
+
+`__init__(self, version=Y9S3, roles=(ATTACK, DEFENSE), score=(0, 0),
+telemetria=b"")` arma `header` con `codeVersion`, `gamemode=BOMB`, 10
+jugadores `A0..A4` (teamIndex 0) y `B0..B4` (teamIndex 1) con
+`dissectID = bytes([equipo, n, 0, 0])`, y `teams` con `role`,
+`startingScore=0`, `score`, `won=False`, `winCondition=""`. Ademas
+`match_feedback=[]`, `time=0.0`, `time_raw=""`, `planted=False`,
+`last_defuser_player_index=-1`, `b=telemetria`, `offset=0`. Helper
+`kill(autor, victima)` que devuelve el dict de KILL.
+
+**Tests** (`class RoundEndTests(SimpleTestCase)` y
+`class DefuserTimerTests(SimpleTestCase)`), con lo que devuelve main hoy:
+
+1. `test_previo_y9s4_cinco_muertes_da_la_ronda_al_rival_por_eliminacion`:
+   `B0` mata `A0..A4` -> `teams == [(False, ""), (True, "KilledOpponents")]`
+   (comparar `(won, winCondition)` de cada equipo).
+2. `test_previo_y9s4_muertes_por_death_tambien_cuentan`: cinco eventos
+   `DEATH` con `username` `A0..A4` -> equipo 1 gana con `"KilledOpponents"`.
+3. `test_previo_y9s4_plant_sin_desactivar_gana_el_que_planto`:
+   `DEFUSER_PLANT_COMPLETE` de `A0` -> `(True, "DefusedBomb")` para el 0.
+4. `test_previo_y9s4_desactivar_despues_del_plant_gana_el_que_desactivo`:
+   plant de `A0` y despues `DEFUSER_DISABLE_COMPLETE` de `B0` ->
+   `[(False, ""), (True, "DisabledDefuser")]`.
+5. `test_previo_y9s4_sin_muertes_ni_defuser_gana_la_defensa_por_tiempo`:
+   roles `(ATTACK, DEFENSE)` -> equipo 1 `(True, "Time")`; y con roles
+   `(DEFENSE, ATTACK)` -> equipo 0 `(True, "Time")` (dos asserts o
+   `subTest`, para que no pase solo por ser el indice 1).
+6. `test_y9s4_el_marcador_decide_y_la_eliminacion_da_la_condicion`:
+   version `Y9S4`, `score=(1, 0)`, `A0` mata `B0..B4` ->
+   `[(True, "KilledOpponents"), (False, "")]`.
+7. `test_y9s4_sin_eliminacion_la_condicion_es_tiempo`: version `Y9S4`,
+   `score=(0, 1)`, sin eventos -> `[(False, ""), (True, "Time")]`. Esto
+   cubre ademas que el equipo 1 recibe el valor contrario al 0.
+8. `test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador`: KILL
+   `B0 -> A0` con `usernameFromScoreboard="B1"` -> despues de `round_end`
+   el dict tiene `username == "B1"`.
+9. `test_defuser_plant_y_despues_desactivar` (DefuserTimerTests). Telemetria
+   = cuatro bloques `bytes([len(t)]) + t + b"\0" * 34 + dissect_id`, con
+   `t` = `b"7.00"`, `b"0.00"` (id de `A0`), `b"7.00"`, `b"0.00"` (id de
+   `B1`), **mas un byte de relleno al final** (`Reader.skip` lanza
+   `EndOfFile` si el offset llega justo al final). Dos llamadas a
+   `events.read_defuser_timer` -> tipos y autores en `match_feedback` ==
+   `[(PLANT_START, "A0"), (PLANT_START, "A0"), (PLANT_COMPLETE, "A0")]` y
+   `planted is True`. Ojo: el criterio de la ficha dice "agrega START y
+   despues COMPLETE"; en main cada lectura del timer agrega un START, asi que
+   son dos START. Se afirma la lista exacta. Dos llamadas mas -> la lista
+   sigue con `[(DISABLE_START, "B1"), (DISABLE_START, "B1"),
+   (DISABLE_COMPLETE, "B1")]`.
+10. `test_defuser_con_id_desconocido_no_agrega_eventos`: un solo bloque
+    `"0.00"` con id `bytes([9, 9, 9, 9])` -> `match_feedback == []`. Main
+    deja `planted is True` igual (marca el plant aunque no sepa quien); el
+    test lo afirma tal cual, con un comentario de una linea que explica por
+    que (el plant existio aunque el autor no se pueda atribuir).
+
+**Orden:** clase falsa -> tests 1 a 8 -> 9 y 10 -> `ruff check backend` ->
+`manage.py test tests.test_round_end` -> `check.sh`.
+
+**Que puede romperse:** nada en runtime (solo tests). Riesgo real: que el
+falso diverja del `Reader` si cambian sus atributos; por eso se toman los
+metodos del `Reader` y no copias. Los atributos `bytes` e `int` pisan
+builtins dentro de la clase; `ruff.toml` no selecciona las reglas `A`, asi
+que no hace falta `noqa`.
+
+**No va como test:** el bug de Y9S4 con `DEFUSER_DISABLE_COMPLETE` (ver
+`## Para el humano`). Un test que afirme un comportamiento incorrecto lo
+congelaria; uno que afirme el correcto fallaria. Queda documentado aca y
+para una ficha aparte.
+
+**Verificacion manual:** `cd backend && python manage.py test
+tests.test_round_end -v 2` -> 10 tests ok. Prueba de mutacion sugerida para
+QA: cambiar `TIME` por `KILLED_OPPONENTS` en la rama de Y9S4 de `round_end` y
+ver caer el test 7; invertir `r.planted = True` y ver caer el 9.
+
+**Tamano:** ~150 lineas de test. Cabe holgado en un turno de Dev.
 
 ## Implementacion
 
@@ -81,3 +178,13 @@ Todos con un lector falso (objeto con `players`, `teams`, `header`,
 ## Pendiente
 
 ## Para el humano
+
+- (Arquitecto 20261008T0602Z, aviso, no bloquea) Bug confirmado en main
+  dc0188b: en version `Y9S4` o posterior, con `score=(1, 0)` (gano el equipo 0
+  segun la cabecera) y un `DEFUSER_DISABLE_COMPLETE` de un jugador del equipo
+  1, `round_end` deja **los dos** equipos con `won=True`
+  (`[(True, ""), (True, "DisabledDefuser")]`). El `return` dentro del bucle
+  sale antes de que nadie apague al otro. Que la cabecera y el feed se
+  contradigan es raro, pero si pasa la ronda cuenta como ganada por ambos.
+  Queda para que el PO lo proponga como ficha aparte (decidir cual manda en
+  Y9S4+: la cabecera o el feed). No entra en esta ficha.
