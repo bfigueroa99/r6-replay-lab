@@ -34,7 +34,9 @@ sin `.rec`. Los numeros esperados se verificaron contra main dc0188b:
       `1vX == 1`.
 - [ ] El equipo ganador no pierde a nadie -> ningun jugador tiene 1vX.
 - [ ] El ultimo sobreviviente del equipo ganador muere al final (ronda ganada
-      por plant) -> igual se le cuenta el 1vX (rama `last_death_was_winner`).
+      por plant): A0-A3 mueren, A4 mata a B0 y despues B1 mata a A4, gana el
+      equipo 0 -> A4 tiene `1vX == 5` (1 kill mas 4 rivales vivos; rama
+      `last_death_was_winner`).
 - [ ] `headshotPercentage` por ronda: 1 headshot en 2 kills -> `50.0`; 0
       kills -> `0.0` sin dividir por cero.
 - [ ] `player_match_stats` sobre dos rondas iguales de un jugador con 2 kills

@@ -26,7 +26,7 @@ ganador de la ronda en silencio.
 ## Criterios de aceptacion
 
 Todos con un lector falso (objeto con `players`, `teams`, `header`,
-`code_version`, `match_feedback` y `player_index_by_username`), sin `.rec`:
+`code_version`, `match_feedback` y `player_index_by_username`), sin `.rec`. Los cuatro primeros y el ultimo se verificaron contra main dc0188b:
 
 - [ ] Version previa a Y9S4: los 5 de un equipo mueren (KILL o DEATH) ->
       el otro equipo queda `won=True` con `winCondition == "KilledOpponents"`.
