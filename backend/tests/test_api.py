@@ -195,11 +195,12 @@ class ParametrosInvalidosTests(TestCase):
             "sessions",
             "compare",
             f"players/{Player.objects.first().pk}",
+            "export",
         ]
         for endpoint in endpoints:
             for days in ("1000000", "99999999999"):
                 with self.subTest(endpoint=endpoint, days=days):
-                    respuesta = self.client.get(f"/api/{endpoint}/?days={days}")
+                    respuesta = self.client.get(f"/api/{endpoint}/?table=maps&days={days}")
                     self.assertEqual(respuesta.status_code, 200)
 
     def test_un_days_desbordado_se_ignora_como_cualquier_valor_invalido(self):
@@ -216,7 +217,8 @@ class ParametrosInvalidosTests(TestCase):
         ultima_semana = self.client.get("/api/overview/?days=7").json()
         self.assertIn("since", ultima_semana.pop("filters"))
         sin_filtro.pop("filters")
-        self.assertNotEqual(ultima_semana, sin_filtro)
+        self.assertEqual(sin_filtro["overall"]["matches"], 3)
+        self.assertEqual(ultima_semana["overall"]["matches"], 1)
 
     def test_el_limite_se_acota_al_rango(self):
         data = self.client.get("/api/matches/?limit=-5").json()

@@ -1,7 +1,7 @@
 # 32. Un ?days= enorme da 500 en nueve endpoints
 
-estado: en curso 2026-10-08
-candado: dev 2026-10-08 15:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/32-days-enorme-da-500
 area: backend
 prioridad: 2
@@ -41,3 +41,24 @@ la resta: `timedelta(days=10**11)` desborda en el constructor y
 `datetime.now() - timedelta(days=10**6)` en la resta. Tests nuevos en
 `ParametrosInvalidosTests` de `backend/tests/test_api.py`. Sin migracion,
 sin recompute, sin frontend.
+
+## Implementacion
+
+- `backend/replays/views.py` (`_filters`): el `except` de `days` atrapa
+  `(ValueError, OverflowError)`. Hay dos puntos de desborde: `timedelta(days=99999999999)`
+  en el constructor y `datetime.now() - timedelta(days=1000000)` en la resta
+  (anio < 1). En los dos casos el filtro se ignora, igual que `days=abc`.
+- `backend/tests/test_api.py`, en `ParametrosInvalidosTests`:
+  - `test_un_days_enorme_no_revienta_ningun_endpoint`: 10 endpoints que pasan por
+    `_filters` (overview, coach, operators, trends, teammates, duels, sessions,
+    compare, players/<id>, export) x `days` 1000000 y 99999999999 -> 200.
+  - `test_un_days_desbordado_se_ignora_como_cualquier_valor_invalido`: overview
+    con `days=1000000` == overview sin filtro.
+  - `test_un_days_normal_sigue_filtrando`: con una partida de ayer y dos de
+    2026-09, `days=7` cuenta 1 partida y sin filtro 3.
+- Sin el arreglo, los tests nuevos dan 19 errores (verificado con `git stash`).
+- Revision ciega del diff: aprobar, con dos hallazgos de test ya corregidos
+  (contar partidas exactas en vez de `assertNotEqual`; sumar `export/` a la lista).
+- Desvio: no hay arquitecto ni PO en `turnos:` porque es un bug encontrado por el
+  Dev sin trabajo tomable, segun el playbook.
+- `check.sh` en verde: 369 tests backend, 53 frontend, build, 17 e2e.
