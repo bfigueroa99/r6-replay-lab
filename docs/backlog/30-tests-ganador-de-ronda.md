@@ -1,7 +1,7 @@
 # 30. Tests de quien gana la ronda y por que
 
-estado: en curso 2026-10-08
-candado: dev 2026-10-08 09:05 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/30-tests-ganador-de-ronda
 area: parser
 prioridad: 2
@@ -161,7 +161,45 @@ ver caer el test 7; invertir `r.planted = True` y ver caer el 9.
 
 ## Implementacion
 
-(Dev)
+(Dev 20261008T0902Z, sobre main dc0188b, commits a63d828 y a65069c)
+
+Quedo: `backend/tests/test_round_end.py` con `LectorFalso` (accesos tomados de
+`Reader`), `RoundEndTests` (9 tests) y `DefuserTimerTests` (2). 11 tests,
+todos verdes; ningun archivo fuera de `archivos:`.
+
+Criterio -> test:
+- 5 muertes (KILL) -> `test_previo_y9s4_cinco_muertes_da_la_ronda_al_rival_por_eliminacion`;
+  por DEATH -> `test_previo_y9s4_muertes_por_death_tambien_cuentan`.
+- plant / desactivar -> `test_previo_y9s4_plant_sin_desactivar_gana_el_que_planto`,
+  `test_previo_y9s4_desactivar_despues_del_plant_gana_el_que_desactivo`.
+- defensa por tiempo (los dos ordenes de roles, con `subTest`) ->
+  `test_previo_y9s4_sin_muertes_ni_defuser_gana_la_defensa_por_tiempo`.
+- Y9S4+ -> `test_y9s4_el_marcador_decide_y_la_eliminacion_da_la_condicion`,
+  `test_y9s4_sin_eliminacion_la_condicion_es_tiempo`,
+  `test_y9s4_el_marcador_gana_aunque_el_feed_diga_eliminacion`.
+- reloj del defuser -> `test_defuser_plant_y_despues_desactivar`,
+  `test_defuser_con_id_desconocido_no_agrega_eventos`.
+- autor corregido por el marcador -> `test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador`.
+
+Desvios del diseno:
+- Tests 6 y 7 del diseno cambiados: la revision ciega mostro que con los
+  datos del diseno (`score=(1,0)` + A mata a los B; `score=(0,1)` sin eventos)
+  la logica previa a Y9S4 da el mismo resultado, asi que pasaban aunque se
+  anulara la rama del marcador. Ahora el feed apunta al equipo contrario al
+  marcador (mueren los diez con `score=(1,0)`; atacante gana por tiempo con
+  `score=(1,0)`), y se agrego un test 11 (`..._el_marcador_gana_aunque_el_feed_diga_eliminacion`,
+  el caso que sugirio la revision).
+- `zip(..., strict=True)` en el falso porque ruff selecciona B905.
+
+Mutaciones corridas (y revertidas): `TIME` -> `KILLED_OPPONENTS` en la rama
+Y9S4 tira 1 test; `r.planted = True` -> `False` en `read_defuser_timer` tira
+2; `if r.code_version >= Y9S4:` -> `if False:` tira los 3 de Y9S4.
+
+No se toco `pydissect/` (fuera de alcance). El bug de Y9S4 con
+`DEFUSER_DISABLE_COMPLETE` sigue en `## Para el humano`, sin test.
+
+Verificacion: `check.sh` -> `Todo en verde.` (377 tests backend, 53 vitest,
+build ok, 17 e2e) sobre a65069c.
 
 ## Revision <fecha> sobre <sha>
 
