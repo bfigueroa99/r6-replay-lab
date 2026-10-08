@@ -43,6 +43,14 @@ sacar operadores de la rueda, quitar al que ya salio para repartir en el equipo
 y dejar solo la rueda en pantalla para capturarla en OBS. Es una pagina normal
 del navegador, no un overlay.
 
+**El jugador fuera de tus replays.** El perfil de cada persona (y el tuyo, desde
+tu nombre en la cabecera) enlaza a su pagina en [stats.cc](https://stats.cc/siege)
+y [R6 Tracker](https://r6.tracker.network/) con el profileID que trae el replay.
+Si pones una cuenta de Ubisoft en el `.env`, un boton trae de la API de Ubisoft
+su rango, MMR, K/D y partidas ganadas de la temporada actual, nivel y horas
+jugadas: lo mismo que muestran esos sitios, sin pasar por ellos. Es la unica
+parte de la app que sale a internet, y solo cuando aprietas el boton.
+
 **Importacion automatica.** Con la app abierta, en cuanto terminas una partida
 se importa sola, y al abrirla entra lo que jugaste desde la ultima vez. Nada de
 arrastrar archivos ni de apretar botones. Se apaga en **Ajustes**.
@@ -259,7 +267,7 @@ npm run dev     # http://localhost:5173
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
 | `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
-| `manage.py test tests` | Corre la suite (389 tests). |
+| `manage.py test tests` | Corre la suite (419 tests). |
 | `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |
 
 ### Sacar los datos
@@ -301,6 +309,20 @@ comentarios) y aplica el cambio sin reiniciar:
 | `TRADE_WINDOW_SECONDS` | `3` | Segundos para considerar vengada una muerte. Cambiarlo pide `manage.py recompute`. |
 | `SQLITE_PATH` | `data/db.sqlite3` | Base de datos. |
 | `OVERRIDES_PATH` | `data/overrides.json` | Nombres para IDs de temporadas nuevas. |
+| `UBI_EMAIL` / `UBI_PASSWORD` | vacias | Cuenta de Ubisoft para el panel *Temporada en Ubisoft*. Vacias, la app no sale a internet. Sin verificacion en dos pasos: usa una cuenta secundaria. |
+| `UBI_SESION_PATH` | `data/ubisoft-sesion.json` | Donde queda el ticket de sesion entre consultas. La clave no se guarda en ningun lado fuera del `.env`. |
+
+### Ubisoft, stats.cc y R6 Tracker
+
+Los enlaces a stats.cc y R6 Tracker no necesitan nada: los abre tu navegador.
+La app no lee esas paginas (estan detras de Cloudflare y bloquean a todo lo que
+no es un navegador); trae los mismos numeros de la API de Ubisoft, de donde los
+sacan ellos.
+
+La API de Ubisoft no es publica ni documentada. Los endpoints son los que
+mantiene [siegeapi](https://github.com/CNDRD/siegeapi); si Ubisoft los cambia,
+el panel muestra el error en vez de numeros viejos. Ubisoft bloquea la IP por un
+rato si se loguea muy seguido, por eso la app reusa el ticket hasta que vence.
 
 ### Copias de seguridad
 
@@ -356,7 +378,9 @@ Vale la pena ser explicito, porque son limitaciones del formato, no del codigo:
   pero el ID del jugador ya no aparece donde estaba, asi que no se pueden
   atribuir. La app lo reporta como no disponible en vez de mostrar ceros.
 - **Solo ves lo que grabaste tu.** Los replays son desde tu cliente; las stats
-  de los rivales salen del kill feed, no de su scoreboard.
+  de los rivales salen del kill feed, no de su scoreboard. Lo unico de afuera es
+  el panel opcional de Ubisoft (temporada actual), y ninguna metrica depende de
+  el.
 
 `docs/formato-rec.md` explica el detalle tecnico de cada punto y por donde
 seguir si alguien quiere resolverlos. Lo que si esta en carpeta, con lo que
@@ -377,6 +401,9 @@ backend/
     match.py            lectura de una partida completa
     constants.py        IDs de mapas, operadores, modos y versiones
     overrides.py        etiquetas para IDs de temporadas nuevas
+  externo/              lo que sale a la red (independiente de Django)
+    enlaces.py          URLs del perfil en stats.cc y R6 Tracker
+    ubisoft.py          cliente de la API de Ubisoft: login, rango, temporada
   replays/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
@@ -387,14 +414,15 @@ backend/
     recompute.py        rehace los trades con otra ventana, sin reparsear
     retag.py            re-etiqueta IDs ya importados sin reparsear
     unknowns.py         IDs sin nombre y el archivo de etiquetas
+    perfil_externo.py   credenciales, ticket guardado y consulta a Ubisoft
     analytics/
       metrics.py        metricas derivadas por ronda
       aggregates.py     agregaciones para la API
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                389 tests (parser, metricas, agregados, coach, API)
-frontend/               React + Vite + recharts (62 tests con vitest)
+  tests/                419 tests (parser, metricas, agregados, coach, API)
+frontend/               React + Vite + recharts (65 tests con vitest)
   components/           tabla, filtros, graficos, helpers de formato
   pages/                una por ruta, cada una en su propio chunk
   electron/             app de escritorio (proceso principal y preload)

@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import PerfilUbisoft from '../components/PerfilUbisoft.jsx'
 import {
   Bar,
   DataTable,
@@ -54,45 +55,61 @@ export default function Jugador() {
             {player.aliases?.length ? ` · antes: ${player.aliases.join(', ')}` : ''}
           </p>
         </div>
-        <Link className="btn small" to="/companeros">
-          Volver
-        </Link>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {data.externo.enlaces.map((enlace) => (
+            <a
+              key={enlace.sitio}
+              className="btn small"
+              href={enlace.url}
+              target="_blank"
+              rel="noreferrer"
+              title={`Abre su perfil en ${enlace.sitio}, en tu navegador`}
+            >
+              {enlace.sitio} ↗
+            </a>
+          ))}
+          <Link className="btn small" to="/companeros">
+            Volver
+          </Link>
+        </div>
       </div>
 
-      <Panel
-        title="Tu rendimiento con y sin"
-        hint={
-          flaco
-            ? 'Ojo: uno de los dos lados tiene menos de 20 rondas, asi que la diferencia puede ser varianza y no la persona.'
-            : 'Tus numeros en las rondas que compartieron, contra el resto de tu historial.'
-        }
-      >
-        <DataTable
-          columns={[
-            { key: 'name', label: '', sortable: false, left: true },
-            { key: 'rounds', label: 'Rondas' },
-            {
-              key: 'winrate',
-              label: 'Ganadas',
-              render: (row) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-                  <Bar value={row.winrate} />
-                  <span style={{ minWidth: 38 }}>{pct(row.winrate)}</span>
-                </div>
-              ),
-            },
-            { key: 'rating', label: 'Rating', digits: 2 },
-            { key: 'kd', label: 'K/D', digits: 2 },
-            { key: 'kpr', label: 'KPR', digits: 2 },
-            { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%' },
-            { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
-          ]}
-          rows={comparacion}
-          initialSort={{ key: 'rounds', dir: 'desc' }}
-          rowKey={(row) => row.name}
-          csvName={`con-y-sin-${player.username}`}
-        />
-      </Panel>
+      {player.is_me ? null : (
+        <Panel
+          title="Tu rendimiento con y sin"
+          hint={
+            flaco
+              ? 'Ojo: uno de los dos lados tiene menos de 20 rondas, asi que la diferencia puede ser varianza y no la persona.'
+              : 'Tus numeros en las rondas que compartieron, contra el resto de tu historial.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'name', label: '', sortable: false, left: true },
+              { key: 'rounds', label: 'Rondas' },
+              {
+                key: 'winrate',
+                label: 'Ganadas',
+                render: (row) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                    <Bar value={row.winrate} />
+                    <span style={{ minWidth: 38 }}>{pct(row.winrate)}</span>
+                  </div>
+                ),
+              },
+              { key: 'rating', label: 'Rating', digits: 2 },
+              { key: 'kd', label: 'K/D', digits: 2 },
+              { key: 'kpr', label: 'KPR', digits: 2 },
+              { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%' },
+              { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
+            ]}
+            rows={comparacion}
+            initialSort={{ key: 'rounds', dir: 'desc' }}
+            rowKey={(row) => row.name}
+            csvName={`con-y-sin-${player.username}`}
+          />
+        </Panel>
+      )}
 
       {duels ? (
         <Panel title="Duelos entre ustedes" hint="Bajas directas, sacadas del kill feed.">
@@ -172,6 +189,8 @@ export default function Jugador() {
         />
       </Panel>
 
+      <PerfilUbisoft key={player.id} jugadorId={player.id} inicial={data.externo.ubisoft} />
+
       <Panel title="Partidas compartidas">
         <DataTable
           columns={[
@@ -210,8 +229,9 @@ export default function Jugador() {
       </Panel>
 
       <p className="note">
-        Todo lo de esta pagina sale de tus propios replays: son las rondas que jugaste con o contra
-        esa persona, no su historial completo. {fmt(data.matches.length)} partidas compartidas.
+        Salvo la temporada en Ubisoft, todo lo de esta página sale de tus propios replays: son las
+        rondas que jugaste con o contra esa persona, no su historial completo.{' '}
+        {fmt(data.matches.length)} partidas compartidas.
       </p>
     </>
   )

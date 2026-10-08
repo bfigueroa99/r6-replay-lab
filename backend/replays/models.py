@@ -218,3 +218,18 @@ class ImportLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.folder} {'ok' if self.ok else 'error'}"
+
+
+class PerfilUbisoft(models.Model):
+    """Lo ultimo que devolvio la API de Ubisoft para un jugador.
+
+    Se guarda para que abrir un perfil no salga a la red: la consulta solo corre
+    cuando el usuario la pide, y Ubisoft limita los logins por IP.
+    """
+
+    player = models.OneToOneField(Player, related_name="perfil_ubisoft", on_delete=models.CASCADE)
+    datos = models.JSONField(default=dict)
+    consultado = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return f"{self.player} ({self.consultado:%Y-%m-%d %H:%M})"

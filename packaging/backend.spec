@@ -29,6 +29,7 @@ hiddenimports = [
     # las migraciones y los comandos se cargan por nombre, no por import
     *collect_submodules("replays"),
     *collect_submodules("pydissect"),
+    *collect_submodules("externo"),
     "config.settings",
     "config.urls",
     "config.wsgi",
