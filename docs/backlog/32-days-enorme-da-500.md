@@ -1,7 +1,7 @@
 # 32. Un ?days= enorme da 500 en nueve endpoints
 
 estado: revisado
-candado: -
+candado: qa 2026-10-09T18:02Z
 rama: claude/equipo-dev/32-days-enorme-da-500
 area: backend
 prioridad: 2
