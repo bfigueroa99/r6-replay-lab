@@ -124,3 +124,11 @@ class FechaConZonaTests(TestCase):
         # 23:30 en UTC-1 = 00:30 UTC = 21:30 en Santiago
         self.assertEqual(self._rondas("since=2026-09-08T23:30-01:00"), 2)
         self.assertEqual(self._rondas("since=2026-09-08T23:31-01:00"), 1)
+
+    def test_una_fecha_con_zona_en_el_limite_del_calendario_se_ignora(self):
+        # Pasarlas a hora local se sale del rango de datetime (OverflowError)
+        for query in ("since=0001-01-01T00:00Z", "until=9999-12-31T23:59-05:00"):
+            with self.subTest(query=query):
+                respuesta = self.client.get(f"/api/overview/?{query}")
+                self.assertEqual(respuesta.status_code, 200)
+                self.assertEqual(rondas(respuesta), 4)

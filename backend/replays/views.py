@@ -42,7 +42,12 @@ def _fecha(valor: str, *, fin_del_dia: bool = False) -> datetime | None:
     if fecha.tzinfo is not None:
         # Con USE_TZ=False la base guarda hora local ingenua y el ORM rechaza
         # un datetime con zona (500). Lo que sale de `toISOString()` trae `Z`.
-        fecha = timezone.make_naive(fecha, timezone.get_default_timezone())
+        try:
+            fecha = timezone.make_naive(fecha, timezone.get_default_timezone())
+        except OverflowError:
+            # Cerca de los limites de datetime el cambio de zona se sale del
+            # rango; se ignora como cualquier fecha invalida en vez de un 500.
+            return None
     if fin_del_dia and len(valor.strip()) == 10:
         return fecha.replace(hour=23, minute=59, second=59, microsecond=999999)
     return fecha
