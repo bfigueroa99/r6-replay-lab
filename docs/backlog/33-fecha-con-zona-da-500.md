@@ -1,7 +1,7 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-09 12:05 UTC
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
