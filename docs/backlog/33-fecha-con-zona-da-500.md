@@ -1,13 +1,13 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
-estado: con hallazgos
-candado: -
+estado: en curso 2026-10-09
+candado: dev 2026-10-09 15:05 UTC
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 6ec5961 con `seed_demo`: `GET /api/overview/?since=2026-01-01T00:00Z` responde 500 (`ValueError: SQLite backend does not support timezone-aware datetimes when USE_TZ is False`; `_fecha` en `replays/views.py` acepta el offset y el ORM lo rechaza). Lo mismo con `+00:00` o `-03:00`, en `since` y en `until`, en overview, coach, operators, trends, teammates, duels, sessions, export y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_dates.py
-turnos: dev 20261009T0902Z, revisor 20261009T1202Z
+turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z
 
 ## PR
 
