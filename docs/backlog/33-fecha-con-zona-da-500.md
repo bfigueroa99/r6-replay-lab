@@ -1,13 +1,13 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
-estado: implementado
-candado: revisor 2026-10-09T21:02Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 6ec5961 con `seed_demo`: `GET /api/overview/?since=2026-01-01T00:00Z` responde 500 (`ValueError: SQLite backend does not support timezone-aware datetimes when USE_TZ is False`; `_fecha` en `replays/views.py` acepta el offset y el ORM lo rechaza). Lo mismo con `+00:00` o `-03:00`, en `since` y en `until`, en overview, coach, operators, trends, teammates, duels, sessions, export y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_dates.py
-turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z
+turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z, revisor 20261009T2101Z
 
 ## PR
 
@@ -119,3 +119,34 @@ Veredicto: corregir (un hallazgo, chico y local).
 - Revision ciega del diff (subagente con `revision.md`): aprobar, sin
   hallazgos; confirmo que los subtests del limite caen sin el `try/except`.
 - Desvio del arreglo sugerido: ninguno.
+
+## Revision 2026-10-09 sobre cab041d
+
+Segunda pasada, sesion distinta de la que implemento (20261009T2101Z).
+Revision ciega (subagente con `revision.md`, sin leer la ficha) y
+confirmacion del lider. `check.sh` en `Todo en verde.` sobre la rama (ya
+contiene `origin/main` 6ec5961): 396 tests backend (4 skipped), 53 vitest,
+build, 17 e2e.
+
+Criterios: los cuatro tienen test con nombre (`FechaConZonaTests` x4 y
+`RangoTests` sin cambios). Con el `views.py` de `origin/main`,
+`tests.test_dates` da 40 errores; con el arreglo, 15 en verde. El diff solo
+toca los archivos de `archivos:`. Sin numeros nuevos en la UI, sin tildes
+en identificadores, sin `print`, sin dependencias nuevas.
+
+Hallazgo de la revision anterior (`OverflowError` en el borde del
+calendario): corregido y con subTest. Casos borde confirmados por el lider
+con el test client y `TIME_ZONE=America/Santiago` (overview, sessions,
+export): DST de Santiago (`since=2026-04-05T03:30Z`, hora repetida;
+`until=2026-09-06T04:00Z`, salto), `since=0001-01-01T00:00Z`,
+`until=9999-12-31T23:59-05:00`, `since=9999-12-31T20:00+14:00`,
+`until=2026-09-08Z` (se ignora, `fromisoformat` la rechaza), fracciones de
+9 digitos: 24 de 24 responden 200. `fin_del_dia` no aplica a fechas con
+zona (ninguna cadena de 10 caracteres con zona pasa `fromisoformat`).
+
+Fuera del diff: `?days=999999999` da 500 en `origin/main`; es la ficha 32
+(`aprobado`), no se reporta aca.
+
+Hallazgos: ninguno.
+
+Veredicto: aprobar.
