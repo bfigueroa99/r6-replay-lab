@@ -102,3 +102,18 @@ Hallazgos:
   `until=9999-12-31T23:59-05:00` que espere 200.
 
 Veredicto: corregir (un hallazgo, chico y local).
+
+## Implementacion 2026-10-09 (correccion del hallazgo)
+
+- `backend/replays/views.py` (`_fecha`): el `make_naive` va dentro de
+  `try/except OverflowError` y devuelve `None`, asi que una fecha con zona
+  que se sale del rango de `datetime` al pasarla a hora local se ignora
+  como cualquier fecha invalida (200, sin filtro), igual que la misma fecha
+  sin zona.
+- `backend/tests/test_dates.py`:
+  `FechaConZonaTests.test_una_fecha_con_zona_en_el_limite_del_calendario_se_ignora`
+  con subTest `since=0001-01-01T00:00Z` y `until=9999-12-31T23:59-05:00`:
+  200 y las 4 rondas. Sin el arreglo da 2 errores (`OverflowError`,
+  verificado con `git stash`).
+- `check.sh` en `Todo en verde.`: 396 tests backend, 53 vitest, build, 17 e2e.
+- Desvio del arreglo sugerido: ninguno.
