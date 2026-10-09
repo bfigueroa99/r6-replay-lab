@@ -18,7 +18,7 @@ Mergeados a main en el ultimo Release (00:02 UTC): PR #15 (ficha 30) y PR #16 (f
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/32-days-enorme-da-500`: `aprobado` (dev, revisor y qa de tres sesiones). Ya trae main 6ec5961 fusionado y `check.sh` en verde sobre ese head. Libera `backend/replays/views.py` y `backend/tests/test_api.py`. Lista para el Release de las 00:01 UTC.
-2. `claude/equipo-dev/33-fecha-con-zona-da-500`: `revisado` (segunda revision, sesion 20261009T2101Z: aprobar, sin hallazgos; `check.sh` en verde, 396 backend). Espera QA de otra sesion (QA de las 18:01 UTC, o el Release de las 00:01 no la puede mergear todavia). Merge de prueba con main 6ec5961 y con 32 limpio. Libera `backend/replays/views.py` y `backend/tests/test_dates.py`.
+2. `claude/equipo-dev/33-fecha-con-zona-da-500`: `revisado` (segunda revision, sesion 20261009T2101Z: aprobar, sin hallazgos; `check.sh` en verde, 396 backend). Espera QA de otra sesion (QA de las 18:01 UTC); el Release de las 00:01 todavia no la puede mergear. Merge de prueba con main 6ec5961 y con 32 limpio. Libera `backend/replays/views.py` y `backend/tests/test_dates.py`.
 
 ## Papel (rama backlog)
 
