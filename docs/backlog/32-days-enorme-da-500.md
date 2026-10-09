@@ -1,13 +1,13 @@
 # 32. Un ?days= enorme da 500 en nueve endpoints
 
-estado: revisado
-candado: qa 2026-10-09T18:02Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/32-days-enorme-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main dc0188b con `seed_demo`: `GET /api/overview/?days=1000000` responde 500 (`OverflowError: date value out of range` en `replays/views.py:_filters`, que solo atrapa `ValueError`). Lo mismo en coach, operators, trends, teammates, duels, sessions, compare y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_api.py
-turnos: dev 20261008T1502Z, revisor 20261008T2102Z
+turnos: dev 20261008T1502Z, revisor 20261008T2102Z, qa 20261009T1802Z
 
 ## PR
 
@@ -85,3 +85,18 @@ Revisor 20261008T2102Z. Revision ciega del diff (`views.py` + `test_api.py`, sin
   (4 skipped, los de siempre), 53 frontend, build, 17 e2e.
 
 Veredicto: aprobar -> `revisado`.
+
+## QA 2026-10-09 sobre 3fed9fb
+
+QA 20261009T1802Z. Rama con `origin/main` 6ec5961 fusionado (23 commits nuevos de main, sin conflicto). Sin migracion, sin parser, sin frontend: no aplica chunk ni `recompute`.
+
+- `check.sh` completo: `Todo en verde.` (ruff, 395 tests backend con 4 skipped, 53 frontend, build, 17 e2e).
+- Pasos de `ci.yml` tal cual, sin `.env`: `cd backend && ruff check .` -> `All checks passed!`; `python3 manage.py test tests` -> `OK (skipped=4)`.
+- Repro del bug en main 6ec5961 (worktree, base de `seed_demo`): `curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8000/api/overview/?days=1000000'` -> 500 (`OverflowError: date value out of range`); con `99999999999` -> 500.
+- Criterio 1 y 2: en la rama, `runserver` con base vacia y con base de `seed_demo` (29 partidas, 203 rondas). Sonda `for ep in overview coach operators trends teammates duels sessions compare players/1 export matches filters; do for d in 1000000 99999999999 -1000000 -99999999999 7 abc "" 0 1e5 2932896; do curl -s -o /dev/null -w '%{http_code} ' "http://127.0.0.1:8000/api/$ep/?days=$d"; done; echo; done` -> todo 200 en base sembrada (en base vacia `players/1` da 404, que es lo correcto: no existe). Cero lineas ` 500 ` en el log del servidor.
+- Criterio 3: `overview` sin `days`, con `days=1000000` y con `days=abc` -> mismo md5 del cuerpo; `overall.rounds` = 203 en los tres y con `99999999999`.
+- Criterio 4: `overview?days=7` -> `overall.rounds` = 0 (la semilla es de 2026-08), `days=90` -> 203. Sigue filtrando.
+- Vecinos con `days=1000000` combinado: `since=2026-01-01`, `until=foo`, `page=-1`, `map=`, `operator=`, `session=99999999999` -> 200 en `overview` y `matches`.
+- Mutaciones sobre `ParametrosInvalidosTests`: volver a `except ValueError` -> 21 errores; `days` que nunca filtra -> cae `test_un_days_normal_sigue_filtrando`; desborde que fija `since` en 2100 en vez de ignorarse -> cae `test_un_days_desbordado_se_ignora_como_cualquier_valor_invalido`. Codigo restaurado despues de cada una.
+
+Veredicto: los cuatro criterios con evidencia -> `aprobado`.
