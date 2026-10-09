@@ -1,7 +1,7 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
-estado: en curso 2026-10-09
-candado: dev 2026-10-09 15:05 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
@@ -116,4 +116,6 @@ Veredicto: corregir (un hallazgo, chico y local).
   200 y las 4 rondas. Sin el arreglo da 2 errores (`OverflowError`,
   verificado con `git stash`).
 - `check.sh` en `Todo en verde.`: 396 tests backend, 53 vitest, build, 17 e2e.
+- Revision ciega del diff (subagente con `revision.md`): aprobar, sin
+  hallazgos; confirmo que los subtests del limite caen sin el `try/except`.
 - Desvio del arreglo sugerido: ninguno.
