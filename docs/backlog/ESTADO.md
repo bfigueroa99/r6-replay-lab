@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-08 21:12 UTC por revisor (sesion 20261008T2102Z)
+actualizado: 2026-10-09 00:30 UTC por release (sesion 20261009T0002Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,35 +8,32 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/30-tests-ganador-de-ronda | docs/backlog/30-tests-ganador-de-ronda.md | aprobado | 2 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/30-tests-ganador-de-ronda?expand=1) |
-| claude/equipo-dev/31-tests-stats-por-jugador | docs/backlog/31-tests-stats-por-jugador.md | aprobado | 2 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/31-tests-stats-por-jugador?expand=1) |
-| claude/equipo-dev/32-days-enorme-da-500 | docs/backlog/32-days-enorme-da-500.md | revisado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/32-days-enorme-da-500?expand=1) |
+| claude/equipo-dev/32-days-enorme-da-500 | docs/backlog/32-days-enorme-da-500.md | revisado | 3 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/32-days-enorme-da-500?expand=1) |
 
-COLA=3/3  TOTAL=3/5 (cola llena: nadie abre ramas nuevas hasta que se mergee algo)
+COLA=1/3  TOTAL=1/5 (hay lugar: el Dev puede tomar `disenado`, pero el papel esta vacio)
+
+Mergeados a main este turno (puerta completa: dev, revisor y qa de tres sesiones; `check.sh` en verde sobre el head exacto ya fusionado con main):
+
+- [PR #15](https://github.com/bfigueroa99/r6-replay-lab/pull/15), ficha 30, tests de `round_end` y del reloj del defuser -> main ff0d388.
+- [PR #16](https://github.com/bfigueroa99/r6-replay-lab/pull/16), ficha 31, tests de 1vX, headshots y agregado por partida -> main 6ec5961 (main fusionado en la rama antes, `check.sh` en verde con 392 tests).
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/30-tests-ganador-de-ronda`: no choca con main, 31 ni 32 (merge de prueba limpio sobre 5701949). Libera `backend/tests/test_round_end.py`.
-2. `claude/equipo-dev/31-tests-stats-por-jugador`: no choca con nada (merge de prueba limpio sobre 2a35219). Libera `backend/tests/test_player_stats.py`.
-3. `claude/equipo-dev/32-days-enorme-da-500`: no choca con main, 30 ni 31 (merge de prueba limpio, revisor 20261008T2102Z). Libera `backend/replays/views.py` y `backend/tests/test_api.py`.
-
-30 y 31 estan `aprobado` (dev 20261008T0902Z, revisor 20261008T1202Z, qa 20261008T1802Z: tres sesiones distintas). Listas para la puerta de merge del release (00:01 UTC). La 32 esta `revisado` (dev 20261008T1502Z, revisor 20261008T2102Z): espera la QA de una tercera sesion (QA de las 18:01 UTC, o el revisor de las 12:01 UTC en su fallback).
+1. `claude/equipo-dev/32-days-enorme-da-500`: no choca con main 6ec5961 (merge de prueba limpio). Libera `backend/replays/views.py` y `backend/tests/test_api.py`. Espera la QA de una tercera sesion (QA de las 18:01 UTC; o P7 si pasa 48 h).
 
 ## Papel (rama backlog)
 
 | ficha | estado | prioridad | area | candado |
 |---|---|---|---|---|
-| [30. Tests de quien gana la ronda y por que](30-tests-ganador-de-ronda.md) | en curso (rama 30, aprobado) | 2 | parser | - |
-| [31. Tests de stats por jugador: 1vX, headshots y agregado por partida](31-tests-stats-por-jugador.md) | en curso (rama 31, aprobado) | 3 | parser | - |
 | [32. Un ?days= enorme da 500 en nueve endpoints](32-days-enorme-da-500.md) | en curso (rama 32, revisado) | 2 | backend | - |
 
-Disenadas 30 y 31 sin archivos en comun (`tests/test_round_end.py` y `tests/test_player_stats.py`): implementadas en paralelo por el dev 20261008T0902Z. Papel: 0 propuesto, 0 disenado.
+Papel: 0 propuesto, 0 disenado. Las fichas 30 y 31 ya estan en main; su espejo se quito de esta rama. El PO tiene dos candidatos anotados en las fichas 30 y 31 (abajo), pero los dos esperan una decision tuya.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-08 00:01 | Crea la rama backlog y este tablero. Sin fichas que mergear. |
+| release | 2026-10-09 00:02 | Entrega y mergea 30 (PR #15) y 31 (PR #16): `## PR`, fichas recortadas, `check.sh` en verde sobre cada head exacto (380 y 392 tests backend, 53 vitest, build, 17 e2e). Ninguna rama en conflicto con main. No pudo borrar las ramas mergeadas: el proxy de git corta el push de borrado. |
 | revisor | 2026-10-08 21:02 | Revisa 32 (revision ciega + confirmacion propia): sin hallazgos; otros caminos de fecha desde la query string sin 500; dos mutaciones caen. `check.sh` en verde (369 backend, 53 frontend, build, 17 e2e). 32 -> `revisado`. |
 | dev | 2026-10-08 15:02 | Sin fichas tomables (30 y 31 en `revisado`, papel vacio): bug real encontrado probando parametros borde sobre `seed_demo`. `?days=1000000` daba 500 en 10 endpoints (`OverflowError` en `_filters`). Ficha 32 escrita, arreglada (1 linea + 3 tests) y dejada en `implementado`. |
 | qa | 2026-10-08 18:02 | QA de 30 y 31: `check.sh` en verde sobre cada rama, 10 mutaciones propias por ficha. Dos mutantes sobrevivian y quedaron cubiertos con un test de borde cada uno: Y9S4 fuera de modo bomba (30) y compañero muerto por `DEATH` sin asesino en el 1vX (31). Las dos -> `aprobado`. |
@@ -45,11 +42,22 @@ Disenadas 30 y 31 sin archivos en comun (`tests/test_round_end.py` y `tests/test
 
 ## Para el humano
 
-- Ramas borrables (playbook anterior, solo commit de reclamo, sin codigo): `git push origin --delete claude/confident-feynman-dc9apf`
+- Ramas borrables (ya mergeadas o sin codigo). El turno no pudo borrarlas: el proxy de la sesion corta `git push --delete` (`send-pack: unexpected disconnect while reading sideband packet`). Pegar en tu PC:
+  - `git push origin --delete claude/equipo-dev/30-tests-ganador-de-ronda` (mergeada, PR #15)
+  - `git push origin --delete claude/equipo-dev/31-tests-stats-por-jugador` (mergeada, PR #16)
+  - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo commit de reclamo)
+  - `git push origin --delete claude/equipo-dev/prueba-acceso` (si existe: el `--dry-run` de prueba de acceso no deberia haberla creado)
 - Playbook: sigue viviendo en `claude/great-cray-7o9tvf` (PR #11, abierto). Lo mergeas vos: toca las reglas del equipo.
 - PRs abiertos que no son del equipo y no se tocan: #12 (`claude/focused-newton-w26nu4`, instalador) y #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL).
 - Preguntas abiertas:
   - **Boton de backup en Datos (deuda del #16) y `REPLAY_DIR` desde la UI (deuda del #19/#20).** Los dos necesitan un POST nuevo, y `CLAUDE.md` fija la API en tres POST (`/api/import/`, `/api/overrides/`, `/api/players/<id>/ubisoft/`). El PO no los propone hasta que digas si se puede sumar un cuarto (`POST /api/backup/`) y/o un quinto (`POST /api/config/replay-dir/`, que escribiria el `.env` de `%APPDATA%`). Contesta abajo en `## Para el equipo`.
+  - **Bug en `round_end` (aviso de la ficha 30, ya en main):** en Y9S4+ un `DEFUSER_DISABLE_COMPLETE` del equipo que perdio segun la cabecera deja a los **dos** equipos con `won=True`. Hay que decidir cual manda (cabecera o feed) antes de arreglarlo; el PO lo puede proponer como ficha.
+  - **1vX con `PLAYER_LEAVE` (aviso de la ficha 31, ya en main):** si un compañero se desconecta, el ultimo vivo que gana 1v1 queda con `1vX == 0` porque el que se fue no cuenta como muerto. ¿Debe contar? Decision de producto; no se toca hasta que digas.
+  - **#28 (calibrar el corte de 10 rondas por operador rival)** solo se puede hacer con tu base real; en la nube no hay datos. Queda para vos o para cuando haya un export anonimizado.
+- Verificar en el PC: nada (30 y 31 solo agregan tests).
+- CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
+
+## Para el equipo`.
   - **Bug en `round_end` (aviso de la ficha 30):** en Y9S4+ un `DEFUSER_DISABLE_COMPLETE` del equipo que perdio segun la cabecera deja a los **dos** equipos con `won=True`. Hay que decidir cual manda (cabecera o feed) antes de arreglarlo; el PO lo puede proponer como ficha.
   - **1vX con `PLAYER_LEAVE` (aviso de la ficha 31):** si un compañero se desconecta, el ultimo vivo que gana 1v1 queda con `1vX == 0` porque el que se fue no cuenta como muerto. ¿Debe contar? Decision de producto; no se toca hasta que digas.
   - **#28 (calibrar el corte de 10 rondas por operador rival)** solo se puede hacer con tu base real; en la nube no hay datos. Queda para vos o para cuando haya un export anonimizado.
