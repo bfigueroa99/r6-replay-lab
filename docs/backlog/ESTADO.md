@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-09 06:15 UTC por arquitecto (sesion 20261009T0604Z)
+actualizado: 2026-10-09 09:10 UTC por dev (sesion 20261009T0902Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,9 +8,10 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/32-days-enorme-da-500 | docs/backlog/32-days-enorme-da-500.md | revisado | 9 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/32-days-enorme-da-500?expand=1) |
+| claude/equipo-dev/32-days-enorme-da-500 | docs/backlog/32-days-enorme-da-500.md | revisado | 12 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/32-days-enorme-da-500?expand=1) |
+| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | implementado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
 
-COLA=1/3  TOTAL=1/5 (hay lugar: el Dev puede tomar `disenado`, pero el papel esta vacio)
+COLA=2/3  TOTAL=2/5
 
 Mergeados a main este turno (puerta completa: dev, revisor y qa de tres sesiones; `check.sh` en verde sobre el head exacto ya fusionado con main):
 
@@ -20,14 +21,16 @@ Mergeados a main este turno (puerta completa: dev, revisor y qa de tres sesiones
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/32-days-enorme-da-500`: no choca con main 6ec5961 (merge de prueba limpio). Libera `backend/replays/views.py` y `backend/tests/test_api.py`. Espera la QA de una tercera sesion (QA de las 18:01 UTC; o P7 si pasa 48 h).
+2. `claude/equipo-dev/33-fecha-con-zona-da-500`: no choca con main 6ec5961 ni con 32 (merge de prueba por pares limpio: las dos tocan `views.py`, pero 32 en la linea de `days` de `_filters` y 33 en `_fecha`). Libera `backend/replays/views.py` y `backend/tests/test_dates.py`. Espera revision (12:01 UTC).
 
 ## Papel (rama backlog)
 
 | ficha | estado | prioridad | area | candado |
 |---|---|---|---|---|
 | [32. Un ?days= enorme da 500 en nueve endpoints](32-days-enorme-da-500.md) | en curso (rama 32, revisado) | 2 | backend | - |
+| [33. Una fecha con zona horaria en ?since= o ?until= da 500](33-fecha-con-zona-da-500.md) | en curso (rama 33, implementado) | 2 | backend | - |
 
-Papel: 0 propuesto, 0 disenado (el espejo de 32 dice `en curso`; la rama manda: `revisado`). Las fichas 30 y 31 ya estan en main; su espejo se quito de esta rama. El PO tiene dos candidatos anotados en las fichas 30 y 31 (abajo), pero los dos esperan una decision tuya.
+Papel: 0 propuesto, 0 disenado (los espejos de 32 y 33 dicen `en curso`; la rama manda: `revisado` e `implementado`). Las fichas 30 y 31 ya estan en main; su espejo se quito de esta rama. El PO tiene dos candidatos anotados en las fichas 30 y 31 (abajo), pero los dos esperan una decision tuya.
 
 ## Ultimo turno de cada rol
 
@@ -35,7 +38,7 @@ Papel: 0 propuesto, 0 disenado (el espejo de 32 dice `en curso`; la rama manda: 
 |---|---|---|
 | release | 2026-10-09 00:02 | Entrega y mergea 30 (PR #15) y 31 (PR #16): `## PR`, fichas recortadas, `check.sh` en verde sobre cada head exacto (380 y 392 tests backend, 53 vitest, build, 17 e2e). Ninguna rama en conflicto con main. No pudo borrar las ramas mergeadas: el proxy de git corta el push de borrado. |
 | revisor | 2026-10-08 21:02 | Revisa 32 (revision ciega + confirmacion propia): sin hallazgos; otros caminos de fecha desde la query string sin 500; dos mutaciones caen. `check.sh` en verde (369 backend, 53 frontend, build, 17 e2e). 32 -> `revisado`. |
-| dev | 2026-10-08 15:02 | Sin fichas tomables (30 y 31 en `revisado`, papel vacio): bug real encontrado probando parametros borde sobre `seed_demo`. `?days=1000000` daba 500 en 10 endpoints (`OverflowError` en `_filters`). Ficha 32 escrita, arreglada (1 linea + 3 tests) y dejada en `implementado`. |
+| dev | 2026-10-09 09:02 | Sin fichas tomables (32 en `revisado`, papel vacio): bug real encontrado probando parametros borde sobre `seed_demo`. `?since=`/`?until=` con zona horaria (`2026-01-01T00:00Z`, lo que da `toISOString()`) daba 500 en 9 endpoints (el ORM rechaza un datetime con zona con `USE_TZ=False`). Ficha 33 escrita, arreglada en `_fecha` (pasa a hora local) con 3 tests, revision ciega aprobar, `check.sh` en verde (395 backend, build, 17 e2e). 33 -> `implementado`. |
 | qa | 2026-10-08 18:02 | QA de 30 y 31: `check.sh` en verde sobre cada rama, 10 mutaciones propias por ficha. Dos mutantes sobrevivian y quedaron cubiertos con un test de borde cada uno: Y9S4 fuera de modo bomba (30) y compañero muerto por `DEATH` sin asesino en el 1vX (31). Las dos -> `aprobado`. |
 | arquitecto | 2026-10-09 06:04 | Sin fichas `propuesto` que disenar ni `disenado` que revalidar: turno sin trabajo de diseno. Rama 32 sin conflicto contra main 6ec5961. Limpia de este tablero un bloque duplicado que un turno anterior habia pegado entre Para el humano y Para el equipo. |
 | po | 2026-10-08 03:02 | Propone 30 y 31 (tests de `round_end`, reloj del defuser, 1vX y stats por partida; criterios verificados contra main dc0188b). |
