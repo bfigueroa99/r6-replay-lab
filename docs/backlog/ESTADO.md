@@ -46,7 +46,6 @@ Papel: 0 propuesto, 0 disenado. Las fichas 30 y 31 ya estan en main; su espejo s
   - `git push origin --delete claude/equipo-dev/30-tests-ganador-de-ronda` (mergeada, PR #15)
   - `git push origin --delete claude/equipo-dev/31-tests-stats-por-jugador` (mergeada, PR #16)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo commit de reclamo)
-  - `git push origin --delete claude/equipo-dev/prueba-acceso` (si existe: el `--dry-run` de prueba de acceso no deberia haberla creado)
 - Playbook: sigue viviendo en `claude/great-cray-7o9tvf` (PR #11, abierto). Lo mergeas vos: toca las reglas del equipo.
 - PRs abiertos que no son del equipo y no se tocan: #12 (`claude/focused-newton-w26nu4`, instalador) y #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL).
 - Preguntas abiertas:
