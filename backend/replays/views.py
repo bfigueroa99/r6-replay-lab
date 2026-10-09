@@ -9,6 +9,7 @@ from pathlib import Path
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
@@ -38,6 +39,10 @@ def _fecha(valor: str, *, fin_del_dia: bool = False) -> datetime | None:
         fecha = datetime.fromisoformat(valor.strip())
     except ValueError:
         return None
+    if fecha.tzinfo is not None:
+        # Con USE_TZ=False la base guarda hora local ingenua y el ORM rechaza
+        # un datetime con zona (500). Lo que sale de `toISOString()` trae `Z`.
+        fecha = timezone.make_naive(fecha, timezone.get_default_timezone())
     if fin_del_dia and len(valor.strip()) == 10:
         return fecha.replace(hour=23, minute=59, second=59, microsecond=999999)
     return fecha
