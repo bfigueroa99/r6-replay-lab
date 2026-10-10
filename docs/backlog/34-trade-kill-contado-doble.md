@@ -1,13 +1,13 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
-estado: revisado
-candado: qa 2026-10-10 18:02 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/34-trade-kill-contado-doble
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 0b547d7 llamando a `metrics.annotate_trades` directo: eventos `d1 -> a1` (150 s), `d1 -> a2` (149 s), `a3 -> d1` (148 s), equipos `a1/a2/a3 = 0`, `d1 = 1`, ventana 5 s. Resultado: `a3.trade_kills == 2` con una sola baja. El bucle de `annotate_trades` recorre cada muerte y busca la venganza; si el asesino mato a dos, la misma baja vengadora suma una vez por cada victima. `docs/metricas.md` define trade kill como "una baja que ademas deshace una perdida" (+0.3 en el rating) y "veces que tu mataste al asesino de un compañero".
 archivos: backend/replays/analytics/metrics.py, backend/tests/test_metrics.py, backend/tests/test_recompute.py, docs/metricas.md
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T0902Z, revisor 20261010T1202Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T0902Z, revisor 20261010T1202Z, qa 20261010T1801Z
 
 ## PR
 
@@ -24,11 +24,11 @@ contando como tradeadas, que es lo que realmente paso.
 
 ## Criterios de aceptacion
 
-- [ ] Con los eventos de la fuente (3 atacantes, un defensor que mata a dos y muere a manos del tercero dentro de la ventana), `analyse_round` deja `trade_kills == 1` al vengador y `was_traded == True` a las dos victimas (test en `tests/test_metrics.py`).
-- [ ] Dos bajas vengadoras distintas sobre dos asesinos distintos siguen sumando 2 (test: el caso que hoy funciona no cambia).
-- [ ] En cualquier ronda, `trade_kills <= kills` para cada jugador: test que arma una ronda con un doble y un triple vengados y lo afirma para todos.
-- [ ] `manage.py recompute` corrige las filas ya importadas: una ronda guardada con `trade_kills = 2` para esa secuencia queda en 1 despues del recompute, y el resumen lo cuenta como cambio (test en `tests/test_recompute.py`).
-- [ ] Los tests existentes de `TradeTests` y de `test_recompute.py` siguen en verde sin cambios.
+- [x] Con los eventos de la fuente (3 atacantes, un defensor que mata a dos y muere a manos del tercero dentro de la ventana), `analyse_round` deja `trade_kills == 1` al vengador y `was_traded == True` a las dos victimas (test en `tests/test_metrics.py`).
+- [x] Dos bajas vengadoras distintas sobre dos asesinos distintos siguen sumando 2 (test: el caso que hoy funciona no cambia).
+- [x] En cualquier ronda, `trade_kills <= kills` para cada jugador: test que arma una ronda con un doble y un triple vengados y lo afirma para todos.
+- [x] `manage.py recompute` corrige las filas ya importadas: una ronda guardada con `trade_kills = 2` para esa secuencia queda en 1 despues del recompute, y el resumen lo cuenta como cambio (test en `tests/test_recompute.py`).
+- [x] Los tests existentes de `TradeTests` y de `test_recompute.py` siguen en verde sin cambios.
 
 ## Fuera de alcance
 
@@ -214,13 +214,60 @@ comentarios, sin `print`.
 
 Veredicto: aprobar
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-10 sobre 3dd63a0
 
-(QA) Un comando y un resultado por criterio de aceptacion.
+(QA 20261010T1801Z.) La rama ya contiene `origin/main` 0b547d7. Sin `.env`.
+Los scripts de siembra viven en el scratchpad (`sembrar.py`, `ver.py`, con
+`tests/factories.py`); nada de `.rec` ni `.sqlite3` al repo.
+
+- `check.sh` -> `Todo en verde.`: ruff ok, 399 tests backend (4 skipped),
+  53 vitest, build, 17 e2e. Cubre los pasos de `ci.yml`.
+- Criterios 1-4 de punta a punta con el comando real, base nueva
+  (`DATA_DIR=<tmp> migrate`) sembrada con filas como las dejaba el import
+  viejo: ronda 1 doble vengado (`vengador` con `trade_kills=2`), ronda 2
+  triple vengado por `ME` (`trade_kills=3`), ronda 3 dos venganzas sobre dos
+  asesinos (`trade_kills=2`), ronda 4 sin bajas.
+  - Antes: 2 filas con `trade_kills > kills`.
+  - `manage.py recompute --dry-run` -> "cambiarian 9 filas de jugador y 7
+    eventos sobre 4 rondas"; `manage.py recompute` -> "se actualizaron 9
+    filas ...".
+  - Despues: ronda 1 `vengador` 1, ronda 2 `ME` 1, ronda 3 `ME` sigue en 2
+    (criterio 2); 0 filas con `trade_kills > kills` (criterio 3); todas las
+    victimas de las rondas 1-3 con `untraded_death=False` (las muertes
+    siguen contando como tradeadas).
+  - Segundo `recompute` -> "Nada que recalcular ... las 4 rondas ya estan al
+    dia" (idempotente).
+- API sobre esa base (`runserver :8767`): `overview` da `trade_kills` 3 para
+  `ME` (1 + 2; con el bug eran 5) y `traded_pct` 100. overview, coach,
+  teammates, duels, sessions, players/1, trends y operators con `""`,
+  `since=foo`, `page=-1` -> 200. Con `until=2026-08-03T18:00Z` dan 500: es
+  el bug de la ficha 33 (`aprobado`), que esta rama todavia no trae; no es
+  de este diff.
+- `seed_demo` + `recompute`: 1320 filas, 0 con `trade_kills > kills`.
+- Mutacion (`tests.test_metrics tests.test_recompute`, 32 tests):
+  `metrics.py` de `origin/main` -> 4 fallos (`..._cuenta_una_vez`,
+  `..._nunca_supera_a_kills` [doble] y [triple], `RecomputeDobleTests`);
+  `vengadoras` como lista en vez de `set` -> los mismos 4; sin marcar
+  `was_traded` -> 6 fallos (incluido `..._cuenta_una_vez`). Restaurado: 32 OK.
+  `..._suman_dos` pasa con el codigo de main, como pide el criterio 2.
+- Criterio 5: el diff no toca tests existentes; suite completa en verde.
+- Merge de prueba: 34 x 33 y 34 x 35 limpios.
+
+Veredicto: aprobado.
 
 ## Verificar en el PC
 
-(QA, solo si toca migraciones, recompute, parser, Electron o `.ps1`.)
+Cambian numeros historicos (trade kills y rating de las rondas con un doble
+o triple vengado). En la base real, desde `backend/`:
+
+```powershell
+..\.venv\Scripts\python.exe manage.py recompute --dry-run   # cuantas filas cambiarian
+..\.venv\Scripts\python.exe manage.py backup                # por las dudas
+..\.venv\Scripts\python.exe manage.py recompute
+```
+
+Despues, en la UI, que ninguna fila de jugador muestre mas trade kills que
+bajas.
 
 ## Pendiente
 
