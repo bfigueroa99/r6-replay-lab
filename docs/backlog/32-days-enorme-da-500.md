@@ -1,7 +1,7 @@
 # 32. Un ?days= enorme da 500 en nueve endpoints
 
 estado: aprobado
-candado: -
+candado: release 2026-10-10 00:10
 rama: claude/equipo-dev/32-days-enorme-da-500
 area: backend
 prioridad: 2
