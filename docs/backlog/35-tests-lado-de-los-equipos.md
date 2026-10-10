@@ -1,7 +1,7 @@
 # 35. Tests de como el parser decide que equipo ataca
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-10T06:02Z
 rama: -
 area: tests
 prioridad: 3

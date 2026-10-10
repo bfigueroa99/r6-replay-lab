@@ -1,7 +1,7 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-10T06:02Z
 rama: -
 area: backend
 prioridad: 2
