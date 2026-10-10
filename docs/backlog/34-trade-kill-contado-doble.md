@@ -1,13 +1,13 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
-estado: implementado
-candado: revisor 2026-10-10 12:02
+estado: revisado
+candado: -
 rama: claude/equipo-dev/34-trade-kill-contado-doble
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 0b547d7 llamando a `metrics.annotate_trades` directo: eventos `d1 -> a1` (150 s), `d1 -> a2` (149 s), `a3 -> d1` (148 s), equipos `a1/a2/a3 = 0`, `d1 = 1`, ventana 5 s. Resultado: `a3.trade_kills == 2` con una sola baja. El bucle de `annotate_trades` recorre cada muerte y busca la venganza; si el asesino mato a dos, la misma baja vengadora suma una vez por cada victima. `docs/metricas.md` define trade kill como "una baja que ademas deshace una perdida" (+0.3 en el rating) y "veces que tu mataste al asesino de un compañero".
 archivos: backend/replays/analytics/metrics.py, backend/tests/test_metrics.py, backend/tests/test_recompute.py, docs/metricas.md
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T0902Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T0902Z, revisor 20261010T1202Z
 
 ## PR
 
@@ -187,9 +187,32 @@ subtests y el 4); el 2 pasa en main como se esperaba. `seed_demo` no pasa por
 aprobar; unico hallazgo, una ñ en un comentario, corregido.
 `check.sh`: Todo en verde (399 backend, 53 frontend, 17 e2e, build ok).
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-10 sobre 9faff04
 
-(Revisor) Formato de `revision.md`. Veredicto al final.
+(Revisor 20261010T1202Z.) Rama ya contiene main 0b547d7 (merge-tree limpio); `check.sh`
+en verde sobre 9faff04: ruff ok, 399 backend, 53 vitest, build, 17 e2e.
+
+Revision a ciegas (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos. Confirmado por el lider:
+
+- Mutacion: con `metrics.py` de `origin/main` y los tests de la rama fallan
+  exactamente los 4 nuevos (`..._cuenta_una_vez`, `..._nunca_supera_a_kills`
+  [doble] y [triple], `RecomputeDobleTests`); `..._suman_dos` pasa en los dos,
+  como pide el criterio 2. Los asserts ven el bug.
+- La deteccion de muerte vengada no cambio (mismas condiciones, mismo
+  `break`); solo se mueve la suma al final, por indice. El reset de
+  `trade_kills` sigue arriba, asi que `recompute` baja los 2 viejos a 1 y lo
+  cuenta en `players_changed` (`trade_kills` esta en `CAMPOS`).
+- `_stats_del_guion` saca `kills` del mismo guion de eventos: el
+  `trade_kills <= kills` del criterio 3 compara contra bajas reales, no
+  contra un 0 por defecto.
+
+Ficha: criterios 1-4 con test con nombre, 5 con la suite completa sin tocar
+tests existentes. Diff dentro de `archivos:`. Sin numero nuevo (fila
+**Trade kills** aclarada en `metricas.md`). Sin tildes en identificadores ni
+comentarios, sin `print`.
+
+Veredicto: aprobar
 
 ## QA <fecha> sobre <sha>
 
