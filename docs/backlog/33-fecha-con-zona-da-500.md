@@ -1,13 +1,13 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
-estado: revisado
-candado: qa 2026-10-10 18:02 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 6ec5961 con `seed_demo`: `GET /api/overview/?since=2026-01-01T00:00Z` responde 500 (`ValueError: SQLite backend does not support timezone-aware datetimes when USE_TZ is False`; `_fecha` en `replays/views.py` acepta el offset y el ORM lo rechaza). Lo mismo con `+00:00` o `-03:00`, en `since` y en `until`, en overview, coach, operators, trends, teammates, duels, sessions, export y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_dates.py
-turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z, revisor 20261009T2101Z
+turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z, revisor 20261009T2101Z, qa 20261010T1801Z
 
 ## PR
 
@@ -24,10 +24,10 @@ como regla.
 
 ## Criterios de aceptacion
 
-- [ ] `GET /api/overview/?since=2026-01-01T00:00Z` responde 200 (test).
-- [ ] `since` y `until` con offset (`Z`, `+00:00`, `-03:00`) responden 200 en los endpoints que usan `_filters`, incluidos export y players/<id> (test con subTest).
-- [ ] Una fecha con offset se convierte a la hora local (`TIME_ZONE`) antes de filtrar: `since=<hora UTC equivalente a una partida local>` la incluye y un minuto despues la excluye (test).
-- [ ] Las fechas sin offset se comportan igual que antes: los tests de `RangoTests` siguen en verde sin cambios.
+- [x] `GET /api/overview/?since=2026-01-01T00:00Z` responde 200 (test).
+- [x] `since` y `until` con offset (`Z`, `+00:00`, `-03:00`) responden 200 en los endpoints que usan `_filters`, incluidos export y players/<id> (test con subTest).
+- [x] Una fecha con offset se convierte a la hora local (`TIME_ZONE`) antes de filtrar: `since=<hora UTC equivalente a una partida local>` la incluye y un minuto despues la excluye (test).
+- [x] Las fechas sin offset se comportan igual que antes: los tests de `RangoTests` siguen en verde sin cambios.
 
 ## Fuera de alcance
 
@@ -150,3 +150,45 @@ Fuera del diff: `?days=999999999` da 500 en `origin/main`; es la ficha 32
 Hallazgos: ninguno.
 
 Veredicto: aprobar.
+
+## QA 2026-10-10 sobre 0378eba
+
+(QA 20261010T1801Z.) La rama no tenia `origin/main` 0b547d7 (ficha 32
+mergeada, tambien toca `views.py`): merge sin conflictos (185ccbf) y todo lo
+de abajo corre sobre el resultado. `TIME_ZONE` por defecto
+(`America/Santiago`, UTC-4 en agosto); sin `.env`.
+
+- `check.sh` -> `Todo en verde.`: ruff ok, 399 tests backend (4 skipped),
+  53 vitest, build, 17 e2e. Cubre los pasos de `ci.yml` (`ruff check
+  backend`, `manage.py test tests` sin `.env`, `npm test`, `npm run build`).
+- Criterio 1 y 2, base vacia (`DATA_DIR=<tmp> migrate`, `runserver :8765`):
+  overview, coach, operators, trends, teammates, duels y sessions con
+  `since=2026-01-01T00:00Z`, `until=...%2B00:00`, `since=...-03:00`,
+  `since=foo`, `page=-1`, `until=9999-12-31T23:59-05:00`,
+  `since=0001-01-01T00:00Z` -> 49 de 49 en 200; export con `Z` -> 200.
+- Criterio 1 y 2, base sembrada (`seed_demo`: 29 partidas, 203 rondas,
+  `runserver :8766`): 11 endpoints (overview, coach, operators, trends,
+  teammates, duels, sessions, compare, players/1, export, matches) x 11
+  parametros (`Z`, `%2B00:00`, `-04:00`, `.000Z`, limites del calendario,
+  `+14:00`, `since=foo&until=`, `page=-1`, `2026-08-03Z`, hora del cambio de
+  horario) -> 121 de 121 en 200, cero `Traceback` en el log del servidor.
+- Criterio 3, la zona se convierte a hora local (partida de las 14:00 del
+  3 de agosto, hora de Santiago = 18:00Z), contando partidas en `sessions`
+  y filas de `export/?table=matches`:
+  `since=2026-08-03T14:00` 15, `since=...18:00Z` 15, `since=...14:00-04:00`
+  15, `since=...18:01Z` 14 (igual que `since=...14:01`);
+  `until=...18:00Z` 15, `until=...17:59Z` 14 (igual que `until=...13:59`).
+  `overview` con `since=...14:00` y con `since=...18:00Z` da el mismo JSON
+  byte a byte.
+- Criterio 4: `RangoTests` sin cambios en el diff y en verde.
+- Mutacion sobre `_fecha` (`tests.test_dates`, 15 tests): sin el bloque de
+  `tzinfo` -> 40 errores; `fecha.replace(tzinfo=None)` en vez de
+  `make_naive` -> 2 fallos (los de conversion a hora local); `except
+  ZeroDivisionError` en vez de `OverflowError` -> 2 errores (los del limite
+  del calendario). Restaurado: 15 OK.
+- Merge de prueba con las ramas abiertas: 33 x 34 y 33 x 35 limpios.
+
+Sin migracion, recompute, parser ni frontend: no hace falta
+`## Verificar en el PC`.
+
+Veredicto: aprobado.
