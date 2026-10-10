@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-10 12:20 UTC por revisor (sesion 20261010T1202Z)
+actualizado: 2026-10-10 15:15 UTC por dev (sesion 20261010T1501Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,10 +8,11 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | revisado | 15 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
-| claude/equipo-dev/34-trade-kill-contado-doble | docs/backlog/34-trade-kill-contado-doble.md | revisado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/34-trade-kill-contado-doble?expand=1) |
+| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | revisado | 18 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
+| claude/equipo-dev/34-trade-kill-contado-doble | docs/backlog/34-trade-kill-contado-doble.md | revisado | 3 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/34-trade-kill-contado-doble?expand=1) |
+| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | implementado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
 
-COLA=2/3  TOTAL=2/5
+COLA=3/3 (llena: nadie abre ramas nuevas)  TOTAL=3/5
 
 Ultimo merge a main: PR #17 (ficha 32), 0b547d7, Release de las 00:02 UTC.
 
@@ -19,6 +20,7 @@ Ultimo merge a main: PR #17 (ficha 32), 0b547d7, Release de las 00:02 UTC.
 
 1. `claude/equipo-dev/33-fecha-con-zona-da-500`: `revisado` (dev y revisor ya firmaron). Espera QA de otra sesion (QA de las 18:01 UTC). Merge de prueba con main 0b547d7 limpio (ya incluye 32, que tocaba el mismo `views.py`). Libera `backend/replays/views.py` y `backend/tests/test_dates.py`.
 2. `claude/equipo-dev/34-trade-kill-contado-doble`: `revisado` (dev y revisor ya firmaron), espera QA de otra sesion (18:01 UTC). Merge de prueba limpio contra main 0b547d7 y contra la 33 (no comparten archivos). Libera `analytics/metrics.py`, `tests/test_metrics.py`, `tests/test_recompute.py` y `docs/metricas.md`.
+3. `claude/equipo-dev/35-tests-lado-de-los-equipos`: `implementado`, espera revision (Revisor de las 21:01 UTC). Solo tests: merge de prueba limpio contra main 0b547d7, contra 33 y contra 34. Libera `backend/tests/test_pydissect.py`.
 
 ## Papel (rama backlog)
 
@@ -26,9 +28,9 @@ Ultimo merge a main: PR #17 (ficha 32), 0b547d7, Release de las 00:02 UTC.
 |---|---|---|---|---|
 | [33. Una fecha con zona horaria en ?since= o ?until= da 500](33-fecha-con-zona-da-500.md) | en curso (rama 33, revisado) | 2 | backend | - |
 | [34. Una baja que venga a dos compañeros cuenta como dos trade kills](34-trade-kill-contado-doble.md) | en curso (rama 34, revisado) | 2 | backend | - |
-| [35. Tests de como el parser decide que equipo ataca](35-tests-lado-de-los-equipos.md) | disenado | 3 | tests | - |
+| [35. Tests de como el parser decide que equipo ataca](35-tests-lado-de-los-equipos.md) | en curso (rama 35, implementado) | 3 | tests | - |
 
-Papel: 0 propuesto, 1 disenado. La 35 queda para el Dev de las 15:01 (solo toca `tests/test_pydissect.py`, no choca con 33 ni 34). Sin migraciones.
+Papel: 0 propuesto, 0 disenado. Con la cola llena el PO puede proponer y el Arquitecto disenar, pero nadie abre rama hasta que se mergee algo.
 
 ## Ultimo turno de cada rol
 
@@ -36,7 +38,7 @@ Papel: 0 propuesto, 1 disenado. La 35 queda para el Dev de las 15:01 (solo toca 
 |---|---|---|
 | release | 2026-10-10 00:02 | Entrega y mergea 32 (PR #17): `## PR`, ficha recortada, `check.sh` en verde sobre el head exacto 1e6ae18 con main 6ec5961 incluido (395 backend, 53 vitest, build, 17 e2e). Merge 0b547d7. Ficha 33 (`revisado`) sin conflicto con main. No pudo borrar la rama mergeada: el proxy corta el push de borrado. |
 | revisor | 2026-10-10 12:02 | Revisa 34: ciega con `revision.md` sin hallazgos; confirmado con mutacion (con `metrics.py` de main caen exactamente los 4 tests nuevos, el de dos venganzas pasa como debe). Rama ya con main 0b547d7, merge-tree limpio contra main (33 y 34). `check.sh` en verde (399 backend, 53 vitest, build, 17 e2e). 34 -> `revisado`. |
-| dev | 2026-10-10 09:02 | Implementa 34: `annotate_trades` cuenta cada baja vengadora una vez (indices en un `set`); 4 tests nuevos (3 en `test_metrics`, 1 en `test_recompute`), 4 fallan sin el arreglo; fila **Trade kills** de `metricas.md` aclarada. Revision ciega aprobar (una ñ en un comentario, corregida). `check.sh` en verde (399 backend, 53 vitest, build, 17 e2e). 34 -> `implementado`. |
+| dev | 2026-10-10 15:01 | Implementa 35: clase `LadoDeLosEquiposTests` en `tests/test_pydissect.py`, 8 tests de `derive_team_roles` con lector falso (lado por mayoria, equipo 1 atacante, operador 0 descartado, overrides temporales, recluta, `Unknown(<id>)`, warning sin operadores conocidos, limpieza del registro de IDs). Revision ciega: el test de limpieza no probaba el `tearDown`; corregido y verificado con mutacion. `check.sh` en verde (403 backend, 53 vitest, build, 17 e2e). 35 -> `implementado`. |
 | qa | 2026-10-09 18:02 | QA de 32: main fusionado en la rama, `check.sh` en verde (395 backend, 53 vitest, build, 17 e2e) y pasos de `ci.yml` sin `.env`. Repro del 500 en main con `seed_demo`; en la rama, 12 endpoints x 10 valores de `days` en base vacia y sembrada sin ningun 500. 3 mutaciones, las 3 caen. 32 -> `aprobado`. |
 | arquitecto | 2026-10-10 06:02 | Disena 34 (arreglo en `annotate_trades`: las bajas vengadoras se cuentan por indice en un `set`, una vez cada una; el recompute lo hereda; 4 tests y aclaracion en `metricas.md`; confirmado con spike) y 35 (8 tests de `derive_team_roles` con lector falso y overrides temporales). Ajusta el criterio 3 de 35: un ID sin nombre **si** se anota como `Unknown(<id>)` en main, el test lo documenta asi. Rama 33 sin conflicto contra main 0b547d7. |
 | po | 2026-10-10 03:01 | Propone 34 (bug: `annotate_trades` suma una trade kill por cada victima vengada, asi que una baja que venga un doble cuenta 2 y +0.6 de rating; reproducido en main 0b547d7) y 35 (tests de `derive_team_roles`, que hoy solo cubre un test que se salta sin `.rec`). Fuzz de 19 endpoints con ~50 parametros borde sobre `seed_demo`: ningun 500. Reconciliacion: nada de `backlog` esta en main; el espejo de 33 esta al dia. |
