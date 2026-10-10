@@ -23,6 +23,7 @@ COLA=<n>/4  TOTAL=<n>/6
 - Epicas en curso: <slug>: tramos <NN en main>, <NN en cola>, <NN en papel> | ninguna
 - Papel: <PAPEL_TIPOS de estado.sh>. Cola: <COLA_TIPOS de estado.sh>.
 - `ALCANCE.md`: <n> ideas libres. Ideas nuevas de este turno: <titulos> | ninguna
+- Investigacion: ultima entrada <fecha> (<familias visitadas>) | ninguna todavia
 
 ## Papel (rama backlog)
 

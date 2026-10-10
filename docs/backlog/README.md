@@ -10,7 +10,8 @@ items terminados.
 
 - **Rama `claude/equipo-dev/backlog`**: el papel. Fichas en `propuesto`,
   `disenado` y `descartado`, mas `ESTADO.md` (el tablero), `ALCANCE.md` (el
-  mapa de lo que la app todavia no hace) y, si existe, el
+  mapa de lo que la app todavia no hace), `INVESTIGACION.md` (la bitacora del
+  investigador) y, si existe, el
   marcador `PAUSA`, el veto `SIN_MERGE` y un espejo `en curso` de cada ficha
   reclamada. Nunca tiene PR, nunca se mergea, no cuenta para la cola.
 - **Rama `claude/equipo-dev/NN-slug`**: el trabajo de un item. Nace cuando un
@@ -56,9 +57,15 @@ bugs reales entran siempre.
 
 `ALCANCE.md` es el mapa: epicas por tema, cada idea con que gana el usuario,
 que datos del `.rec` usa, tamano y estado (`idea`, `ficha NN`, `en main`,
-`PR #n`, `no`). Lo hace crecer el product owner en cada turno; la semilla esta
-en `docs/backlog/ALCANCE.md` del playbook y se copia a `backlog` la primera
-vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
+`PR #n`, `no`). Lo hace crecer el product owner en cada turno con lo que ve
+adentro del repo, y el **investigador** (el turno de las 21:01 UTC de los
+dias pares) con lo que trae de afuera: parsers abiertos del `.rec` (primero
+r6-dissect), otras herramientas de replay, trackers, herramientas de otros
+juegos, la comunidad, las notas de parche de Ubisoft y la analitica de
+esports. Cada idea de afuera llega con su link, y su bitacora (que fuentes se
+miraron, que dieron, que salio seco) es `INVESTIGACION.md`. Las semillas de
+los dos archivos estan en `docs/backlog/` del playbook y se copian a
+`backlog` la primera vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
 `main` en la ultima semana y, si fueron cero, por que.
 
 ## Lo que hace el humano

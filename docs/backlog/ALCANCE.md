@@ -5,7 +5,9 @@ El mapa de crecimiento del equipo (Directiva de alcance de
 `claude/equipo-dev/backlog`; esta copia del playbook es la semilla que el
 primer turno copia alla si no existe. Desde ahi lo mantiene el product owner:
 reconcilia estados, agrega al menos 2 ideas por turno y saca de aca las
-fichas nuevas.
+fichas nuevas. El Investigador (franja 7, dias pares) suma lo que trae de
+afuera, con `[fuente](url)` en la celda de la idea; su bitacora esta en
+`INVESTIGACION.md`.
 
 Como se lee:
 
@@ -95,6 +97,17 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 |---|---|---|---|---|---|
 | I1 | Abrir la carpeta de una partida | Un boton en el detalle que abre la carpeta del replay | `Match.source_path` (`models.py:49`, sin exponer) + `shell.openPath` (`frontend/electron/main.cjs:179`). Toca Electron: lo mergea el humano, "verificado solo en nube" | S | idea |
 | I2 | Importacion automatica al aparecer una partida | No tener que apretar Importar | vigia de carpeta | M | PR #12 |
+
+### datos-nuevos-del-parser: campos que el `.rec` tiene y `pydissect/` todavia no lee
+
+Las llena el Investigador cuando un parser abierto (primero r6-dissect, del
+que `pydissect/` es un port) decodifica algo nuevo. Cada idea dice que campo,
+donde lo encontro (archivo y commit) y que pantalla lo usaria. Se verifican
+con `.rec` reales en el PC antes de prometer un numero: la nube no tiene
+replays.
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
 
 ## Cubierto por PRs abiertos que no son del equipo
 

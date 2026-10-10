@@ -1,12 +1,12 @@
 ---
 name: equipo-dev
-description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa) segun la franja horaria UTC. Usar cuando la rutina lo pida o con /equipo-dev [rol].
+description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun la franja horaria UTC. Usar cuando la rutina lo pida o con /equipo-dev [rol].
 ---
 
 # Equipo de desarrollo: una iteracion, un rol
 
-Seis roles se turnan: **release manager, product owner, arquitecto, dev,
-revisor y QA**. Cada sesion es un turno de un solo rol; el trabajo pasa de un
+Siete roles se turnan: **release manager, product owner, arquitecto, dev,
+revisor, QA e investigador**. Cada sesion es un turno de un solo rol; el trabajo pasa de un
 rol al siguiente a traves de **fichas** (un archivo por item en
 `docs/backlog/`) que viven en git. Nadie recuerda nada entre turnos: todo lo
 que un rol necesita saber esta en las fichas, en las ramas y en este archivo.
@@ -68,8 +68,11 @@ exactamente igual.
 - **`ALCANCE.md`**, en la rama `backlog`, es el mapa de lo que la app todavia
   no hace: epicas por tema, cada una con sus tramos, los datos del `.rec` que
   usa y su estado (`idea`, `ficha NN`, `en main`, `PR #n`). Lo mantiene el
-  PO; la semilla esta en `docs/backlog/ALCANCE.md` de `$REF` y se copia a
-  `backlog` si no existe. El humano lo edita desde la web para reordenar o
+  PO y lo alimentan dos lados: el PO y el Arquitecto con lo que ven adentro
+  del repo, y el **Investigador** con lo que trae de afuera (otras
+  herramientas, otros juegos, la comunidad, parsers abiertos), con su
+  bitacora en `INVESTIGACION.md`. Las semillas estan en `docs/backlog/` de
+  `$REF` y se copian a `backlog` si no existen. El humano lo edita desde la web para reordenar o
   tachar ideas: una idea tachada o marcada `no` no se propone.
 - **Epicas y tramos.** Lo grande no se descarta por grande: se parte en
   tramos de una epica (`epica: <slug>` en la cabecera). Cada tramo cabe en un
@@ -148,10 +151,16 @@ minutos. Se decide una vez al arrancar y no se recalcula.
 | 4 | 12:01 | 09:01 | Revisor |
 | 5 | 15:01 | 12:01 | Dev |
 | 6 | 18:01 | 15:01 | QA |
-| 7 | 21:01 | 18:01 | Revisor |
+| 7 | 21:01 | 18:01 | Investigador los dias pares, Revisor los impares |
+
+Dias pares e impares se cuentan desde 1970 sobre la hora del disparo
+(`disparo / 86400 % 2`), no sobre el dia del mes: asi no se repite el mismo
+rol dos noches seguidas al cambiar de mes. `turno.sh` lo resuelve; no se
+calcula a mano.
 
 Nemotecnica: el dia UTC arranca entregando, despues propone, disena,
-implementa, revisa, implementa, prueba, revisa. Un item disenado a las 06:01
+implementa, revisa, implementa, prueba, y cierra revisando o mirando afuera
+(un dia si, uno no). Un item disenado a las 06:01
 puede ser un PR listo a las 00:01 del dia siguiente, cuando el humano esta
 sentado en Santiago.
 
@@ -162,8 +171,9 @@ cambian el rol anotado, salvo P6 y P7, que lo dicen.
 
 Por que es robusta: cero estado compartido para decidir; cada rol es
 "avanzar las fichas que esten en el estado X", asi que un disparo perdido no
-deja deuda y dos disparos en la misma franja se reparten por candado; dev y
-revisor corren dos veces por dia y QA y revisor se cubren entre si.
+deja deuda y dos disparos en la misma franja se reparten por candado; dev
+corre dos veces por dia, revisor una vez y media, y QA y revisor se cubren
+entre si.
 
 ## Prioridades sobre el turno
 
@@ -200,7 +210,8 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   con su turno: ninguno convierte papel en codigo.
 - **P6. Cola vacia** (`COLA == 0`) y hay `disenado` tomable: Revisor, QA y
   Release actuan como Dev ese turno y lo anotan `turnos: dev <sesion> (por
-  cola vacia)`. PO y Arquitecto no, para que nunca falte papel.
+  cola vacia)`. PO, Arquitecto e Investigador no, para que nunca falte papel
+ni ideas.
 - **P7. Relevo a 48 h.** Una ficha que lleva mas de 48 h esperando una etapa
   (`implementado`, `revisado`, `aprobado`, o `en curso` con `## Pendiente`)
   la avanza el rol del turno, una sola vez por sesion, anotando `(relevo de
@@ -251,11 +262,11 @@ Dos lugares:
 1. **Rama `claude/equipo-dev/backlog`**, creada una vez desde `origin/main`
    por el primer turno de **cualquier rol** que no la encuentre (`git
    checkout -b claude/equipo-dev/backlog origin/main`, copiar `README.md`,
-   `PLANTILLA.md`, `ESTADO.plantilla.md` y `ALCANCE.md` desde `$REF` si no estan, escribir
+   `PLANTILLA.md`, `ESTADO.plantilla.md`, `ALCANCE.md` e `INVESTIGACION.md` desde `$REF` si no estan, escribir
    `ESTADO.md`, commit `Crea la rama backlog`, push). Sin ella no hay donde
    anotar hallazgos ni tablero, asi que no se posterga. Solo admite
    archivos dentro de `docs/backlog/`. Ahi viven `propuesto`, `disenado`, `descartado`,
-   `ESTADO.md`, `ALCANCE.md`, `PAUSA` y `SIN_MERGE`, mas el espejo `en curso` de las fichas
+   `ESTADO.md`, `ALCANCE.md`, `INVESTIGACION.md`, `PAUSA` y `SIN_MERGE`, mas el espejo `en curso` de las fichas
    reclamadas. Nunca PR, nunca merge, no cuenta para la cola. **Push
    rechazado en `backlog`, receta unica:** `git fetch origin`, `git merge
    origin/claude/equipo-dev/backlog`; si una ficha queda en conflicto gana la
@@ -361,8 +372,9 @@ al humano siga siendo poco.
   - d. El diff (`git diff --name-only origin/main...<rama>`) no toca lo que
     el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
     `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
-    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md` (la
-    semilla; el mapa vivo esta en `backlog`), `frontend/electron/`,
+    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md` y
+    `docs/backlog/INVESTIGACION.md` (las semillas; los vivos estan en
+    `backlog`), `frontend/electron/`,
     `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
     `.github/`.
   - e. Hay herramientas de GitHub y el PR esta abierto contra `main`
@@ -395,7 +407,9 @@ al humano siga siendo poco.
 ### Product owner (franja 1)
 
 - **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
-  en este turno); `origin/main` fresco: `CLAUDE.md`, `README.md` contra lo
+  en este turno) y la ultima entrada de `INVESTIGACION.md` (las ideas que
+  trajo el Investigador, con su fuente, van primero a la cola de lectura);
+  `origin/main` fresco: `CLAUDE.md`, `README.md` contra lo
   que el codigo hace, `docs/formato-rec.md`, las notas de pendientes y deuda
   del roadmap (al final de cada item: "Pendiente", "Lo que falta", "Deuda",
   "Queda anotado") y el `Fuera de alcance` y `## Para el humano` de las
@@ -415,8 +429,8 @@ al humano siga siendo poco.
      o del modelo) y tamano S/M/L. Fuentes, rotando para no secar ninguna:
      datos que el parser ya extrae o la base ya guarda y ninguna pantalla
      muestra; lo que tienen las herramientas de replay de la tabla de
-     competidores del roadmap (si la sesion tiene busqueda web, una
-     busqueda por turno sobre sus novedades); lo que solo sale del historial
+     competidores del roadmap (la busqueda afuera es del Investigador; el
+     PO no la repite); lo que solo sale del historial
      acumulado (el diferencial del proyecto); los `Fuera de alcance` y la
      deuda de arriba; la friccion que anoto QA. Una idea que choca con una
      regla dura va a "Ideas descartadas" con el motivo.
@@ -590,6 +604,85 @@ al humano siga siendo poco.
   Lo que se echo de menos usando la app (un filtro que falta, un dato que
   no se puede ver, un paso de mas) va como idea a `ALCANCE.md`, con la
   pantalla y el paso. Sin nada, informe.
+
+### Investigador (franja 7, dias pares)
+
+Los demas roles miran adentro (el codigo, las fichas, el historial); este
+mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la
+Directiva de alcance: el PO convierte en fichas, el Investigador llena el
+pozo del que el PO saca.
+
+- **Entrada:** `INVESTIGACION.md` y `ALCANCE.md` de `backlog` (si faltan,
+  copiarlos de `$REF`), para saber que fuentes se visitaron, cuales dieron
+  algo y que ideas ya existen; `CLAUDE.md` y `docs/formato-rec.md`, para
+  saber que datos hay; las fichas en `main` y en papel, y los PRs abiertos,
+  para no traer lo que ya existe.
+- **Fuentes**, por familias. Cada turno toma 3 o 4, primero las que llevan
+  mas tiempo sin visitarse y las que dieron senal la ultima vez; ninguna se
+  repite dos turnos seguidos:
+  1. **Parsers abiertos del `.rec`**: primero r6-dissect, del que
+     `pydissect/` es un port (README, "Creditos"), con sus commits, releases
+     e issues desde la ultima visita; despues sus forks y otros parsers.
+     Campos que alguien decodifico y `pydissect/` todavia no lee. Es la
+     fuente que mas agranda el alcance, porque trae datos nuevos.
+  2. **Herramientas de replay de Siege** (las de la tabla de competidores
+     del roadmap y las que aparezcan): que muestran, que piden sus usuarios.
+  3. **Trackers de API** (stats.cc, R6 Tracker): solo su descripcion
+     publica, resenas y lo que se dice de ellos. Si una pagina responde 403,
+     se usa la busqueda y se sigue; nunca se intenta pasar la proteccion.
+  4. **Herramientas de otros juegos tacticos** (CS2: Leetify, Scope.gg,
+     CS Demo Manager; Valorant: Blitz, tracker.gg; MOBAs: OP.GG, Dotabuff):
+     metricas y pantallas que se traducen a Siege.
+  5. **Comunidad** (r/Rainbow6, r/R6ProLeague, Siege.GG, contenido de
+     coaching): lo que los jugadores dicen que quieren ver de sus partidas.
+  6. **Ubisoft**: notas de parche y temporada (operadores, mapas, modos y
+     cambios del sistema de replays que van a llegar al parser).
+  7. **Analitica de esports y deporte**: ratings compuestos, probabilidad de
+     ganar la ronda segun la ventaja numerica, redes de trade, rating de
+     clutch.
+- **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
+  existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
+  con link verificado, fecha y una linea de que hace. Despues el lider
+  filtra cada candidato, en este orden:
+  (a) **dato**: que campo de `pydissect/` o de `models.py` lo alimenta,
+  con archivo; si no existe pero un parser abierto lo decodifica, entra
+  como idea de la epica `datos-nuevos-del-parser` con el link al hallazgo y
+  la nota "verificar con `.rec` reales en el PC"; si nadie lo tiene, va a
+  "Ideas descartadas" con el motivo.
+  (b) **reglas duras** de `CLAUDE.md`.
+  (c) **duplicado** contra `main`, `ALCANCE.md` y los PRs abiertos.
+  Lo que pasa entra a `ALCANCE.md`: en la epica que corresponda, o en una
+  nueva si no encaja, con `[fuente](url)` en la celda de la idea. De otros
+  proyectos se traen ideas, no codigo. La excepcion es r6-dissect (MIT): su
+  logica se porta igual que el resto de `pydissect/`, con el commit de
+  origen anotado en la idea y el credito del README al dia. Por ultimo, la
+  entrada del turno en `INVESTIGACION.md`, la mas nueva arriba: fecha,
+  familias visitadas, que dio senal, que salio seco, ideas agregadas (con su
+  `id`), descartadas y por que. Se actualiza la tabla de fuentes. El archivo
+  se mantiene bajo unos 10.000 caracteres condensando las entradas viejas.
+  Sin candado: no hay ficha que candar, y un push rechazado sigue la receta
+  unica de `backlog` (en `ALCANCE.md` e `INVESTIGACION.md` se conservan las
+  filas y entradas de los dos lados).
+- **Sin red** (la sesion no tiene busqueda web o el proxy la corta): el
+  turno no se pierde. Hace la investigacion interna: datos que el parser
+  extrae y ninguna pantalla muestra, ramas `mercado/*` y PRs cerrados sin
+  mergear, y las ideas van igual a `ALCANCE.md`. Se anota "sin red" en
+  `INVESTIGACION.md`, y una sola vez en `## Para el humano` de `ESTADO.md`,
+  con la configuracion de red del entorno como causa probable.
+- **Prioridades:** P1, P2 y P3 como cualquier rol. P4 a P7 no le tocan:
+  nunca implementa, revisa ni prueba.
+- **Salida:** commits `Investiga: <familias>` en `backlog`, solo
+  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md` (mas
+  `ESTADO.md` al cerrar). Nunca fichas: priorizar es del PO. Nunca PR,
+  nunca rama de trabajo, nunca codigo.
+- **Turno bien hecho:** al menos 3 ideas nuevas en `ALCANCE.md` que pasan
+  los tres filtros, cada una con su fuente real; el PO siguiente (03:01
+  UTC) puede convertir cualquiera en ficha sin volver a buscar.
+- **No hace:** inventar links, versiones ni numeros (si no pudo abrir la
+  fuente, la idea no entra); hacer que la app consulte esas fuentes (la
+  investigacion es del equipo, no de la app); scraping ni nada que esquive
+  una proteccion.
+- **Sin trabajo:** no existe; siempre hay una familia sin visitar.
 
 ## Cierre comun (todos los roles, 5 minutos)
 

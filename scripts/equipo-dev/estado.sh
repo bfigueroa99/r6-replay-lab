@@ -140,6 +140,12 @@ if git cat-file -e "$B:docs/backlog/ALCANCE.md" 2>/dev/null; then
 else
     echo "ALCANCE=falta en backlog: copiar docs/backlog/ALCANCE.md desde el playbook"
 fi
+if git cat-file -e "$B:docs/backlog/INVESTIGACION.md" 2>/dev/null; then
+    ultima=$(git show "$B:docs/backlog/INVESTIGACION.md" | grep -m1 -oE '^### [0-9]{4}-[0-9]{2}-[0-9]{2}' | cut -c5-)
+    echo "INVESTIGACION=backlog, ultima entrada: ${ultima:-ninguna}"
+else
+    echo "INVESTIGACION=falta en backlog: copiar docs/backlog/INVESTIGACION.md desde el playbook"
+fi
 
 echo "== entorno"
 # Mismo criterio que check.sh: el venv si existe, si no el sistema.
