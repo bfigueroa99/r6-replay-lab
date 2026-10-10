@@ -66,7 +66,9 @@ def _filters(request: HttpRequest) -> dict:
             from datetime import timedelta
 
             out["since"] = datetime.now() - timedelta(days=int(days))
-        except ValueError:
+        except (ValueError, OverflowError):
+            # Un numero absurdo desborda timedelta o la resta; se ignora como
+            # cualquier otro valor invalido en vez de dar 500.
             pass
     return out
 
