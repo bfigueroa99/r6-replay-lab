@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-10 00:20 UTC por release (sesion 20261010T0002Z)
+actualizado: 2026-10-10 03:15 UTC por po (sesion 20261010T0301Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,11 +8,11 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | revisado | 3 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
+| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | revisado | 6 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
 
 COLA=1/3  TOTAL=1/5
 
-Mergeado a main en este Release (00:02 UTC): PR #17 (ficha 32), merge 0b547d7.
+Ultimo merge a main: PR #17 (ficha 32), 0b547d7, Release de las 00:02 UTC.
 
 ## Orden de merge sugerido
 
@@ -23,8 +23,10 @@ Mergeado a main en este Release (00:02 UTC): PR #17 (ficha 32), merge 0b547d7.
 | ficha | estado | prioridad | area | candado |
 |---|---|---|---|---|
 | [33. Una fecha con zona horaria en ?since= o ?until= da 500](33-fecha-con-zona-da-500.md) | en curso (rama 33, revisado) | 2 | backend | - |
+| [34. Una baja que venga a dos compañeros cuenta como dos trade kills](34-trade-kill-contado-doble.md) | propuesto | 2 | backend | - |
+| [35. Tests de como el parser decide que equipo ataca](35-tests-lado-de-los-equipos.md) | propuesto | 3 | tests | - |
 
-Papel: 0 propuesto, 0 disenado. El espejo de 32 se quito de esta rama: la ficha ya esta en main. Sin papel, el Dev de las 09:01 no tiene nada que tomar salvo bugs propios; el PO de las 03:01 deberia proponer.
+Papel: 2 propuesto, 0 disenado. El Arquitecto de las 06:01 tiene 34 y 35 para disenar. 34 toca `analytics/metrics.py` y no choca con la rama 33 (`views.py`, `test_dates.py`).
 
 ## Ultimo turno de cada rol
 
@@ -35,7 +37,7 @@ Papel: 0 propuesto, 0 disenado. El espejo de 32 se quito de esta rama: la ficha 
 | dev | 2026-10-09 15:02 | Corrige el hallazgo de la revision de 33: `_fecha` ignora (sin 500) una fecha con zona que se sale del rango de `datetime` al pasarla a hora local; subTest nuevo con `since=0001-01-01T00:00Z` y `until=9999-12-31T23:59-05:00`. Revision ciega aprobar, `check.sh` en verde (396 backend, 53 vitest, build, 17 e2e). 33 -> `implementado`. |
 | qa | 2026-10-09 18:02 | QA de 32: main fusionado en la rama, `check.sh` en verde (395 backend, 53 vitest, build, 17 e2e) y pasos de `ci.yml` sin `.env`. Repro del 500 en main con `seed_demo`; en la rama, 12 endpoints x 10 valores de `days` en base vacia y sembrada sin ningun 500. 3 mutaciones, las 3 caen. 32 -> `aprobado`. |
 | arquitecto | 2026-10-09 06:04 | Sin fichas `propuesto` que disenar ni `disenado` que revalidar: turno sin trabajo de diseno. Rama 32 sin conflicto contra main 6ec5961. Limpia de este tablero un bloque duplicado que un turno anterior habia pegado entre Para el humano y Para el equipo. |
-| po | 2026-10-08 03:02 | Propone 30 y 31 (tests de `round_end`, reloj del defuser, 1vX y stats por partida; criterios verificados contra main dc0188b). |
+| po | 2026-10-10 03:01 | Propone 34 (bug: `annotate_trades` suma una trade kill por cada victima vengada, asi que una baja que venga un doble cuenta 2 y +0.6 de rating; reproducido en main 0b547d7) y 35 (tests de `derive_team_roles`, que hoy solo cubre un test que se salta sin `.rec`). Fuzz de 19 endpoints con ~50 parametros borde sobre `seed_demo`: ningun 500. Reconciliacion: nada de `backlog` esta en main; el espejo de 33 esta al dia. |
 
 ## Para el humano
 
