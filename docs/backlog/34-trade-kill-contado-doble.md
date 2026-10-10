@@ -1,13 +1,13 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
-estado: disenado
+estado: en curso 2026-10-10 (implementado en la rama)
 candado: -
-rama: -
+rama: claude/equipo-dev/34-trade-kill-contado-doble
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 0b547d7 llamando a `metrics.annotate_trades` directo: eventos `d1 -> a1` (150 s), `d1 -> a2` (149 s), `a3 -> d1` (148 s), equipos `a1/a2/a3 = 0`, `d1 = 1`, ventana 5 s. Resultado: `a3.trade_kills == 2` con una sola baja. El bucle de `annotate_trades` recorre cada muerte y busca la venganza; si el asesino mato a dos, la misma baja vengadora suma una vez por cada victima. `docs/metricas.md` define trade kill como "una baja que ademas deshace una perdida" (+0.3 en el rating) y "veces que tu mataste al asesino de un compañero".
 archivos: backend/replays/analytics/metrics.py, backend/tests/test_metrics.py, backend/tests/test_recompute.py, docs/metricas.md
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T0902Z
 
 ## PR
 
