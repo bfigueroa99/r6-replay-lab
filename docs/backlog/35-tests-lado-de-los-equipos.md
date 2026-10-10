@@ -1,7 +1,7 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: en curso 2026-10-10
-candado: dev 2026-10-10 15:05 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
@@ -156,7 +156,32 @@ no fijar un comportamiento dudoso. Va como aviso a `## Para el humano`.
 
 ## Implementacion
 
-(Dev) Que quedo, que no, desvios del diseno y por que.
+(Dev 20261010T1501Z.) Solo `backend/tests/test_pydissect.py`: clase
+`LadoDeLosEquiposTests` despues de `NameTests`, con helpers de modulo
+`_lector` y `_jugador` y constantes `ASH`, `THERMITE`, `MUTE`, `JAGER`,
+`DESCONOCIDO = 999`. Los 8 tests del diseno, uno por criterio:
+
+| criterio | test |
+|---|---|
+| 1 | `test_el_equipo_con_operadores_de_ataque_ataca`, `test_el_atacante_puede_ser_el_equipo_1` |
+| 2 | `test_el_jugador_con_operador_0_se_descarta` |
+| 3 (ajustado) | `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`, `test_el_recluta_no_se_anota_como_operador_nuevo`, `test_un_id_sin_nombre_se_anota_como_unknown` |
+| 4 | `test_sin_operadores_conocidos_no_hay_lado_y_avisa` |
+| 5 | `test_los_ids_desconocidos_no_quedan_registrados_entre_tests` |
+
+Desvios del diseno:
+
+- Test 8: tal como estaba disenado (afirmar `unknown_ids() == {}` al
+  empezar) pasaba aunque se borrara el `tearDown`, porque el `setUp` ya
+  limpia (hallazgo de la revision ciega). Ahora el test anota un ID
+  desconocido, llama a `self.tearDown()` y afirma que el registro quedo
+  vacio. Mutacion: con el `tearDown` vacio, cae exactamente ese test.
+- Sin `tearDownClass`: con `tearDown` en cada test sobraba.
+- El test 4 afirma ademas `unknown_ids() == {}`: con el override el `999`
+  tiene nombre y no se registra como desconocido.
+
+Revision ciega (`revision.md`): un hallazgo (el del test 8), corregido.
+Sin cambios en `pydissect/`. `check.sh` en verde.
 
 ## Revision <fecha> sobre <sha>
 

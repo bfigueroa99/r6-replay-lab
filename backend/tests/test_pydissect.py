@@ -218,11 +218,6 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         # operator_name anota los IDs sin nombre en un registro global de modulo
         overrides.reset_unknown()
 
-    @classmethod
-    def tearDownClass(cls):
-        overrides.reset_unknown()
-        super().tearDownClass()
-
     def test_el_equipo_con_operadores_de_ataque_ataca(self):
         r = _lector([
             _jugador("a1", 0, ASH), _jugador("a2", 0, THERMITE),
@@ -287,7 +282,9 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertEqual([p["username"] for p in r.header["players"]], ["x1", "x2"])
 
     def test_los_ids_desconocidos_no_quedan_registrados_entre_tests(self):
-        # corre en cualquier orden respecto de los que anotan IDs: prueba el tearDown
+        derive_team_roles(_lector([_jugador("a1", 0, ASH), _jugador("a2", 0, DESCONOCIDO)]))
+        self.assertTrue(overrides.unknown_ids())
+        self.tearDown()
         self.assertEqual(overrides.unknown_ids(), {})
 
 
