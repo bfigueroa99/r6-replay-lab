@@ -18,7 +18,8 @@ hace esas requests.
 
 El proyecto esta en fase de crecer: el equipo autonomo
 (`.claude/skills/equipo-dev/`) prioriza funcionalidad nueva, y el mapa de lo
-que la app todavia no hace es `docs/backlog/ALCANCE.md`. Crecer no relaja
+que la app todavia no hace es `docs/backlog/ALCANCE.md` (el vivo, en la rama
+`claude/equipo-dev/backlog`; el de `main` es la semilla). Crecer no relaja
 ninguna de las reglas de abajo.
 
 ## Comandos
