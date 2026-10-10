@@ -1,6 +1,6 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
-estado: en curso 2026-10-10 (implementado en la rama)
+estado: en curso 2026-10-10 (revisado en la rama)
 candado: -
 rama: claude/equipo-dev/34-trade-kill-contado-doble
 area: backend
