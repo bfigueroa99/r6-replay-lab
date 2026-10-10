@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import tempfile
+from datetime import datetime, timedelta
 
 from django.test import TestCase
 
-from replays.models import Match
+from replays.models import Match, Player
 
 from .factories import make_event, make_match, make_round, make_round_player
 
@@ -181,6 +182,43 @@ class ParametrosInvalidosTests(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_un_days_enorme_no_revienta_ningun_endpoint(self):
+        """`timedelta` desborda con dias absurdos: tiene que ignorarse, no dar 500."""
+        endpoints = [
+            "overview",
+            "coach",
+            "operators",
+            "trends",
+            "teammates",
+            "duels",
+            "sessions",
+            "compare",
+            f"players/{Player.objects.first().pk}",
+            "export",
+        ]
+        for endpoint in endpoints:
+            for days in ("1000000", "99999999999"):
+                with self.subTest(endpoint=endpoint, days=days):
+                    respuesta = self.client.get(f"/api/{endpoint}/?table=maps&days={days}")
+                    self.assertEqual(respuesta.status_code, 200)
+
+    def test_un_days_desbordado_se_ignora_como_cualquier_valor_invalido(self):
+        sin_filtro = self.client.get("/api/overview/").json()
+        desbordado = self.client.get("/api/overview/?days=1000000").json()
+        self.assertEqual(desbordado, sin_filtro)
+
+    def test_un_days_normal_sigue_filtrando(self):
+        # Las factories fechan en 2026-09; una sola partida queda dentro de la ventana.
+        Match.objects.filter(pk=Match.objects.first().pk).update(
+            played_at=datetime.now() - timedelta(days=1)
+        )
+        sin_filtro = self.client.get("/api/overview/").json()
+        ultima_semana = self.client.get("/api/overview/?days=7").json()
+        self.assertIn("since", ultima_semana.pop("filters"))
+        sin_filtro.pop("filters")
+        self.assertEqual(sin_filtro["overall"]["matches"], 3)
+        self.assertEqual(ultima_semana["overall"]["matches"], 1)
 
     def test_el_limite_se_acota_al_rango(self):
         data = self.client.get("/api/matches/?limit=-5").json()
