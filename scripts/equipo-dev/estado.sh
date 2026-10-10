@@ -43,18 +43,26 @@ if git cat-file -e "$B:docs/backlog/PAUSA" 2>/dev/null; then echo "PAUSA"; else 
 echo "== sin_merge (veto del humano al merge automatico)"
 if git cat-file -e "$B:docs/backlog/SIN_MERGE" 2>/dev/null; then echo "SIN_MERGE"; else echo "no"; fi
 
+# Sin tipo: no cuenta como funcionalidad (Directiva de alcance del playbook).
+tipo_de() { local t; t=$(campo "$1" "$2" tipo); echo "${t:-sin tipo}"; }
 echo "== papel (rama backlog)"
+papel_func=0; papel_otro=0
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
     for f in $(git ls-tree -r --name-only "$B" docs/backlog/ | grep -E '/[0-9]+-'); do
-        printf '%s | estado: %s | candado: %s | rama: %s\n' "$f" "$(campo "$B" "$f" estado)" \
-            "$(campo "$B" "$f" candado)" "$(campo "$B" "$f" rama)"
+        estado=$(campo "$B" "$f" estado); tipo=$(tipo_de "$B" "$f"); epica=$(campo "$B" "$f" epica)
+        printf '%s | estado: %s | tipo: %s | epica: %s | candado: %s | rama: %s\n' "$f" "$estado" \
+            "$tipo" "${epica:--}" "$(campo "$B" "$f" candado)" "$(campo "$B" "$f" rama)"
+        case "$estado" in
+            propuesto*|disenado*)
+                if [ "$tipo" = funcionalidad ]; then papel_func=$((papel_func + 1)); else papel_otro=$((papel_otro + 1)); fi ;;
+        esac
     done
 else
     echo "sin rama backlog (la crea el primer PO o Release)"
 fi
 
 echo "== ramas de trabajo (origin/claude/* no mergeadas con ficha)"
-cola=0; total=0
+cola=0; total=0; cola_func=0
 for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --format='%(refname:short)'); do
     [ "$r" = "$B" ] && continue
     f=$(ficha_de "$r"); [ -z "$f" ] && continue
@@ -65,10 +73,12 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
     total=$((total + 1))
     reciente=no
     if [ "$edad" -lt 336 ] || [[ "$estado" == entregado* ]]; then reciente=si; cola=$((cola + 1)); fi
+    tipo=$(tipo_de "$r" "$f")
+    [ "$tipo" = funcionalidad ] && cola_func=$((cola_func + 1))
     # Sin merges: un "Update branch" del humano desde GitHub no es un pedido.
     humano=$(git log --no-merges "origin/main..$r" --format=%an | grep -v '^Claude' | sort -u | tr '\n' ' ')
-    printf '%s | %s | estado: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s\n' \
-        "$r" "$f" "$estado" "$(campo "$r" "$f" candado)" "$edad" "$reciente" "${humano:-ninguno}"
+    printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s\n' \
+        "$r" "$f" "$estado" "$tipo" "$(campo "$r" "$f" candado)" "$edad" "$reciente" "${humano:-ninguno}"
 done
 
 echo "== ramas del playbook anterior (sin ficha; reclamo en el roadmap)"
@@ -111,7 +121,25 @@ else
 fi
 
 echo "== cola"
-echo "COLA=$cola (tope 3)  TOTAL=$total (tope 5)"
+echo "COLA=$cola (tope 4)  TOTAL=$total (tope 6)"
+
+echo "== alcance"
+echo "PAPEL_TIPOS=funcionalidad:$papel_func otros:$papel_otro (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos)"
+echo "COLA_TIPOS=funcionalidad:$cola_func de $total ramas de trabajo"
+# --first-parent -m fecha cada ficha por el merge que la trajo a main, no por
+# el commit "Reclama:" de su rama, que puede tener mas de una semana.
+main_func=""; main_otro=0
+for f in $(git log --since=7.days --first-parent -m origin/main --diff-filter=A --name-only --format= -- docs/backlog | grep -E '/[0-9]+-' | sort -u); do
+    if [ "$(tipo_de origin/main "$f")" = funcionalidad ]; then main_func="$main_func $(basename "$f" .md)"; else main_otro=$((main_otro + 1)); fi
+done
+echo "MAIN_7D=funcionalidad:$(echo $main_func | wc -w)${main_func:+ (${main_func# })} otros:$main_otro (fichas que llegaron a main en 7 dias)"
+if git cat-file -e "$B:docs/backlog/ALCANCE.md" 2>/dev/null; then
+    # Una idea libre es una fila de tabla cuya ultima columna dice "idea".
+    libres=$(git show "$B:docs/backlog/ALCANCE.md" | grep -cE '\|[[:space:]]*idea[[:space:]]*\|[[:space:]]*$')
+    echo "ALCANCE=backlog, ideas libres: $libres"
+else
+    echo "ALCANCE=falta en backlog: copiar docs/backlog/ALCANCE.md desde el playbook"
+fi
 
 echo "== entorno"
 # Mismo criterio que check.sh: el venv si existe, si no el sistema.

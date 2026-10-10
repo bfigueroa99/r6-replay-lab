@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-Contexto para trabajar en este repo. Lee tambien `docs/roadmap.md` (backlog) y
+Contexto para trabajar en este repo. Lee tambien `docs/backlog/README.md`
+(backlog; `docs/roadmap.md` es la historia hasta el item 29) y
 `docs/formato-rec.md` (limites del formato).
 
 ## Que es
@@ -14,6 +15,11 @@ Ubisoft** del perfil de un jugador consulta la API de Ubisoft
 (`backend/externo/`) si el usuario puso su cuenta en el `.env` y aprieta el
 boton. Los enlaces a stats.cc y R6 Tracker los abre el navegador; la app no
 hace esas requests.
+
+El proyecto esta en fase de crecer: el equipo autonomo
+(`.claude/skills/equipo-dev/`) prioriza funcionalidad nueva, y el mapa de lo
+que la app todavia no hace es `docs/backlog/ALCANCE.md`. Crecer no relaja
+ninguna de las reglas de abajo.
 
 ## Comandos
 
@@ -55,9 +61,13 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
   backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
   requests. En el frontend, `electron` es devDependency y solo la usa la app de
   escritorio: la UI web tiene que seguir funcionando sin ella.
-- **La API es de lectura.** Vistas planas con `JsonResponse` y tres POST
-  (`/api/import/`, `/api/overrides/`, `/api/players/<id>/ubisoft/`). No agregues
-  serializers ni viewsets.
+- **La API es casi toda de lectura.** Vistas planas con `JsonResponse`; no
+  agregues serializers ni viewsets. Un POST solo para una accion explicita del
+  usuario sobre sus datos locales, disparada por un boton: hoy `/api/import/`,
+  `/api/overrides/` y `/api/players/<id>/ubisoft/`, y caben otros del mismo
+  tipo (respaldar la base, fijar la carpeta de replays, anotar una ronda).
+  Ninguno borra datos del usuario sin una confirmacion en la UI, y ninguno sale
+  a la red salvo el de Ubisoft.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
   escribe columnas en `RoundPlayer`, y `analytics/aggregates.py` solo agrega.
 - **Todo numero que muestra la UI tiene definicion en `docs/metricas.md`.** Si

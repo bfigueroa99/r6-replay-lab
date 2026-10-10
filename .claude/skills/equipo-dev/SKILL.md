@@ -34,8 +34,67 @@ aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
    propio equipo lo mergea el humano. Nadie empuja a `main` directo, nadie
    hace force-push, y la unica rama que se borra es la que se acaba de
    mergear.
-6. **No inventar trabajo.** Si no hay nada con valor para quien usa la app,
-   el turno termina y lo dice.
+6. **No inventar trabajo, pero tampoco achicarse.** Una ficha existe solo si
+   quien usa la app gana algo. Con `ALCANCE.md` lleno de cosas que la app
+   todavia no hace, "no hay nada que proponer" no es una salida valida del
+   PO ni del Arquitecto: es una seccion de `ALCANCE.md` que falta escribir.
+7. **Crecer es el objetivo.** El equipo existe para que la app haga cada vez
+   mas cosas, no solo para endurecer las que ya hace. Ver "Directiva de
+   alcance": manda sobre la eleccion de que proponer, disenar e implementar,
+   y no relaja ninguna regla dura de `CLAUDE.md`.
+
+## Directiva de alcance (del humano, 2026-10-10)
+
+Pedido literal: "que el loop aumente el alcance lo mas posible del
+proyecto". Hasta la ficha 35 el papel fue casi todo tests y arreglos de 500;
+desde aca la prioridad es **funcionalidad nueva** que quien usa la app vea o
+pueda usar. Lo que sigue manda sobre las fuentes y el orden de eleccion de
+cada rol; la independencia, la puerta de merge y `check.sh` siguen
+exactamente igual.
+
+- **Que cuenta como funcionalidad** (`tipo: funcionalidad` en la ficha):
+  una pagina, panel, tabla, grafico, metrica, regla del coach, filtro,
+  exportacion, flujo (importar, configurar, respaldar, etiquetar) o
+  integracion de la app de escritorio que hoy no existe, o una ampliacion
+  visible de una que existe. No cuenta: tests, refactors, robustez, docs ni
+  arreglos (`tipo: tests | bug | deuda`). Ficha sin `tipo:` = no es
+  funcionalidad.
+- **Mezcla.** Cada turno del PO propone al menos una funcionalidad. Una ficha
+  `tests` o `deuda` suelta solo entra si el papel ya tiene 3 funcionalidades
+  esperando (`propuesto` o `disenado`). Un **bug real** (numeros mal, 500 con
+  datos legitimos, importacion que se cae) no paga cuota: entra siempre, con
+  prioridad 1 o 2, porque un numero equivocado le quita valor a todo lo demas.
+  Los tests que una funcionalidad necesita van dentro de su ficha.
+- **`ALCANCE.md`**, en la rama `backlog`, es el mapa de lo que la app todavia
+  no hace: epicas por tema, cada una con sus tramos, los datos del `.rec` que
+  usa y su estado (`idea`, `ficha NN`, `en main`, `PR #n`). Lo mantiene el
+  PO; la semilla esta en `docs/backlog/ALCANCE.md` de `$REF` y se copia a
+  `backlog` si no existe. El humano lo edita desde la web para reordenar o
+  tachar ideas: una idea tachada o marcada `no` no se propone.
+- **Epicas y tramos.** Lo grande no se descarta por grande: se parte en
+  tramos de una epica (`epica: <slug>` en la cabecera). Cada tramo cabe en un
+  turno de Dev, se mergea solo y deja algo que el usuario ve o puede hacer;
+  un tramo "solo backend" vale si el siguiente ya esta `propuesto` con
+  "Implementar despues de #NN". Una epica empezada se termina antes de abrir
+  otra del mismo tema.
+- **Ideas con PR abierto fuera del equipo** (hoy #1, #12 y #14) no se
+  proponen mientras ese PR siga abierto: duplicarlo es pelear con trabajo del
+  humano. Quedan en `ALCANCE.md` con `PR #n`; si el humano lo cierra sin
+  mergear, la idea vuelve a estar libre.
+- **Decisiones de producto.** Si una funcionalidad necesita una decision del
+  humano, el PO propone la variante mas conservadora y reversible, deja la
+  alternativa en `## Para el humano` y la ficha avanza igual. Solo se frena
+  (P10) lo que no se puede deshacer.
+- **Lo que crecer no toca.** Overlay in-game, scraping, red sin clic,
+  dependencias nuevas, cuentas, nube, telemetria, datos que el `.rec` no
+  trae, metricas de replay que dependan de Ubisoft: siguen prohibidos. Una
+  idea que choca con eso va a "Ideas descartadas" de `ALCANCE.md` con el
+  motivo, para que nadie la vuelva a proponer.
+- **Medida.** `estado.sh` cuenta las funcionalidades en papel y en las ramas
+  de trabajo, y `ESTADO.md` muestra en `## Alcance` las epicas en curso y
+  las funcionalidades que llegaron a `main` en los ultimos 7 dias. Si en 7
+  dias no llego ninguna, el Release lo dice en `## Para el humano` con el
+  cuello de botella (papel vacio, diseno trabado, cola llena, rojo).
 
 ## Arranque comun (todos los roles, 5 minutos)
 
@@ -135,7 +194,7 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   checkout completo: unica excepcion a la cola llena, rama
   `claude/equipo-dev/NN-hotfix-<slug>` con ficha si el arreglo cabe en ~50
   lineas; si no, ficha `propuesto` con prioridad 1 y aviso en `ESTADO.md`.
-- **P5. Cola llena** (`COLA >= 3` o `TOTAL >= 5`): nadie abre ramas de
+- **P5. Cola llena** (`COLA >= 4` o `TOTAL >= 6`): nadie abre ramas de
   trabajo. Dev solo atiende `con hallazgos` y huerfanas (fichas `en curso`
   con candado muerto o con `## Pendiente`). Los demas siguen
   con su turno: ninguno convierte papel en codigo.
@@ -152,22 +211,31 @@ revisor corren dos veces por dia y QA y revisor se cubren entre si.
   ficha o se termina. Candado ajeno de mas de 3 horas sin commits posteriores
   **sobre esa ficha** (`git log -1 --format=%ci <rama> -- docs/backlog/NN-slug.md`;
   los commits de `ESTADO.md` no cuentan) = sesion muerta: se retoma.
-- **P9. Reloj.** 90 minutos de turno. Antes de cada `check.sh`, cada
-  subagente y cada fase nueva: `source "$(git rev-parse --git-dir)/equipo-dev.env"
-  && echo "minuto $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 )) de 90, cierre a las
-  $EQUIPO_CIERRE UTC"`. Pasado el minuto 75 (o la hora de cierre, si el archivo
-  se perdio: compararla con `date -u +%H:%M`), se cierra con lo que esta verde: push,
+- **P9. Reloj.** `turno.sh` fija la hora de cierre: 135 minutos desde el
+  arranque o 15 minutos antes del disparo de la franja siguiente, lo que
+  llegue primero (`EQUIPO_MINUTOS` dice cuantos quedaron). Turnos largos
+  dejan que un tramo de funcionalidad quepa en un solo Dev. Antes de cada
+  `check.sh`, cada subagente y cada fase nueva: `source "$(git rev-parse --git-dir)/equipo-dev.env"
+  && echo "minuto $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 )) de $EQUIPO_MINUTOS, cierre a las
+  $EQUIPO_CIERRE UTC"`. Llegada la hora de cierre (si el archivo se perdio:
+  compararla con `date -u +%H:%M`), se cierra con lo que esta verde: push,
   `## Pendiente` con lo que falta, `candado: -`, `ESTADO.md`. Nunca se
   empuja con `check.sh` en rojo, tampoco docs sobre una rama cuyo codigo
   quedo roto.
-- **P10. Decision de producto del humano**: no se adivina. Va a `## Para el
-  humano` de la ficha y a `ESTADO.md`; la ficha se queda donde estaba.
+- **P10. Decision de producto del humano que no se puede deshacer** (borra o
+  reescribe datos del usuario, cambia la definicion de una metrica que ya se
+  muestra, toca una regla dura de `CLAUDE.md`): no se adivina. Va a `## Para
+  el humano` de la ficha y a `ESTADO.md`; la ficha se queda donde estaba. El
+  resto de las decisiones sigue la Directiva de alcance: variante
+  conservadora y reversible, pregunta anotada, y la ficha avanza.
 
 ## Fichas
 
 Formato fijo en `docs/backlog/PLANTILLA.md` (leerla siempre de `$REF`).
-Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`, `area:`,
-`prioridad:`, `fuente:`, `archivos:`, `turnos:`. `turnos:` es una sola linea
+Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`, `tipo:`,
+`epica:`, `area:`, `prioridad:`, `fuente:`, `archivos:`, `turnos:`. `tipo:` es
+`funcionalidad`, `bug`, `tests` o `deuda` (ver Directiva de alcance); `epica:`
+es el slug de la epica de `ALCANCE.md` o `-`. `turnos:` es una sola linea
 con pares `rol sesion` separados por coma, en orden cronologico:
 `turnos: po 20261008T0305Z, arquitecto 20261008T0610Z, dev 20261008T0905Z`.
 
@@ -183,11 +251,11 @@ Dos lugares:
 1. **Rama `claude/equipo-dev/backlog`**, creada una vez desde `origin/main`
    por el primer turno de **cualquier rol** que no la encuentre (`git
    checkout -b claude/equipo-dev/backlog origin/main`, copiar `README.md`,
-   `PLANTILLA.md` y `ESTADO.plantilla.md` desde `$REF` si no estan, escribir
+   `PLANTILLA.md`, `ESTADO.plantilla.md` y `ALCANCE.md` desde `$REF` si no estan, escribir
    `ESTADO.md`, commit `Crea la rama backlog`, push). Sin ella no hay donde
    anotar hallazgos ni tablero, asi que no se posterga. Solo admite
    archivos dentro de `docs/backlog/`. Ahi viven `propuesto`, `disenado`, `descartado`,
-   `ESTADO.md`, `PAUSA` y `SIN_MERGE`, mas el espejo `en curso` de las fichas
+   `ESTADO.md`, `ALCANCE.md`, `PAUSA` y `SIN_MERGE`, mas el espejo `en curso` de las fichas
    reclamadas. Nunca PR, nunca merge, no cuenta para la cola. **Push
    rechazado en `backlog`, receta unica:** `git fetch origin`, `git merge
    origin/claude/equipo-dev/backlog`; si una ficha queda en conflicto gana la
@@ -218,8 +286,11 @@ turno al cerrar siguiendo `docs/backlog/ESTADO.plantilla.md` (leerla de `$REF`):
 `https://github.com/bfigueroa99/r6-replay-lab/compare/main...<rama>?expand=1`
 y si tiene PR; orden de merge sugerido (merge de prueba por pares con
 `git merge-tree --write-tree origin/A origin/B` y que archivos libera cada
-merge); papel (`propuesto`, `disenado`, `descartado` de los ultimos 30 dias);
-ultimo turno de cada rol; `## Para el humano` (preguntas acumuladas, ramas
+merge); papel (`propuesto`, `disenado`, `descartado` de los ultimos 30 dias,
+con `tipo`); `## Alcance` (epicas en curso con sus tramos, funcionalidades
+que llegaron a `main` en los ultimos 7 dias, ideas libres en `ALCANCE.md`:
+las lineas de `== alcance` de `estado.sh`); ultimo turno de
+cada rol; `## Para el humano` (preguntas acumuladas, ramas
 borrables con `git push origin --delete <rama>` listo para pegar, aviso unico
 de CI remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
 que escribe el humano y el equipo preserva tal cual, agregando respuestas
@@ -233,19 +304,20 @@ La identidad es la ficha, no el nombre de la rama. El limite existe para que
 el pipeline no se llene de codigo a medio verificar y para que lo que espera
 al humano siga siendo poco.
 
-- **COLA (tope 3)**: ramas de trabajo (y ramas del playbook anterior con
+- **COLA (tope 4)**: ramas de trabajo (y ramas del playbook anterior con
   codigo) con algun commit en los ultimos 14 dias o con ficha `entregado`
   aunque esten quietas (un PR que espera al humano
   ocupa su tiempo de revision). Con herramientas se suman los PRs abiertos
   `[equipo-dev]` en otras ramas.
-- **TOTAL (tope 5)**: todas las ramas de trabajo no mergeadas, con o sin
+- **TOTAL (tope 6)**: todas las ramas de trabajo no mergeadas, con o sin
   actividad, mas las ramas viejas sin ficha.
 - **No cuentan**: `backlog` y todo lo que haya en ella; ramas mergeadas
   efectivamente aunque sigan existiendo (merge commit, squash o rebase:
   `estado.sh` las marca borrables); fichas `descartado`; la rama del
   playbook; `mercado/*`, `loop/*`, `claude/loop-*` y las ramas del humano.
-- **Papel, tope propio**: 4 fichas en `propuesto` (lo mira el PO) y 2 en
-  `disenado` (lo mira el Arquitecto).
+- **Papel, tope propio**: 6 fichas en `propuesto` (lo mira el PO) y 3 en
+  `disenado` (lo mira el Arquitecto). Los topes subieron con la Directiva de
+  alcance: una epica partida en tramos necesita lugar en el papel.
 - Lo mira quien lo puede superar: el Dev antes de reclamar y el Release antes
   del hotfix. Las ramas que no llegaron a `entregado` y llevan 14 dias sin
   commits salen de `COLA`, siguen en `TOTAL` y aparecen en `ESTADO.md` como
@@ -289,7 +361,8 @@ al humano siga siendo poco.
   - d. El diff (`git diff --name-only origin/main...<rama>`) no toca lo que
     el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
     `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
-    `docs/backlog/ESTADO.plantilla.md`, `frontend/electron/`,
+    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md` (la
+    semilla; el mapa vivo esta en `backlog`), `frontend/electron/`,
     `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
     `.github/`.
   - e. Hay herramientas de GitHub y el PR esta abierto contra `main`
@@ -303,7 +376,11 @@ al humano siga siendo poco.
   la rama recien mergeada (`git push origin --delete <rama>`, la unica rama
   que el equipo borra) y, si el espejo de la ficha sigue en `backlog`,
   quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
-  las ramas que sigan abiertas y lista de ramas borrables.
+  las ramas que sigan abiertas y lista de ramas borrables. (7) `## Alcance`
+  de `ESTADO.md` con las lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS` y
+  `ALCANCE` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
+  `## Para el humano` con el cuello de botella exacto (papel sin
+  funcionalidades, diseno trabado, cola llena, rojo, PR esperando).
 - **Salida:** merges a `main` de lo que paso la puerta; pushes a las ramas
   entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
   informe diario.
@@ -317,41 +394,68 @@ al humano siga siendo poco.
 
 ### Product owner (franja 1)
 
-- **Entrada:** `origin/main` fresco: `CLAUDE.md`, las notas de pendientes y deuda que dejan los items hechos del roadmap (al
-  final de cada item, con nombres como "Pendiente", "Lo que falta" o "Deuda";
-  hoy:
-  nemesis por rondas enfrentadas del #3, boton de backup en Datos del #16,
-  `REPLAY_DIR` desde la UI del #19), `README.md` contra lo que el codigo
-  hace, `docs/formato-rec.md`; las fichas de `backlog` y de las ramas de
-  trabajo; `## Para el equipo`; como ideas y nada mas, `mercado/*` y
-  `claude/loop-*`.
-- **Trabajo:** reconciliar primero: quitar de `backlog` las fichas que ya
-  estan en `origin/main` y poner `en curso` + `rama:` a las que ya viven en
-  una rama de trabajo. Las `descartado` no se borran: son historia y
-  reservan su numero. Despues, si
-  hay menos de 4 `propuesto`: hasta 2 fichas nuevas desde `PLANTILLA.md`,
-  numero siguiente libre, "Que gana quien usa la app" en dos frases, 3 a 6
-  criterios de aceptacion convertibles en test o `curl`, "Fuera de alcance",
-  `area`, `prioridad`, `fuente` concreta. Fuentes, en orden: deuda anotada
-  en el roadmap; bugs reales; huecos de tests en `analytics/`, `pydissect/`
-  y `logica.test.js`; robustez del parser ante temporadas nuevas; UX chica y
-  verificable. Filtros duros de `CLAUDE.md` antes de escribir. Lo grande se
-  parte antes de proponerlo. Una decision de producto del humano va a
-  `## Para el humano`, no se propone como item. Items que solo se verifican
-  en Windows (Electron, `.ps1`, instalador) llevan la nota "verificado solo
-  en nube" en los criterios.
+- **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
+  en este turno); `origin/main` fresco: `CLAUDE.md`, `README.md` contra lo
+  que el codigo hace, `docs/formato-rec.md`, las notas de pendientes y deuda
+  del roadmap (al final de cada item: "Pendiente", "Lo que falta", "Deuda",
+  "Queda anotado") y el `Fuera de alcance` y `## Para el humano` de las
+  fichas ya mergeadas, que son el siguiente paso que alguien ya vio; las
+  fichas de `backlog` y de las ramas de trabajo; `## Para el equipo`; como
+  ideas y nada mas, `mercado/*`, `claude/loop-*` y los PRs abiertos que no
+  son del equipo.
+- **Trabajo, en orden:**
+  1. **Reconciliar:** quitar de `backlog` las fichas que ya estan en
+     `origin/main` y poner `en curso` + `rama:` a las que ya viven en una
+     rama de trabajo. Las `descartado` no se borran: son historia y reservan
+     su numero. En `ALCANCE.md`, marcar `en main` lo que llego y `ficha NN`
+     lo que ya tiene ficha. A una ficha vieja del papel sin `tipo:` se le
+     pone el que corresponde.
+  2. **Hacer crecer `ALCANCE.md`:** al menos 2 ideas nuevas por turno, cada
+     una con que gana el usuario, que datos usa (archivo y campo del parser
+     o del modelo) y tamano S/M/L. Fuentes, rotando para no secar ninguna:
+     datos que el parser ya extrae o la base ya guarda y ninguna pantalla
+     muestra; lo que tienen las herramientas de replay de la tabla de
+     competidores del roadmap (si la sesion tiene busqueda web, una
+     busqueda por turno sobre sus novedades); lo que solo sale del historial
+     acumulado (el diferencial del proyecto); los `Fuera de alcance` y la
+     deuda de arriba; la friccion que anoto QA. Una idea que choca con una
+     regla dura va a "Ideas descartadas" con el motivo.
+  3. **Proponer**, si hay menos de 6 `propuesto`: hasta 3 fichas nuevas
+     desde `PLANTILLA.md`, numero siguiente libre, `tipo:`, `epica:` si es
+     tramo de una, "Que gana quien usa la app" en dos frases, 3 a 6
+     criterios de aceptacion convertibles en test o `curl`, "Fuera de
+     alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
+     (a) bug real con numeros mal, 500 con datos legitimos o importacion que
+     se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso;
+     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros;
+     (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
+     funcionalidades esperando. Al menos una de las fichas del turno es
+     funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`
+     antes de escribir. Lo grande se parte en tramos de una epica: el
+     primero con criterios completos y los siguientes como `propuesto` con
+     "Implementar despues de #NN". Una decision de producto reversible no
+     frena la ficha (Directiva de alcance); una irreversible va a
+     `## Para el humano` (P10). Items que solo se verifican en Windows
+     (Electron, `.ps1`, instalador) llevan la nota "verificado solo en
+     nube" en los criterios.
 - **Salida:** push a `claude/equipo-dev/backlog`, solo `docs/backlog/*.md`,
-  commit `Propone: NN titulo`. Nunca PR, nunca rama de trabajo, nunca codigo.
+  commits `Propone: NN titulo` y `Alcance: <que cambio>`. Nunca PR, nunca
+  rama de trabajo, nunca codigo.
 - **Turno bien hecho:** cada ficha nueva la puede disenar un Arquitecto sin
-  preguntar nada, y el humano entiende en 30 segundos que gana.
-- **Sin trabajo:** con 4 o mas `propuesto`, solo grooming (afinar criterios,
-  reordenar prioridades, descartar lo que main ya cubre). Sin nada real que
-  proponer: `Entregado: nada, sin trabajo con valor para el usuario`.
+  preguntar nada, el humano entiende en 30 segundos que gana, y `ALCANCE.md`
+  tiene mas ideas libres que al empezar.
+- **Sin trabajo:** no existe con `ALCANCE.md` vivo. Con 6 o mas `propuesto`:
+  grooming (afinar criterios, reordenar prioridades, descartar lo que main
+  ya cubre, partir lo que no cabe) y el paso 2 completo. `Entregado: nada`
+  solo si todas las ideas de `ALCANCE.md` estan tomadas, tachadas o
+  descartadas, y en ese caso el turno escribe ideas nuevas hasta que haya
+  al menos 5 libres.
 
 ### Arquitecto (franja 2)
 
-- **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad y mas vieja
-  primero, hasta 2 por turno; `git diff --name-only origin/main...<rama>` de
+- **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
+  igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
+  antes que `tests` o `deuda`, y la mas vieja; hasta 3 por turno; `git diff --name-only origin/main...<rama>` de
   todas las ramas de trabajo abiertas (archivos ocupados); `aggregates.py`,
   `metrics.py`, `ui.jsx`, `logica.test.js` para ver como el repo ya resuelve
   lo parecido.
@@ -363,23 +467,29 @@ al humano siga siendo poco.
   nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
   los de una rama abierta, o agrega migracion mientras otra rama abierta ya
   agrega una: `Implementar despues de que #NN se mergee` (prioriza, no
-  bloquea). Si no cabe en un turno de Dev (~300 lineas, 90 min), partir: el
-  diseno cubre la primera mitad util y la segunda queda como ficha
-  `propuesto`. Spikes en el scratchpad, nunca codigo commiteado.
-  `estado: disenado`, `candado: -`.
+  bloquea). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
+  partir en tramos de la misma epica: el diseno cubre el primer tramo que
+  ya deja algo visible y el resto queda como fichas `propuesto` con
+  `epica:` y "Implementar despues de #NN". Grande no es motivo de
+  descarte; solo lo son los filtros duros. Spikes en el scratchpad, nunca
+  codigo commiteado. `estado: disenado`, `candado: -`.
 - **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
 - **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
   ninguna decision de alcance.
-- **Sin trabajo:** con 2 `disenado` esperando, no disena mas: revalida esos
-  disenos contra el main actual y anota los ajustes. Sin nada, informe.
+- **Sin trabajo:** con 3 `disenado` esperando, no disena mas: revalida esos
+  disenos contra el main actual y anota los ajustes. Sin `propuesto` que
+  disenar: hace el paso 2 del PO sobre `ALCANCE.md` (ideas nuevas con los
+  archivos y campos exactos que usarian), que es lo que el proximo PO
+  convierte en fichas. Nunca escribe fichas `propuesto` el mismo.
 
 ### Dev (franjas 3 y 5)
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
   `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
-  `COLA < 3` y `TOTAL < 5`, `disenado` mas vieja cuyo diseno no diga
-  "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
+  `COLA < 4` y `TOTAL < 6`, `disenado` de mayor prioridad (a igual
+  prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
+  no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
   menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
 - **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main` (el
   mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
@@ -399,7 +509,7 @@ al humano siga siendo poco.
   es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
   que quedo, que no, desvios del diseno. `estado: implementado`,
   `candado: -`, push.
-- **A los 75 minutos sin terminar:** push de lo que esta verde,
+- **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
   `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
   `candado: -`. No se tira trabajo parcial verde.
 - **Salida:** rama de trabajo nueva o pushes a la existente; commits en
@@ -477,7 +587,9 @@ al humano siga siendo poco.
   barata (comandos del README que no existen, numeros de la UI sin fila en
   `metricas.md`, variables de `.env.example` sin uso en `settings.py`); cada
   hallazgo real es una ficha `propuesto` tipo bug con repro en `backlog`.
-  Sin nada, informe.
+  Lo que se echo de menos usando la app (un filtro que falta, un dato que
+  no se puede ver, un paso de mas) va como idea a `ALCANCE.md`, con la
+  pantalla y el paso. Sin nada, informe.
 
 ## Cierre comun (todos los roles, 5 minutos)
 
@@ -496,7 +608,8 @@ al humano siga siendo poco.
 **Playbook:** <ref>@<sha corto>
 **Entregado:** <ficha NN: estado anterior -> nuevo, rama> | mergeado a main: <PR #n, ficha NN> | nada, porque <motivo>
 **Mantenimiento:** <P2/P3/P4 atendidos> | nada pendiente
-**Cola:** COLA=<n>/3 TOTAL=<n>/5 | papel: <n> propuesto, <n> disenado
+**Cola:** COLA=<n>/4 TOTAL=<n>/6 | papel: <n> propuesto, <n> disenado (<n> funcionalidad)
+**Alcance:** <funcionalidades a main en 7 dias, epica en curso> | nada nuevo, porque <cuello de botella>
 **GitHub:** con herramientas (<PRs tocados>) | sin herramientas
 **Descartado esta vez:** <ficha o idea> porque <filtro> | nada
 **Para el humano:** <decision, pregunta o rama para mergear/borrar> | nada

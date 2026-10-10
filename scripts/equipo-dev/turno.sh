@@ -13,6 +13,11 @@
 #
 # La franja es la de 3 horas mas cercana, no la que contiene al minuto actual:
 # asi un arranque demorado hasta 88 minutos cae en la franja que le tocaba.
+#
+# El cierre es lo que llegue primero: 135 minutos desde el arranque, o 15
+# minutos antes del disparo de la franja siguiente. El turno largo deja que un
+# tramo de funcionalidad quepa en un solo Dev; el tope por franja evita que un
+# arranque demorado se coma el turno del rol que viene.
 set -u
 roles=(release po arquitecto dev revisor dev qa revisor)
 min=$(( 10#$(date -u +%H) * 60 + 10#$(date -u +%M) ))
@@ -24,6 +29,13 @@ case "$rol" in
 esac
 gitdir="$(git rev-parse --git-dir 2>/dev/null)" || { echo "no es un repo git" >&2; exit 1; }
 inicio=$(date -u +%s)
+medianoche=$(date -u -d "$(date -u -d "@$inicio" +%F)" +%s)
+# Sin el % 8: cerca de medianoche la franja 0 que toca es la del dia siguiente.
+disparo=$(( medianoche + ((min + 90) / 180 * 180 + 1) * 60 ))
+cierre=$(( inicio + 135 * 60 ))
+tope_franja=$(( disparo + (180 - 15) * 60 ))
+[ "$tope_franja" -lt "$cierre" ] && cierre=$tope_franja
+minutos=$(( (cierre - inicio) / 60 ))
 # El playbook se lee de main si ya esta ahi; si no, de la rama donde vive.
 ref=origin/main
 git cat-file -e "$ref:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null || ref=origin/claude/great-cray-7o9tvf
@@ -33,8 +45,9 @@ env_file="$gitdir/equipo-dev.env"
     echo "export EQUIPO_FRANJA=$franja"
     echo "export EQUIPO_INICIO=$inicio"
     echo "export EQUIPO_SESION=$(date -u -d "@$inicio" +%Y%m%dT%H%MZ)"
-    echo "export EQUIPO_CIERRE=$(date -u -d "@$((inicio + 75 * 60))" +%H:%M)"
+    echo "export EQUIPO_CIERRE=$(date -u -d "@$cierre" +%H:%M)"
+    echo "export EQUIPO_MINUTOS=$minutos"
     echo "export EQUIPO_REF=$ref"
 } > "$env_file"
 cat "$env_file"
-echo "# turno: $rol | franja $franja | sesion $(date -u -d "@$inicio" +%Y%m%dT%H%MZ) | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$((inicio + 75 * 60))" +%H:%M) UTC | playbook $ref | variables en $env_file"
+echo "# turno: $rol | franja $franja | sesion $(date -u -d "@$inicio" +%Y%m%dT%H%MZ) | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$cierre" +%H:%M) UTC ($minutos min) | playbook $ref | variables en $env_file"
