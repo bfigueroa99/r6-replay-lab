@@ -60,12 +60,15 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
     for e in kill_events:
         e["traded"] = False
 
+    # una baja que venga a dos companeros es una sola baja: se cuenta por indice
+    vengadoras: set[int] = set()
     for i, e in enumerate(kill_events):
         killer, victim = e["actor"], e["target"]
         victim_team = team_of.get(victim)
         if victim_team is None:
             continue
-        for later in kill_events[i + 1 :]:
+        for j in range(i + 1, len(kill_events)):
+            later = kill_events[j]
             gap = e["clock"] - later["clock"]  # el reloj baja: gap >= 0 es "despues"
             if gap < 0 or gap > window:
                 if gap > window:
@@ -78,9 +81,12 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
             e["traded"] = True
             if victim in metrics:
                 metrics[victim]["was_traded"] = True
-            if later["actor"] in metrics:
-                metrics[later["actor"]]["trade_kills"] += 1
+            vengadoras.add(j)
             break
+    for j in vengadoras:
+        actor = kill_events[j]["actor"]
+        if actor in metrics:
+            metrics[actor]["trade_kills"] += 1
 
     for m in metrics.values():
         m["untraded_death"] = bool(m.get("died")) and not m["was_traded"]

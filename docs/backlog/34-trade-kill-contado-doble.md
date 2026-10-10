@@ -1,7 +1,7 @@
 # 34. Una baja que venga a dos compañeros cuenta como dos trade kills
 
-estado: en curso 2026-10-10
-candado: dev 2026-10-10 09:02 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/34-trade-kill-contado-doble
 area: backend
 prioridad: 2
@@ -163,7 +163,29 @@ que recalcula trades; no hace falta tocarlo.
 
 ## Implementacion
 
-(Dev) Que quedo, que no, desvios del diseno y por que.
+(Dev 20261010T0902Z.) Implementado tal cual el diseno, sin desvios de alcance.
+
+- `annotate_trades` junta los indices de las bajas vengadoras en un `set` y
+  suma 1 por indice al final; la deteccion de "muerte vengada" no cambio.
+- `test_metrics.py`: parametro `extra_players` en `_round` (los tests viejos no
+  lo pasan); helpers `_atacante` y `_stats_del_guion` (stats coherentes con el
+  kill feed, porque `kills` sale de `stats`). Tests nuevos en `TradeTests`:
+  `test_una_baja_que_venga_a_dos_companeros_cuenta_una_vez`,
+  `test_dos_venganzas_sobre_dos_asesinos_suman_dos`,
+  `test_trade_kills_nunca_supera_a_kills` (subTest doble y triple).
+- `test_recompute.py`: `RecomputeDobleTests.test_recompute_corrige_el_trade_kill_contado_doble`
+  (incluye el segundo recompute idempotente).
+- `docs/metricas.md`: fila **Trade kills** con la aclaracion.
+
+Criterios -> tests: 1 `..._cuenta_una_vez`; 2 `..._suman_dos`; 3
+`..._nunca_supera_a_kills`; 4 `RecomputeDobleTests`; 5 suite completa verde sin
+tocar tests existentes.
+
+Verificado: sin el arreglo en `metrics.py` fallan 4 (el 1, el 3 en sus dos
+subtests y el 4); el 2 pasa en main como se esperaba. `seed_demo` no pasa por
+`annotate_trades`: e2e sin cambios. Revision ciega (`revision.md`): veredicto
+aprobar; unico hallazgo, una ñ en un comentario, corregido.
+`check.sh`: Todo en verde (399 backend, 53 frontend, 17 e2e, build ok).
 
 ## Revision <fecha> sobre <sha>
 

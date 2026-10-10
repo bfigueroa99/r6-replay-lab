@@ -114,7 +114,7 @@ que ventana estan calculados los numeros que muestra.
 |---|---|
 | **Muerte tradeada** | Alguien vengo tu muerte en la ventana. Tu muerte costo poco: intercambiaste. |
 | **Muerte sin trade** | Moriste y nadie te vengo. Es la muerte que realmente pierde rondas: tu equipo queda 4v5 gratis. Un porcentaje sobre 65% casi siempre significa que juegas muy separado o muy adelantado. |
-| **Trade kills** | Veces que **tu** mataste al asesino de un compañero dentro de la ventana. |
+| **Trade kills** | Veces que **tu** mataste al asesino de un compañero dentro de la ventana. Cuenta bajas, no compañeros vengados: si el rival habia matado a dos y lo matas, es un trade kill (y las dos muertes cuentan como tradeadas). |
 
 ## Duelos
 
