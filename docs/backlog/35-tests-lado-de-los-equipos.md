@@ -1,6 +1,6 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: en curso 2026-10-10 (con hallazgos en la rama)
+estado: en curso 2026-10-10 (implementado en la rama)
 candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
