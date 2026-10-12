@@ -63,8 +63,8 @@ bugs reales entran siempre.
 `ALCANCE.md` es el mapa: epicas por tema, cada idea con que gana el usuario,
 que datos del `.rec` usa, tamano y estado (`idea`, `ficha NN`, `en main`,
 `PR #n`, `no`). Lo hace crecer el product owner en cada turno con lo que ve
-adentro del repo, y el **investigador** (el turno de las 21:01 UTC de los
-dias pares) con lo que trae de afuera: parsers abiertos del `.rec` (primero
+adentro del repo, y el **investigador** (cuando el estado lo pide; por
+reloj, la franja 7 de los dias pares) con lo que trae de afuera: parsers abiertos del `.rec` (primero
 r6-dissect), otras herramientas de replay, trackers, herramientas de otros
 juegos, la comunidad, las notas de parche de Ubisoft y la analitica de
 esports. Cada idea de afuera llega con su link, y su bitacora (que fuentes se
@@ -84,6 +84,10 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
 - **Pedir algo**: un commit propio en la rama del item, o texto bajo
   `## Para el equipo` en `ESTADO.md` (editable desde la web). El equipo
   responde en la ficha y en el tablero en su proximo turno.
+- **Cambiar el prompt de la rutina**: editar
+  `.claude/skills/equipo-dev/rutina.md` (llega por merge o por una sesion
+  tuya); lo que edites a mano en claude.ai lo revierte el Release al
+  compararlo.
 - **Pausar**: crear el archivo `docs/backlog/PAUSA` en la rama `backlog`
   desde la web de GitHub. Ningun turno nuevo hace nada mientras exista, y uno
   que ya arranco lo ve antes de su proximo push y cierra.

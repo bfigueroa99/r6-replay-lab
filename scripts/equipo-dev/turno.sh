@@ -17,7 +17,7 @@
 # La franja es la de 3 horas mas cercana, no la que contiene al minuto actual:
 # asi un arranque demorado hasta 88 minutos cae en la franja que le tocaba.
 #
-# El cierre es lo que llegue primero: 135 minutos desde el arranque, o 15
+# El cierre es lo que llegue primero: minutos_turno desde el arranque, o 15
 # minutos antes del disparo de la franja siguiente. El turno largo deja que un
 # tramo de funcionalidad quepa en un solo Dev; el tope por franja evita que un
 # arranque demorado se coma el turno del rol que viene.
@@ -31,6 +31,8 @@
 # escribe nada. Es lo que pruebas.sh usa para fijar la regla.
 set -u
 roles=(release po arquitecto dev revisor dev qa revisor)
+# Largo del turno; SKILL.md (P9) repite el numero y pruebas.sh lo verifica.
+minutos_turno=135
 
 rol_pedido=""; simular=no; sim=""
 while [ $# -gt 0 ]; do
@@ -75,9 +77,11 @@ if [ "$simular" = si ]; then
 else
     gitdir="$(git rev-parse --git-dir 2>/dev/null)" || { echo "no es un repo git" >&2; exit 1; }
     # El playbook se lee de main si ya esta ahi; si no, de la rama donde vive.
-    for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null && break; done
-    git cat-file -e "$ref:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null || {
-        echo "SIN_PLAYBOOK: ni origin/main ni origin/claude/equipo-dev/playbook tienen .claude/skills/equipo-dev/SKILL.md" >&2
+    # Se prueba rutina.md y no SKILL.md: solo el playbook nuevo lo tiene, asi
+    # que un main con un playbook viejo mergeado no gana la cadena.
+    for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
+    git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null || {
+        echo "SIN_PLAYBOOK: ni origin/main ni origin/claude/equipo-dev/playbook tienen .claude/skills/equipo-dev/rutina.md" >&2
         exit 2
     }
     linea=$(git show "$ref:scripts/equipo-dev/estado.sh" | bash -s -- --resumen 2>/dev/null | grep -m1 '^RESUMEN ')
@@ -109,6 +113,9 @@ elegir_rol() {
     elif [ $revisado -gt 0 ]; then rol=qa; motivo="por estado: $revisado revisado"
     elif [ $implementado -gt 0 ]; then rol=revisor; motivo="por estado: $implementado implementado"
     elif [ $con_hallazgos -gt 0 ] || [ $huerfanas -gt 0 ]; then rol=dev; motivo="por estado: $con_hallazgos con_hallazgos, $huerfanas huerfanas"
+    # Lo "entregado (...)" espera al humano, pero el motivo puede ser transitorio
+    # (sin herramientas, veto levantado): el Release del reloj lo reintenta.
+    elif [ $espera_humano -gt 0 ] && [ "$reloj" = release ]; then rol=release; motivo="reloj: release, $espera_humano en espera"
     elif [ "$reloj" = investigador ]; then rol=investigador; motivo="reloj: investigador"
     elif [ $(( propuesto + disenado )) -eq 0 ]; then rol=po; motivo="papel vacio"
     elif [ $disenado -gt 0 ] && [ $cola -lt $tope_cola ] && [ $total -lt $tope_total ]; then rol=dev; motivo="por estado: $disenado disenado, lugar en cola"
@@ -126,7 +133,7 @@ if [ "$simular" = si ]; then
 fi
 [ "$con_resumen" = no ] && echo "# aviso: sin resumen, rol por reloj"
 
-cierre=$(( inicio + 135 * 60 ))
+cierre=$(( inicio + minutos_turno * 60 ))
 tope_franja=$(( disparo + (180 - 15) * 60 ))
 [ "$tope_franja" -lt "$cierre" ] && cierre=$tope_franja
 minutos=$(( (cierre - inicio) / 60 ))

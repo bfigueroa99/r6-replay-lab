@@ -30,7 +30,8 @@ tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
 
 # La ficha que la rama AGREGA (no la primera que toca): una rama puede ademas
 # editar una ficha que ya esta en main.
-ficha_de() { git diff --name-only --diff-filter=A "origin/main...$1" -- docs/backlog 2>/dev/null | grep -E 'docs/backlog/[0-9]+-' | head -1; }
+# core.quotePath=false: una ficha con nombre no ASCII saldria citada e invisible.
+ficha_de() { git -c core.quotePath=false diff --name-only --diff-filter=A "origin/main...$1" -- docs/backlog 2>/dev/null | grep -E 'docs/backlog/[0-9]+-' | head -1; }
 # Las tres formas en que el humano integra: merge commit, squash o rebase.
 mergeada() {
     git merge-base --is-ancestor "$1" origin/main 2>/dev/null && return 0
@@ -40,17 +41,20 @@ mergeada() {
 }
 edad_h() { echo $(( (ahora - $(git log -1 --format=%ct "$1")) / 3600 )); }
 campo() { git show "$1:$2" 2>/dev/null | grep -m1 "^$3:" | sed "s/^$3:[[:space:]]*//"; }
-# La rama del playbook no es trabajo del equipo: no cuenta ni se le crea ficha.
-es_playbook() { [ "$1" = origin/claude/equipo-dev/playbook ]; }
+# La rama del playbook (y sus variantes playbook-2, playbook/x) no es trabajo
+# del equipo: no cuenta ni se le crea ficha.
+es_playbook() { case "$1" in origin/claude/equipo-dev/playbook|origin/claude/equipo-dev/playbook[-/]*) return 0 ;; esac; return 1; }
 
 echo "== playbook"
-for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null && break; done
-if git cat-file -e "$ref:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null; then
+# Se prueba rutina.md y no SKILL.md: solo el playbook nuevo lo tiene, asi que
+# un main con un playbook viejo mergeado no gana la cadena.
+for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
+if git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null; then
     echo "$ref@$(git rev-parse --short "$ref")"
     # Si main gano la cadena con un playbook viejo (por ejemplo, mergeado un PR
     # anterior) y la rama del playbook trae otro, hay que decirlo.
     pb=origin/claude/equipo-dev/playbook
-    if [ "$ref" = origin/main ] && git cat-file -e "$pb:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null \
+    if [ "$ref" = origin/main ] && git cat-file -e "$pb:.claude/skills/equipo-dev/rutina.md" 2>/dev/null \
         && [ "$(git rev-parse "origin/main:.claude/skills/equipo-dev/SKILL.md")" != "$(git rev-parse "$pb:.claude/skills/equipo-dev/SKILL.md")" ]; then
         echo "PLAYBOOK_CANDIDATO=$pb@$(git rev-parse --short "$pb")"
     fi
@@ -70,7 +74,7 @@ tipo_de() { local t; t=$(campo "$1" "$2" tipo); echo "${t:-sin tipo}"; }
 echo "== papel (rama backlog)"
 papel_func=0; papel_otro=0; propuesto=0; disenado=0
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
-    for f in $(git ls-tree -r --name-only "$B" docs/backlog/ | grep -E '/[0-9]+-'); do
+    for f in $(git -c core.quotePath=false ls-tree -r --name-only "$B" docs/backlog/ | grep -E '/[0-9]+-'); do
         estado=$(campo "$B" "$f" estado); tipo=$(tipo_de "$B" "$f"); epica=$(campo "$B" "$f" epica)
         printf '%s | estado: %s | tipo: %s | epica: %s | candado: %s | rama: %s\n' "$f" "$estado" \
             "$tipo" "${epica:--}" "$(campo "$B" "$f" candado)" "$(campo "$B" "$f" rama)"
@@ -188,15 +192,16 @@ else
     fi
     # Un disparo tiene rastro si algun commit de ESTADO.md cae en [d, d + 3 h).
     con_rastro() { local t; for t in $cts; do [ "$t" -ge "$1" ] && [ "$t" -lt $(( $1 + 10800 )) ] && return 0; done; return 1; }
-    # Cuenta los disparos de la ventana ($1 segundos) hasta 30 min antes de
-    # ahora (un turno recien arrancado todavia no escribio). Arranca en el
-    # disparo de la franja que contiene el limite, asi el turno del primer
-    # rastro cuenta entero. Imprime "sin total lista".
+    # Cuenta los disparos de la ventana ($1 segundos) cuya ventana de 3 h ya
+    # cerro: el turno en curso commitea ESTADO.md al cerrar, hasta 135 min
+    # despues del disparo, y no puede contarse como perdido a si mismo.
+    # Arranca en el disparo de la franja que contiene el limite, asi el turno
+    # del primer rastro cuenta entero. Imprime "sin total lista".
     contar() {
         local desde d sin=0 tot=0 lista=""
         desde=$(( ahora - $1 )); [ "$desde" -lt "$primero" ] && desde=$primero
         d=$(( desde / 10800 * 10800 + 60 ))
-        while [ "$d" -le $(( ahora - 1800 )) ]; do
+        while [ "$d" -le $(( ahora - 10800 )) ]; do
             tot=$((tot + 1))
             con_rastro "$d" || { sin=$((sin + 1)); lista="$lista $(date -u -d "@$d" +%m-%dT%H:%MZ)"; }
             d=$(( d + 10800 ))

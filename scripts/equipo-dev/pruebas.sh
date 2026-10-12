@@ -47,14 +47,16 @@ for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo
 done
 cierra sintaxis "$det"
 
-# 2. cadena: la misma secuencia de refs en los cuatro lugares, y ninguna ref
-# vieja en ningun lado. El patron de las viejas se arma partido para que este
-# archivo no lo contenga.
+# 2. cadena: la misma secuencia de refs en los cuatro lugares, probando
+# rutina.md (solo el playbook nuevo lo tiene), y ninguna ref vieja en ningun
+# lado. El patron de las viejas se arma partido para que este archivo no lo
+# contenga.
 det=""
 cadena='origin/main origin/claude/equipo-dev/playbook'
 for f in "$tu" "$es" "$sk" "$ru"; do
     c=$(grep -o "$cadena" "$f" 2>/dev/null | wc -l)
-    [ "$c" -eq 1 ] || det="$det ${f#$base/} tiene la cadena $c veces"
+    [ "$c" -eq 1 ] || det="$det ${f#$base/} tiene la cadena $c veces;"
+    grep -- "$cadena" "$f" 2>/dev/null | grep -qF '/equipo-dev/rutina.md"' || det="$det ${f#$base/} no prueba rutina.md en la cadena;"
 done
 viejas='great-'"cray"'\|ccr'"-"
 h=$(grep -rln -- "$viejas" "$base/.claude" "$base/scripts/equipo-dev" "$bl/README.md" "$bl/PLANTILLA.md" "$bl/ESTADO.plantilla.md" "$bl/ALCANCE.md" "$bl/INVESTIGACION.md" "$bl/MAQUINARIA.md" 2>/dev/null | sed "s#^$base/##" | tr '\n' ' ')
@@ -98,7 +100,12 @@ else
         echo "$texto" | grep -qF -- "$t" || det="$det SKILL.md sin '$t';"
     done
     pl=$(tr '\n' ' ' < "$bl/ESTADO.plantilla.md" 2>/dev/null | tr -s ' ')
-    echo "$pl" | grep -qF -- "COLA=<n>/$tc TOTAL=<n>/$tt" || det="$det ESTADO.plantilla.md sin 'COLA=<n>/$tc TOTAL=<n>/$tt'"
+    echo "$pl" | grep -qF -- "COLA=<n>/$tc TOTAL=<n>/$tt" || det="$det ESTADO.plantilla.md sin 'COLA=<n>/$tc TOTAL=<n>/$tt';"
+fi
+# El largo del turno tambien vive en los dos lados.
+mt=$(grep -oE 'minutos_turno=[0-9]+' "$tu" 2>/dev/null | head -1 | cut -d= -f2)
+if [ -z "$mt" ]; then det="$det turno.sh sin minutos_turno;"
+else echo "$texto" | grep -qF -- "$mt minutos" || det="$det SKILL.md sin '$mt minutos'"
 fi
 cierra topes "$det"
 
@@ -121,6 +128,9 @@ cierra podridos "$det"
 
 # 9. simular: la regla del rol, caso por caso, comparando la linea entera.
 # Un caso es "rol|argumentos|salida esperada"; el rol va vacio salvo que se pida.
+# Los casos con dos contadores activos fijan el orden de las reglas: invertir
+# dos adyacentes tiene que caer aca. GIT_DIR apunta a un directorio que no
+# existe para que un turno.sh viejo (sin --simular) no escriba .git/equipo-dev.env.
 casos=(
 '|aprobado=1 hora=0905|rol=release motivo=por estado: 1 aprobado reloj=dev franja=3'
 '|entregado=1 hora=1801|rol=release motivo=por estado: 1 entregado reloj=qa franja=6'
@@ -140,20 +150,31 @@ casos=(
 '|implementado=1 hora=2101 fecha=2026-10-12|rol=revisor motivo=por estado: 1 implementado reloj=investigador franja=7'
 '|hora=0229|rol=po motivo=papel vacio reloj=po franja=1'
 'qa|aprobado=1 hora=0905|rol=qa motivo=pedido reloj=dev franja=3'
+'|aprobado=1 entregado=1 hora=0905|rol=release motivo=por estado: 1 aprobado reloj=dev franja=3'
+'|revisado=1 implementado=1 hora=0301|rol=qa motivo=por estado: 1 revisado reloj=po franja=1'
+'|implementado=1 con_hallazgos=1 hora=0301|rol=revisor motivo=por estado: 1 implementado reloj=po franja=1'
+'|con_hallazgos=1 hora=2101 fecha=2026-10-12|rol=dev motivo=por estado: 1 con_hallazgos, 0 huerfanas reloj=investigador franja=7'
+'|hora=2101 fecha=2026-10-12|rol=investigador motivo=reloj: investigador reloj=investigador franja=7'
+'|disenado=1 propuesto=1 cola=1 total=1 hora=1801|rol=dev motivo=por estado: 1 disenado, lugar en cola reloj=qa franja=6'
+'|espera_humano=1 propuesto=2 hora=0001|rol=release motivo=reloj: release, 1 en espera reloj=release franja=0'
+'|espera_humano=1 propuesto=2 hora=0301|rol=arquitecto motivo=por estado: 2 propuesto, 0 disenado de 3 reloj=po franja=1'
+'|aprobado=1 espera_humano=1 hora=0001|rol=release motivo=por estado: 1 aprobado reloj=release franja=0'
+'|con_hallazgos=1 espera_humano=1 hora=0001|rol=dev motivo=por estado: 1 con_hallazgos, 0 huerfanas reloj=release franja=0'
 )
 malos=0
 for c in "${casos[@]}"; do
     r=${c%%|*}; resto=${c#*|}; a=${resto%%|*}; e=${resto#*|}
-    if [ -n "$r" ]; then s=$(bash "$tu" "$r" --simular "$a" 2>&1); else s=$(bash "$tu" --simular "$a" 2>&1); fi
+    if [ -n "$r" ]; then s=$(GIT_DIR="$base/.nogit" bash "$tu" "$r" --simular "$a" 2>&1); else s=$(GIT_DIR="$base/.nogit" bash "$tu" --simular "$a" 2>&1); fi
     [ "$s" = "$e" ] || { malos=$((malos + 1)); echo "FALLA simular: ${r:+$r }$a -> $s (esperado $e)"; }
 done
-bash "$tu" foo --simular "hora=0905" >/dev/null 2>&1; codigo=$?
+GIT_DIR="$base/.nogit" bash "$tu" foo --simular "hora=0905" >/dev/null 2>&1; codigo=$?
 [ "$codigo" -eq 1 ] || { malos=$((malos + 1)); echo "FALLA simular: foo --simular hora=0905 -> salida $codigo (esperado 1)"; }
 det=""; [ "$malos" -eq 0 ] || det=" $malos de $(( ${#casos[@]} + 1 )) casos"
 cierra simular "$det"
 
 # 10. resumen: contra el remoto real, la linea existe y trae los 20 pares en
-# orden; los valores no se afirman porque cambian con cada turno.
+# orden; los valores no se afirman porque cambian con cada turno. Lo unico
+# estable: la rama del playbook no aparece como rama de trabajo.
 if [ "${PRUEBAS_SIN_RED:-}" = 1 ]; then
     ok "resumen (saltada: PRUEBAS_SIN_RED=1)"
 else
@@ -163,7 +184,9 @@ else
     claves=$(printf '%s\n' "$salida" | grep -m1 '^RESUMEN ' | sed 's/^RESUMEN //' | tr ' ' '\n' | grep -E '^[a-z_0-9]+=[^ ]+$' | cut -d= -f1 | tr '\n' ' ')
     esperadas='propuesto disenado en_curso huerfanas implementado revisado con_hallazgos aprobado entregado espera_humano cola total tope_cola tope_total tope_propuesto tope_disenado ideas_libres sin_merge pausa sin_rastro_48h '
     [ "$lineas" -eq 1 ] || det="$det $lineas lineas en vez de 1;"
-    [ "$claves" = "$esperadas" ] || det="$det pares: '${claves:-ninguno}'"
+    [ "$claves" = "$esperadas" ] || det="$det pares: '${claves:-ninguno}';"
+    filas=$(bash "$es" 2>/dev/null | grep -c 'equipo-dev/playbook |')
+    [ "$filas" -eq 0 ] || det="$det la rama del playbook aparece $filas veces como rama de trabajo"
     cierra resumen "$det"
 fi
 

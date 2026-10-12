@@ -5,7 +5,8 @@ El mapa de crecimiento del equipo (Directiva de alcance de
 `claude/equipo-dev/backlog`; esta copia del playbook es la semilla que el
 primer turno copia alla si no existe. Desde ahi lo mantiene el product owner:
 reconcilia estados, agrega al menos 2 ideas por turno y saca de aca las
-fichas nuevas. El Investigador (franja 7, dias pares) suma lo que trae de
+fichas nuevas. El Investigador (cuando el estado lo pide; por reloj, la
+franja 7 de los dias pares) suma lo que trae de
 afuera, con `[fuente](url)` en la celda de la idea; su bitacora esta en
 `INVESTIGACION.md`.
 
