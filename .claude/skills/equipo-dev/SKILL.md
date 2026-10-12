@@ -86,15 +86,21 @@ minutos. Se decide una vez al arrancar y no se recalcula.
 | 1 | 03:01 | 00:01 | Product owner |
 | 2 | 06:01 | 03:01 | Arquitecto |
 | 3 | 09:01 | 06:01 | Dev |
-| 4 | 12:01 | 09:01 | Revisor |
+| 4 | 12:01 | 09:01 | Release manager (si no entrega nada, Revisor) |
 | 5 | 15:01 | 12:01 | Dev |
 | 6 | 18:01 | 15:01 | QA |
 | 7 | 21:01 | 18:01 | Revisor |
 
+Dos Release, separados 12 horas, porque solo el Release mergea: con uno por
+dia, un disparo perdido dejaba lo aprobado 24 horas mas sin llegar a `main`
+(paso el 2026-10-11 y el 2026-10-12). La franja 4 era del Revisor; los dias
+en que el Release no tiene nada que entregar la sigue usando el Revisor (ver
+la especificacion del Release).
+
 Nemotecnica: el dia UTC arranca entregando, despues propone, disena,
-implementa, revisa, implementa, prueba, revisa. Un item disenado a las 06:01
-puede ser un PR listo a las 00:01 del dia siguiente, cuando el humano esta
-sentado en Santiago.
+implementa, vuelve a entregar (o revisa), implementa, prueba, revisa. Un item
+disenado a las 06:01 puede ser un PR listo a las 00:01 del dia siguiente,
+cuando el humano esta sentado en Santiago.
 
 Excepciones: un rol pedido explicitamente (`rol: revisor` en el prompt, o
 `/equipo-dev revisor`) gana al reloj; es la forma de disparo manual con
@@ -104,7 +110,8 @@ cambian el rol anotado, salvo P6 y P7, que lo dicen.
 Por que es robusta: cero estado compartido para decidir; cada rol es
 "avanzar las fichas que esten en el estado X", asi que un disparo perdido no
 deja deuda y dos disparos en la misma franja se reparten por candado; dev y
-revisor corren dos veces por dia y QA y revisor se cubren entre si.
+release corren dos veces por dia, revisor una (dos si el Release de las 12:01
+no tiene nada que entregar), y QA y revisor se cubren entre si.
 
 ## Prioridades sobre el turno
 
@@ -253,7 +260,7 @@ al humano siga siendo poco.
 
 ## Especificacion por rol
 
-### Release manager (franja 0)
+### Release manager (franjas 0 y 4)
 
 - **Entrada:** `estado.sh` completo; `## Para el equipo`; con herramientas,
   PRs `[equipo-dev]`, sus comentarios y si alguno fue cerrado sin mergear.
@@ -306,14 +313,23 @@ al humano siga siendo poco.
   las ramas que sigan abiertas y lista de ramas borrables.
 - **Salida:** merges a `main` de lo que paso la puerta; pushes a las ramas
   entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
-  informe diario.
+  informe.
 - **Turno bien hecho:** ninguna rama con conflicto contra main; toda
-  `aprobado` de ayer esta mergeada, o `entregado` con el motivo exacto por el
-  que no; `ESTADO.md` dice que le queda al humano y que borrar, con los
-  comandos.
-- **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
-- **Sin trabajo:** mantenimiento, `ESTADO.md` e informe. Es el unico rol que
-  siempre produce algo.
+  `aprobado` que habia al arrancar esta mergeada, o `entregado` con el motivo
+  exacto por el que no; `ESTADO.md` dice que le queda al humano y que borrar,
+  con los comandos.
+- **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6, y
+  la revision de la franja 4 que sigue).
+- **Franja 4 sin entregas:** si los pasos (1) a (6) no entregaron ni
+  mergearon ninguna ficha, el turno sigue con la especificacion del Revisor
+  (incluido su fallback) y lo anota en la ficha
+  `turnos: revisor <sesion> (release sin entregas)`. Es la franja que antes
+  era del Revisor: asi la revision de la manana no se pierde los dias sin nada
+  que mergear. El orden cuida la independencia: los pasos del Release van
+  primero, asi que lo que esta sesion revise (o pruebe, por el fallback del
+  Revisor) no lo mergea ella; lo mergea el Release siguiente.
+- **Sin trabajo:** en la franja 0, mantenimiento, `ESTADO.md` e informe; es el
+  unico turno que siempre produce algo. En la 4, la revision de arriba.
 
 ### Product owner (franja 1)
 
@@ -413,7 +429,7 @@ al humano siga siendo poco.
   `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
   llena o solo cosmetica: `Entregado: nada, <motivo>`.
 
-### Revisor (franjas 4 y 7)
+### Revisor (franja 7, y la 4 cuando el Release no entrega nada)
 
 - **Entrada:** fichas `implementado`, de la mas vieja a la mas nueva, hasta
   2 por turno; `revision.md`; `CLAUDE.md`.

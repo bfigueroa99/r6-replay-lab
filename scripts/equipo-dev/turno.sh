@@ -13,8 +13,12 @@
 #
 # La franja es la de 3 horas mas cercana, no la que contiene al minuto actual:
 # asi un arranque demorado hasta 88 minutos cae en la franja que le tocaba.
+#
+# Dos Release separados 12 horas (franjas 0 y 4): solo el Release mergea, y con
+# uno por dia un disparo perdido dejaba lo aprobado esperando 24 horas mas. El
+# de la franja 4 sigue como Revisor si no entrega nada (lo dice el playbook).
 set -u
-roles=(release po arquitecto dev revisor dev qa revisor)
+roles=(release po arquitecto dev release dev qa revisor)
 min=$(( 10#$(date -u +%H) * 60 + 10#$(date -u +%M) ))
 franja=$(( (min + 90) / 180 % 8 ))
 rol="${1:-${roles[$franja]}}"
