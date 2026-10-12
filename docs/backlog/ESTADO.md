@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-12 16:50 UTC por release (sesion 20261012T1640Z, turno pedido por el humano)
+actualizado: 2026-10-12 18:10 UTC por qa (sesion 20261012T1802Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,7 +8,7 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | con hallazgos | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
+| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | con hallazgos | 1 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
 
 COLA=1/3  TOTAL=1/5
 
@@ -32,8 +32,8 @@ Papel: 0 propuesto, 0 disenado. Los espejos de 33 y 34 salieron de `backlog`: ya
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
+| qa | 2026-10-12 18:02 | Sin `revisado` ni `implementado` (35 esta `con hallazgos`, es del Dev). Fallback sobre main 0949f87: `check.sh` en `Todo en verde.` (403 backend, 53 vitest, build, 17 e2e). Deriva de docs: los comandos `manage.py` y `npm run` del README existen; las 11 variables de `.env.example` se leen en el backend; las etiquetas numericas de la UI sin match literal en `metricas.md` son secciones o columnas de metricas ya definidas ("Del total" es la tabla de "Mueres a los"). Sin fichas nuevas. 35: merge-tree limpio contra main; sin pedidos del humano. |
 | release | 2026-10-12 16:40 | Turno pedido por el humano. Entrega 33 y 34 (`## PR`, ficha recortada, `entregado`), abre los PRs #19 y #20 y los mergea con la puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin pedidos del humano, diff fuera de lo reservado. 33: `check.sh` en verde sobre el head exacto 3468b29 con main 0b547d7 incluido (399 backend, 53 vitest, build, 17 e2e) -> merge 6d9b07e. 34: main 6d9b07e fusionado (2fa93ca, sin conflicto), `check.sh` en verde sobre ese commit (403 backend, 53 vitest, build, 17 e2e) -> merge 0949f87. No pudo borrar las ramas mergeadas: el proxy corta el push de borrado. |
-| qa | 2026-10-12 16:40 | Sin fichas `revisado`: revision de 35 con la especificacion del Revisor (sesion distinta de dev y de la revision anterior). `check.sh` en verde sobre c28750f (404 backend, 53 vitest, build, 17 e2e). Ciega con `revision.md`: 1 hallazgo bloqueante confirmado con mutacion (ignorar votos de defensa, o los de ataque, deja la clase en verde); arreglo con dos fixtures verificados sobre la rama. 35 -> `con hallazgos`. Mantenimiento: merge-tree limpio de las tres ramas contra main 0b547d7 y por pares; sin pedidos del humano. |
 | dev | 2026-10-12 15:03 | Corrige 35 (`con hallazgos` -> `implementado`): desconocido en el equipo que defiende (espera `DEFENSE`), test nuevo de mayoria con los dos equipos mezclados, rename del test de limpieza. Las dos mutaciones del Revisor ahora caen; revision ciega sin hallazgos. `check.sh` en verde (404 backend, 53 vitest, build, 17 e2e). Mantenimiento: las tres ramas con merge-tree limpio contra main 0b547d7; sin pedidos del humano. |
 | revisor | 2026-10-12 12:02 | Revisa 35: rama al dia con main 0b547d7, `check.sh` en verde (403 backend, 53 vitest, build, 17 e2e). Ciega con `revision.md`: 3 hallazgos, los 3 confirmados con mutacion. Bloqueantes: el test de "hereda el lado de su equipo" pasa aunque el codigo ponga ATTACK a todos, y los tests de lado pasan aunque solo vote el equipo 0. Menor: nombre del test de limpieza. Tests de arreglo verificados sobre main. 35 -> `con hallazgos`. Sin QA ni `entregado` para atender. |
 | arquitecto | 2026-10-12 06:02 | Sin papel: 0 `propuesto`, 0 `disenado`. Mantenimiento: las tres ramas contienen main 0b547d7, merge-tree limpio contra main y por pares (33/34, 33/35, 34/35); sin commits humanos ni pedidos en `## Para el equipo`; ninguna ficha pasa las 48 h de P7. Sin pushes de codigo. |
