@@ -236,6 +236,16 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertEqual(r.teams[1]["role"], ATTACK)
         self.assertEqual(r.teams[0]["role"], DEFENSE)
 
+    def test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados(self):
+        # los votos del equipo 1 tienen que pesar: aca solo ellos desempatan
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, THERMITE), _jugador("y2", 1, ASH),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
     def test_el_jugador_con_operador_0_se_descarta(self):
         r = _lector([_jugador("a1", 0, ASH), _jugador("fantasma", 0, 0), _jugador("d1", 1, MUTE)])
         derive_team_roles(r)
@@ -244,8 +254,9 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertEqual(len(r.scoreboard), 2)
 
     def test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo(self):
+        # en el equipo que defiende: en el atacante pasaria aunque el codigo pusiera ATTACK fijo
         r = _lector([
-            _jugador("a1", 0, ASH), _jugador("a2", 0, DESCONOCIDO), _jugador("d1", 1, MUTE),
+            _jugador("a1", 0, ASH), _jugador("d1", 1, MUTE), _jugador("d2", 1, DESCONOCIDO),
         ])
         with tempfile.TemporaryDirectory() as carpeta:
             ruta = Path(carpeta) / "overrides.json"
@@ -257,7 +268,7 @@ class LadoDeLosEquiposTests(SimpleTestCase):
             finally:
                 # el cache es global: sin recargarlo, otros tests verian "Nuevo"
                 overrides.load(force=True)
-        self.assertEqual(r.header["inferredOperatorSides"], {"Nuevo": ATTACK})
+        self.assertEqual(r.header["inferredOperatorSides"], {"Nuevo": DEFENSE})
         self.assertEqual(overrides.unknown_ids(), {})
 
     def test_el_recluta_no_se_anota_como_operador_nuevo(self):
@@ -267,10 +278,10 @@ class LadoDeLosEquiposTests(SimpleTestCase):
 
     def test_un_id_sin_nombre_se_anota_como_unknown(self):
         r = _lector([
-            _jugador("a1", 0, ASH), _jugador("a2", 0, DESCONOCIDO), _jugador("d1", 1, MUTE),
+            _jugador("a1", 0, ASH), _jugador("d1", 1, MUTE), _jugador("d2", 1, DESCONOCIDO),
         ])
         derive_team_roles(r)
-        self.assertEqual(r.header["inferredOperatorSides"], {f"Unknown({DESCONOCIDO})": ATTACK})
+        self.assertEqual(r.header["inferredOperatorSides"], {f"Unknown({DESCONOCIDO})": DEFENSE})
         self.assertIn(DESCONOCIDO, overrides.unknown_ids()["operators"])
 
     def test_sin_operadores_conocidos_no_hay_lado_y_avisa(self):
@@ -281,7 +292,7 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertNotIn("role", r.teams[1])
         self.assertEqual([p["username"] for p in r.header["players"]], ["x1", "x2"])
 
-    def test_los_ids_desconocidos_no_quedan_registrados_entre_tests(self):
+    def test_el_tear_down_vacia_el_registro_de_ids_desconocidos(self):
         derive_team_roles(_lector([_jugador("a1", 0, ASH), _jugador("a2", 0, DESCONOCIDO)]))
         self.assertTrue(overrides.unknown_ids())
         self.tearDown()
