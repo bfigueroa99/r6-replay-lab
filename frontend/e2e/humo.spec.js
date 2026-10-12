@@ -98,6 +98,26 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
   await expect(panel.getByRole('button')).toHaveCount(0)
 
+  // operadores y mapas de la temporada, cada uno con su cruce contra los replays
+  const detalle = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Operadores y mapas en Ubisoft' }),
+  })
+  await expect(detalle.locator('tr', { hasText: 'Ash' }).locator('td')).toHaveText([
+    'Ash', 'Ataque', '120', '55%', '1.20', '0.80', '50%', '39', '100%', '0.51',
+  ])
+  // CLUBHOUSE en Ubisoft es Club House en el replay
+  await expect(detalle.locator('tr', { hasText: 'Clubhouse' }).locator('td')).toHaveText([
+    'Clubhouse', '12', '90', '44%', '33%', '56%', '0.93', '70', '57%', '0.35',
+  ])
+  await expect(detalle).toContainText('Periodo según Ubisoft: del 01-06-2026 al 01-09-2026.')
+
+  // otra playlist; un mapa que nunca jugaste en tus replays deja el cruce vacio
+  await detalle.getByLabel('Playlist').selectOption('all')
+  await expect(detalle.locator('tr', { hasText: 'Kafe' }).locator('td')).toHaveText([
+    'Kafe Dostoyevsky', '4', '30', '40%', '—', '—', '0.80', '—', '—', '—',
+  ])
+  await expect(detalle.locator('tr', { hasText: 'Thermite' })).toBeVisible()
+
   expect(afuera, 'la app pidio algo fuera de localhost').toEqual([])
   expect(errores).toEqual([])
 })

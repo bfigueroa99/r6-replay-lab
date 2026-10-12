@@ -189,7 +189,14 @@ export default function Jugador() {
         />
       </Panel>
 
-      <PerfilUbisoft key={player.id} jugadorId={player.id} inicial={data.externo.ubisoft} />
+      <PerfilUbisoft
+        key={player.id}
+        jugadorId={player.id}
+        inicial={data.externo.ubisoft}
+        nombre={player.username}
+        operadoresReplay={data.their_operators}
+        mapasReplay={data.their_maps}
+      />
 
       <Panel title="Partidas compartidas">
         <DataTable
@@ -229,7 +236,7 @@ export default function Jugador() {
       </Panel>
 
       <p className="note">
-        Salvo la temporada en Ubisoft, todo lo de esta página sale de tus propios replays: son las
+        Salvo lo que viene de Ubisoft, todo lo de esta página sale de tus propios replays: son las
         rondas que jugaste con o contra esa persona, no su historial completo.{' '}
         {fmt(data.matches.length)} partidas compartidas.
       </p>

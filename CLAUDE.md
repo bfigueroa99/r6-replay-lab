@@ -89,9 +89,9 @@ No propongas features que dependan de esto (esta documentado en el README):
 - **Armas, dano, disparos, precision.**
 - **MMR, rango, historial de temporada, stats de rivales fuera de tus partidas.**
   Eso vive en la API de Ubisoft. El panel opcional de Ubisoft muestra rango,
-  MMR y K/D de la **temporada actual** de un jugador, pero ninguna metrica sobre
-  tus replays puede depender de el: sin cuenta configurada tiene que funcionar
-  todo igual.
+  MMR, K/D y las tablas de operadores y mapas de la **temporada actual** de un
+  jugador (cruzadas con tus replays), pero ninguna metrica sobre tus replays
+  puede depender de el: sin cuenta configurada tiene que funcionar todo igual.
 
 ## No-goals
 

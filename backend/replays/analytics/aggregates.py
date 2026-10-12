@@ -1141,6 +1141,17 @@ def player_profile(player_id: int, **filters) -> dict | None:
                 baseline=baseline,
             )
         ],
+        # lo cruza el panel de Ubisoft con la tabla de mapas de la temporada
+        "their_maps": [
+            _sin_rating(fila)
+            for fila in group_by(
+                suyas,
+                "round__match__map_name",
+                labels=("map",),
+                min_rounds=1,
+                baseline=baseline,
+            )
+        ],
         "duels": duelos,
         "matches": _partidas_compartidas(suyas),
     }

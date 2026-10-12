@@ -153,9 +153,91 @@ class Command(BaseCommand):
         }
         PerfilUbisoft.objects.create(
             player=yo,
-            datos={"tableros": ubisoft.tableros(respuesta), "nivel": 212, "horas": 500},
+            datos={
+                "tableros": ubisoft.tableros(respuesta),
+                "nivel": 212,
+                "horas": 500,
+                "estadisticas": self._estadisticas_ubisoft(),
+            },
             consultado=datetime(2026, 9, 1, 12, 0),
         )
+
+    @staticmethod
+    def _estadisticas_ubisoft() -> dict:
+        """Operadores y mapas de la temporada, con la forma de `playerstats`.
+
+        Pasa por el mismo `resumir` que la respuesta real. Los operadores y Club
+        House y Bank estan tambien en los replays sembrados, asi que el e2e ve el
+        cruce con numeros de los dos lados. Kafe no: una fila de la temporada que
+        nunca jugaste contigo tiene que verse igual, con el cruce vacio.
+        """
+
+        def fila(nombre, partidas, rondas, ganadas, bajas, muertes, headshots):
+            return {
+                "statsDetail": nombre,
+                "matchesPlayed": partidas,
+                "roundsPlayed": rondas,
+                "roundsWon": ganadas,
+                "kills": bajas,
+                "death": muertes,
+                "headshots": headshots,
+            }
+
+        def respuesta(modos):
+            return {
+                "platforms": {"PC": {"gameModes": modos}},
+                "startDate": "20260601",
+                "endDate": "20260901",
+            }
+
+        operadores = respuesta(
+            {
+                "ranked": {
+                    "teamRoles": {
+                        "Attacker": [fila("Ash", 30, 120, 66, 96, 80, 48)],
+                        "Defender": [fila("Jager", 25, 100, 52, 70, 70, 28)],
+                    }
+                },
+                "all": {
+                    "teamRoles": {
+                        "Attacker": [
+                            fila("Ash", 40, 160, 86, 120, 100, 60),
+                            fila("Thermite", 10, 40, 18, 20, 30, 9),
+                        ],
+                        "Defender": [fila("Jager", 35, 140, 70, 98, 96, 40)],
+                    }
+                },
+            }
+        )
+        mapas = respuesta(
+            {
+                "ranked": {
+                    "teamRoles": {
+                        "all": [
+                            fila("CLUBHOUSE", 12, 90, 40, 70, 75, 30),
+                            fila("BANK", 8, 60, 33, 50, 40, 20),
+                        ],
+                        "Attacker": [
+                            fila("CLUBHOUSE", 12, 45, 15, 30, 40, 12),
+                            fila("BANK", 8, 30, 18, 26, 20, 10),
+                        ],
+                        "Defender": [
+                            fila("CLUBHOUSE", 12, 45, 25, 40, 35, 18),
+                            fila("BANK", 8, 30, 15, 24, 20, 10),
+                        ],
+                    }
+                },
+                "all": {
+                    "teamRoles": {
+                        "all": [
+                            fila("CLUBHOUSE", 15, 110, 50, 85, 90, 36),
+                            fila("KAFE DOSTOYEVSKY", 4, 30, 12, 20, 25, 8),
+                        ],
+                    }
+                },
+            }
+        )
+        return ubisoft.resumir(operadores, mapas)
 
     def _plan(self) -> dict[str, list[dict]]:
         """Las rondas de cada mapa, por separado.

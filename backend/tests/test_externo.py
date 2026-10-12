@@ -92,6 +92,67 @@ class FalsoUbisoft:
         return sum(fragmento in r.full_url for r in self.pedidos)
 
 
+def _fila(nombre, rondas, ganadas, bajas, muertes, headshots, partidas=10) -> dict:
+    """Una fila de `playerstats` con los conteos y un ratio armado que no cuadra.
+
+    El `killDeathRatio` de mentira esta para probar que el K/D sale de los
+    conteos, que es lo que lo hace comparable con el de los replays.
+    """
+    return {
+        "statsDetail": nombre,
+        "matchesPlayed": partidas,
+        "roundsPlayed": rondas,
+        "roundsWon": ganadas,
+        "roundsLost": rondas - ganadas,
+        "kills": bajas,
+        "death": muertes,
+        "headshots": headshots,
+        "killDeathRatio": {"value": 9.99},
+    }
+
+
+def _playerstats(modos: dict, **extra) -> tuple[int, dict]:
+    return 200, {
+        "platforms": {"PC": {"gameModes": modos}},
+        "startDate": "20260601",
+        "endDate": "20260930",
+        **extra,
+    }
+
+
+def _operadores() -> tuple[int, dict]:
+    return _playerstats(
+        {
+            "ranked": {
+                "type": "ranked",
+                "teamRoles": {
+                    "all": [_fila("Ash", 999, 1, 1, 1, 1)],
+                    "Attacker": [_fila("Ash", 120, 66, 96, 80, 48), _fila("IQ", 0, 0, 0, 0, 0)],
+                    "Defender": [_fila("Jäger", 100, 52, 70, 70, 28)],
+                },
+            },
+            "casual": {"teamRoles": {"Attacker": [], "Defender": []}},
+        }
+    )
+
+
+def _mapas() -> tuple[int, dict]:
+    return _playerstats(
+        {
+            "ranked": {
+                "teamRoles": {
+                    "all": [
+                        _fila("CLUBHOUSE", 90, 40, 70, 75, 30, partidas=12),
+                        _fila("KAFE DOSTOYEVSKY", 30, 12, 20, 0, 0, partidas=4),
+                    ],
+                    "Attacker": [_fila("CLUBHOUSE", 45, 15, 30, 40, 12)],
+                    "Defender": [_fila("CLUBHOUSE", 45, 25, 40, 35, 18)],
+                }
+            }
+        }
+    )
+
+
 def _ubisoft_sano(**extra) -> FalsoUbisoft:
     rutas = {
         "profiles/sessions": [_login()],
@@ -100,6 +161,8 @@ def _ubisoft_sano(**extra) -> FalsoUbisoft:
         "profiles/stats": [
             (200, {"profiles": [{"stats": {"PTotalTimePlayed": {"value": "1800000"}}}]})
         ],
+        "aggregation=operators": [_operadores()],
+        "aggregation=maps": [_mapas()],
     }
     rutas.update(extra)
     return FalsoUbisoft(**rutas)
@@ -248,6 +311,118 @@ class PerfilClienteTests(SimpleTestCase):
         self.assertIsNone(ubisoft.codigo_temporada(0))
 
 
+class EstadisticasClienteTests(SimpleTestCase):
+    """Operadores y mapas: lo que stats.cc muestra en esas pestanas."""
+
+    def setUp(self):
+        self.sesion = ubisoft.Sesion("tk-1", "ses-1", _expiracion())
+
+    def estadisticas(self, **rutas):
+        return ubisoft.perfil(self.sesion, PID, abrir=_ubisoft_sano(**rutas))["estadisticas"]
+
+    def test_operadores_con_su_lado_y_numeros_desde_los_conteos(self):
+        ranked = self.estadisticas()["operadores"]["ranked"]
+        ash = next(f for f in ranked if f["operador"] == "Ash")
+        self.assertEqual(ash["lado"], "Attack")
+        self.assertEqual(ash["rondas"], 120)
+        self.assertEqual(ash["partidas"], 10)
+        self.assertEqual(ash["winrate"], 55.0)
+        # el 9.99 que manda Ubisoft no se usa: bajas / muertes
+        self.assertEqual(ash["kd"], 1.2)
+        self.assertEqual(ash["kpr"], 0.8)
+        self.assertEqual(ash["hs_pct"], 50.0)
+        jager = next(f for f in ranked if f["operador"] == "Jäger")
+        self.assertEqual(jager["lado"], "Defense")
+
+    def test_la_fila_all_de_operadores_no_es_un_operador(self):
+        """La fila `all` agrega los dos lados; contarla duplicaria a Ash."""
+        ranked = self.estadisticas()["operadores"]["ranked"]
+        self.assertEqual(sorted(f["operador"] for f in ranked), ["Ash", "Jäger"])
+
+    def test_sin_rondas_no_hay_fila_ni_playlist(self):
+        operadores = self.estadisticas()["operadores"]
+        self.assertNotIn("IQ", [f["operador"] for f in operadores["ranked"]])
+        self.assertNotIn("casual", operadores)
+
+    def test_mapas_con_el_winrate_de_cada_lado(self):
+        mapas = self.estadisticas()["mapas"]["ranked"]
+        club = next(f for f in mapas if f["mapa"] == "Clubhouse")
+        self.assertEqual(club["partidas"], 12)
+        self.assertEqual(club["rondas"], 90)
+        self.assertEqual(club["winrate"], 44.4)
+        self.assertEqual(club["winrate_attack"], 33.3)
+        self.assertEqual(club["winrate_defense"], 55.6)
+
+    def test_un_mapa_sin_lados_o_sin_muertes_no_inventa(self):
+        kafe = next(
+            f for f in self.estadisticas()["mapas"]["ranked"] if f["mapa"] == "Kafe Dostoyevsky"
+        )
+        self.assertIsNone(kafe["winrate_attack"])
+        self.assertIsNone(kafe["winrate_defense"])
+        self.assertIsNone(kafe["kd"])
+        # con bajas y ningun headshot es un 0 real, no un vacio
+        self.assertEqual(kafe["hs_pct"], 0.0)
+
+    def test_el_periodo_es_el_que_dice_ubisoft(self):
+        datos = self.estadisticas()
+        self.assertEqual(datos["desde"], "2026-06-01")
+        self.assertEqual(datos["hasta"], "2026-09-30")
+
+    def test_un_periodo_raro_no_se_adivina(self):
+        raro = _playerstats({}, startDate="1 de junio", endDate="20260930")
+        # el de operadores no sirve: se usa entero el de mapas, no medio de cada uno
+        datos = self.estadisticas(**{"aggregation=operators": [raro]})
+        self.assertEqual((datos["desde"], datos["hasta"]), ("2026-06-01", "2026-09-30"))
+
+        sin_fecha = _playerstats({}, startDate=None, endDate=None)
+        datos = self.estadisticas(
+            **{"aggregation=operators": [raro], "aggregation=maps": [sin_fecha]}
+        )
+        self.assertEqual((datos["desde"], datos["hasta"]), (None, None))
+
+    def test_pide_playerstats_de_pc_con_el_ticket(self):
+        falso = _ubisoft_sano()
+        ubisoft.perfil(self.sesion, PID, abrir=falso)
+        pedidos = [p for p in falso.pedidos if "playerstats" in p.full_url]
+        self.assertEqual(len(pedidos), 2)
+        for pedido in pedidos:
+            self.assertTrue(pedido.full_url.startswith("https://prod.datadev.ubisoft.com/"))
+            self.assertIn(f"/profiles/{PID.lower()}/playerstats", pedido.full_url)
+            self.assertIn("platformGroup=PC", pedido.full_url)
+            self.assertIn(f"spaceId={ubisoft.ESPACIO}", pedido.full_url)
+            self.assertEqual(pedido.get_header("Authorization"), "Ubi_v1 t=tk-1")
+
+    def test_acepta_la_respuesta_anidada_en_profile_data(self):
+        """La forma del endpoint de resumenes; si Ubisoft unifica, no se rompe."""
+        _, plano = _operadores()
+        anidado = {"profileData": {PID.lower(): {"platforms": plano["platforms"]}}}
+        datos = self.estadisticas(**{"aggregation=operators": [(200, anidado)]})
+        self.assertEqual(len(datos["operadores"]["ranked"]), 2)
+
+    def test_una_forma_desconocida_da_tablas_vacias_y_no_numeros(self):
+        datos = self.estadisticas(
+            **{
+                "aggregation=operators": [(200, {"platforms": {"PC": {"gameModes": [1, 2]}}})],
+                "aggregation=maps": [(200, {"algo": "nuevo"})],
+            }
+        )
+        self.assertEqual(datos["operadores"], {})
+        self.assertEqual(datos["mapas"], {})
+
+    def test_si_playerstats_falla_el_rango_llega_igual_con_el_motivo(self):
+        falso = _ubisoft_sano(**{"aggregation=maps": [(404, {"httpCode": 404})]})
+        datos = ubisoft.perfil(self.sesion, PID, abrir=falso)
+        self.assertEqual(datos["tableros"]["ranked"]["rango"], "Oro 1")
+        self.assertIn("operadores ni mapas", datos["estadisticas"]["error"])
+        self.assertNotIn("operadores", {k for k in datos["estadisticas"] if k != "error"})
+
+    def test_un_401_en_playerstats_no_se_toma_como_ticket_vencido(self):
+        """`full_profiles` acaba de aceptar el ticket: loguear de nuevo no lo arregla."""
+        falso = _ubisoft_sano(**{"aggregation=operators": [(401, {"httpCode": 401})]})
+        datos = ubisoft.perfil(self.sesion, PID, abrir=falso)
+        self.assertIn("401", datos["estadisticas"]["error"])
+
+
 # --------------------------------------------------------------------- Django
 
 
@@ -325,6 +500,23 @@ class PerfilJugadorTests(_ConUbisoft):
         data = self.client.get(f"/api/players/{self.amigo.id}/").json()
         self.assertEqual(data["externo"]["ubisoft"]["datos"]["tableros"]["ranked"]["mmr"], 2950)
 
+    def test_la_consulta_guarda_operadores_y_mapas(self):
+        with self.con(_ubisoft_sano()):
+            self.consultar()
+
+        def prohibido(request):
+            raise AssertionError("abrir un perfil no puede consultar a Ubisoft")
+
+        with self.con(prohibido):
+            data = self.client.get(f"/api/players/{self.amigo.id}/").json()
+        estadisticas = data["externo"]["ubisoft"]["datos"]["estadisticas"]
+        self.assertEqual(estadisticas["desde"], "2026-06-01")
+        self.assertEqual(len(estadisticas["operadores"]["ranked"]), 2)
+        self.assertEqual(estadisticas["mapas"]["ranked"][0]["mapa"], "Clubhouse")
+        # y al lado, lo que el panel cruza con eso
+        self.assertIn("their_operators", data)
+        self.assertIn("their_maps", data)
+
     def test_reconsultar_pisa_el_anterior(self):
         with self.con(_ubisoft_sano()):
             self.consultar()
@@ -399,6 +591,16 @@ class SesionGuardadaTests(_ConUbisoft):
         self.assertEqual(respuesta.status_code, 502)
         self.assertIn("sesión nueva", respuesta.json()["error"])
         self.assertEqual(falso.contar("profiles/sessions"), 1)
+
+    def test_un_401_en_operadores_no_hace_otro_login(self):
+        """Ubisoft corta la IP con pocos logins, y uno nuevo no arreglaria ese 401."""
+        falso = _ubisoft_sano(**{"aggregation=operators": [(401, {"httpCode": 401})]})
+        with self.con(falso):
+            respuesta = self.consultar()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(falso.contar("profiles/sessions"), 1)
+        self.assertIn("401", respuesta.json()["datos"]["estadisticas"]["error"])
+        self.assertEqual(respuesta.json()["datos"]["tableros"]["ranked"]["rango"], "Oro 1")
 
     def test_ticket_de_otra_cuenta_no_se_usa(self):
         self.guardar("ajeno", cuenta="otra@example.com")

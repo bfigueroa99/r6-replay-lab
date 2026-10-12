@@ -233,6 +233,31 @@ Cubre todas sus partidas, no solo las que jugo contigo.
 | **Nivel** | Nivel de la cuenta (`rewards/public_profile`). Si Ubisoft no lo devuelve, sale `—`. |
 | **Horas jugadas** | `PTotalTimePlayed` en horas, redondeado. Incluye todos los modos de la cuenta. |
 
+### Operadores y mapas en Ubisoft
+
+Las tablas de las pestanas de operadores y mapas de stats.cc, desde el mismo
+endpoint de Ubisoft (`playerstats`, agregacion `operators` y `maps`). El
+periodo lo elige Ubisoft y se muestra con las fechas que devuelve. Los
+porcentajes y ratios se recalculan desde los conteos (rondas, bajas, muertes,
+headshots) con la misma formula que los de tus replays, y no se toman los
+`killDeathRatio` y compania que Ubisoft manda ya hechos: asi las dos columnas
+son comparables.
+
+| Metrica | Definicion |
+|---|---|
+| **Rondas** | `roundsPlayed` en esa playlist. Un operador o mapa sin rondas no se muestra. |
+| **Partidas** (mapas) | `matchesPlayed`. |
+| **Ganadas** | rondas ganadas / rondas jugadas. **Son rondas, no partidas**, igual que el winrate de tus replays. |
+| **En ataque / En defensa** (mapas) | Ganadas, pero solo con las rondas de ese lado en ese mapa. |
+| **K/D** | bajas / muertes. Sin muertes no hay K/D. |
+| **KPR** | bajas / rondas. |
+| **HS%** | headshots / bajas. Sin bajas, vacio. |
+| **Rondas / Ganadas / K/D en replays** | Lo mismo, pero de las rondas de esa persona en tus replays (con los filtros activos): para un operador, con el mismo operador y del mismo lado; para un mapa, en ese mapa. Vacio si no hay ninguna. El cruce es por nombre sin tildes, espacios ni mayusculas: `CLUBHOUSE` de Ubisoft es `Club House` del replay. |
+
+El cruce no es una metrica nueva sobre tus replays: los numeros de la derecha
+son los de siempre (`their_operators` y `their_maps` del perfil), puestos al
+lado. Sin cuenta de Ubisoft esas columnas no se ven, y nada de lo demas cambia.
+
 ## Muestra minima
 
 Los agregados de la UI filtran por `min_rounds` y el coach exige muestra antes de

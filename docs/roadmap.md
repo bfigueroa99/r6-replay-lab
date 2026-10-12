@@ -34,7 +34,8 @@ Dos familias distintas, y solo una es comparable:
 historial de temporadas, leaderboards, rango de los rivales del lobby. Nada de
 eso se puede replicar leyendo replays. Desde el #29 el perfil de cada jugador
 enlaza a los dos y trae rango, MMR y K/D de la temporada actual de la misma API
-de Ubisoft, pero el objetivo sigue siendo lo que solo sale de tus replays. Lo
+de Ubisoft, y desde el #30 sus tablas de operadores y mapas, cruzadas con tus
+replays; pero el objetivo sigue siendo lo que solo sale de tus replays. Lo
 que si aplica de ellos: **comparacion con companeros de escuadra** ("con quien deberias
 jugar mas"), ya implementado, y el breakdown por operador / mapa / modo, que ya
 existe.
@@ -615,6 +616,53 @@ Lo que no entra:
 - **No se probo contra la API real** desde la nube (sin cuenta y sin red hacia
   Ubisoft). La forma de las respuestas sale de siegeapi 6.3.5; si Ubisoft la
   cambio, el panel muestra el error en vez de numeros.
+
+### 30. Operadores y mapas de stats.cc, cruzados con tus replays [x]
+
+Pedido directo del usuario ("incluye e integra informacion de stats.cc"). El
+scraping sigue fuera, por lo mismo que en el #29: stats.cc no tiene API publica
+y esquivar su Cloudflare es evadir su proteccion. Lo que se integro es lo que
+stats.cc muestra en sus pestanas de **operadores** y **mapas**, sacado del mismo
+endpoint de Ubisoft que lee el (`prod.datadev.ubisoft.com/.../playerstats`, con
+agregacion `operators` y `maps`), dentro del mismo boton del #29.
+
+Hecho: panel **Operadores y mapas en Ubisoft** en el perfil de cada jugador,
+debajo de la temporada, con selector de playlist (ranked primero). Cada fila de
+la temporada lleva al lado lo que esa persona hizo en tus replays con el mismo
+operador y lado, o en el mismo mapa: rondas, ganadas y K/D. Para eso el perfil
+suma `their_maps`, hermano de `their_operators`. Las dos tablas se exportan a
+CSV. 16 tests de backend, 10 de vitest y el e2e del perfil afirma el cruce
+fila por fila.
+
+Decisiones:
+
+- **Los ratios se recalculan desde los conteos.** Ubisoft manda `killDeathRatio`
+  y compania ya hechos, pero con la formula de los replays (bajas / muertes,
+  headshots / bajas, rondas ganadas / jugadas) las dos columnas son
+  comparables. Hay un test con un ratio de Ubisoft que no cuadra a proposito.
+- **Si `playerstats` falla, el rango llega igual** con el motivo escrito en el
+  panel. Un 401 ahi no dispara otro login: `full_profiles` acaba de aceptar el
+  mismo ticket, y Ubisoft corta la IP con pocos logins.
+- **El cruce es por nombre normalizado** (sin tildes, espacios ni mayusculas):
+  Ubisoft escribe `CLUBHOUSE` y el replay `Club House`. Una fila sin pareja
+  deja las columnas de replays vacias, no en cero.
+- **El periodo lo elige Ubisoft** y se muestra con las fechas que devuelve; no
+  se mezcla el inicio de una respuesta con el fin de otra.
+- **Una consulta guardada antes de esto** no tiene las tablas: el panel lo dice
+  y pide actualizar, en vez de mostrarse vacio.
+
+Lo que no entra:
+
+- **Armas y tendencias** de stats.cc. El mismo endpoint las trae
+  (`aggregation=weapons` / `movingpoint`); quedan para otro item si hacen falta.
+- **Historial por temporada.** `playerstats` tiene una vista `seasonal` con
+  resumen por temporada (sin rango); seria el reemplazo parcial de la fila
+  "Historial de temporadas viejas" de las descartadas, y queda anotado.
+- **No se probo contra la API real**, igual que el #29: en la nube no hay cuenta
+  ni red hacia Ubisoft. La forma sale de siegeapi 6.3.5, que la lee en
+  `platforms` al primer nivel; el parser acepta tambien la forma anidada en
+  `profileData.<id>` del endpoint de resumenes. Se asume, como siegeapi, que en
+  PC el userId que pide `playerstats` es el mismo profileID del replay.
 
 ## Ideas descartadas
 

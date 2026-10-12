@@ -1,10 +1,11 @@
-"""Cliente minimo de la API de Ubisoft: rango, MMR y temporada de un jugador.
+"""Cliente minimo de la API de Ubisoft: rango, MMR, operadores y mapas de un jugador.
 
-Es la misma API que leen stats.cc y R6 Tracker, sin pasar por ellos. No es una
-API publica documentada: el AppId y los endpoints salen de siegeapi
-(github.com/CNDRD/siegeapi), que los sigue temporada a temporada. Si Ubisoft los
-cambia, esto falla con un error que dice que paso; nunca devuelve numeros
-inventados.
+Es la misma API que leen stats.cc y R6 Tracker, sin pasar por ellos: el rango
+sale de `full_profiles` y las pestanas de operadores y mapas de stats.cc, de
+`playerstats`. No es una API publica documentada: el AppId y los endpoints
+salen de siegeapi (github.com/CNDRD/siegeapi), que los sigue temporada a
+temporada. Si Ubisoft los cambia, esto falla con un error que dice que paso;
+nunca devuelve numeros inventados.
 
 Solo usa la libreria estandar. `abrir` se pasa como argumento para que los
 tests corran sin red: recibe un `urllib.request.Request` y devuelve
@@ -42,9 +43,17 @@ URL_TIEMPO = (
     "https://public-ubiservices.ubi.com/v1/profiles/stats"
     "?profileIds={pid}&spaceId={espacio}&statNames=PTotalTimePlayed"
 )
+#: Pide el userId; en PC es el mismo valor que el profileID del replay, que es
+#: justo lo que hace siegeapi (`player_uid if PC`). Sin fechas, Ubisoft elige la
+#: ventana y la devuelve en `startDate` / `endDate`.
+URL_ESTADISTICAS = (
+    "https://prod.datadev.ubisoft.com/v1/profiles/{pid}/playerstats"
+    "?spaceId={espacio}&view=current&aggregation={agregacion}"
+    "&gameMode=all,ranked,casual,unranked&platformGroup=PC&teamRole=all,Attacker,Defender"
+)
 
 TIMEOUT = 15
-#: Un ticket que vence en menos de esto se descarta: la consulta son tres
+#: Un ticket que vence en menos de esto se descarta: la consulta son cinco
 #: requests y no conviene que el ultimo llegue con el ticket ya muerto.
 MARGEN = timedelta(minutes=5)
 
@@ -297,8 +306,173 @@ def _horas(data: dict) -> int | None:
     return round(int(segundos) / 3600) if segundos is not None else None
 
 
+# ----------------------------------------------------- operadores y mapas
+
+#: Los lados con el nombre que usa el replay, para poder cruzar las dos fuentes.
+LADOS = {"Attacker": "Attack", "Defender": "Defense"}
+
+
+def _modos(data: dict) -> dict:
+    """Los `gameModes` de una respuesta de `playerstats`, sea cual sea su envoltorio.
+
+    siegeapi los lee en `platforms` al primer nivel, pero el endpoint hermano de
+    resumenes por temporada los anida en `profileData.<id>`. Se aceptan las dos
+    formas para no romper si Ubisoft unifica una con la otra.
+    """
+    plataformas = data.get("platforms")
+    if not isinstance(plataformas, dict):
+        perfiles = data.get("profileData")
+        perfil_ = next(iter(perfiles.values()), None) if isinstance(perfiles, dict) else None
+        plataformas = perfil_.get("platforms") if isinstance(perfil_, dict) else None
+    if not isinstance(plataformas, dict) or not plataformas:
+        return {}
+    plataforma = plataformas.get("PC") or next(iter(plataformas.values()))
+    modos = plataforma.get("gameModes") if isinstance(plataforma, dict) else None
+    return modos if isinstance(modos, dict) else {}
+
+
+def _roles(modo) -> dict[str, list[dict]]:
+    roles = modo.get("teamRoles") if isinstance(modo, dict) else None
+    if not isinstance(roles, dict):
+        return {}
+    return {
+        rol: [fila for fila in filas if isinstance(fila, dict)]
+        for rol, filas in roles.items()
+        if isinstance(filas, list)
+    }
+
+
+def _numeros(stats: dict) -> dict:
+    """Los numeros de una fila, calculados desde los conteos y no desde los ratios.
+
+    Ubisoft tambien manda `killDeathRatio` y compania ya hechos, pero
+    recalcularlos con la misma formula que usan los replays es lo que hace
+    comparables las dos columnas de la tabla.
+    """
+    rondas = _entero(stats.get("roundsPlayed"))
+    ganadas = _entero(stats.get("roundsWon"))
+    bajas = _entero(stats.get("kills"))
+    muertes = _entero(stats.get("death"))
+    headshots = _entero(stats.get("headshots"))
+    return {
+        "partidas": _entero(stats.get("matchesPlayed")),
+        "rondas": rondas,
+        "winrate": round(100 * ganadas / rondas, 1) if rondas else None,
+        "bajas": bajas,
+        "muertes": muertes,
+        "kd": round(bajas / muertes, 2) if muertes else None,
+        "kpr": round(bajas / rondas, 2) if rondas else None,
+        "hs_pct": round(100 * headshots / bajas, 1) if bajas else None,
+    }
+
+
+def _nombre(stats: dict) -> str:
+    return str(stats.get("statsDetail") or "").strip()
+
+
+def _nombre_mapa(stats: dict) -> str:
+    nombre = _nombre(stats)
+    # vienen en mayusculas ("KAFE DOSTOYEVSKY"); los operadores no, y "IQ" no se toca
+    return nombre.title() if nombre.isupper() else nombre
+
+
+def operadores(data: dict) -> dict[str, list[dict]]:
+    """Una lista por playlist con cada operador y su lado, solo los que jugo."""
+    salida: dict[str, list[dict]] = {}
+    for modo, contenido in _modos(data).items():
+        roles = _roles(contenido)
+        filas = [
+            {"operador": _nombre(stats), "lado": lado, **_numeros(stats)}
+            for rol, lado in LADOS.items()
+            for stats in roles.get(rol, [])
+            if _nombre(stats) and _entero(stats.get("roundsPlayed")) > 0
+        ]
+        if filas:
+            salida[modo] = filas
+    return salida
+
+
+def mapas(data: dict) -> dict[str, list[dict]]:
+    """Una lista por playlist con cada mapa, y el winrate de rondas de cada lado."""
+    salida: dict[str, list[dict]] = {}
+    for modo, contenido in _modos(data).items():
+        roles = _roles(contenido)
+        por_lado = {
+            lado: {_nombre_mapa(stats): _numeros(stats) for stats in roles.get(rol, [])}
+            for rol, lado in LADOS.items()
+        }
+        filas = []
+        for stats in roles.get("all", []):
+            nombre = _nombre_mapa(stats)
+            if not nombre or _entero(stats.get("roundsPlayed")) <= 0:
+                continue
+            fila = {"mapa": nombre, **_numeros(stats)}
+            for lado, indice in por_lado.items():
+                fila[f"winrate_{lado.lower()}"] = (indice.get(nombre) or {}).get("winrate")
+            filas.append(fila)
+        if filas:
+            salida[modo] = filas
+    return salida
+
+
+def _fecha(valor) -> str | None:
+    """20260601 -> 2026-06-01; cualquier otra cosa no se adivina."""
+    texto = str(valor or "")
+    if len(texto) != 8 or not texto.isdigit():
+        return None
+    return f"{texto[:4]}-{texto[4:6]}-{texto[6:]}"
+
+
+def _periodo(*respuestas: dict) -> tuple[str | None, str | None]:
+    """El primer periodo completo; mezclar el inicio de una con el fin de otra no vale."""
+    for respuesta in respuestas:
+        desde, hasta = _fecha(respuesta.get("startDate")), _fecha(respuesta.get("endDate"))
+        if desde and hasta:
+            return desde, hasta
+    return None, None
+
+
+def resumir(de_operadores: dict, de_mapas: dict) -> dict:
+    """Lo que se guarda a partir de las dos respuestas de `playerstats`."""
+    desde, hasta = _periodo(de_operadores, de_mapas)
+    return {
+        "desde": desde,
+        "hasta": hasta,
+        "operadores": operadores(de_operadores),
+        "mapas": mapas(de_mapas),
+    }
+
+
+def estadisticas(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> dict:
+    """Lo que stats.cc muestra en sus pestanas de operadores y mapas."""
+    pid = quote(profile_id.strip().lower(), safe="")
+
+    def pedir(agregacion: str) -> dict:
+        url = URL_ESTADISTICAS.format(pid=pid, espacio=ESPACIO, agregacion=agregacion)
+        return _get(sesion, url, abrir)
+
+    return resumir(pedir("operators"), pedir("maps"))
+
+
+def _estadisticas_o_aviso(sesion: Sesion, profile_id: str, abrir: Abridor) -> dict:
+    """Operadores y mapas, o el motivo por el que no vinieron.
+
+    No tumba el perfil: el rango ya llego, y perderlo porque fallo un endpoint
+    distinto seria peor que mostrarlo sin tablas. Tampoco se calla, como el
+    nivel: una tabla que no aparece sin explicacion parece un bug.
+    Un 401 aca no es un ticket vencido (`full_profiles` acaba de aceptarlo), asi
+    que tampoco vale la pena loguear de nuevo.
+    """
+    try:
+        return estadisticas(sesion, profile_id, abrir=abrir)
+    except SesionVencida:
+        return {"error": "Ubisoft rechazó la consulta de operadores y mapas (HTTP 401)."}
+    except ErrorUbisoft as exc:
+        return {"error": f"Ubisoft no devolvió operadores ni mapas: {exc}"}
+
+
 def perfil(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> dict:
-    """Rango, MMR, K/D y partidas de la temporada actual, mas nivel y horas."""
+    """Temporada actual: rango, MMR, K/D, nivel, horas, operadores y mapas."""
     pid = quote(profile_id.strip().lower(), safe="")
     completo = _get(sesion, URL_PERFILES.format(espacio=ESPACIO, pid=pid), abrir)
     por_tablero = tableros(completo)
@@ -313,4 +487,9 @@ def perfil(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> di
         lambda: _get(sesion, URL_TIEMPO.format(espacio=ESPACIO, pid=pid), abrir),
         _horas,
     )
-    return {"tableros": por_tablero, "nivel": nivel, "horas": horas}
+    return {
+        "tableros": por_tablero,
+        "nivel": nivel,
+        "horas": horas,
+        "estadisticas": _estadisticas_o_aviso(sesion, profile_id, abrir),
+    }

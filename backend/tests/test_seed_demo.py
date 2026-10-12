@@ -96,3 +96,17 @@ class FormaTests(TestCase):
         self.assertEqual(ranked["rango"], "Oro 1")
         self.assertEqual(ranked["temporada"], "Y10S2")
         self.assertEqual(PerfilUbisoft.objects.count(), 1)
+
+    def test_la_consulta_guardada_trae_operadores_y_mapas_que_cruzan(self):
+        """El e2e afirma el cruce: tienen que existir de los dos lados."""
+        perfil = PerfilUbisoft.objects.get(player__is_me=True)
+        estadisticas = perfil.datos["estadisticas"]
+        ash = estadisticas["operadores"]["ranked"][0]
+        self.assertEqual((ash["operador"], ash["lado"], ash["rondas"]), ("Ash", "Attack", 120))
+        self.assertTrue(
+            RoundPlayer.objects.filter(is_me=True, operator="Ash", side="Attack").exists()
+        )
+        self.assertEqual(
+            [m["mapa"] for m in estadisticas["mapas"]["ranked"]], ["Clubhouse", "Bank"]
+        )
+        self.assertEqual((estadisticas["desde"], estadisticas["hasta"]), ("2026-06-01", "2026-09-01"))

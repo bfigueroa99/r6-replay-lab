@@ -48,6 +48,14 @@ class PerfilTests(TestCase):
         self.assertEqual(perfil["their_operators"][0]["rounds"], 3)
         self.assertIsNone(perfil["their_operators"][0]["rating"])
 
+    def test_sus_mapas(self):
+        """El panel de Ubisoft los cruza con la tabla de mapas de la temporada."""
+        mapas = agg.player_profile(self.amigo.id)["their_maps"]
+        self.assertEqual([m["map"] for m in mapas], ["Bank"])
+        self.assertEqual(mapas[0]["rounds"], 3)
+        self.assertEqual(mapas[0]["winrate"], 100.0)
+        self.assertIsNone(mapas[0]["rating"])
+
     def test_partidas_compartidas(self):
         perfil = agg.player_profile(self.amigo.id)
         self.assertEqual(len(perfil["matches"]), 1)
