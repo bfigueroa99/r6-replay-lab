@@ -1,7 +1,7 @@
 # 35. Tests de como el parser decide que equipo ataca
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-12 12:10 UTC
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
