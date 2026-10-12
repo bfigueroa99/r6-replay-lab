@@ -1,6 +1,7 @@
 # Investigacion: ideas de afuera
 
-Bitacora del Investigador del equipo (franja 7, dias pares; ver
+Bitacora del Investigador del equipo (cuando el estado lo pide; por reloj,
+la franja 7 de los dias pares; ver
 `.claude/skills/equipo-dev/SKILL.md`). Vive en la rama
 `claude/equipo-dev/backlog`; esta copia del playbook es la semilla que el
 primer turno copia alla si no existe.

@@ -104,12 +104,14 @@ exactamente igual.
 ```bash
 cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
 git fetch origin main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
-for REF in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null && break; done
+for REF in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
 git show $REF:scripts/equipo-dev/turno.sh | bash -s --      # decide el rol; escribe .git/equipo-dev.env (un rol al final solo si lo pidieron)
 git show $REF:scripts/equipo-dev/estado.sh | bash           # papel, ramas, cola, rutina, entorno
 ```
 
-Si `turno.sh` imprime `SIN_PLAYBOOK` (ninguna ref de la cadena tiene el
+La cadena prueba `rutina.md`, que solo este playbook tiene: un `main` con
+un playbook viejo mergeado no la gana. Si el `git show` de `turno.sh` falla
+o `turno.sh` imprime `SIN_PLAYBOOK` (ninguna ref de la cadena tiene el
 playbook), el turno termina con un informe de una linea. Antes de trabajar,
 probar el acceso con `git push --dry-run origin HEAD:refs/heads/claude/equipo-dev/prueba-acceso`
 (no crea nada); si devuelve 403 u otro rechazo, no se implementa nada:
@@ -154,13 +156,17 @@ linea `RESUMEN` de `estado.sh --resumen`, el primero que aplique:
 3. `revisor` si hay `implementado`.
 4. `dev` si hay `con hallazgos` o huerfanas (`en curso` con `candado: -` o
    sin commits sobre la ficha en 3 h).
-5. `investigador` si el reloj dice investigador (franja 7, dia par).
-6. `po` si el papel esta vacio (0 `propuesto` y 0 `disenado`).
-7. `dev` si hay `disenado` y lugar en la cola (`COLA < 4` y `TOTAL < 6`).
-8. `arquitecto` si hay `propuesto` y menos de 3 `disenado`.
-9. `po` si hay menos de 6 `propuesto`.
-10. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
-11. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
+5. `release` si hay `entregado (...)` (espera al humano) y el reloj dice
+   release, motivo `reloj: release, N en espera`: lo que quedo `pendiente
+   de merge` por un motivo transitorio (sin herramientas, veto levantado,
+   pregunta respondida) se reintenta una vez por dia.
+6. `investigador` si el reloj dice investigador (franja 7, dia par).
+7. `po` si el papel esta vacio (0 `propuesto` y 0 `disenado`).
+8. `dev` si hay `disenado` y lugar en la cola (`COLA < 4` y `TOTAL < 6`).
+9. `arquitecto` si hay `propuesto` y menos de 3 `disenado`.
+10. `po` si hay menos de 6 `propuesto`.
+11. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
+12. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
 
 Un rol pedido (`rol: revisor` en el disparo, o `/equipo-dev revisor`) gana a
 todo, motivo `pedido`. Sin linea `RESUMEN` (fetch caido), rol del reloj,
@@ -236,7 +242,7 @@ estado.
   trabajo. Dev solo atiende `con hallazgos` y huerfanas (fichas `en curso`
   con candado muerto o con `## Pendiente`). Los demas siguen
   con su turno: ninguno convierte papel en codigo.
-- **P6. Cola vacia.** Cubierto por el orden de `turno.sh` (regla 7). Vale
+- **P6. Cola vacia.** Cubierto por el orden de `turno.sh` (regla 8). Vale
   solo si el rol vino pedido a mano y el estado pedia otro: con `COLA == 0` y
   `disenado` tomable, Revisor, QA y Release actuan como Dev y lo anotan
   `turnos: dev <sesion> (por cola vacia)`. PO, Arquitecto e Investigador no.
@@ -365,7 +371,9 @@ al humano siga siendo poco.
 
 ## Especificacion por rol
 
-### Release manager (franja 0)
+### Release manager
+
+Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
 
 - **Entrada:** `estado.sh` completo; `## Para el equipo`; con herramientas,
   PRs `[equipo-dev]`, sus comentarios y si alguno fue cerrado sin mergear.
@@ -441,16 +449,18 @@ al humano siga siendo poco.
   herramientas para comparar`.
 - **Salida:** merges a `main` de lo que paso la puerta; pushes a las ramas
   entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
-  informe diario.
+  informe.
 - **Turno bien hecho:** ninguna rama con conflicto contra main; toda
-  `aprobado` de ayer esta mergeada, o `entregado` con el motivo exacto por el
+  `aprobado` que encontro esta mergeada, o `entregado` con el motivo exacto por el
   que no; `ESTADO.md` dice que le queda al humano y que borrar, con los
   comandos.
 - **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
 - **Sin trabajo:** mantenimiento, (8), (9), `ESTADO.md` e informe. Es el
   unico rol que siempre produce algo.
 
-### Product owner (franja 1)
+### Product owner
+
+Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
 
 - **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
   en este turno) y la ultima entrada de `INVESTIGACION.md` (las ideas que
@@ -511,7 +521,9 @@ al humano siga siendo poco.
   descartadas, y en ese caso el turno escribe ideas nuevas hasta que haya
   al menos 5 libres.
 
-### Arquitecto (franja 2)
+### Arquitecto
+
+Cuando el estado lo pide (regla 9); por reloj, franja 2.
 
 - **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
   igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
@@ -542,7 +554,9 @@ al humano siga siendo poco.
   archivos y campos exactos que usarian), que es lo que el proximo PO
   convierte en fichas. Nunca escribe fichas `propuesto` el mismo.
 
-### Dev (franjas 3 y 5)
+### Dev
+
+Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
@@ -583,7 +597,9 @@ al humano siga siendo poco.
   `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
   llena o solo cosmetica: `Entregado: nada, <motivo>`.
 
-### Revisor (franjas 4 y 7)
+### Revisor
+
+Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impares.
 
 - **Entrada:** fichas `implementado`, de la mas vieja a la mas nueva, hasta
   2 por turno; `revision.md`; `CLAUDE.md`.
@@ -615,7 +631,9 @@ al humano siga siendo poco.
   eso, salud de ramas `entregado`: merge de main si se movio, `check.sh`,
   push. Sin nada, informe.
 
-### QA (franja 6)
+### QA
+
+Cuando el estado lo pide (regla 2); por reloj, franja 6.
 
 - **Entrada:** fichas `revisado`, de la mas vieja a la mas nueva, hasta 2
   por turno; `backend/tests/factories.py`.
@@ -649,7 +667,9 @@ al humano siga siendo poco.
   no se puede ver, un paso de mas) va como idea a `ALCANCE.md`, con la
   pantalla y el paso. Sin nada, informe.
 
-### Investigador (franja 7, dias pares)
+### Investigador
+
+Cuando el estado lo pide (reglas 6 y 11); por reloj, la franja 7 de los dias pares.
 
 Los demas roles miran adentro (el codigo, las fichas, el historial); este
 mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la
@@ -720,8 +740,9 @@ pozo del que el PO saca.
   `ESTADO.md` al cerrar). Nunca fichas: priorizar es del PO. Nunca PR,
   nunca rama de trabajo, nunca codigo.
 - **Turno bien hecho:** al menos 3 ideas nuevas en `ALCANCE.md` que pasan
-  los tres filtros, cada una con su fuente real; el PO siguiente (03:01
-  UTC) puede convertir cualquiera en ficha sin volver a buscar.
+  los tres filtros, cada una con su fuente real; el PO siguiente (cuando
+  el estado lo pide; por reloj, franja 1) puede convertir cualquiera en
+  ficha sin volver a buscar.
 - **No hace:** inventar links, versiones ni numeros (si no pudo abrir la
   fuente, la idea no entra); hacer que la app consulte esas fuentes (la
   investigacion es del equipo, no de la app); scraping ni nada que esquive
@@ -749,7 +770,7 @@ pozo del que el PO saca.
 
 **Turno:** <rol> (motivo: <EQUIPO_MOTIVO> | reloj: <EQUIPO_RELOJ>, franja N)
 **Playbook:** <ref>@<sha corto>[ (pruebas: ok | FALLAN k)]
-**Rutina:** <n> disparos sin rastro en 48 h | todos con rastro[; prompt al dia | actualizado desde rutina.md@<sha> | sin herramientas | apagada]
+**Rutina:** <n> disparos sin rastro en 48 h | todos con rastro[; prompt al dia | prompt sincronizado con rutina.md@<sha corto> | sin herramientas para comparar | apagada]
 **Entregado:** <ficha NN: estado anterior -> nuevo, rama> | mergeado a main: <PR #n, ficha NN> | nada, porque <motivo>
 **Mantenimiento:** <P2/P3/P4 atendidos> | nada pendiente
 **Cola:** COLA=<n>/4 TOTAL=<n>/6 | papel: <n> propuesto, <n> disenado (<n> funcionalidad)
