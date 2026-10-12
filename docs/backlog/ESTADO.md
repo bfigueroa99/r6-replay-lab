@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-12 06:10 UTC por arquitecto (sesion 20261012T0602Z)
+actualizado: 2026-10-12 09:10 UTC por dev (sesion 20261012T0902Z)
 playbook: origin/claude/great-cray-7o9tvf@557a890
 pausa: no
 
@@ -8,15 +8,15 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | aprobado | 36 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
-| claude/equipo-dev/34-trade-kill-contado-doble | docs/backlog/34-trade-kill-contado-doble.md | aprobado | 36 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/34-trade-kill-contado-doble?expand=1) |
-| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | implementado | 39 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
+| claude/equipo-dev/33-fecha-con-zona-da-500 | docs/backlog/33-fecha-con-zona-da-500.md | aprobado | 39 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/33-fecha-con-zona-da-500?expand=1) |
+| claude/equipo-dev/34-trade-kill-contado-doble | docs/backlog/34-trade-kill-contado-doble.md | aprobado | 39 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/34-trade-kill-contado-doble?expand=1) |
+| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | implementado | 42 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
 
 COLA=3/3 (llena: nadie abre ramas nuevas)  TOTAL=3/5
 
 Ultimo merge a main: PR #17 (ficha 32), 0b547d7, Release del 2026-10-10 00:02 UTC.
 
-Aviso: entre la QA del 2026-10-10 18:01 y este turno (2026-10-12 06:02) no hay ningun commit del equipo: once turnos seguidos (del Revisor del 10 a las 21:01 al PO del 12 a las 03:01, dos Release incluidos) no dejaron rastro; si la rutina no corrio, conviene mirarla. 33 y 34 llevan 36 h `aprobado` sin Release que las mergee y 35 lleva 39 h esperando revision. Desde el 2026-10-12 15:14 UTC, P7 (relevo a 48 h) hace que el primer turno que llegue avance 35.
+Aviso: entre la QA del 2026-10-10 18:01 y este turno (2026-10-12 06:02) no hay ningun commit del equipo: once turnos seguidos (del Revisor del 10 a las 21:01 al PO del 12 a las 03:01, dos Release incluidos) no dejaron rastro; si la rutina no corrio, conviene mirarla. Desde entonces corrieron el Arquitecto (06:02) y el Dev (09:02) del 12. 33 y 34 llevan 39 h `aprobado` sin Release que las mergee y 35 lleva 42 h esperando revision. Desde el 2026-10-12 15:14 UTC, P7 (relevo a 48 h) hace que el primer turno que llegue avance 35.
 
 ## Orden de merge sugerido
 
@@ -40,7 +40,7 @@ Papel: 0 propuesto, 0 disenado. El Arquitecto 20261012T0602Z no tuvo nada que di
 |---|---|---|
 | release | 2026-10-10 00:02 | Entrega y mergea 32 (PR #17): `## PR`, ficha recortada, `check.sh` en verde sobre el head exacto 1e6ae18 con main 6ec5961 incluido (395 backend, 53 vitest, build, 17 e2e). Merge 0b547d7. Ficha 33 (`revisado`) sin conflicto con main. No pudo borrar la rama mergeada: el proxy corta el push de borrado. |
 | revisor | 2026-10-10 12:02 | Revisa 34: ciega con `revision.md` sin hallazgos; confirmado con mutacion (con `metrics.py` de main caen exactamente los 4 tests nuevos, el de dos venganzas pasa como debe). Rama ya con main 0b547d7, merge-tree limpio contra main (33 y 34). `check.sh` en verde (399 backend, 53 vitest, build, 17 e2e). 34 -> `revisado`. |
-| dev | 2026-10-10 15:01 | Implementa 35: clase `LadoDeLosEquiposTests` en `tests/test_pydissect.py`, 8 tests de `derive_team_roles` con lector falso (lado por mayoria, equipo 1 atacante, operador 0 descartado, overrides temporales, recluta, `Unknown(<id>)`, warning sin operadores conocidos, limpieza del registro de IDs). Revision ciega: el test de limpieza no probaba el `tearDown`; corregido y verificado con mutacion. `check.sh` en verde (403 backend, 53 vitest, build, 17 e2e). 35 -> `implementado`. |
+| dev | 2026-10-12 09:02 | Sin trabajo tomable: cola llena (3/3), ninguna ficha `con hallazgos` ni huerfana, ninguna pasa las 48 h de P7 (35 llega a las 15:14 UTC). Mantenimiento: las tres ramas contienen main 0b547d7 y merge-tree limpio contra main; sin commits humanos ni pedidos en `## Para el equipo`. Sin pushes de codigo. (Turno dev anterior, 2026-10-10 15:01: implemento 35.) |
 | qa | 2026-10-10 18:01 | QA de 33 y 34. 33: main 0b547d7 fusionado (sin conflicto), `check.sh` en verde (399 backend, 53 vitest, build, 17 e2e); 49/49 y 121/121 respuestas 200 con fechas con zona en base vacia y sembrada; la `Z` se convierte a hora local (18:00Z = 14:00 Santiago incluye la partida, 18:01Z la excluye); 3 mutaciones, las 3 caen. 34: `check.sh` en verde; `recompute` real sobre filas sembradas como el import viejo corrige 2 -> 1 y 3 -> 1, deja 2 donde son dos venganzas, idempotente; 0 filas con `trade_kills > kills` tambien con `seed_demo`; 3 mutaciones, las 3 caen. 33 y 34 -> `aprobado`. |
 | arquitecto | 2026-10-12 06:02 | Sin papel: 0 `propuesto`, 0 `disenado`. Mantenimiento: las tres ramas contienen main 0b547d7, merge-tree limpio contra main y por pares (33/34, 33/35, 34/35); sin commits humanos ni pedidos en `## Para el equipo`; ninguna ficha pasa las 48 h de P7. Sin pushes de codigo. |
 | po | 2026-10-10 03:01 | Propone 34 (bug: `annotate_trades` suma una trade kill por cada victima vengada, asi que una baja que venga un doble cuenta 2 y +0.6 de rating; reproducido en main 0b547d7) y 35 (tests de `derive_team_roles`, que hoy solo cubre un test que se salta sin `.rec`). Fuzz de 19 endpoints con ~50 parametros borde sobre `seed_demo`: ningun 500. Reconciliacion: nada de `backlog` esta en main; el espejo de 33 esta al dia. |
