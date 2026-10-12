@@ -18,13 +18,15 @@ def _kill(order: int, actor: str, target: str, clock: float, headshot: bool = Fa
     }
 
 
-def _round(events, *, won_team=0, stats=None, clock_start=180.0, clock_end=20.0, mode="Bomb"):
-    """Ronda sintetica: 2 atacantes en el equipo 0, 2 defensores en el 1."""
+def _round(events, *, won_team=0, stats=None, clock_start=180.0, clock_end=20.0, mode="Bomb",
+           extra_players=None):
+    """Ronda sintetica: 2 atacantes en el equipo 0, 2 defensores en el 1, mas `extra_players`."""
     players = [
         {"username": "atk1", "teamIndex": 0, "operator": {"id": 1, "name": "Ash"}, "spawn": "Main", "profileID": "p-atk1"},
         {"username": "atk2", "teamIndex": 0, "operator": {"id": 2, "name": "Thermite"}, "spawn": "Main", "profileID": "p-atk2"},
         {"username": "def1", "teamIndex": 1, "operator": {"id": 3, "name": "Mute"}, "spawn": "Site", "profileID": "p-def1"},
         {"username": "def2", "teamIndex": 1, "operator": {"id": 4, "name": "Rook"}, "spawn": "Site", "profileID": "p-def2"},
+        *(extra_players or []),
     ]
     default_stats = [
         {"username": p["username"], "kills": 0, "died": False, "headshots": 0, "assists": 0,
@@ -113,6 +115,79 @@ class TradeTests(SimpleTestCase):
         )
         result = analyse_round(data)
         self.assertFalse(result["players"]["atk1"]["was_traded"])
+
+    def test_una_baja_que_venga_a_dos_companeros_cuenta_una_vez(self):
+        data = _round(
+            [
+                _kill(0, "def1", "atk1", 150.0),
+                _kill(1, "def1", "atk2", 149.0),  # doble de def1
+                _kill(2, "atk3", "def1", 148.0),  # una sola baja venga a los dos
+            ],
+            extra_players=[_atacante("atk3")],
+        )
+        result = analyse_round(data)
+        self.assertEqual(result["players"]["atk3"]["trade_kills"], 1)
+        self.assertTrue(result["players"]["atk1"]["was_traded"])
+        self.assertTrue(result["players"]["atk2"]["was_traded"])
+        self.assertTrue(result["events"][0]["traded"])
+        self.assertTrue(result["events"][1]["traded"])
+
+    def test_dos_venganzas_sobre_dos_asesinos_suman_dos(self):
+        data = _round(
+            [
+                _kill(0, "def1", "atk1", 150.0),
+                _kill(1, "atk3", "def1", 149.0),
+                _kill(2, "def2", "atk2", 140.0),
+                _kill(3, "atk3", "def2", 139.0),
+            ],
+            extra_players=[_atacante("atk3")],
+        )
+        result = analyse_round(data)
+        self.assertEqual(result["players"]["atk3"]["trade_kills"], 2)
+
+    def test_trade_kills_nunca_supera_a_kills(self):
+        doble = (
+            [_atacante("atk3")],
+            [
+                _kill(0, "def1", "atk1", 150.0),
+                _kill(1, "def1", "atk2", 149.0),
+                _kill(2, "atk3", "def1", 148.0),
+            ],
+        )
+        triple = (
+            [_atacante("atk3"), _atacante("atk4")],
+            [
+                _kill(0, "def1", "atk1", 150.0),
+                _kill(1, "def1", "atk2", 149.0),
+                _kill(2, "def1", "atk3", 148.0),
+                _kill(3, "atk4", "def1", 147.0),
+            ],
+        )
+        for nombre, (extra, events) in {"doble": doble, "triple": triple}.items():
+            with self.subTest(nombre):
+                data = _round(events, extra_players=extra, stats=_stats_del_guion(extra, events))
+                result = analyse_round(data)
+                for username, m in result["players"].items():
+                    self.assertLessEqual(m["trade_kills"], m["kills"], username)
+                if nombre == "triple":
+                    self.assertEqual(result["players"]["atk4"]["trade_kills"], 1)
+
+
+def _atacante(username: str) -> dict:
+    return {"username": username, "teamIndex": 0, "operator": {"id": 5, "name": "Sledge"},
+            "spawn": "Main", "profileID": f"p-{username}"}
+
+
+def _stats_del_guion(extra_players: list[dict], events: list[dict]) -> list[dict]:
+    """Stats coherentes con el kill feed: `analyse_round` saca `kills` de aca, no de los eventos."""
+    nombres = ["atk1", "atk2", "def1", "def2", *(p["username"] for p in extra_players)]
+    equipo = {"atk1": 0, "atk2": 0, "def1": 1, "def2": 1, **{p["username"]: 0 for p in extra_players}}
+    return [
+        {"username": n, "kills": sum(e["username"] == n for e in events),
+         "died": any(e["target"] == n for e in events), "headshots": 0, "assists": 0,
+         "score": 0, "1vX": 0, "teamIndex": equipo[n]}
+        for n in nombres
+    ]
 
 
 class KstTests(SimpleTestCase):
