@@ -632,7 +632,7 @@ dato que si sale del `.rec`: **la salida del spawn**, rondas en que mueres en lo
 primeros 15 segundos de accion, por mapa y lado, mas tus bajas en esa misma
 ventana. Panel nuevo en Tendencias (tabla exportable `spawn_exit`), boton
 "Spawn peeks" en el detalle de cada partida y regla `salida-spawn-{lado}` en el
-coach, que trae el enlace igual que `spawn-debil`. 23 tests nuevos en el backend
+coach, que trae el enlace igual que `spawn-debil`. 28 tests nuevos en el backend
 y uno en el e2e (mas el boton en la prueba del detalle), ninguno sale a la red.
 
 Decisiones:
@@ -641,11 +641,20 @@ Decisiones:
   de la ronda; la ventana de un spawnpeek o un runout es mas corta.
 - **No afirma que fue un spawnpeek.** Sin coordenadas no se puede; el texto dice
   cuando paso y deja los peeks del mapa a un clic.
-- **El coach compara contra tus otros mapas y pide dos bandas de ruido.** No hay
-  promedio poblacional (ver #9), y como se elige el peor de varios mapas, con
-  una sola banda el peor la pasaria casi siempre por azar.
-- Una muerte sin reloj queda con `death_elapsed = 0` en la ingesta; aca no
-  cuenta como temprana. "Sales muy temprano" (#9) si la cuenta, y queda anotado.
+- **El coach compara contra tus otros mapas, con una vara que sube con cuantos
+  compara.** No hay promedio poblacional (ver #9), y se queda con el peor de
+  varios mapas. La primera version pedia dos bandas de ruido fijas; la revision
+  del PR lo simulo y con diez mapas iguales avisaba el 12% de las veces (19% con
+  quince). Ahora reparte un 2.5% de error entre los mapas (Bonferroni,
+  `statistics.NormalDist`, sin dependencias) y el falso aviso queda en 1% o menos.
+- **Un evento con el reloj en 0 cuenta como segundo 0.** La primera version lo
+  descartaba como "sin reloj", pero el parser deja el ultimo valor visto y el
+  reloj vale 0 entre la preparacion y el primer tick de la accion: descartarlo
+  contaba de menos justo los peeks mas tempranos. Asi queda igual que "sales muy
+  temprano" (#9), que ya lo contaba.
+- **Las bajas tempranas salen del kill feed al consultar**, igual que los duelos
+  (#3, #27), y no de una columna de `RoundPlayer`. Llevarlas a una columna pide
+  migracion, backfill de lo ya importado y dejar los 15s fijos en la base.
 
 Pendiente, igual que el #28: los cortes de la regla (12 rondas por lado, 4
 muertes en la ventana) no se calibraron contra datos reales, porque en la nube

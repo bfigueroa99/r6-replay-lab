@@ -150,7 +150,7 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | **Cuando mueres** | La distribucion completa, en tramos de 30 segundos y separada por lado. El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir mitad a los 20 y mitad a los 170, y las dos cosas se arreglan distinto. |
 | **Sales muy temprano** | Muertes en los primeros 30 **segundos jugados**. La ronda todavia no se arma: mueres sin informacion. El coach opina desde 25 muertes del lado y un 25% concentrado ahi (el reparto uniforme daria 17%). |
 | **Te quedas sin tiempo** | Muertes con menos de 30 segundos **de reloj**. Es otro eje: no importa cuanto jugaste, importa que la ronda ya estaba decidida. En ataque significa que la ejecucion nunca llego a empezar. |
-| **Mueres al salir** (salida del spawn, ataque) | Rondas en ataque en que moriste en los primeros 15 **segundos jugados**, sobre tus rondas en ataque en ese mapa. Es sobre rondas y no sobre muertes: sobrevivir tambien es pasar la salida. 15s es lo que tarda el ataque en dejar el spawn y lo que dura la ventana de un spawnpeek o un runout; el tramo de 30s de "sales muy temprano" ya mete el primer duelo de la ronda. **No afirma que fue un spawnpeek**: el `.rec` no trae posiciones, solo dice cuando paso. Una muerte sin reloj (la ingesta le deja 0) no cuenta. |
+| **Mueres al salir** (salida del spawn, ataque) | Rondas en ataque en que moriste en los primeros 15 **segundos jugados**, sobre tus rondas en ataque en ese mapa. Es sobre rondas y no sobre muertes: sobrevivir tambien es pasar la salida. 15s es lo que tarda el ataque en dejar el spawn y lo que dura la ventana de un spawnpeek o un runout; el tramo de 30s de "sales muy temprano" ya mete el primer duelo de la ronda. **No afirma que fue un spawnpeek**: el `.rec` no trae posiciones, solo dice cuando paso. Una muerte con el reloj en 0 cuenta como segundo 0: el reloj vale 0 entre el ultimo tick de la preparacion y el primero de la accion, y ahi cae el peek mas temprano. |
 | **Mueres temprano** (salida del spawn, defensa) | Lo mismo en defensa: rondas en que moriste en los primeros 15s. Ahi casi siempre es un peek o un runout que salio mal. |
 | **Bajas al salir / bajas tempranas** | Tus bajas a rivales en los primeros 15s, por lado. Los teamkills no cuentan. En defensa son los spawnpeeks que salieron; en ataque, el spawnpeeker o el runout que castigaste. |
 | **Mueres a los** | Promedio de segundos de la fase de accion hasta tu muerte. Se saca del reloj de la ronda: `reloj_inicial - reloj_de_tu_muerte`. Un promedio bajo (menos de 45-50 s) significa que te estas perdiendo la mayor parte de la ronda. |
@@ -161,9 +161,11 @@ por mapa. Es un enlace que abre el navegador: la app no le pide nada a ese
 sitio, y un mapa que peekabooR6 no tiene queda sin enlace en vez de llevar a un
 404. La regla `salida-spawn-{lado}` del coach compara tu peor mapa contra **tus
 otros mapas** (no hay un promedio poblacional con que comparar) y solo opina si
-la diferencia pasa **dos veces** la banda de ruido de la seccion Progreso: se
-elige el peor de varios mapas, y con una sola banda el peor casi siempre la
-pasaria por azar.
+la diferencia pasa varias veces la banda de ruido de la seccion Progreso. Cuantas
+depende de cuantos mapas compara, porque se queda con el peor: con una vara fija
+de dos bandas, en una simulacion con diez mapas iguales avisaba el 12% de las
+veces. La vara reparte un 2.5% de error entre los mapas (Bonferroni): 2.2 bandas
+con dos mapas, 2.8 con diez, y el falso aviso queda en 1% o menos.
 
 ## Cortes
 

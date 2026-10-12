@@ -27,6 +27,8 @@ from django.db.models import (
 )
 from django.db.models.functions import Floor
 
+from externo import enlaces
+
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from .metrics import trade_window
 
@@ -1092,46 +1094,50 @@ def spawn_exit(**filters) -> dict:
 
     El `.rec` no trae posiciones, asi que esto no afirma que fue un spawnpeek:
     dice que la ronda se termino antes de que el ataque pudiera estar lejos del
-    spawn. Es la ventana donde viven los spawnpeeks y los runouts, y por eso la
-    API le pega a cada mapa su pagina de peekabooR6.
+    spawn. Es la ventana donde viven los spawnpeeks y los runouts, y por eso
+    cada mapa trae su pagina de peekabooR6.
 
     El porcentaje es sobre rondas y no sobre muertes: "1 de cada 5 rondas en
     ataque no pasas de la salida" se lee sin saber cuantas veces moriste.
+
+    Un evento con el reloj en 0 entra como segundo 0: el reloj vale 0 entre el
+    ultimo tick de la preparacion y el primero de la accion, y lo que pasa ahi
+    es justo el peek mas temprano.
     """
     mine = base_queryset(**filters)
-    # un evento sin reloj queda con elapsed 0 y se leeria como una muerte al salir
-    temprano = Q(death_elapsed__lt=SPAWN_EXIT_SECONDS, death_clock__gt=0)
+    temprano = Q(death_elapsed__lt=SPAWN_EXIT_SECONDS)
 
     vacia = {
         f"{clave}_{campo}": 0
         for _, clave in _LADOS
         for campo in ("rounds", "early_deaths", "early_kills")
     }
-    filas: dict[str, dict] = {}
+    # por nombre y slug, igual que `by_map`, para que las dos tablas no difieran
+    filas: dict[tuple[str, str], dict] = {}
     crudas = (
         mine.filter(side__in=[lado for lado, _ in _LADOS])
         .values("round__match__map_name", "round__match__map_slug", "side")
         .annotate(rounds=Count("id"), deaths=Count("id", filter=temprano))
     )
     for cruda in crudas:
-        nombre = cruda["round__match__map_name"]
-        fila = filas.setdefault(
-            nombre, {"map": nombre, "slug": cruda["round__match__map_slug"], **vacia}
-        )
+        mapa = (cruda["round__match__map_name"], cruda["round__match__map_slug"])
+        fila = filas.setdefault(mapa, {"map": mapa[0], "slug": mapa[1], **vacia})
         clave = dict(_LADOS)[cruda["side"]]
         fila[f"{clave}_rounds"] += cruda["rounds"]
         fila[f"{clave}_early_deaths"] += cruda["deaths"]
 
     me_ids = _me_ids()
     if me_ids and filas:
+        # sin el order_by la subconsulta hereda el ordering de RoundPlayer y
+        # arrastra dos joins por cada baja para ordenar una sola fila
+        lado = mine.filter(round_id=OuterRef("round_id")).order_by().values("side")[:1]
         bajas = _solo_rivales(
-            _mis_bajas(mine).filter(
-                actor_id__in=me_ids, elapsed__lt=SPAWN_EXIT_SECONDS, clock__gt=0
-            ),
+            _mis_bajas(mine).filter(actor_id__in=me_ids, elapsed__lt=SPAWN_EXIT_SECONDS),
             "target_id",
-        ).annotate(lado=Subquery(mine.filter(round_id=OuterRef("round_id")).values("side")[:1]))
-        for cruda in bajas.values("round__match__map_name", "lado").annotate(n=Count("id")):
-            fila = filas.get(cruda["round__match__map_name"])
+        ).annotate(lado=Subquery(lado))
+        por_mapa = bajas.values("round__match__map_name", "round__match__map_slug", "lado")
+        for cruda in por_mapa.annotate(n=Count("id")):
+            fila = filas.get((cruda["round__match__map_name"], cruda["round__match__map_slug"]))
             clave = dict(_LADOS).get(cruda["lado"])
             if fila and clave:
                 fila[f"{clave}_early_kills"] += cruda["n"]
@@ -1152,11 +1158,11 @@ def spawn_exit(**filters) -> dict:
         filas.values(),
         key=lambda f: (-(f["attack_rounds"] + f["defense_rounds"]), f["map"]),
     )
-    return {
-        "seconds": SPAWN_EXIT_SECONDS,
-        "overall": con_pct(total),
-        "maps": [con_pct(fila) for fila in rows],
-    }
+    for fila in rows:
+        con_pct(fila)
+        # aca y no en la vista: asi la API, el CSV y el coach llevan el mismo enlace
+        fila["peeks_url"] = enlaces.spawn_peeks(fila["slug"])
+    return {"seconds": SPAWN_EXIT_SECONDS, "overall": con_pct(total), "maps": rows}
 
 
 # --------------------------------------------------------------------- jugador

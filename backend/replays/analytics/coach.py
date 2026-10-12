@@ -7,6 +7,8 @@ que hacer al respecto.
 
 from __future__ import annotations
 
+from statistics import NormalDist
+
 from externo import enlaces
 
 from . import aggregates as agg
@@ -306,32 +308,44 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
 SALIDA_MIN_RONDAS = 12
 #: Con menos muertes en la ventana, un 30% son tres rondas con mala suerte.
 SALIDA_MIN_MUERTES = 4
+#: Chance de que la regla avise en un historial donde todos los mapas son
+#: iguales. Se reparte entre los mapas comparados: con una vara fija de dos
+#: bandas, el peor de diez mapas la pasaba por azar una vez de cada ocho.
+SALIDA_ALFA = 0.025
 
 
 def _salida_del_spawn(**filters) -> list[dict]:
     """El mapa donde la ronda se te corta en la salida del spawn, por lado.
 
     Se compara contra tus otros mapas y no contra un numero fijo, porque no hay
-    un promedio poblacional con que comparar (ver #9). Tiene que pasar dos
-    veces la banda de ruido: se elige el peor de varios mapas, y con una sola
-    banda el peor casi siempre la pasa por azar.
+    un promedio poblacional con que comparar (ver #9). Como se elige el peor de
+    varios mapas, la vara sube con cuantos se comparan (Bonferroni): con dos
+    mapas son 2.2 bandas de ruido, con diez son 2.8.
     """
     datos = agg.spawn_exit(**filters)
     total = datos["overall"]
     segundos = datos["seconds"]
     out = []
     for clave, label in (("attack", "ataque"), ("defense", "defensa")):
-        candidatos = []
+        comparables = []
         for fila in datos["maps"]:
-            rondas, muertes = fila[f"{clave}_rounds"], fila[f"{clave}_early_deaths"]
+            rondas = fila[f"{clave}_rounds"]
             resto_rondas = total[f"{clave}_rounds"] - rondas
-            resto_muertes = total[f"{clave}_early_deaths"] - muertes
-            if min(rondas, resto_rondas) < SALIDA_MIN_RONDAS or muertes < SALIDA_MIN_MUERTES:
+            if min(rondas, resto_rondas) >= SALIDA_MIN_RONDAS:
+                comparables.append((fila, rondas, resto_rondas))
+        if not comparables:
+            continue
+        vara = NormalDist().inv_cdf(1 - SALIDA_ALFA / len(comparables))
+
+        candidatos = []
+        for fila, rondas, resto_rondas in comparables:
+            muertes = fila[f"{clave}_early_deaths"]
+            if muertes < SALIDA_MIN_MUERTES:
                 continue
             pct = fila[f"{clave}_early_death_pct"]
-            resto = round(resto_muertes / resto_rondas * 100, 1)
+            resto = agg._pct(total[f"{clave}_early_deaths"] - muertes, resto_rondas)
             banda = agg.banda_de_ruido(pct, rondas, resto, resto_rondas) or 0
-            if pct - resto > 2 * banda:
+            if pct - resto > vara * banda:
                 candidatos.append((pct - resto, fila, pct, resto))
         if not candidatos:
             continue

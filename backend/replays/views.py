@@ -212,17 +212,9 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_round_number": agg.by_round_number(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
-            "spawn_exit": _salida_del_spawn(filters),
+            "spawn_exit": agg.spawn_exit(**filters),
         }
     )
-
-
-def _salida_del_spawn(filters: dict) -> dict:
-    """La salida del spawn por mapa, con la pagina de peekabooR6 de cada uno."""
-    datos = agg.spawn_exit(**filters)
-    for fila in datos["maps"]:
-        fila["peeks_url"] = enlaces.spawn_peeks(fila["slug"])
-    return datos
 
 
 @require_GET

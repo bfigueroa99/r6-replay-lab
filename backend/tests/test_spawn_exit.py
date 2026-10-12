@@ -6,7 +6,7 @@ from django.test import TestCase
 
 from replays.analytics import aggregates as agg
 from replays.analytics.coach import build_insights
-from replays.models import RoundPlayer
+from replays.models import Event, RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -74,11 +74,15 @@ class SalidaDelSpawnTests(TestCase):
         self.ronda(elapsed=15)
         self.assertEqual(fila(agg.spawn_exit(), "Club House")["attack_early_deaths"], 0)
 
-    def test_una_muerte_sin_reloj_no_es_una_muerte_al_salir(self):
-        """La ingesta deja elapsed 0 cuando el evento no traia reloj."""
+    def test_una_muerte_con_el_reloj_en_cero_es_del_primer_instante(self):
+        """El reloj vale 0 entre la preparacion y el primer tick de la accion.
+
+        La ingesta la guarda asi, con elapsed 0, y es el peek mas temprano que
+        hay: dejarla afuera contaria de menos justo lo que el panel busca.
+        """
         self.ronda(elapsed=5)
         RoundPlayer.objects.filter(is_me=True).update(death_clock=0.0, death_elapsed=0.0)
-        self.assertEqual(fila(agg.spawn_exit(), "Club House")["attack_early_deaths"], 0)
+        self.assertEqual(fila(agg.spawn_exit(), "Club House")["attack_early_deaths"], 1)
 
     def test_cuenta_tus_bajas_tempranas_y_no_los_teamkills(self):
         rnd = self.ronda(side="Defense", rival=True)
@@ -92,6 +96,30 @@ class SalidaDelSpawnTests(TestCase):
         club = fila(agg.spawn_exit(), "Club House")
         self.assertEqual(club["defense_early_kills"], 1)
         self.assertEqual(club["attack_early_kills"], 0)
+
+    def test_una_baja_con_el_reloj_en_cero_cuenta_como_temprana(self):
+        rnd = self.ronda(side="Defense", rival=True)
+        make_event(rnd, 0, ME, "rival", clock=172.0)
+        # como la guarda la ingesta cuando el reloj todavia no salto a la accion
+        Event.objects.filter(round=rnd).update(clock=0.0, elapsed=0.0)
+        self.assertEqual(fila(agg.spawn_exit(), "Club House")["defense_early_kills"], 1)
+
+    def test_el_mismo_nombre_con_otro_slug_no_se_mezcla(self):
+        """Igual que `by_map`: cada slug con su fila y su enlace."""
+        self.ronda(elapsed=5)
+        otra = make_match(map_name="Club House", index=9)
+        otra.map_slug = "clubhouse-y10"
+        otra.save()
+        make_round_player(make_round(otra, 99), death_elapsed=5)
+        slugs = sorted(f["slug"] for f in agg.spawn_exit()["maps"])
+        self.assertEqual(slugs, ["club-house", "clubhouse-y10"])
+
+    def test_cada_mapa_trae_su_enlace_a_peekaboo(self):
+        self.ronda(elapsed=5)
+        self.ronda("Tower", elapsed=5)
+        datos = agg.spawn_exit()
+        self.assertEqual(fila(datos, "Club House")["peeks_url"], "https://peekaboor6.com/maps/clubhouse")
+        self.assertIsNone(fila(datos, "Tower")["peeks_url"])
 
     def test_el_total_junta_todos_los_mapas(self):
         self.ronda(elapsed=5)
@@ -149,16 +177,20 @@ class SalidaDelSpawnApiTests(TestCase):
         cabecera, *filas = respuesta.content.decode().strip().splitlines()
         self.assertTrue(cabecera.startswith("map,slug,"))
         self.assertIn("attack_early_death_pct", cabecera)
+        # el mismo enlace que trae el boton de la UI
+        self.assertIn("peeks_url", cabecera)
+        self.assertIn("https://peekaboor6.com/maps/border", respuesta.content.decode())
         self.assertEqual(len(filas), 2)
 
 
 class CoachSalidaDelSpawnTests(TestCase):
     def historial(self, tempranas, *, side="Attack", rondas=20):
-        """Rondas por mapa y cuantas de ellas mueres en la salida."""
+        """Cuantas rondas mueres en la salida por mapa; `(muertes, rondas)` cambia la muestra."""
         n = 0
-        for i, (mapa, muertes) in enumerate(tempranas.items()):
+        for i, (mapa, valor) in enumerate(tempranas.items()):
+            muertes, total = valor if isinstance(valor, tuple) else (valor, rondas)
             partida = make_match(map_name=mapa, index=i)
-            for j in range(rondas):
+            for j in range(total):
                 rnd = make_round(partida, n, side=side, won=j % 2 == 0)
                 n += 1
                 make_round_player(rnd, side=side, death_elapsed=6 if j < muertes else 90)
@@ -188,6 +220,21 @@ class CoachSalidaDelSpawnTests(TestCase):
     def test_una_diferencia_dentro_del_ruido_no_dispara(self):
         self.historial({"Border": 5, "Club House": 3})
         self.assertIsNone(find(build_insights(), "salida-spawn-ataque"))
+
+    def test_con_muchos_mapas_la_vara_sube(self):
+        """El peor de diez mapas pasa dos bandas de ruido por azar a menudo.
+
+        45% contra 15% en el resto (27 de 180) es 2.6 bandas: no llega a las 2.8
+        que pide Bonferroni con diez mapas comparados.
+        """
+        otros = {f"Mapa {i}": 3 for i in range(9)}
+        self.historial({"Border": 9, **otros})
+        self.assertIsNone(find(build_insights(), "salida-spawn-ataque"))
+
+    def test_la_misma_diferencia_con_dos_mapas_si_avisa(self):
+        """Mismos 45% contra 27 de 180: con dos mapas la vara es 2.2 bandas."""
+        self.historial({"Border": 9, "Club House": (27, 180)})
+        self.assertIsNotNone(find(build_insights(), "salida-spawn-ataque"))
 
     def test_no_opina_con_pocas_rondas_en_el_mapa(self):
         self.historial({"Border": 8, "Club House": 0, "Bank": 0}, rondas=10)

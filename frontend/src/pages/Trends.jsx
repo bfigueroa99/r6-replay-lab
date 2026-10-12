@@ -14,7 +14,16 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, EnlaceExterno, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
+import {
+  DataTable,
+  EmptyState,
+  EnlaceExterno,
+  ErrorBox,
+  Loading,
+  Panel,
+  Stat,
+  fmt,
+} from '../components/ui.jsx'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -376,16 +385,15 @@ function SalidaDelSpawn({ salida }) {
           { lado: 'Ataque', clave: 'attack', label: 'no pasas de la salida' },
           { lado: 'Defensa', clave: 'defense', label: 'caes en el peek temprano' },
         ].map(({ lado, clave, label }) => (
-          <div className="stat" key={clave}>
-            <div className="label">
-              {lado}: {label}
-            </div>
-            <div className="value">{fmt(total[`${clave}_early_death_pct`], 0, '%')}</div>
-            <div className="sub">
-              {total[`${clave}_early_deaths`]} de {total[`${clave}_rounds`]} rondas ·{' '}
-              {total[`${clave}_early_kills`]} bajas tuyas en esos {s}s
-            </div>
-          </div>
+          <Stat
+            key={clave}
+            label={`${lado}: ${label}`}
+            value={fmt(total[`${clave}_early_death_pct`], 0, '%')}
+            sub={
+              `${total[`${clave}_early_deaths`]} de ${total[`${clave}_rounds`]} rondas · ` +
+              `${total[`${clave}_early_kills`]} bajas tuyas en esos ${s}s`
+            }
+          />
         ))}
       </div>
 

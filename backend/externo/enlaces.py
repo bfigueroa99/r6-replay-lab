@@ -38,13 +38,18 @@ def enlaces(profile_id: str | None, username: str | None) -> list[dict]:
 
 PEEKABOO = "https://peekaboor6.com/maps/"
 
-#: Los mapas que tiene peekabooR6 (octubre de 2026), con la clave solo en letras.
-#: La app arma el slug desde el nombre, y un mapa etiquetado a mano puede
-#: llegar como "Club House" o como "Clubhouse": sin espacios ni guiones son el
-#: mismo. Un mapa que el sitio no tiene se queda sin enlace en vez de llevar a
-#: un 404.
+
+def _clave(mapa: str) -> str:
+    """Solo letras y numeros: "Club House", "club-house" y "Clubhouse" son el mismo."""
+    return re.sub(r"[^a-z0-9]", "", mapa.lower())
+
+
+#: Los mapas que tiene peekabooR6 (octubre de 2026). La app arma el slug desde
+#: el nombre y un mapa etiquetado a mano puede llegar escrito de otra forma, asi
+#: que se comparan por `_clave`. Un mapa que el sitio no tiene se queda sin
+#: enlace en vez de llevar a un 404.
 _PEEKABOO_MAPAS = {
-    re.sub(r"[^a-z0-9]", "", slug): slug
+    _clave(slug): slug
     for slug in (
         "bank", "border", "calypso-casino", "chalet", "clubhouse", "coastline", "consulate",
         "emerald-plains", "fortress", "kafe-dostoyevsky", "kanal", "lair", "nighthaven-labs",
@@ -58,5 +63,5 @@ def spawn_peeks(mapa: str | None) -> str | None:
 
     Acepta el slug o el nombre: el coach solo tiene el nombre a mano.
     """
-    slug = _PEEKABOO_MAPAS.get(re.sub(r"[^a-z0-9]", "", (mapa or "").lower()))
+    slug = _PEEKABOO_MAPAS.get(_clave(mapa or ""))
     return f"{PEEKABOO}{slug}" if slug else None

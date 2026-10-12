@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { vigilarConsola } from './consola.js'
+import { vigilarConsola, vigilarRed } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
 /** Ruta -> el h1 que tiene que aparecer. Son las ocho del menu. */
@@ -61,10 +61,7 @@ test('el detalle de una partida se abre desde la lista', async ({ page }) => {
 
 test('Tendencias enlaza los spawn peeks de cada mapa sin salir a la red', async ({ page }) => {
   const errores = vigilarConsola(page)
-  const afuera = []
-  page.on('request', (request) => {
-    if (!request.url().startsWith(BASE_URL)) afuera.push(request.url())
-  })
+  const afuera = vigilarRed(page, BASE_URL)
 
   await page.goto('/tendencias')
   const panel = page.locator('section.panel', {
@@ -105,10 +102,7 @@ test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
 
 test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', async ({ page }) => {
   const errores = vigilarConsola(page)
-  const afuera = []
-  page.on('request', (request) => {
-    if (!request.url().startsWith(BASE_URL)) afuera.push(request.url())
-  })
+  const afuera = vigilarRed(page, BASE_URL)
 
   await page.goto('/')
   await page.locator('.topbar').getByRole('link', { name: 'BearF99' }).click()
