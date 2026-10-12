@@ -1,7 +1,7 @@
 # 35. Tests de como el parser decide que equipo ataca
 
 estado: con hallazgos
-candado: -
+candado: dev 2026-10-12T21:02Z
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
