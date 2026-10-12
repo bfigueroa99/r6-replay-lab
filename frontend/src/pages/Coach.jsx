@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { EmptyState, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import { EmptyState, EnlaceExterno, ErrorBox, Loading, Panel } from '../components/ui.jsx'
 
 const GROUPS = [
   { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
@@ -46,6 +46,11 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
                 <div className="action">
                   <b>Que hacer:</b> {insight.action}
                 </div>
+                {insight.link ? (
+                  <div className="enlace">
+                    <EnlaceExterno href={insight.link.url}>{insight.link.label}</EnlaceExterno>
+                  </div>
+                ) : null}
                 <div className="meta">
                   {insight.metric ? (
                     <span>

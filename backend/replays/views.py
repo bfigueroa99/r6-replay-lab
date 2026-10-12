@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 import pydissect
-from externo import ubisoft
+from externo import enlaces, ubisoft
 from pydissect.constants import OPERATOR_SIDES
 
 from . import export as exportador
@@ -212,8 +212,17 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_round_number": agg.by_round_number(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
+            "spawn_exit": _salida_del_spawn(filters),
         }
     )
+
+
+def _salida_del_spawn(filters: dict) -> dict:
+    """La salida del spawn por mapa, con la pagina de peekabooR6 de cada uno."""
+    datos = agg.spawn_exit(**filters)
+    for fila in datos["maps"]:
+        fila["peeks_url"] = enlaces.spawn_peeks(fila["slug"])
+    return datos
 
 
 @require_GET
@@ -459,6 +468,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "folder": match.folder,
                 "played_at": match.played_at.isoformat(),
                 "map": match.map_name,
+                "peeks_url": enlaces.spawn_peeks(match.map_slug),
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,

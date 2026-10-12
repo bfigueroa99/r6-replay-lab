@@ -872,7 +872,7 @@ def _sin_filtros_de_tiempo(filters: dict) -> dict:
     return {k: v for k, v in filters.items() if k not in _FILTROS_DE_TIEMPO}
 
 
-def _ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
+def banda_de_ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
     """Error estandar de la diferencia entre dos proporciones, en puntos.
 
     Es el tamano tipico de una diferencia que **no significa nada**. Sin este
@@ -950,7 +950,9 @@ def compare_periods(
         ahora, antes = fila_actual.get(clave), fila_previa.get(clave)
         delta = None if (ahora is None or antes is None) else round(ahora - antes, 2)
         ruido = (
-            _ruido(ahora, fila_actual.get(campo_muestra), antes, fila_previa.get(campo_muestra))
+            banda_de_ruido(
+                ahora, fila_actual.get(campo_muestra), antes, fila_previa.get(campo_muestra)
+            )
             if campo_muestra
             else None
         )
@@ -1074,6 +1076,87 @@ def death_timing(**filters) -> dict:
         fila["last30_pct"] = _pct(fila["last30"], fila["deaths"])
         salida[clave] = fila
     return salida
+
+
+#: Segundos de fase de accion que cuentan como salida del spawn: lo que tarda el
+#: ataque en dejar el spawn y lo que dura la ventana de un spawnpeek o un runout.
+#: Mas corto que el primer tramo de `death_timing` a proposito: en 30s ya entra
+#: el primer duelo de la ronda, que es otro problema.
+SPAWN_EXIT_SECONDS = 15
+
+_LADOS = (("Attack", "attack"), ("Defense", "defense"))
+
+
+def spawn_exit(**filters) -> dict:
+    """Muertes y bajas tuyas en la salida del spawn, por mapa y lado.
+
+    El `.rec` no trae posiciones, asi que esto no afirma que fue un spawnpeek:
+    dice que la ronda se termino antes de que el ataque pudiera estar lejos del
+    spawn. Es la ventana donde viven los spawnpeeks y los runouts, y por eso la
+    API le pega a cada mapa su pagina de peekabooR6.
+
+    El porcentaje es sobre rondas y no sobre muertes: "1 de cada 5 rondas en
+    ataque no pasas de la salida" se lee sin saber cuantas veces moriste.
+    """
+    mine = base_queryset(**filters)
+    # un evento sin reloj queda con elapsed 0 y se leeria como una muerte al salir
+    temprano = Q(death_elapsed__lt=SPAWN_EXIT_SECONDS, death_clock__gt=0)
+
+    vacia = {
+        f"{clave}_{campo}": 0
+        for _, clave in _LADOS
+        for campo in ("rounds", "early_deaths", "early_kills")
+    }
+    filas: dict[str, dict] = {}
+    crudas = (
+        mine.filter(side__in=[lado for lado, _ in _LADOS])
+        .values("round__match__map_name", "round__match__map_slug", "side")
+        .annotate(rounds=Count("id"), deaths=Count("id", filter=temprano))
+    )
+    for cruda in crudas:
+        nombre = cruda["round__match__map_name"]
+        fila = filas.setdefault(
+            nombre, {"map": nombre, "slug": cruda["round__match__map_slug"], **vacia}
+        )
+        clave = dict(_LADOS)[cruda["side"]]
+        fila[f"{clave}_rounds"] += cruda["rounds"]
+        fila[f"{clave}_early_deaths"] += cruda["deaths"]
+
+    me_ids = _me_ids()
+    if me_ids and filas:
+        bajas = _solo_rivales(
+            _mis_bajas(mine).filter(
+                actor_id__in=me_ids, elapsed__lt=SPAWN_EXIT_SECONDS, clock__gt=0
+            ),
+            "target_id",
+        ).annotate(lado=Subquery(mine.filter(round_id=OuterRef("round_id")).values("side")[:1]))
+        for cruda in bajas.values("round__match__map_name", "lado").annotate(n=Count("id")):
+            fila = filas.get(cruda["round__match__map_name"])
+            clave = dict(_LADOS).get(cruda["lado"])
+            if fila and clave:
+                fila[f"{clave}_early_kills"] += cruda["n"]
+
+    total = dict(vacia)
+    for fila in filas.values():
+        for campo in vacia:
+            total[campo] += fila[campo]
+
+    def con_pct(fila: dict) -> dict:
+        for _, clave in _LADOS:
+            fila[f"{clave}_early_death_pct"] = _pct(
+                fila[f"{clave}_early_deaths"], fila[f"{clave}_rounds"]
+            )
+        return fila
+
+    rows = sorted(
+        filas.values(),
+        key=lambda f: (-(f["attack_rounds"] + f["defense_rounds"]), f["map"]),
+    )
+    return {
+        "seconds": SPAWN_EXIT_SECONDS,
+        "overall": con_pct(total),
+        "maps": [con_pct(fila) for fila in rows],
+    }
 
 
 # --------------------------------------------------------------------- jugador

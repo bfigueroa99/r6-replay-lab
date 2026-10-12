@@ -41,6 +41,18 @@ export function Panel({ title, hint, children, right }) {
   )
 }
 
+/**
+ * Enlace a un sitio de afuera. Lo abre el navegador (o el de sistema, desde la
+ * app de escritorio): la app no pide nada a ese sitio.
+ */
+export function EnlaceExterno({ href, children, title, className = 'externo' }) {
+  return (
+    <a className={className} href={href} target="_blank" rel="noreferrer" title={title}>
+      {children} ↗
+    </a>
+  )
+}
+
 export function SideChip({ side }) {
   if (!side) return <span className="chip">?</span>
   const attack = side === 'Attack'

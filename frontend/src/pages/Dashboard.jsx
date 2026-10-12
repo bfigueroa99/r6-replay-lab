@@ -7,6 +7,7 @@ import {
   Bar,
   DataTable,
   EmptyState,
+  EnlaceExterno,
   ErrorBox,
   Loading,
   Panel,
@@ -162,6 +163,11 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               <h3>{insight.title}</h3>
               <p>{insight.detail}</p>
               <div className="action">{insight.action}</div>
+              {insight.link ? (
+                <div className="enlace">
+                  <EnlaceExterno href={insight.link.url}>{insight.link.label}</EnlaceExterno>
+                </div>
+              ) : null}
             </div>
           ))}
         </Panel>

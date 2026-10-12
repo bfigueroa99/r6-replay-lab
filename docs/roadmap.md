@@ -616,6 +616,43 @@ Lo que no entra:
   Ubisoft). La forma de las respuestas sale de siegeapi 6.3.5; si Ubisoft la
   cambio, el panel muestra el error en vez de numeros.
 
+### 35. Spawn peeks de peekabooR6 por mapa [x]
+
+Pedido directo del usuario: integrar [peekabooR6](https://peekaboor6.com), una
+biblioteca comunitaria de spawn peeks por mapa (clips con el angulo y la nota
+que le pone la gente). No tiene API, no tiene perfiles de jugador y sus peeks
+son contenido de terceros, asi que entra como **enlace por mapa** y no como
+datos: `enlaces.spawn_peeks()` arma `peekaboor6.com/maps/<slug>` para los 18
+mapas que el sitio tiene y devuelve `None` para el resto (Tower, Favela,
+Hereford...) en vez de mandar a un 404. El slug de la app no siempre coincide:
+`club-house` es `clubhouse` alla, asi que se compara sin guiones ni espacios.
+
+Un enlace suelto no dice cuando mirarlo. Lo que lo hace util es el cruce con un
+dato que si sale del `.rec`: **la salida del spawn**, rondas en que mueres en los
+primeros 15 segundos de accion, por mapa y lado, mas tus bajas en esa misma
+ventana. Panel nuevo en Tendencias (tabla exportable `spawn_exit`), boton
+"Spawn peeks" en el detalle de cada partida y regla `salida-spawn-{lado}` en el
+coach, que trae el enlace igual que `spawn-debil`. 23 tests nuevos en el backend
+y uno en el e2e (mas el boton en la prueba del detalle), ninguno sale a la red.
+
+Decisiones:
+
+- **15s y no los 30 de "sales muy temprano".** En 30s ya entra el primer duelo
+  de la ronda; la ventana de un spawnpeek o un runout es mas corta.
+- **No afirma que fue un spawnpeek.** Sin coordenadas no se puede; el texto dice
+  cuando paso y deja los peeks del mapa a un clic.
+- **El coach compara contra tus otros mapas y pide dos bandas de ruido.** No hay
+  promedio poblacional (ver #9), y como se elige el peor de varios mapas, con
+  una sola banda el peor la pasaria casi siempre por azar.
+- Una muerte sin reloj queda con `death_elapsed = 0` en la ingesta; aca no
+  cuenta como temprana. "Sales muy temprano" (#9) si la cuenta, y queda anotado.
+
+Pendiente, igual que el #28: los cortes de la regla (12 rondas por lado, 4
+muertes en la ventana) no se calibraron contra datos reales, porque en la nube
+no hay. El seed del e2e no tiene muertes antes de los 35s, asi que ahi la regla
+no dispara y la tabla sale en cero; los numeros los prueban los tests del
+backend.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
@@ -626,5 +663,6 @@ Lo que no entra:
 | Historial de temporadas viejas | `full_profiles` solo trae la actual; el #29 cubre esa. |
 | Scouting de rivales que no estan en tus partidas | El perfil existe para quien aparece en tus replays. |
 | Scraping de stats.cc / R6 Tracker | Cloudflare los cierra a clientes que no son navegador; ver #29. |
+| Mostrar los clips de peekabooR6 dentro de la app | No tiene API y son clips de la comunidad: se enlaza, no se copia. Ver #35. |
 | Workspaces de equipo, scrims compartidos | Es una app local y de un jugador. |
 | Subir replays a un servidor para parsear | Todo corre en el PC, a proposito. |

@@ -51,6 +51,16 @@ su rango, MMR, K/D y partidas ganadas de la temporada actual, nivel y horas
 jugadas: lo mismo que muestran esos sitios, sin pasar por ellos. Es la unica
 parte de la app que sale a internet, y solo cuando aprietas el boton.
 
+**Spawn peeks de peekabooR6.** Tendencias trae la **salida del spawn** por mapa:
+en cuantas rondas mueres en los primeros 15 segundos de accion, en ataque y en
+defensa, y cuantas bajas sacas en esa ventana. Cada mapa enlaza a su pagina en
+[peekabooR6](https://peekaboor6.com), la biblioteca comunitaria de spawn peeks,
+igual que el detalle de cada partida; y cuando un mapa se despega de tus otros
+el coach lo dice con el enlace a la mano. El replay no trae posiciones, asi que
+la app no afirma que fue un spawnpeek: dice cuando paso y te deja los peeks del
+mapa a un clic. peekabooR6 no tiene API y la app no lee sus paginas: es un
+enlace que abre tu navegador.
+
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
 cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
 
@@ -288,7 +298,8 @@ Todo vive en `.env` (ver `.env.example`):
 
 ### Ubisoft, stats.cc y R6 Tracker
 
-Los enlaces a stats.cc y R6 Tracker no necesitan nada: los abre tu navegador.
+Los enlaces a stats.cc, R6 Tracker y peekabooR6 no necesitan nada: los abre tu
+navegador.
 La app no lee esas paginas (estan detras de Cloudflare y bloquean a todo lo que
 no es un navegador); trae los mismos numeros de la API de Ubisoft, de donde los
 sacan ellos.
@@ -372,7 +383,7 @@ backend/
     constants.py        IDs de mapas, operadores, modos y versiones
     overrides.py        etiquetas para IDs de temporadas nuevas
   externo/              lo que sale a la red (independiente de Django)
-    enlaces.py          URLs del perfil en stats.cc y R6 Tracker
+    enlaces.py          URLs del perfil en stats.cc y R6 Tracker, y del mapa en peekabooR6
     ubisoft.py          cliente de la API de Ubisoft: login, rango, temporada
   replays/
     models.py           Match / Round / RoundPlayer / Event / Player

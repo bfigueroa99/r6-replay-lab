@@ -14,7 +14,7 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, EnlaceExterno, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -63,6 +63,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   }))
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
+  const salida = data.spawn_exit
   const porPosicion = sesiones.data?.by_position || []
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
@@ -321,6 +322,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </Panel>
       ) : null}
 
+      {salida?.maps?.length ? <SalidaDelSpawn salida={salida} /> : null}
+
       <Panel
         title="Por numero de ronda"
         hint="Si el winrate cae en las rondas finales, el problema es de decisiones bajo presion, no de aim."
@@ -352,5 +355,89 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         />
       </Panel>
     </>
+  )
+}
+
+/** Rondas que se cortan en la salida del spawn, con los peeks de cada mapa. */
+function SalidaDelSpawn({ salida }) {
+  const s = salida.seconds
+  const total = salida.overall
+  return (
+    <Panel
+      title="Salida del spawn"
+      hint={
+        `Rondas que se te terminan en los primeros ${s}s de acción: la ventana de los spawnpeeks y ` +
+        'los runouts. El replay no trae posiciones, así que no afirma que fue un spawnpeek; dice ' +
+        'cuándo pasó. Cada mapa enlaza a sus peeks en peekabooR6, que se abre en tu navegador.'
+      }
+    >
+      <div className="kpis" style={{ marginBottom: 12 }}>
+        {[
+          { lado: 'Ataque', clave: 'attack', label: 'no pasas de la salida' },
+          { lado: 'Defensa', clave: 'defense', label: 'caes en el peek temprano' },
+        ].map(({ lado, clave, label }) => (
+          <div className="stat" key={clave}>
+            <div className="label">
+              {lado}: {label}
+            </div>
+            <div className="value">{fmt(total[`${clave}_early_death_pct`], 0, '%')}</div>
+            <div className="sub">
+              {total[`${clave}_early_deaths`]} de {total[`${clave}_rounds`]} rondas ·{' '}
+              {total[`${clave}_early_kills`]} bajas tuyas en esos {s}s
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <DataTable
+        columns={[
+          { key: 'map', label: 'Mapa', left: true },
+          { key: 'attack_rounds', label: 'Rondas ataque' },
+          {
+            key: 'attack_early_death_pct',
+            label: 'Mueres al salir',
+            digits: 0,
+            suffix: '%',
+            help: `Rondas en ataque en que moriste en los primeros ${s}s de acción.`,
+          },
+          {
+            key: 'attack_early_kills',
+            label: 'Bajas al salir',
+            help: `Bajas tuyas en ataque en los primeros ${s}s: spawnpeeks o runouts que castigaste.`,
+          },
+          { key: 'defense_rounds', label: 'Rondas defensa' },
+          {
+            key: 'defense_early_death_pct',
+            label: 'Mueres temprano',
+            digits: 0,
+            suffix: '%',
+            help: `Rondas en defensa en que moriste en los primeros ${s}s: el peek o el runout que salió mal.`,
+          },
+          {
+            key: 'defense_early_kills',
+            label: 'Bajas tempranas',
+            help: `Bajas tuyas en defensa en los primeros ${s}s: los spawnpeeks que salieron.`,
+          },
+          {
+            key: 'peeks_url',
+            label: 'Spawn peeks',
+            sortable: false,
+            render: (row) =>
+              row.peeks_url ? (
+                <EnlaceExterno href={row.peeks_url} title={`Los spawn peeks de ${row.map} en peekabooR6`}>
+                  peekabooR6
+                </EnlaceExterno>
+              ) : (
+                <span className="note" title="peekabooR6 no tiene este mapa">—</span>
+              ),
+            csv: (row) => row.peeks_url || '',
+          },
+        ]}
+        rows={salida.maps}
+        initialSort={{ key: 'attack_rounds', dir: 'desc' }}
+        rowKey={(row) => row.map}
+        csvName="salida-del-spawn"
+      />
+    </Panel>
   )
 }

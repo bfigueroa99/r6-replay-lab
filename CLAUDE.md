@@ -12,8 +12,8 @@ Corre entero en el PC del usuario: sin servicios externos, sin cuentas propias.
 La unica salida a la red es opcional y explicita: el panel **Temporada en
 Ubisoft** del perfil de un jugador consulta la API de Ubisoft
 (`backend/externo/`) si el usuario puso su cuenta en el `.env` y aprieta el
-boton. Los enlaces a stats.cc y R6 Tracker los abre el navegador; la app no
-hace esas requests.
+boton. Los enlaces a stats.cc, R6 Tracker y peekabooR6 (spawn peeks por mapa)
+los abre el navegador; la app no hace esas requests.
 
 ## Comandos
 
@@ -42,15 +42,17 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 
 - **`pydissect/` no importa Django.** Es un parser independiente; recibe rutas y
   devuelve dicts. Si necesitas config, pasala como argumento.
-- **`externo/` tampoco.** Es el cliente de Ubisoft y los enlaces a trackers; el
-  abridor de red entra como argumento. `replays/perfil_externo.py` es la capa
-  Django (credenciales, cache del ticket, modelo `PerfilUbisoft`).
+- **`externo/` tampoco.** Es el cliente de Ubisoft y los enlaces a trackers y a
+  peekabooR6; el abridor de red entra como argumento. `replays/perfil_externo.py`
+  es la capa Django (credenciales, cache del ticket, modelo `PerfilUbisoft`).
 - **Nada sale a la red sin un clic.** Abrir una pagina nunca consulta a
   Ubisoft: lo hace el POST del boton, y lo que vuelve se guarda con su fecha.
   Ningun test sale a internet: se reemplaza `perfil_externo.abrir`.
 - **Sin scraping de stats.cc ni R6 Tracker.** Estan detras de Cloudflare y
   responden 403 a todo lo que no es un navegador; esquivar eso es evadir su
   proteccion. Sus numeros salen de la API de Ubisoft, que se consulta directo.
+  peekabooR6 tampoco se lee: no tiene API y sus peeks son clips de la
+  comunidad. Entra como enlace por mapa (`enlaces.spawn_peeks`), nunca como datos.
 - **Sin dependencias nuevas** salvo que no haya alternativa razonable. El
   backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
   requests. En el frontend, `electron` es devDependency y solo la usa la app de

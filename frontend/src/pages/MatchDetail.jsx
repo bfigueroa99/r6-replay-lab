@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useApi } from '../api.js'
 import {
   DataTable,
+  EnlaceExterno,
   ErrorBox,
   Loading,
   Panel,
@@ -38,9 +39,20 @@ export default function MatchDetail() {
             {match.game_version}
           </p>
         </div>
-        <Link className="btn small" to="/partidas">
-          Volver
-        </Link>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {match.peeks_url ? (
+            <EnlaceExterno
+              className="btn small"
+              href={match.peeks_url}
+              title={`Los spawn peeks de ${match.map} en peekabooR6, en tu navegador`}
+            >
+              Spawn peeks
+            </EnlaceExterno>
+          ) : null}
+          <Link className="btn small" to="/partidas">
+            Volver
+          </Link>
+        </div>
       </div>
 
       {match.warnings?.length ? (
