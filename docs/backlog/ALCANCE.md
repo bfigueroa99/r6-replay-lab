@@ -19,7 +19,9 @@ Como se lee:
   epica de varios) y estado.
 - Estados, siempre en la ultima columna: `idea` (libre), `ficha NN`,
   `en main`, `PR #n` (cubierta por un PR abierto que no es del equipo: no se
-  propone mientras siga abierto), `no` (la tacho el humano).
+  propone mientras siga abierto), `decision (<que>)` (espera la respuesta
+  del humano en `## Para el equipo` de `ESTADO.md`; no se propone), `no` (la
+  tacho el humano).
 - El humano reordena las filas o pone `no` desde la web. Lo que esta mas
   arriba dentro de una tabla se propone antes.
 
@@ -64,14 +66,14 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | E1 | Curva de aprendizaje por operador | Tu rating en las primeras N rondas con un operador contra las siguientes: si practicarlo rinde | `RoundPlayer` por operador ordenado por fecha, como `trend_by_match`; fila nueva en `docs/metricas.md` | M | idea |
-| E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita (`CLAUDE.md` lo permite desde 2026-10-10); sesiones de `sessions/` | M | idea |
+| E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
 
 ### revision-de-rondas: revisar rondas
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | F1 | Buscador de rondas entre partidas | Encontrar todas tus rondas de un tipo (clutch, apertura perdida sin trade, ronda perdida tras abrir ganando) y saltar al detalle de cada una | banderas de `RoundPlayer` (`one_vx`, `entry_kill`, `untraded_death`, `models.py:140-148`). PR #14 enlaza señales del coach a rondas: revisarlo antes de disenar para no duplicar | M | idea |
-| F2 | Notas y marcadores por ronda | Anotar que paso en una ronda y volver a las marcadas | modelo nuevo + POST de accion explicita; candidato #22 de `mercado/2026-09-16` | M | idea |
+| F2 | Notas y marcadores por ronda | Anotar que paso en una ronda y volver a las marcadas | modelo nuevo + POST de accion explicita; candidato #22 de `mercado/2026-09-16` | M | decision (POST nuevo: ver Para el humano) |
 | F3 | Cambios de operador y spawn en la linea de tiempo | Ver en el detalle de la ronda quien cambio de operador y desde que spawn salio cada uno | eventos `OPERATOR_SWAP` (`constants.py:292`), hoy una linea generica en `MatchDetail.jsx`; `spawn` ya viene en `matches/<id>/` y ninguna pagina lo pinta | S | idea |
 
 ### datos: datos y configuracion
@@ -79,7 +81,7 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | G1 | Calidad de datos | Ver las partidas con avisos del parser o leidas con una version vieja, y recalcularlas sin abrir una consola | `Match.warnings` (`models.py:69`, hoy solo por partida), `Match.parser_version` (`models.py:68`, sin exponer), `recompute.py` | M | idea |
-| G2 | Excluir una partida de los agregados | Sacar una custom o una partida rara de tus numeros sin borrarla, y volver a meterla | campo nuevo + migracion + POST; reversible por diseno (nunca borra) | M | idea |
+| G2 | Excluir una partida de los agregados | Sacar una custom o una partida rara de tus numeros sin borrarla, y volver a meterla | campo nuevo + migracion + POST; reversible por diseno (nunca borra) | M | decision (POST nuevo: ver Para el humano) |
 | G3 | Unir jugadores y alias desde Datos | Juntar dos perfiles que son la misma persona | alias de `Player`, `retag.py`. Reescribe datos: disenar reversible (tabla de equivalencias) o va a P10 | M | idea |
 | G4 | Boton de backup en Datos | Respaldar la base desde la app (deuda del #16) | `replays/backup.py` + POST | S | PR #12 |
 | G5 | Carpeta de replays desde la UI | Fijar `REPLAY_DIR` sin editar un `.env` (deuda del #19 y #20) | `config/replay_dir.py` + POST | S | PR #12 |
@@ -108,6 +110,17 @@ replays.
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
+
+### deuda-y-tests: no son funcionalidad
+
+Entran por la regla de mezcla de la Directiva (solo con 3 funcionalidades
+esperando en el papel) o como bug si lo son. Su estado es `idea (tests)` o
+`idea (deuda)`: libres, pero `estado.sh` no las cuenta como ideas libres.
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
+| T1 | Barrido de parametros borde sobre toda la API como test de Django | Ningun filtro raro vuelve a dar 500 (las fichas 32 y 33 salieron de barridos a mano; el PO del 2026-10-10 repitio 19 endpoints x ~50 parametros sin dejar script) | `backend/tests/test_barrido_api.py`: recorre las 18 rutas GET de `replays/urls.py` (pk 1 y 999999) con 14 variantes fijas de query (`since=foo`, `until=2026-01-01T00:00Z`, `since=0001-01-01T00:00Z`, `days=99999999999`, `days=-1`, `page=-1`, `page=abc`, `side=`, `map=%00`, `operator=;`, `session=x`, `ranked_only=2`, `table=`, `table=maps&sep=;`) con el test client sobre base vacia y sobre `seed_demo`; afirma status < 500; una ruta nueva entra sola; menos de 20 s | S | idea (tests) |
+| T2 | README sin cifras de tests que se pudren | El README no miente: `README.md:248` dice 306 tests y `:392` dice 366 cuando `grep -c 'def test_' backend/tests/*.py` suma 403 en main 0949f87 | `README.md`: no afirmar cifras que cambian con cada ficha; decir "la suite completa" y remitir a `check.sh` | S | idea (deuda) |
 
 ## Cubierto por PRs abiertos que no son del equipo
 

@@ -45,6 +45,11 @@ esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge: ...)` y
 aparecen en `ESTADO.md` con el motivo. Da igual merge, squash o rebase: el
 equipo detecta los tres. Borra la rama al mergear.
 
+Las reglas del equipo (playbook) viven en `main` cuando las mergeas; mientras
+tanto, en la rama `claude/equipo-dev/playbook`, que es la que lee la rutina.
+Nadie del equipo empuja ahi: la mueven tu merge o una sesion que vos inicies.
+Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
+
 ## Alcance
 
 Desde el 2026-10-10 el equipo trabaja con una **directiva de alcance**: la
