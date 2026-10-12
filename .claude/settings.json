@@ -15,6 +15,7 @@
     "allow": [
       "Bash(git commit:*)",
       "Bash(git push:*)",
+      "mcp__claude-code-remote__get_trigger",
       "mcp__claude-code-remote__update_trigger"
     ]
   }

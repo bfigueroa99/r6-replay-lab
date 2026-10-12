@@ -3,6 +3,8 @@
 estado: propuesto
 candado: -
 rama: -
+tipo: funcionalidad
+epica: -
 area: backend
 prioridad: 3
 fuente: -
@@ -17,7 +19,9 @@ cuerpo segun `.claude/skills/equipo-dev/plantilla-pr.md` y una seccion
 
 ## Que gana quien usa la app
 
-Dos frases. Si es trabajo interno (tests, deuda), que riesgo baja.
+Dos frases: que puede ver o hacer que hoy no puede. Si es trabajo interno
+(`tipo: tests` o `deuda`), que riesgo baja. Si es tramo de una epica, que
+deja visible este tramo por si solo y cual es el siguiente.
 
 ## Criterios de aceptacion
 

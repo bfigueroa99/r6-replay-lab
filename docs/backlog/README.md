@@ -9,7 +9,9 @@ items terminados.
 ## Dos lugares
 
 - **Rama `claude/equipo-dev/backlog`**: el papel. Fichas en `propuesto`,
-  `disenado` y `descartado`, mas `ESTADO.md` (el tablero) y, si existe, el
+  `disenado` y `descartado`, mas `ESTADO.md` (el tablero), `ALCANCE.md` (el
+  mapa de lo que la app todavia no hace), `INVESTIGACION.md` (la bitacora del
+  investigador) y, si existe, el
   marcador `PAUSA`, el veto `SIN_MERGE` y un espejo `en curso` de cada ficha
   reclamada. Nunca tiene PR, nunca se mergea, no cuenta para la cola.
 - **Rama `claude/equipo-dev/NN-slug`**: el trabajo de un item. Nace cuando un
@@ -43,8 +45,39 @@ esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge: ...)` y
 aparecen en `ESTADO.md` con el motivo. Da igual merge, squash o rebase: el
 equipo detecta los tres. Borra la rama al mergear.
 
+Las reglas del equipo (playbook) viven en `main` cuando las mergeas; mientras
+tanto, en la rama `claude/equipo-dev/playbook`, que es la que lee la rutina.
+Nadie del equipo empuja ahi: la mueven tu merge o una sesion que vos inicies.
+Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
+
+## Alcance
+
+Desde el 2026-10-10 el equipo trabaja con una **directiva de alcance**: la
+prioridad es funcionalidad nueva, no solo endurecer lo que existe (ver la
+seccion del mismo nombre en `.claude/skills/equipo-dev/SKILL.md`). Cada ficha
+lleva `tipo:` (`funcionalidad`, `bug`, `tests`, `deuda`) y, si es parte de
+algo grande, `epica:`. El product owner propone al menos una funcionalidad por
+turno; tests y deuda sueltos solo entran con 3 funcionalidades esperando; los
+bugs reales entran siempre.
+
+`ALCANCE.md` es el mapa: epicas por tema, cada idea con que gana el usuario,
+que datos del `.rec` usa, tamano y estado (`idea`, `ficha NN`, `en main`,
+`PR #n`, `no`). Lo hace crecer el product owner en cada turno con lo que ve
+adentro del repo, y el **investigador** (el turno de las 21:01 UTC de los
+dias pares) con lo que trae de afuera: parsers abiertos del `.rec` (primero
+r6-dissect), otras herramientas de replay, trackers, herramientas de otros
+juegos, la comunidad, las notas de parche de Ubisoft y la analitica de
+esports. Cada idea de afuera llega con su link, y su bitacora (que fuentes se
+miraron, que dieron, que salio seco) es `INVESTIGACION.md`. Las semillas de
+los dos archivos estan en `docs/backlog/` del playbook y se copian a
+`backlog` la primera vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
+`main` en la ultima semana y, si fueron cero, por que.
+
 ## Lo que hace el humano
 
+- **Dirigir el crecimiento**: editar `ALCANCE.md` en la rama `backlog` desde
+  la web. Lo que subas en una tabla se propone antes; una idea con estado `no`
+  o tachada no se propone nunca.
 - **Vetar el merge automatico**: crear `docs/backlog/SIN_MERGE` en la rama
   `backlog` desde la web. El equipo sigue trabajando pero deja todo en
   `entregado` para que lo mergees vos. Borrar el archivo lo reactiva.

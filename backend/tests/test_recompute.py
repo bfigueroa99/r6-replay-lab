@@ -128,6 +128,27 @@ class RecomputeTests(TestCase):
         self.assertEqual(recompute(window=3.0).rounds, 2)
 
 
+class RecomputeDobleTests(TestCase):
+    def setUp(self):
+        rnd = make_round(make_match(index=0), 0)
+        make_round_player(rnd, username=ME, kills=0, died=True)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=0, died=True)
+        # como lo dejaba el import viejo: una baja vengadora contada dos veces
+        make_round_player(rnd, username="vengador", is_me=False, team_index=0, kills=1, died=False,
+                          trade_kills=2)
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=2, died=True)
+        make_event(rnd, 0, "rival", ME, clock=100.0)
+        make_event(rnd, 1, "rival", "amigo", clock=99.0)
+        make_event(rnd, 2, "vengador", "rival", clock=98.0)
+
+    def test_recompute_corrige_el_trade_kill_contado_doble(self):
+        result = recompute(window=3.0)
+        self.assertEqual(RoundPlayer.objects.get(username="vengador").trade_kills, 1)
+        self.assertGreaterEqual(result.players_changed, 1)
+        self.assertTrue(result.changed)
+        self.assertFalse(recompute(window=3.0).changed)
+
+
 class ComandoTests(TestCase):
     def setUp(self):
         match = make_match(index=0)
