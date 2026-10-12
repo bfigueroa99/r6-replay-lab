@@ -1,6 +1,6 @@
 ---
 name: equipo-dev
-description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun la franja horaria UTC. Usar cuando la rutina lo pida o con /equipo-dev [rol].
+description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun lo que el pipeline necesita (`turno.sh`); el reloj desempata. Usar cuando la rutina lo pida o con /equipo-dev [rol].
 ---
 
 # Equipo de desarrollo: una iteracion, un rol
@@ -103,18 +103,24 @@ exactamente igual.
 
 ```bash
 cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
-git fetch origin main 'refs/heads/claude/*:refs/remotes/origin/claude/*'
-REF=origin/main
-git cat-file -e $REF:.claude/skills/equipo-dev/SKILL.md 2>/dev/null || REF=origin/claude/great-cray-7o9tvf
-git show $REF:scripts/equipo-dev/turno.sh | bash -s --        # con un rol al final solo si lo pidieron
-git show $REF:scripts/equipo-dev/estado.sh | bash
+git fetch origin main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
+for REF in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/SKILL.md" 2>/dev/null && break; done
+git show $REF:scripts/equipo-dev/turno.sh | bash -s --      # decide el rol; escribe .git/equipo-dev.env (un rol al final solo si lo pidieron)
+git show $REF:scripts/equipo-dev/estado.sh | bash           # papel, ramas, cola, rutina, entorno
 ```
 
+Si `turno.sh` imprime `SIN_PLAYBOOK` (ninguna ref de la cadena tiene el
+playbook), el turno termina con un informe de una linea. Antes de trabajar,
+probar el acceso con `git push --dry-run origin HEAD:refs/heads/claude/equipo-dev/prueba-acceso`
+(no crea nada); si devuelve 403 u otro rechazo, no se implementa nada:
+informe con el comando y el mensaje exactos.
+
 `turno.sh` escribe `.git/equipo-dev.env` (nunca se commitea) con `EQUIPO_ROL`,
-`EQUIPO_FRANJA`, `EQUIPO_INICIO` (epoch), `EQUIPO_SESION` (id del turno,
+`EQUIPO_FRANJA`, `EQUIPO_MOTIVO` (por que ese rol), `EQUIPO_RELOJ` (el rol que
+decia el reloj), `EQUIPO_INICIO` (epoch), `EQUIPO_SESION` (id del turno,
 formato `AAAAMMDDTHHMMZ`, va en `turnos:` y en `ESTADO.md`), `EQUIPO_CIERRE`
-(hora UTC `HH:MM` a la que hay que cerrar) y `EQUIPO_REF`, lo imprime entero y
-resume todo en una linea `# turno:`. **Las variables no sobreviven entre
+(hora UTC `HH:MM` a la que hay que cerrar), `EQUIPO_MINUTOS` y `EQUIPO_REF`,
+lo imprime entero y resume todo en una linea `# turno:`. **Las variables no sobreviven entre
 comandos ni llegan a los subagentes**: cada comando que las use empieza con
 `source "$(git rev-parse --git-dir)/equipo-dev.env"`, y a un subagente se le
 pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
@@ -123,7 +129,9 @@ pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
 argumento de `turno.sh`, en minuscula.
 `estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
 de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
-viejas sin ficha, `COLA`, `TOTAL` y si el entorno esta completo. Con eso se
+viejas sin ficha, los disparos de la rutina sin rastro (`TURNOS_SIN_RASTRO`),
+`COLA`, `TOTAL`, la linea `RESUMEN` que lee `turno.sh` y si el entorno esta
+completo. Con eso se
 sabe todo lo que hace falta para decidir. El playbook se lee siempre de
 `$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
 
@@ -138,9 +146,31 @@ ramas, para que las fichas y los PRs sigan siendo uno por item.
 
 ## Turnos
 
-El rol sale del reloj UTC y de nada mas. Franja de 3 horas mas cercana,
-`((minuto_del_dia + 90) / 180) % 8`, tolera arranques demorados hasta 88
-minutos. Se decide una vez al arrancar y no se recalcula.
+El rol lo decide `turno.sh` por lo que el pipeline necesita, leyendo la
+linea `RESUMEN` de `estado.sh --resumen`, el primero que aplique:
+
+1. `release` si hay `aprobado` o `entregado` (exacto, sin parentesis).
+2. `qa` si hay `revisado`.
+3. `revisor` si hay `implementado`.
+4. `dev` si hay `con hallazgos` o huerfanas (`en curso` con `candado: -` o
+   sin commits sobre la ficha en 3 h).
+5. `investigador` si el reloj dice investigador (franja 7, dia par).
+6. `po` si el papel esta vacio (0 `propuesto` y 0 `disenado`).
+7. `dev` si hay `disenado` y lugar en la cola (`COLA < 4` y `TOTAL < 6`).
+8. `arquitecto` si hay `propuesto` y menos de 3 `disenado`.
+9. `po` si hay menos de 6 `propuesto`.
+10. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
+11. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
+
+Un rol pedido (`rol: revisor` en el disparo, o `/equipo-dev revisor`) gana a
+todo, motivo `pedido`. Sin linea `RESUMEN` (fetch caido), rol del reloj,
+motivo `sin resumen: reloj`. Se decide una vez al arrancar y no se
+recalcula; `EQUIPO_MOTIVO` y `EQUIPO_RELOJ` quedan en el env y en `ESTADO.md`.
+
+### Rol por reloj: desempate cuando nada espera, alternancia del Investigador y nemotecnia
+
+Franja de 3 horas mas cercana, `((minuto_del_dia + 90) / 180) % 8`, tolera
+arranques demorados hasta 88 minutos.
 
 | franja | disparo UTC | Chile (UTC-3) | rol |
 |---|---|---|---|
@@ -164,16 +194,14 @@ implementa, revisa, implementa, prueba, y cierra revisando o mirando afuera
 puede ser un PR listo a las 00:01 del dia siguiente, cuando el humano esta
 sentado en Santiago.
 
-Excepciones: un rol pedido explicitamente (`rol: revisor` en el prompt, o
-`/equipo-dev revisor`) gana al reloj; es la forma de disparo manual con
-intencion. Las prioridades de abajo se atienden antes del turno pero no
-cambian el rol anotado, salvo P6 y P7, que lo dicen.
+Excepciones: solo el rol pedido (arriba). Las prioridades de abajo se
+atienden antes del turno pero no cambian el rol anotado, salvo P6 y P7, que
+lo dicen.
 
-Por que es robusta: cero estado compartido para decidir; cada rol es
-"avanzar las fichas que esten en el estado X", asi que un disparo perdido no
-deja deuda y dos disparos en la misma franja se reparten por candado; dev
-corre dos veces por dia, revisor una vez y media, y QA y revisor se cubren
-entre si.
+Por que es robusta: cero estado compartido para decidir (el conteo sale de
+git); dos disparos simultaneos eligen igual y se reparten por candado (P8);
+un disparo perdido cuesta 3 h y no 24, porque el siguiente ve el mismo
+estado.
 
 ## Prioridades sobre el turno
 
@@ -208,14 +236,15 @@ entre si.
   trabajo. Dev solo atiende `con hallazgos` y huerfanas (fichas `en curso`
   con candado muerto o con `## Pendiente`). Los demas siguen
   con su turno: ninguno convierte papel en codigo.
-- **P6. Cola vacia** (`COLA == 0`) y hay `disenado` tomable: Revisor, QA y
-  Release actuan como Dev ese turno y lo anotan `turnos: dev <sesion> (por
-  cola vacia)`. PO, Arquitecto e Investigador no, para que nunca falte papel
-ni ideas.
-- **P7. Relevo a 48 h.** Una ficha que lleva mas de 48 h esperando una etapa
-  (`implementado`, `revisado`, `aprobado`, o `en curso` con `## Pendiente`)
-  la avanza el rol del turno, una sola vez por sesion, anotando `(relevo de
-  <rol>)`. La independencia sigue valiendo.
+- **P6. Cola vacia.** Cubierto por el orden de `turno.sh` (regla 7). Vale
+  solo si el rol vino pedido a mano y el estado pedia otro: con `COLA == 0` y
+  `disenado` tomable, Revisor, QA y Release actuan como Dev y lo anotan
+  `turnos: dev <sesion> (por cola vacia)`. PO, Arquitecto e Investigador no.
+- **P7. Relevo.** Cubierto por el orden de `turno.sh` (reglas 1 a 4): un
+  `aprobado` trae un Release en el proximo disparo. Vale solo si el rol vino
+  pedido a mano: una ficha con mas de 48 h en una etapa la avanza el rol del
+  turno, una sola vez por sesion, anotando `(relevo de <rol>)`; la
+  independencia sigue valiendo y solo el Release mergea.
 - **P8. Solapamiento.** Push rechazado: `git fetch`, `git log -3
   origin/<rama>`. Si otra sesion toco esa rama o esa ficha en las ultimas 3
   horas, se descarta lo propio (ni merge ni force) y se pasa a la siguiente
@@ -372,9 +401,9 @@ al humano siga siendo poco.
   - d. El diff (`git diff --name-only origin/main...<rama>`) no toca lo que
     el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
     `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
-    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md` y
+    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md`,
     `docs/backlog/INVESTIGACION.md` (las semillas; los vivos estan en
-    `backlog`), `frontend/electron/`,
+    `backlog`) y `docs/backlog/MAQUINARIA.md`, `frontend/electron/`,
     `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
     `.github/`.
   - e. Hay herramientas de GitHub y el PR esta abierto contra `main`
@@ -392,7 +421,24 @@ al humano siga siendo poco.
   de `ESTADO.md` con las lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS` y
   `ALCANCE` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
   `## Para el humano` con el cuello de botella exacto (papel sin
-  funcionalidades, diseno trabado, cola llena, rojo, PR esperando).
+  funcionalidades, diseno trabado, cola llena, rojo, PR esperando). (8)
+  Playbook: `git show $EQUIPO_REF:scripts/equipo-dev/pruebas.sh | bash -s -- $EQUIPO_REF`.
+  El resultado va al informe (`**Playbook:** <ref>@<sha corto> (pruebas: ok |
+  FALLAN k)`); un fallo va ademas a `## Para el humano` como `Playbook:
+  pruebas.sh fallo: <linea FALLA>` (el equipo no toca `scripts/equipo-dev/`;
+  lo arregla una sesion que el humano inicie). (9) Rutina: con
+  `mcp__claude-code-remote__get_trigger` disponible, leer
+  `trig_01SLH6dc1rT5C6ZLMXPEsckN`, guardar `derived_state.prompt` en el
+  scratchpad y compararlo con
+  `git show $EQUIPO_REF:.claude/skills/equipo-dev/rutina.md` (`diff`,
+  ignorando el salto de linea final). Si difiere y el texto de `$EQUIPO_REF`
+  contiene los literales `turno.sh`, `estado.sh` y `rol:`:
+  `mcp__claude-code-remote__update_trigger` con `trigger_id` y solo `prompt`
+  (nunca `cron_expression`, `enabled` ni `model`), y la cabecera `rutina:` de
+  `ESTADO.md` suma `prompt sincronizado con rutina.md@<sha corto>`. Si
+  `enabled` es false: vineta en `## Para el humano` (`la rutina esta apagada;
+  el equipo no la enciende`) y nada mas. Sin herramientas o sin permiso: `sin
+  herramientas para comparar`.
 - **Salida:** merges a `main` de lo que paso la puerta; pushes a las ramas
   entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
   informe diario.
@@ -401,8 +447,8 @@ al humano siga siendo poco.
   que no; `ESTADO.md` dice que le queda al humano y que borrar, con los
   comandos.
 - **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
-- **Sin trabajo:** mantenimiento, `ESTADO.md` e informe. Es el unico rol que
-  siempre produce algo.
+- **Sin trabajo:** mantenimiento, (8), (9), `ESTADO.md` e informe. Es el
+  unico rol que siempre produce algo.
 
 ### Product owner (franja 1)
 
@@ -572,11 +618,9 @@ al humano siga siendo poco.
 ### QA (franja 6)
 
 - **Entrada:** fichas `revisado`, de la mas vieja a la mas nueva, hasta 2
-  por turno; `.github/workflows/ci.yml`; `backend/tests/factories.py`.
+  por turno; `backend/tests/factories.py`.
 - **Trabajo:** candado `qa`, push. Ejercita el sistema, no relee el diff.
-  Por ficha: `check.sh` completo mas los pasos de `ci.yml` tal cual (`ruff
-  check backend`, `manage.py test tests` sin `.env`, `npm test`, `npm run
-  build`); `runserver` con base vacia y con base sembrada desde
+  Por ficha: `check.sh` completo; `runserver` con base vacia y con base sembrada desde
   `factories.py` (script temporal en el scratchpad; nunca `.rec` reales ni
   `.sqlite3` al repo) y `curl` a los endpoints tocados y vecinos con
   parametros borde (`until=foo`, `page=-1`, filtros vacios, partida de un
@@ -691,14 +735,21 @@ pozo del que el PO saca.
 2. Regenerar `docs/backlog/ESTADO.md` entero en la rama `backlog` a partir
    de `estado.sh`. Push rechazado: `git fetch`, `git reset --hard
    origin/claude/equipo-dev/backlog`, regenerar, push, hasta 3 veces.
-   `## Para el equipo` se copia tal cual de origin.
+   `## Para el equipo` se copia tal cual de origin. Copiar a la cabecera de
+   `ESTADO.md` la linea `rutina:` (la de `TURNOS_SIN_RASTRO` tal cual; el
+   Release agrega la parte del prompt) y la linea `RESUMEN` debajo de
+   `COLA=...`; a `## Para el humano`, si corresponde, `Rutina: <n> disparos
+   sin rastro en 48 h (<lista>); revisar el historial de la Routine
+   \`r6-replay-lab: equipo dev cada 3h\`` y `Playbook candidato: <linea
+   PLAYBOOK_CANDIDATO>`.
 3. Informe final, que tiene que entenderse solo:
 
 ```
 ## Iteracion equipo-dev <fecha UTC>
 
-**Turno:** <rol> (franja N | pedido | por cola vacia | relevo de <rol>)
-**Playbook:** <ref>@<sha corto>
+**Turno:** <rol> (motivo: <EQUIPO_MOTIVO> | reloj: <EQUIPO_RELOJ>, franja N)
+**Playbook:** <ref>@<sha corto>[ (pruebas: ok | FALLAN k)]
+**Rutina:** <n> disparos sin rastro en 48 h | todos con rastro[; prompt al dia | actualizado desde rutina.md@<sha> | sin herramientas | apagada]
 **Entregado:** <ficha NN: estado anterior -> nuevo, rama> | mergeado a main: <PR #n, ficha NN> | nada, porque <motivo>
 **Mantenimiento:** <P2/P3/P4 atendidos> | nada pendiente
 **Cola:** COLA=<n>/4 TOTAL=<n>/6 | papel: <n> propuesto, <n> disenado (<n> funcionalidad)
@@ -709,11 +760,17 @@ pozo del que el PO saca.
 **Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok) | sin pushes de codigo
 ```
 
+Lo que va entre corchetes en `**Playbook:**` y `**Rutina:**` lo escribe solo
+el Release (pasos 8 y 9 de su turno).
+
 ## Transicion
 
-- Mientras este playbook no este en `main`, `$REF` apunta a la rama donde
-  vive y `ESTADO.md` e informe lo dicen en `playbook:`. El PR del playbook
-  (#11) lo mergea el humano: toca las reglas del equipo.
+- Mientras este playbook no este en `main`, `$REF` es la segunda ref de la
+  cadena de `turno.sh` y `ESTADO.md` e informe lo dicen en `playbook:`. El
+  PR del playbook lo mergea el humano: toca las reglas del equipo. Nadie
+  empuja a esa rama sin `bash scripts/equipo-dev/pruebas.sh` en
+  `PRUEBAS_OK`. Lo diferido de la maquinaria vive en
+  `docs/backlog/MAQUINARIA.md`.
 - Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
   `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
   nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
@@ -733,7 +790,7 @@ pozo del que el PO saca.
 - Mergear fuera del turno de Release o sin pasar la puerta de merge. Aprobar
   PRs formalmente. Cerrar PRs. Empujar a `main` directo. Force-push. Rebase
   de ramas publicadas. Borrar ramas, salvo la que el Release acaba de
-  mergear.
+  mergear. Empujar a `claude/equipo-dev/playbook`.
 - Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
   Cualquier forma de overlay in-game.
