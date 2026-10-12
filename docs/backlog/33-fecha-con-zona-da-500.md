@@ -1,26 +1,67 @@
 # 33. Una fecha con zona horaria en ?since= o ?until= da 500
 
-estado: aprobado
-candado: release 2026-10-12 16:40 UTC
+estado: entregado
+candado: -
 rama: claude/equipo-dev/33-fecha-con-zona-da-500
 area: backend
 prioridad: 2
 fuente: bug reproducido en main 6ec5961 con `seed_demo`: `GET /api/overview/?since=2026-01-01T00:00Z` responde 500 (`ValueError: SQLite backend does not support timezone-aware datetimes when USE_TZ is False`; `_fecha` en `replays/views.py` acepta el offset y el ORM lo rechaza). Lo mismo con `+00:00` o `-03:00`, en `since` y en `until`, en overview, coach, operators, trends, teammates, duels, sessions, export y players/<id>.
 archivos: backend/replays/views.py, backend/tests/test_dates.py
-turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z, revisor 20261009T2101Z, qa 20261010T1801Z
+turnos: dev 20261009T0902Z, revisor 20261009T1202Z, dev 20261009T1502Z, revisor 20261009T2101Z, qa 20261010T1801Z, release 20261012T1640Z
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][backend] Una fecha con zona horaria en ?since= o ?until= ya no da 500`
+
+## Que cambia
+
+Un enlace con una fecha ISO completa en `?since=` o `?until=` (la que sale de `toISOString()` en JavaScript termina en `Z`; tambien `+00:00` o `-03:00`) ya no tumba con un 500 los endpoints que filtran por fecha: la fecha se pasa a la hora local de la app y filtra como cualquier otra. Las fechas sin zona se comportan igual que antes.
+
+## Por que esto y no otra cosa
+
+Bug encontrado por el Dev sin trabajo tomable (ficha 33): `_fecha` en `backend/replays/views.py` aceptaba el offset y el ORM lo rechazaba, porque con `USE_TZ=False` la base guarda hora local ingenua. Se convierte con `timezone.make_naive(fecha, timezone.get_default_timezone())`, que es la unica lectura que compara contra lo que hay en la base. Se descarto cambiar `USE_TZ` o como se guardan las partidas (fuera de alcance: migracion de datos para arreglar una query string). Una fecha con zona que se sale del rango de `datetime` al convertirla (`0001-01-01T00:00Z`) se ignora como cualquier fecha invalida en vez de dar `OverflowError`.
+
+## Como se probo
+
+- `./scripts/check.sh`: `Todo en verde.` (ruff, tests backend, 53 vitest, build, 17 e2e) sobre la rama con `origin/main` fusionado.
+- Tests nuevos en `FechaConZonaTests` (`backend/tests/test_dates.py`, con `TIME_ZONE=America/Santiago` fijo):
+  - `test_una_fecha_con_z_no_revienta_ningun_endpoint`: 10 endpoints x `since`/`until` con `Z`, `.000Z`, `+00:00` y `-03:00` -> 200.
+  - `test_la_fecha_con_zona_se_pasa_a_la_hora_local`: `since=...00:30Z` incluye la partida de las 21:30 de Santiago y `00:31Z` la excluye; `until` al reves.
+  - `test_un_offset_distinto_de_utc_tambien_se_convierte`: lo mismo con `-01:00`.
+  - `test_una_fecha_con_zona_en_el_limite_del_calendario_se_ignora`: `since=0001-01-01T00:00Z` y `until=9999-12-31T23:59-05:00` -> 200, sin filtro.
+- `RangoTests` (fechas sin zona) sin cambios y en verde.
+- Revision ciega en dos pasadas: un hallazgo (`OverflowError` en el borde del calendario), corregido con su test.
+- QA: 49/49 respuestas 200 en base vacia y 121/121 en base sembrada (11 endpoints x 11 parametros borde), cero `Traceback`; `since=...18:00Z` y `since=...14:00` (Santiago) devuelven el mismo JSON byte a byte. 3 mutaciones sobre `_fecha`, las 3 caen.
+
+## Riesgos y lo que no entra
+
+Sin migracion, sin `recompute`, sin parser, sin frontend. Fuera de alcance: `USE_TZ` y el formato en que se guardan las fechas de las partidas. Una cadena de 10 caracteres con zona (`2026-09-08Z`) la sigue rechazando `fromisoformat` y se ignora, como antes.
+
+## Como probarlo en 2 minutos
+
+```bash
+cd backend
+python manage.py test tests.test_dates
+python manage.py seed_demo && python manage.py runserver
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8000/api/overview/?since=2026-01-01T00:00Z'           # 200 (en main: 500)
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8000/api/sessions/?until=2026-12-31T23:59%2B00:00'    # 200
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8000/api/overview/?since=0001-01-01T00:00Z'           # 200
+```
+
+## Para el humano
+
+Nada.
+
+## Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
-Un enlace con una fecha en formato ISO completo (la que sale de
-`toISOString()` en JavaScript, o copiada de otra herramienta, termina en `Z`)
-ya no tumba la pagina con un error de servidor: la fecha se pasa a la hora
-local de la app y filtra como cualquier otra. Baja el riesgo de que un valor
-de la query string vuelva a dar 500, que `ParametrosInvalidosTests` declara
-como regla.
+Un enlace con una fecha en formato ISO completo ya no tumba la pagina con un
+error de servidor: la fecha se pasa a la hora local de la app y filtra como
+cualquier otra. Baja el riesgo de que un valor de la query string vuelva a dar
+500, que `ParametrosInvalidosTests` declara como regla.
 
 ## Criterios de aceptacion
 
@@ -34,161 +75,30 @@ como regla.
 - Cambiar `USE_TZ` o como se guardan las fechas de las partidas.
 - Tocar `days` (es la ficha 32).
 
-## Diseno
-
-(Dev, bug encontrado en el turno.) En `_fecha`, si `fromisoformat` devuelve
-un datetime con `tzinfo`, pasarlo a la zona de `settings.TIME_ZONE` con
-`django.utils.timezone.make_naive(fecha, timezone.get_default_timezone())`:
-las fechas de la base son ingenuas en hora local, asi que esa es la unica
-lectura que compara peras con peras. Tests nuevos en
-`backend/tests/test_dates.py` (no en `test_api.py`, que esta tocando la rama
-32). Sin migracion, sin recompute, sin frontend.
-
 ## Implementacion
 
-- `backend/replays/views.py` (`_fecha`): si `fromisoformat` devuelve una
-  fecha con `tzinfo` (`Z`, `+00:00`, `-03:00`), se pasa a hora local ingenua
-  con `timezone.make_naive(fecha, timezone.get_default_timezone())`. Todas las
-  fechas de la query string (`since`, `until`) pasan por `_fecha`, asi que el
-  arreglo cubre los nueve endpoints de `_filters`. Las fechas sin offset no
-  cambian.
-- `backend/tests/test_dates.py`, clase nueva `FechaConZonaTests` con
-  `@override_settings(TIME_ZONE="America/Santiago")` (no depende de la zona
-  de la maquina):
-  - `test_una_fecha_con_z_no_revienta_ningun_endpoint`: overview, coach,
-    operators, trends, teammates, duels, sessions, compare, players/<id> y
-    export x `since`/`until` con `Z`, `.000Z`, `+00:00` y `-03:00` -> 200.
-  - `test_la_fecha_con_zona_se_pasa_a_la_hora_local`: la partida del 8 a las
-    21:30 de Santiago (UTC-3) es 00:30 UTC del 9; `since=...00:30Z` la
-    incluye, `00:31Z` no; `until` igual en sentido contrario.
-  - `test_un_offset_distinto_de_utc_tambien_se_convierte`: lo mismo con `-01:00`.
-  - `RangoTests` sin cambios y en verde (criterio 4).
-- Sin el arreglo, `tests.test_dates` da 38 errores (verificado con `git stash`).
-- Revision ciega del diff (subagente con `revision.md`): aprobar, sin
-  hallazgos; confirmo por su cuenta que los tests nuevos fallan sin el arreglo.
-- `check.sh` en `Todo en verde.`: 395 tests backend (4 skipped), vitest,
-  build y 17 e2e.
-- Desvio del diseno: ninguno. Los tests van en `test_dates.py` y no en
-  `test_api.py` para no chocar con la rama 32, que tambien toca `views.py`
-  pero en otra funcion (`_filters`, linea de `days`): merge de prueba limpio.
+(Dev 20261009T0902Z; correccion del hallazgo en Dev 20261009T1502Z.) En
+`_fecha`, si `fromisoformat` devuelve una fecha con `tzinfo`, se pasa a hora
+local ingenua con `make_naive`, dentro de `try/except OverflowError` que
+devuelve `None`. Tests en `test_dates.py` (no en `test_api.py`, que tocaba la
+rama 32). Sin el arreglo, `tests.test_dates` da 40 errores. Sin desvios del
+diseno.
 
-## Revision 2026-10-09 sobre 69d569b
+## Revision
 
-Revision ciega (subagente con `revision.md`, sin leer la ficha) y
-confirmacion del lider. `check.sh` en `Todo en verde.` sobre la rama (ya
-contiene `origin/main` 6ec5961): 395 tests backend, 53 vitest, build, 17 e2e.
-
-Criterios: los cuatro tienen test con nombre (`FechaConZonaTests` x3 y
-`RangoTests` sin cambios). Los tests discriminan: sin el arreglo dan
-`ValueError`; quitando el `tzinfo` sin convertir, `since=2026-09-09T00:30Z`
-da 1 ronda y no 2. El diff solo toca los archivos de `archivos:`. Sin
-numeros nuevos en la UI, sin tildes en identificadores, sin `print`.
-
-Hallazgos:
-
-- [bug] backend/replays/views.py:45 (`_fecha`)
-  Que pasa: una fecha con zona cerca de los limites de `datetime` sigue
-  dando 500: `make_naive` lanza `OverflowError` y `_fecha` solo atrapa
-  `ValueError`.
-  Como reproducirlo: `GET /api/overview/?until=9999-12-31T23:59-05:00` (o
-  `?since=0001-01-01T00:00Z`) -> `OverflowError: date value out of range`
-  (reproducido con el test client). La misma fecha sin zona
-  (`since=0001-01-01`) responde 200, asi que el camino nuevo introduce un 500
-  que la ficha dice eliminar (y que `ParametrosInvalidosTests` declara regla;
-  es la misma familia que la ficha 32).
-  Arreglo sugerido: envolver el `make_naive` en `try/except OverflowError:
-  return None` (la fecha se ignora como una invalida) y agregar a
-  `FechaConZonaTests` un subTest con `since=0001-01-01T00:00Z` y
-  `until=9999-12-31T23:59-05:00` que espere 200.
-
-Veredicto: corregir (un hallazgo, chico y local).
-
-## Implementacion 2026-10-09 (correccion del hallazgo)
-
-- `backend/replays/views.py` (`_fecha`): el `make_naive` va dentro de
-  `try/except OverflowError` y devuelve `None`, asi que una fecha con zona
-  que se sale del rango de `datetime` al pasarla a hora local se ignora
-  como cualquier fecha invalida (200, sin filtro), igual que la misma fecha
-  sin zona.
-- `backend/tests/test_dates.py`:
-  `FechaConZonaTests.test_una_fecha_con_zona_en_el_limite_del_calendario_se_ignora`
-  con subTest `since=0001-01-01T00:00Z` y `until=9999-12-31T23:59-05:00`:
-  200 y las 4 rondas. Sin el arreglo da 2 errores (`OverflowError`,
-  verificado con `git stash`).
-- `check.sh` en `Todo en verde.`: 396 tests backend, 53 vitest, build, 17 e2e.
-- Revision ciega del diff (subagente con `revision.md`): aprobar, sin
-  hallazgos; confirmo que los subtests del limite caen sin el `try/except`.
-- Desvio del arreglo sugerido: ninguno.
-
-## Revision 2026-10-09 sobre cab041d
-
-Segunda pasada, sesion distinta de la que implemento (20261009T2101Z).
-Revision ciega (subagente con `revision.md`, sin leer la ficha) y
-confirmacion del lider. `check.sh` en `Todo en verde.` sobre la rama (ya
-contiene `origin/main` 6ec5961): 396 tests backend (4 skipped), 53 vitest,
-build, 17 e2e.
-
-Criterios: los cuatro tienen test con nombre (`FechaConZonaTests` x4 y
-`RangoTests` sin cambios). Con el `views.py` de `origin/main`,
-`tests.test_dates` da 40 errores; con el arreglo, 15 en verde. El diff solo
-toca los archivos de `archivos:`. Sin numeros nuevos en la UI, sin tildes
-en identificadores, sin `print`, sin dependencias nuevas.
-
-Hallazgo de la revision anterior (`OverflowError` en el borde del
-calendario): corregido y con subTest. Casos borde confirmados por el lider
-con el test client y `TIME_ZONE=America/Santiago` (overview, sessions,
-export): DST de Santiago (`since=2026-04-05T03:30Z`, hora repetida;
-`until=2026-09-06T04:00Z`, salto), `since=0001-01-01T00:00Z`,
-`until=9999-12-31T23:59-05:00`, `since=9999-12-31T20:00+14:00`,
-`until=2026-09-08Z` (se ignora, `fromisoformat` la rechaza), fracciones de
-9 digitos: 24 de 24 responden 200. `fin_del_dia` no aplica a fechas con
-zona (ninguna cadena de 10 caracteres con zona pasa `fromisoformat`).
-
-Fuera del diff: `?days=999999999` da 500 en `origin/main`; es la ficha 32
-(`aprobado`), no se reporta aca.
-
-Hallazgos: ninguno.
-
-Veredicto: aprobar.
+- 2026-10-09 sobre 69d569b (Revisor 20261009T1202Z): corregir. Hallazgo:
+  `?until=9999-12-31T23:59-05:00` daba `OverflowError` en `make_naive`.
+  Corregido en cab041d con subTest del limite del calendario.
+- 2026-10-09 sobre cab041d (Revisor 20261009T2101Z): aprobar, sin hallazgos.
+  24/24 casos borde (DST de Santiago, limites del calendario, `+14:00`,
+  fracciones de 9 digitos) en 200.
 
 ## QA 2026-10-10 sobre 0378eba
 
-(QA 20261010T1801Z.) La rama no tenia `origin/main` 0b547d7 (ficha 32
-mergeada, tambien toca `views.py`): merge sin conflictos (185ccbf) y todo lo
-de abajo corre sobre el resultado. `TIME_ZONE` por defecto
-(`America/Santiago`, UTC-4 en agosto); sin `.env`.
-
-- `check.sh` -> `Todo en verde.`: ruff ok, 399 tests backend (4 skipped),
-  53 vitest, build, 17 e2e. Cubre los pasos de `ci.yml` (`ruff check
-  backend`, `manage.py test tests` sin `.env`, `npm test`, `npm run build`).
-- Criterio 1 y 2, base vacia (`DATA_DIR=<tmp> migrate`, `runserver :8765`):
-  overview, coach, operators, trends, teammates, duels y sessions con
-  `since=2026-01-01T00:00Z`, `until=...%2B00:00`, `since=...-03:00`,
-  `since=foo`, `page=-1`, `until=9999-12-31T23:59-05:00`,
-  `since=0001-01-01T00:00Z` -> 49 de 49 en 200; export con `Z` -> 200.
-- Criterio 1 y 2, base sembrada (`seed_demo`: 29 partidas, 203 rondas,
-  `runserver :8766`): 11 endpoints (overview, coach, operators, trends,
-  teammates, duels, sessions, compare, players/1, export, matches) x 11
-  parametros (`Z`, `%2B00:00`, `-04:00`, `.000Z`, limites del calendario,
-  `+14:00`, `since=foo&until=`, `page=-1`, `2026-08-03Z`, hora del cambio de
-  horario) -> 121 de 121 en 200, cero `Traceback` en el log del servidor.
-- Criterio 3, la zona se convierte a hora local (partida de las 14:00 del
-  3 de agosto, hora de Santiago = 18:00Z), contando partidas en `sessions`
-  y filas de `export/?table=matches`:
-  `since=2026-08-03T14:00` 15, `since=...18:00Z` 15, `since=...14:00-04:00`
-  15, `since=...18:01Z` 14 (igual que `since=...14:01`);
-  `until=...18:00Z` 15, `until=...17:59Z` 14 (igual que `until=...13:59`).
-  `overview` con `since=...14:00` y con `since=...18:00Z` da el mismo JSON
-  byte a byte.
-- Criterio 4: `RangoTests` sin cambios en el diff y en verde.
-- Mutacion sobre `_fecha` (`tests.test_dates`, 15 tests): sin el bloque de
-  `tzinfo` -> 40 errores; `fecha.replace(tzinfo=None)` en vez de
-  `make_naive` -> 2 fallos (los de conversion a hora local); `except
-  ZeroDivisionError` en vez de `OverflowError` -> 2 errores (los del limite
-  del calendario). Restaurado: 15 OK.
-- Merge de prueba con las ramas abiertas: 33 x 34 y 33 x 35 limpios.
-
-Sin migracion, recompute, parser ni frontend: no hace falta
-`## Verificar en el PC`.
-
+(QA 20261010T1801Z.) main 0b547d7 fusionado sin conflicto (185ccbf).
+`check.sh` en verde (399 backend, 53 vitest, build, 17 e2e) y pasos de
+`ci.yml` sin `.env`. 49/49 (base vacia) y 121/121 (base sembrada) en 200; la
+`Z` se convierte a hora local (18:00Z = 14:00 Santiago incluye la partida,
+18:01Z la excluye). Mutaciones: sin el bloque de `tzinfo` 40 errores,
+`replace(tzinfo=None)` 2 fallos, `except ZeroDivisionError` 2 errores.
 Veredicto: aprobado.
