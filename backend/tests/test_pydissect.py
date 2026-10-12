@@ -246,6 +246,26 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertEqual(r.teams[1]["role"], ATTACK)
         self.assertEqual(r.teams[0]["role"], DEFENSE)
 
+    def test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes(self):
+        # contar solo atacantes empata 1 a 1 y el desempate le daria el ataque al equipo 0
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE), _jugador("x3", 0, JAGER),
+            _jugador("y1", 1, THERMITE), _jugador("y2", 1, MUTE),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
+    def test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores(self):
+        # contar solo defensores empata 1 a 1 y el desempate le daria el ataque al equipo 0
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, ASH), _jugador("y2", 1, THERMITE), _jugador("y3", 1, MUTE),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
     def test_el_jugador_con_operador_0_se_descarta(self):
         r = _lector([_jugador("a1", 0, ASH), _jugador("fantasma", 0, 0), _jugador("d1", 1, MUTE)])
         derive_team_roles(r)

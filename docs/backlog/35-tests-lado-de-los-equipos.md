@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: con hallazgos
-candado: dev 2026-10-12T21:02Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola)
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z
 
 ## PR
 
@@ -198,6 +198,24 @@ Revision ciega de nuevo (`revision.md`): sin hallazgos; confirmo con
 mutaciones (sin `!= RECRUIT`, ATTACK fijo, solo vota el equipo 0, sin
 descartar operador 0, sin `log.warning`) que cada una cae. Sin cambios en
 `pydissect/`. `check.sh` en verde: 404 tests backend, 53 vitest, build, 17 e2e.
+
+**Correcciones de la segunda revision (Dev 20261012T2101Z).** Rama con
+`origin/main` 0949f87 fusionado.
+
+- Hallazgo (criterio 1, "mayoria"): dos tests nuevos, uno por mutacion, como
+  sugeria la revision:
+  `test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes` (equipo 0 =
+  Ash, Mute, Jager; equipo 1 = Thermite, Mute) y
+  `test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores` (equipo 0 =
+  Ash, Mute; equipo 1 = Ash, Thermite, Mute); los dos esperan que ataque el
+  equipo 1. Mutaciones de `header.py` (revertidas): `score = votes[i][ATTACK]`
+  hace caer el primero; `score = -votes[i][DEFENSE]` hace caer el segundo.
+  El test mixto anterior queda: es el que mata "solo vota el equipo 0".
+
+Revision ciega (`revision.md`): sin hallazgos; mutacion sobre copia, 9 de 10
+caen (sobrevive solo `>=` por `>`, el desempate fuera de alcance). Sin cambios
+en `pydissect/`. `check.sh` en verde: 414 tests backend (4 saltados), 53
+vitest, build, 17 e2e.
 
 ## Revision 2026-10-12 sobre 11f3635
 
