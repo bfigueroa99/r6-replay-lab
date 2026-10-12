@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: con hallazgos
-candado: dev 2026-10-12 15:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z
 
 ## PR
 
@@ -182,6 +182,22 @@ Desvios del diseno:
 
 Revision ciega (`revision.md`): un hallazgo (el del test 8), corregido.
 Sin cambios en `pydissect/`. `check.sh` en verde.
+
+**Correcciones de la revision (Dev 20261012T1503Z).**
+
+- Hallazgo 1: en `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`
+  y `test_un_id_sin_nombre_se_anota_como_unknown` el operador sin lado ahora
+  esta en el equipo que defiende y se espera `DEFENSE`. La mutacion del repro
+  (`unknown[name] = ATTACK`) hace caer los dos.
+- Hallazgo 2: test nuevo `test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`
+  (equipo 0 con Ash y Mute, equipo 1 con Thermite y Ash). La mutacion del
+  repro (solo vota el equipo 0) lo hace caer.
+- Hallazgo 3: renombrado a `test_el_tear_down_vacia_el_registro_de_ids_desconocidos`.
+
+Revision ciega de nuevo (`revision.md`): sin hallazgos; confirmo con
+mutaciones (sin `!= RECRUIT`, ATTACK fijo, solo vota el equipo 0, sin
+descartar operador 0, sin `log.warning`) que cada una cae. Sin cambios en
+`pydissect/`. `check.sh` en verde: 404 tests backend, 53 vitest, build, 17 e2e.
 
 ## Revision 2026-10-12 sobre 11f3635
 
