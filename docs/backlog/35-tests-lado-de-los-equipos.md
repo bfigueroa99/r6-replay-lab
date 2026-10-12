@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: implementado
-candado: qa 2026-10-12 16:50 UTC (revision, sin revisado en cola)
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola)
 
 ## PR
 
@@ -244,6 +244,48 @@ de `archivos:`.
 
 Veredicto: **corregir**. Son dos tests a agregar o ajustar y un rename; no
 hay que tocar `pydissect/`.
+
+## Revision 2026-10-12 sobre c28750f
+
+(QA 20261012T1640Z con la especificacion del Revisor: no habia fichas
+`revisado`. Sesion distinta de las de dev y de la revision anterior.) Rama
+con main 0b547d7 incluido. `check.sh` en verde sobre c28750f: 404 tests
+backend (4 saltados), 53 vitest, build, 17 e2e. Revision ciega con
+`revision.md` sobre el diff sin `docs/backlog`; hallazgo confirmado por el
+lider con mutacion de `header.py`, revertida (arbol limpio). Las correcciones
+de la revision anterior estan: la mutacion `unknown[name] = ATTACK` y "solo
+vota el equipo 0" caen. Tambien caen: `atk_team = 0` fijo, sin `!= RECRUIT`,
+sin descartar el operador 0, sin el `return` del warning. Reglas de
+`CLAUDE.md`: bien.
+
+- [test] `backend/tests/test_pydissect.py:240`
+  (`test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`),
+  **bloqueante** (criterio 1, "mayoria de operadores"). El equipo 1 tiene solo
+  atacantes (Thermite y Ash), asi que ningun test hace pesar los votos de
+  defensa contra los de ataque. Repro: en `header.py:276-277` cambiar a
+  `score0 = votes[0][ATTACK]` y `score1 = votes[1][ATTACK]` ->
+  `python3 manage.py test tests.test_pydissect.LadoDeLosEquiposTests` sigue
+  OK. Lo mismo con `score0 = -votes[0][DEFENSE]` y
+  `score1 = -votes[1][DEFENSE]` (solo defensa). Ningun fixture solo mata las
+  dos mutaciones (es aritmeticamente imposible con un `>=`), asi que son dos:
+  - mixto 1: equipo 0 = `ASH, MUTE, JAGER`, equipo 1 = `THERMITE, MUTE` ->
+    `teams[1]["role"] == ATTACK` (verificado sobre la rama: da `Attack`; con
+    "solo ataque" empata 1 a 1 y gana el equipo 0, cae).
+  - mixto 2: equipo 0 = `ASH, MUTE`, equipo 1 = `ASH, THERMITE, MUTE` ->
+    `teams[1]["role"] == ATTACK` (verificado: da `Attack`; con "solo
+    defensa" empata -1 a -1 y gana el equipo 0, cae).
+  Se pueden poner en el test existente (reemplazando su fixture) o en dos
+  tests; el nombre actual pasa a ser cierto con cualquiera de los dos.
+
+Mutacion que sobrevive y no se reporta: `>=` por `>` en el desempate (fuera
+de alcance, ya esta en `## Para el humano`).
+
+Criterios: 2, 3, 4 y 5 cubiertos con mutacion que cae; 1 a medias (hallazgo).
+Diff dentro de `archivos:`.
+
+Veredicto: **corregir**. Un fixture (o dos tests) en `test_pydissect.py`; no
+hay que tocar `pydissect/`. Si la proxima revision solo encuentra menores,
+es la tercera pasada: `revisado`.
 
 ## QA <fecha> sobre <sha>
 
