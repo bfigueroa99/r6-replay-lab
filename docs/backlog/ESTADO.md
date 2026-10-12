@@ -1,42 +1,51 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-12 18:10 UTC por qa (sesion 20261012T1802Z)
-playbook: origin/claude/great-cray-7o9tvf@557a890
+actualizado: 2026-10-12 21:20 UTC por dev (sesion 20261012T2101Z; motivo: por estado: 1 con_hallazgos, 0 huerfanas)
+playbook: origin/claude/equipo-dev/playbook@e8d6798
+rutina: TURNOS_SIN_RASTRO=11 en 48 h (10-10T21:01Z 10-11T00:01Z 10-11T03:01Z 10-11T06:01Z 10-11T09:01Z 10-11T12:01Z 10-11T15:01Z 10-11T18:01Z 10-11T21:01Z 10-12T00:01Z 10-12T03:01Z) | 12 de 39 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | con hallazgos | 1 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
+| claude/equipo-dev/35-tests-lado-de-los-equipos | docs/backlog/35-tests-lado-de-los-equipos.md | implementado | 0 | sin PR, [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/35-tests-lado-de-los-equipos?expand=1) |
 
-COLA=1/3  TOTAL=1/5
-
-Ultimos merges a main: PR #19 (ficha 33), 6d9b07e, y PR #20 (ficha 34), 0949f87, Release del 2026-10-12 16:40 UTC (turno pedido por el humano).
-
-Aviso: los Release de las 00:01 UTC del 2026-10-11 y del 2026-10-12 no dejaron rastro (once turnos seguidos sin commits, del Revisor del 2026-10-10 21:01 al PO del 2026-10-12 03:01), asi que 33 y 34 esperaron 46 h en `aprobado`. Este Release lo pidio el humano a mano. 35: segunda revision (QA 20261012T1640Z, por no haber `revisado`) -> `con hallazgos`: falta un fixture donde los votos de defensa pesen; vuelve al Dev de las 09:01 o 15:01.
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=20 sin_merge=no pausa=no sin_rastro_48h=11
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/35-tests-lado-de-los-equipos`: `con hallazgos` (segunda revision, QA 20261012T1640Z: los tests pasan aunque el codigo ignore los votos de defensa, o los de ataque; dos fixtures mixtos de arreglo, verificados, en la ficha). Despues necesita revision y QA de sesiones distintas. Solo tests: merge de prueba limpio contra main 0949f87 (todavia no lo tiene fusionado; no hace falta para seguir). Libera `backend/tests/test_pydissect.py`.
+1. `claude/equipo-dev/35-tests-lado-de-los-equipos`: `implementado` (tercera vuelta del Dev, main 0949f87 ya fusionado). Necesita revision y QA de sesiones distintas a dev 20261010T1501Z, 20261012T1503Z y 20261012T2101Z. Solo tests: no choca con nada. Libera `backend/tests/test_pydissect.py`.
+
+## Alcance
+
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): ninguna (funcionalidad:0 otros:5): papel vacio.
+- Epicas en curso: ninguna
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 1 ramas de trabajo.
+- `ALCANCE.md`: 20 ideas libres. Ideas nuevas de este turno: ninguna
+- Investigacion: ninguna todavia
 
 ## Papel (rama backlog)
 
-| ficha | estado | prioridad | area | candado |
-|---|---|---|---|---|
-| [35. Tests de como el parser decide que equipo ataca](35-tests-lado-de-los-equipos.md) | en curso (rama 35, con hallazgos) | 3 | tests | - |
+| ficha | estado | tipo | epica | prioridad | area | candado |
+|---|---|---|---|---|---|---|
+| [35. Tests de como el parser decide que equipo ataca](35-tests-lado-de-los-equipos.md) | en curso (rama 35, implementado) | tests | - | 3 | tests | - |
 
-Papel: 0 propuesto, 0 disenado. Los espejos de 33 y 34 salieron de `backlog`: ya estan en main. Con la cola en 1/3 el Dev puede volver a reclamar, pero no hay `disenado`: el PO de las 03:01 tiene lugar para proponer.
+Papel: 0 propuesto, 0 disenado.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
+| dev | 2026-10-12 21:01 | Corrige 35 (`con hallazgos` -> `implementado`): fusiona main 0949f87 y agrega dos tests de mayoria (`test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes`, `test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores`); las mutaciones "solo ataque" y "solo defensa" de la segunda revision ahora caen. Revision ciega sin hallazgos. `check.sh` en verde (414 backend, 53 vitest, build, 17 e2e). |
 | qa | 2026-10-12 18:02 | Sin `revisado` ni `implementado` (35 esta `con hallazgos`, es del Dev). Fallback sobre main 0949f87: `check.sh` en `Todo en verde.` (403 backend, 53 vitest, build, 17 e2e). Deriva de docs: los comandos `manage.py` y `npm run` del README existen; las 11 variables de `.env.example` se leen en el backend; las etiquetas numericas de la UI sin match literal en `metricas.md` son secciones o columnas de metricas ya definidas ("Del total" es la tabla de "Mueres a los"). Sin fichas nuevas. 35: merge-tree limpio contra main; sin pedidos del humano. |
 | release | 2026-10-12 16:40 | Turno pedido por el humano. Entrega 33 y 34 (`## PR`, ficha recortada, `entregado`), abre los PRs #19 y #20 y los mergea con la puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin pedidos del humano, diff fuera de lo reservado. 33: `check.sh` en verde sobre el head exacto 3468b29 con main 0b547d7 incluido (399 backend, 53 vitest, build, 17 e2e) -> merge 6d9b07e. 34: main 6d9b07e fusionado (2fa93ca, sin conflicto), `check.sh` en verde sobre ese commit (403 backend, 53 vitest, build, 17 e2e) -> merge 0949f87. No pudo borrar las ramas mergeadas: el proxy corta el push de borrado. |
-| dev | 2026-10-12 15:03 | Corrige 35 (`con hallazgos` -> `implementado`): desconocido en el equipo que defiende (espera `DEFENSE`), test nuevo de mayoria con los dos equipos mezclados, rename del test de limpieza. Las dos mutaciones del Revisor ahora caen; revision ciega sin hallazgos. `check.sh` en verde (404 backend, 53 vitest, build, 17 e2e). Mantenimiento: las tres ramas con merge-tree limpio contra main 0b547d7; sin pedidos del humano. |
 | revisor | 2026-10-12 12:02 | Revisa 35: rama al dia con main 0b547d7, `check.sh` en verde (403 backend, 53 vitest, build, 17 e2e). Ciega con `revision.md`: 3 hallazgos, los 3 confirmados con mutacion. Bloqueantes: el test de "hereda el lado de su equipo" pasa aunque el codigo ponga ATTACK a todos, y los tests de lado pasan aunque solo vote el equipo 0. Menor: nombre del test de limpieza. Tests de arreglo verificados sobre main. 35 -> `con hallazgos`. Sin QA ni `entregado` para atender. |
 | arquitecto | 2026-10-12 06:02 | Sin papel: 0 `propuesto`, 0 `disenado`. Mantenimiento: las tres ramas contienen main 0b547d7, merge-tree limpio contra main y por pares (33/34, 33/35, 34/35); sin commits humanos ni pedidos en `## Para el equipo`; ninguna ficha pasa las 48 h de P7. Sin pushes de codigo. |
+| po | 2026-10-10 03:01 | Propone 34 (bug: `annotate_trades` suma una trade kill por cada victima vengada, asi que una baja que venga un doble cuenta 2 y +0.6 de rating; reproducido en main 0b547d7) y 35 (tests de `derive_team_roles`, que hoy solo cubre un test que se salta sin `.rec`). Fuzz de 19 endpoints con ~50 parametros borde sobre `seed_demo`: ningun 500. Reconciliacion: nada de `backlog` esta en main; el espejo de 33 esta al dia. |
+
+## Para el equipo`; ninguna ficha pasa las 48 h de P7. Sin pushes de codigo. |
 | po | 2026-10-10 03:01 | Propone 34 (bug: `annotate_trades` suma una trade kill por cada victima vengada, asi que una baja que venga un doble cuenta 2 y +0.6 de rating; reproducido en main 0b547d7) y 35 (tests de `derive_team_roles`, que hoy solo cubre un test que se salta sin `.rec`). Fuzz de 19 endpoints con ~50 parametros borde sobre `seed_demo`: ningun 500. Reconciliacion: nada de `backlog` esta en main; el espejo de 33 esta al dia. |
 
 ## Para el humano
