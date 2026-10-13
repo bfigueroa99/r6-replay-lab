@@ -29,7 +29,7 @@ export function filasPlaylists(tableros) {
 export function clave(nombre) {
   return String(nombre || '')
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/ø/gi, 'o')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')
@@ -38,12 +38,9 @@ export function clave(nombre) {
 // ranked primero porque es la playlist del rango que se ve arriba
 const ORDEN_PLAYLISTS = ['ranked', 'all', 'unranked', 'casual']
 
-/** Las playlists que trajeron operadores o mapas, en un orden fijo. */
-export function playlistsConDetalle(estadisticas) {
-  const ids = new Set([
-    ...Object.keys(estadisticas?.operadores || {}),
-    ...Object.keys(estadisticas?.mapas || {}),
-  ])
+/** Las playlists que trae alguna de las tablas (cada una es `{playlist: filas}`), en un orden fijo. */
+export function playlistsDe(...tablas) {
+  const ids = new Set(tablas.flatMap((tabla) => Object.keys(tabla || {})))
   const lugar = (id) => (ORDEN_PLAYLISTS.includes(id) ? ORDEN_PLAYLISTS.indexOf(id) : ORDEN_PLAYLISTS.length)
   return [...ids].sort((a, b) => lugar(a) - lugar(b) || a.localeCompare(b))
 }
@@ -79,62 +76,86 @@ export const cruzarMapas = (temporada, enReplays) =>
     (fila) => clave(fila.map),
   )
 
+/** Cada temporada del historial con sus replays de esa temporada (por la versión del juego). */
+export const cruzarTemporadas = (historial, enReplays) =>
+  cruzar(
+    historial,
+    enReplays,
+    (fila) => fila.temporada,
+    (fila) => fila.season,
+  )
+
 const abandonos = (n) => (n ? ` · ${n} ${n === 1 ? 'abandono' : 'abandonos'}` : '')
 
 const dia = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().join('-') : '')
 
 const cuando = (iso) => (iso ? `${dia(iso)} ${iso.slice(11, 16)}` : '')
 
+// la pagina del jugador no tiene barra de filtros: es todo lo que hay en tus replays
 const COLUMNAS_REPLAY = [
   {
     key: 'replay_rondas',
     label: 'Rondas en replays',
-    help: 'Rondas de esta persona en tus replays, con los filtros de arriba.',
+    help: 'Rondas de esta persona en todos tus replays.',
   },
   { key: 'replay_winrate', label: 'Ganadas en replays', digits: 0, suffix: '%' },
   { key: 'replay_kd', label: 'K/D en replays', digits: 2 },
 ]
 
+/** La playlist elegida; si deja de existir (otra consulta), vuelve a la primera. */
+function usePlaylist(playlists) {
+  const [elegida, setElegida] = useState(null)
+  return [playlists.includes(elegida) ? elegida : playlists[0], setElegida]
+}
+
+function SelectorPlaylist({ playlists, value, onChange }) {
+  if (playlists.length < 2) return null
+  return (
+    <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      Playlist
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {playlists.map((id) => (
+          <option key={id} value={id}>
+            {PLAYLISTS[id] || id}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+const ANTERIOR = (que) => (
+  <p className="note">
+    La consulta guardada es de antes de que la app trajera {que}. Actualízala para verlos.
+  </p>
+)
+
+const Separador = () => <div style={{ height: 18 }} />
+
 /**
- * Lo que stats.cc muestra en sus pestañas de operadores y mapas, cruzado con
- * tus replays. Vive en su propio panel porque son dos tablas largas.
+ * Lo que stats.cc muestra en sus pestañas de operadores, mapas y armas, cruzado
+ * con tus replays donde se puede. Vive en su propio panel porque son tablas largas.
  */
 function DetalleTemporada({ estadisticas, operadoresReplay, mapasReplay, nombre }) {
-  const playlists = playlistsConDetalle(estadisticas)
-  const [elegida, setElegida] = useState(null)
-  const playlist = playlists.includes(elegida) ? elegida : playlists[0]
+  const playlists = playlistsDe(estadisticas?.operadores, estadisticas?.mapas, estadisticas?.armas)
+  const [playlist, setPlaylist] = usePlaylist(playlists)
 
   const operadores = cruzarOperadores(estadisticas?.operadores?.[playlist], operadoresReplay)
   const mapas = cruzarMapas(estadisticas?.mapas?.[playlist], mapasReplay)
+  const armas = estadisticas?.armas?.[playlist] || []
 
   return (
     <Panel
-      title="Operadores y mapas en Ubisoft"
-      hint="Las pestañas de operadores y mapas de stats.cc, desde la misma API de Ubisoft: toda la temporada de esta persona. Al lado, lo que hizo en tus replays con el mismo operador o en el mismo mapa. Ganadas son rondas, no partidas."
-      right={
-        playlists.length > 1 ? (
-          <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            Playlist
-            <select value={playlist} onChange={(e) => setElegida(e.target.value)}>
-              {playlists.map((id) => (
-                <option key={id} value={id}>
-                  {PLAYLISTS[id] || id}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null
-      }
+      title="Operadores, mapas y armas en Ubisoft"
+      hint="Las pestañas de operadores, mapas y armas de stats.cc, desde la misma API de Ubisoft: toda la temporada de esta persona. Al lado, lo que hizo en tus replays con el mismo operador o en el mismo mapa; las armas no tienen cruce porque el replay no las trae. Ganadas son rondas, no partidas."
+      right={<SelectorPlaylist playlists={playlists} value={playlist} onChange={setPlaylist} />}
     >
       {!estadisticas ? (
-        <p className="note">
-          La consulta guardada es de antes de que la app trajera operadores y mapas. Actualízala para
-          verlos.
-        </p>
+        ANTERIOR('operadores y mapas')
       ) : estadisticas.error ? (
         <div className="error">{estadisticas.error}</div>
       ) : !playlist ? (
-        <p className="note">Ubisoft no devolvió operadores ni mapas para este periodo.</p>
+        <p className="note">Ubisoft no devolvió operadores, mapas ni armas para este periodo.</p>
       ) : (
         <>
           <DataTable
@@ -160,7 +181,7 @@ function DetalleTemporada({ estadisticas, operadoresReplay, mapasReplay, nombre 
             empty="Ubisoft no devolvió operadores en esta playlist."
           />
 
-          <div style={{ height: 18 }} />
+          <Separador />
 
           <DataTable
             columns={[
@@ -180,6 +201,31 @@ function DetalleTemporada({ estadisticas, operadoresReplay, mapasReplay, nombre 
             empty="Ubisoft no devolvió mapas en esta playlist."
           />
 
+          {estadisticas.armas ? (
+            <>
+              <Separador />
+              <DataTable
+                columns={[
+                  { key: 'arma', label: 'Arma', left: true },
+                  { key: 'ranura', label: 'Ranura', left: true },
+                  { key: 'tipo', label: 'Tipo', left: true, dim: true },
+                  { key: 'rondas', label: 'Rondas' },
+                  { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+                  { key: 'bajas', label: 'Bajas' },
+                  { key: 'kpr', label: 'Bajas por ronda', digits: 2 },
+                  { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
+                ]}
+                rows={armas}
+                initialSort={{ key: 'rondas', dir: 'desc' }}
+                rowKey={(row) => `${row.arma}-${row.ranura}`}
+                csvName={`armas-temporada-${nombre}`}
+                empty="Ubisoft no devolvió armas en esta playlist."
+              />
+            </>
+          ) : (
+            ANTERIOR('las armas')
+          )}
+
           {estadisticas.desde && estadisticas.hasta ? (
             <p className="note">
               Periodo según Ubisoft: del {dia(estadisticas.desde)} al {dia(estadisticas.hasta)}.
@@ -191,7 +237,63 @@ function DetalleTemporada({ estadisticas, operadoresReplay, mapasReplay, nombre 
   )
 }
 
-export default function PerfilUbisoft({ jugadorId, inicial, nombre, operadoresReplay, mapasReplay }) {
+/**
+ * La pestaña de temporadas de stats.cc, sin el rango de cada una (Ubisoft solo
+ * lo da para la actual), y cada temporada con tus replays de esa temporada.
+ */
+function HistorialTemporadas({ historial, temporadasReplay, nombre }) {
+  const playlists = playlistsDe(historial?.temporadas)
+  const [playlist, setPlaylist] = usePlaylist(playlists)
+  const filas = cruzarTemporadas(historial?.temporadas?.[playlist], temporadasReplay)
+
+  return (
+    <Panel
+      title="Temporadas en Ubisoft"
+      hint="El historial por temporada de stats.cc, desde la misma API de Ubisoft: todas sus partidas de cada temporada. Al lado, sus rondas en tus replays de esa temporada, que sale de la versión del juego de cada replay. Ubisoft no da el rango de las temporadas pasadas."
+      right={<SelectorPlaylist playlists={playlists} value={playlist} onChange={setPlaylist} />}
+    >
+      {!historial ? (
+        ANTERIOR('el historial por temporada')
+      ) : historial.error ? (
+        <div className="error">{historial.error}</div>
+      ) : (
+        <DataTable
+          columns={[
+            { key: 'temporada', label: 'Temporada', left: true },
+            { key: 'partidas', label: 'Partidas' },
+            {
+              key: 'winrate_partidas',
+              label: 'Partidas ganadas',
+              digits: 0,
+              suffix: '%',
+              help: 'Ganadas / (ganadas + perdidas). Los abandonos no entran.',
+            },
+            { key: 'rondas', label: 'Rondas' },
+            { key: 'winrate', label: 'Rondas ganadas', digits: 0, suffix: '%' },
+            { key: 'kd', label: 'K/D', digits: 2 },
+            { key: 'kpr', label: 'KPR', digits: 2 },
+            { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
+            ...COLUMNAS_REPLAY,
+          ]}
+          rows={filas}
+          initialSort={{ key: 'temporada', dir: 'desc' }}
+          rowKey={(row) => row.temporada}
+          csvName={`temporadas-${nombre}`}
+          empty="Ubisoft no devolvió temporadas jugadas."
+        />
+      )}
+    </Panel>
+  )
+}
+
+export default function PerfilUbisoft({
+  jugadorId,
+  inicial,
+  nombre,
+  operadoresReplay,
+  mapasReplay,
+  temporadasReplay,
+}) {
   const [estado, setEstado] = useState(inicial)
   const [consultando, setConsultando] = useState(false)
   const [error, setError] = useState(null)
@@ -287,12 +389,19 @@ export default function PerfilUbisoft({ jugadorId, inicial, nombre, operadoresRe
       </Panel>
 
       {datos ? (
-        <DetalleTemporada
-          estadisticas={datos.estadisticas}
-          operadoresReplay={operadoresReplay}
-          mapasReplay={mapasReplay}
-          nombre={nombre}
-        />
+        <>
+          <DetalleTemporada
+            estadisticas={datos.estadisticas}
+            operadoresReplay={operadoresReplay}
+            mapasReplay={mapasReplay}
+            nombre={nombre}
+          />
+          <HistorialTemporadas
+            historial={datos.historial}
+            temporadasReplay={temporadasReplay}
+            nombre={nombre}
+          />
+        </>
       ) : null}
     </>
   )

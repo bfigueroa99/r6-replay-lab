@@ -233,10 +233,11 @@ Cubre todas sus partidas, no solo las que jugo contigo.
 | **Nivel** | Nivel de la cuenta (`rewards/public_profile`). Si Ubisoft no lo devuelve, sale `—`. |
 | **Horas jugadas** | `PTotalTimePlayed` en horas, redondeado. Incluye todos los modos de la cuenta. |
 
-### Operadores y mapas en Ubisoft
+### Operadores, mapas y armas en Ubisoft
 
-Las tablas de las pestanas de operadores y mapas de stats.cc, desde el mismo
-endpoint de Ubisoft (`playerstats`, agregacion `operators` y `maps`). El
+Las tablas de las pestanas de operadores, mapas y armas de stats.cc, desde el
+mismo endpoint de Ubisoft (`playerstats`, agregacion `operators`, `maps` y
+`weapons`). El
 periodo lo elige Ubisoft y se muestra con las fechas que devuelve. Los
 porcentajes y ratios se recalculan desde los conteos (rondas, bajas, muertes,
 headshots) con la misma formula que los de tus replays, y no se toman los
@@ -252,11 +253,30 @@ son comparables.
 | **K/D** | bajas / muertes. Sin muertes no hay K/D. |
 | **KPR** | bajas / rondas. |
 | **HS%** | headshots / bajas. Sin bajas, vacio. |
-| **Rondas / Ganadas / K/D en replays** | Lo mismo, pero de las rondas de esa persona en tus replays (con los filtros activos): para un operador, con el mismo operador y del mismo lado; para un mapa, en ese mapa. Vacio si no hay ninguna. El cruce es por nombre sin tildes, espacios ni mayusculas: `CLUBHOUSE` de Ubisoft es `Club House` del replay. |
+| **Bajas por ronda** (armas) | bajas con esa arma / rondas en que la llevo. Es el KPR del arma. |
+| **Ranura / Tipo** (armas) | Principal o secundaria, y el tipo que manda Ubisoft (fusil, subfusil...). Las armas no tienen K/D: Ubisoft no atribuye muertes a un arma. |
+| **Rondas / Ganadas / K/D en replays** | Lo mismo, pero de las rondas de esa persona en todos tus replays (la pagina del jugador no tiene filtros): para un operador, con el mismo operador y del mismo lado; para un mapa, en ese mapa. Vacio si no hay ninguna. El cruce es por nombre sin tildes, espacios ni mayusculas: `CLUBHOUSE` de Ubisoft es `Club House` del replay. |
+
+Las armas no tienen cruce: el `.rec` no dice con que arma fue cada baja.
 
 El cruce no es una metrica nueva sobre tus replays: los numeros de la derecha
-son los de siempre (`their_operators` y `their_maps` del perfil), puestos al
-lado. Sin cuenta de Ubisoft esas columnas no se ven, y nada de lo demas cambia.
+son los de siempre (`their_operators`, `their_maps` y `their_seasons` del
+perfil), puestos al lado. Sin cuenta de Ubisoft esas columnas no se ven, y nada
+de lo demas cambia.
+
+### Temporadas en Ubisoft
+
+La pestana de temporadas de stats.cc, desde `playerstats` con vista `seasonal`.
+Una fila por temporada con partidas, de la mas nueva a la mas vieja. **No trae
+el rango de cada temporada**: Ubisoft solo lo da para la actual (arriba, en la
+temporada). Rondas, Rondas ganadas, K/D, KPR y HS% se definen igual que en la
+tabla de operadores.
+
+| Metrica | Definicion |
+|---|---|
+| **Partidas** | `matchesPlayed` de esa temporada. Una temporada sin partidas no se muestra. |
+| **Partidas ganadas** | ganadas / (ganadas + perdidas). Los abandonos cuentan como partida pero no entran al porcentaje, igual que en la temporada actual. |
+| **Rondas / Ganadas / K/D en replays** | Las rondas de esa persona en tus replays de esa temporada. La temporada de un replay es el comienzo de la version del juego que trae (`Y10S3_1` es Y10S3); una version sin ese formato no entra a ninguna. Ganadas aca son rondas. |
 
 ## Muestra minima
 

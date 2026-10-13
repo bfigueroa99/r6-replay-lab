@@ -153,6 +153,72 @@ def _mapas() -> tuple[int, dict]:
     )
 
 
+def _arma(nombre, rondas, ganadas, bajas, headshots) -> dict:
+    return {
+        "weaponName": nombre,
+        "roundsPlayed": rondas,
+        "roundsWon": ganadas,
+        "kills": bajas,
+        "headshots": headshots,
+    }
+
+
+def _armas() -> tuple[int, dict]:
+    def ranura(*tipos):
+        return {"weaponTypes": [{"weaponType": t, "weapons": armas} for t, armas in tipos]}
+
+    return _playerstats(
+        {
+            "ranked": {
+                "teamRoles": {
+                    "all": {
+                        "weaponSlots": {
+                            "primaryWeapons": ranura(
+                                ("Assault Rifle", [_arma("R4-C", 120, 66, 90, 45)]),
+                                # el segundo tipo es el que siegeapi no lee
+                                ("Submachine Gun", [_arma("MP5", 100, 52, 64, 24)]),
+                            ),
+                            "secondaryWeapons": ranura(
+                                ("Handgun", [_arma("5.7 USG", 40, 20, 0, 0), _arma("P9", 0, 0, 0, 0)])
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+
+def _temporada(anio, numero, ganadas, perdidas, abandonos=0) -> dict:
+    return {
+        "seasonYear": anio,
+        "seasonNumber": numero,
+        "matchesPlayed": ganadas + perdidas + abandonos,
+        "matchesWon": ganadas,
+        "matchesLost": perdidas,
+        "roundsPlayed": 8 * (ganadas + perdidas),
+        "roundsWon": 4 * (ganadas + perdidas),
+        "kills": 300,
+        "death": 250,
+        "headshots": 120,
+    }
+
+
+def _temporadas(*filas) -> tuple[int, dict]:
+    filas = filas or (
+        _temporada("Y9", "S4", 40, 40),
+        _temporada("Y10", "S2", 30, 20, abandonos=2),
+        _temporada("Y10", "S1", 0, 0),
+    )
+    return 200, {
+        "profileData": {
+            PID.lower(): {
+                "platforms": {"PC": {"gameModes": {"ranked": {"teamRoles": {"all": list(filas)}}}}}
+            }
+        }
+    }
+
+
 def _ubisoft_sano(**extra) -> FalsoUbisoft:
     rutas = {
         "profiles/sessions": [_login()],
@@ -163,6 +229,8 @@ def _ubisoft_sano(**extra) -> FalsoUbisoft:
         ],
         "aggregation=operators": [_operadores()],
         "aggregation=maps": [_mapas()],
+        "aggregation=weapons": [_armas()],
+        "view=seasonal": [_temporadas()],
     }
     rutas.update(extra)
     return FalsoUbisoft(**rutas)
@@ -376,7 +444,11 @@ class EstadisticasClienteTests(SimpleTestCase):
 
         sin_fecha = _playerstats({}, startDate=None, endDate=None)
         datos = self.estadisticas(
-            **{"aggregation=operators": [raro], "aggregation=maps": [sin_fecha]}
+            **{
+                "aggregation=operators": [raro],
+                "aggregation=maps": [sin_fecha],
+                "aggregation=weapons": [sin_fecha],
+            }
         )
         self.assertEqual((datos["desde"], datos["hasta"]), (None, None))
 
@@ -384,13 +456,17 @@ class EstadisticasClienteTests(SimpleTestCase):
         falso = _ubisoft_sano()
         ubisoft.perfil(self.sesion, PID, abrir=falso)
         pedidos = [p for p in falso.pedidos if "playerstats" in p.full_url]
-        self.assertEqual(len(pedidos), 2)
+        self.assertEqual(len(pedidos), 4)
         for pedido in pedidos:
             self.assertTrue(pedido.full_url.startswith("https://prod.datadev.ubisoft.com/"))
-            self.assertIn(f"/profiles/{PID.lower()}/playerstats", pedido.full_url)
             self.assertIn("platformGroup=PC", pedido.full_url)
             self.assertIn(f"spaceId={ubisoft.ESPACIO}", pedido.full_url)
             self.assertEqual(pedido.get_header("Authorization"), "Ubi_v1 t=tk-1")
+        # el periodo cuelga de /profiles/ y el historial de /users/, como en siegeapi
+        rutas = sorted(p.full_url.split("/playerstats")[0].split("/v1/")[1] for p in pedidos)
+        self.assertEqual(
+            rutas, [f"profiles/{PID.lower()}"] * 3 + [f"users/{PID.lower()}"]
+        )
 
     def test_acepta_la_respuesta_anidada_en_profile_data(self):
         """La forma del endpoint de resumenes; si Ubisoft unifica, no se rompe."""
@@ -413,14 +489,93 @@ class EstadisticasClienteTests(SimpleTestCase):
         falso = _ubisoft_sano(**{"aggregation=maps": [(404, {"httpCode": 404})]})
         datos = ubisoft.perfil(self.sesion, PID, abrir=falso)
         self.assertEqual(datos["tableros"]["ranked"]["rango"], "Oro 1")
-        self.assertIn("operadores ni mapas", datos["estadisticas"]["error"])
+        self.assertIn("operadores, mapas y armas", datos["estadisticas"]["error"])
         self.assertNotIn("operadores", {k for k in datos["estadisticas"] if k != "error"})
+        # el historial es otra ruta y llega igual
+        self.assertIn("ranked", datos["historial"]["temporadas"])
 
     def test_un_401_en_playerstats_no_se_toma_como_ticket_vencido(self):
         """`full_profiles` acaba de aceptar el ticket: loguear de nuevo no lo arregla."""
         falso = _ubisoft_sano(**{"aggregation=operators": [(401, {"httpCode": 401})]})
         datos = ubisoft.perfil(self.sesion, PID, abrir=falso)
         self.assertIn("401", datos["estadisticas"]["error"])
+
+
+class ArmasClienteTests(SimpleTestCase):
+    def setUp(self):
+        self.sesion = ubisoft.Sesion("tk-1", "ses-1", _expiracion())
+
+    def armas(self, **rutas):
+        datos = ubisoft.perfil(self.sesion, PID, abrir=_ubisoft_sano(**rutas))
+        return datos["estadisticas"]["armas"]
+
+    def test_recorre_todos_los_tipos_de_cada_ranura(self):
+        ranked = self.armas()["ranked"]
+        self.assertEqual([f["arma"] for f in ranked], ["R4-C", "MP5", "5.7 USG"])
+        self.assertEqual([f["ranura"] for f in ranked], ["Principal", "Principal", "Secundaria"])
+        self.assertEqual(ranked[1]["tipo"], "Submachine Gun")
+
+    def test_numeros_de_un_arma(self):
+        r4c = self.armas()["ranked"][0]
+        self.assertEqual(r4c["rondas"], 120)
+        self.assertEqual(r4c["winrate"], 55.0)
+        self.assertEqual(r4c["bajas"], 90)
+        self.assertEqual(r4c["kpr"], 0.75)
+        self.assertEqual(r4c["hs_pct"], 50.0)
+        # un arma no muere: no hay K/D que mostrar
+        self.assertNotIn("kd", r4c)
+
+    def test_sin_bajas_no_hay_hs_y_sin_rondas_no_hay_fila(self):
+        ranked = self.armas()["ranked"]
+        pistola = next(f for f in ranked if f["arma"] == "5.7 USG")
+        self.assertIsNone(pistola["hs_pct"])
+        self.assertNotIn("P9", [f["arma"] for f in ranked])
+
+    def test_una_forma_desconocida_no_inventa_armas(self):
+        raro = _playerstats({"ranked": {"teamRoles": {"all": [{"weaponName": "R4-C"}]}}})
+        self.assertEqual(self.armas(**{"aggregation=weapons": [raro]}), {})
+
+
+class HistorialClienteTests(SimpleTestCase):
+    def setUp(self):
+        self.sesion = ubisoft.Sesion("tk-1", "ses-1", _expiracion())
+
+    def historial(self, **rutas):
+        return ubisoft.perfil(self.sesion, PID, abrir=_ubisoft_sano(**rutas))["historial"]
+
+    def test_una_fila_por_temporada_la_mas_nueva_primero(self):
+        """Alfabeticamente Y9S4 iria antes que Y10S2."""
+        ranked = self.historial()["temporadas"]["ranked"]
+        self.assertEqual([f["temporada"] for f in ranked], ["Y10S2", "Y9S4"])
+
+    def test_numeros_de_una_temporada(self):
+        y10s2 = self.historial()["temporadas"]["ranked"][0]
+        self.assertEqual(y10s2["partidas"], 52)
+        self.assertEqual(y10s2["partidas_ganadas"], 30)
+        # los abandonos cuentan como partida pero no entran al porcentaje
+        self.assertEqual(y10s2["winrate_partidas"], 60.0)
+        self.assertEqual(y10s2["winrate"], 50.0)
+        self.assertEqual(y10s2["kd"], 1.2)
+
+    def test_una_temporada_sin_partidas_no_es_una_fila(self):
+        ranked = self.historial()["temporadas"]["ranked"]
+        self.assertNotIn("Y10S1", [f["temporada"] for f in ranked])
+
+    def test_acepta_el_codigo_con_numeros_sueltos_y_descarta_lo_raro(self):
+        respuesta = _temporadas(
+            _temporada(10, 3, 5, 5), _temporada("Y10", "Mid", 5, 5), _temporada("", "", 5, 5)
+        )
+        ranked = self.historial(**{"view=seasonal": [respuesta]})["temporadas"]["ranked"]
+        self.assertEqual([f["temporada"] for f in ranked], ["Y10S3"])
+
+    def test_si_falla_el_historial_los_operadores_llegan_igual(self):
+        falso = _ubisoft_sano(**{"view=seasonal": [(404, {"httpCode": 404})]})
+        datos = ubisoft.perfil(self.sesion, PID, abrir=falso)
+        self.assertIn("historial por temporada", datos["historial"]["error"])
+        self.assertIn("ranked", datos["estadisticas"]["operadores"])
+
+    def test_orden_de_temporadas(self):
+        self.assertGreater(ubisoft.orden_temporada("Y10S1"), ubisoft.orden_temporada("Y9S4"))
 
 
 # --------------------------------------------------------------------- Django
@@ -513,9 +668,13 @@ class PerfilJugadorTests(_ConUbisoft):
         self.assertEqual(estadisticas["desde"], "2026-06-01")
         self.assertEqual(len(estadisticas["operadores"]["ranked"]), 2)
         self.assertEqual(estadisticas["mapas"]["ranked"][0]["mapa"], "Clubhouse")
+        self.assertEqual(len(estadisticas["armas"]["ranked"]), 3)
+        historial = data["externo"]["ubisoft"]["datos"]["historial"]
+        self.assertEqual(historial["temporadas"]["ranked"][0]["temporada"], "Y10S2")
         # y al lado, lo que el panel cruza con eso
         self.assertIn("their_operators", data)
         self.assertIn("their_maps", data)
+        self.assertIn("their_seasons", data)
 
     def test_reconsultar_pisa_el_anterior(self):
         with self.con(_ubisoft_sano()):

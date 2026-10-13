@@ -55,6 +55,12 @@ OPERADORES = {"Attack": ("Zofia", "Ash", "Thermite"), "Defense": ("Mute", "Jager
 RONDAS_POR_PARTIDA = 7
 INICIO = datetime(2026, 8, 1, 20, 0)
 
+#: Las primeras partidas son de una temporada y el resto de la siguiente, con la
+#: version tal como la escribe el juego. El historial de Ubisoft se cruza por ese
+#: prefijo, y con una sola temporada el e2e no veria que el cruce las separa.
+CAMBIO_DE_TEMPORADA = 15
+VERSIONES = ("Y10S1_3", "Y10S2_4")
+
 
 def _pid(nick: str) -> str:
     """Un profileID con forma de UUID, como los reales, y siempre el mismo.
@@ -158,13 +164,14 @@ class Command(BaseCommand):
                 "nivel": 212,
                 "horas": 500,
                 "estadisticas": self._estadisticas_ubisoft(),
+                "historial": self._historial_ubisoft(yo),
             },
             consultado=datetime(2026, 9, 1, 12, 0),
         )
 
     @staticmethod
     def _estadisticas_ubisoft() -> dict:
-        """Operadores y mapas de la temporada, con la forma de `playerstats`.
+        """Operadores, mapas y armas de la temporada, con la forma de `playerstats`.
 
         Pasa por el mismo `resumir` que la respuesta real. Los operadores y Club
         House y Bank estan tambien en los replays sembrados, asi que el e2e ve el
@@ -237,7 +244,108 @@ class Command(BaseCommand):
                 },
             }
         )
-        return ubisoft.resumir(operadores, mapas)
+        armas = respuesta(
+            {
+                "ranked": {
+                    "teamRoles": {
+                        "all": {
+                            "weaponSlots": {
+                                "primaryWeapons": {
+                                    "weaponTypes": [
+                                        {
+                                            "weaponType": "Assault Rifle",
+                                            "weapons": [
+                                                {
+                                                    "weaponName": "R4-C",
+                                                    "roundsPlayed": 120,
+                                                    "roundsWon": 66,
+                                                    "kills": 90,
+                                                    "headshots": 45,
+                                                }
+                                            ],
+                                        },
+                                        {
+                                            "weaponType": "Submachine Gun",
+                                            "weapons": [
+                                                {
+                                                    "weaponName": "MP5",
+                                                    "roundsPlayed": 100,
+                                                    "roundsWon": 52,
+                                                    "kills": 64,
+                                                    "headshots": 24,
+                                                }
+                                            ],
+                                        },
+                                    ]
+                                },
+                                "secondaryWeapons": {
+                                    "weaponTypes": [
+                                        {
+                                            "weaponType": "Handgun",
+                                            "weapons": [
+                                                {
+                                                    "weaponName": "5.7 USG",
+                                                    "roundsPlayed": 40,
+                                                    "roundsWon": 20,
+                                                    "kills": 6,
+                                                    "headshots": 4,
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                },
+                            }
+                        }
+                    }
+                }
+            }
+        )
+        return ubisoft.resumir(operadores, mapas, armas)
+
+    @staticmethod
+    def _historial_ubisoft(yo: Player) -> dict:
+        """Tres temporadas con la forma del `playerstats` por temporada.
+
+        Y10S2 e Y10S1 son las de `VERSIONES`, asi que cruzan con los replays;
+        Y9S4 no tiene ninguno y tiene que verse con el cruce vacio.
+        """
+
+        def temporada(anio, numero, ganadas, perdidas, rondas, rondas_ganadas, bajas, muertes):
+            return {
+                "seasonYear": anio,
+                "seasonNumber": numero,
+                "matchesPlayed": ganadas + perdidas,
+                "matchesWon": ganadas,
+                "matchesLost": perdidas,
+                "roundsPlayed": rondas,
+                "roundsWon": rondas_ganadas,
+                "kills": bajas,
+                "death": muertes,
+                "headshots": bajas // 2,
+            }
+
+        respuesta = {
+            "profileData": {
+                yo.profile_id: {
+                    "platforms": {
+                        "PC": {
+                            "gameModes": {
+                                "ranked": {
+                                    "teamRoles": {
+                                        "all": [
+                                            temporada("Y9", "S4", 40, 40, 640, 320, 400, 400),
+                                            temporada("Y10", "S2", 30, 20, 400, 210, 300, 250),
+                                            temporada("Y10", "S1", 22, 28, 380, 180, 260, 300),
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return {"temporadas": ubisoft.temporadas(respuesta)}
 
     def _plan(self) -> dict[str, list[dict]]:
         """Las rondas de cada mapa, por separado.
@@ -268,6 +376,7 @@ class Command(BaseCommand):
                     map_slug=mapa.lower().replace(" ", "-"),
                     match_type="Ranked",
                     gamemode="Bomb",
+                    game_version=VERSIONES[numero >= CAMBIO_DE_TEMPORADA],
                     rounds_count=len(tanda),
                     my_team_index=0,
                     my_score=ganadas,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
-from replays.models import Player
+from replays.models import Match, Player
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -55,6 +55,35 @@ class PerfilTests(TestCase):
         self.assertEqual(mapas[0]["rounds"], 3)
         self.assertEqual(mapas[0]["winrate"], 100.0)
         self.assertIsNone(mapas[0]["rating"])
+
+    def test_sus_temporadas_salen_de_la_version_del_replay(self):
+        """El historial de Ubisoft no trae fechas: el cruce es por el codigo."""
+        Match.objects.filter(pk=self.match.pk).update(game_version="Y10S3_1")
+        # el perfil solo mira rondas que jugaste: cada una lleva tu fila
+        otra = make_match(map_name="Villa", index=1)
+        Match.objects.filter(pk=otra.pk).update(game_version="Y9S4")
+        rnd = make_round(otra, 0, won=True)
+        make_round_player(rnd)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0)
+        # sin formato de temporada no se adivina
+        rara = make_match(map_name="Oregon", index=2)
+        Match.objects.filter(pk=rara.pk).update(game_version="dev-build")
+        rnd = make_round(rara, 0)
+        make_round_player(rnd)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0)
+
+        temporadas = agg.player_profile(self.amigo.id)["their_seasons"]
+        self.assertEqual([t["season"] for t in temporadas], ["Y10S3", "Y9S4"])
+        self.assertEqual(temporadas[0]["rounds"], 3)
+        self.assertEqual(temporadas[0]["winrate"], 100.0)
+        self.assertEqual(temporadas[1]["rounds"], 1)
+        self.assertIsNone(temporadas[0]["rating"])
+
+    def test_temporada_de_una_version(self):
+        self.assertEqual(agg.temporada_de("Y10S3_1"), "Y10S3")
+        self.assertEqual(agg.temporada_de("Y11S3_Test"), "Y11S3")
+        self.assertIsNone(agg.temporada_de(""))
+        self.assertIsNone(agg.temporada_de(None))
 
     def test_partidas_compartidas(self):
         perfil = agg.player_profile(self.amigo.id)

@@ -103,6 +103,15 @@ describe('ordenarFilas', () => {
     expect(orden).toEqual(['Bank', 'Club House', 'Consulate', 'Villa'])
   })
 
+  it('los numeros dentro del texto se ordenan como numeros', () => {
+    const temporadas = [{ t: 'Y9S4' }, { t: 'Y10S2' }, { t: 'Y10S1' }]
+    expect(ordenarFilas(temporadas, { key: 't', dir: 'desc' }).map((f) => f.t)).toEqual([
+      'Y10S2',
+      'Y10S1',
+      'Y9S4',
+    ])
+  })
+
   it('no toca el arreglo original', () => {
     const copia = [...filas]
     ordenarFilas(filas, { key: 'winrate', dir: 'asc' })

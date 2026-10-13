@@ -1,10 +1,10 @@
-"""Cliente minimo de la API de Ubisoft: rango, MMR, operadores y mapas de un jugador.
+"""Cliente minimo de la API de Ubisoft: rango, MMR y las tablas de stats.cc.
 
 Es la misma API que leen stats.cc y R6 Tracker, sin pasar por ellos: el rango
-sale de `full_profiles` y las pestanas de operadores y mapas de stats.cc, de
-`playerstats`. No es una API publica documentada: el AppId y los endpoints
-salen de siegeapi (github.com/CNDRD/siegeapi), que los sigue temporada a
-temporada. Si Ubisoft los cambia, esto falla con un error que dice que paso;
+sale de `full_profiles`, y las pestanas de operadores, mapas, armas y
+temporadas de stats.cc, de `playerstats`. No es una API publica documentada: el
+AppId y los endpoints salen de siegeapi (github.com/CNDRD/siegeapi), que los
+sigue temporada a temporada. Si Ubisoft los cambia, esto falla con un error que dice que paso;
 nunca devuelve numeros inventados.
 
 Solo usa la libreria estandar. `abrir` se pasa como argumento para que los
@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import urllib.error
 import urllib.request
 from collections.abc import Callable
@@ -52,8 +53,16 @@ URL_ESTADISTICAS = (
     "&gameMode=all,ranked,casual,unranked&platformGroup=PC&teamRole=all,Attacker,Defender"
 )
 
+#: El historial por temporada vive en el mismo servicio pero bajo `/users/`; las
+#: temporadas no tienen ventana de fechas, cada fila es una temporada entera.
+URL_TEMPORADAS = (
+    "https://prod.datadev.ubisoft.com/v1/users/{pid}/playerstats"
+    "?spaceId={espacio}&view=seasonal&aggregation=summary"
+    "&gameMode=all,ranked,casual,unranked&platformGroup=PC&teamRole=all"
+)
+
 TIMEOUT = 15
-#: Un ticket que vence en menos de esto se descarta: la consulta son cinco
+#: Un ticket que vence en menos de esto se descarta: la consulta son ocho
 #: requests y no conviene que el ultimo llegue con el ticket ya muerto.
 MARGEN = timedelta(minutes=5)
 
@@ -415,6 +424,109 @@ def mapas(data: dict) -> dict[str, list[dict]]:
     return salida
 
 
+#: Las dos ranuras, con el nombre que ve el usuario.
+RANURAS = {"primaryWeapons": "Principal", "secondaryWeapons": "Secundaria"}
+
+
+def _numeros_arma(stats: dict) -> dict:
+    """Como `_numeros`, pero un arma no tiene muertes: no hay K/D que calcular."""
+    rondas = _entero(stats.get("roundsPlayed"))
+    ganadas = _entero(stats.get("roundsWon"))
+    bajas = _entero(stats.get("kills"))
+    headshots = _entero(stats.get("headshots"))
+    return {
+        "rondas": rondas,
+        "winrate": round(100 * ganadas / rondas, 1) if rondas else None,
+        "bajas": bajas,
+        "kpr": round(bajas / rondas, 2) if rondas else None,
+        "hs_pct": round(100 * headshots / bajas, 1) if bajas else None,
+    }
+
+
+def _lista(contenedor, clave: str) -> list[dict]:
+    valor = contenedor.get(clave) if isinstance(contenedor, dict) else None
+    return [fila for fila in valor if isinstance(fila, dict)] if isinstance(valor, list) else []
+
+
+def _filas_armas(ranuras: dict) -> list[dict]:
+    filas = []
+    for clave, ranura in RANURAS.items():
+        # siegeapi lee solo el primer tipo de cada ranura; cada tipo (fusil,
+        # subfusil, escopeta...) es una lista aparte, asi que se recorren todos
+        for tipo in _lista(ranuras.get(clave), "weaponTypes"):
+            for stats in _lista(tipo, "weapons"):
+                nombre = str(stats.get("weaponName") or "").strip()
+                if nombre and _entero(stats.get("roundsPlayed")) > 0:
+                    filas.append(
+                        {
+                            "arma": nombre,
+                            "ranura": ranura,
+                            "tipo": str(tipo.get("weaponType") or "").strip() or None,
+                            **_numeros_arma(stats),
+                        }
+                    )
+    return filas
+
+
+def armas(data: dict) -> dict[str, list[dict]]:
+    """Una lista por playlist con cada arma usada, de los dos lados juntos."""
+    salida: dict[str, list[dict]] = {}
+    for modo, contenido in _modos(data).items():
+        roles = contenido.get("teamRoles") if isinstance(contenido, dict) else None
+        todos = roles.get("all") if isinstance(roles, dict) else None
+        ranuras = todos.get("weaponSlots") if isinstance(todos, dict) else None
+        filas = _filas_armas(ranuras) if isinstance(ranuras, dict) else []
+        if filas:
+            salida[modo] = filas
+    return salida
+
+
+_CODIGO = re.compile(r"Y\d+S\d+")
+
+
+def _codigo(stats: dict) -> str | None:
+    """`seasonYear` "Y9" + `seasonNumber` "S2" -> Y9S2; con numeros sueltos tambien."""
+    anio = str(stats.get("seasonYear") or "").strip().upper()
+    numero = str(stats.get("seasonNumber") or "").strip().upper()
+    anio = f"Y{anio}" if anio.isdigit() else anio
+    numero = f"S{numero}" if numero.isdigit() else numero
+    codigo = anio + numero
+    return codigo if _CODIGO.fullmatch(codigo) else None
+
+
+def orden_temporada(codigo: str) -> tuple[int, int]:
+    """Y10S1 va despues de Y9S4: el orden alfabetico las pone al reves."""
+    anio, _, numero = codigo[1:].partition("S")
+    return int(anio), int(numero)
+
+
+def temporadas(data: dict) -> dict[str, list[dict]]:
+    """Una lista por playlist con cada temporada jugada, la mas nueva primero."""
+    salida: dict[str, list[dict]] = {}
+    for modo, contenido in _modos(data).items():
+        filas = {}
+        for stats in _roles(contenido).get("all", []):
+            codigo = _codigo(stats)
+            if not codigo or _entero(stats.get("matchesPlayed")) <= 0:
+                continue
+            ganadas = _entero(stats.get("matchesWon"))
+            perdidas = _entero(stats.get("matchesLost"))
+            filas[codigo] = {
+                "temporada": codigo,
+                **_numeros(stats),
+                "partidas_ganadas": ganadas,
+                "partidas_perdidas": perdidas,
+                "winrate_partidas": (
+                    round(100 * ganadas / (ganadas + perdidas), 1) if ganadas + perdidas else None
+                ),
+            }
+        if filas:
+            salida[modo] = sorted(
+                filas.values(), key=lambda f: orden_temporada(f["temporada"]), reverse=True
+            )
+    return salida
+
+
 def _fecha(valor) -> str | None:
     """20260601 -> 2026-06-01; cualquier otra cosa no se adivina."""
     texto = str(valor or "")
@@ -432,47 +544,56 @@ def _periodo(*respuestas: dict) -> tuple[str | None, str | None]:
     return None, None
 
 
-def resumir(de_operadores: dict, de_mapas: dict) -> dict:
-    """Lo que se guarda a partir de las dos respuestas de `playerstats`."""
-    desde, hasta = _periodo(de_operadores, de_mapas)
+def resumir(de_operadores: dict, de_mapas: dict, de_armas: dict) -> dict:
+    """Lo que se guarda a partir de las tres respuestas de `playerstats` del periodo."""
+    desde, hasta = _periodo(de_operadores, de_mapas, de_armas)
     return {
         "desde": desde,
         "hasta": hasta,
         "operadores": operadores(de_operadores),
         "mapas": mapas(de_mapas),
+        "armas": armas(de_armas),
     }
 
 
 def estadisticas(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> dict:
-    """Lo que stats.cc muestra en sus pestanas de operadores y mapas."""
+    """Lo que stats.cc muestra en sus pestanas de operadores, mapas y armas."""
     pid = quote(profile_id.strip().lower(), safe="")
 
     def pedir(agregacion: str) -> dict:
         url = URL_ESTADISTICAS.format(pid=pid, espacio=ESPACIO, agregacion=agregacion)
         return _get(sesion, url, abrir)
 
-    return resumir(pedir("operators"), pedir("maps"))
+    return resumir(pedir("operators"), pedir("maps"), pedir("weapons"))
 
 
-def _estadisticas_o_aviso(sesion: Sesion, profile_id: str, abrir: Abridor) -> dict:
-    """Operadores y mapas, o el motivo por el que no vinieron.
+def historial(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> dict:
+    """Lo que stats.cc muestra en su pestana de temporadas, sin el rango de cada una."""
+    pid = quote(profile_id.strip().lower(), safe="")
+    data = _get(sesion, URL_TEMPORADAS.format(pid=pid, espacio=ESPACIO), abrir)
+    return {"temporadas": temporadas(data)}
+
+
+def _seccion(consulta: Callable[[], dict], nombre: str) -> dict:
+    """Una seccion de `playerstats`, o el motivo por el que no vino.
 
     No tumba el perfil: el rango ya llego, y perderlo porque fallo un endpoint
     distinto seria peor que mostrarlo sin tablas. Tampoco se calla, como el
-    nivel: una tabla que no aparece sin explicacion parece un bug.
+    nivel: una tabla que no aparece sin explicacion parece un bug. Cada seccion
+    falla por su cuenta porque el historial vive en otra ruta del servicio.
     Un 401 aca no es un ticket vencido (`full_profiles` acaba de aceptarlo), asi
     que tampoco vale la pena loguear de nuevo.
     """
     try:
-        return estadisticas(sesion, profile_id, abrir=abrir)
+        return consulta()
     except SesionVencida:
-        return {"error": "Ubisoft rechazó la consulta de operadores y mapas (HTTP 401)."}
+        return {"error": f"Ubisoft rechazó la consulta de {nombre} (HTTP 401)."}
     except ErrorUbisoft as exc:
-        return {"error": f"Ubisoft no devolvió operadores ni mapas: {exc}"}
+        return {"error": f"Ubisoft no devolvió {nombre}: {exc}"}
 
 
 def perfil(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> dict:
-    """Temporada actual: rango, MMR, K/D, nivel, horas, operadores y mapas."""
+    """Rango y temporada actual, nivel, horas y las tablas de stats.cc."""
     pid = quote(profile_id.strip().lower(), safe="")
     completo = _get(sesion, URL_PERFILES.format(espacio=ESPACIO, pid=pid), abrir)
     por_tablero = tableros(completo)
@@ -491,5 +612,10 @@ def perfil(sesion: Sesion, profile_id: str, *, abrir: Abridor = abrir_red) -> di
         "tableros": por_tablero,
         "nivel": nivel,
         "horas": horas,
-        "estadisticas": _estadisticas_o_aviso(sesion, profile_id, abrir),
+        "estadisticas": _seccion(
+            lambda: estadisticas(sesion, profile_id, abrir=abrir), "operadores, mapas y armas"
+        ),
+        "historial": _seccion(
+            lambda: historial(sesion, profile_id, abrir=abrir), "el historial por temporada"
+        ),
     }

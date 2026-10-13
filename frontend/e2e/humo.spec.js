@@ -98,9 +98,9 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
   await expect(panel.getByRole('button')).toHaveCount(0)
 
-  // operadores y mapas de la temporada, cada uno con su cruce contra los replays
+  // operadores, mapas y armas de la temporada; los dos primeros con su cruce contra los replays
   const detalle = page.locator('section.panel', {
-    has: page.getByRole('heading', { name: 'Operadores y mapas en Ubisoft' }),
+    has: page.getByRole('heading', { name: 'Operadores, mapas y armas en Ubisoft' }),
   })
   await expect(detalle.locator('tr', { hasText: 'Ash' }).locator('td')).toHaveText([
     'Ash', 'Ataque', '120', '55%', '1.20', '0.80', '50%', '39', '100%', '0.51',
@@ -108,6 +108,10 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   // CLUBHOUSE en Ubisoft es Club House en el replay
   await expect(detalle.locator('tr', { hasText: 'Clubhouse' }).locator('td')).toHaveText([
     'Clubhouse', '12', '90', '44%', '33%', '56%', '0.93', '70', '57%', '0.35',
+  ])
+  // las armas no tienen cruce: el replay no las trae
+  await expect(detalle.locator('tr', { hasText: 'R4-C' }).locator('td')).toHaveText([
+    'R4-C', 'Principal', 'Assault Rifle', '120', '55%', '90', '0.75', '50%',
   ])
   await expect(detalle).toContainText('Periodo según Ubisoft: del 01-06-2026 al 01-09-2026.')
 
@@ -117,6 +121,19 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
     'Kafe Dostoyevsky', '4', '30', '40%', '—', '—', '0.80', '—', '—', '—',
   ])
   await expect(detalle.locator('tr', { hasText: 'Thermite' })).toBeVisible()
+
+  // historial por temporada, cruzado por la version del juego de cada replay;
+  // ordenado por numero y no por texto, que pondria Y9S4 primero
+  const temporadas = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Temporadas en Ubisoft' }),
+  })
+  await expect(temporadas.locator('tbody tr').first().locator('td')).toHaveText([
+    'Y10S2', '50', '60%', '400', '53%', '1.20', '0.75', '50%', '98', '57%', '0.77',
+  ])
+  await expect(temporadas.locator('tbody tr').nth(1)).toContainText('Y10S1')
+  await expect(temporadas.locator('tbody tr').last().locator('td')).toHaveText([
+    'Y9S4', '80', '50%', '640', '50%', '1.00', '0.62', '50%', '—', '—', '—',
+  ])
 
   expect(afuera, 'la app pidio algo fuera de localhost').toEqual([])
   expect(errores).toEqual([])

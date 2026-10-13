@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -1152,9 +1153,41 @@ def player_profile(player_id: int, **filters) -> dict | None:
                 baseline=baseline,
             )
         ],
+        "their_seasons": _por_temporada(suyas, baseline),
         "duels": duelos,
         "matches": _partidas_compartidas(suyas),
     }
+
+
+_TEMPORADA = re.compile(r"Y\d+S\d+")
+
+
+def temporada_de(version: str | None) -> str | None:
+    """`Y10S3_1` -> `Y10S3`: la version que trae el replay empieza por la temporada."""
+    encontrada = _TEMPORADA.match(version or "")
+    return encontrada.group(0) if encontrada else None
+
+
+def _por_temporada(suyas: QuerySet[RoundPlayer], baseline: float) -> list[dict]:
+    """Sus rondas por temporada, para cruzar con el historial de Ubisoft.
+
+    El historial de Ubisoft no trae fechas, solo el codigo de cada temporada,
+    y ese mismo codigo es el comienzo de la version del juego de cada replay:
+    no hace falta mantener un calendario de temporadas. Una version sin ese
+    formato no se adivina y queda fuera.
+    """
+    grupos: dict[str, list[dict]] = {}
+    for fila in suyas.values("round__match__game_version").annotate(**AGGREGATES):
+        codigo = temporada_de(fila["round__match__game_version"])
+        if codigo:
+            grupos.setdefault(codigo, []).append(fila)
+    salida = []
+    for codigo, filas in grupos.items():
+        fila = _sin_rating(_fold(filas, baseline))
+        fila["season"] = codigo
+        salida.append(fila)
+    return sorted(salida, key=lambda f: [int(n) for n in re.findall(r"\d+", f["season"])],
+                  reverse=True)
 
 
 def _partidas_compartidas(suyas: QuerySet[RoundPlayer]) -> list[dict]:

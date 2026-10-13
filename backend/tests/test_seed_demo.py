@@ -110,3 +110,14 @@ class FormaTests(TestCase):
             [m["mapa"] for m in estadisticas["mapas"]["ranked"]], ["Clubhouse", "Bank"]
         )
         self.assertEqual((estadisticas["desde"], estadisticas["hasta"]), ("2026-06-01", "2026-09-01"))
+        self.assertEqual(
+            [a["arma"] for a in estadisticas["armas"]["ranked"]], ["R4-C", "MP5", "5.7 USG"]
+        )
+
+    def test_el_historial_guardado_cruza_con_las_versiones_de_los_replays(self):
+        """Dos temporadas con replays y una sin, que el e2e afirma con el cruce vacio."""
+        perfil = PerfilUbisoft.objects.get(player__is_me=True)
+        temporadas = [t["temporada"] for t in perfil.datos["historial"]["temporadas"]["ranked"]]
+        self.assertEqual(temporadas, ["Y10S2", "Y10S1", "Y9S4"])
+        versiones = set(Match.objects.values_list("game_version", flat=True))
+        self.assertEqual(versiones, {"Y10S1_3", "Y10S2_4"})

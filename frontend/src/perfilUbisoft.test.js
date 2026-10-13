@@ -6,8 +6,9 @@ import {
   clave,
   cruzarMapas,
   cruzarOperadores,
+  cruzarTemporadas,
   filasPlaylists,
-  playlistsConDetalle,
+  playlistsDe,
 } from './components/PerfilUbisoft.jsx'
 
 describe('filasPlaylists', () => {
@@ -50,18 +51,19 @@ describe('clave', () => {
   })
 })
 
-describe('playlistsConDetalle', () => {
-  it('pone ranked primero y junta operadores con mapas', () => {
-    const playlists = playlistsConDetalle({
-      operadores: { casual: [{}], all: [{}] },
-      mapas: { ranked: [{}], arcade_nuevo: [{}] },
-    })
+describe('playlistsDe', () => {
+  it('pone ranked primero y junta las de todas las tablas', () => {
+    const playlists = playlistsDe(
+      { casual: [{}], all: [{}] },
+      { ranked: [{}], arcade_nuevo: [{}] },
+      { ranked: [{}] },
+    )
     expect(playlists).toEqual(['ranked', 'all', 'casual', 'arcade_nuevo'])
   })
 
   it('una consulta vieja o con error no tiene playlists', () => {
-    expect(playlistsConDetalle(undefined)).toEqual([])
-    expect(playlistsConDetalle({ error: 'boom' })).toEqual([])
+    expect(playlistsDe(undefined, undefined)).toEqual([])
+    expect(playlistsDe()).toEqual([])
   })
 })
 
@@ -106,5 +108,20 @@ describe('cruzarMapas', () => {
       [{ map: 'Club House', rounds: 70, winrate: 57.1, kd: 0.35 }],
     )
     expect(filas[0]).toMatchObject({ replay_rondas: 70, replay_winrate: 57.1, replay_kd: 0.35 })
+  })
+})
+
+describe('cruzarTemporadas', () => {
+  it('cruza cada temporada con los replays de la misma', () => {
+    const filas = cruzarTemporadas(
+      [
+        { temporada: 'Y10S2', partidas: 50 },
+        { temporada: 'Y9S4', partidas: 80 },
+      ],
+      [{ season: 'Y10S2', rounds: 98, winrate: 57.1, kd: 0.77 }],
+    )
+    expect(filas[0]).toMatchObject({ replay_rondas: 98, replay_winrate: 57.1, replay_kd: 0.77 })
+    // una temporada sin replays no se rellena con la de al lado
+    expect(filas[1]).toMatchObject({ replay_rondas: null, replay_kd: null })
   })
 })

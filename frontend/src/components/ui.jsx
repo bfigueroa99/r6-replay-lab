@@ -144,9 +144,9 @@ export function ordenarFilas(rows, sort) {
     if (aNull) return 1
     if (bNull) return -1
     if (typeof av === 'string' || typeof bv === 'string') {
-      return sort.dir === 'asc'
-        ? String(av).localeCompare(String(bv))
-        : String(bv).localeCompare(String(av))
+      // numeric: Y10S1 va despues de Y9S4, y "Stadium 2020" no queda antes de "Stadium 3"
+      const [x, y] = sort.dir === 'asc' ? [av, bv] : [bv, av]
+      return String(x).localeCompare(String(y), undefined, { numeric: true })
     }
     return sort.dir === 'asc' ? av - bv : bv - av
   })

@@ -196,6 +196,7 @@ export default function Jugador() {
         nombre={player.username}
         operadoresReplay={data.their_operators}
         mapasReplay={data.their_maps}
+        temporadasReplay={data.their_seasons}
       />
 
       <Panel title="Partidas compartidas">

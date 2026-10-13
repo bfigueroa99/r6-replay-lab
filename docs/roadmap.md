@@ -34,8 +34,9 @@ Dos familias distintas, y solo una es comparable:
 historial de temporadas, leaderboards, rango de los rivales del lobby. Nada de
 eso se puede replicar leyendo replays. Desde el #29 el perfil de cada jugador
 enlaza a los dos y trae rango, MMR y K/D de la temporada actual de la misma API
-de Ubisoft, y desde el #30 sus tablas de operadores y mapas, cruzadas con tus
-replays; pero el objetivo sigue siendo lo que solo sale de tus replays. Lo
+de Ubisoft, y desde el #30 y el #31 las tablas de operadores, mapas, armas y
+temporadas de stats.cc, cruzadas con tus replays; pero el objetivo sigue siendo
+lo que solo sale de tus replays. Lo
 que si aplica de ellos: **comparacion con companeros de escuadra** ("con quien deberias
 jugar mas"), ya implementado, y el breakdown por operador / mapa / modo, que ya
 existe.
@@ -664,6 +665,49 @@ Lo que no entra:
   `profileData.<id>` del endpoint de resumenes. Se asume, como siegeapi, que en
   PC el userId que pide `playerstats` es el mismo profileID del replay.
 
+### 31. Armas y temporadas de stats.cc; el cruce por temporada [x]
+
+Sigue al #30 ("continua"): las dos pestanas de stats.cc que habian quedado
+fuera, desde el mismo `playerstats` y dentro del mismo boton.
+
+Hecho:
+
+- **Armas**: tercera tabla del panel, que pasa a llamarse **Operadores, mapas y
+  armas en Ubisoft**. Rondas, ganadas, bajas, bajas por ronda y HS% por arma,
+  con ranura y tipo. siegeapi lee solo el primer tipo de cada ranura; aca se
+  recorren todos, con test. Sin cruce: el `.rec` no trae armas.
+- **Temporadas**: panel **Temporadas en Ubisoft** (`view=seasonal`), una fila por
+  temporada jugada, cruzada con las rondas de esa persona en tus replays de esa
+  temporada (`their_seasons` en el perfil).
+- **El cruce por temporada no necesita calendario.** El historial de Ubisoft no
+  trae fechas, solo el codigo (`Y10S2`), y la version del juego que guarda cada
+  replay empieza por ese mismo codigo (`Y10S2_4`). Una version sin ese formato
+  no se adivina. `seed_demo` reparte sus partidas en dos temporadas para que el
+  e2e vea el cruce separarlas, y deja una tercera sin replays.
+- **Cada seccion falla por su cuenta.** El historial cuelga de `/v1/users/` y el
+  periodo de `/v1/profiles/`; si uno cae, el otro y el rango llegan igual.
+- **Las tablas ordenan texto con numeros como numeros** (`ordenarFilas` con
+  `numeric`): alfabeticamente Y9S4 iba antes que Y10S2. Vale para todas las
+  tablas de la app.
+- De paso, dos arreglos del #30: la ayuda de las columnas "en replays" decia
+  "con los filtros de arriba" y la pagina del jugador no tiene filtros; y el
+  regex de tildes de `clave()` estaba escrito con los caracteres combinantes
+  invisibles en vez de `\u0300-\u036f`.
+
+13 tests de backend, 2 de vitest y el e2e del perfil afirma armas y temporadas
+fila por fila, con el orden.
+
+Lo que no entra:
+
+- **Tendencias** (`aggregation=movingpoint`). siegeapi guarda la serie como un
+  dict sin decir que son sus claves (fechas o posiciones); dibujar un grafico
+  sobre un eje adivinado seria inventar numeros. Hace falta ver una respuesta
+  real primero.
+- **El rango de cada temporada pasada**: Ubisoft no lo expone desde Ranked 2.0.
+- **No se probo contra la API real**, igual que #29 y #30. La forma del historial
+  sale de `load_summaries` de siegeapi (`profileData.<id>.platforms.PC...` con
+  `seasonYear` y `seasonNumber`); la de armas, de `Weapons`.
+
 ## Ideas descartadas
 
 | Idea | Por que no |
@@ -671,7 +715,7 @@ Lo que no entra:
 | Overlay in-game | No-goal del proyecto. |
 | Heatmap de posiciones sobre el minimapa | El `.rec` no trae coordenadas. |
 | Stats de armas, precision, dano | No estan en el formato. |
-| Historial de temporadas viejas | `full_profiles` solo trae la actual; el #29 cubre esa. |
+| Rango de temporadas viejas | `full_profiles` solo trae la actual; el #31 trae el resto del historial sin rango. |
 | Scouting de rivales que no estan en tus partidas | El perfil existe para quien aparece en tus replays. |
 | Scraping de stats.cc / R6 Tracker | Cloudflare los cierra a clientes que no son navegador; ver #29. |
 | Workspaces de equipo, scrims compartidos | Es una app local y de un jugador. |

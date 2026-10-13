@@ -48,10 +48,10 @@ tu nombre en la cabecera) enlaza a su pagina en [stats.cc](https://stats.cc/sieg
 y [R6 Tracker](https://r6.tracker.network/) con el profileID que trae el replay.
 Si pones una cuenta de Ubisoft en el `.env`, un boton trae de la API de Ubisoft
 su rango, MMR, K/D y partidas ganadas de la temporada actual, nivel y horas
-jugadas, y las tablas de operadores y mapas de la temporada que stats.cc muestra
-en sus pestanas: lo mismo que muestran esos sitios, sin pasar por ellos. Cada
-operador y cada mapa viene cruzado con lo que esa persona hizo en tus replays,
-para ver si contigo rinde como en el resto de su temporada. Es la unica parte de
+jugadas, y las tablas que stats.cc muestra en sus pestanas de operadores, mapas,
+armas y temporadas: lo mismo que muestran esos sitios, sin pasar por ellos. Cada
+operador, mapa y temporada viene cruzado con lo que esa persona hizo en tus
+replays, para ver si contigo rinde como en el resto de su historial. Es la unica parte de
 la app que sale a internet, y solo cuando aprietas el boton.
 
 **Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
@@ -298,8 +298,8 @@ sacan ellos.
 
 La API de Ubisoft no es publica ni documentada. Los endpoints son los que
 mantiene [siegeapi](https://github.com/CNDRD/siegeapi): `full_profiles` para el
-rango y `playerstats` (el que alimenta las pestanas de operadores y mapas de
-stats.cc) para las tablas. Si Ubisoft los cambia, el panel muestra el error en
+rango y `playerstats` (el que alimenta las pestanas de operadores, mapas, armas y
+temporadas de stats.cc) para las tablas. Si Ubisoft los cambia, el panel muestra el error en
 vez de numeros viejos, y si solo falla `playerstats` el rango llega igual.
 Ubisoft bloquea la IP por un rato si se loguea muy seguido, por eso la app
 reusa el ticket hasta que vence.
@@ -379,7 +379,7 @@ backend/
     overrides.py        etiquetas para IDs de temporadas nuevas
   externo/              lo que sale a la red (independiente de Django)
     enlaces.py          URLs del perfil en stats.cc y R6 Tracker
-    ubisoft.py          cliente de la API de Ubisoft: login, rango, operadores, mapas
+    ubisoft.py          cliente de la API de Ubisoft: login, rango, tablas de stats.cc
   replays/
     models.py           Match / Round / RoundPlayer / Event / Player
     ingest.py           parseo -> base de datos, idempotente
