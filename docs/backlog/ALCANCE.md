@@ -26,7 +26,8 @@ Como se lee:
 - El humano reordena las filas o pone `no` desde la web. Lo que esta mas
   arriba dentro de una tabla se propone antes.
 
-Semilla del 2026-10-10, verificada contra `main` 0b547d7.
+Semilla del 2026-10-10, verificada contra `main` 0b547d7. Reconciliado por el PO
+el 2026-10-13 contra `main` e5bad5b (PR #12 mergeado: G4, G5 e I2 en main).
 
 ## Epicas
 
@@ -42,9 +43,10 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
-| B1 | Primera mitad, segunda mitad y prorroga | Ver si arrancar en ataque o en defensa te cambia la partida, y como rindes en prorroga | `Round.number`, `overtime_number` (`models.py:89`, guardado y sin exponer), `my_side` | S | idea |
+| B1 | Primera mitad, segunda mitad y prorroga | Ver si arrancar en ataque o en defensa te cambia la partida, y como rindes en prorroga | `Round.number`, `overtime_number` (`models.py:89`, guardado y sin exponer), `my_side` | S | ficha 36 |
 | B2 | Rondas bajo presion | Tu rendimiento en match point, yendo abajo y yendo arriba | `score_before` / `score_after` (`models.py:98-99`) | M | idea |
 | B3 | Metricas por tercios de la ronda segun el reloj | Si te va peor al principio, al medio o al final de la ronda, mas alla de cuando mueres | reloj de los eventos, `death_clock`, `death_elapsed`; candidato #23 de `mercado/2026-09-16`. Nunca anclado al plant | M | idea |
+| B4 | Inercia entre rondas | Tu winrate de ronda despues de ganar la anterior contra despues de perderla: si una ronda perdida te arrastra a la siguiente | `Round.my_team_won` de la ronda `number - 1` de la misma partida (`models.py:94`); fila nueva en `docs/metricas.md`, con banda de ruido como el #10 | S | idea |
 
 ### escuadra: el equipo con el que juegas
 
@@ -58,7 +60,7 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
-| D1 | Rivales repetidos | Lista de los que te tocaron en 2 o mas partidas, con tu record contra cada uno; el detalle ya esta en la pagina de jugador | filas `RoundPlayer` del equipo rival por `profileID`. Solo gente de tus replays: no es scouting | S | idea |
+| D1 | Rivales repetidos | Lista de los que te tocaron en 2 o mas partidas, con tu record contra cada uno; el detalle ya esta en la pagina de jugador | filas `RoundPlayer` del equipo rival por `profileID`. Solo gente de tus replays: no es scouting | S | ficha 37 |
 | D2 | Meta rival por mapa y sitio | Que operadores te ponen enfrente en cada mapa y como te va contra cada uno | extiende `rounds_vs_operator` (`aggregates.py:771`) con mapa y sitio; muestra chica, va con banda de ruido como el #10 | M | idea |
 | D3 | Abandonos | Partidas con alguien que se fue, y tu winrate en 5v4 y 4v5 | eventos `PLAYER_LEAVE` (`constants.py:294`), que hoy solo cuentan como muerte (`stats.py:126`). Verificar que el evento sigue saliendo en temporadas nuevas | S | idea |
 
@@ -68,6 +70,7 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 |---|---|---|---|---|---|
 | E1 | Curva de aprendizaje por operador | Tu rating en las primeras N rondas con un operador contra las siguientes: si practicarlo rinde | `RoundPlayer` por operador ordenado por fecha, como `trend_by_match`; fila nueva en `docs/metricas.md` | M | idea |
 | E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
+| E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | idea |
 
 ### revision-de-rondas: revisar rondas
 
@@ -84,8 +87,8 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 | G1 | Calidad de datos | Ver las partidas con avisos del parser o leidas con una version vieja, y recalcularlas sin abrir una consola | `Match.warnings` (`models.py:69`, hoy solo por partida), `Match.parser_version` (`models.py:68`, sin exponer), `recompute.py` | M | idea |
 | G2 | Excluir una partida de los agregados | Sacar una custom o una partida rara de tus numeros sin borrarla, y volver a meterla | campo nuevo + migracion + POST; reversible por diseno (nunca borra) | M | decision (POST nuevo: ver Para el humano) |
 | G3 | Unir jugadores y alias desde Datos | Juntar dos perfiles que son la misma persona | alias de `Player`, `retag.py`. Reescribe datos: disenar reversible (tabla de equivalencias) o va a P10 | M | idea |
-| G4 | Boton de backup en Datos | Respaldar la base desde la app (deuda del #16) | `replays/backup.py` + POST | S | PR #12 |
-| G5 | Carpeta de replays desde la UI | Fijar `REPLAY_DIR` sin editar un `.env` (deuda del #19 y #20) | `config/replay_dir.py` + POST | S | PR #12 |
+| G4 | Boton de backup en Datos | Respaldar la base desde la app (deuda del #16) | `replays/backup.py` + POST | S | en main |
+| G5 | Carpeta de replays desde la UI | Fijar `REPLAY_DIR` sin editar un `.env` (deuda del #19 y #20) | `config/replay_dir.py` + POST | S | en main |
 
 ### exportar: exportar y compartir en local
 
@@ -99,7 +102,7 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7.
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | I1 | Abrir la carpeta de una partida | Un boton en el detalle que abre la carpeta del replay | `Match.source_path` (`models.py:49`, sin exponer) + `shell.openPath` (`frontend/electron/main.cjs:179`). Toca Electron: lo mergea el humano, "verificado solo en nube" | S | idea |
-| I2 | Importacion automatica al aparecer una partida | No tener que apretar Importar | vigia de carpeta | M | PR #12 |
+| I2 | Importacion automatica al aparecer una partida | No tener que apretar Importar | vigia de carpeta | M | en main |
 
 ### datos-nuevos-del-parser: campos que el `.rec` tiene y `pydissect/` todavia no lee
 
@@ -130,9 +133,9 @@ mergear, sus ideas pasan a `idea`; si lo mergea, a `en main`.
 
 - **PR #1** (`claude/loop-lwjbgs`): pagina Posicionamiento, con veredicto por
   sitio y spawn.
-- **PR #12** (`claude/focused-newton-w26nu4`): pagina Ajustes (carpeta de
-  replays, importacion automatica, backups, datos de la app) e instalador de
-  un clic.
+- **PR #22** (`ccr-ec8265ab-4qn7k2`): spawn peeks de peekabooR6 por mapa,
+  cruzados con la salida del spawn. Toca lo mismo que cualquier idea de
+  agregados por spawn.
 - **PR #14** (`claude/dazzling-einstein-w3qcyq`): filtros en la URL, "Ver esas
   rondas" desde las señales, vigia de importacion, filtros en Partidas,
   partida anterior y siguiente, flechas para cambiar de ronda, racha actual,
