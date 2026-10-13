@@ -267,6 +267,9 @@ else
     printf '%s\n' "$sal" | grep -qx 'PLAYBOOK_TOCADO_POR_EL_EQUIPO=claude/equipo-dev/47-toca-playbook: scripts/equipo-dev/turno.sh' || det="$det sin PLAYBOOK_TOCADO de 47;"
     printf '%s\n' "$sal" | grep -q '51-squash | mergeada efectivamente: borrable' || det="$det 51 no sale borrable;"
     printf '%s\n' "$sal" | grep -q 'ESPERA_HUMANO=2 (ocupan 1 lugar de COLA)' || det="$det sin ESPERA_HUMANO;"
+    # 51 se firmo por primera vez el 11 a las 09:02 y entro a main el 12 a las 16:00
+    printf '%s\n' "$sal" | grep -q '^CICLO_7D=mediana 30 h, de la primera firma al merge (1 fichas: 30 h)$' || det="$det CICLO_7D: '$(printf '%s\n' "$sal" | grep '^CICLO_7D')';"
+    printf '%s\n' "$sal" | grep -q '^MAIN_7D=funcionalidad:0 otros:1 ' || det="$det MAIN_7D: '$(printf '%s\n' "$sal" | grep '^MAIN_7D')';"
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" --resumen --sin-fetch --excluir-sesion 20261011T1202Z 2>/dev/null)
     case "$r" in *" aprobado=1 "*) ;; *) det="$det --excluir-sesion del revisor de 44 y 50 no deja aprobado=1: '$r';" ;; esac
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" --resumen --sin-fetch --excluir-sesion 20261012T0301Z 2>/dev/null)
@@ -414,6 +417,29 @@ else
     (cd "$clon" && EQUIPO_SIN_PULSO=1 bash "$es_s/turno.sh" 2>&1) | grep -q '^# guardia: ya hay otro pre-push' || det="$det pisa un pre-push ajeno;"
     grep -q 'equipo-dev pre-push' "$clon/.git/hooks/pre-push" && det="$det el pre-push ajeno quedo reemplazado;"
     cierra guardia "$det"
+
+    # 17. El arranque de rutina.md tal cual, por `git show $REF | bash` como lo
+    # corre la Routine, en el clon (su primera linea, el `cd`, se reemplaza:
+    # apunta al checkout real). Tiene que dejar el rol, la guardia, el pulso,
+    # SKILL.md y el archivo del rol, todo leido de origin/main del remoto
+    # sintetico, que trae el playbook bajo prueba.
+    det=""
+    rm -f "$clon/.git/hooks/pre-push" "$clon/.git/equipo-dev.env"
+    bloque=$(awk '/^Arranque, tal cual/ {f=1; next} f && /^   [^ ]/ {print substr($0, 4); n++; next} f && n && /^$/ {exit}' "$ru" | sed '1d')
+    if printf '%s\n' "$bloque" | grep -qE '(^|[;&| ])cd |/home/'; then
+        # nunca correr contra el checkout real: empujaria un pulso al remoto de verdad
+        det="$det el bloque extraido trae un cd o una ruta absoluta; no se corre;"
+    elif [ "$(printf '%s\n' "$bloque" | grep -c .)" -lt 6 ]; then det="$det no encontre el bloque de arranque en rutina.md;"
+    else
+        sal=$(cd "$clon" && bash -c "$bloque" 2>&1)
+        printf '%s\n' "$sal" | grep -q '^# turno: ' || det="$det sin # turno:;"
+        printf '%s\n' "$sal" | grep -q '^# guardia: pre-push del equipo instalado' || det="$det sin guardia por git show;"
+        printf '%s\n' "$sal" | grep -q '^# pulso: PULSO_OK ' || det="$det sin pulso por git show;"
+        printf '%s\n' "$sal" | grep -q '^RESUMEN propuesto=' || det="$det estado.sh no corrio;"
+        printf '%s\n' "$sal" | grep -q '^# Equipo de desarrollo' || det="$det no leyo SKILL.md;"
+        printf '%s\n' "$sal" | grep -q '^# Rol: ' || det="$det no leyo el archivo del rol;"
+    fi
+    cierra arranque "$det"
 fi
 rm -rf "$sint"
 

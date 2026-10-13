@@ -388,10 +388,30 @@ echo "COLA_TIPOS=funcionalidad:$cola_func de $total ramas de trabajo"
 # --first-parent -m fecha cada ficha por el merge que la trajo a main, no por
 # el commit "Reclama:" de su rama, que puede tener mas de una semana.
 main_func=""; main_otro=0
-for f in $(git log --since=7.days --first-parent -m origin/main --diff-filter=A --name-only --format= -- docs/backlog | grep -E '/[0-9]+-' | sort -u); do
+for f in $(git log --since="@$(( ahora - 604800 ))" --first-parent -m origin/main --diff-filter=A --name-only --format= -- docs/backlog | grep -E '/[0-9]+-' | sort -u); do
     if [ "$(tipo_de origin/main "$f")" = funcionalidad ]; then main_func="$main_func $(basename "$f" .md)"; else main_otro=$((main_otro + 1)); fi
 done
 main_func_n=$(echo $main_func | wc -w)
+# Tiempo de ciclo: de la primera firma de `turnos:` al merge en main, por
+# ficha llegada en 7 dias. Es el numero con el que se decide la cadencia (M1)
+# y se mide si el encadenado sirvio.
+ciclos=""
+while IFS=' ' read -r ct f; do
+    [ -n "${f:-}" ] || continue
+    s=$(campo origin/main "$f" turnos | grep -oE '[0-9]{8}T[0-9]{4}Z' | head -1)
+    [ -n "$s" ] || continue
+    e=$(date -u -d "${s:0:4}-${s:4:2}-${s:6:2} ${s:9:2}:${s:11:2}" +%s 2>/dev/null) || continue
+    [ "$ct" -gt "$e" ] && ciclos="$ciclos $(( (ct - e) / 3600 ))"
+done <<< "$(git log --since="@$(( ahora - 604800 ))" --first-parent -m origin/main --diff-filter=A --name-only --format='C %ct' -- docs/backlog \
+    | awk '/^C [0-9]+$/ {c=$2; next} /\/[0-9]+-[^\/]*\.md$/ {print c, $0}' | sort -k2,2 -u)"
+if [ -n "$ciclos" ]; then
+    n_c=$(echo $ciclos | wc -w)
+    mediana=$(printf '%s\n' $ciclos | sort -n | awk '{a[NR]=$1} END {print a[int((NR+1)/2)]}')
+    ciclo_linea="CICLO_7D=mediana ${mediana} h, de la primera firma al merge ($n_c fichas: ${ciclos# } h)"
+else
+    ciclo_linea="CICLO_7D=sin fichas llegadas a main en 7 dias"
+fi
+echo "$ciclo_linea"
 main7_linea="MAIN_7D=funcionalidad:$main_func_n${main_func:+ (${main_func# })} otros:$main_otro (fichas que llegaron a main en 7 dias)"
 echo "$main7_linea"
 libres=0
@@ -542,6 +562,7 @@ echo "## Alcance"
 echo
 echo "- $main7_linea"
 echo "- PAPEL_TIPOS=funcionalidad:$papel_func otros:$papel_otro. COLA_TIPOS=funcionalidad:$cola_func de $total."
+echo "- $ciclo_linea"
 echo "- $alcance_linea"
 echo "- $invest_linea"
 echo "- $release_linea"
