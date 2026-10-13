@@ -1,7 +1,7 @@
 # 38. Una ronda de Y9S4+ con defuse del perdedor queda con dos ganadores
 
-estado: en curso 2026-10-13T11:11Z
-candado: dev 2026-10-13T11:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/38-dos-ganadores-por-ronda
 tipo: bug
 epica: -
@@ -140,7 +140,28 @@ frontend, no hay fila de `metricas.md` (no hay numero nuevo).
 
 ## Implementacion
 
-(Dev) Que quedo, que no, desvios del diseno y por que.
+(Dev 20261013T1111Z)
+
+- `round_end` (`backend/pydissect/events.py`): el loop guarda `disabler`
+  como ya guardaba `planter`; el `return` temprano del defuse y el bloque
+  del plant quedan solo antes de Y9S4, sin cambios de orden. Desde Y9S4 el
+  ganador es el de la cabecera y el feed solo aporta `DISABLED_DEFUSER` o
+  `DEFUSED_BOMB` si apunta al ganador; si no, la inferencia de bomba de
+  siempre (`KILLED_OPPONENTS` / `TIME`). Ningun camino Y9S4+ escribe `won`
+  desde el feed.
+- Tests: los 6 del diseno en `test_round_end.py`, con los nombres del
+  diseno. Los 3 de "perdedor"/"sin coincidencia" fallan sobre main (dos
+  `True`) y pasan con el cambio; los 14 existentes no se tocaron.
+- `docs/formato-rec.md`: parrafo bajo las claves de la cabecera.
+- Desvio del diseno: ninguno en codigo. **Si en la verificacion**: el
+  diseno y la ficha dicen que las rondas ya importadas se corrigen con
+  `manage.py recompute`, pero `recompute` no abre ningun `.rec` (solo
+  recalcula trades desde la base). Las rondas Y9S4+ ya importadas se
+  corrigen reimportando: `manage.py import_replays --force <carpeta>`.
+  Corregido abajo en `## Verificar en el PC`.
+- Revision ciega (subagente con `revision.md`): aprobar, sin hallazgos;
+  confirmo con mutacion (events.py de main) que los tests nuevos caen.
+- `check.sh`: `Todo en verde.` (484 tests backend, 65 frontend, build, 24 e2e).
 
 ## Revision <fecha> sobre <sha>
 
@@ -154,8 +175,9 @@ frontend, no hay fila de `metricas.md` (no hay numero nuevo).
 
 (QA, solo si toca migraciones, recompute, parser, Electron o `.ps1`.)
 Toca el parser: confirmar con `.rec` reales de Y9S4+ que el ganador de cada
-ronda coincide con el marcador, y correr `manage.py recompute --dry-run`
-para ver cuantas rondas cambian antes del `recompute` real.
+ronda coincide con el marcador. `recompute` no reparsea: las rondas ya
+importadas se corrigen con `cd backend; python manage.py import_replays
+--force <carpeta de replays>` (hacer `manage.py backup` antes).
 
 ## Pendiente
 
@@ -166,4 +188,4 @@ cabecera**, porque es la misma fuente que el marcador de la partida y el
 comentario de `round_end` ya la trata como la verdad desde Y9S4. La
 alternativa (manda el feed y se corrige el marcador) es mas invasiva y no se
 hace sin que lo pidas en `## Para el equipo`. El cambio es reversible: no
-toca datos hasta que corras `recompute`.
+toca datos hasta que reimportes con `import_replays --force` (`recompute` no reparsea).
