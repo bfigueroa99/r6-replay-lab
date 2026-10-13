@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
 estado: aprobado
-candado: -
+candado: release 2026-10-13T04:13Z
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z, qa 20261013T0302Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z, qa 20261013T0302Z, release 20261013T0413Z
 
 ## PR
 
