@@ -1,7 +1,7 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
-estado: en curso 2026-10-13T21:12Z
-candado: dev 2026-10-13T21:12Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/39-inercia-entre-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -135,6 +135,37 @@ Trends.jsx -> e2e -> metricas.md -> `check.sh`.
 **Verificacion manual:** `python manage.py seed_demo`, `runserver`,
 `curl -s localhost:8000/api/trends/ | python -m json.tool | grep -A3 by_previous_round`,
 y `/tendencias` muestra el panel con 0 % / 100 %.
+
+## Implementacion
+
+(Dev 20261013T2112Z.) Diseno completo, sin desvios de alcance:
+
+- `aggregates.py`: `_filas_por_tramo`, `RONDA_ANTERIOR`, `_resultado_anterior()`
+  y `by_previous_round()`; `by_half` ahora termina en `_filas_por_tramo`
+  (mismo resultado, `test_mitades.py` verde). El orden de las filas sale de
+  `RONDA_ANTERIOR`, igual que `by_half` con `MITADES`.
+- `views.py`: `by_previous_round` en `/api/trends/`.
+- `frontend/src/muestra.js` + `muestra.test.js` (4 tests): `MUESTRA_CORTE = 30`
+  y `filasConPocaMuestra`.
+- `Trends.jsx`: `TablaDeCorte` local y el panel "Después de ganar o perder la
+  ronda anterior" entre "Por mitad" y "Por numero de ronda", CSV
+  `ronda-anterior`, hint con aviso de muestra chica.
+- `test_ronda_anterior.py`: los 7 tests del diseno mas
+  `test_la_ronda_anterior_no_se_cruza_entre_partidas` y
+  `test_trends_con_datos_trae_la_ronda_anterior`.
+- e2e `Tendencias muestra la inercia entre rondas`: ademas de las celdas
+  afirma Ganadas 0 % despues de ganar y 100 % despues de perder (seed_demo
+  alterna), para que unas filas invertidas no pasen.
+- `metricas.md`: seccion `## Contexto de la ronda` y fila de muestra minima.
+  Desvio menor: la fila de muestra dice solo "(ronda anterior)"; las fichas
+  40 y 41 agregan marcador, hora y dia cuando existan.
+
+Revision ciega previa (subagente): 4 hallazgos menores (e2e sin numeros,
+filtro de lado que no filtraba en un test, fila de doc que nombraba cortes
+inexistentes, constante sin usar), los 4 corregidos.
+
+Verificacion: `check.sh` en `Todo en verde.` (502 tests backend, 69 vitest,
+build ok, 27 e2e).
 
 ## Para el humano
 

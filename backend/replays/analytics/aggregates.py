@@ -377,8 +377,47 @@ def by_half(**filters) -> list[dict]:
         "second": con_lado.exclude(round__my_side=F("lado_inicial")),
         "overtime": qs.filter(round__overtime_number__gt=0),
     }
+    return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
+
+
+def _filas_por_tramo(campo: str, tramos: dict[str, QuerySet[RoundPlayer]]) -> list[dict]:
+    """Una fila de `totals()` por tramo, en el orden del dict.
+
+    El baseline del rating se calcula una sola vez: es el mismo para todas
+    las filas y sale de toda la base, no del tramo.
+    """
     baseline = rating_baseline()
-    return [{"half": mitad, **totals(tramos[mitad], baseline)} for mitad in MITADES]
+    return [{campo: nombre, **totals(qs, baseline)} for nombre, qs in tramos.items()]
+
+
+#: Orden fijo de las filas de `by_previous_round`.
+RONDA_ANTERIOR = ("after_win", "after_loss", "no_previous")
+
+
+def _resultado_anterior() -> Subquery:
+    """Resultado de la ronda `number - 1` de la misma partida.
+
+    Se lee de `Round` y no del queryset filtrado, como `_lado_inicial`: con
+    `?side=Attack` la ronda anterior de defensa sigue existiendo y pesa igual.
+    """
+    return Subquery(
+        Round.objects.filter(
+            match_id=OuterRef("round__match_id"), number=OuterRef("round__number") - 1
+        ).values("my_team_won")[:1]
+    )
+
+
+def by_previous_round(**filters) -> list[dict]:
+    """Rondas despues de ganar, despues de perder y sin ronda anterior conocida."""
+    qs = base_queryset(**filters).annotate(anterior=_resultado_anterior())
+    # Nulo junta la primera ronda, la anterior que falta (sin su .rec) y la
+    # anterior sin resultado: ninguna dice nada sobre la inercia.
+    tramos = {
+        "after_win": qs.filter(anterior=True),
+        "after_loss": qs.filter(anterior=False),
+        "no_previous": qs.filter(anterior__isnull=True),
+    }
+    return _filas_por_tramo("previous", {nombre: tramos[nombre] for nombre in RONDA_ANTERIOR})
 
 
 def by_start_side(**filters) -> list[dict]:

@@ -59,6 +59,23 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Después de ganar o perder la ronda anterior' })
+  await expect(panel).toBeVisible()
+  // seed_demo alterna ganada y perdida: despues de ganar siempre pierdes y al reves
+  const ganar = panel.locator('tr', { has: page.getByRole('cell', { name: 'Después de ganar', exact: true }) })
+  const perder = panel.locator('tr', { has: page.getByRole('cell', { name: 'Después de perder', exact: true }) })
+  // columnas: tramo, rondas, ganadas
+  await expect(ganar.locator('td').nth(2)).toHaveText('0%')
+  await expect(perder.locator('td').nth(2)).toHaveText('100%')
+  await expect(panel.getByRole('cell', { name: 'Sin ronda anterior', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')

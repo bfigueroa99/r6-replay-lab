@@ -78,6 +78,15 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 | **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
 | **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
 
+## Contexto de la ronda
+
+En Tendencias, cada ronda se corta tambien por lo que paso antes de ella en la
+misma partida.
+
+| Metrica | Definicion |
+|---|---|
+| **Despues de ganar / perder** | Rondas cuya ronda anterior (la de numero `N - 1` en la misma partida) tu equipo gano o perdio. La anterior se lee de la partida entera: el filtro de lado o de operador limita las rondas que se cuentan, no cambia cual fue la anterior. La primera ronda, la que no tiene importada la anterior (falta su `.rec`) y la que tiene la anterior sin resultado van a "Sin ronda anterior". Las tres filas suman todas tus rondas. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. |
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
@@ -259,5 +268,6 @@ opinar:
 | Mapa | 15 rondas en ese mapa |
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
+| Cortes de Tendencias (ronda anterior) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.
