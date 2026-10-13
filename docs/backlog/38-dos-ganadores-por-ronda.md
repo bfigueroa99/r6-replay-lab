@@ -1,7 +1,7 @@
 # 38. Una ronda de Y9S4+ con defuse del perdedor queda con dos ganadores
 
 estado: revisado
-candado: -
+candado: qa 2026-10-13T13:12Z
 rama: claude/equipo-dev/38-dos-ganadores-por-ronda
 tipo: bug
 epica: -
