@@ -1,8 +1,8 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
-estado: disenado
+estado: en curso 2026-10-13T07:12Z
 candado: -
-rama: -
+rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
