@@ -57,6 +57,21 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Rivales repetidos' })
+  await expect(panel).toBeVisible()
+  // seed_demo repite los mismos rivales en todas las partidas
+  const enlace = panel.locator('table tbody tr').first().getByRole('link').first()
+  await expect(enlace).toHaveAttribute('href', /\/jugadores\/\d+$/)
+  await enlace.click()
+  await expect(page).toHaveURL(/\/jugadores\/\d+$/)
+
+  expect(errores).toEqual([])
+})
+
 test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

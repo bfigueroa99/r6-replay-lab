@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from replays.analytics import aggregates as agg
 from replays.analytics.coach import build_insights
+from replays.models import Player, RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -274,3 +275,93 @@ class RondasPorOperadorTests(TestCase):
         data = self.client.get("/api/duels/?min_rounds=1").json()
         self.assertEqual(data["faced"]["operators"][0]["operator"], "Thorn")
         self.assertEqual(data["faced"]["base"]["rounds"], 1)
+
+
+class RivalesRepetidosTests(TestCase):
+    """Record de partidas contra cada persona que te toco en el equipo contrario."""
+
+    def _partida(self, index, *, rival="rival", rival_team=1, ganada=True, mapa="Club House"):
+        match = make_match(
+            index=index,
+            map_name=mapa,
+            my_score=4 if ganada else 2,
+            opponent_score=2 if ganada else 4,
+        )
+        rnd = make_round(match, 0)
+        make_round_player(rnd)
+        make_round_player(rnd, username=rival, is_me=False, team_index=rival_team)
+        return match
+
+    def test_rivales_repetidos_cuenta_partidas_ganadas_y_perdidas(self):
+        self._partida(0, ganada=True)
+        self._partida(1, ganada=True)
+        self._partida(2, ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["username"], "rival")
+        self.assertEqual(
+            (fila["matches"], fila["wins"], fila["losses"], fila["winrate"]), (3, 2, 1, 66.7)
+        )
+
+    def test_un_rival_en_una_sola_partida_no_aparece_con_el_minimo_por_defecto(self):
+        self._partida(0)
+        self.assertEqual(agg.repeated_rivals(), [])
+        self.assertEqual(len(agg.repeated_rivals(min_matches=1)), 1)
+
+    def test_quien_fue_companero_en_una_partida_y_rival_en_otra_cuenta_solo_la_de_rival(self):
+        self._partida(0, rival_team=0)
+        self._partida(1, rival_team=1, ganada=False)
+
+        fila = agg.repeated_rivals(min_matches=1)[0]
+        self.assertEqual((fila["matches"], fila["wins"], fila["losses"]), (1, 0, 1))
+
+    def test_partida_sin_resultado_cuenta_en_matches_y_no_en_el_winrate(self):
+        self._partida(0, ganada=True)
+        sin_resultado = self._partida(1)
+        sin_resultado.won = None
+        sin_resultado.save()
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(fila["wins"] + fila["losses"], 1)
+        self.assertEqual(fila["winrate"], 100.0)
+
+    def test_un_cambio_de_nick_no_parte_la_fila_de_rivales(self):
+        self._partida(0)
+        self._partida(1)
+        # mismo profileID con otro nick en la segunda partida
+        RoundPlayer.objects.filter(round__match__match_id__startswith="match-1").filter(
+            is_me=False
+        ).update(username="rival_nuevo")
+        Player.objects.filter(profile_id="pid-rival").update(username="rival_nuevo")
+
+        filas = agg.repeated_rivals()
+        self.assertEqual(len(filas), 1)
+        self.assertEqual(filas[0]["matches"], 2)
+        self.assertEqual(filas[0]["username"], "rival_nuevo")
+
+    def test_el_filtro_de_mapa_aplica_a_rivales(self):
+        self._partida(0, mapa="Club House")
+        self._partida(1, mapa="Border")
+
+        self.assertEqual(agg.repeated_rivals(map="border", min_matches=1)[0]["matches"], 1)
+        self.assertEqual(agg.repeated_rivals(map="border"), [])
+
+    def test_sin_datos_no_revienta(self):
+        self.assertEqual(agg.repeated_rivals(), [])
+
+    def test_endpoint_trae_los_rivales_con_enlace_al_jugador(self):
+        self._partida(0)
+        self._partida(1)
+        data = self.client.get("/api/duels/").json()
+        fila = data["rivals"][0]
+        self.assertEqual(fila["player_id"], Player.objects.get(profile_id="pid-rival").id)
+        self.assertEqual(fila["matches"], 2)
+
+    def test_min_matches_fuera_de_rango_o_texto_no_da_500(self):
+        self._partida(0)
+        for valor in ("0", "-5", "abc", "99999", ""):
+            with self.subTest(valor=valor):
+                respuesta = self.client.get(f"/api/duels/?min_matches={valor}")
+                self.assertEqual(respuesta.status_code, 200)
+                self.assertIn("rivals", respuesta.json())

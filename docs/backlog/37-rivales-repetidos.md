@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: en curso 2026-10-13T11:14Z
-candado: dev 2026-10-13T11:14Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -164,7 +164,29 @@ otras funciones y secciones: se puede implementar en paralelo.
 
 ## Implementacion
 
-(Dev) Que quedo, que no, desvios del diseno y por que.
+(Dev 20261013T1111Z)
+
+- `repeated_rivals` en `aggregates.py`, debajo de `nemesis`, con la consulta
+  del diseno; `_MI_EQUIPO` sirvio tal cual sobre `RoundPlayer`. Nick: el
+  actual del `Player`. Orden `(-matches, -losses, username)`.
+- `views.duels`: clave `rivals`, `min_matches` con `_int_param` (1 a 1000,
+  default 2).
+- `Duelos.jsx`: panel "Rivales repetidos" despues de "Por rival", con las
+  columnas del diseno. Desvio menor: `Winrate` como porcentaje simple con
+  `help` (sin barra), para no confundirlo con la columna "Ganas" de duelos.
+  El `EmptyState` de la pagina (`totals.duels == 0`) no se toco, como pide el
+  diseno: con un filtro que deja rivales sin ninguna baja la tabla no se ve.
+- e2e `'Duelos muestra rivales repetidos con enlace al perfil'` en
+  `humo.spec.js`: con `seed_demo` hay filas (3 rivales, 29 partidas), afirma
+  el `href` y que el clic abre el perfil.
+- Tests en `test_duels.py` (clase `RivalesRepetidosTests`): los 7 del diseno
+  mas `test_sin_datos_no_revienta` y
+  `test_endpoint_trae_los_rivales_con_enlace_al_jugador`.
+- `docs/metricas.md`: filas "Rival repetido" y "Récord contra un rival" en
+  `## Duelos`.
+- Revision ciega (subagente con `revision.md`): aprobar; un hallazgo menor
+  corregido (la fila de metricas nombraba `side`/`site` y no `operator`).
+- `check.sh`: `Todo en verde.` (487 tests backend, 65 frontend, build, 25 e2e).
 
 ## Revision <fecha> sobre <sha>
 
@@ -181,3 +203,7 @@ otras funciones y secciones: se puede implementar en paralelo.
 ## Pendiente
 
 ## Para el humano
+
+- En `seed_demo` todas las partidas son ganadas, asi que la tabla demo
+  muestra records 29-0. Cambiar el seed movera numeros que afirma el e2e:
+  queda como idea, no se toco.
