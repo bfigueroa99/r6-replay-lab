@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-13 19:18 UTC por po (sesion 20261013T1915Z; motivo: papel vacio; reloj: qa, franja 6)
+actualizado: 2026-10-13 20:16 UTC por arquitecto (sesion 20261013T2011Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: revisor, franja 7)
 playbook: origin/main@5d2aecc
 rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-11T18:01Z 10-11T21:01Z 10-12T00:01Z 10-12T03:01Z) | 12 de 46 en 7 dias
 pausa: no
@@ -10,7 +10,7 @@ pausa: no
 Vacia: la 37 se mergeo en el turno de Release anterior (PR #27, main 5d2aecc).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -19,7 +19,7 @@ Nada abierto.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:2 (36-mitades-y-prorroga 37-rivales-repetidos) otros:7.
-- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), 39 (B4, inercia) y 41 (B2 tramo 1, marcador) en papel, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) en papel.
+- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), 39 (B4, inercia) y 41 (B2 tramo 1, marcador) disenadas, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) disenada.
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 21 ideas libres (20 al empezar). Ideas nuevas de este turno: B5 match point y ronda decisiva, B6 como ganas y pierdes tus rondas (condicion de victoria por lado y mapa), E4 records personales, F4 tira de rondas en el listado de partidas; T3 (tests) `seed_demo` sin `score_before`.
 - Investigacion: ninguna todavia
@@ -28,11 +28,11 @@ Nada abierto.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 39-inercia-entre-rondas | propuesto | funcionalidad | lado-y-marcador | 2 | fullstack | - |
-| 40-hora-y-dia-de-la-semana | propuesto | funcionalidad | progreso | 3 | fullstack | - |
-| 41-ronda-segun-el-marcador | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 39-inercia-entre-rondas | disenado | funcionalidad | lado-y-marcador | 2 | fullstack | - |
+| 40-hora-y-dia-de-la-semana | disenado | funcionalidad | progreso | 3 | fullstack | - |
+| 41-ronda-segun-el-marcador | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 
-Las tres tocan `/api/trends/` y `Trends.jsx`: el Arquitecto las ordena (la 41 despues de la 39). Proximo turno por estado: Arquitecto.
+Las tres tocan `/api/trends/`, `Trends.jsx`, `metricas.md` y `humo.spec.js`. Orden de implementacion: 39 (crea `_filas_por_tramo`, `TablaDeCorte` y `frontend/src/muestra.js`), despues 41 (llena `score_before` en `seed_demo`), despues 40. Proximo turno por estado: Dev (39).
 
 ## Ultimo turno de cada rol
 
@@ -42,7 +42,7 @@ Las tres tocan `/api/trends/` y `Trends.jsx`: el Arquitecto las ordena (la 41 de
 | revisor | 2026-10-13 16:14 | Revisa 37 por segunda vez (`implementado` -> `revisado`): hallazgo del CSV corregido en c71b7c6 y cubierto por e2e; revision ciega con `revision.md` sin hallazgos; nota sin efecto (el `.distinct()` de `repeated_rivals` no deduplica por el `Meta.ordering`, pero se junta en sets). Fusiona main ac18a6e en la rama (ec8df02); `check.sh` en `Todo en verde.` (493 backend, 65 vitest, build, 26 e2e). Sin pushes de codigo. |
 | dev | 2026-10-13 15:25 | Corrige 37 (`con hallazgos` -> `implementado`): `csv:` en la columna "Récord" de "Rivales repetidos" (`Duelos.jsx`) y e2e nuevo que baja el CSV y afirma `Récord == Ganadas-Perdidas` (visto rojo antes: `""` en vez de `"29-0"`). `check.sh` en `Todo en verde.` (26 e2e), main ac18a6e ya en la rama. |
 | qa | 2026-10-13 17:14 | Prueba 37 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (493 backend, 65 vitest, build, 26 e2e), main ac18a6e ya fusionado. Base sembrada con `factories.py`: record por profileID con nick cambiado, compañero/rival, partida sin resultado, `min_matches` 0/-5/abc/99999/vacio/1.5, `map=oregon`, `side`, `until=foo`, `page=-1` y base vacia, todo 200 con los numeros esperados. Chunk inicial sin cambio (185503 B). 4 mutaciones de `repeated_rivals` caen. Sin pushes de codigo. |
-| arquitecto | 2026-10-13 06:15 | Disena 36 (mitades por lado inicial de la ronda mas baja sin prorroga, `by_half` y `by_start_side` en `/api/trends/`, panel en Tendencias, seed sin tocar), 37 (`repeated_rivals` con `_MI_EQUIPO`, `rivals` y `?min_matches=` en `/api/duels/`, panel en Duelos) y 38 (en Y9S4+ el feed solo da la condicion si apunta al ganador de la cabecera; el disable/plant del perdedor ya no marca `won`). Sin pushes de codigo. |
+| arquitecto | 2026-10-13 20:16 | Disena 39 (`by_previous_round` con subconsulta a la ronda `number - 1` de la partida entera; ayudantes `_filas_por_tramo`, `TablaDeCorte`, `muestra.js` con aviso bajo 30 rondas), 41 (`by_score_state` con `KeyTransform`+`Cast` sobre `score_before` y tu `team_index`; `seed_demo` pasa a llenar `score_before`, solo cambia el panel nuevo) y 40 (`by_hour` en 8 franjas y `by_weekday` con `iso_week_day`). Spike en scratchpad con `seed_demo`: las sumas cuadran con el total (203). Orden 39 -> 41 -> 40. Sin pushes de codigo. |
 | po | 2026-10-13 19:18 | Papel vacio: propone 39 (funcionalidad, B4: winrate y rating despues de ganar o perder la ronda anterior, en Tendencias), 40 (funcionalidad, E3: por franja de 3 h y por dia de la semana, en Tendencias) y 41 (funcionalidad, B2 tramo 1: adelante, empatado o atras segun `score_before`). `ALCANCE.md`: reconciliado contra main 5d2aecc (B1 y D1 en main), ideas nuevas B5, B6, E4, F4 y T3; 21 ideas libres. PRs abiertos revisados con herramientas: #14, #22, #1 siguen abiertos. Sin pushes de codigo. |
 
 ## Para el humano
@@ -60,7 +60,7 @@ Las tres tocan `/api/trends/` y `Trends.jsx`: el Arquitecto las ordena (la 41 de
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo commit de reclamo)
 - Rutina: 4 disparos sin rastro en 48 h (10-11T18:01Z 10-11T21:01Z 10-12T00:01Z 10-12T03:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
-- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, las fichas 39-41 se disenan sobre ella.
+- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas antes que las fichas 39-41, el Dev resuelve el choque en `aggregates.py` y la 41 en `seed_demo.py` (P3).
 - Preguntas abiertas:
   - ~~Boton de backup y `REPLAY_DIR` desde la UI~~: resuelto por el #12 (main eb2633c), que suma `POST /api/settings/` y `POST /api/backup/` a `CLAUDE.md`. El PO ya no las tiene que esperar.
   - **Ficha 38 ya en main (PR #26):** manda la cabecera sobre el kill feed para el ganador de la ronda desde Y9S4. Si preferis que mande el feed y se corrija el marcador, pedilo en `## Para el equipo`.
