@@ -1,6 +1,6 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
-estado: implementado
+estado: revisado
 candado: -
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
