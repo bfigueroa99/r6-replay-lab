@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { vigilarConsola } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
-/** Ruta -> el h1 que tiene que aparecer. Son las ocho del menu. */
+/** Ruta -> el h1 que tiene que aparecer. Las del menu, menos la Ruleta (tiene su spec). */
 const PAGINAS = [
   ['/', 'Resumen'],
   ['/coach', 'Coach'],
@@ -13,6 +13,7 @@ const PAGINAS = [
   ['/tendencias', 'Tendencias'],
   ['/partidas', 'Partidas'],
   ['/datos', 'Datos'],
+  ['/ajustes', 'Ajustes'],
 ]
 
 test.describe('todas las paginas cargan', () => {

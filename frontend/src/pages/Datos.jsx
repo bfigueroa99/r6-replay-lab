@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { post, useApi } from '../api.js'
 import { DataTable, ErrorBox, Loading, Panel, SideChip } from '../components/ui.jsx'
@@ -169,9 +170,8 @@ export default function Datos() {
       >
         {status.data && !status.data.replay_dir_exists ? (
           <p className="note" style={{ marginTop: 0 }}>
-            Esa carpeta no existe en este PC. Si Siege está instalado en otro lado, crea un
-            archivo <code>.env</code> en la carpeta de datos de la app con{' '}
-            <code>REPLAY_DIR=ruta\a\MatchReplay</code> y vuelve a abrir la app.
+            Esa carpeta no existe en este PC. Si Siege está instalado en otro lado, elige tu
+            carpeta <code>MatchReplay</code> en <Link to="/ajustes">Ajustes</Link>.
           </p>
         ) : null}
         <div className="kpis" style={{ marginBottom: 14 }}>

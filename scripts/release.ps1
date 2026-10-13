@@ -50,8 +50,9 @@ if ($LASTEXITCODE -ne 0) { throw "La verificacion fallo. No se publica nada en r
 Write-Host "`n== Empaquetado" -ForegroundColor Cyan
 & "$repo\scripts\package.ps1"
 if ($LASTEXITCODE -ne 0) { throw "Fallo el empaquetado." }
-$exes = Get-ChildItem "$repo\packaging\installer\*.exe"
-if (-not $exes) { throw "No hay .exe en packaging\installer." }
+# el nombre exacto: electron-builder deja otros .exe de trabajo en la carpeta
+$exes = Get-ChildItem "$repo\packaging\installer\R6ReplayLab-$version-setup.exe" -ErrorAction SilentlyContinue
+if (-not $exes) { throw "No esta packaging\installer\R6ReplayLab-$version-setup.exe." }
 
 if ($SoloArmar) {
     Write-Host "`nListo (-SoloArmar): sin tag ni Release." -ForegroundColor Green
@@ -68,11 +69,15 @@ if ($LASTEXITCODE -ne 0) { throw "No se pudo pushear el tag. Revisa el acceso al
 # --- release ------------------------------------------------------------------
 $remoto = (git remote get-url origin).Trim() -replace '\.git$', '' -replace '^git@github\.com:', 'https://github.com/'
 $notas = @"
-**Para usarla:** descarga ``R6ReplayLab-$version-portable.exe`` y hazle doble clic.
-No instala nada. Si prefieres acceso directo en el escritorio, usa el ``-setup.exe``.
+**Para usarla:** descarga ``R6ReplayLab-$version-setup.exe`` y hazle doble clic.
+Se instala en unos segundos sin preguntar nada (no pide permisos de
+administrador), deja un acceso directo en el escritorio y abre la app.
+Para actualizar, baja la version nueva y haz lo mismo: tus datos se quedan.
 
-Al abrir busca sola la carpeta ``MatchReplay`` de Siege (Steam y Ubisoft Connect).
-Los datos quedan en ``%APPDATA%\r6-replay-lab``.
+Al abrir busca sola la carpeta ``MatchReplay`` de Siege (Steam y Ubisoft Connect)
+e importa tus partidas; con la app abierta, cada partida nueva entra sola al
+terminar. Si no la encuentra, se elige en **Ajustes**. Los datos quedan en
+``%APPDATA%\r6-replay-lab``.
 
 El ejecutable no esta firmado: la primera vez Windows muestra SmartScreen
 (*Mas informacion* -> *Ejecutar de todas formas*).

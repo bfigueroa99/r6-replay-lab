@@ -51,28 +51,42 @@ su rango, MMR, K/D y partidas ganadas de la temporada actual, nivel y horas
 jugadas: lo mismo que muestran esos sitios, sin pasar por ellos. Es la unica
 parte de la app que sale a internet, y solo cuando aprietas el boton.
 
-**Importacion automatica.** `manage.py watch_replays` vigila la carpeta y en
-cuanto terminas una partida la importa sola. Nada de arrastrar archivos.
+**Importacion automatica.** Con la app abierta, en cuanto terminas una partida
+se importa sola, y al abrirla entra lo que jugaste desde la ultima vez. Nada de
+arrastrar archivos ni de apretar botones. Se apaga en **Ajustes**.
 
 ## Descargar y usar
 
-No hace falta instalar Python ni Node. Baja el `.exe` de la ultima
-[Release](https://github.com/bfigueroa99/r6-replay-lab/releases/latest):
+Todo sale de **un solo `.exe`**. No hace falta Python, Node ni abrir una
+consola. Baja `R6ReplayLab-x.y.z-setup.exe` de la ultima
+[Release](https://github.com/bfigueroa99/r6-replay-lab/releases/latest) y hazle
+doble clic:
 
-| Archivo | Que hace |
-|---|---|
-| `R6ReplayLab-x.y.z-portable.exe` | Doble clic y listo. No instala nada ni toca el registro. Tarda unos segundos mas en abrir porque se descomprime en `%TEMP%` cada vez. |
-| `R6ReplayLab-x.y.z-setup.exe` | Instalador normal: acceso directo en el escritorio y entrada en "Agregar o quitar programas". |
+1. **Se instala solo**, en unos segundos y sin preguntar nada. Es por usuario,
+   asi que no pide permisos de administrador. Deja un acceso directo en el
+   escritorio y en el menu Inicio.
+2. **Se abre la app** y **busca sola la carpeta `MatchReplay`** de Siege
+   (Steam, Ubisoft Connect, bibliotecas secundarias y las rutas tipicas de cada
+   unidad).
+3. **Importa tus partidas sola.** La primera vez lee todo el historial (el
+   avance se ve arriba a la derecha). Despues, con la app abierta, cada partida
+   entra sola al terminar.
 
-Las dos variantes son la misma app: una ventana con la UI, y adentro un Python
-completo con el parser y la API. Al abrir, **busca sola la carpeta
-`MatchReplay`** de Siege (Steam, Ubisoft Connect, bibliotecas secundarias y
-las rutas tipicas de cada unidad). Dale a *Importar replays* y ya.
+Todo lo demas se maneja desde la pagina **Ajustes**:
 
-Los datos van a `%APPDATA%\r6-replay-lab`: la base, las etiquetas de IDs
-desconocidos y un `.env` opcional. Si la app no encuentra tu `MatchReplay`
-(lo dice en la pagina Datos), crea ahi un `.env` con
-`REPLAY_DIR=D:\ruta\a\MatchReplay` y vuelve a abrirla.
+- **Carpeta de replays**: si no la encontro o tienes el juego en otro lado,
+  *Elegir carpeta…* abre el selector de Windows. Si eliges la carpeta del juego
+  en vez de su `MatchReplay`, la corrige sola.
+- **Importacion automatica**: prendida por defecto; se apaga con un clic.
+- **Copias de seguridad**: la app copia la base sola una vez por semana al
+  abrir, y hay un boton para hacer una al instante.
+
+Para **actualizar**, baja el `.exe` nuevo y haz lo mismo: se instala encima y
+tus datos se quedan. Para **desinstalar**, "Agregar o quitar programas".
+
+Los datos van a `%APPDATA%\r6-replay-lab`: la base, las copias, las etiquetas
+de IDs desconocidos y el `.env` donde Ajustes guarda lo que cambias.
+Desinstalar no los borra.
 
 El `.exe` **no esta firmado**: la primera vez Windows muestra SmartScreen
 (*Mas informacion* -> *Ejecutar de todas formas*). Firmarlo necesita un
@@ -169,9 +183,11 @@ cd frontend
 npm run desktop        # o .\scripts\desktop.ps1
 ```
 
-El proceso principal levanta Django solo, espera a que la API responda y recien
-ahi muestra la ventana. Si ya tenias un `runserver` corriendo en otra consola, lo
-reutiliza y **no** te lo mata al cerrar. El menu tiene un acceso directo a tu
+El proceso principal levanta el backend solo con `backend/serve.py` (el mismo
+punto de entrada del `.exe`: migra, hace la copia semanal y deja la importacion
+automatica corriendo), espera a que la API responda y recien ahi muestra la
+ventana. Si ya tenias un `runserver` corriendo en otra consola, lo reutiliza y
+**no** te lo mata al cerrar. El menu tiene accesos directos a Ajustes y a tu
 carpeta `MatchReplay`.
 
 Que quede claro, porque es la duda obvia: **no es un overlay**. Es una ventana
@@ -184,10 +200,14 @@ Siege no se entera de que existe. Es un no-goal del proyecto, no algo pendiente.
 .\scripts\package.ps1
 ```
 
-Deja en `packaging\installer\` el instalador (`-setup.exe`) y el portable
-(`-portable.exe`), unos 135 MB cada uno. Adentro va un Python completo, asi que
-**corren en una maquina sin Python instalado**: el frontend compilado viaja
-dentro del ejecutable del backend y Django lo sirve igual que desde el repo.
+Se prepara solo: si falta el venv, las dependencias o `node_modules`, los
+instala, asi que en un clon recien bajado basta con tener Python 3.11+ y
+Node 18+. Deja en `packaging\installer\` un solo `.exe`, el instalador de un clic
+(`-setup.exe`), de unos 135 MB. Adentro va un Python completo, asi que **corre
+en una maquina sin Python instalado**: el frontend compilado viaja dentro del
+ejecutable del backend y Django lo sirve igual que desde el repo. Antes se
+armaba tambien un `-portable.exe`; se saco para que haya un solo archivo que
+bajar, y porque se descomprimia en `%TEMP%` en cada arranque.
 
 #### Publicar una version
 
@@ -219,8 +239,10 @@ cd frontend
 npm run desktop:dev    # apunta a Vite en :5173; Django tiene que estar corriendo
 ```
 
-Para que importe solo cada vez que termines una partida, deja esto corriendo en
-otra consola:
+La app de escritorio y `.\scripts\start.ps1` corren `serve.py`, que ya importa
+solo cada partida al terminar. Si levantas el server pelado con
+`manage.py runserver`, la importacion automatica no corre: dejala en otra
+consola con
 
 ```powershell
 python manage.py watch_replays
@@ -245,7 +267,8 @@ npm run dev     # http://localhost:5173
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
 | `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
-| `manage.py test tests` | Corre la suite (306 tests). |
+| `manage.py test tests` | Corre la suite (419 tests). |
+| `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |
 
 ### Sacar los datos
 
@@ -271,13 +294,16 @@ es esa noche y nada mas.
 
 ## Configuracion
 
-Todo vive en `.env` (ver `.env.example`):
+Todo vive en `.env` (ver `.env.example`). Las dos primeras se cambian tambien
+desde la pagina **Ajustes**, que escribe en ese mismo archivo (respetando tus
+comentarios) y aplica el cambio sin reiniciar:
 
 | Variable | Default | Que hace |
 |---|---|---|
 | `REPLAY_DIR` | se detecta sola | Carpeta `MatchReplay` de Siege. Sin fijar, se busca en Steam, Ubisoft Connect y las rutas tipicas de cada unidad. |
+| `AUTO_IMPORT` | `true` | La app vigila `REPLAY_DIR` e importa cada partida al terminar. |
 | `IMPORT_QUIET_SECONDS` | `60` | Segundos sin cambios en los `.rec` para considerar terminada una partida. |
-| `WATCH_INTERVAL_SECONDS` | `20` | Cada cuanto revisa el watcher. |
+| `WATCH_INTERVAL_SECONDS` | `20` | Cada cuanto se revisa la carpeta. |
 | `MIN_ROUNDS_DEFAULT` | `5` | Muestra minima para que un agregado aparezca en las tablas. |
 | `SESSION_GAP_MINUTES` | `120` | Minutos sin jugar para cortar una sesion. |
 | `TRADE_WINDOW_SECONDS` | `3` | Segundos para considerar vengada una muerte. Cambiarlo pide `manage.py recompute`. |
@@ -300,15 +326,19 @@ rato si se loguea muy seguido, por eso la app reusa el ticket hasta que vence.
 
 ### Copias de seguridad
 
+La app copia la base sola, una vez por semana, al abrir (si ya importaste algo),
+y en **Ajustes** hay un boton para hacer una al instante. Por consola es lo
+mismo:
+
 ```powershell
 cd backend
 python manage.py backup
 ```
 
 Deja `data/backups/db-20260910-231155.sqlite3` y conserva las 10 ultimas. Vale
-la pena hacerlo seguido, porque **rehacer el historial no siempre es posible**:
-el juego va borrando los replays viejos de `MatchReplay`, y lo que ya
-importaste puede no existir mas en disco.
+la pena tenerlas, porque **rehacer el historial no siempre es posible**: el
+juego va borrando los replays viejos de `MatchReplay`, y lo que ya importaste
+puede no existir mas en disco.
 
 Usa la API de backup online de SQLite y no una copia de archivo, asi que sale
 consistente aunque el server este corriendo.
@@ -362,7 +392,7 @@ hacen las herramientas parecidas y lo que se descarto a proposito, esta en
 ```
 packaging/              spec de PyInstaller para el .exe del backend
 backend/
-  serve.py              punto de entrada del backend empaquetado
+  serve.py              punto de entrada del .exe: migra, copia, vigila y sirve
   pydissect/            parser del formato .rec (independiente de Django)
     reader.py           lector binario, zstd chunked, escaneo de patrones
     header.py           cabecera en texto plano, nombres, roles de equipo
@@ -379,6 +409,8 @@ backend/
     ingest.py           parseo -> base de datos, idempotente
     export.py           agregados a CSV
     backup.py           copia de la base con la API online de SQLite
+    ajustes.py          lo que cambia la pagina Ajustes, escrito en el .env
+    vigilante.py        importacion automatica en un hilo del servidor
     recompute.py        rehace los trades con otra ventana, sin reparsear
     retag.py            re-etiqueta IDs ya importados sin reparsear
     unknowns.py         IDs sin nombre y el archivo de etiquetas
@@ -389,8 +421,8 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                366 tests (parser, metricas, agregados, coach, API)
-frontend/               React + Vite + recharts (53 tests con vitest)
+  tests/                419 tests (parser, metricas, agregados, coach, API)
+frontend/               React + Vite + recharts (65 tests con vitest)
   components/           tabla, filtros, graficos, helpers de formato
   pages/                una por ruta, cada una en su propio chunk
   electron/             app de escritorio (proceso principal y preload)
