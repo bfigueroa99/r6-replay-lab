@@ -44,6 +44,19 @@ test('el menu navega sin recargar y carga los chunks lazy', async ({ page }) => 
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la tabla por mitad', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Por mitad de la partida' })
+  await expect(panel).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Primera mitad', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Segunda mitad', exact: true })).toBeVisible()
+  await expect(panel.getByText('Según el lado con que arrancas')).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

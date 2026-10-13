@@ -222,6 +222,8 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_day": agg.trend_by_day(**filters),
             "by_match": agg.trend_by_match(limit=limit, **filters),
             "by_round_number": agg.by_round_number(**filters),
+            "by_half": agg.by_half(**filters),
+            "by_start_side": agg.by_start_side(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
             "spawn_exit": agg.spawn_exit(**filters),

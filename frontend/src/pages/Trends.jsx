@@ -49,6 +49,9 @@ function Delta({ metric }) {
   return <span className="chip">{texto}</span>
 }
 
+const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
+const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
+
 export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
   const sesiones = useApi('/sessions/', filters)
@@ -69,6 +72,16 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const byRound = data.by_round_number.map((row) => ({
     ...row,
     ronda: `R${row.round_number + 1}`,
+  }))
+  const porMitad = (data.by_half ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: MITADES[row.half] || row.half,
+  }))
+  const porLadoInicial = (data.by_start_side ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    lado: LADOS[row.side] || row.side,
   }))
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
@@ -332,6 +345,43 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       ) : null}
 
       {salida?.maps?.length ? <SalidaDelSpawn salida={salida} /> : null}
+
+      {porMitad.length ? (
+        <Panel
+          title="Por mitad de la partida"
+          hint={
+            'Primera mitad: las rondas en el lado con que arrancaste. ' +
+            'Si la segunda o la prórroga caen, el problema es cerrar, no empezar.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'tramo', label: 'Tramo', sortable: false, left: true },
+              { key: 'rounds', label: 'Rondas', sortable: false },
+              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
+              { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+              { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+              { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+            ]}
+            rows={porMitad}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.half}
+            csvName="por-mitad"
+          />
+          <h3 style={{ margin: '16px 0 8px' }}>Según el lado con que arrancas</h3>
+          <DataTable
+            columns={[
+              { key: 'lado', label: 'Lado', sortable: false, left: true },
+              { key: 'matches', label: 'Partidas', sortable: false },
+              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false, help: 'Partidas ganadas sobre las que tienen resultado.' },
+            ]}
+            rows={porLadoInicial}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.side}
+            csvName="por-lado-inicial"
+          />
+        </Panel>
+      ) : null}
 
       <Panel
         title="Por numero de ronda"
