@@ -163,6 +163,49 @@ class RoundEndTests(SimpleTestCase):
         events.round_end(r)
         self.assertEqual(resultado(r), [(True, ""), (False, "")])
 
+    def test_y9s4_un_defuse_del_perdedor_no_crea_un_segundo_ganador(self):
+        r = LectorFalso(version=Y9S4, score=(1, 0))
+        r.match_feedback = [{"type": DEFUSER_DISABLE_COMPLETE, "username": "B0"}]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, TIME), (False, "")])
+
+    def test_y9s4_un_plant_del_perdedor_no_crea_un_segundo_ganador(self):
+        r = LectorFalso(version=Y9S4, roles=(DEFENSE, ATTACK), score=(1, 0))
+        r.match_feedback = [{"type": DEFUSER_PLANT_COMPLETE, "username": "B0"}]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, TIME), (False, "")])
+
+    def test_y9s4_sin_coincidencia_y_con_eliminacion_la_condicion_es_eliminacion(self):
+        r = LectorFalso(version=Y9S4, score=(1, 0))
+        r.match_feedback = [
+            {"type": DEFUSER_DISABLE_COMPLETE, "username": "B0"},
+            *(kill("A0", f"B{n}") for n in range(5)),
+        ]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, KILLED_OPPONENTS), (False, "")])
+
+    def test_y9s4_defuse_del_ganador_da_la_condicion_desactivar(self):
+        r = LectorFalso(version=Y9S4, score=(0, 1))
+        r.match_feedback = [
+            {"type": DEFUSER_PLANT_COMPLETE, "username": "A0"},
+            {"type": DEFUSER_DISABLE_COMPLETE, "username": "B0"},
+        ]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(False, ""), (True, DISABLED_DEFUSER)])
+
+    def test_y9s4_plant_del_ganador_da_la_condicion_bomba(self):
+        r = LectorFalso(version=Y9S4, score=(1, 0))
+        r.match_feedback = [{"type": DEFUSER_PLANT_COMPLETE, "username": "A0"}]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(True, DEFUSED_BOMB), (False, "")])
+
+    def test_previo_y9s4_el_defuse_sigue_decidiendo_el_ganador(self):
+        # antes de Y9S4 la cabecera no trae ganador: el score se ignora y manda el feed
+        r = LectorFalso(version=Y9S3, score=(1, 0))
+        r.match_feedback = [{"type": DEFUSER_DISABLE_COMPLETE, "username": "B0"}]
+        events.round_end(r)
+        self.assertEqual(resultado(r), [(False, ""), (True, DISABLED_DEFUSER)])
+
     def test_kill_corregida_por_el_marcador_toma_el_autor_del_marcador(self):
         r = LectorFalso()
         r.match_feedback = [kill("B0", "A0", usernameFromScoreboard="B1")]
