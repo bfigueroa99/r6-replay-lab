@@ -1,15 +1,15 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
-estado: propuesto
-candado: arquitecto 2026-10-13T20:12Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B4 (idea del PO 20261013T0511Z); epica lado-y-marcador en curso (B1 en main por #25)
-archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T1915Z
+archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/muestra.js, frontend/src/muestra.test.js, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_ronda_anterior.py, frontend/e2e/humo.spec.js
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z
 
 ## PR
 
@@ -55,7 +55,86 @@ ninguna pantalla muestra hoy.
 
 ## Diseno
 
-(Arquitecto)
+(Arquitecto 20261013T2011Z, sobre main 5d2aecc. Spike en el scratchpad con
+`seed_demo`: la subconsulta de abajo da 87 / 87 / 29 rondas, suma 203 = total.)
+
+Es la primera de tres fichas que agregan cortes a `/api/trends/` y a
+Tendencias (39, 41, 40). Esta deja armados los dos ayudantes que las otras
+reusan: `_filas_por_tramo` en el backend y `TablaDeCorte` + `muestra.js` en
+el frontend. Implementar primero esta.
+
+**Archivos y por que**
+
+- `backend/replays/analytics/aggregates.py`:
+  - `_filas_por_tramo(campo: str, tramos: dict[str, QuerySet]) -> list[dict]`:
+    una fila `{campo: nombre, **totals(qs, baseline)}` por tramo, en el orden
+    del dict, con un solo `rating_baseline()`. Reescribir el final de
+    `by_half` para usarlo (mismo resultado; `test_mitades.py` lo cubre).
+  - `RONDA_ANTERIOR = ("after_win", "after_loss", "no_previous")`, constante
+    de orden como `MITADES`.
+  - `_resultado_anterior() -> Subquery`: `Round.objects.filter(match_id=OuterRef("round__match_id"), number=OuterRef("round__number") - 1).values("my_team_won")[:1]`.
+    Se lee de `Round`, no del queryset filtrado: por eso `?side=` no la
+    cambia (mismo criterio que `_lado_inicial`). Docstring corto con ese por que.
+  - `by_previous_round(**filters)`: `qs = base_queryset(**filters).annotate(anterior=_resultado_anterior())`;
+    tramos `after_win: qs.filter(anterior=True)`, `after_loss: qs.filter(anterior=False)`,
+    `no_previous: qs.filter(anterior__isnull=True)`. Las tres son disjuntas
+    y cubren todo (nulo = sin ronda anterior importada o anterior sin
+    resultado). Devuelve `_filas_por_tramo("previous", tramos)`.
+- `backend/replays/views.py`: en `trends`, `"by_previous_round": agg.by_previous_round(**filters)`.
+- `frontend/src/muestra.js` (nuevo, logica pura): `export const MUESTRA_CORTE = 30`
+  y `export function filasConPocaMuestra(filas, minimo = MUESTRA_CORTE)` que
+  devuelve las filas con `0 < rounds < minimo` (las de 0 rondas no avisan:
+  salen vacias). `frontend/src/muestra.test.js` con vitest.
+- `frontend/src/pages/Trends.jsx`:
+  - componente local `TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName })`
+    con las columnas de "Por mitad" (etiqueta, Rondas, Ganadas %, Rating con
+    su `help`, KPR, Aperturas %), `initialSort` por `orden`. "Por mitad"
+    no se migra (no hace falta tocarla).
+  - panel "Después de ganar o perder la ronda anterior", entre "Por mitad de
+    la partida" y "Por numero de ronda". Etiquetas: `after_win` "Después de
+    ganar", `after_loss` "Después de perder", `no_previous` "Sin ronda anterior".
+    `csvName="ronda-anterior"`. Hint normal: "Si después de perder tu winrate
+    o tu rating caen más que tu promedio, la ronda perdida te sigue pesando."
+    Si `filasConPocaMuestra(filas).length`, el hint pasa a: "Ojo: alguna fila
+    tiene menos de 30 rondas; la diferencia puede ser varianza." (mismo
+    patron que `flaco` en `Jugador.jsx`). Se renderiza solo si
+    `data.by_previous_round?.length`.
+- `docs/metricas.md`: seccion nueva `## Contexto de la ronda` debajo de
+  "Mitades y prorroga", con la fila **Despues de ganar / perder** (ronda
+  anterior = `number - 1` de la misma partida, leida de la partida entera;
+  sin ronda anterior importada o sin resultado va a "Sin ronda anterior";
+  metricas las de siempre). En `## Muestra minima` la fila
+  `Cortes de Tendencias (ronda anterior, marcador, hora, dia) | 30 rondas por fila: no se oculta, se avisa`.
+- `backend/tests/test_ronda_anterior.py` (nuevo), con `factories`
+  (`make_match`, `make_round(match, n, side=, won=)`, `make_round_player`):
+  - `test_las_tres_filas_salen_en_orden_fijo`
+  - `test_ganar_y_perder_mandan_la_siguiente_a_su_fila` (R1 gana, R2 pierde,
+    R3: R2 en after_win, R3 en after_loss, R1 en no_previous)
+  - `test_la_primera_ronda_y_la_que_le_falta_la_anterior_van_a_sin_anterior`
+    (rondas 1, 2 y 5: la 5 sin la 4)
+  - `test_anterior_sin_resultado_va_a_sin_anterior` (`won=None` via `Round.objects.filter(...).update(my_team_won=None)`)
+  - `test_el_filtro_de_lado_no_cambia_la_ronda_anterior` (R1 defensa ganada,
+    R2 ataque; `by_previous_round(side="Attack")`: R2 en after_win)
+  - `test_las_filas_suman_las_rondas_del_resumen` (contra `overview()["overall"]["rounds"]`)
+  - `test_base_vacia_y_filtros_raros_dan_200_con_tres_filas_en_cero`
+    (cliente sobre `/api/trends/?days=-1`, `?since=foo`, `?map=%00`)
+- `frontend/e2e/humo.spec.js`: test `Tendencias muestra la inercia entre rondas`,
+  calcado de `Tendencias muestra la tabla por mitad`: panel por titulo, celdas
+  "Después de ganar" y "Después de perder", consola limpia. Con `seed_demo`
+  las rondas alternan ganada/perdida, asi que "Después de ganar" da 0 % y
+  "Después de perder" 100 % (87 rondas cada una): se puede afirmar, pero
+  basta con las celdas.
+
+**Orden:** aggregates + test backend -> views -> muestra.js + test ->
+Trends.jsx -> e2e -> metricas.md -> `check.sh`.
+
+**Que puede romperse:** nada de base (sin migracion ni recompute). Si
+`_filas_por_tramo` cambia el orden o las claves de `by_half`, cae
+`test_mitades.py`. `OuterRef(...) - 1` funciona en Django + SQLite (spike).
+
+**Verificacion manual:** `python manage.py seed_demo`, `runserver`,
+`curl -s localhost:8000/api/trends/ | python -m json.tool | grep -A3 by_previous_round`,
+y `/tendencias` muestra el panel con 0 % / 100 %.
 
 ## Para el humano
 

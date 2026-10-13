@@ -1,15 +1,15 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
-estado: propuesto
-candado: arquitecto 2026-10-13T20:12Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: progreso
 area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E3 (idea del PO 20261013T0511Z)
-archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T1915Z
+archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_hora_y_dia.py, frontend/e2e/humo.spec.js
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z
 
 ## PR
 
@@ -51,8 +51,64 @@ pantalla la usa.
 
 ## Diseno
 
-(Arquitecto) Toca `Trends.jsx` y `trends` igual que la 39 y la 41: si se
-disenan juntas, ordenar la implementacion para que no choquen.
+(Arquitecto 20261013T2011Z, sobre main 5d2aecc. Spike en el scratchpad con
+`seed_demo`: franjas [28, 28, 28, 21, 21, 21, 28, 28] y dias
+[56, 56, 21, 0, 0, 14, 56], las dos suman 203 = total.)
+
+**Implementar despues de que #41 se mergee** (y la 41 despues de la 39):
+usa `_filas_por_tramo`, `TablaDeCorte` y `muestra.js` de la 39 y toca los
+mismos archivos. Prioriza, no bloquea; si se implementa antes, crear esos
+ayudantes con los nombres y firmas del diseno de la 39.
+
+**Archivos y por que**
+
+- `backend/replays/analytics/aggregates.py`:
+  - `by_hour(**filters)`: 8 tramos `qs.filter(round__match__played_at__hour__gte=h, round__match__played_at__hour__lt=h + 3)`
+    para `h in range(0, 24, 3)`. Filas `{"hour_from": h, **totals}` con un
+    solo `rating_baseline()` (no usar `_filas_por_tramo` tal cual porque la
+    clave es un entero; si se generaliza para aceptar claves int, mejor).
+  - `by_weekday(**filters)`: 7 tramos `qs.filter(round__match__played_at__iso_week_day=d)`
+    para `d in 1..7`, filas `{"weekday": d, **totals}`. Usar
+    `iso_week_day` (1=lunes) y **no** `week_day` (1=domingo): comentario
+    corto con ese por que.
+  - Hora tal cual esta en la base (`USE_TZ = False`, hora local del PC):
+    sin conversion. 15 `totals()` son ~30 consultas chicas; con miles de
+    rondas sigue siendo instantaneo en SQLite. No hace falta agrupar en SQL.
+- `backend/replays/views.py`: `"by_hour"` y `"by_weekday"` en `trends`.
+- `frontend/src/pages/Trends.jsx`: dos paneles despues de "Según el marcador"
+  y antes de "Por numero de ronda", con `TablaDeCorte`:
+  - "Por hora del día": etiqueta `${h}–${h + 3} h` (ej. "21–24 h"),
+    `csvName="por-hora"`. Hint: "Hora de inicio de la partida, tal como la
+    guardó tu PC."
+  - "Por día de la semana": `['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'][weekday - 1]`,
+    `csvName="por-dia"`.
+  - Las filas en 0 se muestran (son fijas y dicen "no juegas a esa hora");
+    aviso de `filasConPocaMuestra` en el hint como en la 39.
+- `docs/metricas.md`: seccion `## Cuando juegas` (despues de `## Sesiones`)
+  con **Por hora del dia** (franjas de 3 h por la hora de inicio de la
+  partida, hora local guardada, sin zona horaria; una partida que cruza la
+  medianoche cuenta entera en la franja en que empezo) y **Por dia de la
+  semana** (lunes a domingo del inicio de la partida).
+- `backend/tests/test_hora_y_dia.py` (nuevo), con `make_match(played_at=...)`:
+  - `test_ocho_franjas_fijas_aunque_no_haya_rondas` (`hour_from` 0..21, rounds 0)
+  - `test_siete_dias_fijos_de_lunes_a_domingo`
+  - `test_domingo_23_30_y_lunes_00_30_caen_en_su_dia_y_su_franja`
+    (2026-09-06 es domingo: 23:30 -> weekday 7 y franja 21; 2026-09-07
+    00:30 -> weekday 1 y franja 0)
+  - `test_las_filas_suman_las_rondas_del_resumen` (las dos listas)
+  - `test_base_vacia_y_filtros_raros_dan_200`
+- `frontend/e2e/humo.spec.js`: `Tendencias muestra hora y dia de la semana`:
+  paneles por titulo, celdas "21–24 h", "Lunes" y "Domingo", consola limpia.
+
+**Orden:** test backend -> aggregates -> views -> Trends.jsx -> e2e ->
+metricas.md -> `check.sh`.
+
+**Que puede romperse:** nada de base; el guion largo `–` en las etiquetas
+tiene que coincidir entre Trends.jsx y el e2e (copiarlo, no tipearlo).
+`seed_demo` no cambia.
+
+**Verificacion manual:** `seed_demo`, `/api/trends/` -> las sumas de arriba,
+y `/tendencias` con jueves y viernes en 0.
 
 ## Para el humano
 
