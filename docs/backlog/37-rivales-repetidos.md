@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
 estado: aprobado
-candado: -
+candado: release 2026-10-13 18:15 UTC
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
