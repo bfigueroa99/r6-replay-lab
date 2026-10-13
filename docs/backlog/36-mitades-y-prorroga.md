@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
-estado: en curso 2026-10-13T07:12Z
-candado: dev 2026-10-13T07:12Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -178,7 +178,13 @@ resultado).
 **Que puede romperse.** Sin migracion ni recompute. El Subquery corre por
 fila de `RoundPlayer`; con `Round` indexado por `match` es barato, pero si
 `/api/trends/` se pone lento en la base real (miles de rondas), anotarlo en
-`## Para el humano` (no optimizar a ciegas). Rondas con `my_side` vacio en
+`## Para el humano
+
+- (Dev 20261013T0711Z, aviso) Hoy, si faltan los `.rec` del inicio de una
+  partida, la segunda mitad se lee como primera (documentado en
+  `metricas.md`). Hay forma de evitarlo: tomar el lado inicial solo de una
+  ronda con `score_before == [0, 0]`. Queda como mejora posible para el
+  tramo siguiente; no bloquea.` (no optimizar a ciegas). Rondas con `my_side` vacio en
 una partida con lado inicial caen en `second` (distinto de `""`): excluir
 `round__my_side=""` tambien en `second`.
 
@@ -191,7 +197,38 @@ resuelve un merge trivial.
 
 ## Implementacion
 
-(Dev) Que quedo, que no, desvios del diseno y por que.
+(Dev 20261013T0711Z) Quedo todo el diseno:
+
+- `aggregates.py`: `_lado_inicial(match_ref)` (Subquery sobre `Round`, ronda
+  mas baja sin prorroga), `by_half` y `by_start_side`. `views.trends` suma
+  `by_half` y `by_start_side`, sin parametros nuevos.
+- `factories.make_round` gana `overtime_number=0`.
+- `backend/tests/test_mitades.py`, 10 tests: los 7 del diseno y 3 mas
+  (`test_ronda_sin_lado_no_cae_en_la_segunda_mitad`,
+  `test_el_filtro_de_lado_no_cambia_el_lado_inicial`,
+  `test_partida_sin_resultado_cuenta_pero_no_entra_al_winrate`). Prueba de
+  mutacion: con `number=1` en el Subquery falla el test de la ronda mas baja.
+- `Trends.jsx`: Panel "Por mitad de la partida", antes de "Por numero de
+  ronda", con las dos tablas (`por-mitad`, `por-lado-inicial`) en orden fijo
+  (campo `orden` y columnas `sortable: false`).
+- e2e `Tendencias muestra la tabla por mitad` en `humo.spec.js`.
+- `docs/metricas.md`: seccion `## Mitades y prorroga` con las tres filas.
+
+Desvios: `by_start_side` devuelve ademas `decided` y `wins` (cuantas partidas
+entran al porcentaje). La primera y la segunda mitad tambien excluyen rondas
+con `my_side` vacio, como pedia "Que puede romperse".
+
+La revision ciega previa encontro un test que no detectaba lo que su nombre
+dice (corregido) y propuso usar `score_before == [0, 0]` para detectar
+partidas a las que les faltan las primeras rondas. Eso no se hizo: el diseno
+lo deja como limitacion documentada y hacerlo cambia la definicion. Va a
+`## Para el humano
+
+- (Dev 20261013T0711Z, aviso) Hoy, si faltan los `.rec` del inicio de una
+  partida, la segunda mitad se lee como primera (documentado en
+  `metricas.md`). Hay forma de evitarlo: tomar el lado inicial solo de una
+  ronda con `score_before == [0, 0]`. Queda como mejora posible para el
+  tramo siguiente; no bloquea.`.
 
 ## Revision <fecha> sobre <sha>
 
@@ -208,3 +245,9 @@ resuelve un merge trivial.
 ## Pendiente
 
 ## Para el humano
+
+- (Dev 20261013T0711Z, aviso) Hoy, si faltan los `.rec` del inicio de una
+  partida, la segunda mitad se lee como primera (documentado en
+  `metricas.md`). Hay forma de evitarlo: tomar el lado inicial solo de una
+  ronda con `score_before == [0, 0]`. Queda como mejora posible para el
+  tramo siguiente; no bloquea.

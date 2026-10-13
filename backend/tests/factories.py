@@ -54,10 +54,12 @@ def make_round(
     side: str = "Attack",
     site: str = "B Church, B Arsenal Room",
     won: bool = True,
+    overtime_number: int = 0,
 ) -> Round:
     return Round.objects.create(
         match=match,
         number=number,
+        overtime_number=overtime_number,
         site=site,
         my_side=side,
         my_team_won=won,
