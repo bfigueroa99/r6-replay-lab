@@ -1,7 +1,7 @@
 # 38. Una ronda de Y9S4+ con defuse del perdedor queda con dos ganadores
 
-estado: revisado
-candado: qa 2026-10-13T13:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/38-dos-ganadores-por-ronda
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: parser
 prioridad: 2
 fuente: aviso de la ficha 30 (`## Para el humano`, ya en main) y de `ESTADO.md`; `round_end` en `backend/pydissect/events.py:378`
 archivos: backend/pydissect/events.py, backend/tests/test_round_end.py, docs/formato-rec.md
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z, qa 20261013T1312Z
 
 ## PR
 
@@ -191,9 +191,47 @@ sin importar Django.
 
 Veredicto: aprobar.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-13 sobre a6febeb
 
-(QA) Un comando y un resultado por criterio de aceptacion.
+(QA 20261013T1312Z) Codigo de 0b96635; `origin/main` (3e42126) ya fusionado.
+Scripts en el scratchpad de la sesion, base temporal (`SQLITE_PATH`), sin
+`.rec` reales.
+
+- `./scripts/check.sh` -> `Todo en verde.` (484 tests backend, 65 frontend,
+  build, 24 e2e). Sin migraciones ni `frontend/src`: chunk sin cambios.
+- Criterios 1 y 2: `python manage.py test tests.test_round_end -v 2` -> 20
+  OK, incluidos `test_y9s4_un_defuse_del_perdedor_no_crea_un_segundo_ganador`
+  y `test_y9s4_un_plant_del_perdedor_no_crea_un_segundo_ganador`.
+  Propiedad sobre 3456 combinaciones (version Y9S3/Y9S4 x marcador x roles x
+  disable de A0/B0/ninguno/desconocido x plant de A1/B1/ninguno x 0-5 bajas
+  por lado): en Y9S4 siempre **un** ganador, el de la cabecera, y el
+  perdedor sin condicion. Con `events.py` de main la misma propiedad falla
+  (`[(True, ''), (True, 'DefusedBomb')]` con plant de B1).
+- Criterio 3: los 14 tests previos de `test_round_end.py` verdes sin tocar;
+  `test_y9s4_defuse_del_ganador_da_la_condicion_desactivar` y
+  `test_y9s4_plant_del_ganador_da_la_condicion_bomba` verdes.
+- Criterio 4: `test_y9s4_sin_coincidencia_y_con_eliminacion_la_condicion_es_eliminacion`
+  verde; la incertidumbre la pone `analyse_round` (`win_condition_certain=False`,
+  `ObjectiveOrTime`), confirmado en la importacion de abajo.
+- Criterio 5: `test_previo_y9s4_el_defuse_sigue_decidiendo_el_ganador` verde.
+- Criterio 6: `docs/formato-rec.md:72-74`.
+- Cadena completa: partida sintetica Y9S4 de 3 rondas (ronda 1 = cabecera
+  al rival + defuse propio, ronda 2 = defuse propio y ganada, ronda 3 =
+  eliminacion del rival) importada por `ingest.import_match_folder` con
+  `MatchReader` reemplazado. Rama: rondas con `my_team_won` = 1 y marcador
+  1-2, coinciden; `GET /api/matches/1/` -> 200 con lo mismo. Con
+  `events.py` de main: 2 rondas ganadas contra un marcador 1-2 (el bug).
+- Endpoints con base vacia y parametros borde (`/api/overview/?until=foo`,
+  `/api/matches/?page=-1`, `/api/trends/`, `/api/coach/`): 200;
+  `/api/matches/1/` sin datos: 404.
+- Mutacion (`python manage.py test tests.test_round_end`): (1) el disable
+  vuelve a escribir `won` en Y9S4 -> caen 2 tests; (2) sin chequear el equipo
+  del disabler -> caen 2; (3) sin chequear el equipo del planter -> cae 1.
+- `tests.test_pydissect`: verde; `test_parsea_una_ronda_completa` se salta
+  sin `R6_TEST_REPLAY` (ver abajo).
+
+Veredicto: aprobado. El hallazgo menor del Revisor (`TIME` tras un plant del
+perdedor) sigue sin efecto en datos: `winCondition` de pydissect no se guarda.
 
 ## Verificar en el PC
 
@@ -202,6 +240,7 @@ Toca el parser: confirmar con `.rec` reales de Y9S4+ que el ganador de cada
 ronda coincide con el marcador. `recompute` no reparsea: las rondas ya
 importadas se corrigen con `cd backend; python manage.py import_replays
 --force <carpeta de replays>` (hacer `manage.py backup` antes).
+Y el test con replay real: `$env:R6_TEST_REPLAY="<ruta a un .rec Y9S4+>"; cd backend; python manage.py test tests.test_pydissect`.
 
 ## Pendiente
 
