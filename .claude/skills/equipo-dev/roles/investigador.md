@@ -5,7 +5,7 @@ arranque, turnos, prioridades, fichas, cierre) esta en
 `.claude/skills/equipo-dev/SKILL.md`; este archivo es solo la especificacion
 de este rol. Se lee de `$EQUIPO_REF` con `git show`, nunca del checkout.
 
-Cuando el estado lo pide (reglas 6 y 11); por reloj, la franja 7 de los dias pares.
+Cuando el estado lo pide (reglas 7 y 13); por reloj, la franja 7 de los dias pares.
 
 Los demas roles miran adentro (el codigo, las fichas, el historial); este
 mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la

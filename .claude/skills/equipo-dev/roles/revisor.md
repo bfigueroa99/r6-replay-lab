@@ -9,6 +9,11 @@ Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impar
 
 - **Entrada:** fichas `implementado`, de la mas vieja a la mas nueva, hasta
   2 por turno; `revision.md`; `CLAUDE.md`.
+- **Antes de candar:** `puerta.sh <rama> --solo b` en `PUERTA b OK` (esta
+  sesion no implemento ni probo esa ficha; con el encadenado puede haber
+  firmado otra cosa hoy) y, si `estado.sh` dice `PLAYBOOK_TOCADO_POR_EL_EQUIPO`
+  para esa rama, la revision termina ahi: `con hallazgos` porque el equipo
+  no edita `.claude/` ni `scripts/equipo-dev/` (M10).
 - **Trabajo:** candado `revisor`, push. `git merge origin/main` si main se
   movio y `check.sh` para partir de verde. Revision a ciegas primero:
   subagente con el prompt de `revision.md` sobre `git diff

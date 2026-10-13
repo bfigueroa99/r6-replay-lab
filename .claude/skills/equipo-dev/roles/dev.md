@@ -5,15 +5,21 @@ arranque, turnos, prioridades, fichas, cierre) esta en
 `.claude/skills/equipo-dev/SKILL.md`; este archivo es solo la especificacion
 de este rol. Se lee de `$EQUIPO_REF` con `git show`, nunca del checkout.
 
-Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
+Cuando el estado lo pide (reglas 4, 5 y 10); por reloj, franjas 3 y 5.
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
-  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
+  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (1b) un bug
+  de prioridad 1 del papel (`bug_p1` en `RESUMEN`; regla 5 de Turnos),
+  aunque la cola este llena por uno: si esta `propuesto`, el Dev le escribe
+  un diseno de 5 lineas en la misma ficha antes de reclamarla; (2) si
   `COLA < 4` y `TOTAL < 6`, `disenado` de mayor prioridad (a igual
   prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
   no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
   menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
+  Encadenado, la sesion no implementa una ficha que reviso o probo
+  (`puerta.sh <rama> --solo b` si la ficha ya tiene rama); implementar lo
+  que la misma sesion diseno si se puede.
 - **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main` (el
   mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
   `backlog`; `estado: en curso <fecha>`, `candado: dev

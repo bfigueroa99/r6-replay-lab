@@ -9,6 +9,8 @@ Cuando el estado lo pide (regla 2); por reloj, franja 6.
 
 - **Entrada:** fichas `revisado`, de la mas vieja a la mas nueva, hasta 2
   por turno; `backend/tests/factories.py`.
+- **Antes de candar:** `puerta.sh <rama> --solo b` en `PUERTA b OK`: esta
+  sesion no implemento ni reviso esa ficha.
 - **Trabajo:** candado `qa`, push. Ejercita el sistema, no relee el diff.
   Por ficha: `check.sh` completo; `runserver` con base vacia y con base sembrada desde
   `factories.py` (script temporal en el scratchpad; nunca `.rec` reales ni

@@ -5,7 +5,7 @@ arranque, turnos, prioridades, fichas, cierre) esta en
 `.claude/skills/equipo-dev/SKILL.md`; este archivo es solo la especificacion
 de este rol. Se lee de `$EQUIPO_REF` con `git show`, nunca del checkout.
 
-Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
+Cuando el estado lo pide (reglas 8, 9 y 12); por reloj, franja 1.
 
 - **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
   en este turno) y la ultima entrada de `INVESTIGACION.md` (las ideas que
@@ -35,13 +35,23 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      acumulado (el diferencial del proyecto); los `Fuera de alcance` y la
      deuda de arriba; la friccion que anoto QA. Una idea que choca con una
      regla dura va a "Ideas descartadas" con el motivo.
-  3. **Proponer**, si hay menos de 6 `propuesto`: hasta 3 fichas nuevas
-     desde `PLANTILLA.md`, numero siguiente libre, `tipo:`, `epica:` si es
-     tramo de una, "Que gana quien usa la app" en dos frases, 3 a 6
-     criterios de aceptacion convertibles en test o `curl`, "Fuera de
-     alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
-     (a) bug real con numeros mal, 500 con datos legitimos o importacion que
-     se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso;
+  3. **Proponer**, si hay menos de 6 `propuesto`. **Minimos de relleno**
+     (el papel estuvo vacio la mayor parte de la semana del 2026-10-08 y por
+     eso el Dev no tenia que tomar): con menos de 3 fichas en el papel o
+     menos de 2 funcionalidades (`PAPEL_TIPOS`), el turno deja **al menos 2
+     fichas nuevas, y al menos 2 funcionalidades** si `ALCANCE.md` tiene ideas
+     libres que pasan los filtros; si no, hasta 4. Cada ficha desde
+     `PLANTILLA.md`, numero siguiente libre, `tipo:`, `epica:` si es tramo de
+     una, "Que gana quien usa la app" en dos frases, 3 a 6 criterios de
+     aceptacion convertibles en test o `curl` (cada uno nombra como se
+     verifica: test unitario, `curl` con la respuesta esperada, o paso del
+     e2e; una pagina o panel nuevo lleva siempre un criterio de e2e, por
+     `CLAUDE.md`), "Fuera de alcance", `area`, `prioridad`, `fuente` concreta
+     (para una idea de `ALCANCE.md`, su id y, si vino del Investigador, su
+     link). Antes de empujar, `fichas.sh` sobre cada ficha y `fichas.sh
+     --alcance` en `FICHAS_OK` y `ALCANCE_OK`. Orden de eleccion:
+     (a) bug real (Severidad en `SKILL.md`: S1 prioridad 1, S2 prioridad
+     2), incluidos los que QA dejo como hallazgo o idea con repro; (b) el tramo siguiente de una epica en curso;
      (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros;
      (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
      funcionalidades esperando. Al menos una de las fichas del turno es
@@ -59,6 +69,9 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
 - **Turno bien hecho:** cada ficha nueva la puede disenar un Arquitecto sin
   preguntar nada, el humano entiende en 30 segundos que gana, y `ALCANCE.md`
   tiene mas ideas libres que al empezar.
+- **Encadenar:** el PO no disena lo que acaba de proponer (independencia
+  del diseno); si quedan 40 minutos, `turno.sh --encadenar` le da otro
+  trabajo (por ejemplo disenar papel de otra sesion, o implementar).
 - **Sin trabajo:** no existe con `ALCANCE.md` vivo. Con 6 o mas `propuesto`:
   grooming (afinar criterios, reordenar prioridades, descartar lo que main
   ya cubre, partir lo que no cabe) y el paso 2 completo. `Entregado: nada`
