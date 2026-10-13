@@ -69,6 +69,15 @@ class RondaAnteriorTests(TestCase):
             {"after_win": 1, "after_loss": 0, "no_previous": 0},
         )
 
+    def test_el_filtro_de_operador_no_cambia_la_ronda_anterior(self):
+        match = make_match()
+        make_round_player(make_round(match, 0, won=False), operator="Ash")
+        make_round_player(make_round(match, 1, won=True), operator="Zofia")
+        self.assertEqual(
+            _por_anterior(agg.by_previous_round(operator="Zofia")),
+            {"after_win": 0, "after_loss": 1, "no_previous": 0},
+        )
+
     def test_las_filas_suman_las_rondas_del_resumen(self):
         _partida([(1, True), (2, False), (3, False), (4, True), (7, True)], index=0,
                  sides=["Attack", "Attack", "Defense", "Defense", "Attack"])

@@ -1,7 +1,7 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
-estado: implementado
-candado: revisor 2026-10-13T22:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/39-inercia-entre-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B4 (idea del PO 20261013T0511Z); epica lado-y-marcador en curso (B1 en main por #25)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/muestra.js, frontend/src/muestra.test.js, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_ronda_anterior.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261013T2112Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261013T2112Z, revisor 20261013T2211Z
 
 ## PR
 
@@ -166,6 +166,33 @@ inexistentes, constante sin usar), los 4 corregidos.
 
 Verificacion: `check.sh` en `Todo en verde.` (502 tests backend, 69 vitest,
 build ok, 27 e2e).
+
+## Revision 2026-10-13 sobre 5f23d8f
+
+(Revisor 20261013T2211Z.) Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos, veredicto `aprobar`. Confirmado por el lider:
+
+- Criterios: los 6 cubiertos. Orden fijo, ganar/perder, primera ronda y
+  anterior faltante, anterior sin resultado, filtro de lado y suma contra
+  `overview` con test en `test_ronda_anterior.py`; panel, CSV y aviso de
+  muestra en `Trends.jsx` + `muestra.test.js`; e2e `Tendencias muestra la
+  inercia entre rondas` afirma 0 % / 100 %; fila en `metricas.md` (corte y
+  muestra minima); base vacia y filtros raros con test de API.
+- Con `seed_demo` las tres filas suman el total en cada filtro probado
+  (todo 87/87/29 = 203; `side=Attack` 0/87/29 = 116; `side=Defense` 87/0/0 =
+  87; `map=oregon` 0/0/0), sin rondas contadas dos veces.
+- Diff dentro de `archivos:`; sin tildes en identificadores, UI con tildes,
+  sin `print` ni `console.log`; sin dependencias ni migraciones.
+- La subconsulta corre al consultar: es un corte (como `_lado_inicial` en
+  `by_half`), no una metrica por ronda; no rompe la regla de metricas al
+  importar.
+- Test agregado (verde): `test_el_filtro_de_operador_no_cambia_la_ronda_anterior`,
+  porque `metricas.md` promete que el filtro de operador tampoco cambia la
+  anterior y solo estaba probado el de lado.
+
+`check.sh` en `Todo en verde.` (503 tests backend, 69 vitest, build ok, 27 e2e).
+
+Veredicto: aprobar.
 
 ## Para el humano
 
