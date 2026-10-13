@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-13 08:15 UTC
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B1; `Round.overtime_number` (`backend/replays/models.py:89`) se guarda en `ingest.py:201` y ninguna vista lo usa
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/, frontend/e2e/, backend/tests/factories.py
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T0711Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T0711Z, revisor 20261013T0811Z
 
 ## PR
 
