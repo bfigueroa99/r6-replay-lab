@@ -29,6 +29,8 @@ else
 fi
 sk=$base/.claude/skills/equipo-dev/SKILL.md
 ru=$base/.claude/skills/equipo-dev/rutina.md
+rl=$base/.claude/skills/equipo-dev/roles
+ROLES="release po arquitecto dev revisor qa investigador"
 tu=$base/scripts/equipo-dev/turno.sh
 es=$base/scripts/equipo-dev/estado.sh
 bl=$base/docs/backlog
@@ -69,23 +71,26 @@ det=""
 if [ ! -f "$ru" ]; then det=" no existe"
 else
     b=$(wc -c < "$ru"); [ "$b" -lt 2600 ] || det="$det $b bytes (tope 2600)"
-    for t in 'turno.sh' 'estado.sh' 'rol:' 'SKILL.md' 'SIN_PLAYBOOK' '+refs/heads/claude/*'; do
+    for t in 'turno.sh' 'estado.sh' 'rol:' 'SKILL.md' 'roles/$EQUIPO_ROL.md' 'equipo-dev.env' 'SIN_PLAYBOOK' '+refs/heads/claude/*'; do
         grep -qF -- "$t" "$ru" || det="$det falta '$t'"
     done
     for t in tope minutos P1; do grep -qi -- "$t" "$ru" && det="$det contiene '$t'"; done
 fi
 cierra rutina "$det"
 
-# 4. rutas: todo lo que los textos nombran como archivo existe.
+# 4. rutas: todo lo que los textos nombran como archivo existe. Los
+# `roles/<rol>.md` que se citan entre si son relativos a la skill.
 det=""
 # Linea por linea y no `for p in $(...)`: el for expandiria `docs/backlog/*.md`
 # contra el directorio actual.
+textos=$(cat "$sk" "$ru" "$bl/README.md" "$rl"/*.md 2>/dev/null)
 while IFS= read -r p; do
     [ -n "$p" ] || continue
     case " $EXENTAS " in *" $p "*) continue ;; esac
-    case "$p" in *NN*|*'*'*|*'<'*) continue ;; esac
+    case "$p" in *NN*|*'*'*|*'<'*|*'$'*) continue ;; esac
+    case "$p" in roles/*) p=.claude/skills/equipo-dev/$p ;; esac
     [ -e "$base/$p" ] || det="$det $p"
-done <<< "$(cat "$sk" "$ru" "$bl/README.md" 2>/dev/null | grep -oE '`(\.claude|scripts|docs/backlog)/[^`]*`' | tr -d '`' | sort -u)"
+done <<< "$(printf '%s\n' "$textos" | grep -oE '`(\.claude|scripts|docs/backlog|roles)/[^` ]*`' | tr -d '`' | sort -u)"
 cierra rutas "$det"
 
 # 5. topes: los numeros de estado.sh son los que el playbook y la plantilla
@@ -114,16 +119,32 @@ det=""
 for k in estado candado rama tipo epica turnos; do grep -q "^$k:" "$bl/PLANTILLA.md" 2>/dev/null || det="$det $k:"; done
 cierra plantilla "$det"
 
-# 7. roles: siete en el case de turno.sh y siete especificaciones en el playbook.
+# 7. roles: los siete del case de turno.sh tienen su archivo `roles/<rol>.md`
+# con un `# Rol:`, el indice de SKILL.md los nombra a los siete y no sobra
+# ninguno: un rol sin archivo deja al turno sin especificacion.
 det=""
-nc=$(grep -oE '^[[:space:]]*release\|[a-z|]+\)' "$tu" 2>/dev/null | head -1 | tr -d ' )' | tr '|' '\n' | grep -c .)
+caso=$(grep -oE '^[[:space:]]*release\|[a-z|]+\)' "$tu" 2>/dev/null | head -1 | tr -d ' )' | tr '|' ' ')
+[ "$caso" = "$ROLES" ] || det="$det case de turno.sh: '$caso' (esperado '$ROLES');"
+for r in $ROLES; do
+    if [ ! -f "$rl/$r.md" ]; then det="$det falta roles/$r.md;"
+    else grep -q '^# Rol: ' "$rl/$r.md" || det="$det roles/$r.md sin '# Rol:';"
+    fi
+    sed -n '/^## Especificacion por rol/,/^## Cierre comun/p' "$sk" 2>/dev/null | grep -qF "\`roles/$r.md\`" || det="$det el indice de SKILL.md no nombra roles/$r.md;"
+done
+for f in "$rl"/*.md; do
+    [ -e "$f" ] || continue
+    r=$(basename "$f" .md)
+    case " $ROLES " in *" $r "*) ;; *) det="$det roles/$r.md no es un rol de turno.sh;" ;; esac
+done
 nh=$(sed -n '/^## Especificacion por rol/,/^## Cierre comun/p' "$sk" 2>/dev/null | grep -c '^### ')
-[ "$nc" -eq 7 ] && [ "$nh" -eq 7 ] || det=" case de turno.sh: $nc nombres; SKILL.md: $nh encabezados ### (esperados 7 y 7)"
+[ "$nh" -eq 0 ] || det="$det SKILL.md volvio a tener $nh especificaciones ### de rol"
 cierra roles "$det"
 
 # 8. podridos: hechos que ya no son ciertos y que el playbook no puede nombrar.
 det=""
-for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray"; do grep -qF -- "$t" "$sk" 2>/dev/null && det="$det '$t'"; done
+for f in "$sk" "$rl"/*.md; do
+    for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray"; do grep -qF -- "$t" "$f" 2>/dev/null && det="$det ${f#$base/}:'$t'"; done
+done
 cierra podridos "$det"
 
 # 9. simular: la regla del rol, caso por caso, comparando la linea entera.

@@ -1,0 +1,48 @@
+# Rol: Dev
+
+Parte del playbook del equipo. Lo comun a todos los roles (principios,
+arranque, turnos, prioridades, fichas, cierre) esta en
+`.claude/skills/equipo-dev/SKILL.md`; este archivo es solo la especificacion
+de este rol. Se lee de `$EQUIPO_REF` con `git show`, nunca del checkout.
+
+Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
+
+- **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
+  `en curso` con candado muerto (mas de 3 h sin commits) o con
+  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
+  `COLA < 4` y `TOTAL < 6`, `disenado` de mayor prioridad (a igual
+  prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
+  no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
+  menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
+- **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/main` (el
+  mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
+  `backlog`; `estado: en curso <fecha>`, `candado: dev
+  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
+  origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
+  siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
+  curso`, `rama:`); si ese push falla, no importa.
+- **Trabajo:** implementar el diseno completo: backend + frontend + tests +
+  fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
+  migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
+  repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
+  explican por que). Dos subagentes para backend y frontend si son
+  independientes. Antes del ultimo push: subagente ciego con `revision.md`
+  sobre `git diff origin/main...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
+  filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
+  es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
+  que quedo, que no, desvios del diseno. `estado: implementado`,
+  `candado: -`, push.
+- **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
+  `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
+  `candado: -`. No se tira trabajo parcial verde.
+- **Salida:** rama de trabajo nueva o pushes a la existente; commits en
+  presente (`Agrega ...`, `Corrige ...`). Nunca abre el PR.
+- **Turno bien hecho:** cada criterio de aceptacion tiene un test con nombre;
+  el Revisor puede trabajar sin preguntar nada.
+- **Sin trabajo:** sin nada tomable y con lugar en la cola: un bug real
+  reproducible (test que falla, 500 con datos legitimos, deprecacion que va
+  a romper, `.rec` raro que tumba la importacion) con ficha propia escrita
+  en el momento (criterios, diseno de 5 lineas, implementacion) y dejada en
+  `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
+  llena o solo cosmetica: `Entregado: nada, <motivo>`.
+
