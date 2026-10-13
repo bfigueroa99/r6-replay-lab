@@ -570,25 +570,15 @@ el Release (pasos 8 y 9 de `roles/release.md`).
 
 ## Transicion
 
-- Mientras este playbook no este en `main`, `$REF` es la segunda ref de la
-  cadena de `turno.sh` y `ESTADO.md` e informe lo dicen en `playbook:`. El
-  PR del playbook lo mergea el humano: toca las reglas del equipo. Nadie
-  empuja a esa rama sin `bash scripts/equipo-dev/pruebas.sh` en
-  `PRUEBAS_OK`. Lo diferido de la maquinaria vive en
-  `docs/backlog/MAQUINARIA.md`.
-- Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
-  `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
-  nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
-  (o QA en su fallback) les crea la ficha a partir de su entrada en el
-  roadmap y del mensaje de su ultimo commit, en `implementado`, y sigue como
-  siempre; si ya tienen PR abierto, el PR se conserva y la sesion que las
-  hizo ya termino, asi que no aplica la espera de 3 horas de P8 (sin
-  herramientas para ver el PR, vale la regla general: commits de menos de 3
-  horas = posible sesion viva). Con solo el commit de reclamo: borrables, se
-  listan en `ESTADO.md` y no se les crea ficha.
-- Los numeros 20 a 29 del roadmap estan tomados o reservados por
-  `mercado/*`, `claude/loop-*` y los PRs del playbook anterior; no se tocan.
-  El PO puede importar esos candidatos como fichas nuevas con numero nuevo.
+- El playbook vive en `main` (#21). La cadena de `turno.sh` sigue probando
+  `claude/equipo-dev/playbook` despues de `main` por si `main` lo pierde.
+  Cambia solo por PR que mergea el humano, con `pruebas.sh` en `PRUEBAS_OK`;
+  lo diferido de la maquinaria vive en `docs/backlog/MAQUINARIA.md`.
+- Ramas del playbook anterior (reclamaban en `docs/roadmap.md` con un commit
+  `Reclama:`; `estado.sh` las lista): con codigo, el primer Revisor (o QA en
+  su fallback) les crea la ficha en `implementado` desde su entrada en el
+  roadmap y su ultimo commit; con solo el reclamo, borrables. Los numeros 20
+  a 29 del roadmap estan tomados: las fichas arrancan en 30.
 
 ## Lo que el equipo nunca hace
 
