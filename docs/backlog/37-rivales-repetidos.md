@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-13T16:12Z
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D1; `nemesis` (`backend/replays/analytics/aggregates.py:640`) cuenta duelos pero no partidas ganadas o perdidas contra cada rival
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Duelos.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z, dev 20261013T1511Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z, dev 20261013T1511Z, revisor 20261013T1612Z
 
 ## PR
 
