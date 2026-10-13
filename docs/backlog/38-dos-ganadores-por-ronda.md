@@ -1,7 +1,7 @@
 # 38. Una ronda de Y9S4+ con defuse del perdedor queda con dos ganadores
 
-estado: implementado
-candado: revisor 2026-10-13T12:13Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/38-dos-ganadores-por-ronda
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: parser
 prioridad: 2
 fuente: aviso de la ficha 30 (`## Para el humano`, ya en main) y de `ESTADO.md`; `round_end` en `backend/pydissect/events.py:378`
 archivos: backend/pydissect/events.py, backend/tests/test_round_end.py, docs/formato-rec.md
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z
 
 ## PR
 
@@ -163,9 +163,33 @@ frontend, no hay fila de `metricas.md` (no hay numero nuevo).
   confirmo con mutacion (events.py de main) que los tests nuevos caen.
 - `check.sh`: `Todo en verde.` (484 tests backend, 65 frontend, build, 24 e2e).
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-13 sobre 0b96635
 
-(Revisor) Formato de `revision.md`. Veredicto al final.
+(Revisor 20261013T1213Z) Revision ciega con `revision.md` y confirmacion del
+lider. `check.sh` en el revisor: `Todo en verde.` (484 backend, 65 frontend,
+build, 24 e2e). `origin/main` ya estaba fusionado.
+
+Confirmado: desde Y9S4 `round_end` solo escribe `won` desde la cabecera, que
+siempre deja exactamente un ganador (`events.py:392-394`); antes de Y9S4 el
+orden disable > plant > inferencia queda intacto. Los dos tests "del
+perdedor" fallan sobre main (dos `True`) y pasan con el cambio. Criterios 1 a
+6 cubiertos por los 6 tests nuevos de `test_round_end.py` y el parrafo de
+`docs/formato-rec.md`; los 14 tests previos sin tocar. `pydissect/` sigue
+sin importar Django.
+
+- [formato, menor, no bloqueante] backend/pydissect/events.py:431-435
+  Que pasa: en Y9S4+, plant del atacante y ronda ganada por la defensa sin
+  defuse en el feed ni eliminacion completa deja `winCondition = TIME`, que
+  no puede pasar despues de un plant (lo fija
+  `test_y9s4_un_plant_del_perdedor_no_crea_un_segundo_ganador`, como pedia el
+  diseno).
+  Por que no bloquea: el `winCondition` de pydissect no se guarda ni se lee
+  (`grep winCondition backend/replays` vacio; `analyse_round` calcula su
+  propia condicion), asi que no cambia ningun dato de la base ni de la UI.
+  Arreglo posible a futuro: con plant del perdedor, condicion vacia o
+  `DISABLED_DEFUSER` en vez de `TIME`.
+
+Veredicto: aprobar.
 
 ## QA <fecha> sobre <sha>
 
