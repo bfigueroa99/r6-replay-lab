@@ -1,381 +1,85 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: aprobado
-candado: release 2026-10-13T04:13Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
+tipo: tests
+epica: -
 area: tests
 prioridad: 3
-fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
+fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` solo la ejercitaba `RealReplayTests`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre).
 archivos: backend/tests/test_pydissect.py
 turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z, qa 20261013T0302Z, release 20261013T0413Z
 
 ## PR
 
-(La escribe el Release manager al final: titulo `[equipo-dev][area] Titulo`,
-cuerpo segun `.claude/skills/equipo-dev/plantilla-pr.md` y una seccion
-"Como probarlo en 2 minutos" con comandos exactos.)
+**Titulo:** `[equipo-dev][tests] Tests de como el parser decide que equipo ataca`
+
+### Que cambia
+
+Doce tests nuevos para `derive_team_roles`, la funcion que decide que equipo ataca y cual defiende. Hoy ningun test que corre la cubria; baja el riesgo de que un cambio en el parser, o una temporada con operadores nuevos, invierta ataque y defensa (y con eso todo lo que se filtra por lado) sin que nada avise.
+
+### Por que esto y no otra cosa
+
+Ficha 35: hueco de tests visto en `pydissect/header.py`. Se descarto usar `.rec` reales o fixtures binarias: un lector falso (`SimpleNamespace`) alcanza y corre en todos lados. No cambia codigo de `pydissect/`.
+
+### Como se probo
+
+- `./scripts/check.sh`: 468 tests backend (4 saltados), 65 vitest, build ok, 23 e2e. `Todo en verde.`
+- Tests nuevos (`LadoDeLosEquiposTests` en `backend/tests/test_pydissect.py`):
+  - `test_el_equipo_con_operadores_de_ataque_ataca`, `test_el_atacante_puede_ser_el_equipo_1`: lado por mayoria, con el atacante en cualquiera de los dos `teamIndex`.
+  - `test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`, `test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes`, `test_los_defensores_de_mas_del_equipo_1_tambien_restan`, `test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores`: el puntaje es ataque menos defensa y votan los dos equipos.
+  - `test_el_jugador_con_operador_0_se_descarta`: sale de `players` y del `scoreboard`.
+  - `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`, `test_el_recluta_no_se_anota_como_operador_nuevo`, `test_un_id_sin_nombre_se_anota_como_unknown`: `inferredOperatorSides`.
+  - `test_sin_operadores_conocidos_no_hay_lado_y_avisa`: sin `role` y con `log.warning`.
+  - `test_el_tear_down_vacia_el_registro_de_ids_desconocidos`: los tests no dejan IDs en `overrides.unknown_ids()`.
+- Mutaciones sobre `header.py` (revision y QA): caen todas salvo `>=` por `>` en el desempate, fuera de alcance a proposito.
+
+### Riesgos y lo que no entra
+
+Sin migraciones, sin `recompute`, sin frontend, sin cambios de parser. Fuera: la regla de desempate (`score0 >= score1`), `read_header` y `gamemode_name`.
+
+### Como probarlo en 2 minutos
+
+```bash
+cd backend
+python manage.py test tests.test_pydissect.LadoDeLosEquiposTests -v 2   # 12 tests OK
+python manage.py test tests.test_pydissect --reverse                    # sin estado entre tests
+```
+
+### Para el humano
+
+Dos avisos, no bloquean: (1) `inferredOperatorSides` anota tambien los IDs sin nombre como `"Unknown(<id>)"`; el test lo documenta tal cual. (2) Si los dos equipos empatan en puntaje ataca el equipo 0; no se testea para no fijarlo. Cualquiera de los dos, si queres cambiarlo, es otra ficha.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
-Trabajo interno: si una temporada nueva trae operadores que la app no conoce,
-el lado de cada equipo (y con el todo lo que se filtra por ataque y defensa)
-depende de esta funcion, y hoy ningun test que corre la cubre. Baja el riesgo
-de que un cambio en el parser invierta ataque y defensa sin que nada avise.
+Trabajo interno: el lado de cada equipo, y todo lo que se filtra por ataque y defensa, depende de esta funcion. Ahora un test avisa si se invierte.
 
 ## Criterios de aceptacion
 
-- [ ] Con un lector falso (`header`, `players`, `teams`, sin `.rec`), un equipo con mayoria de operadores de ataque conocidos queda `Attack` y el otro `Defense`, tambien cuando el equipo atacante es el `teamIndex` 1 (test en `tests/test_pydissect.py`).
-- [ ] Un jugador con operador 0 sale de `header["players"]` y del `scoreboard` (test).
-- [ ] Un operador con nombre conocido pero sin lado en `OPERATOR_SIDES` (el caso de un operador nuevo etiquetado en overrides) hereda el lado de su equipo en `header["inferredOperatorSides"]`; un Recluta no se anota ahi, y un ID sin nombre tampoco (test).
-- [ ] Si ningun operador tiene lado conocido, los equipos quedan sin `role` y la funcion no revienta (test que afirma tambien el `log.warning`).
-- [ ] Los tests no dejan estado: `operator_name` anota los IDs sin nombre en el registro en memoria de `overrides.record_unknown`, asi que cada test que use un ID desconocido llama a `reset_unknown()` al terminar, y `unknown_ids()` queda vacio despues de la clase (test).
+- [x] Mayoria de operadores de ataque conocidos -> `Attack`, tambien con el atacante en `teamIndex` 1.
+- [x] Jugador con operador 0 fuera de `header["players"]` y del `scoreboard`.
+- [x] Operador con nombre y sin lado hereda el de su equipo en `inferredOperatorSides`; el Recluta no; un ID sin nombre se anota como `Unknown(<id>)` (criterio ajustado en el diseno a lo que hace main).
+- [x] Sin operadores con lado conocido: sin `role`, sin excepcion, con `log.warning`.
+- [x] Los tests no dejan estado en `overrides.unknown_ids()`.
 
 ## Fuera de alcance
 
-- Cambiar la regla de desempate (`score0 >= score1` hace atacar al equipo 0): si el diseno ve que el empate da un resultado dudoso, va a `## Para el humano`, no se cambia en esta ficha.
-- Tests con `.rec` reales o fixtures binarias.
-- Otras funciones de `header.py` sin test directo (`read_header`, `gamemode_name`).
+Cambiar el desempate; `.rec` reales o fixtures binarias; otras funciones de `header.py`.
 
-## Diseno
+## Diseno, implementacion y revision (resumen; detalle en `git log`)
 
-(Arquitecto 20261010T0602Z, sobre main 0b547d7.) Solo tests: no cambia codigo
-de `pydissect/`. Spike en el scratchpad con un lector falso confirmo el
-comportamiento actual, con **un ajuste al criterio 3** (ver abajo).
-
-**Ajuste al criterio 3.** El criterio dice que "un ID sin nombre tampoco" se
-anota en `inferredOperatorSides`. En main **si** se anota: `operator_name`
-devuelve `"Unknown(<id>)"` (no vacio) para un ID que no esta ni en
-`OPERATORS` ni en overrides, y queda `{"Unknown(123)": "Attack"}`. Es
-coherente con el comentario del codigo ("quedan registrados para
-aprenderlos") y nadie consume ese dict fuera de `match.py:144`, que lo copia al
-dict de la ronda. Como la ficha es de tests y cambiar el comportamiento esta
-fuera de alcance, el test **documenta lo que hace main**: el ID sin nombre se
-anota con la clave `"Unknown(<id>)"`. Si el humano prefiere que no se anote,
-es otra ficha (ver `## Para el humano`).
-
-**Archivo y por que**
-
-- `backend/tests/test_pydissect.py`: ahi viven `NameTests` y
-  `CompatTradeTests`, que ya usan lectores falsos (`FakeReader`). Clase nueva
-  `LadoDeLosEquiposTests(SimpleTestCase)` despues de `NameTests`. Import nuevo:
-  `derive_team_roles` desde `pydissect.header`; `overrides` desde `pydissect`
-  (`from pydissect import overrides`), `ATTACK`, `DEFENSE`, `RECRUIT` desde
-  `pydissect.constants`.
-
-Nada mas. `archivos:` = ese archivo.
-
-**Lector falso**
-
-`derive_team_roles(r)` solo usa `r.players` (lista de dicts con `username`,
-`teamIndex`, `operator`), `r.header` (dict), `r.teams` (lista de 2 dicts) y
-escribe `r.scoreboard`. Helper de modulo:
-
-```python
-def _lector(jugadores):
-    """Lo minimo que `derive_team_roles` lee y escribe, sin .rec."""
-    return SimpleNamespace(header={}, players=jugadores, teams=[{}, {}], scoreboard=None)
-```
-
-IDs a usar (estan en `constants.OPERATORS` y ya los usa `NameTests`): Ash
-`92270642656` (ataque), Mute `92270642318` (defensa). Para un segundo atacante
-y defensor, el Dev toma dos IDs cualquiera de `OPERATORS` con lado conocido y
-los nombra en una constante con comentario (`THERMITE = ...  # ataque`). ID
-desconocido: `999` (no esta en `OPERATORS`; si lo estuviera el test lo
-detecta porque falla).
-
-**Tests** (nombres en espanol, sin tildes)
-
-1. `test_el_equipo_con_operadores_de_ataque_ataca`: equipo 0 con 2 atacantes,
-   equipo 1 con 2 defensores -> `teams[0]["role"] == ATTACK`,
-   `teams[1]["role"] == DEFENSE`.
-2. `test_el_atacante_puede_ser_el_equipo_1`: lo mismo invertido ->
-   `teams[1]["role"] == ATTACK`.
-3. `test_el_jugador_con_operador_0_se_descarta`: 3 jugadores, uno con
-   `operator: 0` -> `header["players"]` tiene 2 y no contiene a ese
-   `username`; `len(scoreboard) == 2`.
-4. `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`: overrides
-   apuntando a un JSON temporal con `{"operators": {"999": "Nuevo"}}`; equipo 0
-   con Ash y el `999`, equipo 1 con Mute ->
-   `header["inferredOperatorSides"] == {"Nuevo": ATTACK}`. Mecanica (para que
-   no quede cache sucio): `tempfile.TemporaryDirectory()`, escribir el JSON,
-   `with mock.patch.dict(os.environ, {overrides.ENV_VAR: ruta}):`
-   `overrides.load(force=True)` y llamar a `derive_team_roles`; fuera del
-   `with`, en un `finally`, `overrides.load(force=True)` otra vez para que el
-   cache vuelva al estado sin overrides. `os` ya esta importado; agregar
-   `tempfile`, `from types import SimpleNamespace`, `from unittest import mock`.
-5. `test_el_recluta_no_se_anota_como_operador_nuevo`: equipo 0 con Ash y
-   `RECRUIT`, equipo 1 con Mute -> `"inferredOperatorSides" not in header`.
-6. `test_un_id_sin_nombre_se_anota_como_unknown`: equipo 0 con Ash y `999`
-   (sin overrides), equipo 1 con Mute ->
-   `header["inferredOperatorSides"] == {"Unknown(999)": ATTACK}` y
-   `999 in overrides.unknown_ids()["operators"]`. (Criterio 3 ajustado.)
-7. `test_sin_operadores_conocidos_no_hay_lado_y_avisa`: todos con `999` ->
-   `with self.assertLogs("pydissect.header", level="WARNING")`; afirma que
-   ningun `teams[i]` tiene `"role"` y que `header["players"]` sigue armado.
-8. `test_los_ids_desconocidos_no_quedan_registrados_entre_tests`: con 6 y 7 en
-   la clase, `setUp` y `tearDown` llaman a `overrides.reset_unknown()`; este
-   test afirma `overrides.unknown_ids() == {}` al empezar (prueba que el
-   `tearDown` del anterior limpio, sea cual sea el orden). Ademas
-   `tearDownClass` llama a `reset_unknown()` por las dudas.
-
-`self.assertNoLogs` no hace falta en el resto: el warning solo sale en 7.
-
-**Orden**
-
-1. Helper `_lector` y tests 1 a 3.
-2. 5, 6 y 7 con el `setUp`/`tearDown` de `reset_unknown`.
-3. 4 (overrides temporal), y el 8 al final.
-4. `python manage.py test tests.test_pydissect` y despues `check.sh`.
-
-Prueba de mutacion sugerida para QA: cambiar `score0 >= score1` por
-`score0 <= score1` hace caer 1 y 2; sacar el `p.get("operator") != RECRUIT`
-hace caer 5.
-
-**Que puede romperse**
-
-- El cache de overrides es global de modulo: si el test 4 no lo recarga en el
-  `finally`, otros tests que dependan de nombres (`NameTests`) podrian ver
-  `"Nuevo"`. Por eso el `finally`.
-- `record_unknown` es estado global: si un test olvida limpiar, cualquier test
-  posterior que mire `overrides.unknown_ids()` ve IDs ajenos. El `tearDown` lo
-  cubre.
-- Sin migracion, sin frontend, sin cambios de parser. `RealReplayTests` no se
-  toca.
-
-**Verificacion manual:** `cd backend && python manage.py test
-tests.test_pydissect -v 2` muestra los 8 tests nuevos.
-
-**Choques:** ninguno. La rama abierta (#33) toca `replays/views.py` y
-`tests/test_dates.py`; la ficha 34 (disenada en este turno) toca
-`analytics/metrics.py` y otros tests.
-
-**Desempate:** `score0 >= score1` hace atacar al equipo 0 si los puntajes
-empatan (por ejemplo, equipo 0 con un atacante y un defensor conocidos y
-equipo 1 sin ninguno conocido). Fuera de alcance; no se testea el empate para
-no fijar un comportamiento dudoso. Va como aviso a `## Para el humano`.
-
-## Implementacion
-
-(Dev 20261010T1501Z.) Solo `backend/tests/test_pydissect.py`: clase
-`LadoDeLosEquiposTests` despues de `NameTests`, con helpers de modulo
-`_lector` y `_jugador` y constantes `ASH`, `THERMITE`, `MUTE`, `JAGER`,
-`DESCONOCIDO = 999`. Los 8 tests del diseno, uno por criterio:
-
-| criterio | test |
-|---|---|
-| 1 | `test_el_equipo_con_operadores_de_ataque_ataca`, `test_el_atacante_puede_ser_el_equipo_1` |
-| 2 | `test_el_jugador_con_operador_0_se_descarta` |
-| 3 (ajustado) | `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`, `test_el_recluta_no_se_anota_como_operador_nuevo`, `test_un_id_sin_nombre_se_anota_como_unknown` |
-| 4 | `test_sin_operadores_conocidos_no_hay_lado_y_avisa` |
-| 5 | `test_los_ids_desconocidos_no_quedan_registrados_entre_tests` |
-
-Desvios del diseno:
-
-- Test 8: tal como estaba disenado (afirmar `unknown_ids() == {}` al
-  empezar) pasaba aunque se borrara el `tearDown`, porque el `setUp` ya
-  limpia (hallazgo de la revision ciega). Ahora el test anota un ID
-  desconocido, llama a `self.tearDown()` y afirma que el registro quedo
-  vacio. Mutacion: con el `tearDown` vacio, cae exactamente ese test.
-- Sin `tearDownClass`: con `tearDown` en cada test sobraba.
-- El test 4 afirma ademas `unknown_ids() == {}`: con el override el `999`
-  tiene nombre y no se registra como desconocido.
-
-Revision ciega (`revision.md`): un hallazgo (el del test 8), corregido.
-Sin cambios en `pydissect/`. `check.sh` en verde.
-
-**Correcciones de la revision (Dev 20261012T1503Z).**
-
-- Hallazgo 1: en `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`
-  y `test_un_id_sin_nombre_se_anota_como_unknown` el operador sin lado ahora
-  esta en el equipo que defiende y se espera `DEFENSE`. La mutacion del repro
-  (`unknown[name] = ATTACK`) hace caer los dos.
-- Hallazgo 2: test nuevo `test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`
-  (equipo 0 con Ash y Mute, equipo 1 con Thermite y Ash). La mutacion del
-  repro (solo vota el equipo 0) lo hace caer.
-- Hallazgo 3: renombrado a `test_el_tear_down_vacia_el_registro_de_ids_desconocidos`.
-
-Revision ciega de nuevo (`revision.md`): sin hallazgos; confirmo con
-mutaciones (sin `!= RECRUIT`, ATTACK fijo, solo vota el equipo 0, sin
-descartar operador 0, sin `log.warning`) que cada una cae. Sin cambios en
-`pydissect/`. `check.sh` en verde: 404 tests backend, 53 vitest, build, 17 e2e.
-
-**Correcciones de la segunda revision (Dev 20261012T2101Z).** Rama con
-`origin/main` 0949f87 fusionado.
-
-- Hallazgo (criterio 1, "mayoria"): dos tests nuevos, uno por mutacion, como
-  sugeria la revision:
-  `test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes` (equipo 0 =
-  Ash, Mute, Jager; equipo 1 = Thermite, Mute) y
-  `test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores` (equipo 0 =
-  Ash, Mute; equipo 1 = Ash, Thermite, Mute); los dos esperan que ataque el
-  equipo 1. Mutaciones de `header.py` (revertidas): `score = votes[i][ATTACK]`
-  hace caer el primero; `score = -votes[i][DEFENSE]` hace caer el segundo.
-  El test mixto anterior queda: es el que mata "solo vota el equipo 0".
-
-Revision ciega (`revision.md`): sin hallazgos; mutacion sobre copia, 9 de 10
-caen (sobrevive solo `>=` por `>`, el desempate fuera de alcance). Sin cambios
-en `pydissect/`. `check.sh` en verde: 414 tests backend (4 saltados), 53
-vitest, build, 17 e2e.
-
-## Revision 2026-10-12 sobre 11f3635
-
-(Revisor 20261012T1202Z.) Rama al dia con main 0b547d7 (merge-tree limpio).
-`check.sh` en verde sobre la rama: 403 tests backend (4 saltados), 53 vitest,
-build, 17 e2e. Revision ciega con `revision.md` sobre el diff sin
-`docs/backlog`; cada hallazgo confirmado con una mutacion de `header.py` o
-del test, revertida despues (arbol limpio). Reglas de `CLAUDE.md`: bien (sin
-dependencias, sin red, sin tildes en identificadores, sin `print`).
-Mutaciones que si caen: quitar `!= RECRUIT`, `atk_team = 0` fijo, no
-descartar el operador 0, quitar el `return` temprano.
-
-- [test] `backend/tests/test_pydissect.py:246` (y `:268`), **bloqueante**
-  (criterio 3). `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo`
-  no prueba "de su equipo": el operador sin lado esta siempre en el equipo
-  atacante, asi que `{"Nuevo": ATTACK}` pasa igual si el codigo le pone
-  ATTACK a cualquiera. Repro: en `header.py` cambiar
-  `unknown[name] = r.teams[p.get("teamIndex", 0)].get("role", "")` por
-  `unknown[name] = ATTACK` -> `LadoDeLosEquiposTests` sigue OK. Lo mismo le
-  pasa a `test_un_id_sin_nombre_se_anota_como_unknown`. Arreglo: poner el
-  desconocido en el equipo que defiende, p. ej.
-  `[_jugador("a1", 0, ASH), _jugador("d1", 1, MUTE), _jugador("d2", 1, DESCONOCIDO)]`
-  y esperar `{"Nuevo": DEFENSE}` (en el de Unknown,
-  `{"Unknown(999)": DEFENSE}`; verificado sobre main: es lo que devuelve).
-- [test] `backend/tests/test_pydissect.py:221-237`, **bloqueante**
-  (criterio 1, "mayoria"). En los dos tests de lado los votos del equipo 1
-  nunca cambian el resultado. Repro: en `header.py` cambiar `if side:` por
-  `if side and p.get("teamIndex", 0) == 0:` (solo vota el equipo 0) ->
-  `LadoDeLosEquiposTests` sigue OK. Arreglo: un test mixto,
-  `test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`: equipo 0
-  con `ASH` y `MUTE`, equipo 1 con `THERMITE` y `ASH` -> `teams[1]["role"] ==
-  ATTACK`, `teams[0]["role"] == DEFENSE` (verificado sobre main: pasa).
-- [test] `backend/tests/test_pydissect.py:284-287`, menor (criterio 5).
-  `test_los_ids_desconocidos_no_quedan_registrados_entre_tests` prueba que
-  `tearDown` vacia el registro, no que un test no le deje IDs al siguiente:
-  con el `setUp` reemplazado por `pass` sigue OK, y `tearDown` corre dos
-  veces. El aislamiento real lo dan `setUp` y `tearDown`, asi que no hay
-  bug; arreglo barato: renombrarlo a `test_el_tear_down_vacia_el_registro_de_ids_desconocidos`
-  para que el nombre diga lo que prueba.
-
-Criterios: 2 y 4 cubiertos y con mutacion que cae; 1 y 3 cubiertos solo a
-medias (hallazgos 1 y 2); 5 cubierto (hallazgo 3 es de nombre). Diff dentro
-de `archivos:`.
-
-Veredicto: **corregir**. Son dos tests a agregar o ajustar y un rename; no
-hay que tocar `pydissect/`.
-
-## Revision 2026-10-12 sobre c28750f
-
-(QA 20261012T1640Z con la especificacion del Revisor: no habia fichas
-`revisado`. Sesion distinta de las de dev y de la revision anterior.) Rama
-con main 0b547d7 incluido. `check.sh` en verde sobre c28750f: 404 tests
-backend (4 saltados), 53 vitest, build, 17 e2e. Revision ciega con
-`revision.md` sobre el diff sin `docs/backlog`; hallazgo confirmado por el
-lider con mutacion de `header.py`, revertida (arbol limpio). Las correcciones
-de la revision anterior estan: la mutacion `unknown[name] = ATTACK` y "solo
-vota el equipo 0" caen. Tambien caen: `atk_team = 0` fijo, sin `!= RECRUIT`,
-sin descartar el operador 0, sin el `return` del warning. Reglas de
-`CLAUDE.md`: bien.
-
-- [test] `backend/tests/test_pydissect.py:240`
-  (`test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados`),
-  **bloqueante** (criterio 1, "mayoria de operadores"). El equipo 1 tiene solo
-  atacantes (Thermite y Ash), asi que ningun test hace pesar los votos de
-  defensa contra los de ataque. Repro: en `header.py:276-277` cambiar a
-  `score0 = votes[0][ATTACK]` y `score1 = votes[1][ATTACK]` ->
-  `python3 manage.py test tests.test_pydissect.LadoDeLosEquiposTests` sigue
-  OK. Lo mismo con `score0 = -votes[0][DEFENSE]` y
-  `score1 = -votes[1][DEFENSE]` (solo defensa). Ningun fixture solo mata las
-  dos mutaciones (es aritmeticamente imposible con un `>=`), asi que son dos:
-  - mixto 1: equipo 0 = `ASH, MUTE, JAGER`, equipo 1 = `THERMITE, MUTE` ->
-    `teams[1]["role"] == ATTACK` (verificado sobre la rama: da `Attack`; con
-    "solo ataque" empata 1 a 1 y gana el equipo 0, cae).
-  - mixto 2: equipo 0 = `ASH, MUTE`, equipo 1 = `ASH, THERMITE, MUTE` ->
-    `teams[1]["role"] == ATTACK` (verificado: da `Attack`; con "solo
-    defensa" empata -1 a -1 y gana el equipo 0, cae).
-  Se pueden poner en el test existente (reemplazando su fixture) o en dos
-  tests; el nombre actual pasa a ser cierto con cualquiera de los dos.
-
-Mutacion que sobrevive y no se reporta: `>=` por `>` en el desempate (fuera
-de alcance, ya esta en `## Para el humano`).
-
-Criterios: 2, 3, 4 y 5 cubiertos con mutacion que cae; 1 a medias (hallazgo).
-Diff dentro de `archivos:`.
-
-Veredicto: **corregir**. Un fixture (o dos tests) en `test_pydissect.py`; no
-hay que tocar `pydissect/`. Si la proxima revision solo encuentra menores,
-es la tercera pasada: `revisado`.
-
-## Revision 2026-10-13 sobre f0fb9c3
-
-(Revisor 20261013T0002Z, tercera pasada; sesion distinta de las tres de dev
-y de las dos revisiones anteriores.) Rama con `origin/main` 0949f87 incluido.
-`check.sh` en `Todo en verde.` sobre f0fb9c3: 414 tests backend (4
-saltados), 53 vitest, build, 17 e2e. Revision ciega con `revision.md` sobre
-el diff sin `docs/backlog`; mutaciones de `header.py` sobre una copia, con
-`PYTHONDONTWRITEBYTECODE=1` (con `.pyc` viejos una mutacion del mismo tamano
-puede no recargarse). Caen: `atk_team = 0` fijo, solo ataque o solo defensa
-en los dos scores, `score0` solo ataque, `score1 = 0`, no descartar el
-operador 0, scoreboard con todos, sin `return` temprano, `log.warning` ->
-`log.debug`, sin `!= RECRUIT`, lado inferido fijo o tomado del equipo 0, sin
-`inferredOperatorSides`, votar con lado `None`. Reglas de `CLAUDE.md`: bien.
-Los hallazgos de las dos revisiones anteriores estan corregidos.
-
-- [test] `backend/tests/test_pydissect.py`, menor (criterio 1). Los tests de
-  "de mas" ponen siempre el sobrante en el equipo 0, asi que `score1 =
-  votes[1][ATTACK]` (el equipo 1 no resta defensores) sobrevivia. **Corregido
-  por el Revisor** con un test verde, como permite el rol:
-  `test_los_defensores_de_mas_del_equipo_1_tambien_restan` (equipo 0 =
-  Thermite, Mute; equipo 1 = Ash, Mute, Jager -> ataca el equipo 0). Pasa
-  sobre el codigo actual; con la mutacion cae exactamente ese test.
-- No se reporta: `>=` por `>` en el desempate sobrevive (fuera de alcance,
-  ya en `## Para el humano`).
-
-Criterios 1 a 5 cubiertos, cada uno con al menos una mutacion que cae. Diff
-dentro de `archivos:`. Sin `print`, identificadores sin tildes.
-
-Veredicto: **aprobar** -> `revisado`.
+- Diseno (arquitecto 20261010T0602Z): solo `test_pydissect.py`, lector falso, overrides en JSON temporal con recarga en `finally`, `reset_unknown()` en `setUp`/`tearDown`.
+- Implementacion en tres pasadas de dev; tres revisiones. Hallazgos corregidos: el operador sin lado se movio al equipo defensor (si no, `ATTACK` fijo pasaba); tests de mayoria mixta para que voten los dos equipos y pesen ataque y defensa; rename del test del `tearDown`; el revisor agrego `test_los_defensores_de_mas_del_equipo_1_tambien_restan`. Veredicto final: **aprobar**.
 
 ## QA 2026-10-13 sobre 76a476f
 
-(QA 20261013T0302Z; sesion distinta de las de dev y revision.) Rama con
-`origin/main` eb2633c (#12) fusionado, sin conflictos; 76a476f es ese merge.
-`check.sh` completo en `Todo en verde.`: 468 tests backend (4 saltados), 65
-vitest, build, 23 e2e. Mutaciones sobre `pydissect/header.py` con
-`PYTHONDONTWRITEBYTECODE=1`, revertidas despues (arbol limpio).
-
-| criterio | comando | resultado |
-|---|---|---|
-| 1 | `cd backend && python3 manage.py test tests.test_pydissect.LadoDeLosEquiposTests -v 2` | 12 tests OK; mutacion `if side:` -> `if side == ATTACK:` cae `test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes` |
-| 2 | mutacion: scoreboard `for p in kept` -> `for p in r.players` | cae `test_el_jugador_con_operador_0_se_descarta` |
-| 3 | mutacion: clave `unknown[name]` -> `unknown[str(p["operator"])]`; y `if unknown:` -> `if False:` | caen `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo` y `test_un_id_sin_nombre_se_anota_como_unknown` en las dos |
-| 4 | `test_sin_operadores_conocidos_no_hay_lado_y_avisa` (con `assertLogs`) | OK |
-| 5 | `python3 manage.py test tests.test_pydissect --reverse`, `--shuffle 7`, y `NameTests` antes y despues de la clase | OK en todos; correr la clase sola deja `overrides.unknown_ids() == {}` y `operator_name(999) == "Unknown(999)"` (el cache de overrides vuelve a su estado) |
-
-Humo de la app (la ficha no toca codigo de la app; vecinos del lado de
-equipo): `runserver` con `SQLITE_PATH` en el scratchpad, base vacia y
-despues `seed_demo`; `curl` a `/api/health/`, `/api/overview/?side=Attack|Defense|foo`,
-`/api/operators/?side=...&page=-1`, `/api/coach/?until=foo` -> 200 en todos.
-Sin frontend, sin migracion, sin cambios de parser: no aplica chunk ni
-`## Verificar en el PC`.
-
-Veredicto: **aprobado**.
-
-## Verificar en el PC
-
-(QA, solo si toca migraciones, recompute, parser, Electron o `.ps1`.)
-
-## Pendiente
-
-(Solo si alguien dejo trabajo a medias: que falta y donde se trabo.)
+(QA 20261013T0302Z.) `check.sh` en verde (468 backend, 65 vitest, build, 23 e2e). Cada criterio con una mutacion que cae; `--reverse` y `--shuffle 7` OK; humo de `runserver` con base vacia y `seed_demo`: `/api/overview/?side=Attack|Defense|foo`, `/api/operators/?page=-1`, `/api/coach/?until=foo` -> 200. Veredicto: **aprobado**.
 
 ## Para el humano
 
-(Arquitecto 20261010T0602Z, avisos; no bloquean la ficha.)
-
-- `derive_team_roles` anota en `inferredOperatorSides` tambien los IDs sin
-  nombre, como `"Unknown(<id>)"`. Esta ficha lo deja documentado en un test tal
-  como esta. Si preferis que solo se anoten operadores con nombre, decilo y el
-  PO abre una ficha aparte.
-- Desempate: si los dos equipos suman el mismo puntaje de ataque menos
-  defensa, ataca el equipo 0 (`score0 >= score1`). No se testea para no fijar
-  algo dudoso; si queres otra regla, es otra ficha.
+Los dos avisos del PR (Unknown en `inferredOperatorSides`, desempate al equipo 0). Informativos.
