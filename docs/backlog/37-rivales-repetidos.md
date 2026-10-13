@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: implementado
-candado: revisor 2026-10-13T16:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -228,6 +228,31 @@ Sin tildes en identificadores, UI con tildes, sin `print`/`console.log`.
 Consulta por ronda contra `is_me`, agrupada por `player_id`: correcta.
 
 Veredicto: corregir (el hallazgo de CSV, una linea).
+
+## Revision 2026-10-13 sobre ec8df02
+
+(Revisor 20261013T1612Z) Segunda pasada. `origin/main` (ac18a6e) fusionado
+en la rama y empujado; `check.sh` en el revisor: `Todo en verde.` (493
+backend, 65 frontend, build, 26 e2e).
+
+- Hallazgo anterior (CSV con "Récord" vacio): corregido en c71b7c6. La
+  columna lleva `csv:` igual que `Jugador.jsx` y `Trends.jsx`, y el e2e
+  `el CSV de rivales repetidos trae el récord de cada rival` baja el CSV
+  real y afirma `Récord == Ganadas-Perdidas` en cada fila.
+- Revision ciega (subagente con `revision.md`) sobre el diff completo: sin
+  hallazgos. Confirmado por el lider: los tests de nick, compañero/rival y
+  partida sin resultado caen con el bug que nombran; `min_matches` acotado
+  con `_int_param`; filtros por `base_queryset`.
+- Nota sin efecto: el `.distinct()` de `repeated_rivals` no deduplica por
+  el `Meta.ordering` de `RoundPlayer`, pero el resultado se junta en sets,
+  asi que los numeros dan bien.
+
+Criterios: los 6 cubiertos (tests `RivalesRepetidosTests` para 1 a 4, e2e
+de Duelos para el 5, filas en `docs/metricas.md` para el 6). Diff dentro de
+`archivos:`. Sin tildes en identificadores, UI con tildes, sin
+`print`/`console.log`.
+
+Veredicto: aprobar.
 
 ## QA <fecha> sobre <sha>
 
