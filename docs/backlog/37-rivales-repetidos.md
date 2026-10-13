@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: revisado
-candado: qa 2026-10-13T17:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D1; `nemesis` (`backend/replays/analytics/aggregates.py:640`) cuenta duelos pero no partidas ganadas o perdidas contra cada rival
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Duelos.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z, dev 20261013T1511Z, revisor 20261013T1612Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z, dev 20261013T1511Z, revisor 20261013T1612Z, qa 20261013T1712Z
 
 ## PR
 
@@ -254,9 +254,49 @@ de Duelos para el 5, filas en `docs/metricas.md` para el 6). Diff dentro de
 
 Veredicto: aprobar.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-13 sobre fef46f5
 
-(QA) Un comando y un resultado por criterio de aceptacion.
+(QA 20261013T1712Z) `origin/main` (ac18a6e) ya estaba fusionado.
+`./scripts/check.sh`: `Todo en verde.` (ruff ok, 493 backend con 4 skip,
+65 frontend, build, 26 e2e).
+
+Base sembrada con `factories.py` (script en el scratchpad, `SQLITE_PATH` y
+`R6_ENV_FILE` temporales, `runserver 8765`): Ana rival en 4 partidas (2 G,
+1 P, una con `won=None`), Ciro igual y con nick cambiado a `CiroNuevo` en
+una, Beto rival en una y compañero en otra, Dani rival en una sola.
+
+- Criterio 1 (`rivals` por profileID): `curl /api/duels/` -> 200, dos filas
+  `Ana 4/2/1 66.7` y `CiroNuevo 4/2/1 66.7`; Ciro no se parte por el nick.
+- Criterio 2 (compañero/rival): `?min_matches=1` -> `Beto matches 1, wins 1`
+  (la partida en que fue compañero no cuenta).
+- Criterio 3 (sin resultado): Ana `matches 4`, `wins + losses = 3`,
+  winrate 66.7 sobre las 3 con resultado.
+- Criterio 4 (filtros y rango): `min_matches=0`, `-5`, `abc`, `99999`, vacio
+  y `1.5` -> 200 siempre (0 y -5 se acotan a 1; `abc`, vacio y `1.5` caen al
+  default 2; 99999 a 1000 -> `[]`). `?map=oregon&min_matches=1` -> Ana y
+  CiroNuevo con 1 partida perdida; `?map=nada` y `?side=Defense` -> `[]`;
+  `until=foo`, `page=-1`, `player=99` -> 200. Vecinos `/api/players/2/`,
+  `/api/players/4/`, `/api/summary/`, `/api/matches/` -> 200. Base vacia
+  (`migrate` sola, `runserver 8766`): `/api/duels/` -> 200 con
+  `"rivals": []`, tambien con `min_matches=abc`.
+- Criterio 5 (UI): e2e `Duelos muestra rivales repetidos con enlace al
+  perfil` y `el CSV de rivales repetidos trae el récord de cada rival` en
+  verde dentro de `check.sh` (consola limpia, `href` `/jugadores/<id>`, clic
+  abre el perfil).
+- Criterio 6: filas "Rival repetido" y "Récord contra un rival" en
+  `docs/metricas.md`, `## Duelos`.
+- Bundle: chunk inicial `index-*.js` 185503 B en main y en la rama (0 %);
+  el chunk lazy de Duelos pasa de 5520 a 6414 B.
+- Mutacion sobre `repeated_rivals` (`python3 manage.py test
+  tests.test_duels.RivalesRepetidosTests`): sin el `exclude(team_index=...)`
+  cae `test_quien_fue_companero...`; winrate sobre `len(ids)` cae
+  `test_partida_sin_resultado...`; nick desde `profile_id` caen
+  `test_rivales_repetidos_cuenta...` y `test_un_cambio_de_nick...`;
+  ignorar `min_matches` caen `test_un_rival_en_una_sola_partida...` y
+  `test_el_filtro_de_mapa...`. Codigo restaurado despues de cada una.
+
+Sin migracion, sin parser, sin Electron ni `.ps1`: no hace falta
+"Verificar en el PC". Veredicto: aprobado.
 
 ## Verificar en el PC
 
