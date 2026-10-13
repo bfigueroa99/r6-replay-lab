@@ -344,6 +344,65 @@ def by_round_number(**filters) -> list[dict]:
     return group_by(qs, "round__number", labels=("round_number",), order="round__number")
 
 
+def _lado_inicial(match_ref: str) -> Subquery:
+    """Lado de la ronda mas baja sin prorroga de la partida.
+
+    Se lee de la partida entera y no del queryset filtrado: con `?side=` el
+    filtro limita las rondas, pero la partida arranco donde arranco. No se
+    exige `number=1` porque `seed_demo` numera desde 0.
+    """
+    return Subquery(
+        Round.objects.filter(match_id=OuterRef(match_ref), overtime_number=0)
+        .order_by("number")
+        .values("my_side")[:1]
+    )
+
+
+#: Orden fijo de las filas de `by_half`.
+MITADES = ("first", "second", "overtime")
+
+
+def by_half(**filters) -> list[dict]:
+    """Primera mitad, segunda mitad y prorroga, sin suponer rondas por modo."""
+    qs = base_queryset(**filters)
+    con_lado = (
+        qs.filter(round__overtime_number=0)
+        .annotate(lado_inicial=_lado_inicial("round__match_id"))
+        .exclude(lado_inicial__isnull=True)
+        .exclude(lado_inicial="")
+        .exclude(round__my_side="")
+    )
+    tramos = {
+        "first": con_lado.filter(round__my_side=F("lado_inicial")),
+        "second": con_lado.exclude(round__my_side=F("lado_inicial")),
+        "overtime": qs.filter(round__overtime_number__gt=0),
+    }
+    baseline = rating_baseline()
+    return [{"half": mitad, **totals(tramos[mitad], baseline)} for mitad in MITADES]
+
+
+def by_start_side(**filters) -> list[dict]:
+    """Partidas y winrate de partida segun el lado con que arrancaste."""
+    ids = base_queryset(**filters).values_list("round__match_id", flat=True).distinct()
+    partidas = Match.objects.filter(id__in=ids).annotate(lado=_lado_inicial("id"))
+    filas = []
+    for lado in ("Attack", "Defense"):
+        suyas = partidas.filter(lado=lado)
+        decididas = suyas.exclude(won__isnull=True)
+        wins = decididas.filter(won=True).count()
+        n_decididas = decididas.count()
+        filas.append(
+            {
+                "side": lado,
+                "matches": suyas.count(),
+                "decided": n_decididas,
+                "wins": wins,
+                "winrate": _pct(wins, n_decididas),
+            }
+        )
+    return filas
+
+
 def trend_by_day(**filters) -> list[dict]:
     qs = base_queryset(**filters)
     baseline = rating_baseline()

@@ -67,6 +67,17 @@ apertura, trade y clutch, 5.8.
 - **Como numero suelto no dice nada**: el rating de todo tu historial es 1.00 por
   definicion. Sirve en las tablas, comparando cortes.
 
+## Mitades y prorroga
+
+En Tendencias, la partida se corta por mitades sin suponer cuantas rondas
+tiene cada modo: la mitad se deduce del lado de cada ronda.
+
+| Metrica | Definicion |
+|---|---|
+| **Primera / segunda mitad** | Rondas sin prorroga. Primera mitad: las jugadas en el lado inicial de la partida; segunda: las del otro lado. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. Rondas sin lado, o de una partida sin lado inicial, no entran en ninguna. Si faltan los `.rec` de la primera mitad, la segunda se lee como primera. |
+| **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
+| **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
