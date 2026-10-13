@@ -1,7 +1,7 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
-estado: revisado
-candado: qa 2026-10-13T23:11Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/39-inercia-entre-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B4 (idea del PO 20261013T0511Z); epica lado-y-marcador en curso (B1 en main por #25)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/muestra.js, frontend/src/muestra.test.js, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_ronda_anterior.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261013T2112Z, revisor 20261013T2211Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261013T2112Z, revisor 20261013T2211Z, qa 20261013T2311Z
 
 ## PR
 
@@ -194,6 +194,57 @@ build ok, 27 e2e).
 
 Veredicto: aprobar.
 
+## QA 2026-10-13 sobre d2f1dc7
+
+(QA 20261013T2311Z.) Rama sin conflicto con `origin/main`
+(`git merge-tree --write-tree origin/main HEAD`, salida 0). Bases en el
+scratchpad, nunca en el repo; `S` = carpeta del scratchpad.
+
+- **`check.sh`**: `Todo en verde.` (ruff ok, 503 tests backend OK con 4
+  skipped, 69 vitest, build ok, 27 e2e incluido `Tendencias muestra la
+  inercia entre rondas`).
+- **Base vacia** (`SQLITE_PATH=$S/vacia.sqlite3 python manage.py migrate`,
+  `runserver 8101`): `/api/trends/` con `""`, `?days=-1`, `?since=foo`,
+  `?until=foo`, `?map=%00`, `?page=-1`, `?side=`, `?side=Attack` -> 200 y
+  `by_previous_round` = `after_win 0, after_loss 0, no_previous 0`. La UI
+  muestra el estado vacio de siempre, sin errores de consola.
+- **Base sembrada con `factories.py`** (`$S/sembrar.py` via `manage.py shell`):
+  partida Club House con rondas 1 G (ataque), 2 P (def), 3 P (at), 5 G (at,
+  sin bajas), 6 con `my_team_won=None` (def), 7 G (at): falta la 4; partida
+  Border de una sola ronda perdida; un compañero con nick repetido (otro
+  `profile_id`). Esperado a mano: despues de ganar = R2 y R6, despues de
+  perder = R3, sin anterior = R1, R5 (falta la 4), R7 (anterior sin
+  resultado), Border R1.
+  - `/api/trends/` -> 2 / 1 / 4 (winrate 50 / 0 / 75), suma 7 = `overview`
+    7. Coincide con lo esperado.
+  - `?side=Attack` -> 0 / 1 / 4 (suma 5 = `overview?side=Attack` 5: R3 sigue
+    en despues de perder aunque la R2 fue de defensa). `?side=Defense` -> 2 / 0 / 0.
+  - `?map=club-house` -> 2 / 1 / 3 (= overview 6); `?map=border` -> 0 / 0 / 1
+    (= overview 1); `?days=-1` -> 0 / 0 / 0 (= overview 0); `?operator=Zofia`,
+    `?since=foo`, `?until=foo`, `?page=-1`, `?side=`, `?map=` -> 2 / 1 / 4.
+    `?map=%00` -> 0 / 0 / 0. Todo 200, sin trazas en el log del server.
+  - Vecinos (`overview`, `matches`, `maps`, `operators`, `coach`, `sessions`,
+    `trends?side=Attack`) en las dos bases: 200. `by_half` intacto (5 / 2 / 0).
+- **UI en Chromium** (`node $S/ui.cjs frontend $S` sobre la base sembrada):
+  `/tendencias` muestra el panel con "Después de ganar 2 50 %", "Después de
+  perder 1 0 %", "Sin ronda anterior 4 75 %" y el aviso "menos de 30
+  rondas"; 0 errores de consola.
+- **Chunk inicial**: `vite build` de `origin/main` y de la rama, `index-*.js`
+  185.47 kB en los dos (0 %); el chunk lazy de Tendencias pasa de 12.05 a
+  13.31 kB.
+- **Mutacion** (cada una revertida con `git checkout --`):
+  1. `OuterRef("round__number") - 1` -> `+ 1`: `tests.test_ronda_anterior`
+     FAILED (failures=4).
+  2. filtros de `after_win` y `after_loss` invertidos: FAILED (failures=5).
+  3. subconsulta sin `match_id` (cruza partidas): FAILED (failures=1).
+  4. `muestra.js` `rondas > 0` -> `>= 0`: vitest 2 failed.
+  5. `muestra.js` `rondas < minimo` -> `<= minimo`: vitest 1 failed.
+- Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: no hay
+  `## Verificar en el PC`.
+
+Criterios: los 6 cumplidos con la evidencia de arriba. Veredicto: aprobado.
+
 ## Para el humano
 
-Nada por ahora.
+El umbral de 30 rondas del aviso de muestra se probo solo con datos
+sinteticos: calibrar con la base real (si el aviso sale siempre, o nunca).
