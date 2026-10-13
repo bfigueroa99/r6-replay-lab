@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: implementado
-candado: revisor 2026-10-13T12:13Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D1; `nemesis` (`backend/replays/analytics/aggregates.py:640`) cuenta duelos pero no partidas ganadas o perdidas contra cada rival
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Duelos.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T1111Z, revisor 20261013T1213Z
 
 ## PR
 
@@ -188,9 +188,32 @@ otras funciones y secciones: se puede implementar en paralelo.
   corregido (la fila de metricas nombraba `side`/`site` y no `operator`).
 - `check.sh`: `Todo en verde.` (487 tests backend, 65 frontend, build, 25 e2e).
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-13 sobre a4a2213
 
-(Revisor) Formato de `revision.md`. Veredicto al final.
+(Revisor 20261013T1213Z) Revision ciega con `revision.md` y confirmacion del
+lider. `check.sh` en el revisor: `Todo en verde.` (487 backend, 65 frontend,
+build, 25 e2e). `origin/main` ya estaba fusionado.
+
+- [bug] frontend/src/pages/Duelos.jsx:233
+  Que pasa: la columna "Récord" sale vacia en el CSV que baja el boton de la
+  tabla "Rivales repetidos".
+  Como reproducirlo o por que es cierto: la columna tiene `key: 'record'` y
+  solo `render`; las filas de `/api/duels/` no traen `record`, y `celdaCsv`
+  (`frontend/src/components/ui.jsx:85`) lee `row[col.key]` -> `undefined` ->
+  `''`. Confirmado leyendo `celdaCsv`; `Jugador.jsx:220` y `Trends.jsx:129`
+  ya resuelven este caso con `csv:`.
+  Arreglo sugerido: agregar `csv: (row) => \`${row.wins}-${row.losses}\`` a
+  esa columna (o `csv: false`, porque Ganadas y Perdidas ya se exportan), y
+  un caso en `frontend/src/logica.test.js` o en el e2e que afirme el valor
+  `2-1` en el CSV.
+
+Criterios: los 6 cubiertos (tests `RivalesRepetidosTests` en `test_duels.py`
+para 1 a 4, e2e `Duelos muestra rivales repetidos con enlace al perfil` para
+el 5, filas en `docs/metricas.md` para el 6). Diff dentro de `archivos:`.
+Sin tildes en identificadores, UI con tildes, sin `print`/`console.log`.
+Consulta por ronda contra `is_me`, agrupada por `player_id`: correcta.
+
+Veredicto: corregir (el hallazgo de CSV, una linea).
 
 ## QA <fecha> sobre <sha>
 
