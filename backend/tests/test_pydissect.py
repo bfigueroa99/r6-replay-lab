@@ -7,15 +7,26 @@ test tambien corre contra ese archivo.
 
 from __future__ import annotations
 
+import json
 import os
+import tempfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 import zstandard
 from django.test import SimpleTestCase
 
-from pydissect import Reader, stats
+from pydissect import Reader, overrides, stats
+from pydissect.constants import ATTACK, DEFENSE, RECRUIT
 from pydissect.errors import InvalidFile
-from pydissect.header import map_name, map_slug, operator_label, operator_side
+from pydissect.header import (
+    derive_team_roles,
+    map_name,
+    map_slug,
+    operator_label,
+    operator_side,
+)
 from pydissect.reader import _decompress_chunks
 
 HEADER_PREFIX = b"dissect" + b"\x00" * 7 + b"X" + b"\x00" * 7
@@ -179,6 +190,143 @@ class NameTests(SimpleTestCase):
 
     def test_operador_conocido_ignora_la_cabecera(self):
         self.assertEqual(operator_label({"operator": 92270642318, "roleName": "OTRO"}), "Mute")
+
+
+ASH = 92270642656  # ataque
+THERMITE = 92270642760  # ataque
+MUTE = 92270642318  # defensa
+JAGER = 92270642604  # defensa
+DESCONOCIDO = 999  # no esta en OPERATORS: un operador de una temporada nueva
+
+
+def _lector(jugadores):
+    """Lo minimo que `derive_team_roles` lee y escribe, sin .rec."""
+    return SimpleNamespace(header={}, players=jugadores, teams=[{}, {}], scoreboard=None)
+
+
+def _jugador(nombre, equipo, operador):
+    return {"username": nombre, "teamIndex": equipo, "operator": operador}
+
+
+class LadoDeLosEquiposTests(SimpleTestCase):
+    """`derive_team_roles` sin replay real: el unico otro test que la cubre se salta en la nube."""
+
+    def setUp(self):
+        overrides.reset_unknown()
+
+    def tearDown(self):
+        # operator_name anota los IDs sin nombre en un registro global de modulo
+        overrides.reset_unknown()
+
+    def test_el_equipo_con_operadores_de_ataque_ataca(self):
+        r = _lector([
+            _jugador("a1", 0, ASH), _jugador("a2", 0, THERMITE),
+            _jugador("d1", 1, MUTE), _jugador("d2", 1, JAGER),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[0]["role"], ATTACK)
+        self.assertEqual(r.teams[1]["role"], DEFENSE)
+
+    def test_el_atacante_puede_ser_el_equipo_1(self):
+        r = _lector([
+            _jugador("d1", 0, MUTE), _jugador("d2", 0, JAGER),
+            _jugador("a1", 1, ASH), _jugador("a2", 1, THERMITE),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
+    def test_gana_la_mayoria_aunque_cada_equipo_tenga_de_los_dos_lados(self):
+        # los votos del equipo 1 tienen que pesar: aca solo ellos desempatan
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, THERMITE), _jugador("y2", 1, ASH),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
+    def test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes(self):
+        # contar solo atacantes empata 1 a 1 y el desempate le daria el ataque al equipo 0
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE), _jugador("x3", 0, JAGER),
+            _jugador("y1", 1, THERMITE), _jugador("y2", 1, MUTE),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
+    def test_los_defensores_de_mas_del_equipo_1_tambien_restan(self):
+        # espejo del anterior: si solo restaran los del equipo 0, aca atacaria el equipo 1
+        r = _lector([
+            _jugador("x1", 0, THERMITE), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, ASH), _jugador("y2", 1, MUTE), _jugador("y3", 1, JAGER),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[0]["role"], ATTACK)
+        self.assertEqual(r.teams[1]["role"], DEFENSE)
+
+    def test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores(self):
+        # contar solo defensores empata 1 a 1 y el desempate le daria el ataque al equipo 0
+        r = _lector([
+            _jugador("x1", 0, ASH), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, ASH), _jugador("y2", 1, THERMITE), _jugador("y3", 1, MUTE),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[1]["role"], ATTACK)
+        self.assertEqual(r.teams[0]["role"], DEFENSE)
+
+    def test_el_jugador_con_operador_0_se_descarta(self):
+        r = _lector([_jugador("a1", 0, ASH), _jugador("fantasma", 0, 0), _jugador("d1", 1, MUTE)])
+        derive_team_roles(r)
+        nombres = [p["username"] for p in r.header["players"]]
+        self.assertEqual(nombres, ["a1", "d1"])
+        self.assertEqual(len(r.scoreboard), 2)
+
+    def test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo(self):
+        # en el equipo que defiende: en el atacante pasaria aunque el codigo pusiera ATTACK fijo
+        r = _lector([
+            _jugador("a1", 0, ASH), _jugador("d1", 1, MUTE), _jugador("d2", 1, DESCONOCIDO),
+        ])
+        with tempfile.TemporaryDirectory() as carpeta:
+            ruta = Path(carpeta) / "overrides.json"
+            ruta.write_text(json.dumps({"operators": {str(DESCONOCIDO): "Nuevo"}}), encoding="utf-8")
+            try:
+                with mock.patch.dict(os.environ, {overrides.ENV_VAR: str(ruta)}):
+                    overrides.load(force=True)
+                    derive_team_roles(r)
+            finally:
+                # el cache es global: sin recargarlo, otros tests verian "Nuevo"
+                overrides.load(force=True)
+        self.assertEqual(r.header["inferredOperatorSides"], {"Nuevo": DEFENSE})
+        self.assertEqual(overrides.unknown_ids(), {})
+
+    def test_el_recluta_no_se_anota_como_operador_nuevo(self):
+        r = _lector([_jugador("a1", 0, ASH), _jugador("a2", 0, RECRUIT), _jugador("d1", 1, MUTE)])
+        derive_team_roles(r)
+        self.assertNotIn("inferredOperatorSides", r.header)
+
+    def test_un_id_sin_nombre_se_anota_como_unknown(self):
+        r = _lector([
+            _jugador("a1", 0, ASH), _jugador("d1", 1, MUTE), _jugador("d2", 1, DESCONOCIDO),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.header["inferredOperatorSides"], {f"Unknown({DESCONOCIDO})": DEFENSE})
+        self.assertIn(DESCONOCIDO, overrides.unknown_ids()["operators"])
+
+    def test_sin_operadores_conocidos_no_hay_lado_y_avisa(self):
+        r = _lector([_jugador("x1", 0, DESCONOCIDO), _jugador("x2", 1, DESCONOCIDO)])
+        with self.assertLogs("pydissect.header", level="WARNING"):
+            derive_team_roles(r)
+        self.assertNotIn("role", r.teams[0])
+        self.assertNotIn("role", r.teams[1])
+        self.assertEqual([p["username"] for p in r.header["players"]], ["x1", "x2"])
+
+    def test_el_tear_down_vacia_el_registro_de_ids_desconocidos(self):
+        derive_team_roles(_lector([_jugador("a1", 0, ASH), _jugador("a2", 0, DESCONOCIDO)]))
+        self.assertTrue(overrides.unknown_ids())
+        self.tearDown()
+        self.assertEqual(overrides.unknown_ids(), {})
 
 
 class CompatTradeTests(SimpleTestCase):
