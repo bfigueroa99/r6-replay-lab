@@ -42,11 +42,21 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 
 # 1. sintaxis
 det=""
-for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/check.sh .claude/hooks/session-start.sh; do
+for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/check.sh .claude/hooks/session-start.sh \
+    scripts/equipo-dev/puerta.sh scripts/equipo-dev/pulso.sh scripts/equipo-dev/fichas.sh scripts/equipo-dev/sintetico.sh \
+    scripts/equipo-dev/deriva-docs.sh scripts/equipo-dev/qa.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
 done
+for s in scripts/equipo-dev/barrido_api.py scripts/equipo-dev/fuzz_parser.py scripts/equipo-dev/mutar.py; do
+    if [ ! -f "$base/$s" ]; then det="$det falta $s"
+    elif ! python3 -c "import ast, sys; ast.parse(open(sys.argv[1]).read())" "$base/$s" 2>/dev/null; then det="$det python $s"
+    fi
+done
+if [ ! -f "$base/scripts/equipo-dev/qa-paginas.mjs" ]; then det="$det falta scripts/equipo-dev/qa-paginas.mjs"
+elif command -v node >/dev/null 2>&1 && ! node --check "$base/scripts/equipo-dev/qa-paginas.mjs" 2>/dev/null; then det="$det node --check qa-paginas.mjs"
+fi
 cierra sintaxis "$det"
 
 # 2. cadena: la misma secuencia de refs en los cuatro lugares, probando
@@ -370,6 +380,33 @@ else
     cierra fichas "$det"
 fi
 rm -rf "$sint"
+
+# 15. herramientas de QA: cada una trae una --autoprueba que inyecta la
+# violacion que dice detectar (una vista que revienta, un listener roto, un
+# mutante vivo, una cita a un comando que no existe, un 500 en la pagina).
+# Corren sobre el checkout; si falta lo que necesitan (django, zstandard,
+# Chromium o el build) se dice cual y se salta, nunca se da por buena.
+det=""; saltadas=""
+auto() { # nombre comando...
+    local n=$1 r; shift
+    r=$("$@" 2>&1 | grep -E '^AUTOPRUEBA_' | tail -1)
+    case "$r" in AUTOPRUEBA_OK*) ;; *) det="$det $n: '${r:-sin AUTOPRUEBA_}';" ;; esac
+}
+auto deriva-docs bash "$es_s/deriva-docs.sh" --autoprueba
+auto mutar python3 "$es_s/mutar.py" --autoprueba
+if python3 -c 'import zstandard' 2>/dev/null; then auto fuzz_parser python3 "$es_s/fuzz_parser.py" --autoprueba; else saltadas="$saltadas fuzz_parser(sin zstandard)"; fi
+if python3 -c 'import django, zstandard' 2>/dev/null; then auto barrido_api python3 "$es_s/barrido_api.py" --autoprueba; else saltadas="$saltadas barrido_api(sin django)"; fi
+if [ -d frontend/node_modules ] && [ -f frontend/dist/index.html ] \
+    && ls -d "${PLAYWRIGHT_BROWSERS_PATH:-${HOME:-}/.cache/ms-playwright}"/chromium-* >/dev/null 2>&1 \
+    && python3 -c 'import django' 2>/dev/null; then
+    auto qa-paginas node "$es_s/qa-paginas.mjs" --autoprueba
+else
+    saltadas="$saltadas qa-paginas(sin build, node_modules o Chromium)"
+fi
+if [ -n "$det" ]; then falla herramientas "$det"
+elif [ -n "$saltadas" ]; then ok "herramientas (saltadas:$saltadas)"
+else ok herramientas
+fi
 
 if [ "$fallos" -gt 0 ]; then echo "PRUEBAS_FALLAN: $fallos"; exit 1; fi
 echo "PRUEBAS_OK ($n)"
