@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
 estado: revisado
-candado: -
+candado: qa 2026-10-13T09:12Z
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
