@@ -23,7 +23,12 @@ Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impar
   cubierto por un test o por una verificacion anotada; el diff no toca
   archivos fuera de `archivos:` sin explicacion en Implementacion; fila en
   `docs/metricas.md` por cada numero nuevo; identificadores sin tildes, UI
-  con tildes; sin `print` ni `console.log`. Puede empujar tests de casos
+  con tildes; sin `print` ni `console.log`. Mutacion de lo nuevo con
+  `mutar.py --base origin/main` sobre cada archivo de codigo de la rama y
+  el test mas chico que lo cubre: cada mutante vivo no equivalente es un
+  hallazgo `[test]` con el test exacto que lo mataria (la ficha 35 necesito
+  tres pasadas porque las mutaciones se probaban a mano y de a poco).
+  Puede empujar tests de casos
   borde que pasan; un test que falla nunca se empuja: va como hallazgo con
   el test exacto a agregar. `## Revision <fecha> sobre <sha corto>` con el
   formato de `revision.md` y el veredicto: `aprobar` -> `revisado`;

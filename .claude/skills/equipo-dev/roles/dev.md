@@ -35,9 +35,22 @@ Cuando el estado lo pide (reglas 4, 5 y 10); por reloj, franjas 3 y 5.
   independientes. Antes del ultimo push: subagente ciego con `revision.md`
   sobre `git diff origin/main...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
   filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
-  es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
-  que quedo, que no, desvios del diseno. `estado: implementado`,
-  `candado: -`, push.
+  es el plan). `mutar.py` sobre cada archivo de codigo que cambio, con el
+  test mas chico que lo cubre: un `MUTANTE vivo` que no sea equivalente se
+  mata con un test antes de entregar (el Revisor y QA lo van a correr
+  igual). `check.sh` en `Todo en verde.`. `## Implementacion`: que quedo,
+  que no, desvios del diseno, y la linea `MUTACION_...` de cada archivo.
+  `estado: implementado`, `candado: -`, push.
+- **Un bug, siempre en este orden** (ficha `tipo: bug`, propia o de QA):
+  1. **Reproducir en main** con el repro de la ficha (comando exacto).
+  2. **Test que falla primero:** el test con nombre que describe el caso
+     (`test_un_playerid_que_no_es_numero_no_tumba_la_partida`), corrido sobre
+     main sin el arreglo; su salida en rojo va a `## Implementacion`.
+  3. **Arreglo minimo** en el lugar del error, no un `try` alrededor de todo.
+  4. **Prueba de que el test sirve:** `mutar.py --lineas` sobre las lineas
+     del arreglo (o revertirlo a mano): el test nuevo tiene que caer.
+  5. Si el bug cambio numeros guardados, `recompute` en el diseno y
+     `## Verificar en el PC` con el comando, como la ficha 34.
 - **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
   `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
   `candado: -`. No se tira trabajo parcial verde.
@@ -45,10 +58,16 @@ Cuando el estado lo pide (reglas 4, 5 y 10); por reloj, franjas 3 y 5.
   presente (`Agrega ...`, `Corrige ...`). Nunca abre el PR.
 - **Turno bien hecho:** cada criterio de aceptacion tiene un test con nombre;
   el Revisor puede trabajar sin preguntar nada.
-- **Sin trabajo:** sin nada tomable y con lugar en la cola: un bug real
-  reproducible (test que falla, 500 con datos legitimos, deprecacion que va
-  a romper, `.rec` raro que tumba la importacion) con ficha propia escrita
-  en el momento (criterios, diseno de 5 lineas, implementacion) y dejada en
+- **Sin trabajo:** sin nada tomable y con lugar en la cola, **caza de
+  bugs**, en este orden de fuentes: (a) los `HALLAZGO` de la ultima pasada
+  de QA que todavia no son ficha; (b) `fuzz_parser.py --casos 3000` y
+  `barrido_api.py` sobre main; (c) leer los casos borde del parser
+  (`header.py`, `events.py`, `stats.py`: cada `int(...)` sin `try`, cada
+  indice sin guarda, cada `split` que asume un formato) y de `aggregates.py`
+  (divisiones por cero con 0 rondas, filtros que se cruzan); (d) con
+  herramientas de GitHub, issues abiertos del repo. Lo que reproduce va con
+  ficha propia escrita en el momento (severidad, repro, criterios, diseno
+  de 5 lineas) y sigue "Un bug, siempre en este orden" hasta
   `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
   llena o solo cosmetica: `Entregado: nada, <motivo>`.
 

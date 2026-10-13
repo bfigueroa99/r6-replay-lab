@@ -446,6 +446,15 @@ la raiz del repo. Lo que miden es el checkout (la rama bajo prueba).
 | `puerta.sh` | la puerta de merge a-f; `--solo b` antes de revisar o probar | Release, Revisor, QA |
 | `fichas.sh` | lint de fichas y de `ALCANCE.md` (`--alcance`) | quien escribe o avanza una ficha |
 | `pruebas.sh` | las pruebas del propio playbook | Release (paso 8) y sesiones del dueno |
+| `qa.sh` | la bateria de QA en un comando: deriva, fichas, barrido, fuzz y paginas | QA en cada ficha y sin trabajo; Dev cazando bugs |
+| `barrido_api.py` | todas las rutas de la API con parametros y cuerpos borde, base vacia y sembrada | QA, Dev |
+| `fuzz_parser.py` | `.rec` sinteticos rotos y truncados contra el parser | QA si toca el parser, Dev cazando bugs |
+| `qa-paginas.mjs` | todas las paginas en Chromium, escritorio y celular: consola, red, desborde, foco | QA |
+| `mutar.py` | mutacion de las lineas que cambio la rama | Dev antes de entregar, Revisor, QA |
+| `deriva-docs.sh` | lo que los docs citan contra el codigo (M9) | QA |
+
+Cada herramienta de QA trae `--autoprueba`, que rompe a proposito lo que
+dice detectar; `pruebas.sh` las corre todas.
 
 ## Severidad de bugs
 
