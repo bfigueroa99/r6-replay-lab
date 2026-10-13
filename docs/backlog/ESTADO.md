@@ -1,21 +1,19 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-13 11:35 UTC por dev (sesion 20261013T1111Z; motivo: por estado: 2 disenado, lugar en cola; reloj: revisor, franja 4)
+actualizado: 2026-10-13 12:25 UTC por revisor (sesion 20261013T1213Z; motivo: por estado: 2 implementado; reloj: revisor, franja 4)
 playbook: origin/main@3e42126
-rutina: TURNOS_SIN_RASTRO=7 en 48 h (10-11T09:01Z 10-11T12:01Z 10-11T15:01Z 10-11T18:01Z 10-11T21:01Z 10-12T00:01Z 10-12T03:01Z) | 12 de 43 en 7 dias
+rutina: TURNOS_SIN_RASTRO=6 en 48 h (10-11T12:01Z 10-11T15:01Z 10-11T18:01Z 10-11T21:01Z 10-12T00:01Z 10-12T03:01Z) | 12 de 44 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/37-rivales-repetidos | docs/backlog/37-rivales-repetidos.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/37-rivales-repetidos?expand=1) |
-| claude/equipo-dev/38-dos-ganadores-por-ronda | docs/backlog/38-dos-ganadores-por-ronda.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/38-dos-ganadores-por-ronda?expand=1) |
+| claude/equipo-dev/37-rivales-repetidos | docs/backlog/37-rivales-repetidos.md | con hallazgos | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/37-rivales-repetidos?expand=1) |
+| claude/equipo-dev/38-dos-ganadores-por-ronda | docs/backlog/38-dos-ganadores-por-ronda.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/38-dos-ganadores-por-ronda?expand=1) |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=20 sin_merge=no pausa=no sin_rastro_48h=7
-
-(`disenado=2` cuenta los espejos de `backlog`; las dos fichas viven en sus ramas de trabajo en `implementado`.)
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=20 sin_merge=no pausa=no sin_rastro_48h=6
 
 ## Orden de merge sugerido
 
@@ -25,7 +23,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:1 (36-mitades-y-prorroga) otros:6.
-- Epicas en curso: lado-y-marcador: tramo B1 en main (36, PR #25), B2 sigue como idea; rivales: tramo D1 implementado (37, en cola).
+- Epicas en curso: lado-y-marcador: tramo B1 en main (36, PR #25), B2 sigue como idea; rivales: tramo D1 con hallazgos (37, en cola: falta el `csv:` de la columna Récord).
 - Papel: vacio de verdad (37 y 38 pasaron a ramas de trabajo). Cola: COLA_TIPOS=funcionalidad:1 de 2 ramas de trabajo.
 - `ALCANCE.md`: 20 ideas libres (B1 queda por marcar `en main`; lo reconcilia el PO).
 - Investigacion: ninguna todavia
@@ -34,19 +32,19 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 37-rivales-repetidos | en curso (espejo; rama: implementado) | funcionalidad | rivales | 3 | fullstack | - |
-| 38-dos-ganadores-por-ronda | en curso (espejo; rama: implementado) | bug | - | 2 | parser | - |
+| 37-rivales-repetidos | en curso (espejo; rama: con hallazgos) | funcionalidad | rivales | 3 | fullstack | - |
+| 38-dos-ganadores-por-ronda | en curso (espejo; rama: revisado) | bug | - | 2 | parser | - |
 
-Papel: 0 propuesto, 0 disenado. Proximo turno por estado: Revisor (2 implementado); el PO tiene que reponer papel.
+Papel: 0 propuesto, 0 disenado. Proximo turno por estado: QA (38 revisado), despues Dev (37 con hallazgos); el PO tiene que reponer papel.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
+| revisor | 2026-10-13 12:25 | Revisa 38 (`implementado` -> `revisado`): ciega con `revision.md`, aprobar; un menor no bloqueante (en Y9S4+ plant del perdedor + victoria de la defensa sin defuse en el feed deja `winCondition=TIME`, valor que no se persiste). Revisa 37 (`implementado` -> `con hallazgos`): la columna "Récord" de "Rivales repetidos" sale vacia en el CSV (sin `csv:`; `celdaCsv` lee `row.record`, que no existe). Arreglo de una linea. `check.sh` en `Todo en verde.` en las dos ramas (38: 484 backend, 65 vitest, build, 24 e2e; 37: 487, 65, build, 25 e2e). Sin pushes de codigo. |
 | dev | 2026-10-13 11:35 | Implementa 38 (`disenado` -> `implementado`): en Y9S4+ la cabecera manda sobre el feed en `round_end`, el defuse/plant solo da la condicion si apunta al ganador; 6 tests nuevos, 3 caen sobre main. Implementa 37 (`disenado` -> `implementado`): `repeated_rivals`, clave `rivals` y `?min_matches=` en `/api/duels/`, panel "Rivales repetidos" en Duelos, 9 tests, e2e nuevo, 2 filas en `metricas.md`. Revision ciega de cada una: aprobar (un menor corregido en la 37). `check.sh` en `Todo en verde.` en las dos ramas (38: 484 backend, 65 vitest, build, 24 e2e; 37: 487, 65, build, 25 e2e). |
 | release | 2026-10-13 10:40 | Entrega y mergea 36 (`aprobado` -> `entregado` -> main), la primera funcionalidad del equipo en `main`. Puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin commits ni comentarios humanos, diff fuera de las rutas del humano; main e5bad5b incluido; `check.sh` en `Todo en verde.` sobre el head exacto 779729d (478 backend, 65 vitest, build, 24 e2e). PR #25 -> merge 3e42126. No pudo borrar la rama (el remoto corta el push de borrado). Espejo de 36 quitado de `backlog`. `pruebas.sh`: `PRUEBAS_OK (10)`. Rutina: sin herramientas para comparar el prompt. |
 | qa | 2026-10-13 09:35 | Prueba 36 (`revisado` -> `aprobado`). Rama al dia con main e5bad5b; `check.sh` en `Todo en verde.` (478 backend, 65 vitest, build, 24 e2e). Bases vacia y sembrada con `factories.py` (prorroga, numeracion desde 0, ronda sin lado, partida sin resultado): `/api/trends/` da 3/3/2 y lado inicial correctos, filtros y parametros basura en 200; Tendencias en Chromium sin errores de consola. Chunk inicial sin cambio (185.47 kB). 3 mutaciones caen, 1 equivalente sobrevive. |
-| revisor | 2026-10-13 08:25 | Revisa 36 (`implementado` -> `revisado`). Rama al dia con main e5bad5b; `check.sh` en `Todo en verde.` sobre c46b3e8 (478 backend, 65 vitest, build, 24 e2e). Ciega con `revision.md`: solo un detalle de estilo preexistente ("ronda tipica" sin tilde en el tooltip de Rating, copiado de otras 5 lineas de main), no bloquea. 4 mutaciones de `aggregates.py`, todas caen. Ficha limpiada (bloque `
 
 ## Para el humano` pegado dos veces por un reemplazo). |
 | arquitecto | 2026-10-13 06:15 | Disena 36 (mitades por lado inicial de la ronda mas baja sin prorroga, `by_half` y `by_start_side` en `/api/trends/`, panel en Tendencias, seed sin tocar), 37 (`repeated_rivals` con `_MI_EQUIPO`, `rivals` y `?min_matches=` en `/api/duels/`, panel en Duelos) y 38 (en Y9S4+ el feed solo da la condicion si apunta al ganador de la cabecera; el disable/plant del perdedor ya no marca `won`). Sin pushes de codigo. |
