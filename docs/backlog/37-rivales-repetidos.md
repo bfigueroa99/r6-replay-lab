@@ -1,8 +1,8 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: disenado
+estado: en curso 2026-10-13
 candado: -
-rama: -
+rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
 area: fullstack
