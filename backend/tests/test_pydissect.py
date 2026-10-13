@@ -256,6 +256,16 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertEqual(r.teams[1]["role"], ATTACK)
         self.assertEqual(r.teams[0]["role"], DEFENSE)
 
+    def test_los_defensores_de_mas_del_equipo_1_tambien_restan(self):
+        # espejo del anterior: si solo restaran los del equipo 0, aca atacaria el equipo 1
+        r = _lector([
+            _jugador("x1", 0, THERMITE), _jugador("x2", 0, MUTE),
+            _jugador("y1", 1, ASH), _jugador("y2", 1, MUTE), _jugador("y3", 1, JAGER),
+        ])
+        derive_team_roles(r)
+        self.assertEqual(r.teams[0]["role"], ATTACK)
+        self.assertEqual(r.teams[1]["role"], DEFENSE)
+
     def test_los_atacantes_de_mas_suman_aunque_empaten_en_defensores(self):
         # contar solo defensores empata 1 a 1 y el desempate le daria el ataque al equipo 0
         r = _lector([

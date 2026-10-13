@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: implementado
-candado: revisor 2026-10-13T00:02Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z
 
 ## PR
 
@@ -304,6 +304,36 @@ Diff dentro de `archivos:`.
 Veredicto: **corregir**. Un fixture (o dos tests) en `test_pydissect.py`; no
 hay que tocar `pydissect/`. Si la proxima revision solo encuentra menores,
 es la tercera pasada: `revisado`.
+
+## Revision 2026-10-13 sobre f0fb9c3
+
+(Revisor 20261013T0002Z, tercera pasada; sesion distinta de las tres de dev
+y de las dos revisiones anteriores.) Rama con `origin/main` 0949f87 incluido.
+`check.sh` en `Todo en verde.` sobre f0fb9c3: 414 tests backend (4
+saltados), 53 vitest, build, 17 e2e. Revision ciega con `revision.md` sobre
+el diff sin `docs/backlog`; mutaciones de `header.py` sobre una copia, con
+`PYTHONDONTWRITEBYTECODE=1` (con `.pyc` viejos una mutacion del mismo tamano
+puede no recargarse). Caen: `atk_team = 0` fijo, solo ataque o solo defensa
+en los dos scores, `score0` solo ataque, `score1 = 0`, no descartar el
+operador 0, scoreboard con todos, sin `return` temprano, `log.warning` ->
+`log.debug`, sin `!= RECRUIT`, lado inferido fijo o tomado del equipo 0, sin
+`inferredOperatorSides`, votar con lado `None`. Reglas de `CLAUDE.md`: bien.
+Los hallazgos de las dos revisiones anteriores estan corregidos.
+
+- [test] `backend/tests/test_pydissect.py`, menor (criterio 1). Los tests de
+  "de mas" ponen siempre el sobrante en el equipo 0, asi que `score1 =
+  votes[1][ATTACK]` (el equipo 1 no resta defensores) sobrevivia. **Corregido
+  por el Revisor** con un test verde, como permite el rol:
+  `test_los_defensores_de_mas_del_equipo_1_tambien_restan` (equipo 0 =
+  Thermite, Mute; equipo 1 = Ash, Mute, Jager -> ataca el equipo 0). Pasa
+  sobre el codigo actual; con la mutacion cae exactamente ese test.
+- No se reporta: `>=` por `>` en el desempate sobrevive (fuera de alcance,
+  ya en `## Para el humano`).
+
+Criterios 1 a 5 cubiertos, cada uno con al menos una mutacion que cae. Diff
+dentro de `archivos:`. Sin `print`, identificadores sin tildes.
+
+Veredicto: **aprobar** -> `revisado`.
 
 ## QA <fecha> sobre <sha>
 
