@@ -452,6 +452,8 @@ la raiz del repo. Lo que miden es el checkout (la rama bajo prueba).
 | `qa-paginas.mjs` | todas las paginas en Chromium, escritorio y celular: consola, red, desborde, foco | QA |
 | `mutar.py` | mutacion de las lineas que cambio la rama | Dev antes de entregar, Revisor, QA |
 | `deriva-docs.sh` | lo que los docs citan contra el codigo (M9) | QA |
+| `notas.sh` | notas de version desde las fichas que llegaron a main desde el ultimo tag (M7) | Release |
+| `pre-push.sh` | guardia de ramas que `turno.sh` instala: solo `claude/equipo-dev/*` durante un turno (M11) | nadie lo corre a mano |
 
 Cada herramienta de QA trae `--autoprueba`, que rompe a proposito lo que
 dice detectar; `pruebas.sh` las corre todas.
@@ -593,7 +595,9 @@ el Release (pasos 8 y 9 de `roles/release.md`).
 - Mergear fuera del turno de Release o sin pasar la puerta de merge. Aprobar
   PRs formalmente. Cerrar PRs. Empujar a `main` directo. Force-push. Rebase
   de ramas publicadas. Borrar ramas, salvo la que el Release acaba de
-  mergear. Empujar a `claude/equipo-dev/playbook`.
+  mergear. Empujar a `claude/equipo-dev/playbook`. Saltar la guardia de
+  ramas (`git push --no-verify`, borrar o editar `.git/hooks/pre-push`): un
+  `PUSH_BLOQUEADO` se informa, no se esquiva.
 - Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
   Cualquier forma de overlay in-game.

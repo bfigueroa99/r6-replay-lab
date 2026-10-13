@@ -44,7 +44,7 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 det=""
 for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/check.sh .claude/hooks/session-start.sh \
     scripts/equipo-dev/puerta.sh scripts/equipo-dev/pulso.sh scripts/equipo-dev/fichas.sh scripts/equipo-dev/sintetico.sh \
-    scripts/equipo-dev/deriva-docs.sh scripts/equipo-dev/qa.sh; do
+    scripts/equipo-dev/deriva-docs.sh scripts/equipo-dev/qa.sh scripts/equipo-dev/notas.sh scripts/equipo-dev/pre-push.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
@@ -271,6 +271,11 @@ else
     case "$r" in *" aprobado=1 "*) ;; *) det="$det --excluir-sesion del revisor de 44 y 50 no deja aprobado=1: '$r';" ;; esac
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" --resumen --sin-fetch --excluir-sesion 20261012T0301Z 2>/dev/null)
     case "$r" in "RESUMEN propuesto=1 "*) ;; *) det="$det --excluir-sesion del po de 40 no deja propuesto=1: '$r';" ;; esac
+    # M7: las notas de version salen de las fichas que llegaron a main.
+    r=$(cd "$clon" && bash "$es_s/notas.sh" 2>&1)
+    printf '%s\n' "$r" | grep -q '^### Por dentro (tests y deuda)' && printf '%s\n' "$r" | grep -q '(ficha 51)' || det="$det notas.sh no lista la 51: '$(printf '%s' "$r" | head -3 | tr '\n' ' ')';"
+    r=$(cd "$clon" && bash "$es_s/notas.sh" --desde origin/main 2>&1)
+    case "$r" in NOTAS_VACIAS*) ;; *) det="$det notas.sh desde main no da NOTAS_VACIAS: '$r';" ;; esac
     cierra sintetico "$det"
 
     # 12. puerta.sh: cada condicion cae con su violacion y pasa sin ella.
@@ -378,6 +383,37 @@ else
     (cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" 2>/dev/null) | grep -q '^SALUD_FICHAS_MAL=1 de 13' || det="$det estado.sh no lleva la ficha mal a la salud;"
     rm -rf "$fx"
     cierra fichas "$det"
+
+    # 16. turno.sh de verdad (no simulado) en el clon: instala la guardia
+    # pre-push y escribe el arranque a traves de ella; la guardia deja pasar
+    # lo del equipo y frena main, el playbook, otras ramas y borrados ajenos,
+    # escriba como se escriba el destino; fuera de un turno no hace nada.
+    det=""
+    rm -f "$clon/.git/equipo-dev.env"
+    sal=$(cd "$clon" && bash "$es_s/turno.sh" 2>&1)
+    printf '%s\n' "$sal" | grep -q '^# guardia: pre-push del equipo instalado' || det="$det turno.sh no instalo la guardia;"
+    printf '%s\n' "$sal" | grep -q '^# pulso: PULSO_OK ' || det="$det el arranque no paso por la guardia: '$(printf '%s\n' "$sal" | grep '^# pulso' | head -1)';"
+    printf '%s\n' "$sal" | grep -qE '^# leer: git show origin/main:.claude/skills/equipo-dev/roles/[a-z]+\.md$' || det="$det sin linea # leer;"
+    empuja() { (cd "$clon" && git push -q "$@" >/dev/null 2>&1); }
+    # un commit nuevo: empujar algo que el remoto ya tiene no llama al hook
+    (cd "$clon" && git checkout -q --detach && git commit -q --allow-empty -m "prueba de guardia") >/dev/null 2>&1
+    empuja origin HEAD:refs/heads/claude/equipo-dev/60-nueva || det="$det frena una rama de trabajo;"
+    empuja --dry-run origin HEAD:refs/heads/claude/equipo-dev/prueba-acceso || det="$det frena la prueba de acceso;"
+    empuja origin --delete claude/equipo-dev/60-nueva || det="$det frena el borrado de una rama de trabajo;"
+    empuja origin HEAD:main && det="$det deja empujar a main;"
+    empuja origin HEAD:refs/heads/main && det="$det deja empujar a refs/heads/main;"
+    empuja origin +HEAD:refs/heads/claude/equipo-dev/playbook && det="$det deja empujar al playbook;"
+    empuja origin HEAD:refs/heads/otra && det="$det deja empujar a otra rama;"
+    empuja origin --delete claude/equipo-dev/backlog && det="$det deja borrar backlog;"
+    empuja origin HEAD:refs/tags/v9.9.9 && det="$det deja empujar un tag;"
+    sed -i 's/^export EQUIPO_INICIO=.*/export EQUIPO_INICIO=1/' "$clon/.git/equipo-dev.env"
+    empuja origin HEAD:refs/heads/otra-fuera-de-turno || det="$det frena fuera de turno (env de hace mas de 4 h);"
+    rm -f "$clon/.git/equipo-dev.env"
+    empuja origin HEAD:refs/heads/otra-sin-env || det="$det frena sin equipo-dev.env;"
+    printf '#!/bin/sh\nexit 0\n' > "$clon/.git/hooks/pre-push"
+    (cd "$clon" && EQUIPO_SIN_PULSO=1 bash "$es_s/turno.sh" 2>&1) | grep -q '^# guardia: ya hay otro pre-push' || det="$det pisa un pre-push ajeno;"
+    grep -q 'equipo-dev pre-push' "$clon/.git/hooks/pre-push" && det="$det el pre-push ajeno quedo reemplazado;"
+    cierra guardia "$det"
 fi
 rm -rf "$sint"
 

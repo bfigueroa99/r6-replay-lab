@@ -228,6 +228,28 @@ cat "$env_file"
 echo "# turno: $roles_turno | motivo: $motivo | reloj: $reloj (franja $franja) | sesion $sesion | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$cierre" +%H:%M) UTC ($minutos min) | playbook $ref | variables en $env_file"
 echo "# leer: git show $ref:.claude/skills/equipo-dev/roles/$rol.md"
 
+# M11: la guardia de ramas (pre-push.sh), antes del primer push del turno,
+# que es el del pulso: si la guardia estuviera rota se ve ahi. No pisa un
+# pre-push ajeno ni escribe fuera de .git (core.hooksPath versionado).
+if [ "$simular" = no ] && [ "${EQUIPO_SIN_GUARDIA:-}" != 1 ]; then
+    hook=$(git rev-parse --git-path hooks/pre-push)
+    case "$hook" in /*) ;; *) hook="$(pwd)/$hook" ;; esac
+    gd=$(cd "$gitdir" && pwd)
+    case "$hook" in
+        "$gd"/*)
+            if [ ! -e "$hook" ] || grep -q 'equipo-dev pre-push' "$hook" 2>/dev/null; then
+                mkdir -p "$(dirname "$hook")"
+                if [ -n "$yo_dir" ] && [ -f "$yo_dir/pre-push.sh" ]; then cp "$yo_dir/pre-push.sh" "$hook"
+                else git show "$ref:scripts/equipo-dev/pre-push.sh" > "$hook" 2>/dev/null
+                fi
+                chmod +x "$hook" && echo "# guardia: pre-push del equipo instalado"
+            else
+                echo "# guardia: ya hay otro pre-push en $hook; no se pisa"
+            fi ;;
+        *) echo "# guardia: hooks fuera de .git ($hook); no se instala" ;;
+    esac
+fi
+
 # M3: la linea de arranque en PULSO.md, antes de cualquier trabajo, para que
 # una sesion que muera despues se distinga de un disparo perdido. Un fallo
 # (proxy, sin backlog) no frena el turno: se anota y se sigue.
