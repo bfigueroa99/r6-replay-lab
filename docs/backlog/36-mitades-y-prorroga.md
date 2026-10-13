@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
-estado: implementado
-candado: revisor 2026-10-13 08:15 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -178,13 +178,7 @@ resultado).
 **Que puede romperse.** Sin migracion ni recompute. El Subquery corre por
 fila de `RoundPlayer`; con `Round` indexado por `match` es barato, pero si
 `/api/trends/` se pone lento en la base real (miles de rondas), anotarlo en
-`## Para el humano
-
-- (Dev 20261013T0711Z, aviso) Hoy, si faltan los `.rec` del inicio de una
-  partida, la segunda mitad se lee como primera (documentado en
-  `metricas.md`). Hay forma de evitarlo: tomar el lado inicial solo de una
-  ronda con `score_before == [0, 0]`. Queda como mejora posible para el
-  tramo siguiente; no bloquea.` (no optimizar a ciegas). Rondas con `my_side` vacio en
+`## Para el humano` (no optimizar a ciegas). Rondas con `my_side` vacio en
 una partida con lado inicial caen en `second` (distinto de `""`): excluir
 `round__my_side=""` tambien en `second`.
 
@@ -222,17 +216,52 @@ La revision ciega previa encontro un test que no detectaba lo que su nombre
 dice (corregido) y propuso usar `score_before == [0, 0]` para detectar
 partidas a las que les faltan las primeras rondas. Eso no se hizo: el diseno
 lo deja como limitacion documentada y hacerlo cambia la definicion. Va a
-`## Para el humano
+`## Para el humano`.
 
-- (Dev 20261013T0711Z, aviso) Hoy, si faltan los `.rec` del inicio de una
-  partida, la segunda mitad se lee como primera (documentado en
-  `metricas.md`). Hay forma de evitarlo: tomar el lado inicial solo de una
-  ronda con `score_before == [0, 0]`. Queda como mejora posible para el
-  tramo siguiente; no bloquea.`.
+## Revision 2026-10-13 sobre c46b3e8
 
-## Revision <fecha> sobre <sha>
+(Revisor 20261013T0811Z) Rama ya contiene `origin/main` e5bad5b, sin
+conflicto. `check.sh` en `Todo en verde.` sobre c46b3e8 (478 backend, 65
+vitest, build, 24 e2e).
 
-(Revisor) Formato de `revision.md`. Veredicto al final.
+Revision ciega (subagente con `revision.md`, sin leer el plan): sin bugs,
+reglas rotas ni tests flojos. Un hallazgo de estilo, confirmado:
+
+- [estilo] frontend/src/pages/Trends.jsx:350
+  Que pasa: el tooltip de Rating dice "ronda tipica" sin tilde en un texto de UI.
+  Por que es cierto: copia el texto de Trends.jsx:221 y :252, Dashboard.jsx:135,
+  Matches.jsx:45 y Operators.jsx:75, que ya lo tienen asi en main.
+  Arreglo sugerido: "típica" en las seis lineas, en una ficha aparte o al
+  pasar. Menor y preexistente: no bloquea.
+
+Mutaciones del Revisor sobre `aggregates.py` (todas caen en `test_mitades`):
+sin `.exclude(round__my_side="")` (1 falla), lado inicial sin filtrar
+prorroga (8 errores), winrate de lado sin excluir `won` nulo (1 falla),
+prorroga con `>= 0` (2 fallas).
+
+Ficha contra el diff:
+
+- Criterio 1 (`by_half` con 3 filas, vacias sin 500):
+  `test_una_mitad_sin_rondas_sale_con_cero_y_metricas_nulas`,
+  `test_trends_sin_datos_devuelve_las_filas_vacias_sin_500`.
+- Criterio 2 (mitad deducida de los datos, 3/3/2):
+  `test_seis_rondas_y_dos_de_prorroga_dan_tres_tres_y_dos`,
+  `test_el_lado_inicial_sale_de_la_ronda_mas_baja_aunque_no_sea_la_uno`.
+- Criterio 3 (`by_start_side`): `test_lado_inicial_cuenta_partidas_y_winrate_de_partida`,
+  `test_partida_sin_lado_en_la_primera_ronda_no_cuenta_para_el_lado_inicial`.
+- Criterio 4 (filtros): `test_el_filtro_de_mapa_cambia_el_conteo_por_mitad`.
+- Criterio 5 (UI y e2e): `Tendencias muestra la tabla por mitad` en `humo.spec.js`, verde.
+- Criterio 6 (`metricas.md`): seccion `## Mitades y prorroga` con las tres filas.
+- Archivos: el diff toca solo los de `archivos:`. Identificadores sin
+  tildes, UI con tildes (salvo el tooltip de arriba), sin `print` ni `console.log`.
+- Ficha: un reemplazo de texto habia pegado el bloque `## Para el humano`
+  dentro de Diseno e Implementacion; el Revisor lo dejo como referencia.
+
+Observacion para QA: `seed_demo` alterna el lado en cada ronda y gana todas
+las de ataque, asi que en la demo "Primera mitad" sale 100 % y "Segunda
+mitad" 0 %. Es el seed, no el codigo; el e2e solo afirma etiquetas.
+
+Veredicto: aprobar.
 
 ## QA <fecha> sobre <sha>
 
