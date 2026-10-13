@@ -1,13 +1,13 @@
 # 35. Tests de como el parser decide que equipo ataca
 
-estado: revisado
-candado: qa 2026-10-13T03:02Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/35-tests-lado-de-los-equipos
 area: tests
 prioridad: 3
 fuente: hueco de tests en `pydissect/header.py`: `derive_team_roles` (decide el lado de cada equipo por mayoria de operadores, descarta jugadores con operador 0 y anota el lado inferido de los operadores nuevos en `inferredOperatorSides`) solo lo ejercita `RealReplayTests` de `tests/test_pydissect.py`, que se salta sin `R6_TEST_REPLAY` (en la nube y en `check.sh` siempre). Es justo el codigo que tiene que aguantar una temporada nueva con operadores desconocidos.
 archivos: backend/tests/test_pydissect.py
-turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z
+turnos: po 20261010T0301Z, arquitecto 20261010T0602Z, dev 20261010T1501Z, revisor 20261012T1202Z, dev 20261012T1503Z, revisor 20261012T1640Z (QA sin revisado en cola), dev 20261012T2101Z, revisor 20261013T0002Z, qa 20261013T0302Z
 
 ## PR
 
@@ -335,9 +335,30 @@ dentro de `archivos:`. Sin `print`, identificadores sin tildes.
 
 Veredicto: **aprobar** -> `revisado`.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-13 sobre 76a476f
 
-(QA) Un comando y un resultado por criterio de aceptacion.
+(QA 20261013T0302Z; sesion distinta de las de dev y revision.) Rama con
+`origin/main` eb2633c (#12) fusionado, sin conflictos; 76a476f es ese merge.
+`check.sh` completo en `Todo en verde.`: 468 tests backend (4 saltados), 65
+vitest, build, 23 e2e. Mutaciones sobre `pydissect/header.py` con
+`PYTHONDONTWRITEBYTECODE=1`, revertidas despues (arbol limpio).
+
+| criterio | comando | resultado |
+|---|---|---|
+| 1 | `cd backend && python3 manage.py test tests.test_pydissect.LadoDeLosEquiposTests -v 2` | 12 tests OK; mutacion `if side:` -> `if side == ATTACK:` cae `test_los_defensores_de_mas_restan_aunque_empaten_en_atacantes` |
+| 2 | mutacion: scoreboard `for p in kept` -> `for p in r.players` | cae `test_el_jugador_con_operador_0_se_descarta` |
+| 3 | mutacion: clave `unknown[name]` -> `unknown[str(p["operator"])]`; y `if unknown:` -> `if False:` | caen `test_operador_con_nombre_y_sin_lado_hereda_el_de_su_equipo` y `test_un_id_sin_nombre_se_anota_como_unknown` en las dos |
+| 4 | `test_sin_operadores_conocidos_no_hay_lado_y_avisa` (con `assertLogs`) | OK |
+| 5 | `python3 manage.py test tests.test_pydissect --reverse`, `--shuffle 7`, y `NameTests` antes y despues de la clase | OK en todos; correr la clase sola deja `overrides.unknown_ids() == {}` y `operator_name(999) == "Unknown(999)"` (el cache de overrides vuelve a su estado) |
+
+Humo de la app (la ficha no toca codigo de la app; vecinos del lado de
+equipo): `runserver` con `SQLITE_PATH` en el scratchpad, base vacia y
+despues `seed_demo`; `curl` a `/api/health/`, `/api/overview/?side=Attack|Defense|foo`,
+`/api/operators/?side=...&page=-1`, `/api/coach/?until=foo` -> 200 en todos.
+Sin frontend, sin migracion, sin cambios de parser: no aplica chunk ni
+`## Verificar en el PC`.
+
+Veredicto: **aprobado**.
 
 ## Verificar en el PC
 
