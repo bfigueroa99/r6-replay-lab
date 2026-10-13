@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T20:12Z
 rama: -
 tipo: funcionalidad
 epica: progreso

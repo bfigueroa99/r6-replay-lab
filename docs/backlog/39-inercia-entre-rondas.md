@@ -1,7 +1,7 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T20:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

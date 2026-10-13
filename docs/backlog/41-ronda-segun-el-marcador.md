@@ -1,7 +1,7 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T20:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
