@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: con hallazgos
-candado: dev 2026-10-13T15:12Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/37-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -187,6 +187,20 @@ otras funciones y secciones: se puede implementar en paralelo.
 - Revision ciega (subagente con `revision.md`): aprobar; un hallazgo menor
   corregido (la fila de metricas nombraba `side`/`site` y no `operator`).
 - `check.sh`: `Todo en verde.` (487 tests backend, 65 frontend, build, 25 e2e).
+
+Correccion (Dev 20261013T1511Z) del hallazgo de la revision sobre a4a2213:
+
+- `Duelos.jsx`: la columna "Récord" de "Rivales repetidos" lleva
+  `csv: (row) => \`${row.wins}-${row.losses}\``, como `Jugador.jsx` y
+  `Trends.jsx`.
+- e2e nuevo `'el CSV de rivales repetidos trae el récord de cada rival'` en
+  `humo.spec.js`: baja el CSV del panel y afirma que cada fila tiene
+  `Récord == Ganadas-Perdidas`. Visto en rojo antes del arreglo
+  (`Expected "29-0", Received ""`) y en verde despues. Se eligio el e2e y no
+  `logica.test.js` porque las columnas viven dentro del componente y el e2e
+  prueba el boton real.
+- `check.sh`: `Todo en verde.` (backend y frontend sin cambios de cantidad,
+  26 e2e).
 
 ## Revision 2026-10-13 sobre a4a2213
 

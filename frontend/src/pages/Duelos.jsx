@@ -234,6 +234,8 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               label: 'Récord',
               sortable: false,
               render: (row) => `${row.wins}-${row.losses}`,
+              // `record` no viene en las filas: sin esto la celda sale vacia en el CSV
+              csv: (row) => `${row.wins}-${row.losses}`,
             },
             {
               key: 'winrate',
