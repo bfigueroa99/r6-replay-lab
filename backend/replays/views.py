@@ -316,6 +316,10 @@ def duels(request: HttpRequest) -> JsonResponse:
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
                 **filters,
             ),
+            "rivals": agg.repeated_rivals(
+                min_matches=_int_param(request, "min_matches", 2, minimum=1, maximum=1000),
+                **filters,
+            ),
         }
     )
 

@@ -45,6 +45,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const nemesis = data.nemesis || []
   const operators = data.operators || []
   const faced = data.faced || { base: {}, operators: [] }
+  const rivals = data.rivals ?? []
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -206,6 +207,48 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.player_id}
           csvName="duelos-por-rival"
           empty={`Nadie llega a ${minDuels} duelos contigo con estos filtros.`}
+        />
+      </Panel>
+
+      <Panel
+        title="Rivales repetidos"
+        hint={
+          'Personas que te tocaron en el equipo contrario en 2 o más partidas, con el ' +
+          'resultado de esas partidas. Es tu récord contra ellas, no su nivel: el resto lo ' +
+          'deciden los otros ocho.'
+        }
+      >
+        <DataTable
+          columns={[
+            {
+              key: 'username',
+              label: 'Rival',
+              left: true,
+              render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+            },
+            { key: 'matches', label: 'Partidas' },
+            { key: 'wins', label: 'Ganadas' },
+            { key: 'losses', label: 'Perdidas' },
+            {
+              key: 'record',
+              label: 'Récord',
+              sortable: false,
+              render: (row) => `${row.wins}-${row.losses}`,
+              // `record` no viene en las filas: sin esto la celda sale vacia en el CSV
+              csv: (row) => `${row.wins}-${row.losses}`,
+            },
+            {
+              key: 'winrate',
+              label: 'Winrate',
+              help: 'Sobre las partidas con resultado: las que no lo tienen cuentan en Partidas y no acá.',
+              render: (row) => pct(row.winrate),
+            },
+          ]}
+          rows={rivals}
+          initialSort={{ key: 'matches', dir: 'desc' }}
+          rowKey={(row) => row.player_id}
+          csvName="rivales-repetidos"
+          empty="Nadie te tocó de rival en 2 o más partidas con estos filtros."
         />
       </Panel>
     </>

@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+
 import { expect, test } from '@playwright/test'
 
 import { vigilarConsola } from './consola.js'
@@ -53,6 +55,43 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   await expect(panel.getByRole('cell', { name: 'Primera mitad', exact: true })).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Segunda mitad', exact: true })).toBeVisible()
   await expect(panel.getByText('Según el lado con que arrancas')).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Rivales repetidos' })
+  await expect(panel).toBeVisible()
+  // seed_demo repite los mismos rivales en todas las partidas
+  const enlace = panel.locator('table tbody tr').first().getByRole('link').first()
+  await expect(enlace).toHaveAttribute('href', /\/jugadores\/\d+$/)
+  await enlace.click()
+  await expect(page).toHaveURL(/\/jugadores\/\d+$/)
+
+  expect(errores).toEqual([])
+})
+
+test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Rivales repetidos' })
+  await expect(panel.locator('table tbody tr').first()).toBeVisible()
+  const [descarga] = await Promise.all([
+    page.waitForEvent('download'),
+    panel.getByRole('button', { name: 'Descargar CSV' }).click(),
+  ])
+  const texto = fs.readFileSync(await descarga.path(), 'utf-8').replace(/^\ufeff/, '')
+  const [cabecera, ...filas] = texto.split('\r\n').map((linea) => linea.split(';'))
+  const col = (nombre) => cabecera.indexOf(nombre)
+  expect(filas.length).toBeGreaterThan(0)
+  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia
+  for (const fila of filas) {
+    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}-${fila[col('Perdidas')]}`)
+  }
 
   expect(errores).toEqual([])
 })

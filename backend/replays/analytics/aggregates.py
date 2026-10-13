@@ -755,6 +755,56 @@ def nemesis(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["balance"], r["username"]))
 
 
+def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
+    """Record de partidas contra cada persona que te toco de rival varias veces.
+
+    Rival es quien estuvo en el equipo contrario en al menos una de tus rondas
+    filtradas de esa partida: el equipo se lee por ronda, como en el perfil,
+    porque la misma persona puede ser companero en una partida y rival en otra.
+    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    mine = base_queryset(**filters)
+    cruces = (
+        RoundPlayer.objects.filter(Exists(mine.filter(round_id=OuterRef("round_id"))))
+        .exclude(player_id__in=me_ids)
+        .annotate(mi_equipo=_MI_EQUIPO)
+        .exclude(mi_equipo=None)
+        .exclude(team_index=F("mi_equipo"))
+        .values_list("player_id", "round__match_id")
+        .distinct()
+    )
+    partidas: dict[int, set[int]] = {}
+    for pid, match_id in cruces:
+        partidas.setdefault(pid, set()).add(match_id)
+    partidas = {pid: ids for pid, ids in partidas.items() if len(ids) >= min_matches}
+    if not partidas:
+        return []
+
+    match_ids = set().union(*partidas.values())
+    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
+
+    salida = []
+    for pid, ids in partidas.items():
+        wins = sum(1 for mid in ids if resultado.get(mid) is True)
+        losses = sum(1 for mid in ids if resultado.get(mid) is False)
+        salida.append(
+            {
+                "player_id": pid,
+                "username": nicks.get(pid, ""),
+                "matches": len(ids),
+                "wins": wins,
+                "losses": losses,
+                # las partidas sin resultado no ensucian el winrate
+                "winrate": _pct(wins, wins + losses),
+            }
+        )
+    return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
+
+
 def _agregar_mapas(salida: list[dict], contra_mi, a_favor) -> None:
     """En que mapas te cruzaste con cada rival. Solo para los que sobrevivieron."""
     if not salida:

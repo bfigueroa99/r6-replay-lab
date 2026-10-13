@@ -143,6 +143,8 @@ de las dos direcciones. Sale del kill feed, no del scoreboard.
 | **Mueres (contra un operador)** | Rondas en que moriste / rondas contra ese operador. |
 | **Ganas la ronda (contra un operador)** | Rondas ganadas / rondas contra ese operador. |
 | **vs. promedio** | Puntos de diferencia entre la tasa contra ese operador y la misma tasa sobre **todas** tus rondas filtradas. En "Mueres" es mejor negativo; en "Ganas" es mejor positivo. No trae banda de ruido: con 10 a 30 rondas, 10 o 15 puntos todavia pueden ser azar. |
+| **Rival repetido** | Persona (por profileID, no por nick) que estuvo en el equipo contrario en al menos una de tus rondas filtradas de N partidas distintas. Desde 2 partidas. Un rival que solo aparece en rondas que los filtros por ronda (`side`, `site`, `operator`) dejan afuera no cuenta en esa partida. |
+| **Récord contra un rival** | Partidas ganadas-perdidas de esas N. El winrate se calcula sobre las que tienen resultado: una partida sin resultado cuenta en Partidas y no en el winrate. Es tu record contra esa persona, no su nivel. |
 
 En ranked solo los rivales casi no se repiten, asi que la tabla por persona es
 anecdota antes que patron: el coach solo opina desde 8 duelos contra la misma
