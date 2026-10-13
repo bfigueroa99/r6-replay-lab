@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-from config import replay_dir
+from config import envfile, replay_dir
 
 #: True cuando corre dentro del ejecutable empaquetado.
 FROZEN = bool(getattr(sys, "frozen", False))
@@ -42,17 +42,18 @@ else:
 FRONTEND_DIST = BUNDLE_DIR / "frontend" / "dist"
 
 
+#: El .env que se lee al arrancar y que reescribe la pagina Ajustes.
+#: `R6_ENV_FILE` lo mueve: el e2e lo usa para no tocar el del usuario.
+ENV_FILE = Path(os.environ.get("R6_ENV_FILE") or USER_DIR / ".env")
+
+
 def _load_env() -> None:
-    """Lector de .env minimo, para no depender de python-dotenv."""
-    env_file = USER_DIR / ".env"
-    if not env_file.exists():
-        return
-    for line in env_file.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+    """Lector de .env minimo, para no depender de python-dotenv.
+
+    `setdefault`: una variable de entorno de verdad gana sobre el archivo.
+    """
+    for key, value in envfile.leer(ENV_FILE).items():
+        os.environ.setdefault(key, value)
 
 
 _load_env()
@@ -158,16 +159,18 @@ os.environ.setdefault("PYDISSECT_OVERRIDES", str(OVERRIDES_PATH))
 
 #: Carpeta donde Siege deja los replays. Si el .env no la fija, se busca sola
 #: (Steam, Ubisoft Connect y las rutas tipicas de cada unidad): la app instalada
-#: tiene que mostrar partidas al primer doble clic, sin editar nada.
-REPLAY_DIR = env("REPLAY_DIR") or str(
-    replay_dir.detectar()
-    or r"C:\Program Files (x86)\Steam\steamapps\common\Tom Clancy's Rainbow Six Siege\MatchReplay"
-)
+#: tiene que mostrar partidas al primer doble clic, sin editar nada. El origen
+#: (`elegida`, `detectada`, `no_encontrada`) es lo que muestra Ajustes.
+REPLAY_DIR, REPLAY_DIR_ORIGEN = replay_dir.resolver(env("REPLAY_DIR"))
+
+#: Si el servidor de la app vigila REPLAY_DIR e importa cada partida al
+#: terminar. Lo hace `serve.py`, que es lo que lanza el .exe; se apaga en Ajustes.
+AUTO_IMPORT = env_bool("AUTO_IMPORT", True)
 
 #: Segundos sin cambios en los .rec para considerar que la partida termino.
 IMPORT_QUIET_SECONDS = env_int("IMPORT_QUIET_SECONDS", 60)
 
-#: Cada cuanto revisa la carpeta el comando `watch_replays`.
+#: Cada cuanto se revisa la carpeta (`watch_replays` y la importacion automatica).
 WATCH_INTERVAL_SECONDS = env_int("WATCH_INTERVAL_SECONDS", 20)
 
 #: Muestra minima por defecto para que un agregado aparezca en la UI.

@@ -4,7 +4,9 @@
  *
  * La base es un archivo aparte dentro de `e2e/.tmp/` y nunca la de verdad: el
  * e2e siembra datos sinteticos con `manage.py seed_demo`, y apuntar eso a la
- * base real seria borrar el historial del usuario.
+ * base real seria borrar el historial del usuario. Lo mismo el `.env` y la
+ * carpeta de datos: la pagina Ajustes escribe el `.env` y las copias de
+ * seguridad rotan las de `data/backups`.
  */
 
 import { existsSync } from 'node:fs'
@@ -17,6 +19,10 @@ export const REPO = path.resolve(AQUI, '..', '..')
 export const BACKEND = path.join(REPO, 'backend')
 export const DIST = path.join(REPO, 'frontend', 'dist')
 export const DB = path.join(AQUI, '.tmp', 'e2e.sqlite3')
+export const DATOS = path.join(AQUI, '.tmp', 'data')
+export const ENV_FILE = path.join(AQUI, '.tmp', '.env')
+/** Una carpeta de replays que no existe, a proposito: ver servidor.js. */
+export const SIN_REPLAYS = path.join(AQUI, '.tmp', 'sin-replays')
 
 export const PUERTO = Number(process.env.E2E_PORT || 8099)
 export const BASE_URL = `http://127.0.0.1:${PUERTO}`
@@ -33,11 +39,13 @@ export function python() {
   return process.platform === 'win32' ? 'python' : 'python3'
 }
 
-/** El entorno de Django para el e2e: base propia y nada del .env del usuario. */
+/** El entorno de Django para el e2e: base, .env y datos propios, nada del usuario. */
 export function entornoDjango() {
   return {
     ...process.env,
     SQLITE_PATH: DB,
+    DATA_DIR: DATOS,
+    R6_ENV_FILE: ENV_FILE,
     // sin esto el .env del usuario decide la ventana de trade y los numeros que
     // afirman las pruebas dejarian de depender solo del seed
     TRADE_WINDOW_SECONDS: '3',

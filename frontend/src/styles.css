@@ -62,6 +62,22 @@ button { font: inherit; }
 }
 .flash.bad { border-left-color: var(--bad); background: #f8514912; }
 
+/* Ajustes: la ruta de la carpeta es larga, el input ocupa el ancho entero y los
+   botones bajan a la linea siguiente en vez de apretarlo. */
+.ajustes-estado { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.ajustes-carpeta { display: flex; flex-direction: column; gap: 8px; }
+.ajustes-carpeta input { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.ajustes-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+.ajustes-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.ajustes-pie code { word-break: break-all; }
+
 /* ------------------------------------------------------------------ layout */
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }

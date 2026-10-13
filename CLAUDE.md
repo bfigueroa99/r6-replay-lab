@@ -55,9 +55,14 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
   backend tiene dos y punto: `django` y `zstandard`. Nada de DRF, pandas ni
   requests. En el frontend, `electron` es devDependency y solo la usa la app de
   escritorio: la UI web tiene que seguir funcionando sin ella.
-- **La API es de lectura.** Vistas planas con `JsonResponse` y tres POST
-  (`/api/import/`, `/api/overrides/`, `/api/players/<id>/ubisoft/`). No agregues
-  serializers ni viewsets.
+- **La API es de lectura.** Vistas planas con `JsonResponse`. Los POST son
+  pocos y locales: `/api/import/`, `/api/overrides/`,
+  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; los que
+  cambian configuracion exigen `application/json`. No agregues serializers ni
+  viewsets.
+- **La configuracion vive en el `.env`.** La pagina Ajustes lo reescribe con
+  `config/envfile.py` (solo la linea tocada) y aplica en caliente; no abras un
+  segundo archivo de configuracion.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
   escribe columnas en `RoundPlayer`, y `analytics/aggregates.py` solo agrega.
 - **Todo numero que muestra la UI tiene definicion en `docs/metricas.md`.** Si

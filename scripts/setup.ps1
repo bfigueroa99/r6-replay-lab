@@ -12,7 +12,7 @@ if (-not (Test-Path '.venv')) { python -m venv .venv }
 Write-Host '=> Configuracion' -ForegroundColor Cyan
 if (-not (Test-Path '.env')) {
     Copy-Item '.env.example' '.env'
-    Write-Host '   Cree .env desde .env.example. Revisa REPLAY_DIR antes de importar.' -ForegroundColor Yellow
+    Write-Host '   Cree .env desde .env.example. La carpeta de replays se busca sola; si no, se elige en Ajustes.' -ForegroundColor Yellow
 } else {
     Write-Host '   .env ya existe, no lo toco.'
 }
@@ -45,6 +45,6 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
 
 Write-Host ''
 Write-Host 'Listo. Ahora:' -ForegroundColor Green
-Write-Host '  .\scripts\import.ps1    para importar tus replays'
-Write-Host '  .\scripts\start.ps1     para levantar la app en http://127.0.0.1:8000'
-Write-Host '  .\scripts\watch.ps1     para que importe sola al terminar cada partida'
+Write-Host '  .\scripts\start.ps1     levanta la app en http://127.0.0.1:8000 e importa sola tus partidas'
+Write-Host '  .\scripts\desktop.ps1   lo mismo, en la ventana de escritorio'
+Write-Host '  .\scripts\import.ps1    importa por consola, sin levantar la app'

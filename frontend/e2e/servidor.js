@@ -9,10 +9,20 @@
  */
 
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { BACKEND, DB, DIST, PUERTO, entornoDjango, python } from './entorno.js'
+import {
+  BACKEND,
+  DATOS,
+  DB,
+  DIST,
+  ENV_FILE,
+  PUERTO,
+  SIN_REPLAYS,
+  entornoDjango,
+  python,
+} from './entorno.js'
 
 const py = python()
 const opciones = { cwd: BACKEND, env: entornoDjango() }
@@ -30,6 +40,12 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
 // una prueba que pasa por lo que quedo de la anterior
 mkdirSync(path.dirname(DB), { recursive: true })
 rmSync(DB, { force: true })
+rmSync(DATOS, { recursive: true, force: true })
+mkdirSync(DATOS, { recursive: true })
+// la carpeta de replays va fijada a una que no existe: si se dejara buscarla
+// sola, en un PC con Siege instalado encontraria la de verdad y las pruebas
+// dependerian de que maquina las corre
+writeFileSync(ENV_FILE, `REPLAY_DIR=${SIN_REPLAYS}\n`)
 
 try {
   execFileSync(py, ['manage.py', 'migrate', '--no-input'], { ...opciones, stdio: 'pipe' })
