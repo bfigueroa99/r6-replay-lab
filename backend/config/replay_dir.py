@@ -120,3 +120,44 @@ def detectar(env: dict | None = None, unidades: list[Path] | None = None) -> Pat
         if ruta.is_dir():
             return ruta
     return None
+
+
+#: Lo que se muestra cuando no hay ninguna: la ruta de Steam por defecto, que
+#: es la mas comun y la que el usuario reconoce al leer el aviso.
+POR_DEFECTO = Path(r"C:\Program Files (x86)\Steam\steamapps\common") / NOMBRE_JUEGO / MATCH_REPLAY
+
+
+def resolver(configurada: str | None) -> tuple[str, str]:
+    """La carpeta a usar y de donde salio: `elegida`, `detectada` o `no_encontrada`.
+
+    Lo que fijo el usuario (en el `.env` o en Ajustes) siempre gana, exista o
+    no: si la eligio mal, se le avisa, pero no se la cambia por otra a escondidas.
+    """
+    if configurada and configurada.strip():
+        return configurada.strip(), "elegida"
+    detectada = detectar()
+    if detectada:
+        return str(detectada), "detectada"
+    return str(POR_DEFECTO), "no_encontrada"
+
+
+def _tiene_partidas(ruta: Path) -> bool:
+    try:
+        return any(p.is_dir() and p.name.startswith("Match-") for p in ruta.iterdir())
+    except OSError:
+        return False
+
+
+def normalizar(ruta: Path) -> Path:
+    """Corrige la confusion mas comun al elegir la carpeta a mano.
+
+    En el selector es facil quedarse un nivel arriba: la carpeta del juego en
+    vez de su `MatchReplay`, o la de la biblioteca en vez de la del juego. Si la
+    elegida no tiene partidas y la de abajo si existe, se usa esa.
+    """
+    if _tiene_partidas(ruta):
+        return ruta
+    for abajo in (ruta / MATCH_REPLAY, ruta / NOMBRE_JUEGO / MATCH_REPLAY):
+        if abajo.is_dir():
+            return abajo
+    return ruta

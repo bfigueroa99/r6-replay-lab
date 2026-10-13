@@ -304,7 +304,7 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
 
 
 #: Rondas de un lado en un mapa, y en el resto de los mapas, para comparar la
-#: salida del spawn. Sin calibrar contra datos reales: ver roadmap #35.
+#: salida del spawn. Sin calibrar contra datos reales: ver roadmap #31.
 SALIDA_MIN_RONDAS = 12
 #: Con menos muertes en la ventana, un 30% son tres rondas con mala suerte.
 SALIDA_MIN_MUERTES = 4

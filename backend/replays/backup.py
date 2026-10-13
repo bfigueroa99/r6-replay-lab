@@ -12,6 +12,7 @@ copia consistente aunque el server este corriendo.
 from __future__ import annotations
 
 import sqlite3
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,10 @@ from django.conf import settings
 
 #: Cuantas copias se conservan antes de ir borrando las mas viejas.
 KEEP_DEFAULT = 10
+
+#: Cada cuantos dias la app hace sola una copia al abrir (ver `serve.py`).
+#: Con KEEP_DEFAULT son unos dos meses y medio de historia.
+DIAS_ENTRE_COPIAS = 7
 
 PREFIX = "db-"
 SUFFIX = ".sqlite3"
@@ -111,3 +116,16 @@ def _rotar(carpeta: Path, keep: int) -> list[Path]:
     for copia in sobran:
         copia.unlink(missing_ok=True)
     return sobran
+
+
+def hace_falta_copia(dias: float = DIAS_ENTRE_COPIAS, *, ahora: float | None = None) -> bool:
+    """True si no hay copias o la mas nueva tiene mas de `dias`.
+
+    Es lo que decide la copia automatica: un backup que depende de acordarse de
+    correr un comando no se corre, y quien usa el .exe ni siquiera tiene consola.
+    """
+    copias = existing_backups()
+    if not copias:
+        return True
+    ahora = time.time() if ahora is None else ahora
+    return ahora - copias[0].stat().st_mtime >= dias * 86400

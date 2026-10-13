@@ -1,13 +1,15 @@
-import React, { Suspense, lazy, useCallback, useState } from 'react'
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Route, Routes } from 'react-router-dom'
 
 import { get, post, useApi } from './api.js'
+import { avisoAutomatico, etiquetaImportacion } from './importacion.js'
 import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
 
 // El Resumen entra en el bundle inicial porque es la pantalla de partida. El
-// resto se carga al entrar: son 8 paginas y dos de ellas arrastran recharts,
+// resto se carga al entrar: son 10 paginas y dos de ellas arrastran recharts,
 // que pesa mas que todo lo demas junto.
+const Ajustes = lazy(() => import('./pages/Ajustes.jsx'))
 const Coach = lazy(() => import('./pages/Coach.jsx'))
 const Datos = lazy(() => import('./pages/Datos.jsx'))
 const Duelos = lazy(() => import('./pages/Duelos.jsx'))
@@ -29,11 +31,14 @@ const LINKS = [
   { to: '/partidas', label: 'Partidas' },
   { to: '/ruleta', label: 'Ruleta' },
   { to: '/datos', label: 'Datos' },
+  { to: '/ajustes', label: 'Ajustes' },
 ]
 
 /** Cada cuanto se pregunta como va la importacion, y hasta cuando insistir. */
 const POLL_MS = 700
 const POLL_MAX = Math.round((20 * 60 * 1000) / POLL_MS)
+/** Sin nada corriendo, cada cuanto se mira si el vigilante empezo a importar. */
+const IDLE_MS = 10_000
 
 const espera = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -42,7 +47,43 @@ export default function App() {
   const [importing, setImporting] = useState(false)
   const [progreso, setProgreso] = useState(null)
   const [flash, setFlash] = useState(null)
+  const [auto, setAuto] = useState(null)
   const health = useApi('/health/')
+  const recargarHealth = health.reload
+
+  // El vigilante del backend importa solo al terminar cada partida. La UI no lo
+  // lanzo, asi que se entera preguntando: rapido mientras corre, cada 10 s si
+  // no. Mientras el boton importa, su propio bucle ya sigue el trabajo.
+  useEffect(() => {
+    if (importing) return undefined
+    let vivo = true
+    let timer
+    let anterior = null
+    const mirar = async () => {
+      let job = null
+      try {
+        job = await get('/import/progress/')
+      } catch {
+        /* el backend puede estar reiniciando: se vuelve a mirar en el proximo */
+      }
+      if (!vivo) return
+      if (job) {
+        const aviso = avisoAutomatico(anterior, job)
+        if (aviso) {
+          setFlash(aviso)
+          recargarHealth()
+        }
+        setAuto(job.running && job.origin === 'auto' ? job : null)
+        anterior = job
+      }
+      timer = setTimeout(mirar, job?.running ? POLL_MS : IDLE_MS)
+    }
+    mirar()
+    return () => {
+      vivo = false
+      clearTimeout(timer)
+    }
+  }, [importing, recargarHealth])
 
   const runImport = useCallback(async () => {
     setImporting(true)
@@ -75,11 +116,8 @@ export default function App() {
     }
   }, [health])
 
-  const etiquetaImport = !importing
-    ? 'Importar replays'
-    : progreso?.total
-      ? `Importando ${Math.min(progreso.done + 1, progreso.total)} de ${progreso.total}`
-      : 'Importando...'
+  const enCurso = importing ? progreso : auto
+  const etiquetaImport = etiquetaImportacion(enCurso, importing)
 
   const context = { filters, setFilters, runImport, importing, health: health.data }
 
@@ -112,8 +150,8 @@ export default function App() {
           <button
             className="btn primary small"
             onClick={runImport}
-            disabled={importing}
-            title={progreso?.current ? `Leyendo ${progreso.current}` : undefined}
+            disabled={importing || Boolean(auto)}
+            title={enCurso?.current ? `Leyendo ${enCurso.current}` : undefined}
           >
             {etiquetaImport}
           </button>
@@ -121,9 +159,10 @@ export default function App() {
       </header>
 
       <main>
-        {progreso?.current ? (
+        {enCurso?.current ? (
           <div className="panel" style={{ marginBottom: 14 }}>
-            Leyendo <b>{progreso.current}</b> · {progreso.done} de {progreso.total} listas.
+            {importing ? 'Leyendo' : 'Importando sola'} <b>{enCurso.current}</b> · {enCurso.done} de{' '}
+            {enCurso.total} listas.
           </div>
         ) : null}
         {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
@@ -140,6 +179,7 @@ export default function App() {
           <Route path="/jugadores/:id" element={<Jugador />} />
           <Route path="/ruleta" element={<Ruleta />} />
           <Route path="/datos" element={<Datos />} />
+          <Route path="/ajustes" element={<Ajustes onCambio={recargarHealth} />} />
           <Route
             path="*"
             element={

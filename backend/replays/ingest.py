@@ -317,16 +317,25 @@ def _parse_ts(value) -> datetime:
 
 
 def pending_folders(
-    root: str | Path, *, quiet_seconds: float = 60.0, force: bool = False, limit: int | None = None
+    root: str | Path,
+    *,
+    quiet_seconds: float = 60.0,
+    force: bool = False,
+    limit: int | None = None,
+    skip: Callable[[Path], bool] | None = None,
 ) -> list[Path]:
     """Carpetas que se van a importar. Se calcula antes para saber el total.
 
     Sin esto no se puede decir "3 de 12": el total solo se sabria al terminar.
+    `skip` deja afuera carpetas por otra razon (el vigilante, las que ya
+    intento y no cambiaron).
     """
     known = set(Match.objects.values_list("folder", flat=True))
     out: list[Path] = []
     for folder in find_match_folders(root):
         if folder.name in known and not force:
+            continue
+        if skip and skip(folder):
             continue
         if not folder_is_settled(folder, quiet_seconds):
             log.info("%s todavia se esta escribiendo, se salta", folder.name)
@@ -390,10 +399,13 @@ class ImportJob:
     finished_at: datetime | None = None
     error: str = ""
     results: list[ImportResult] = field(default_factory=list)
+    #: `manual` (el boton) o `auto` (el vigilante): la UI avisa distinto.
+    origin: str = "manual"
 
     def as_dict(self) -> dict:
         return {
             "running": self.running,
+            "origin": self.origin,
             "total": self.total,
             "done": self.done,
             "current": self.current,
@@ -441,6 +453,41 @@ def run_import_job(folders: list[Path], *, force: bool = False) -> ImportJob:
     return _job
 
 
+def reserve_import(
+    root: str | Path,
+    *,
+    quiet_seconds: float = 60.0,
+    force: bool = False,
+    limit: int | None = None,
+    origin: str = "manual",
+    even_if_empty: bool = True,
+    skip: Callable[[Path], bool] | None = None,
+) -> list[Path] | None:
+    """Arma la lista y marca el trabajo como corriendo, todo bajo el lock.
+
+    Devuelve las carpetas a importar, o None si no se reservo nada: ya habia
+    una importacion corriendo o, con `even_if_empty=False`, no habia nada. Lo
+    usan el boton y el vigilante, y por eso nunca importan los dos a la vez.
+
+    El vigilante pasa `even_if_empty=False`: revisa cada 20 segundos, y si
+    dejara un trabajo vacio en cada pasada borraria el resultado de la ultima
+    importacion de verdad.
+    """
+    global _job
+    with _job_lock:
+        if _job.running:
+            return None
+        folders = pending_folders(
+            root, quiet_seconds=quiet_seconds, force=force, limit=limit, skip=skip
+        )
+        if not folders and not even_if_empty:
+            return None
+        _job = ImportJob(
+            running=True, started_at=timezone.now(), total=len(folders), origin=origin
+        )
+    return folders
+
+
 def start_import(
     root: str | Path,
     *,
@@ -457,12 +504,9 @@ def start_import(
     vuelva con el total: si no, el boton muestra "importando..." sin numero
     hasta que el hilo alcance a calcularlo.
     """
-    global _job
-    with _job_lock:
-        if _job.running:
-            return _job
-        folders = pending_folders(root, quiet_seconds=quiet_seconds, force=force, limit=limit)
-        _job = ImportJob(running=True, started_at=timezone.now(), total=len(folders))
+    folders = reserve_import(root, quiet_seconds=quiet_seconds, force=force, limit=limit)
+    if folders is None:
+        return _job
 
     hilo = threading.Thread(
         target=run_import_job,
