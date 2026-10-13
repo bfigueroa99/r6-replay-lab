@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
-estado: revisado
-candado: qa 2026-10-13T09:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/36-mitades-y-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B1; `Round.overtime_number` (`backend/replays/models.py:89`) se guarda en `ingest.py:201` y ninguna vista lo usa
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/, frontend/e2e/, backend/tests/factories.py
-turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T0711Z, revisor 20261013T0811Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z, dev 20261013T0711Z, revisor 20261013T0811Z, qa 20261013T0911Z
 
 ## PR
 
@@ -263,9 +263,62 @@ mitad" 0 %. Es el seed, no el codigo; el e2e solo afirma etiquetas.
 
 Veredicto: aprobar.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-13 sobre 7319395
 
-(QA) Un comando y un resultado por criterio de aceptacion.
+(QA 20261013T0911Z) Rama ya contiene `origin/main` e5bad5b, sin conflicto
+(`git merge-tree --write-tree origin/main HEAD` sale 0).
+
+- `./scripts/check.sh` -> `Todo en verde.`: ruff ok, 478 tests backend
+  (4 skipped), 65 vitest, build, 24 e2e.
+- Bases de prueba en el scratchpad (`DATA_DIR=<scratch>/vacia` y
+  `<scratch>/sembrada`, `manage.py migrate`, siembra con `tests/factories.py`
+  via `manage.py shell < sembrar.py`): partida Club House 1-3 Attack, 4-6
+  Defense, 7-8 prorroga (ganada); Oregon numerada desde 0 que arranca en
+  Defense (perdida); Bank con la ronda mas baja sin `my_side`; Kafe de una
+  ronda sin bajas con `won=None`. `runserver 127.0.0.1:8771/8772 --noreload`.
+
+Criterios:
+
+1. `by_half` con 3 filas, vacias sin 500: base vacia
+   `curl 127.0.0.1:8771/api/trends/` -> 200, `first/second/overtime` con
+   `rounds 0` y `winrate/rating/kpr null`; `by_start_side` dos filas en 0.
+   `?map=noexiste`, `?session=foo`, `?days=0`, `?days=-3` -> 200, mismas filas en 0.
+2. Mitad deducida de los datos: base sembrada, `?map=club-house` -> 3/3/2
+   (winrate 100/33.3/50); `?map=oregon` (numerada desde 0, arranca en
+   Defense) -> first 3, second 2, overtime 0; `?map=bank` (ronda mas baja
+   sin lado) -> 0/0/0. Total sin filtro: 7/5/2, winrate 57.1/20.0/50.0,
+   calculado a mano y coincide.
+3. `by_start_side`: sin filtro Attack `matches 2 decided 1 winrate 100.0`
+   (Club House ganada + Kafe sin resultado), Defense `matches 1 winrate 0.0`
+   (Oregon); Bank no cuenta.
+4. Filtros: `?map=` cambia los conteos (arriba); `?side=Defense` -> first 3
+   (Oregon), second 3 (Club House 4-6), overtime 1, y `by_start_side` igual
+   que sin filtro (el lado inicial se lee de la partida entera). Parametros
+   basura (`?until=foo`, `?page=-1`, `?player=nadie`, `?limit=0`, `?map=`)
+   -> 200 con los mismos numeros que sin filtro. Vecinos `/api/dashboard/`,
+   `/api/matches/`, `/api/coach/`, `/api/operators/` -> 200 en las dos bases.
+5. UI: Chromium headless sobre la base sembrada, `/tendencias`: panel "Por
+   mitad de la partida" con filas `Primera mitad 7 57% 0.98 0.86 —`,
+   `Segunda mitad 5 20% 1.01 1.00 —`, `Prórroga 2 50% 1.01 1.00 —`,
+   `Ataque 2 100%`, `Defensa 1 0%`; 0 errores de consola. e2e
+   `Tendencias muestra la tabla por mitad` verde en `check.sh`.
+6. `docs/metricas.md`: `## Mitades y prorroga` con Primera/segunda mitad,
+   Prórroga y Lado inicial.
+
+Chunk inicial: `index-*.js` 185.47 kB en main e5bad5b y en la rama (sin
+cambio); `Trends-*.js` lazy 10.67 -> 12.05 kB.
+
+Mutaciones del QA sobre `aggregates.py` (distintas de las del Revisor),
+`manage.py test tests.test_mitades`:
+- `first` sin filtrar por lado inicial -> 4 fallas.
+- lado inicial de la ronda mas alta (`order_by("-number")`) -> 7 fallas.
+- filas de `by_start_side` en orden inverso -> 4 fallas.
+- `wins` contado sobre todas las partidas del lado: sobrevive, pero es
+  equivalente (`won=True` ya implica no nulo).
+
+Sin migracion, sin `recompute`, sin parser: no hay `## Verificar en el PC`.
+
+Veredicto: aprobado.
 
 ## Verificar en el PC
 
