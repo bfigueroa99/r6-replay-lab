@@ -1,7 +1,7 @@
 # 38. Una ronda de Y9S4+ con defuse del perdedor queda con dos ganadores
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T06:12Z
 rama: -
 tipo: bug
 epica: -

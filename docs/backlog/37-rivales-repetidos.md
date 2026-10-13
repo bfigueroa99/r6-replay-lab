@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T06:12Z
 rama: -
 tipo: funcionalidad
 epica: rivales

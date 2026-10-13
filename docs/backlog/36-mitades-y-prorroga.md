@@ -1,7 +1,7 @@
 # 36. Primera mitad, segunda mitad y prorroga
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-13T06:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
