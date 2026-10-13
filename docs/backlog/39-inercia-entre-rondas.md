@@ -1,8 +1,8 @@
 # 39. Inercia entre rondas: como juegas despues de ganar y despues de perder
 
-estado: disenado
+estado: en curso 2026-10-13T21:12Z
 candado: -
-rama: -
+rama: claude/equipo-dev/39-inercia-entre-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
