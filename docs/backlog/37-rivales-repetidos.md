@@ -1,7 +1,7 @@
 # 37. Rivales repetidos con tu record contra cada uno
 
-estado: propuesto
-candado: arquitecto 2026-10-13T06:12Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D1; `nemesis` (`backend/replays/analytics/aggregates.py:640`) cuenta duelos pero no partidas ganadas o perdidas contra cada rival
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Duelos.jsx, docs/metricas.md, backend/tests/, frontend/e2e/
-turnos: po 20261013T0511Z
+turnos: po 20261013T0511Z, arquitecto 20261013T0611Z
 
 ## PR
 
@@ -56,10 +56,111 @@ partidas.
 
 ## Diseno
 
-(Arquitecto) Nota del PO: `player_profile` ya calcula "contra" con
-`Exists` sobre `team_index` (`aggregates.py:1093`); reusar esa forma para no
-tener dos definiciones de "rival". Revisar como se llama la ruta del perfil
-en `App.jsx` antes de escribir el enlace.
+(Arquitecto 20261013T0611Z, sobre main e5bad5b)
+
+**Definicion de rival** (la misma que `player_profile`, `aggregates.py:1102`,
+y que `_solo_rivales`): una persona es rival en una partida si en al menos
+una de **mis rondas filtradas** de esa partida tiene una fila de
+`RoundPlayer` con `team_index` distinto del mio en esa ronda. Se agrupa por
+`player_id` (`Player`, profileID), nunca por nick. Si en una partida fue
+compañero en unas rondas y rival en otras (no deberia pasar, pero los datos
+son de replays), cuenta como rival en esa partida.
+
+**Backend, `backend/replays/analytics/aggregates.py`**, funcion nueva
+`repeated_rivals(min_matches: int = 2, **filters) -> list[dict]` debajo de
+`nemesis` (antes de `_agregar_mapas`, linea ~699):
+
+```python
+mine = base_queryset(**filters)
+me_ids = _me_ids()
+if not me_ids:
+    return []
+de_rival = (
+    RoundPlayer.objects.filter(Exists(mine.filter(round_id=OuterRef("round_id"))))
+    .exclude(player_id__in=me_ids)
+    .annotate(mi_equipo=_MI_EQUIPO)
+    .exclude(mi_equipo=None)
+    .exclude(team_index=F("mi_equipo"))
+    .values("player_id", "round__match_id").distinct()
+)
+```
+
+`_MI_EQUIPO` ya existe (`aggregates.py:582`): verificar que su `OuterRef`
+apunta a `round_id` y sirve sobre un queryset de `RoundPlayer` (hoy se usa
+sobre `Event`, que tambien tiene `round_id`); si no encaja, un Subquery
+local identico sobre `mine.filter(round_id=OuterRef("round_id")).values("team_index")[:1]`.
+Despues, en Python: `won` por partida con un solo
+`Match.objects.filter(id__in=<ids>).values_list("id", "won")`; nombre con
+`Player.objects.filter(id__in=<ids>).values_list("id", "username")` (el nick
+actual del `Player`, como el perfil). Fila: `player_id`, `username`,
+`matches`, `wins`, `losses`, `winrate = _pct(wins, wins + losses)` (las de
+`won` nulo cuentan en `matches` y no en el denominador). Filtra
+`matches >= min_matches`. Orden: `(-matches, -losses, username)` (los que mas
+te ganan primero a igual cantidad).
+
+**`backend/replays/views.py`** (`duels`, linea ~304): `min_matches =
+_int_param(request, "min_matches", 2, minimum=1, maximum=1000)` y clave
+nueva `"rivals": agg.repeated_rivals(min_matches=min_matches, **filters)`.
+
+**Tests nuevos** en `backend/tests/test_duels.py` (ya tiene el armado de
+rivales con `factories`; seguir su estilo):
+
+- `test_rivales_repetidos_cuenta_partidas_ganadas_y_perdidas`: un rival en 3
+  partidas (2 ganadas, 1 perdida) -> `matches 3, wins 2, losses 1, winrate 66.7`
+  (el redondeo que use `_pct`).
+- `test_un_rival_en_una_sola_partida_no_aparece_con_el_minimo_por_defecto`.
+- `test_quien_fue_companero_en_una_partida_y_rival_en_otra_cuenta_solo_la_de_rival`:
+  dos partidas, en una es compañero, en otra rival, `min_matches=1` -> `matches 1`.
+- `test_partida_sin_resultado_cuenta_en_matches_y_no_en_el_winrate`:
+  `Match.won=None` en una de dos -> `matches 2`, `wins + losses == 1`.
+- `test_un_cambio_de_nick_no_parte_la_fila_de_rivales`: mismo `Player` con
+  dos nicks en dos partidas -> una fila.
+- `test_min_matches_fuera_de_rango_o_texto_no_da_500`: `?min_matches=0`,
+  `-5`, `abc`, `99999` -> 200.
+- `test_el_filtro_de_mapa_aplica_a_rivales`: `?map=` deja solo las partidas
+  de ese mapa.
+
+**Frontend, `frontend/src/pages/Duelos.jsx`**: Panel nuevo **despues** de
+"Por rival" (linea ~210), titulo `Rivales repetidos`, hint `Personas que te
+tocaron en el equipo contrario en 2 o más partidas, con el resultado de esas
+partidas. Es tu récord contra ellas, no su nivel: el resto lo deciden los
+otros ocho.` `DataTable` con `Rival` (`Link` a `/jugadores/${row.player_id}`,
+igual que "Por rival" en la linea 180), `Partidas`, `Ganadas`, `Perdidas`,
+`Récord` (`${wins}-${losses}`, `sortable: false`), `Winrate` (%);
+`rowKey=player_id`, `csvName="rivales-repetidos"`,
+`initialSort={{ key: 'matches', dir: 'desc' }}`,
+`empty="Nadie te tocó de rival en 2 o más partidas con estos filtros."`.
+Usar `data.rivals ?? []`. Ojo: la pagina hace `return <EmptyState>` si
+`totals.duels` es 0 (linea 42); no cambiar eso.
+
+**e2e, `frontend/e2e/humo.spec.js`**: test nuevo `'Duelos muestra rivales
+repetidos'`: `goto('/duelos')`, texto `Rivales repetidos` visible, y o bien
+una fila con un enlace a `/jugadores/` o bien el texto de vacio (el seed
+reusa 3 rivales en todas las partidas, `seed_demo.py:253`, asi que deberia
+haber filas; si las hay, afirmar al menos una con `toHaveAttribute('href',
+/\/jugadores\/\d+$/)`). Consola limpia.
+
+**`docs/metricas.md`**, tabla de `## Duelos` (linea ~119), dos filas:
+**Rival repetido** (persona en el equipo contrario en al menos una de tus
+rondas filtradas de N partidas distintas; por profileID) y **Récord contra
+un rival** (partidas ganadas-perdidas; winrate sobre las que tienen
+resultado).
+
+**Orden:** tests backend (rojos) -> `aggregates.py` -> `views.py` -> verdes
+-> `Duelos.jsx` -> build -> e2e -> `metricas.md`.
+
+**Que puede romperse.** Sin migracion. `Exists` + `Subquery` por fila de
+`RoundPlayer` de todos los jugadores en mis rondas (~10x mis filas): mismo
+orden que `player_profile`, aceptable; si `/api/duels/` pasa de ~1 s en la
+base real, anotarlo para el humano. Un rival que solo aparece en rondas
+excluidas por filtros (`side`, `site`) no cuenta en esa partida: es
+coherente con el resto de la pagina, decirlo en el hint de `metricas.md`.
+
+**Choque con otras fichas.** Sin ramas abiertas. La 36 toca los mismos
+archivos (`aggregates.py`, `views.py`, `metricas.md`, `humo.spec.js`) en
+otras funciones y secciones: se puede implementar en paralelo.
+
+**Archivos:** los de la cabecera, sin cambios.
 
 ## Implementacion
 
