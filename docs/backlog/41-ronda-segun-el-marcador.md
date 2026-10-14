@@ -1,8 +1,8 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
-estado: disenado
+estado: en curso 2026-10-14
 candado: -
-rama: -
+rama: claude/equipo-dev/41-ronda-segun-el-marcador
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
