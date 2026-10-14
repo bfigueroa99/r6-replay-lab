@@ -5,9 +5,21 @@
 
 const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
 
+const sinDato = (pct) => pct === null || pct === undefined
+
 /** El complemento de un porcentaje; nulo si no hay dato, para no inventar un 100. */
 function complemento(pct) {
-  return pct === null || pct === undefined ? null : Math.round((100 - pct) * 10) / 10
+  return sinDato(pct) ? null : Math.round((100 - pct) * 10) / 10
+}
+
+/**
+ * Los dos porcentajes enteros que muestra la tabla. El complemento se saca del
+ * ya redondeado: redondear 87,5 y 12,5 por separado da 88 + 13 = 101.
+ */
+function enteros(pct) {
+  if (sinDato(pct)) return [null, null]
+  const entero = Math.round(pct)
+  return [entero, 100 - entero]
 }
 
 /**
@@ -16,13 +28,23 @@ function complemento(pct) {
  * sobre las ganadas (o perdidas) con dato, asi que suman 100.
  */
 export function filasDeCierre(filas) {
-  return (filas || []).map((fila, orden) => ({
-    ...fila,
-    orden,
-    lado: LADOS[fila.side] || fila.side,
-    won_other_pct: complemento(fila.won_elimination_pct),
-    lost_other_pct: complemento(fila.lost_elimination_pct),
-  }))
+  return (filas || []).map((fila, orden) => {
+    const [ganadasElim, ganadasOtra] = enteros(fila.won_elimination_pct)
+    const [perdidasElim, perdidasOtra] = enteros(fila.lost_elimination_pct)
+    return {
+      ...fila,
+      orden,
+      lado: LADOS[fila.side] || fila.side,
+      won_other_pct: complemento(fila.won_elimination_pct),
+      lost_other_pct: complemento(fila.lost_elimination_pct),
+      vista: {
+        won_elimination_pct: ganadasElim,
+        won_other_pct: ganadasOtra,
+        lost_elimination_pct: perdidasElim,
+        lost_other_pct: perdidasOtra,
+      },
+    }
+  })
 }
 
 /** El panel no tiene nada que decir si ningun lado tiene rondas. */

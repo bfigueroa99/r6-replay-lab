@@ -1,7 +1,7 @@
 # 42. Como se cierran tus rondas: por eliminacion o sin ella, por lado
 
-estado: en curso 2026-10-14
-candado: dev 2026-10-14T11:16Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/42-como-se-cierran-tus-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -158,5 +158,37 @@ Defensa tenga perdidas sin eliminacion (rondas perdidas por plant).
 **Umbral:** ninguno nuevo; usa `MUESTRA_CORTE`.
 
 ## Implementacion
+
+(dev 20261014T1115Z)
+
+Quedo todo el diseno, sin desvios de `archivos:`:
+
+- `aggregates.round_endings(**filters)` con `LADOS_CIERRE = ("Attack", "Defense")`,
+  un solo `values("side").annotate(...)` sobre `base_queryset`, `unknown` por
+  resta y los dos `*_elimination_pct`. Va en `/api/trends/` como
+  `round_endings`.
+- `frontend/src/cierres.js`: `filasDeCierre` (etiqueta, complementos exactos y
+  `vista` con los enteros que se muestran) y `hayCierres` (oculta el panel si
+  los dos lados tienen 0 rondas).
+- Panel "Cómo se cierran tus rondas" despues de "Según el marcador", con
+  `DataTable`, porcentaje y conteo entre parentesis en cada celda, `help` de
+  objetivo o tiempo en las dos columnas sin eliminacion, hint de muestra chica
+  y CSV `como-se-cierran`.
+- Tests: `backend/tests/test_cierres.py` (los 8 del diseno mas
+  `test_base_vacia_y_filtros_raros_dan_200_con_dos_filas_en_cero`),
+  `cierres.test.js` (6) y e2e `Tendencias muestra como se cierran tus rondas`.
+- Fila en `docs/metricas.md` (Contexto de la ronda) y el corte agregado a la
+  fila de muestra minima.
+
+Detalles que el diseno no fijaba:
+
+- Los porcentajes en pantalla son enteros y el de "sin eliminacion" es
+  `100 - round(eliminacion)`: redondear 87,5 y 12,5 por separado daba 101 %
+  (hallazgo de la revision ciega). El CSV lleva el valor exacto con un decimal
+  y el conteo, p. ej. `87,5 (7)`.
+- El conteo va dentro de la celda y no en el `help` (el `help` es por columna).
+
+Revision ciega previa: 3 hallazgos (101 % en pantalla, CSV sin conteos, lineas
+en blanco en `aggregates.py`), los tres corregidos.
 
 ## Para el humano

@@ -31,12 +31,22 @@ describe('filasDeCierre', () => {
     expect(ataque.lost_other_pct).toBe(50)
   })
 
+  it('los enteros que se muestran suman 100 aunque el porcentaje termine en ,5', () => {
+    const [ataque] = filasDeCierre([fila('Attack', { won_elimination_pct: 87.5, lost_elimination_pct: 37.5 })])
+    expect(ataque.vista.won_elimination_pct + ataque.vista.won_other_pct).toBe(100)
+    expect(ataque.vista.lost_elimination_pct + ataque.vista.lost_other_pct).toBe(100)
+    expect(ataque.vista.won_elimination_pct).toBe(88)
+    expect(ataque.vista.won_other_pct).toBe(12)
+  })
+
   it('sin dato deja los porcentajes nulos y no inventa un 100', () => {
     const [vacia] = filasDeCierre([
       fila('Defense', { rounds: 0, won_elimination_pct: null, lost_elimination_pct: null }),
     ])
     expect(vacia.won_other_pct).toBeNull()
     expect(vacia.lost_other_pct).toBeNull()
+    expect(vacia.vista.won_elimination_pct).toBeNull()
+    expect(vacia.vista.won_other_pct).toBeNull()
   })
 
   it('un lado desconocido queda con su clave y una lista nula no rompe', () => {

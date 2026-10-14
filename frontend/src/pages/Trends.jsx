@@ -59,16 +59,22 @@ const DIAS = Object.fromEntries(
 const SIN_ELIMINACION =
   'Objetivo o tiempo: el .rec de temporadas nuevas no separa plant, defuse ni tiempo agotado; se infiere del reloj.'
 
-/** Porcentaje con el conteo de rondas al lado, para que un 100 % de 2 rondas se vea como tal. */
+/**
+ * Porcentaje con el conteo de rondas al lado, para que un 100 % de 2 rondas se
+ * vea como tal. En pantalla va el entero que suma 100 con su complemento; el
+ * CSV lleva el valor exacto y el conteo.
+ */
 function columnaCierre(key, label, conteo, help) {
   return {
     key,
     label,
     sortable: false,
     help,
-    render: (row) =>
-      row[key] === null || row[key] === undefined ? '—' : `${fmt(row[key], 0, '%')} (${row[conteo]})`,
-    csv: (row) => (row[key] === null || row[key] === undefined ? '' : String(row[key]).replace('.', ',')),
+    render: (row) => (row.vista[key] === null ? '—' : `${row.vista[key]}% (${row[conteo]})`),
+    csv: (row) =>
+      row[key] === null || row[key] === undefined
+        ? `(${row[conteo]})`
+        : `${String(row[key]).replace('.', ',')} (${row[conteo]})`,
   }
 }
 

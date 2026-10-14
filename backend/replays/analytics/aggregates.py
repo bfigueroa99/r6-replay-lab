@@ -458,7 +458,6 @@ def by_score_state(**filters) -> list[dict]:
     return _filas_por_tramo("score_state", {nombre: tramos[nombre] for nombre in MARCADOR})
 
 
-
 #: Orden fijo de las filas de `round_endings`.
 LADOS_CIERRE = ("Attack", "Defense")
 
@@ -513,6 +512,7 @@ def round_endings(**filters) -> list[dict]:
             }
         )
     return filas
+
 
 def by_hour(**filters) -> list[dict]:
     """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
