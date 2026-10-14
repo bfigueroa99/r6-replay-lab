@@ -1,7 +1,7 @@
 # 42. Como se cierran tus rondas: por eliminacion o sin ella, por lado
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-14T12:12Z
 rama: claude/equipo-dev/42-como-se-cierran-tus-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
