@@ -25,7 +25,10 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.functions import Floor
+from django.db.models.fields.json import KeyTransform
+from django.db.models.functions import Cast, Floor
+
+from pydissect.constants import Y9S4
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from .metrics import trade_window
@@ -418,6 +421,41 @@ def by_previous_round(**filters) -> list[dict]:
         "no_previous": qs.filter(anterior__isnull=True),
     }
     return _filas_por_tramo("previous", {nombre: tramos[nombre] for nombre in RONDA_ANTERIOR})
+
+
+#: Orden fijo de las filas de `by_score_state`.
+MARCADOR = ("ahead", "tied", "behind", "unknown")
+
+
+def by_score_state(**filters) -> list[dict]:
+    """Rondas yendo adelante, empatado o atras en el marcador antes de jugarlas."""
+    s0 = Cast(KeyTransform("0", "round__score_before"), IntegerField())
+    s1 = Cast(KeyTransform("1", "round__score_before"), IntegerField())
+    # Un marcador de mas de dos equipos no se puede leer como tuyo contra el
+    # otro: el tercer elemento lo manda a `unknown`.
+    qs = base_queryset(**filters).annotate(
+        s0=s0, s1=s1, s2=KeyTransform("2", "round__score_before")
+    )
+    # El queryset es de tus filas, asi que `team_index` es tu equipo; uno
+    # fuera de 0/1 deja `mio` nulo y la ronda cae en `unknown`.
+    qs = qs.annotate(
+        mio=Case(When(team_index=0, then=F("s0")), When(team_index=1, then=F("s1"))),
+        suyo=Case(When(team_index=0, then=F("s1")), When(team_index=1, then=F("s0"))),
+    )
+    # Antes de Y9S4 el parser pone `startingScore` en 0 y la ingesta guarda
+    # [0, 0]: parece empatado pero no se sabe. Se lee de la partida y no de la
+    # ronda para que una base ya importada se corrija sin reimportar.
+    conocido = qs.filter(
+        mio__isnull=False, suyo__isnull=False, s2__isnull=True,
+        round__match__code_version__gte=Y9S4,
+    )
+    tramos = {
+        "ahead": conocido.filter(mio__gt=F("suyo")),
+        "tied": conocido.filter(mio=F("suyo")),
+        "behind": conocido.filter(mio__lt=F("suyo")),
+        "unknown": qs.exclude(pk__in=conocido.values("pk")),
+    }
+    return _filas_por_tramo("score_state", {nombre: tramos[nombre] for nombre in MARCADOR})
 
 
 def by_start_side(**filters) -> list[dict]:

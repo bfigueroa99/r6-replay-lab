@@ -20,6 +20,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from externo import ubisoft
+from pydissect.constants import Y9S4
 from replays.models import Event, Match, PerfilUbisoft, Player, Round, RoundPlayer
 
 ME = "BearF99"
@@ -191,6 +192,8 @@ class Command(BaseCommand):
                     my_score=ganadas,
                     opponent_score=len(tanda) - ganadas,
                     won=ganadas > len(tanda) - ganadas,
+                    # una version con marcador por ronda: antes de Y9S4 no hay
+                    code_version=Y9S4,
                 )
                 for n, datos in enumerate(tanda):
                     self._ronda(match, n, datos, mapa, indice, yo, companeros, rivales)
@@ -212,6 +215,8 @@ class Command(BaseCommand):
             clock_start=180,
             clock_end=20,
             teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
+            # ganas las pares desde la 0: es el marcador que dejan las rondas previas
+            score_before=[(n + 1) // 2, n // 2],
         )
 
         # quedar fuera de posicion es morir, sin bajas y sin que nadie te vengue

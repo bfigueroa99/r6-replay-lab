@@ -1,7 +1,7 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
-estado: en curso 2026-10-14
-candado: dev 2026-10-14T01:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/41-ronda-segun-el-marcador
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -129,6 +129,41 @@ Con datos reales importados antes de que `startingScore` existiera la fila
 **Verificacion manual:** `seed_demo`, `/api/trends/` -> `by_score_state`
 con 87 ahead / 116 tied / 0 behind / 0 unknown (sobre la semilla actual de
 203 rondas), y el panel en `/tendencias`.
+
+## Implementacion
+
+(Dev 20261014T0111Z, sobre main 2a95f98.)
+
+Quedo todo el diseno:
+
+- `aggregates.by_score_state` con `MARCADOR` y `_filas_por_tramo("score_state", ...)`;
+  `"by_score_state"` en `/api/trends/`.
+- `seed_demo` llena `score_before=[(n + 1) // 2, n // 2]`: con la semilla
+  `by_score_state` da 87 ahead / 116 tied / 0 behind / 0 unknown (203 rondas,
+  verificado en una base temporal).
+- Panel "Según el marcador" en Tendencias despues del de ronda anterior, con
+  `TablaDeCorte`, CSV `segun-marcador`, aviso de muestra chica; la fila
+  "Sin marcador" se oculta si tiene 0 rondas.
+- Fila **Segun el marcador** en `docs/metricas.md` (`## Contexto de la ronda`).
+- `tests/test_marcador.py` (9 tests) y e2e `Tendencias muestra las rondas segun el marcador`.
+
+**Desvio del diseno (hallazgo de la revision ciega previa, confirmado):**
+antes de Y9S4 `pydissect/header.py` fuerza `startingScore = 0` y la ingesta
+guarda `score_before = [0, 0]` siempre, asi que con replays viejos todas las
+rondas caian en "Empatado" y `unknown` nunca se alcanzaba con datos reales.
+`by_score_state` exige ademas `round__match__code_version >= Y9S4` para el
+marcador conocido (se lee de `Match`, asi que corrige bases ya importadas
+sin reimportar). Por eso:
+- `factories.make_match` acepta `code_version` con default `Y9S4` (nadie mas
+  lee ese campo; la suite completa sigue verde).
+- `seed_demo` crea las partidas con `code_version=Y9S4`; ningun otro numero del
+  seed cambia (`code_version` no se muestra ni se agrega en ningun lado).
+- Test nuevo `test_antes_de_y9s4_el_cero_cero_es_sin_marcador_y_no_empate`
+  y `test_un_equipo_fuera_de_cero_y_uno_va_a_sin_marcador` (extra).
+- La fila de `metricas.md` lo dice.
+
+Fuera de `archivos:` no se toco nada. Verificacion: `check.sh` en
+`Todo en verde.` (512 tests backend, 69 frontend, build ok, 28 e2e).
 
 ## Para el humano
 
