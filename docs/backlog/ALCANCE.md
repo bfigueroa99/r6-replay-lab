@@ -32,6 +32,9 @@ Reconciliado otra vez el 2026-10-13 (sesion 20261013T1915Z) contra `main`
 5d2aecc: B1 (#25) y D1 (#27) en main.
 Reconciliado el 2026-10-14 (sesion 20261014T0911Z) contra `main` 3438ab2:
 B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
+Reconciliado el 2026-10-14 (sesion 20261014T1911Z) contra `main` f74a16f:
+B5 (43), B6 (42) y E4 (44) en main; B7 -> ficha 45, C4 -> ficha 46,
+A2 -> ficha 47; nuevas B8, B9 y F6.
 
 ## Epicas
 
@@ -40,7 +43,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | A1 | Selector de tipo de partida en la barra de filtros | Filtrar todo por ranked, unranked, rapida o la que sea, y no solo con "solo ranked" | `Match.match_type`; la API ya filtra (`views.py:48`) y `filters/` ya devuelve `match_types`; falta en `Filters.jsx`, que PR #14 tambien toca | S | idea |
-| A2 | Etiquetar modos de juego desconocidos en Datos | Un modo nuevo deja de verse como `Unknown(...)` | `gamemode_name` (`header.py:233`) no llama a `record_unknown`, a diferencia de mapas y operadores; candidato de `mercado/2026-09-13` | S | idea |
+| A2 | Etiquetar modos de juego desconocidos en Datos | Un modo nuevo deja de verse como `Unknown(...)` | `gamemode_name` (`header.py:233`) no llama a `record_unknown`, a diferencia de mapas y operadores; candidato de `mercado/2026-09-13`. Incluye tipos de partida (`match_type_name`, `header.py:229`) | S | ficha 47 |
 | A3 | Temporada como dimension: etiqueta, filtro y comparacion | Saber si mejoraste de una temporada a otra | `Match.game_version` y `code_version` (`models.py:57-58`); tabla version -> temporada en `constants.py`, y las versiones sin nombre se etiquetan en Datos como los mapas | M | idea |
 
 ### lado-y-marcador: mitades, prorroga y presion
@@ -52,8 +55,10 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | B3 | Metricas por tercios de la ronda segun el reloj | Si te va peor al principio, al medio o al final de la ronda, mas alla de cuando mueres | reloj de los eventos, `death_clock`, `death_elapsed`; candidato #23 de `mercado/2026-09-16`. Nunca anclado al plant | M | idea |
 | B4 | Inercia entre rondas | Tu winrate de ronda despues de ganar la anterior contra despues de perderla: si una ronda perdida te arrastra a la siguiente | `Round.my_team_won` de la ronda `number - 1` de la misma partida (`models.py:94`); fila nueva en `docs/metricas.md`, con banda de ruido como el #10 | S | en main |
 | B5 | Match point y ronda decisiva (segundo tramo de B2) | Tu rendimiento cuando una ronda gana o pierde la partida | `score_before` + `Match.match_type`/`gamemode` para saber a cuanto se gana; las reglas por modo (prorroga, ventaja de 2) van en una tabla de `constants.py`, y un modo sin regla conocida no cuenta. Implementar despues de la ficha 41 | M | en main (ficha 43, PR #33) |
-| B6 | Como ganas y pierdes tus rondas | Por lado y mapa, cuantas rondas se cierran por eliminacion, por tiempo o por objetivo: si en defensa pierdes por tiempo o por quedarte sin gente | `Round.win_condition` y `win_condition_certain` (`models.py:95-96`), hoy solo en el detalle de una ronda. Las inferidas (plant/defuse de temporadas nuevas) van en su propia fila "inferida" y no se desglosan, por `docs/formato-rec.md` | S | ficha 42 |
-| B7 | Remontadas y derrumbes | Lista de partidas que ganaste yendo abajo por 2 o mas rondas y de las que perdiste yendo arriba por 2 o mas, con tu winrate de partida segun la diferencia en el cambio de lado: si sueltas las partidas que tienes ganadas | `Round.score_before` por ronda (mismo corte `code_version >= Y9S4` que `by_score_state`, `aggregates.py:430`) + `Match.won`; maxima diferencia a favor y en contra por partida | S | idea |
+| B6 | Como ganas y pierdes tus rondas | Por lado y mapa, cuantas rondas se cierran por eliminacion, por tiempo o por objetivo: si en defensa pierdes por tiempo o por quedarte sin gente | `Round.win_condition` y `win_condition_certain` (`models.py:95-96`), hoy solo en el detalle de una ronda. Las inferidas (plant/defuse de temporadas nuevas) van en su propia fila "inferida" y no se desglosan, por `docs/formato-rec.md` | S | en main (ficha 42) |
+| B7 | Remontadas y derrumbes | Lista de partidas que ganaste yendo abajo por 2 o mas rondas y de las que perdiste yendo arriba por 2 o mas, con tu winrate de partida segun la diferencia en el cambio de lado: si sueltas las partidas que tienes ganadas | `Round.score_before` por ronda (mismo corte `code_version >= Y9S4` que `by_score_state`, `aggregates.py:543`) + `Match.won`; maxima diferencia a favor y en contra por partida | S | ficha 45 |
+| B8 | Primera ronda de cada mitad | Tu winrate en la ronda 1 y en la primera ronda tras el cambio de lado, contra el resto: si arrancas frio cada mitad. En Siege no hay ronda de pistola, pero la primera de cada lado marca el tono y se juega sin informacion | `Round.number` y la frontera de mitad que ya calcula `by_half` (`aggregates.py:456`, `_lado_inicial`); `Round.my_team_won`; sale en `/api/trends/` | S | idea |
+| B9 | Rondas cortas y largas | Tu winrate de ronda segun cuanto duro, por lado: si en ataque ganas solo las ejecuciones rapidas o si en defensa te quiebras en las rondas largas | `Round.clock_start` y `clock_end` (`models.py:101-102`, propiedad `Round.duration`), hoy sin mostrar; tramos fijos de duracion. Las rondas con `possible_plant` van en su propia fila, porque el reloj despues del plant no mide lo mismo (`docs/formato-rec.md`) | S | idea |
 
 ### escuadra: el equipo con el que juegas
 
@@ -62,7 +67,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | C1 | Winrate por grupo exacto de compañeros | Saber que stack completo te funciona, no solo que pares | `teammate_synergy` (`aggregates.py:383`) agrupa de a uno; `team_index` y `player` por ronda | M | idea |
 | C2 | Matriz de trades del equipo | Quien venga a quien, y a quien nadie venga | `Event.traded` (`models.py:195`), `trade_kills`, `was_traded` (`models.py:146-147`) | M | idea |
 | C3 | Alineacion de operadores de tu equipo contra el resultado | Que combinaciones de tu lado ganan mas por mapa y lado | `RoundPlayer.operator` de tus compañeros por ronda, `operators/catalog/` | M | idea |
-| C4 | Primero de tu equipo en caer | Cuantas rondas eres el primero de tu equipo en morir (no solo la primera muerte de la ronda) y el winrate de esas rondas contra cuando cae otro: si tu forma de abrir le cuesta rondas al equipo | `RoundPlayer.death_elapsed` de las filas de tu equipo por ronda (`team_index`, `models.py:127,150`); hoy `opening_death` solo mira la primera muerte de toda la ronda | S | idea |
+| C4 | Primero de tu equipo en caer | Cuantas rondas eres el primero de tu equipo en morir (no solo la primera muerte de la ronda) y el winrate de esas rondas contra cuando cae otro: si tu forma de abrir le cuesta rondas al equipo | `RoundPlayer.death_elapsed` de las filas de tu equipo por ronda (`team_index`, `models.py:127,150`); hoy `opening_death` solo mira la primera muerte de toda la ronda | S | ficha 46 |
 | C5 | Solo, en duo o en stack | Tu winrate y rating segun cuantos compañeros habituales (los que aparecen contigo en 5 o mas partidas) juegan esa partida: 0, 1, 2 o mas. Responde si te conviene entrar solo o esperar a tu grupo | filas `RoundPlayer` de tu equipo por partida (`team_index`, `player`, `is_me=False`); habitual = `player` con N partidas compartidas, como `teammate_synergy` (`aggregates.py:542`). N fijo en el diseno, sin ajuste en la UI | S | idea |
 
 ### rivales: los rivales de tus replays
@@ -80,7 +85,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | E1 | Curva de aprendizaje por operador | Tu rating en las primeras N rondas con un operador contra las siguientes: si practicarlo rinde | `RoundPlayer` por operador ordenado por fecha, como `trend_by_match`; fila nueva en `docs/metricas.md` | M | idea |
 | E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
 | E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | en main |
-| E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | ficha 44 |
+| E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | en main (ficha 44) |
 
 ### revision-de-rondas: revisar rondas
 
@@ -91,6 +96,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | F4 | Tira de rondas en el listado de partidas | En Partidas, cada fila muestra la secuencia de rondas ganadas y perdidas (y el lado) y no solo el marcador final: se ven las remontadas y los derrumbes sin abrir la partida | `Round.my_team_won`, `my_side`, `number` por partida; `match_list` (`views.py`) agrega una lista corta por partida en la misma consulta paginada. PR #14 toca `Matches.jsx` (filtros): disenar sin pisarlo o esperar | S | idea |
 | F3 | Cambios de operador y spawn en la linea de tiempo | Ver en el detalle de la ronda quien cambio de operador y desde que spawn salio cada uno | eventos `OPERATOR_SWAP` (`constants.py:292`), hoy una linea generica en `MatchDetail.jsx`; `spawn` ya viene en `matches/<id>/` y ninguna pagina lo pinta | S | idea |
 | F5 | Ventaja numerica tirada | Rondas que tu equipo perdio despues de quedar con un jugador mas (o dos), contadas por lado y mapa, con enlace a cada una: el error que mas duele y que el marcador no muestra | orden de las bajas por ronda (`Event` de tipo kill con su reloj y el `team_index` de victima y autor), conteo de vivos por equipo; `Round.my_team_won`. Los abandonos (`PLAYER_LEAVE`) cuentan como baja, igual que en `stats.py` | M | idea |
+| F6 | Saltar a la ronda desde los records y las listas | Desde Records, Remontadas y Clutches del Coach, el enlace abre el detalle de la partida ya posicionado en la ronda que importa (`#ronda-N`) y no en la primera | `RoundPlayer.round.number` ya esta en los agregados (`_record_de_ronda`, `aggregates.py:314`); ancla en `MatchDetail.jsx`. PR #14 agrega flechas de ronda en `MatchDetail.jsx`: disenar sin pisarlo o esperar | S | idea |
 
 ### datos: datos y configuracion
 
