@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
-estado: aprobado
-candado: release 2026-10-14 18:15
+estado: entregado
+candado: -
 rama: claude/equipo-dev/43-match-point
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,304 +9,113 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B5, segundo tramo de B2 (rondas bajo presion); el primer tramo (adelante/empatado/atras) entro con la ficha 41
 archivos: backend/replays/analytics/reglas_partida.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_match_point.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z, revisor 20261014T1611Z, qa 20261014T1711Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z, revisor 20261014T1611Z, qa 20261014T1711Z, release 20261014T1811Z
 
 ## PR
 
-(La escribe el Release manager al final.)
+**Titulo:** `[equipo-dev][frontend] Match point en Tendencias`
+
+### Que cambia
+
+Tendencias suma el panel **Match point**, justo despues de "Según el
+marcador": tus metricas en las rondas donde tu equipo podia cerrar la
+partida, donde podia cerrarla el rival, donde podian los dos, las normales
+y las sin marcador o sin regla. Las cinco filas suman todas tus rondas.
+Por ahora solo ranked tiene regla (gana a 4; con 3-3 prorroga a 5).
+
+### Por que esto y no otra cosa
+
+Ficha 43, segundo tramo de la epica `lado-y-marcador` (ALCANCE.md B5),
+sobre el panel "Según el marcador" de la ficha 41. Descartado: inferir la
+regla desde las partidas importadas (sesga hacia las terminadas y no ve un
+match point perdido); probabilidad de ganar segun el marcador.
+
+### Como se probo
+
+- `./scripts/check.sh`: 561 tests backend, 80 frontend, build ok, 32 e2e,
+  `Todo en verde.` sobre la rama con `main` fusionado.
+- `backend/tests/test_match_point.py`: reglas puras (3-2 `mine`, 3-3
+  `normal` por la prorroga, 4-3 `mine`, 4-4 `both`, 2-3 `theirs`, regla sin
+  prorroga, regla por version), tipo sin regla y QuickMatch a `unknown`,
+  Y9S3 y marcador vacio a `unknown`, marcador fuera de rango a `normal`,
+  equipo 1 leido al reves, las cinco filas en orden que suman todo, API con
+  base vacia y filtros raros.
+- e2e `Tendencias muestra el match point` con `seed_demo` (sin tocarlo).
+- QA manual: base vacia y base sembrada a mano (26 rondas, esperado
+  `mine 3, theirs 2, both 2, normal 13, unknown 6`, obtenido igual; suma
+  igual a `by_score_state`); mutaciones tumban tests.
+
+### Riesgos y lo que no entra
+
+Sin migracion, sin `recompute`, no toca parser ni Electron. `by_score_state`
+se refactorizo para compartir `_marcador_conocido` sin cambiar su salida
+(`test_marcador.py` sin tocar, en verde). Fuera: unranked, rapida y custom
+(sin regla citable, van a "Sin marcador o sin regla").
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+
+Abrir `http://127.0.0.1:8000/tendencias`: el panel "Match point" aparece
+despues de "Según el marcador" con "Tu match point" y "Sin match point".
+
+**Verificar en el PC:** con la base real, `/tendencias?match_type=Ranked`
+marca match point en partidas ranked de 4-x; `?match_type=QuickMatch` manda
+todo a "Sin marcador o sin regla".
+
+### Para el humano
+
+Nada que decidir. Aviso: la regla de ranked sale de una guia de Dexerto
+(2024), no de una pagina oficial; si sabes la de unranked o rapida, es una
+linea en `reglas_partida.py`.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
 Ver como rindes en las rondas que pueden cerrar la partida: cuando tu equipo
-esta a una ronda de ganarla, cuando el rival esta a una de ganarla, y cuando
-pasan las dos cosas a la vez. Completa el panel "Según el marcador" de la
-ficha 41 con el momento de mas presion.
+esta a una ronda de ganarla, cuando el rival esta a una, y cuando pasan las
+dos cosas. Completa el panel "Según el marcador" de la ficha 41.
 
 ## Criterios de aceptacion
 
-- [ ] Una tabla de reglas en `pydissect/constants.py` (o `replays/`, a
-  eleccion del Arquitecto) dice, por tipo de partida y desde que
-  `code_version` vale, a cuantas rondas se gana y como es la prorroga. Una
-  partida cuyo tipo o temporada no tiene regla no cuenta como match point:
-  cae en "sin regla". Test con un tipo inventado que afirma que va a "sin
-  regla" y no a "normal".
-- [ ] `GET /api/trends/` devuelve una lista nueva (p. ej. `match_point`) con
-  las filas `mine` (tu equipo a una ronda de ganar), `theirs` (el rival a una
-  de ganar), `both` (las dos a la vez), `normal` y `unknown` (sin marcador o
-  sin regla), con las metricas de siempre. Las filas suman todas tus rondas.
-  Test con factories y una partida de punta a punta.
-- [ ] Reusa la lectura de `score_before` de `by_score_state` (mismo corte por
-  `code_version >= Y9S4`; antes de eso el marcador es [0, 0] y va a
-  `unknown`). Test con una partida Y9S3 que afirma `unknown`.
-- [ ] Tendencias muestra el panel junto a "Según el marcador", con la banda de
-  muestra chica; base vacia sin error en consola. El e2e lo ve con
-  `seed_demo` (si hace falta, `seed_demo` usa un tipo con regla; los numeros
-  que afirma el e2e se actualizan en la misma rama).
-- [ ] Fila nueva en `docs/metricas.md` que explica las reglas por tipo y que
-  una partida sin regla no cuenta.
-
-## Fuera de alcance
-
-- Inferir la regla desde las partidas importadas (el marcador final): sesga
-  hacia las partidas que terminaron y no detecta un match point perdido.
-- Probabilidad de ganar la partida segun el marcador.
-- Modos sin rondas por equipos (si aparecen, "sin regla").
+- [x] Tabla de reglas por tipo y `code_version`; tipo sin regla a "sin regla".
+- [x] `GET /api/trends/` con `by_match_point` (`mine`, `theirs`, `both`,
+  `normal`, `unknown`) que suman todas tus rondas.
+- [x] Reusa `score_before` con el corte Y9S4; Y9S3 a `unknown`.
+- [x] Panel en Tendencias con banda de muestra chica; e2e con `seed_demo`.
+- [x] Fila en `docs/metricas.md`.
 
 ## Diseno
 
-(arquitecto 20261014T1012Z, sobre main 3438ab2)
-
-Filtros duros: pasa. Lee `Round.score_before`, `RoundPlayer.team_index`,
-`Match.match_type` y `Match.code_version`, que ya estan en la base; la regla
-de cada tipo es una tabla de datos en el codigo, no una consulta a nadie. Sin
-migracion ni dependencia.
-
-**Implementar despues de que #42 se mergee**: las dos tocan `aggregates.py`
-(al lado de `by_score_state`), la vista `trends`, `Trends.jsx`, `humo.spec.js`
-y la misma seccion de `metricas.md`. Prioriza, no bloquea: si 42 sigue sin
-rama cuando un Dev llegue, puede tomar esta primero y la otra resuelve el
-conflicto con P3.
-
-**La tabla de reglas y su fuente.** Solo entra lo que se puede citar:
-
-| `match_type` | desde | gana a | prorroga | fuente |
-|---|---|---|---|---|
-| `Ranked` | `Y9S4` | 4 | con 3-3, la gana el primero a 5 | [Dexerto, "Rainbow Six Siege ranks explained", actualizado 2024-06-04](https://www.dexerto.com/rainbow-six/rainbow-six-siege-ranked-all-ranks-climb-fast-tips-1627443/): "first-to-four rounds format... If scores are all tied at 3-3 by the end of regulation, there'll be a three-round overtime" |
-
-No hay pagina oficial de Ubisoft que lo diga en texto (busqueda del
-20261014: solo guias de terceros; los que dicen "primero a 5 con prorroga en
-4-4" describen el formato de esports, no ranked). `Unranked`, `Standard`,
-`QuickMatch` y los custom **quedan fuera** porque no se encontro fuente: sus
-rondas van a `unknown`. Agregar una regla despues es agregar una entrada,
-con su fuente en un comentario, sin tocar logica. `desde` es `Y9S4` y no
-antes porque antes de Y9S4 no hay marcador por ronda: una regla mas vieja
-no cambiaria nada.
-
-**Archivos y por que:**
-
-- `backend/replays/analytics/reglas_partida.py` (nuevo, sin Django; en
-  `replays/` y no en `pydissect/` porque es una regla de juego que usa la
-  analitica, no algo que el parser lea del `.rec`):
-  - `REGLAS: dict[str, tuple[dict, ...]]`, por tipo una tupla de
-    `{"desde": <code_version>, "para_ganar": 4, "prorroga_hasta": 5}`
-    ordenada por `desde`, con la fuente en un comentario. Sin prorroga,
-    `prorroga_hasta == para_ganar`.
-  - `regla_para(match_type, code_version) -> dict | None`: la de mayor
-    `desde` que sea `<= code_version`; `None` si no hay.
-  - `objetivo(propio, ajeno, regla) -> int`: `prorroga_hasta` si
-    `min(propio, ajeno) >= para_ganar - 1`, si no `para_ganar`.
-  - `cierra(propio, ajeno, regla) -> bool`: `propio + 1 >= objetivo(...)`.
-  - `estado(mio, suyo, regla) -> str`: `"both"` si cierran los dos, `"mine"`
-    o `"theirs"` si cierra uno, si no `"normal"`. Con ranked: 3-2 `mine`,
-    3-3 `normal` (la prorroga sube el objetivo a 5), 4-3 `mine`, 4-4 `both`.
-  - `tramos(regla, desde, hasta) -> dict[str, list[tuple[int, int]]]`: los
-    pares `(mio, suyo)` de `0..prorroga_hasta` agrupados por `estado`. Es lo
-    que la consulta usa, asi que la semantica vive en una sola funcion pura.
-- `backend/replays/analytics/aggregates.py`:
-  - Extraer de `by_score_state` un helper `_marcador_conocido(qs)` que
-    devuelve `(qs_anotado, conocido)` con las anotaciones `mio`/`suyo` y el
-    filtro de dos equipos y `code_version >= Y9S4`. `by_score_state` lo usa
-    sin cambiar su salida (`test_marcador.py` lo cuida).
-  - `by_match_point(**filters)`, orden fijo `MATCH_POINT = ("mine",
-    "theirs", "both", "normal", "unknown")`. Por cada `match_type` de
-    `REGLAS` y cada tramo de version (`desde` hasta el `desde` siguiente), un
-    `Q(round__match__match_type=t, round__match__code_version__gte=desde,
-    [code_version__lt=siguiente])` combinado con el `OR` de
-    `Q(mio=a, suyo=b)` de los pares de cada estado. `con_regla` = `conocido`
-    filtrado por el `OR` de los `Q` de tipo y version. `mine`, `theirs`,
-    `both` = `con_regla` filtrado por su `Q`; `normal` = `con_regla` menos
-    esos tres (cubre marcadores fuera de rango); `unknown` =
-    `qs.exclude(pk__in=con_regla.values("pk"))`. Filas con
-    `_filas_por_tramo("match_point", ...)`: mismas metricas que los paneles
-    vecinos. Las cinco suman todas tus rondas por construccion.
-- `backend/replays/views.py`: `"by_match_point": agg.by_match_point(**filters)` en `trends`.
-- `frontend/src/pages/Trends.jsx`: constante `MATCH_POINT = { mine: 'Tu
-  match point', theirs: 'Match point rival', both: 'Los dos a una ronda',
-  normal: 'Sin match point', unknown: 'Sin marcador o sin regla' }`; panel
-  **"Match point"** justo despues de "Según el marcador", con `TablaDeCorte`
-  (`rowKey="match_point"`, `csvName="match-point"`), la fila `unknown`
-  filtrada igual que `porMarcador` (solo si tiene rondas) y el hint de
-  `filasConPocaMuestra`; sin muestra chica: `'Rondas que podían cerrar la
-  partida. Por ahora solo ranked: los otros modos no tienen regla
-  confirmada.'`.
-- `frontend/e2e/humo.spec.js`: test `Tendencias muestra el match point`.
-  `seed_demo` es ranked, Y9S4, 7 rondas por partida y ganas las pares: la
-  ronda 5 llega 3-2 (`mine`) y la 6 llega 3-3 (`normal`). El test afirma las
-  celdas `Tu match point` y `Sin match point`, ninguna `Sin marcador o sin
-  regla`, y consola limpia. `seed_demo` no se toca.
-- `backend/tests/test_match_point.py` (nuevo).
-- `docs/metricas.md`: fila **"Match point"** en `## Contexto de la ronda`,
-  debajo de "Segun el marcador".
-
-**Tests (`test_match_point.py`; las funciones puras sin base, el agregado
-con `factories.py` y el helper `_partida` de `test_marcador.py` copiado o
-importado):**
-
-- `test_ranked_tres_a_dos_es_tu_match_point`
-- `test_ranked_tres_a_tres_no_es_match_point_por_la_prorroga`
-- `test_ranked_cuatro_a_cuatro_es_de_los_dos`
-- `test_dos_a_tres_es_match_point_rival`
-- `test_sin_prorroga_el_empate_a_uno_de_ganar_es_de_los_dos` (regla
-  inventada `para_ganar == prorroga_hasta == 3`)
-- `test_un_tipo_sin_regla_va_a_unknown_y_no_a_normal` (`match_type="Arcade"`)
-- `test_quick_match_sin_fuente_va_a_unknown`
-- `test_una_partida_y9s3_va_a_unknown`
-- `test_siendo_el_equipo_uno_el_marcador_se_lee_al_reves`
-- `test_las_cinco_filas_salen_en_orden_y_suman_todas_tus_rondas` (una
-  partida ranked de punta a punta con los marcadores 0-0, 1-0, 1-1, 2-1,
-  2-2, 3-2, 3-3, 4-3, 4-4)
-- `test_regla_para_toma_la_de_mayor_desde_que_aplica`
-
-**Orden:** `reglas_partida.py` + sus tests -> helper en `aggregates.py` con
-`test_marcador.py` en verde -> `by_match_point` + tests -> vista -> panel ->
-e2e -> `metricas.md`.
-
-**Que puede romperse:** el refactor de `by_score_state` (lo cuida
-`test_marcador.py`, que no se toca). Una regla mal escrita marca match point
-donde no hay: por eso la tabla cita fuente y queda corta.
-
-**Fila de `metricas.md`** (texto sugerido): "Rondas segun si alguien podia
-cerrar la partida ganandola, leido del marcador antes de la ronda (el mismo
-de 'Segun el marcador'). *Tu match point*: tu equipo gana la partida si gana
-esa ronda; *match point rival*: al reves; *los dos*: las dos cosas. Depende
-de a cuanto se gana cada tipo de partida, que sale de una tabla con fuente:
-hoy solo ranked (gana a 4; con 3-3 hay prorroga y gana el primero a 5, asi
-que 3-3 no es match point y 4-4 es de los dos). Unranked, rapida y custom no
-tienen regla confirmada y van a 'Sin marcador o sin regla', junto con las
-rondas sin marcador. Las cinco filas suman todas tus rondas."
-
-**Verificacion manual (Verificar en el PC):** con la base real,
-`/tendencias?match_type=Ranked`: el panel marca match point en partidas
-ranked de 4-x; `?match_type=QuickMatch` las manda todas a "Sin marcador o
-sin regla".
-
-**Umbral:** ninguno nuevo; usa `MUESTRA_CORTE`.
+(arquitecto 20261014T1012Z) `reglas_partida.py` sin Django con `REGLAS`
+(solo `Ranked` desde Y9S4, fuente Dexerto), `regla_para`, `objetivo`,
+`cierra`, `estado`, `tramos`; `_marcador_conocido` extraido de
+`by_score_state`; `by_match_point` arma `Q` por tipo, version y marcador.
+Detalle en `git log` de la rama.
 
 ## Implementacion
 
-(dev 20261014T1511Z)
+(dev 20261014T1511Z) Todo el diseno. Desvios: `tramos(regla)` sin
+`desde`/`hasta` y sin marcadores de partida terminada; `by_match_point`
+ordena las reglas por `desde`; `regla_para` acepta `reglas` opcional.
 
-Quedo todo el diseno:
+## Revision
 
-- `backend/replays/analytics/reglas_partida.py`: `REGLAS` (solo `Ranked`
-  desde Y9S4, con la fuente de Dexerto en un comentario), `regla_para`,
-  `objetivo`, `cierra`, `estado` y `tramos`.
-- `aggregates.py`: `_marcador_conocido(qs)` extraido de `by_score_state`
-  (sin cambiar su salida: `test_marcador.py` sigue en verde sin tocarlo) y
-  `by_match_point` con `MATCH_POINT = (mine, theirs, both, normal, unknown)`.
-- `views.py`: `by_match_point` en `/api/trends/`.
-- `Trends.jsx`: panel "Match point" despues de "Según el marcador", con la
-  fila "Sin marcador o sin regla" solo si tiene rondas.
-- `humo.spec.js`: `Tendencias muestra el match point` (seed_demo sin tocar).
-- `docs/metricas.md`: fila "Match point" bajo "Segun el marcador".
-- `backend/tests/test_match_point.py`: los 11 tests del diseno mas
-  `test_ranked_cuatro_a_tres_vuelve_a_ser_tu_match_point`,
-  `test_los_tramos_no_traen_marcadores_de_partida_terminada`,
-  `test_ranked_no_tiene_regla_antes_de_y9s4`,
-  `test_un_marcador_fuera_de_rango_cae_en_normal`,
-  `test_marcador_vacio_va_a_unknown` y dos de API (base vacia y filtros
-  raros; con datos).
+(revisor 20261014T1611Z) Sin hallazgos, aprobar. Menores no bloqueantes:
+`regla_para` solo la usan los tests; `metricas.md` no nombra `Standard`.
 
-Desvios del diseno:
+## QA
 
-- `tramos(regla)` no recibe `desde`/`hasta`: el tramo de version lo arma la
-  consulta en `aggregates.py`, y la funcion pura solo enumera marcadores.
-  Ademas omite los marcadores de partida ya terminada (p. ej. 4-0 en
-  ranked): esa ronda no existe, y si un dato raro la trae cae en `normal`
-  por construccion (test).
-- `by_match_point` ordena las reglas de cada tipo por `desde` antes de
-  armar los tramos de version (test con dos reglas desordenadas via
-  `mock.patch.dict`: `test_con_dos_reglas_cada_partida_usa_la_de_su_version`).
-- `regla_para` acepta un `reglas` opcional para probar con una tabla
-  inventada sin parchear `REGLAS`.
-
-Revision ciega previa (subagente con `revision.md`): sin bugs; sus dos
-puntos de tests se corrigieron (los filtros del test de suma no recortaban
-nada; la consulta dependia del orden de la tupla de reglas).
-
-Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
-80 frontend, build ok, 32 e2e).
-
-## Revision 2026-10-14 sobre 2fd322c
-
-(revisor 20261014T1611Z; main ya fusionado, sin merge necesario)
-
-Revision ciega (subagente con `revision.md`, sin leer el plan): sin
-hallazgos, veredicto aprobar. Confirmado por el lider leyendo el diff:
-3-2 `mine`, 3-3 `normal`, 4-3 `mine`, 4-4 `both`, 2-3 `theirs`; 4-0 cae en
-`normal`; sin regla, sin marcador, Y9S3 y marcador de tres equipos van a
-`unknown`; las cinco filas suman por construccion (`unknown` es el
-complemento de `con_regla`).
-
-Criterios:
-
-- Tabla de reglas con tipo inventado a "sin regla":
-  `test_un_tipo_sin_regla_va_a_unknown_y_no_a_normal`,
-  `test_quick_match_sin_fuente_va_a_unknown`, `test_regla_para_*`.
-- `GET /api/trends/` con las cinco filas que suman todo:
-  `test_las_cinco_filas_salen_en_orden_y_suman_todas_tus_rondas`,
-  `test_trends_con_datos_trae_el_match_point`,
-  `test_base_vacia_y_filtros_raros_dan_cinco_filas_en_cero`.
-- Reusa `score_before` con el corte Y9S4: `_marcador_conocido` extraido sin
-  tocar `test_marcador.py` (en verde); `test_una_partida_y9s3_va_a_unknown`.
-- Panel en Tendencias + e2e: `Tendencias muestra el match point` (seed_demo
-  sin tocar, numeros verificados contra `score_before` del seed).
-- Fila en `docs/metricas.md`: presente.
-
-Mutacion: `objetivo` sin prorroga tumba 5 tests (3-3, 4-3, tramos, suma,
-API); `unknown` calculado sobre `conocido` en vez de `qs` tumba 2 (Y9S3 y
-marcador vacio).
-
-Menores, no bloquean: `regla_para` solo la usan los tests (la consulta arma
-los tramos de version por su cuenta, cubierto por
-`test_con_dos_reglas_cada_partida_usa_la_de_su_version`); la fila de
-`metricas.md` nombra unranked, rapida y custom pero no `Standard` (id 8 de
-`MATCH_TYPES`), que tambien cae en "Sin marcador o sin regla".
-
-Estilo: sin tildes en codigo, UI con tildes, sin `print` ni `console.log`.
-Archivos: todos dentro de `archivos:`.
-
-Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
-80 frontend, build ok, 32 e2e).
-
-Veredicto: aprobar.
-
-## QA 2026-10-14 sobre 13fa7ff
-
-(qa 20261014T1711Z; main ya fusionado en la rama, sin merge necesario)
-
-- `./scripts/check.sh`: `Todo en verde.` (561 tests backend, 80 frontend,
-  build ok, 32 e2e; `Tendencias muestra el match point` pasa).
-- Base vacia (`SQLITE_PATH` y `R6_ENV_FILE` en el scratchpad, `migrate`,
-  `runserver 8765`): `curl localhost:8765/api/trends/` da las cinco filas
-  `mine, theirs, both, normal, unknown` en 0. `until=foo`, `page=-1`,
-  `match_type=`, `map=`, `since=2030-01-01`: 200.
-- Base sembrada con `factories.py` (script temporal): partida ranked 0-0 a
-  4-4 siendo equipo 0, la misma siendo equipo 1, QuickMatch 2 rondas, Y9S3
-  2 rondas, una ranked con marcador vacio, 4-0 (fuera de rango) y de tres
-  equipos, y otra con 3-2. Esperado a mano y obtenido:
-  `mine 3, theirs 2, both 2, normal 13, unknown 6`, suma 26 = suma de
-  `by_score_state`. `match_type=Ranked`: unknown 4 (suma 24);
-  `match_type=QuickMatch`: todo en unknown (2); `side=Attack`: suma 15 igual
-  a `by_score_state`. Siendo equipo 1 el marcador se lee al reves (3-2 del
-  equipo 0 cuenta como match point rival). `/tendencias`, `/api/summary/`,
-  `/api/matches/`: 200, sin trazas en el log.
-- Sin migracion; no toca parser, Electron ni `.ps1`.
-- Bundle: el texto nuevo vive solo en el chunk lazy `Trends-*.js`
-  (17,2 kB); el chunk inicial `index-*.js` (186,8 kB) no lo trae.
-- Mutacion sobre `test_match_point`: `cierra` con `>` en vez de `>=` tumba
-  10 tests; `con_regla = conocido` (sin filtrar por regla) tumba 3;
-  `normal` con `filter` en vez de `exclude` tumba 3. Codigo restaurado.
-
-Veredicto: aprobado. Lo que solo se ve con la base real ya esta en
-`## Para el humano` (ranked y rapida reales en el PC).
+(qa 20261014T1711Z) Aprobado: check.sh verde, base vacia y sembrada a mano
+con resultados esperados, filtros raros 200, mutaciones tumban tests.
 
 ## Para el humano
 
-Aviso, sin pregunta abierta: la tabla de reglas (a cuantas rondas se gana
-cada tipo y como es la prorroga) se arma desde fuentes publicas y se probo
-solo con datos sinteticos. Solo ranked tiene fuente (una guia de Dexerto de
-2024, no una pagina oficial); unranked y rapida quedan en "sin regla" hasta
-que alguien cite la suya. Si sabes la regla de esos modos, agregarla es una
-linea en `reglas_partida.py`. Conviene mirar en el PC que el panel marque
-match point en una partida ranked y una rapida reales.
+Aviso, sin pregunta abierta: solo ranked tiene regla (guia de Dexerto de
+2024, no pagina oficial). Conviene mirar en el PC el panel con una partida
+ranked y una rapida reales.
