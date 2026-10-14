@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-14T06:12Z
 rama: claude/equipo-dev/40-hora-y-dia-de-la-semana
 tipo: funcionalidad
 epica: progreso
