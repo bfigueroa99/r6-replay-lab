@@ -1,7 +1,7 @@
 # 42. Como se cierran tus rondas: por eliminacion o sin ella, por lado
 
-estado: implementado
-candado: revisor 2026-10-14T12:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/42-como-se-cierran-tus-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B6 (idea del PO 20261013T0511Z); epica lado-y-marcador en curso (B1, B4 y B2 tramo 1 en main por #25, 39 y 41)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_cierres.py, frontend/src/pages/Trends.jsx, frontend/src/cierres.js, frontend/src/cierres.test.js, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z
 
 ## PR
 
@@ -190,5 +190,44 @@ Detalles que el diseno no fijaba:
 
 Revision ciega previa: 3 hallazgos (101 % en pantalla, CSV sin conteos, lineas
 en blanco en `aggregates.py`), los tres corregidos.
+
+## Revision 2026-10-14 sobre 3b0d7df
+
+(revisor 20261014T1211Z; rama al dia con main 3438ab2, sin merge necesario)
+
+Revision a ciegas (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos. Confirmado por el lider:
+
+- `Round.win_condition` solo toma `KilledOpponents`, `ObjectiveOrTime` o `""`
+  al importar (`metrics.py:227-234`); `DefusedBomb`, `Time` y
+  `DisabledDefuser` de `pydissect` no llegan a la base, asi que las cuatro
+  cuentas mas `unknown` por resta cubren todo.
+- `round__my_team_won` en vez de `won`: `test_sin_ganador_o_sin_condicion_va_a_unknown`
+  falla si se cuenta con `won` (lo manda a perdidas), asi que prueba lo que dice.
+
+Criterios de aceptacion:
+
+- [x] `round_endings` en `/api/trends/` con las cinco cuentas y `rounds`:
+  `test_una_ronda_ganada_por_eliminacion_en_ataque_suma_solo_ahi`.
+- [x] Cada fila suma sus rondas; `""` y `my_team_won` nulo a `unknown`:
+  `test_cada_fila_suma_todas_tus_rondas_de_ese_lado`, `test_sin_ganador_o_sin_condicion_va_a_unknown`.
+- [x] Sin claves de plant ni defuse, rotulo "objetivo o tiempo" en la UI:
+  `test_la_respuesta_no_trae_claves_de_plant_ni_de_defuse` y `SIN_ELIMINACION` en `Trends.jsx`.
+- [x] Filtros: `test_el_filtro_de_mapa_deja_solo_las_rondas_de_ese_mapa`
+  (agregado y API); el resto sale de `base_queryset`.
+- [x] Panel en Tendencias despues de "Según el marcador", con banda de muestra
+  chica; base vacia lo oculta como a los vecinos
+  (`test_base_vacia_y_filtros_raros_dan_200_con_dos_filas_en_cero`); e2e
+  `Tendencias muestra como se cierran tus rondas` en verde.
+- [x] Fila en `docs/metricas.md` (Contexto de la ronda) y el corte en la tabla
+  de muestra minima.
+
+Diff dentro de `archivos:`. Identificadores y comentarios sin tildes, UI con
+tildes, sin `print` ni `console.log`. Merge de prueba con la 44: limpio.
+
+`check.sh` en verde sobre 1f70ae1 (ruff, 529 tests backend, 75 vitest, build,
+30 e2e).
+
+Veredicto: aprobar -> `revisado`.
 
 ## Para el humano
