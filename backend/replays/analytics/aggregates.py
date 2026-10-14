@@ -28,6 +28,7 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTransform
 from django.db.models.functions import Cast, Floor
 
+from externo import enlaces
 from pydissect.constants import Y9S4
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
@@ -1224,7 +1225,7 @@ def _sin_filtros_de_tiempo(filters: dict) -> dict:
     return {k: v for k, v in filters.items() if k not in _FILTROS_DE_TIEMPO}
 
 
-def _ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
+def banda_de_ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
     """Error estandar de la diferencia entre dos proporciones, en puntos.
 
     Es el tamano tipico de una diferencia que **no significa nada**. Sin este
@@ -1302,7 +1303,9 @@ def compare_periods(
         ahora, antes = fila_actual.get(clave), fila_previa.get(clave)
         delta = None if (ahora is None or antes is None) else round(ahora - antes, 2)
         ruido = (
-            _ruido(ahora, fila_actual.get(campo_muestra), antes, fila_previa.get(campo_muestra))
+            banda_de_ruido(
+                ahora, fila_actual.get(campo_muestra), antes, fila_previa.get(campo_muestra)
+            )
             if campo_muestra
             else None
         )
@@ -1426,6 +1429,91 @@ def death_timing(**filters) -> dict:
         fila["last30_pct"] = _pct(fila["last30"], fila["deaths"])
         salida[clave] = fila
     return salida
+
+
+#: Segundos de fase de accion que cuentan como salida del spawn: lo que tarda el
+#: ataque en dejar el spawn y lo que dura la ventana de un spawnpeek o un runout.
+#: Mas corto que el primer tramo de `death_timing` a proposito: en 30s ya entra
+#: el primer duelo de la ronda, que es otro problema.
+SPAWN_EXIT_SECONDS = 15
+
+_LADOS = (("Attack", "attack"), ("Defense", "defense"))
+
+
+def spawn_exit(**filters) -> dict:
+    """Muertes y bajas tuyas en la salida del spawn, por mapa y lado.
+
+    El `.rec` no trae posiciones, asi que esto no afirma que fue un spawnpeek:
+    dice que la ronda se termino antes de que el ataque pudiera estar lejos del
+    spawn. Es la ventana donde viven los spawnpeeks y los runouts, y por eso
+    cada mapa trae su pagina de peekabooR6.
+
+    El porcentaje es sobre rondas y no sobre muertes: "1 de cada 5 rondas en
+    ataque no pasas de la salida" se lee sin saber cuantas veces moriste.
+
+    Un evento con el reloj en 0 entra como segundo 0: el reloj vale 0 entre el
+    ultimo tick de la preparacion y el primero de la accion, y lo que pasa ahi
+    es justo el peek mas temprano.
+    """
+    mine = base_queryset(**filters)
+    temprano = Q(death_elapsed__lt=SPAWN_EXIT_SECONDS)
+
+    vacia = {
+        f"{clave}_{campo}": 0
+        for _, clave in _LADOS
+        for campo in ("rounds", "early_deaths", "early_kills")
+    }
+    # por nombre y slug, igual que `by_map`, para que las dos tablas no difieran
+    filas: dict[tuple[str, str], dict] = {}
+    crudas = (
+        mine.filter(side__in=[lado for lado, _ in _LADOS])
+        .values("round__match__map_name", "round__match__map_slug", "side")
+        .annotate(rounds=Count("id"), deaths=Count("id", filter=temprano))
+    )
+    for cruda in crudas:
+        mapa = (cruda["round__match__map_name"], cruda["round__match__map_slug"])
+        fila = filas.setdefault(mapa, {"map": mapa[0], "slug": mapa[1], **vacia})
+        clave = dict(_LADOS)[cruda["side"]]
+        fila[f"{clave}_rounds"] += cruda["rounds"]
+        fila[f"{clave}_early_deaths"] += cruda["deaths"]
+
+    me_ids = _me_ids()
+    if me_ids and filas:
+        # sin el order_by la subconsulta hereda el ordering de RoundPlayer y
+        # arrastra dos joins por cada baja para ordenar una sola fila
+        lado = mine.filter(round_id=OuterRef("round_id")).order_by().values("side")[:1]
+        bajas = _solo_rivales(
+            _mis_bajas(mine).filter(actor_id__in=me_ids, elapsed__lt=SPAWN_EXIT_SECONDS),
+            "target_id",
+        ).annotate(lado=Subquery(lado))
+        por_mapa = bajas.values("round__match__map_name", "round__match__map_slug", "lado")
+        for cruda in por_mapa.annotate(n=Count("id")):
+            fila = filas.get((cruda["round__match__map_name"], cruda["round__match__map_slug"]))
+            clave = dict(_LADOS).get(cruda["lado"])
+            if fila and clave:
+                fila[f"{clave}_early_kills"] += cruda["n"]
+
+    total = dict(vacia)
+    for fila in filas.values():
+        for campo in vacia:
+            total[campo] += fila[campo]
+
+    def con_pct(fila: dict) -> dict:
+        for _, clave in _LADOS:
+            fila[f"{clave}_early_death_pct"] = _pct(
+                fila[f"{clave}_early_deaths"], fila[f"{clave}_rounds"]
+            )
+        return fila
+
+    rows = sorted(
+        filas.values(),
+        key=lambda f: (-(f["attack_rounds"] + f["defense_rounds"]), f["map"]),
+    )
+    for fila in rows:
+        con_pct(fila)
+        # aca y no en la vista: asi la API, el CSV y el coach llevan el mismo enlace
+        fila["peeks_url"] = enlaces.spawn_peeks(fila["slug"])
+    return {"seconds": SPAWN_EXIT_SECONDS, "overall": con_pct(total), "maps": rows}
 
 
 # --------------------------------------------------------------------- jugador

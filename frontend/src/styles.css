@@ -28,6 +28,8 @@ body {
 }
 
 a { color: inherit; text-decoration: none; }
+a.externo { color: var(--accent); }
+a.externo:hover { text-decoration: underline; }
 button { font: inherit; }
 
 /* ------------------------------------------------------------------- datos */
@@ -337,6 +339,7 @@ td.dim { color: var(--muted); }
 .insight p { margin: 0 0 7px; color: #c3ccd8; }
 .insight .action { color: var(--text); background: #0f1520; border-radius: 6px; padding: 8px 10px; }
 .insight .action b { color: var(--accent); }
+.insight .enlace { margin-top: 8px; font-size: 12px; }
 .insight .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--muted); }
 
 /* ------------------------------------------------------------------ timeline */

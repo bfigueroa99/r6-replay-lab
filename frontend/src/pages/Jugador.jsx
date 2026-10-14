@@ -6,6 +6,7 @@ import PerfilUbisoft from '../components/PerfilUbisoft.jsx'
 import {
   Bar,
   DataTable,
+  EnlaceExterno,
   ErrorBox,
   Loading,
   Panel,
@@ -57,16 +58,14 @@ export default function Jugador() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {data.externo.enlaces.map((enlace) => (
-            <a
+            <EnlaceExterno
               key={enlace.sitio}
               className="btn small"
               href={enlace.url}
-              target="_blank"
-              rel="noreferrer"
               title={`Abre su perfil en ${enlace.sitio}, en tu navegador`}
             >
-              {enlace.sitio} ↗
-            </a>
+              {enlace.sitio}
+            </EnlaceExterno>
           ))}
           <Link className="btn small" to="/companeros">
             Volver

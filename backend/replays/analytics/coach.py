@@ -7,6 +7,10 @@ que hacer al respecto.
 
 from __future__ import annotations
 
+from statistics import NormalDist
+
+from externo import enlaces
+
 from . import aggregates as agg
 
 SEVERITY_ORDER = {"alta": 0, "media": 1, "baja": 2, "positivo": 3}
@@ -24,6 +28,7 @@ def _insight(
     baseline=None,
     sample: int = 0,
     scope: str = "general",
+    link: dict | None = None,
 ) -> dict:
     return {
         "key": key,
@@ -36,7 +41,14 @@ def _insight(
         "baseline": baseline,
         "sample": sample,
         "scope": scope,
+        "link": link,
     }
+
+
+def _peeks(mapa: str) -> dict | None:
+    """El enlace a los spawn peeks del mapa, para las reglas que hablan de la salida."""
+    url = enlaces.spawn_peeks(mapa)
+    return {"label": f"Spawn peeks de {mapa} en peekabooR6", "url": url} if url else None
 
 
 def build_insights(**filters) -> dict:
@@ -79,6 +91,7 @@ def build_insights(**filters) -> dict:
     insights += _round_flow(**filters)
     insights += _sesiones(**filters)
     insights += _momento_de_la_muerte(**filters)
+    insights += _salida_del_spawn(**filters)
     insights += _duelos_por_operador(**filters)
     insights += _nemesis(**filters)
     insights += _form(overall, **filters)
@@ -285,6 +298,82 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                 baseline=25,
                 sample=ataque["deaths"],
                 scope="ataque",
+            )
+        )
+    return out
+
+
+#: Rondas de un lado en un mapa, y en el resto de los mapas, para comparar la
+#: salida del spawn. Sin calibrar contra datos reales: ver roadmap #31.
+SALIDA_MIN_RONDAS = 12
+#: Con menos muertes en la ventana, un 30% son tres rondas con mala suerte.
+SALIDA_MIN_MUERTES = 4
+#: Chance de que la regla avise en un historial donde todos los mapas son
+#: iguales. Se reparte entre los mapas comparados: con una vara fija de dos
+#: bandas, el peor de diez mapas la pasaba por azar una vez de cada ocho.
+SALIDA_ALFA = 0.025
+
+
+def _salida_del_spawn(**filters) -> list[dict]:
+    """El mapa donde la ronda se te corta en la salida del spawn, por lado.
+
+    Se compara contra tus otros mapas y no contra un numero fijo, porque no hay
+    un promedio poblacional con que comparar (ver #9). Como se elige el peor de
+    varios mapas, la vara sube con cuantos se comparan (Bonferroni): con dos
+    mapas son 2.2 bandas de ruido, con diez son 2.8.
+    """
+    datos = agg.spawn_exit(**filters)
+    total = datos["overall"]
+    segundos = datos["seconds"]
+    out = []
+    for clave, label in (("attack", "ataque"), ("defense", "defensa")):
+        comparables = []
+        for fila in datos["maps"]:
+            rondas = fila[f"{clave}_rounds"]
+            resto_rondas = total[f"{clave}_rounds"] - rondas
+            if min(rondas, resto_rondas) >= SALIDA_MIN_RONDAS:
+                comparables.append((fila, rondas, resto_rondas))
+        if not comparables:
+            continue
+        vara = NormalDist().inv_cdf(1 - SALIDA_ALFA / len(comparables))
+
+        candidatos = []
+        for fila, rondas, resto_rondas in comparables:
+            muertes = fila[f"{clave}_early_deaths"]
+            if muertes < SALIDA_MIN_MUERTES:
+                continue
+            pct = fila[f"{clave}_early_death_pct"]
+            resto = agg._pct(total[f"{clave}_early_deaths"] - muertes, resto_rondas)
+            banda = agg.banda_de_ruido(pct, rondas, resto, resto_rondas) or 0
+            if pct - resto > vara * banda:
+                candidatos.append((pct - resto, fila, pct, resto))
+        if not candidatos:
+            continue
+
+        _, fila, pct, resto = max(candidatos, key=lambda c: c[0])
+        mapa = fila["map"]
+        rondas = fila[f"{clave}_rounds"]
+        out.append(
+            _insight(
+                f"salida-spawn-{label}",
+                "media",
+                f"En {mapa} la ronda se te corta en la salida del spawn ({label})",
+                f"Mueres en los primeros {segundos}s de acción en {fila[f'{clave}_early_deaths']} "
+                f"de {rondas} rondas en {label} ({pct:.0f}%), contra un {resto:.0f}% en tus "
+                "otros mapas. Es la ventana de los spawnpeeks y los runouts.",
+                (
+                    f"Antes de salir del spawn en {mapa}, revisa desde dónde te pueden "
+                    "spawnpeekear: dronea esa ventana o sal por otro lado."
+                    if clave == "attack"
+                    else f"El peek temprano en {mapa} te está saliendo caro: quédate con uno "
+                    "o dos ángulos que funcionen, o espera a saber por dónde vienen."
+                ),
+                metric=f"{clave}_early_death_pct",
+                value=pct,
+                baseline=resto,
+                sample=rondas,
+                scope=f"{mapa} · {label}",
+                link=_peeks(mapa),
             )
         )
     return out
@@ -542,6 +631,7 @@ def _spawns(overall, **filters) -> list[dict]:
             baseline=base,
             sample=worst["rounds"],
             scope=f"{worst['map']} · {worst['spawn']}",
+            link=_peeks(worst["map"]),
         )
     ]
 

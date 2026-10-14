@@ -2,7 +2,7 @@ import fs from 'node:fs'
 
 import { expect, test } from '@playwright/test'
 
-import { vigilarConsola } from './consola.js'
+import { vigilarConsola, vigilarRed } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
 /** Ruta -> el h1 que tiene que aparecer. Las del menu, menos la Ruleta (tiene su spec). */
@@ -180,7 +180,42 @@ test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   await page.locator('table tbody tr').first().getByRole('link').first().click()
   await expect(page).toHaveURL(/\/partidas\/\d+$/)
   await expect(page.locator('h1')).toContainText(/Club House|Border|Bank/)
+  // los tres mapas del seed estan en peekabooR6, asi que el boton tiene que estar
+  await expect(page.getByRole('link', { name: /Spawn peeks/ })).toHaveAttribute(
+    'href',
+    /^https:\/\/peekaboor6\.com\/maps\/(clubhouse|border|bank)$/,
+  )
 
+  expect(errores).toEqual([])
+})
+
+test('Tendencias enlaza los spawn peeks de cada mapa sin salir a la red', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const afuera = vigilarRed(page, BASE_URL)
+
+  await page.goto('/tendencias')
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Salida del spawn' }),
+  })
+  await expect(panel).toBeVisible()
+
+  // el slug de la app es club-house; el de peekabooR6 va pegado
+  for (const [mapa, slug] of [
+    ['Club House', 'clubhouse'],
+    ['Border', 'border'],
+    ['Bank', 'bank'],
+  ]) {
+    await expect(
+      panel.locator('tbody tr', { hasText: mapa }).getByRole('link', { name: /peekabooR6/ }),
+    ).toHaveAttribute('href', `https://peekaboor6.com/maps/${slug}`)
+  }
+
+  // en el seed nadie muere antes de los 35s: la ventana de 15 queda vacia, y
+  // un numero distinto de cero aca es un corte mal hecho
+  const ataque = panel.locator('.stat', { hasText: 'Ataque: no pasas de la salida' })
+  await expect(ataque.locator('.value')).toHaveText('0%')
+
+  expect(afuera, 'la app pidio algo fuera de localhost').toEqual([])
   expect(errores).toEqual([])
 })
 
@@ -197,10 +232,7 @@ test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
 
 test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', async ({ page }) => {
   const errores = vigilarConsola(page)
-  const afuera = []
-  page.on('request', (request) => {
-    if (!request.url().startsWith(BASE_URL)) afuera.push(request.url())
-  })
+  const afuera = vigilarRed(page, BASE_URL)
 
   await page.goto('/')
   await page.locator('.topbar').getByRole('link', { name: 'BearF99' }).click()

@@ -23,6 +23,7 @@ TABLES = {
     "maps": ("mapas", lambda **f: agg.by_map(min_rounds=1, **f)),
     "sites": ("sitios", lambda **f: agg.by_site(min_rounds=1, **f)),
     "spawns": ("spawns", lambda **f: agg.by_spawn(min_rounds=1, **f)),
+    "spawn_exit": ("salida-del-spawn", lambda **f: agg.spawn_exit(**f)["maps"]),
     "operators": ("operadores", lambda **f: agg.by_operator(min_rounds=1, **f)),
     "rounds": ("por-ronda", agg.by_round_number),
     "days": ("por-dia", agg.trend_by_day),

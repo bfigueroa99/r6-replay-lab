@@ -1,8 +1,9 @@
-"""Enlaces al perfil de un jugador en los trackers web.
+"""Enlaces a sitios de la comunidad: trackers por jugador y spawn peeks por mapa.
 
-No hace ninguna request: arma la URL con el profileID que trae el replay y el
-navegador del usuario hace el resto. Por eso funciona aunque stats.cc y R6
-Tracker bloqueen a cualquier cliente que no sea un navegador.
+No hace ninguna request: arma la URL con lo que trae el replay (el profileID o
+el mapa) y el navegador del usuario hace el resto. Por eso funciona aunque
+stats.cc y R6 Tracker bloqueen a cualquier cliente que no sea un navegador, y
+por eso peekabooR6, que no tiene API, entra como enlace y no como datos.
 """
 
 from __future__ import annotations
@@ -33,3 +34,34 @@ def enlaces(profile_id: str | None, username: str | None) -> list[dict]:
             "url": f"https://r6.tracker.network/r6siege/profile/ubi/{pid}/overview",
         },
     ]
+
+
+PEEKABOO = "https://peekaboor6.com/maps/"
+
+
+def _clave(mapa: str) -> str:
+    """Solo letras y numeros: "Club House", "club-house" y "Clubhouse" son el mismo."""
+    return re.sub(r"[^a-z0-9]", "", mapa.lower())
+
+
+#: Los mapas que tiene peekabooR6 (octubre de 2026). La app arma el slug desde
+#: el nombre y un mapa etiquetado a mano puede llegar escrito de otra forma, asi
+#: que se comparan por `_clave`. Un mapa que el sitio no tiene se queda sin
+#: enlace en vez de llevar a un 404.
+_PEEKABOO_MAPAS = {
+    _clave(slug): slug
+    for slug in (
+        "bank", "border", "calypso-casino", "chalet", "clubhouse", "coastline", "consulate",
+        "emerald-plains", "fortress", "kafe-dostoyevsky", "kanal", "lair", "nighthaven-labs",
+        "oregon", "outback", "skyscraper", "theme-park", "villa",
+    )
+}
+
+
+def spawn_peeks(mapa: str | None) -> str | None:
+    """La pagina del mapa en peekabooR6, o None si el sitio no lo tiene.
+
+    Acepta el slug o el nombre: el coach solo tiene el nombre a mano.
+    """
+    slug = _PEEKABOO_MAPAS.get(_clave(mapa or ""))
+    return f"{PEEKABOO}{slug}" if slug else None

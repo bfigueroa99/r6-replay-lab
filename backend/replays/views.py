@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 import pydissect
-from externo import ubisoft
+from externo import enlaces, ubisoft
 from pydissect.constants import OPERATOR_SIDES
 
 from . import ajustes, perfil_externo, unknowns
@@ -233,6 +233,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
+            "spawn_exit": agg.spawn_exit(**filters),
         }
     )
 
@@ -484,6 +485,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "folder": match.folder,
                 "played_at": match.played_at.isoformat(),
                 "map": match.map_name,
+                "peeks_url": enlaces.spawn_peeks(match.map_slug),
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,

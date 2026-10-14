@@ -129,6 +129,28 @@ class EnlacesTests(SimpleTestCase):
         self.assertEqual(enlaces.enlaces("", "BearF99"), [])
 
 
+class SpawnPeeksTests(SimpleTestCase):
+    def test_arma_la_pagina_del_mapa_en_peekaboo(self):
+        self.assertEqual(enlaces.spawn_peeks("border"), "https://peekaboor6.com/maps/border")
+        self.assertEqual(
+            enlaces.spawn_peeks("kafe-dostoyevsky"), "https://peekaboor6.com/maps/kafe-dostoyevsky"
+        )
+
+    def test_club_house_de_la_app_es_clubhouse_en_peekaboo(self):
+        """El slug de la app sale del nombre con espacio; el de ellos va pegado."""
+        for mapa in ("club-house", "Club House", "clubhouse", "ClubHouse"):
+            self.assertEqual(enlaces.spawn_peeks(mapa), "https://peekaboor6.com/maps/clubhouse")
+
+    def test_acepta_el_nombre_ademas_del_slug(self):
+        self.assertEqual(
+            enlaces.spawn_peeks("Nighthaven Labs"), "https://peekaboor6.com/maps/nighthaven-labs"
+        )
+
+    def test_un_mapa_que_peekaboo_no_tiene_queda_sin_enlace(self):
+        for mapa in ("tower", "Hereford Base", "unknown-398899676157", "", None):
+            self.assertIsNone(enlaces.spawn_peeks(mapa), mapa)
+
+
 # --------------------------------------------------------------------- cliente
 
 

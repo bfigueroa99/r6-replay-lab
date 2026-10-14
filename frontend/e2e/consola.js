@@ -23,3 +23,16 @@ export function vigilarConsola(page) {
   })
   return errores
 }
+
+/**
+ * Junta todo lo que la pagina pide fuera de la app. "Nada sale a la red sin un
+ * clic" (CLAUDE.md): un enlace a un sitio de afuera se abre con un clic, pero
+ * renderizarlo no puede bajar nada de ese sitio, ni una miniatura.
+ */
+export function vigilarRed(page, base) {
+  const afuera = []
+  page.on('request', (request) => {
+    if (!request.url().startsWith(base)) afuera.push(request.url())
+  })
+  return afuera
+}
