@@ -87,6 +87,7 @@ misma partida.
 |---|---|
 | **Despues de ganar / perder** | Rondas cuya ronda anterior (la de numero `N - 1` en la misma partida) tu equipo gano o perdio. La anterior se lee de la partida entera: el filtro de lado o de operador limita las rondas que se cuentan, no cambia cual fue la anterior. La primera ronda, la que no tiene importada la anterior (falta su `.rec`) y la que tiene la anterior sin resultado van a "Sin ronda anterior". Las tres filas suman todas tus rondas. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. |
 | **Segun el marcador** | Rondas en que tu equipo llegaba adelante, empatado o atras: el marcador al empezar la ronda (`startingScore` de cada equipo en el `.rec`, guardado en `Round.score_before`), tu equipo contra el otro. No depende de a cuanto se gana el modo, asi que vale igual en ranked, unranked o rapida. Una ronda de una partida anterior a Y9S4 (el `.rec` no trae el marcador y se guarda 0-0), sin marcador o con un marcador que no es de dos equipos va a "Sin marcador", que solo se muestra si tiene rondas. Las cuatro filas suman todas tus rondas. |
+| **Como se cierran tus rondas** | Tus rondas de cada lado (ataque, defensa) segun como terminaron, de `Round.win_condition` y `Round.my_team_won`. *Por eliminacion*: el equipo perdedor termino con todos muertos (`KilledOpponents`). *Sin eliminacion*: hubo ganador sin que nadie quedara eliminado del todo (`ObjectiveOrTime`); el `.rec` de temporadas nuevas no dice si fue plant, defuse o tiempo, asi que es inferido del reloj y nunca se separa. Un plant seguido de la eliminacion de los atacantes y un defuse cuenta como eliminacion. *Sin dato*: ronda sin ganador o sin condicion. Los porcentajes son sobre tus ganadas (o perdidas) con dato, y entre parentesis va el conteo de rondas. Las cinco columnas de conteo suman todas tus rondas de ese lado; las rondas sin lado no entran. |
 
 ## Sesiones
 
@@ -299,6 +300,6 @@ opinar:
 | Mapa | 15 rondas en ese mapa |
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
-| Cortes de Tendencias (ronda anterior, marcador, hora, dia) | 30 rondas por fila: no se oculta, se avisa |
+| Cortes de Tendencias (ronda anterior, marcador, como se cierran, hora, dia) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.

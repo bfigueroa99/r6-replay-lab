@@ -90,6 +90,19 @@ test('Tendencias muestra las rondas segun el marcador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Cómo se cierran tus rondas' })
+  await expect(panel).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Ataque', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Defensa', exact: true })).toBeVisible()
+  // seed_demo cierra todo por eliminacion: los numeros los afirman los tests de backend
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra hora y dia de la semana', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
