@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from pydissect.constants import Y9S4
 from replays.models import Event, Match, Player, Round, RoundPlayer
 
 ME = "BearF99"
@@ -28,6 +29,7 @@ def make_match(
     match_type: str = "Ranked",
     index: int = 0,
     map_id: int = 0,
+    code_version: int = Y9S4,
 ) -> Match:
     played_at = played_at or datetime(2026, 9, 1, 20, 0) + timedelta(hours=index)
     return Match.objects.create(
@@ -44,6 +46,7 @@ def make_match(
         my_score=my_score,
         opponent_score=opponent_score,
         won=my_score > opponent_score,
+        code_version=code_version,
     )
 
 
@@ -55,6 +58,7 @@ def make_round(
     site: str = "B Church, B Arsenal Room",
     won: bool = True,
     overtime_number: int = 0,
+    score_before: list | None = None,
 ) -> Round:
     return Round.objects.create(
         match=match,
@@ -67,6 +71,7 @@ def make_round(
         clock_start=180,
         clock_end=30,
         teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
+        score_before=score_before or [],
     )
 
 
