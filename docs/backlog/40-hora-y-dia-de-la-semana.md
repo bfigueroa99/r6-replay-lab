@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
-estado: en curso 2026-10-14
-candado: dev 2026-10-14 05:11 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/40-hora-y-dia-de-la-semana
 tipo: funcionalidad
 epica: progreso
@@ -109,6 +109,39 @@ tiene que coincidir entre Trends.jsx y el e2e (copiarlo, no tipearlo).
 
 **Verificacion manual:** `seed_demo`, `/api/trends/` -> las sumas de arriba,
 y `/tendencias` con jueves y viernes en 0.
+
+## Implementacion
+
+(Dev 20261014T0511Z, sobre main a233a03.)
+
+Quedo el diseno completo, sin desvios de alcance:
+
+- `aggregates.by_hour` (8 franjas fijas `hour_from` 0..21 con `__hour__gte/lt`)
+  y `aggregates.by_weekday` (7 dias `weekday` 1..7 con `iso_week_day`), los dos
+  sobre `_filas_por_tramo`, que ahora acepta claves `int` (solo cambio el type
+  hint; la 39 ya la habia dejado generica en el cuerpo).
+- `/api/trends/` suma `by_hour` y `by_weekday`.
+- Tendencias: paneles "Por hora del día" (`21–24 h`, CSV `por-hora`) y "Por día
+  de la semana" (CSV `por-dia`) con `TablaDeCorte` y aviso de muestra chica,
+  entre "Según el marcador" y "Por numero de ronda". Filas en 0 visibles.
+- `docs/metricas.md`: seccion `## Cuando juegas` despues de `## Sesiones`, y la
+  fila de muestra minima de los cortes de Tendencias nombra hora y dia.
+- Tests (`backend/tests/test_hora_y_dia.py`, 8): los cinco del diseno mas
+  `test_el_borde_de_la_franja_es_la_hora_de_inicio` (2:59 / 3:00),
+  `test_cada_fila_trae_las_metricas_de_siempre` y
+  `test_trends_con_datos_trae_hora_y_dia`. La prueba de sumas usa filtros de
+  mapa y de lado que recortan de verdad (lo pidio la revision ciega previa).
+- e2e: `Tendencias muestra hora y dia de la semana` (paneles, "21–24 h",
+  "Lunes", "Domingo", consola limpia).
+
+Criterio -> test: `by_hour` -> `test_ocho_franjas_fijas_aunque_no_haya_rondas`;
+`by_weekday` y borde domingo/lunes -> `test_siete_dias_fijos_de_lunes_a_domingo`,
+`test_domingo_23_30_y_lunes_00_30_caen_en_su_dia_y_su_franja`; sumas ->
+`test_las_filas_suman_las_rondas_del_resumen`; UI -> e2e; base vacia y filtros
+raros -> `test_base_vacia_y_filtros_raros_dan_200`.
+
+Revision ciega previa: 2 hallazgos (archivo de tests sin trackear, filtro de
+lado que no recortaba), los dos corregidos.
 
 ## Para el humano
 

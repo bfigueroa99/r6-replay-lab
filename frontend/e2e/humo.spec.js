@@ -90,6 +90,21 @@ test('Tendencias muestra las rondas segun el marcador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra hora y dia de la semana', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const hora = page.locator('section.panel', { hasText: 'Por hora del día' })
+  await expect(hora).toBeVisible()
+  await expect(hora.getByRole('cell', { name: '21–24 h', exact: true })).toBeVisible()
+  const dia = page.locator('section.panel', { hasText: 'Por día de la semana' })
+  await expect(dia).toBeVisible()
+  await expect(dia.getByRole('cell', { name: 'Lunes', exact: true })).toBeVisible()
+  await expect(dia.getByRole('cell', { name: 'Domingo', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')
