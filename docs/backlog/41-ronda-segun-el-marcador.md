@@ -1,7 +1,7 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
-estado: revisado
-candado: qa 2026-10-14T03:11Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/41-ronda-segun-el-marcador
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B2 (rondas bajo presion), primer tramo; el match point queda para el segundo
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/factories.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_marcador.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z, revisor 20261014T0211Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z, revisor 20261014T0211Z, qa 20261014T0311Z
 
 ## PR
 
@@ -195,6 +195,43 @@ Sin hallazgos.
   512 tests backend, 69 frontend, build ok, 28 e2e.
 
 Veredicto: aprobar.
+
+## QA 2026-10-14 sobre 3d6efd0
+
+(QA 20261014T0311Z. Se ejercito el sistema; no se releyo el diff. Base temporal en el
+scratchpad con `SQLITE_PATH`, servidor en `:8765`; nada de eso al repo.)
+
+- `./scripts/check.sh` -> `Todo en verde.`: 512 tests backend (4 skipped),
+  69 frontend, build ok, 28 e2e.
+- **Base vacia y filtros raros** (`migrate`, `runserver 8765`): `curl
+  localhost:8765/api/trends/<q>` con `q` en `""`, `?until=foo`, `?page=-1`,
+  `?map=`, `?side=`, `?since=2030-01-01`, `?match_type=Nada`, `?operator=`
+  -> 200 y `by_score_state` con `ahead, tied, behind, unknown` en 0.
+- **Semilla** (`manage.py seed_demo`, 29 partidas, 203 rondas): 87 ahead /
+  116 tied / 0 behind / 0 unknown, lo que dice el diseno.
+- **Bordes con `factories.py`** (script en `manage.py shell` sobre la base
+  sembrada): partida `code_version=0` con `[0,0]` -> unknown (no empate);
+  tu equipo 1 con `[2,1]` -> behind y `[0,3]` -> ahead; `[]`, `[1]`,
+  `[1,2,3]` -> unknown. Resultado 88 / 116 / 2 / 4 = 210.
+- **Suma contra el resumen**: `sum(by_score_state.rounds)` igual a
+  `/api/overview/ -> overall.rounds` con `""`, `?match_type=Ranked`,
+  `?until=2026-09-15` (203 = 203) y `?until=foo` (210 = 210).
+- **Pantalla** (Chromium sobre `:8765/tendencias` con la base anterior):
+  celdas "Adelante", "Empatado", "Atrás" y "Sin marcador" visibles (la
+  ultima porque tiene 4 rondas), consola sin errores. Con la semilla sola
+  el e2e confirma "Sin marcador" oculto.
+- **Chunk inicial**: `index-*.js` 185503 bytes en la rama y en `main`
+  (0 %); solo crece el chunk perezoso de Tendencias (13327 -> 13798).
+- **Mutacion** sobre `aggregates.by_score_state`, `manage.py test
+  tests.test_marcador`: quitar el filtro `code_version >= Y9S4` -> FAILED (1);
+  no invertir `mio/suyo` para el equipo 1 -> FAILED (1); quitar
+  `s2__isnull` -> FAILED (1); `ahead` con `>=` -> FAILED (3).
+- Nota, no hallazgo: un `score_before` con `null` adentro (`[None, 1]`)
+  se lee como 0 en SQLite y cae en `behind`. La ingesta no lo puede
+  producir (`header._int` siempre da entero y `ingest.py:208` usa
+  `startingScore` con default 0), asi que no se reporta.
+
+Veredicto: aprobado.
 
 ## Para el humano
 
