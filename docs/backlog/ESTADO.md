@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 01:40 UTC por dev (sesion 20261014T0111Z; motivo: por estado: 2 disenado, lugar en cola; reloj: release, franja 0)
+actualizado: 2026-10-14 02:14 UTC por revisor (sesion 20261014T0211Z; motivo: por estado: 1 implementado; reloj: po, franja 1)
 playbook: origin/main@2a95f98
 rutina: TURNOS_SIN_RASTRO=2 en 48 h (10-12T00:01Z 10-12T03:01Z) | 12 de 48 en 7 dias
 pausa: no
@@ -9,10 +9,10 @@ pausa: no
 
 | rama | ficha | estado | horas desde el ultimo commit | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/41-ronda-segun-el-marcador | 41-ronda-segun-el-marcador | implementado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/41-ronda-segun-el-marcador?expand=1 | no |
+| claude/equipo-dev/41-ronda-segun-el-marcador | 41-ronda-segun-el-marcador | revisado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/41-ronda-segun-el-marcador?expand=1 | no |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=2
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=2
 
 ## Orden de merge sugerido
 
@@ -21,7 +21,7 @@ Una sola rama abierta (41), sin conflicto con main 2a95f98. La 40 se implementa 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:3 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas) otros:7.
-- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), B4 en main (39, PR #28), 41 (B2 tramo 1, marcador) implementada en su rama, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) disenada.
+- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), B4 en main (39, PR #28), 41 (B2 tramo 1, marcador) revisada en su rama, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) disenada.
 - Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 21 ideas libres (B4 pasa a `en main` en el proximo turno del PO).
 - Investigacion: ninguna todavia
@@ -31,16 +31,16 @@ Una sola rama abierta (41), sin conflicto con main 2a95f98. La 40 se implementa 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 40-hora-y-dia-de-la-semana | disenado | funcionalidad | progreso | 3 | fullstack | - |
-| 41-ronda-segun-el-marcador | en curso (espejo; la rama manda: implementado) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 41-ronda-segun-el-marcador | en curso (espejo; la rama manda: revisado) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 
-41 implementada en su rama; 40 espera a que la 41 se mergee. Proximo turno por estado: Revisor (41 implementado).
+41 revisada en su rama; 40 espera a que la 41 se mergee. Proximo turno por estado: QA (41 revisado).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-14 00:40 | Entrega y mergea 39 (`aprobado` -> `entregado` -> main, funcionalidad, epica lado-y-marcador). Puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin commits ni comentarios humanos, diff fuera de las rutas del humano; main 5d2aecc ya fusionado; `check.sh` en `Todo en verde.` sobre el head exacto eaea5ca (503 backend, 69 vitest, build, 27 e2e). PR #28 -> merge 2a95f98. No pudo borrar la rama (403 del proxy en `git push --delete`). Espejo de 39 quitado de `backlog`. `pruebas.sh`: `PRUEBAS_OK (10)`. Rutina: sin herramientas para comparar el prompt. |
-| revisor | 2026-10-13 22:30 | Revisa 39 (`implementado` -> `revisado`): revision ciega con `revision.md` sin hallazgos, confirmada por el lider (los 6 criterios con test; con `seed_demo` las tres filas suman el total en todo, `side=Attack`, `side=Defense` y `map=oregon`). Agrega `test_el_filtro_de_operador_no_cambia_la_ronda_anterior` (verde). Main 5d2aecc ya fusionado; `check.sh` en `Todo en verde.` (503 backend, 69 vitest, build, 27 e2e). |
+| revisor | 2026-10-14 02:14 | Revisa 41 (`implementado` -> `revisado`): revision ciega con `revision.md` sin hallazgos, confirmada por el lider (los 6 criterios con test o e2e; el desvio de Y9S4 se sostiene: `header.py:146` fuerza `startingScore` 0 y `code_version` fuera del parser solo lo lee `by_score_state`). Main 2a95f98 ya fusionado; `check.sh` en `Todo en verde.` (512 backend, 69 vitest, build, 28 e2e). Sin pushes de codigo. |
 | dev | 2026-10-14 01:40 | Implementa 41 (`disenado` -> `implementado`, rama `claude/equipo-dev/41-ronda-segun-el-marcador`): `by_score_state` en `/api/trends/` (adelante, empatado, atras, sin marcador desde `score_before` y tu `team_index`), panel "Según el marcador" en Tendencias con CSV y aviso de muestra chica, `seed_demo` llena `score_before` (87/116/0/0), fila en `metricas.md`, 9 tests backend y e2e. Revision ciega: 1 hallazgo real corregido (antes de Y9S4 el `.rec` guarda 0-0: ahora va a "Sin marcador" leyendo `Match.code_version`). `check.sh` en `Todo en verde.` (512 backend, 69 vitest, build, 28 e2e). |
 | qa | 2026-10-13 23:45 | Prueba 39 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (503 backend, 69 vitest, build, 27 e2e), sin conflicto con main 5d2aecc. Base vacia y base sembrada con `factories.py` (ronda faltante, anterior sin resultado, partida de una ronda, nick repetido, ronda sin bajas): `by_previous_round` da 2/1/4 como se esperaba a mano y suma igual que `overview` con `side`, `map`, `days`, `operator`; filtros raros 200. UI en Chromium con el aviso de muestra chica, consola limpia. Chunk inicial sin cambio (185.47 kB). 5 mutaciones caen. Sin pushes de codigo. |
 | arquitecto | 2026-10-13 20:16 | Disena 39 (`by_previous_round` con subconsulta a la ronda `number - 1` de la partida entera; ayudantes `_filas_por_tramo`, `TablaDeCorte`, `muestra.js` con aviso bajo 30 rondas), 41 (`by_score_state` con `KeyTransform`+`Cast` sobre `score_before` y tu `team_index`; `seed_demo` pasa a llenar `score_before`, solo cambia el panel nuevo) y 40 (`by_hour` en 8 franjas y `by_weekday` con `iso_week_day`). Spike en scratchpad con `seed_demo`: las sumas cuadran con el total (203). Orden 39 -> 41 -> 40. Sin pushes de codigo. |
