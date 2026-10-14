@@ -58,6 +58,11 @@ const RONDA_ANTERIOR = {
   no_previous: 'Sin ronda anterior',
 }
 const MARCADOR = { ahead: 'Adelante', tied: 'Empatado', behind: 'Atrás', unknown: 'Sin marcador' }
+// las etiquetas se arman una vez: la clave del backend es la hora de inicio de la franja
+const FRANJAS = Object.fromEntries([0, 3, 6, 9, 12, 15, 18, 21].map((h) => [h, `${h}–${h + 3} h`]))
+const DIAS = Object.fromEntries(
+  ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((dia, i) => [i + 1, dia]),
+)
 
 /** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
 function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
@@ -120,6 +125,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const porMarcador = (data.by_score_state ?? []).filter(
     (row) => row.score_state !== 'unknown' || row.rounds > 0,
   )
+  const porHora = data.by_hour ?? []
+  const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
   const salida = data.spawn_exit
@@ -454,6 +461,44 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             etiquetas={MARCADOR}
             rowKey="score_state"
             csvName="segun-marcador"
+          />
+        </Panel>
+      ) : null}
+
+      {porHora.length ? (
+        <Panel
+          title="Por hora del día"
+          hint={
+            filasConPocaMuestra(porHora).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Hora de inicio de la partida, tal como la guardó tu PC.'
+          }
+        >
+          <TablaDeCorte
+            filas={porHora}
+            columna="Hora"
+            etiquetas={FRANJAS}
+            rowKey="hour_from"
+            csvName="por-hora"
+          />
+        </Panel>
+      ) : null}
+
+      {porDia.length ? (
+        <Panel
+          title="Por día de la semana"
+          hint={
+            filasConPocaMuestra(porDia).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Día en que empezó la partida.'
+          }
+        >
+          <TablaDeCorte
+            filas={porDia}
+            columna="Día"
+            etiquetas={DIAS}
+            rowKey="weekday"
+            csvName="por-dia"
           />
         </Panel>
       ) : null}

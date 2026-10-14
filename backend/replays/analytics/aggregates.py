@@ -384,7 +384,7 @@ def by_half(**filters) -> list[dict]:
     return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
 
 
-def _filas_por_tramo(campo: str, tramos: dict[str, QuerySet[RoundPlayer]]) -> list[dict]:
+def _filas_por_tramo(campo: str, tramos: dict[str | int, QuerySet[RoundPlayer]]) -> list[dict]:
     """Una fila de `totals()` por tramo, en el orden del dict.
 
     El baseline del rating se calcula una sola vez: es el mismo para todas
@@ -457,6 +457,29 @@ def by_score_state(**filters) -> list[dict]:
         "unknown": qs.exclude(pk__in=conocido.values("pk")),
     }
     return _filas_por_tramo("score_state", {nombre: tramos[nombre] for nombre in MARCADOR})
+
+
+def by_hour(**filters) -> list[dict]:
+    """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
+
+    La hora es la que guardo el PC (`USE_TZ = False`): sin conversion, que es
+    justamente la hora en que el usuario se sento a jugar.
+    """
+    qs = base_queryset(**filters)
+    tramos = {
+        h: qs.filter(round__match__played_at__hour__gte=h, round__match__played_at__hour__lt=h + 3)
+        for h in range(0, 24, 3)
+    }
+    return _filas_por_tramo("hour_from", tramos)
+
+
+def by_weekday(**filters) -> list[dict]:
+    """Lunes a domingo segun el dia de inicio de la partida."""
+    qs = base_queryset(**filters)
+    # `iso_week_day` cuenta 1=lunes; `week_day` de Django cuenta 1=domingo y
+    # correria el domingo al principio de la semana.
+    tramos = {d: qs.filter(round__match__played_at__iso_week_day=d) for d in range(1, 8)}
+    return _filas_por_tramo("weekday", tramos)
 
 
 def by_start_side(**filters) -> list[dict]:

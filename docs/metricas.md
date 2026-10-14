@@ -104,6 +104,21 @@ esa partida sigue siendo la tercera de su noche.
 El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
 con el que mas conviene es la forma barata de encontrar patrones que no existen.
 
+## Cuando juegas
+
+En Tendencias, tus rondas cortadas por el momento en que empezo la partida. La
+hora es la que guardo tu PC al grabar el replay, tal cual (sin zona horaria ni
+conversion). Una partida cuenta entera en la franja y el dia en que empezo,
+aunque termine pasada la medianoche. Las filas son fijas: una franja sin rondas
+sale en 0, y cada lista suma todas tus rondas. Las metricas (ganadas, rating,
+KPR, aperturas) son las de siempre sobre ese corte, con el aviso de muestra
+minima de abajo.
+
+| Metrica | Definicion |
+|---|---|
+| **Por hora del dia** | Ocho franjas de 3 horas (0–3, 3–6, ..., 21–24) segun la hora de inicio de la partida. El borde es la hora en punto: una partida de las 2:59 cae en 0–3 y una de las 3:00 en 3–6. |
+| **Por dia de la semana** | Lunes a domingo segun el dia de inicio de la partida. |
+
 ## Duelos de apertura
 
 La **primera baja de la ronda** define el duelo de apertura. Quien mata lo gana,
@@ -285,6 +300,6 @@ opinar:
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
 | Salida del spawn | 12 rondas del lado en ese mapa y 12 en el resto, y 4 muertes en la ventana |
-| Cortes de Tendencias (ronda anterior) | 30 rondas por fila: no se oculta, se avisa |
+| Cortes de Tendencias (ronda anterior, marcador, hora, dia) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.
