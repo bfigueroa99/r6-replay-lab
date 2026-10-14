@@ -150,9 +150,12 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   await expect(panel).toBeVisible()
   const fila = panel.locator('tr', { hasText: 'Más bajas en una partida' })
   await expect(fila).toBeVisible()
+  // el enlace tiene que abrir la partida del record, no una cualquiera
+  const respuesta = await page.request.get('/api/overview/')
+  const { match_id: matchId, map } = (await respuesta.json()).records.most_kills_match
   await fila.getByRole('link').click()
-  await expect(page).toHaveURL(/\/partidas\/\d+$/)
-  await expect(page.locator('h1')).toContainText(/Club House|Border|Bank/)
+  await expect(page).toHaveURL(new RegExp(`/partidas/${matchId}$`))
+  await expect(page.locator('h1')).toContainText(map)
 
   expect(errores).toEqual([])
 })

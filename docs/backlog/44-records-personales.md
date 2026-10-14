@@ -1,7 +1,7 @@
 # 44. Records personales en el Resumen
 
-estado: revisado
-candado: qa 2026-10-14T13:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/44-records-personales
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E4 (idea del PO 20261013T1915Z); epica progreso en curso (E3 en main por la ficha 40)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_records.py, frontend/src/pages/Dashboard.jsx, frontend/src/records.js, frontend/src/records.test.js, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z, qa 20261014T1312Z
 
 ## PR
 
@@ -158,7 +158,73 @@ partida (o el dia) mas reciente. Sin candidato, el record no aparece.
 records y cada enlace abre su partida; con `?map=Border` cambian.
 
 **Umbrales:** 6 rondas por partida y 20 por dia son a ojo; calibrar con la
-base real (a `## Para el humano` si QA lo confirma solo con sinteticos).
+base real (a `## QA 2026-10-14 sobre af000a3
+
+(qa 20261014T1312Z; rama al dia con main 3438ab2, sin merge necesario)
+
+`check.sh` completo en verde dos veces: sobre af000a3 y con el e2e reforzado
+(ruff, 532 tests backend, 74 vitest, build, 30 e2e).
+
+Base sembrada (script en el scratchpad, `DATA_DIR` y `SQLITE_PATH`
+temporales): `build_dataset(matches=12)` del 2026-09-01/02 mas tres partidas a
+mano: A Bank 3 rondas con 5 bajas por ronda; B Border 7 rondas con dos rondas
+de 4 bajas, un 1v3 ganado (R2) y un 1v4 perdido (R7); C Club House 4 rondas
+perdidas sin bajas.
+
+```bash
+cd backend
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/q.sqlite3 python3 manage.py migrate
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/q.sqlite3 python3 manage.py shell -c "exec(open('<tmp>/sembrar.py').read())"
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/q.sqlite3 python3 manage.py runserver 127.0.0.1:8044 --noreload
+curl -s '127.0.0.1:8044/api/overview/?<q>' | python3 -c "import json,sys; print(json.load(sys.stdin)['records'])"
+```
+
+- [x] Cinco records con `match_id`, fecha, mapa y valor (`?` sin filtros):
+  mejor partida = B (1.71, 7 rondas; A queda fuera por 3 rondas), mas bajas en
+  partida = A (15), mas bajas en ronda = A R3 (5; R1-R3 empatan y gana la
+  ronda mas nueva), clutch = B R2 1v3 (el 1v4 perdido no cuenta), mejor dia =
+  2026-09-02 (50 %, 48 rondas; empata en winrate con el 09-01 de 24 rondas y
+  gana por mas rondas ganadas), sin `match_id`. Coincide con lo calculado a
+  mano.
+- [x] Empate a la mas reciente: lo de arriba (ronda y dia) y mutacion abajo.
+- [x] Filtros: `map=bank` deja A en bajas; `map=border` lleva bajas a B (13);
+  `side=Defense` -> bajas B 6, ronda B R6, mejor partida `null` (3 rondas de
+  defensa); `since=2026-09-06` -> mejor dia `null`; `until=2026-09-04` ->
+  clutch `null`; `operator=Mute` -> solo mejor dia. Ojo: `map=` toma el slug
+  (`border`), no el nombre; `map=Border` da todo `null`, igual que el resto de
+  la app (comportamiento de main, no de esta ficha).
+- [x] Base vacia: los cinco `null`. `until=foo`, `page=-1`, `map=`,
+  `since=2030-01-01`, `map=Nada`, `days=999999999999`, `session=abc`,
+  `side=Attack&operator=Zofia`: 200 en vacia y en sembrada.
+- [x] Panel y enlace: e2e en verde. Reforce el e2e (hallazgo de test de la
+  revision): ahora lee `records.most_kills_match` de `/api/overview/` y exige
+  `/partidas/<ese id>` y su mapa en el `h1`. Mutacion: con `href` a
+  `match_id + 1` el e2e nuevo cae (`expected /partidas/28$`, `received
+  /partidas/29`); el original pasaba igual.
+- [x] `docs/metricas.md`: seccion `## Records` con cada record, minimos y
+  desempate (sigue el hallazgo de ubicacion del Revisor, abajo).
+
+Mutacion sobre `aggregates.py` (`python3 manage.py test tests.test_records`),
+las cinco caen: orden de partidas `reverse=False` y orden de rondas sin `-`
+en `played_at` -> `test_en_un_empate_gana_la_partida_mas_reciente`; clutch sin
+`won=True` -> `test_el_clutch_mas_grande_es_el_1vx_ganado_mayor`; sin minimo
+de 6 rondas -> `test_mejor_rating_ignora_partidas_de_menos_de_seis_rondas`;
+sin minimo de dia -> `test_mejor_dia_exige_*` y `test_sin_clutches_*`.
+
+Rendimiento (lo que pedia el diseno): 2.000 partidas sinteticas de 7 rondas
+(14.000 filas), `/api/overview/` en 0,28-0,30 s; `personal_records` solo,
+0,16 s; `agg.overview` 0,12 s. Justo en el borde de ~300 ms: aceptable,
+anotado abajo.
+
+Chunk inicial (`vite build`): `index-*.js` 185,47 kB en main -> 186,80 kB
+(+0,7 %).
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hay `## Verificar
+en el PC`.
+
+Veredicto: `aprobado`.
+
+## Para el humano` si QA lo confirma solo con sinteticos).
 
 ## Implementacion
 
@@ -250,3 +316,12 @@ tildes, sin `print` ni `console.log`. Merge de prueba con la 42: limpio.
 Veredicto: aprobar -> `revisado` (hallazgos menores, no bloquean).
 
 ## Para el humano
+
+- Umbrales a ojo (6 rondas por partida, 20 por dia): QA los probo solo con
+  datos sinteticos; calibrar con la base real.
+- `/api/overview/` con 2.000 partidas sinteticas tarda ~0,29 s (los records
+  suman ~0,16 s). Si con la base real se siente lento, mover los records a su
+  propia request.
+- Hallazgo menor del Revisor sin corregir: en `docs/metricas.md` la seccion
+  `## Records` quedo entre la tabla de Sesiones y su parrafo de cierre. El
+  Release puede moverla al armar el PR.
