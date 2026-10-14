@@ -1,16 +1,16 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 18:50 UTC por release (sesion 20261014T1811Z; motivo: por estado: 1 aprobado; reloj: qa, franja 6)
+actualizado: 2026-10-14 19:35 UTC por po (sesion 20261014T1911Z; motivo: papel vacio; reloj: qa, franja 6)
 playbook: origin/main@f74a16f
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 54 en 7 dias; sin herramientas para comparar el prompt
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 54 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia: 43 se mergeo (PR #33, main f74a16f).
+Vacia (main f74a16f, ultimo merge: 43, PR #33).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=24 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -19,16 +19,20 @@ Nada en cola.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:8 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 como idea. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main, siguientes como idea.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0 (papel vacio: el proximo turno por estado es PO). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 22 ideas libres (B2 y B5 marcados `en main` por el Release).
+- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 en ficha 45; B8 y B9 como idea. escuadra: se abre con C4 (ficha 46). temporada-y-modo: A2 en ficha 47. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 24 ideas libres (22 al empezar el turno; nuevas B8, B9, E5, F6 y H3).
 - Investigacion: ninguna todavia
 
 ## Papel (rama backlog)
 
-Vacio. Espejo de 43 quitado (ya en main).
+| ficha | titulo | estado | tipo | epica | prioridad |
+|---|---|---|---|---|---|
+| 45 | Remontadas y derrumbes | propuesto | funcionalidad | lado-y-marcador | 3 |
+| 46 | Primero de tu equipo en caer | propuesto | funcionalidad | escuadra | 3 |
+| 47 | Modos y tipos de partida desconocidos en Datos | propuesto | funcionalidad | temporada-y-modo | 4 |
 
-Proximo turno por estado: PO (papel vacio).
+Proximo turno por estado: arquitecto (3 propuesto, 0 disenado).
 
 ## Ultimo turno de cada rol
 
@@ -39,7 +43,7 @@ Proximo turno por estado: PO (papel vacio).
 | dev | 2026-10-14 15:35 | Implementa 43 (`disenado` -> `implementado`, rama `claude/equipo-dev/43-match-point`): `reglas_partida.py` (solo Ranked desde Y9S4: gana a 4, con 3-3 prorroga a 5, fuente Dexerto), `by_match_point` en `/api/trends/` reusando `_marcador_conocido` extraido de `by_score_state`, panel "Match point" en Tendencias, e2e y fila en `metricas.md`; 20 tests en `test_match_point.py`. Revision ciega: sin bugs, 2 puntos de tests corregidos (filtros que no recortaban, orden de las reglas). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). |
 | qa | 2026-10-14 17:35 | Prueba 43 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). Base vacia: cinco filas en 0 y 200 con `until=foo`, `page=-1`, `match_type=`, `map=`, `since=2030-01-01`. Base sembrada con `factories.py` (ranked 0-0 a 4-4 como equipo 0 y como equipo 1, QuickMatch, Y9S3, marcador vacio, 4-0 y tres equipos): mine 3, theirs 2, both 2, normal 13, unknown 6, igual a lo calculado y suma igual a `by_score_state`, tambien con filtros. 3 mutaciones caen (10, 3 y 3 tests). Chunk inicial sin cambio (el panel va en el lazy `Trends`). Sin pushes de codigo. |
 | arquitecto | 2026-10-14 10:17 | Disena 42 (`round_endings` por lado en `/api/trends/` desde `round__my_team_won` + `win_condition`; panel "Cómo se cierran tus rondas" con `cierres.js`), 43 (tabla `reglas_partida.py` solo con Ranked: gana a 4, con 3-3 prorroga a 5, fuente Dexerto 2024; los demas tipos a `unknown`; `by_match_point` reusa la lectura del marcador de `by_score_state`; va despues de 42) y 44 (`personal_records` en `/api/overview/` agregado en la vista, cinco records con desempate al mas reciente, panel "Tus récords" en el Resumen con `records.js`). Sin pushes de codigo. |
-| po | 2026-10-14 09:40 | Papel vacio: propone 42 (B6: rondas ganadas y perdidas por eliminacion o sin ella, por lado, en Tendencias), 43 (B5: match point y ronda decisiva con tabla de reglas por tipo de partida) y 44 (E4: records personales en el Resumen con enlace a cada partida). Reconcilia `ALCANCE.md` con main 3438ab2 (B2 tramo 1, B4, E3 y T3 en main) y quita el espejo de 40. Ideas nuevas B7, C4, C5 y F5: 22 libres (20 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
+| po | 2026-10-14 19:35 | Papel vacio: propone 45 (B7: remontadas y derrumbes, con winrate de partida segun la diferencia al cambio de lado, en Tendencias), 46 (C4: primero de tu equipo en caer y su winrate, por lado, en Compañeros) y 47 (A2: modos y tipos de partida desconocidos en Datos, con etiqueta y retag sin reimportar). Reconcilia `ALCANCE.md` con main f74a16f (B6 y E4 en main). Ideas nuevas B8, B9, E5, F6 y H3: 24 libres (22 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
 ## Para el humano
 
