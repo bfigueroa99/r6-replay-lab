@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
 estado: revisado
-candado: -
+candado: qa 2026-10-14T07:12Z
 rama: claude/equipo-dev/40-hora-y-dia-de-la-semana
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E3 (idea del PO 20261013T0511Z)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_hora_y_dia.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0511Z, revisor 20261014T0611Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0511Z, revisor 20261014T0611Z, qa 20261014T0712Z
 
 ## PR
 
