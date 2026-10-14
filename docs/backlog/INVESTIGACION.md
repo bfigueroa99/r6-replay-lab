@@ -23,13 +23,13 @@ vivos y corrige lo que no. `ultima visita` y `senal` las actualiza cada turno
 
 | familia | donde mirar | ultima visita | senal |
 |---|---|---|---|
-| 1. Parsers abiertos del `.rec` | r6-dissect (https://github.com/redraskal/r6-dissect): commits, releases e issues desde la ultima visita; sus forks; otros parsers que aparezcan. Upstream quieto desde e6c2ca8 (2025-09-16); lo nuevo esta en issues (#127, #130), PR #126 y el fork ImAAhmad | 2026-10-14 | alta |
-| 2. Herramientas de replay de Siege | r6-replay.com (y `/roadmap`), Aurelix (aurelix.app y su blog), R6TV (nuevo, 2026-06). r6.arenyze.com es SPA de stats, no visor: sacarlo. ReplayAnalysis: Excel sobre JSON de r6-dissect, nada nuevo | 2026-10-14 | alta |
+| 1. Parsers abiertos del `.rec` | r6-dissect (https://github.com/redraskal/r6-dissect): upstream quieto desde e6c2ca8 (2025-09-16); ultimo issue/PR #131 y #130 (2026-09-30). Forks con senal: nicktstewart y defiancer6s-hub (Y11S2), lumina-r6/siege-dissect (picks de preparacion, score). Secos: aa-sasha, cliffside-git, ItaloRossySantiago, PR #105. `api.github.com` da 403 desde la nube: usar las paginas HTML | 2026-10-14 (2211Z) | alta |
+| 2. Herramientas de replay de Siege | r6tv.online/how-it-works (la pagina util de R6TV), aurelix.app (portada y su unico post del blog), r6-replay.com/roadmap (casi todo ya esta en ALCANCE; `/changelog` da 404; `/siegewatch` es anti-cheat, no sirve). Secos: r6.arenyze.com, ReplayAnalysis, Sprabuni/R6-Replays, Breach Report (top.gg 403) | 2026-10-14 (2211Z) | alta |
 | 3. Trackers de API | stats.cc, R6 Tracker: descripcion publica, resenas, lo que se comenta. Detras de Cloudflare: si da 403, busqueda y seguir. Rindio el articulo de tracker.gg sobre R6 Tracker 3.0 y la pagina de R6 Analyst (r6analyst.overwolf.com). stats.cc sin fuente abrible; r6data.eu sin DNS | 2026-10-14 | baja |
-| 4. Otros juegos tacticos | CS2: Leetify (blog), Scope.gg, CS Demo Manager (`/changelog` es lo unico util). Valorant: Blitz, tracker.gg (403), vlr.gg. MOBAs: OP.GG (help 403), Dotabuff (sin visitar) | 2026-10-14 | alta |
+| 4. Otros juegos tacticos | Refrag blog (nuevo, alta: oportunidades de trade, intentos de apertura), Leetify blog (profiles-update), vlr.gg (pestana Performance de una partida; `/stats` falla por redirects), CS Demo Manager `/changelog`. Secos: Dotabuff (403), csstats.gg (403), Scope.gg (blog quieto desde 2025-08), tracker.gg (403), help.op.gg (403) | 2026-10-14 (2211Z) | alta |
 | 5. Comunidad | Reddit bloqueado desde la nube (WebSearch rechaza reddit.com, WebFetch no abre old.reddit): no se usan mirrors. Rindieron Siege.GG (news), shattered.io y boostroom.com (guias). Aimlabs, Metafy y 1v9: genericos o venta de coaching | 2026-10-14 | alta |
 | 6. Ubisoft | Paginas de temporada en ubisoft.com/.../news-updates/seasons/<nombre> (tenfoldpursuit, silenthunt, systemoverride) y news.ubisoft.com; Liquipedia para fechas de parche. Ninguna fuente publica da IDs ni code versions: eso sale de r6-dissect o del PC | 2026-10-14 | alta |
-| 7. Analitica de esports y deporte | Ratings compuestos, probabilidad de ganar la ronda por ventaja numerica, redes de trade, rating de clutch. Rindieron: nomiun.substack.com, HLTV Rating 3.0, Leetify Rating, Siege.GG blog. No hay tabla publica XvY para Siege | 2026-10-14 | alta |
+| 7. Analitica de esports y deporte | Siege.GG blog (rating rebalance 2026-08-11: normalizacion por operador, trade differential), FanGraphs (regresion a la media), Agresti y Coull (Wilson), nomiun.substack.com, HLTV Rating 3.0. Secos: Leetify glossary, ESPN consistency (vacio), Pythagorean para esports. No hay tabla publica XvY ni ventana de trade en segundos para Siege | 2026-10-14 (2211Z) | alta |
 
 ## Trampas conocidas
 
@@ -56,20 +56,17 @@ La entrada mas nueva arriba. Formato:
 - Descartadas: <idea> porque <motivo>
 ```
 
-### 2026-10-14 (sesion 20261014T2111Z)
-
-- Familias: 3, 5, 6
-- Dio senal: tracker.gg (R6 Tracker 3.0: bajas en los primeros 30 s, MVPs, tiempo vivo por mapa, Rivals); R6 Analyst (muertes por spawn); Siege.GG (teamkills en su rating, spawn peeks); shattered.io (partida tras derrotas, revisar una derrota por sesion); boostroom (el ultimo minuto del ataque); Ubisoft (Solid Snake Y11S1 atacante, Calypso Casino Y11S2, Noor Y11S3 defensor, Villa rehecha en Y11S3, Fortress rehecha en Y10S4, replays en PC de 12 a 30).
-- Seco: stats.cc (sin fuente abrible), r6data.eu (sin DNS), Reddit (bloqueado), Aimlabs/Metafy/1v9, addendum Y11S3 (solo bugs), Ranked 3.0 (no cambia rondas para ganar ni reloj).
-- Ideas agregadas a ALCANCE.md: A4 mapas rehechos como su propia fila (trae un bug: `by_map` une el lado por nombre y no por slug), B11 cuando matas, C7 teamkills, E6 partida despues de perder seguido, E7 puesto en el lobby, F9 la ronda para revisar de la sesion, K4 el ultimo minuto del ataque; P1 ampliada con Noor, Snake y Calypso Casino.
-- Descartadas: muertes por spawn y spawn peeks (cubiertos por PR #22); tiempo vivo por mapa (duplica "Mueres a los" y "Sobrevives"); mejor mapa por compañero o rival (muestra chica); 12 -> 30 replays (el vigia ya importa solo); reglas de Dual Front (se retiro en Y11S2 segun Siege.GG, sin fuente oficial).
-- Proxima: familia 1 (forks lumina-r6/siege-dissect, aa-sasha, cliffside-git, defiancer6s-hub, PR #105 de r6-dissect), 2 y 4 (Dotabuff sin visitar). Reglas de match point para Unranked y Quick Match: ninguna fuente oficial las da todavia.
-
-### 2026-10-14 (sesion 20261014T2010Z)
+### 2026-10-14 (sesion 20261014T2211Z)
 
 - Familias: 1, 2, 4, 7
-- Dio senal: r6-dissect issue #130 (operador 444310693746 de Y11S3 y rondas con los dos equipos `won`); PR #126 y fork ImAAhmad (code versions Y10S4/Y11S1, FortressY10, DBNO, scoreboard Y10S4+); Aurelix (cerradas, stacks rivales, operador por sitio); r6-replay.com (refrag, rol); CS Demo Manager changelog (matriz de duelos, duracion de multikill); nomiun, HLTV 3.0, Leetify y Siege.GG (probabilidad por estado de vivos, impacto por baja, intentos de clutch).
-- Seco: commits y releases de r6-dissect upstream (pydissect esta a la par hasta Y10S3_1); r6.arenyze.com (SPA de stats); ReplayAnalysis; tracker.gg (403); help.op.gg (403); perfiles de Leetify (JS vacio); Siege.GG sobre probabilidad de ganar (generico).
-- Ideas agregadas a ALCANCE.md: B10 partidas cerradas, C6 tiempo de refrag, D4 stacks rivales, F7 matriz de duelos, F8 duracion del multikill, K1 conversion por estado de vivos, K2 impacto por baja, K3 intentos de clutch, O1 operador por sitio, O2 rol inferido, P1 catalogo Y10S4-Y11S3, P2 ronda con dos ganadores (posible bug), P3 DBNO, P4 scoreboard Y10S4+.
-- Descartadas: posiciones x/y/z del fork (sin validar, choca con `CLAUDE.md`); plant por bonus de score (plants inferidos no entran en metricas); bans de operadores (sin bytes publicados); MVP/ACE (sin link); comparar dos jugadores (duplica Compañero); "parte de la victoria" de nomiun y el reparto por dano de Leetify (quedan dentro de K2 sin dano).
-- Proxima: familias 3, 5 y 6 sin visitar; en la 1, los forks lumina-r6/siege-dissect, aa-sasha, cliffside-git y defiancer6s-hub, y el PR #105 (movement data).
+- Dio senal: nicktstewart y defiancer6s-hub (DissectID y kill feed de Y11S2); lumina-r6 (picks de preparacion antes de Y9S3); r6tv.online (presencia y delta por operador, cara a cara, busqueda por composicion); Aurelix (tiempo de victoria por lado, mapas para banear); Refrag (oportunidades de trade, intentos de apertura); Leetify profiles-update (contra el promedio); vlr.gg y CS Demo Manager (2K-5K, matriz de aperturas); Siege.GG rebalance (normalizacion por operador, trade differential); FanGraphs y Agresti-Coull (banda de ruido).
+- Seco: PR #105, aa-sasha, cliffside-git, ItaloRossySantiago, api.github.com (403), r6-replay.com/changelog (404) y /siegewatch, Dotabuff y csstats.gg (403), Scope.gg, Leetify glossary, ESPN (vacio).
+- Ideas agregadas a ALCANCE.md: A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade, D5 cara a cara en la partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamano, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 Y11S2, P6 picks de preparacion; F1 (composicion) y F7 (solo aperturas) ampliadas.
+- Descartadas: score y asistencias por entidad (lumina, sin validacion), plant por "arma lista" (heuristica, plants fuera de metricas), consistencia entre partidas (sin fuente abrible), Op Kills (armas). Duplicados no anotados: Round Swing (K2), KOST (KST), 3-Stage/Playlists/Notes/Role/Synergy del roadmap de r6-replay.com (B3, F1, F2, O2, C1).
+- Proxima: familias 3, 5 y 6. P5 contradice `formato-rec.md` para Y11S2: es lo primero que conviene verificar en el PC.
+
+### 2026-10-14 (sesiones 20261014T2010Z y 20261014T2111Z, condensadas)
+
+- Familias 1, 2, 4, 7 y luego 3, 5, 6. Senal: r6-dissect #130 y PR #126, fork ImAAhmad, Aurelix, r6-replay.com, CS Demo Manager, nomiun, HLTV 3.0, Leetify, Siege.GG, tracker.gg (R6 Tracker 3.0), R6 Analyst, shattered.io, boostroom, paginas de temporada de Ubisoft.
+- Ideas: B10, C6, D4, F7, F8, K1-K3, O1, O2, P1-P4; A4, B11, C7, E6, E7, F9, K4; P1 con Noor, Snake y Calypso Casino.
+- Descartadas: posiciones x/y/z de ImAAhmad, plant por bonus de score, bans, ACE, comparar dos jugadores, muertes por spawn y spawn peeks (PR #22), tiempo vivo por mapa, mejor mapa por compañero, 12 -> 30 replays, Dual Front.
