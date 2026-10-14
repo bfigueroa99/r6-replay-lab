@@ -1,7 +1,7 @@
 # 42. Como se cierran tus rondas: por eliminacion o sin ella, por lado
 
-estado: revisado
-candado: qa 2026-10-14T13:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/42-como-se-cierran-tus-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B6 (idea del PO 20261013T0511Z); epica lado-y-marcador en curso (B1, B4 y B2 tramo 1 en main por #25, 39 y 41)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_cierres.py, frontend/src/pages/Trends.jsx, frontend/src/cierres.js, frontend/src/cierres.test.js, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z, qa 20261014T1312Z
 
 ## PR
 
@@ -229,5 +229,69 @@ tildes, sin `print` ni `console.log`. Merge de prueba con la 44: limpio.
 30 e2e).
 
 Veredicto: aprobar -> `revisado`.
+
+## QA 2026-10-14 sobre 00b6007
+
+(qa 20261014T1312Z; rama al dia con main 3438ab2, sin merge necesario)
+
+`check.sh` completo en verde sobre 00b6007 (ruff, 529 tests backend, 75 vitest,
+build, 30 e2e).
+
+Base sembrada (script en el scratchpad; `win_condition` y `my_team_won`
+puestos con `update`, como en `test_cierres.py`): partida Club House con
+ataque 2 ganadas por eliminacion, 1 ganada `ObjectiveOrTime`, 1 perdida por
+eliminacion y defensa 1 perdida `ObjectiveOrTime`, 1 ganada por eliminacion,
+1 con `my_team_won=None` y 1 con `win_condition=""`; partida Border Unranked
+del 09-03 con defensa 3 perdidas sin eliminacion y 1 ganada, y una ronda de
+ataque con un companero de nick parecido (`BearF99x`) sin bajas.
+
+```bash
+cd backend
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/s.sqlite3 python3 manage.py migrate
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/s.sqlite3 python3 manage.py shell -c "exec(open('<tmp>/sembrar.py').read())"
+DATA_DIR=<tmp> SQLITE_PATH=<tmp>/s.sqlite3 python3 manage.py runserver 127.0.0.1:8042 --noreload
+curl -s '127.0.0.1:8042/api/trends/?<q>' | python3 -c "import json,sys; print(json.load(sys.stdin)['round_endings'])"
+```
+
+- [x] `round_endings` con una fila por lado y las cinco cuentas mas `rounds`.
+  Sin filtros: Ataque 5 rondas (3/1/1/0, sin dato 0, 75 % y 100 %), Defensa 8
+  (2/0/0/4, sin dato 2, 100 % y 0 %). Coincide con lo sembrado; el companero
+  no entra.
+- [x] Cada fila suma: 3+1+1+0+0 = 5 y 2+0+0+4+2 = 8; `None` y `""` cayeron en
+  sin dato.
+- [x] Sin claves de plant ni defuse en la respuesta; en la UI las dos
+  columnas "sin eliminacion" llevan el `title` "Objetivo o tiempo: ... se
+  infiere del reloj".
+- [x] Filtros: `map=club-house` (Ataque 4, Defensa 4 con 2 sin dato),
+  `map=border` (Ataque 1, Defensa 4), `side=Defense` (Ataque en 0 con
+  porcentajes `null`), `since=2026-09-02`, `match_type=Unranked` y
+  `session=0` (solo Border), `operator=Mute` y `since=2030-01-01` (las dos
+  filas en 0). `until=foo`, `page=-1`, `map=`: 200 con los numeros sin filtrar.
+  Base vacia: 200, dos filas en 0 y porcentajes `null`.
+- [x] Panel en Tendencias con la base sembrada (Chromium, captura en el
+  scratchpad): `Ataque 5 | 75% (3) | 25% (1) | 100% (1) | 0% (0) | 0`,
+  `Defensa 8 | 100% (2) | 0% (0) | 0% (0) | 100% (4) | 2`, banda de muestra
+  chica visible, consola sin errores. e2e `Tendencias muestra como se cierran
+  tus rondas` en verde con `seed_demo`.
+- [x] Fila en `docs/metricas.md` (Contexto de la ronda) y corte en la tabla
+  de muestra minima.
+
+Mutacion (`python3 manage.py test tests.test_cierres` y `npx vitest run
+src/cierres.test.js`): contar con `won` en vez de `round__my_team_won` ->
+caen `test_sin_ganador_o_sin_condicion_va_a_unknown` y
+`test_cada_fila_suma_*`; `won_other` contando `KilledOpponents` -> caen 3;
+`unknown` fijo en 0 -> caen 2; en `cierres.js` el complemento con
+`Math.round(100 - pct)` (el 101 %) -> cae `los enteros que se muestran suman
+100 aunque el porcentaje termine en ,5`; complemento `0` sin dato -> cae 1.
+Sacar `.filter(side__in=LADOS_CIERRE)` no hace caer nada, pero es un mutante
+equivalente: el bucle solo lee `Attack` y `Defense`.
+
+Chunk inicial (`vite build`): `index-*.js` 185,47 kB, igual que main. El
+panel vive en el chunk perezoso de Tendencias: 14,6 kB -> 16,6 kB.
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hay `## Verificar
+en el PC`. Sin umbral nuevo (usa `MUESTRA_CORTE`).
+
+Veredicto: `aprobado`.
 
 ## Para el humano
