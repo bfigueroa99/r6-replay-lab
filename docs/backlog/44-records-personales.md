@@ -1,8 +1,8 @@
 # 44. Records personales en el Resumen
 
-estado: disenado
+estado: en curso 2026-10-14
 candado: -
-rama: -
+rama: claude/equipo-dev/44-records-personales
 tipo: funcionalidad
 epica: progreso
 area: fullstack
