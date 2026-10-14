@@ -155,6 +155,24 @@ test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page 
   expect(errores).toEqual([])
 })
 
+test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  const panel = page.locator('section.panel', { hasText: 'Tus récords' })
+  await expect(panel).toBeVisible()
+  const fila = panel.locator('tr', { hasText: 'Más bajas en una partida' })
+  await expect(fila).toBeVisible()
+  // el enlace tiene que abrir la partida del record, no una cualquiera
+  const respuesta = await page.request.get('/api/overview/')
+  const { match_id: matchId, map } = (await respuesta.json()).records.most_kills_match
+  await fila.getByRole('link').click()
+  await expect(page).toHaveURL(new RegExp(`/partidas/${matchId}$`))
+  await expect(page.locator('h1')).toContainText(map)
+
+  expect(errores).toEqual([])
+})
+
 test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
