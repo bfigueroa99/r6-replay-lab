@@ -76,6 +76,20 @@ test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra las rondas segun el marcador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Según el marcador' })
+  await expect(panel).toBeVisible()
+  // seed_demo gana las rondas pares: llega empatado a las pares y adelante a las impares
+  await expect(panel.getByRole('cell', { name: 'Adelante', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Empatado', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Sin marcador', exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')

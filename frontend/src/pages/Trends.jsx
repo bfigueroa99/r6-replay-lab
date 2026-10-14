@@ -57,6 +57,7 @@ const RONDA_ANTERIOR = {
   after_loss: 'Después de perder',
   no_previous: 'Sin ronda anterior',
 }
+const MARCADOR = { ahead: 'Adelante', tied: 'Empatado', behind: 'Atrás', unknown: 'Sin marcador' }
 
 /** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
 function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
@@ -115,6 +116,10 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     lado: LADOS[row.side] || row.side,
   }))
   const porAnterior = data.by_previous_round ?? []
+  // sin marcador es ruido de replays viejos: solo se muestra si tiene rondas
+  const porMarcador = (data.by_score_state ?? []).filter(
+    (row) => row.score_state !== 'unknown' || row.rounds > 0,
+  )
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
   const salida = data.spawn_exit
@@ -430,6 +435,25 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             etiquetas={RONDA_ANTERIOR}
             rowKey="previous"
             csvName="ronda-anterior"
+          />
+        </Panel>
+      ) : null}
+
+      {porMarcador.length ? (
+        <Panel
+          title="Según el marcador"
+          hint={
+            filasConPocaMuestra(porMarcador).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Cómo rindes según cómo iba la partida antes de la ronda.'
+          }
+        >
+          <TablaDeCorte
+            filas={porMarcador}
+            columna="Marcador"
+            etiquetas={MARCADOR}
+            rowKey="score_state"
+            csvName="segun-marcador"
           />
         </Panel>
       ) : null}
