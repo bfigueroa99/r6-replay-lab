@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-14T23:11Z
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo

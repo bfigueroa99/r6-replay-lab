@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-14T23:11Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
