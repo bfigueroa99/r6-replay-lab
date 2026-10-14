@@ -90,6 +90,22 @@ test('Tendencias muestra las rondas segun el marcador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra el match point', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Match point', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo es ranked Y9S4: la ronda 5 llega 3-2 (tu match point) y la 6 llega 3-3 (prorroga)
+  await expect(panel.getByRole('cell', { name: 'Tu match point', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Sin match point', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Sin marcador o sin regla', exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

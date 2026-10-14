@@ -50,6 +50,13 @@ const RONDA_ANTERIOR = {
   no_previous: 'Sin ronda anterior',
 }
 const MARCADOR = { ahead: 'Adelante', tied: 'Empatado', behind: 'Atrás', unknown: 'Sin marcador' }
+const MATCH_POINT = {
+  mine: 'Tu match point',
+  theirs: 'Match point rival',
+  both: 'Los dos a una ronda',
+  normal: 'Sin match point',
+  unknown: 'Sin marcador o sin regla',
+}
 // las etiquetas se arman una vez: la clave del backend es la hora de inicio de la franja
 const FRANJAS = Object.fromEntries([0, 3, 6, 9, 12, 15, 18, 21].map((h) => [h, `${h}–${h + 3} h`]))
 const DIAS = Object.fromEntries(
@@ -138,6 +145,9 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   // sin marcador es ruido de replays viejos: solo se muestra si tiene rondas
   const porMarcador = (data.by_score_state ?? []).filter(
     (row) => row.score_state !== 'unknown' || row.rounds > 0,
+  )
+  const porMatchPoint = (data.by_match_point ?? []).filter(
+    (row) => row.match_point !== 'unknown' || row.rounds > 0,
   )
   const cierres = filasDeCierre(data.round_endings)
   const porHora = data.by_hour ?? []
@@ -473,6 +483,25 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             etiquetas={MARCADOR}
             rowKey="score_state"
             csvName="segun-marcador"
+          />
+        </Panel>
+      ) : null}
+
+      {porMatchPoint.length ? (
+        <Panel
+          title="Match point"
+          hint={
+            filasConPocaMuestra(porMatchPoint).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Rondas que podían cerrar la partida. Por ahora solo ranked: los otros modos no tienen regla confirmada.'
+          }
+        >
+          <TablaDeCorte
+            filas={porMatchPoint}
+            columna="Match point"
+            etiquetas={MATCH_POINT}
+            rowKey="match_point"
+            csvName="match-point"
           />
         </Panel>
       ) : null}
