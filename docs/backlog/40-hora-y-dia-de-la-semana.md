@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
-estado: revisado
-candado: qa 2026-10-14T07:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/40-hora-y-dia-de-la-semana
 tipo: funcionalidad
 epica: progreso
@@ -177,6 +177,54 @@ Ficha:
 
 Veredicto: aprobar.
 
+## QA 2026-10-14 sobre fe15095
+
+(QA 20261014T0712Z. Rama ya contiene main a233a03; sin migraciones, sin parser,
+sin `recompute` nuevo. Script de siembra en el scratchpad, nunca commiteado.)
+
+- `./scripts/check.sh` -> `Todo en verde.`: ruff ok, 520 tests backend (4
+  skipped), 69 vitest, build ok, 29 e2e.
+- **by_hour / by_weekday con base vacia** (`SQLITE_PATH=<tmp>/vacia.sqlite3
+  python manage.py migrate` + `runserver`): `GET /api/trends/` con `""`,
+  `until=foo`, `since=2026-13-45`, `map=Nada`, `side=foo`, `page=-1`, `map=`,
+  `match_type=&side=`, `since=2030-01-01` -> 200, 8 franjas (`hour_from`
+  0..21) y 7 dias, todo en 0.
+- **Base sembrada con `factories.py`** (domingo 2026-09-06 23:30 x6 rondas,
+  lunes 00:30 x4, lunes 02:59:59 x2, lunes 03:00 x3, sabado 20:59 x5,
+  miercoles 13:00 x1 con un solo jugador; ronda sin bajas en cada partida):
+  `by_hour` = {0: 6, 3: 3, 12: 1, 18: 5, 21: 6, resto 0} y `by_weekday` =
+  {1: 9, 3: 1, 6: 5, 7: 6, resto 0}: el cruce domingo/lunes y el borde
+  2:59:59 / 3:00 caen donde dice el criterio.
+- **Sumas = overview** (`/api/trends/` vs `/api/overview/` -> `overall.rounds`,
+  mismos filtros): `""` 21/21/21, `map=border` 7/7/7, `side=Defense` 9/9/9,
+  `map=club-house&side=Attack` 7/7/7, `since=2026-09-07&until=2026-09-07`
+  9/9/9, `until=2026-09-06` 6/6/6, `session=0` 5/5/5, `session=foo` 0/0/0,
+  `days=abc`, `operator=Zofia`, `ranked_only=1` 21/21/21. Cero 500 en el log.
+- **seed_demo**: `by_hour` [28, 28, 28, 21, 21, 21, 28, 28] y `by_weekday`
+  [56, 56, 21, 0, 0, 14, 56], identicos al spike del diseno (suman 203).
+- **Cada fila trae las metricas de `totals()`** (38 claves + `hour_from` /
+  `weekday`).
+- **UI**: e2e `Tendencias muestra hora y dia de la semana` en verde; chunk
+  inicial `index-*.js` 185.47 kB igual que main; `Trends-*.js` (lazy) 13.78 ->
+  14.58 kB (+5.8 %).
+- **`docs/metricas.md`**: `## Cuando juegas` con las dos filas.
+- **Mutacion** (codigo roto a proposito, restaurado despues):
+  `iso_week_day` -> `week_day`: caen `test_domingo_23_30_y_lunes_00_30_...` y
+  `test_trends_con_datos_trae_hora_y_dia`; `hour__lt` -> `hour__lte`: cae
+  `test_el_borde_de_la_franja_es_la_hora_de_inicio`; sin franja 0: caen 5;
+  etiquetas de dia corridas en uno en `Trends.jsx`: cae el e2e ("Domingo" no
+  se encuentra).
+
+Veredicto: aprobado. Nada que verificar en el PC (sin migracion, parser ni
+Electron).
+
 ## Para el humano
 
-Nada por ahora.
+Avisos informativos, sin preguntas abiertas:
+
+- (QA) Con datos reales casi siempre habra alguna franja con menos de 30
+  rondas, asi que el hint del panel mostrara el aviso de muestra chica y casi
+  nunca la explicacion "Hora de inicio de la partida, tal como la guardó tu
+  PC". Si molesta, una ficha chica puede mostrar las dos frases.
+- (Revisor) Partidas con `datetime` invalido en el header caen en la hora de
+  importacion (`ingest._parse_ts`); preexistente, no bloquea.
