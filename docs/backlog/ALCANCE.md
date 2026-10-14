@@ -30,6 +30,8 @@ Semilla del 2026-10-10, verificada contra `main` 0b547d7. Reconciliado por el PO
 el 2026-10-13 contra `main` e5bad5b (PR #12 mergeado: G4, G5 e I2 en main).
 Reconciliado otra vez el 2026-10-13 (sesion 20261013T1915Z) contra `main`
 5d2aecc: B1 (#25) y D1 (#27) en main.
+Reconciliado el 2026-10-14 (sesion 20261014T0911Z) contra `main` 3438ab2:
+B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 
 ## Epicas
 
@@ -46,11 +48,12 @@ Reconciliado otra vez el 2026-10-13 (sesion 20261013T1915Z) contra `main`
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | B1 | Primera mitad, segunda mitad y prorroga | Ver si arrancar en ataque o en defensa te cambia la partida, y como rindes en prorroga | `Round.number`, `overtime_number` (`models.py:89`, guardado y sin exponer), `my_side` | S | en main |
-| B2 | Rondas bajo presion | Tu rendimiento en match point, yendo abajo y yendo arriba | `score_before` / `score_after` (`models.py:98-99`). Partida en dos tramos: adelante/empatado/atras (ficha 41) y match point (B5) | M | ficha 41 (tramo 1) |
+| B2 | Rondas bajo presion | Tu rendimiento en match point, yendo abajo y yendo arriba | `score_before` / `score_after` (`models.py:98-99`). Partida en dos tramos: adelante/empatado/atras (ficha 41) y match point (B5) | M | en main (tramo 1, ficha 41); tramo 2 es B5 |
 | B3 | Metricas por tercios de la ronda segun el reloj | Si te va peor al principio, al medio o al final de la ronda, mas alla de cuando mueres | reloj de los eventos, `death_clock`, `death_elapsed`; candidato #23 de `mercado/2026-09-16`. Nunca anclado al plant | M | idea |
-| B4 | Inercia entre rondas | Tu winrate de ronda despues de ganar la anterior contra despues de perderla: si una ronda perdida te arrastra a la siguiente | `Round.my_team_won` de la ronda `number - 1` de la misma partida (`models.py:94`); fila nueva en `docs/metricas.md`, con banda de ruido como el #10 | S | ficha 39 |
-| B5 | Match point y ronda decisiva (segundo tramo de B2) | Tu rendimiento cuando una ronda gana o pierde la partida | `score_before` + `Match.match_type`/`gamemode` para saber a cuanto se gana; las reglas por modo (prorroga, ventaja de 2) van en una tabla de `constants.py`, y un modo sin regla conocida no cuenta. Implementar despues de la ficha 41 | M | idea |
-| B6 | Como ganas y pierdes tus rondas | Por lado y mapa, cuantas rondas se cierran por eliminacion, por tiempo o por objetivo: si en defensa pierdes por tiempo o por quedarte sin gente | `Round.win_condition` y `win_condition_certain` (`models.py:95-96`), hoy solo en el detalle de una ronda. Las inferidas (plant/defuse de temporadas nuevas) van en su propia fila "inferida" y no se desglosan, por `docs/formato-rec.md` | S | idea |
+| B4 | Inercia entre rondas | Tu winrate de ronda despues de ganar la anterior contra despues de perderla: si una ronda perdida te arrastra a la siguiente | `Round.my_team_won` de la ronda `number - 1` de la misma partida (`models.py:94`); fila nueva en `docs/metricas.md`, con banda de ruido como el #10 | S | en main |
+| B5 | Match point y ronda decisiva (segundo tramo de B2) | Tu rendimiento cuando una ronda gana o pierde la partida | `score_before` + `Match.match_type`/`gamemode` para saber a cuanto se gana; las reglas por modo (prorroga, ventaja de 2) van en una tabla de `constants.py`, y un modo sin regla conocida no cuenta. Implementar despues de la ficha 41 | M | ficha 43 |
+| B6 | Como ganas y pierdes tus rondas | Por lado y mapa, cuantas rondas se cierran por eliminacion, por tiempo o por objetivo: si en defensa pierdes por tiempo o por quedarte sin gente | `Round.win_condition` y `win_condition_certain` (`models.py:95-96`), hoy solo en el detalle de una ronda. Las inferidas (plant/defuse de temporadas nuevas) van en su propia fila "inferida" y no se desglosan, por `docs/formato-rec.md` | S | ficha 42 |
+| B7 | Remontadas y derrumbes | Lista de partidas que ganaste yendo abajo por 2 o mas rondas y de las que perdiste yendo arriba por 2 o mas, con tu winrate de partida segun la diferencia en el cambio de lado: si sueltas las partidas que tienes ganadas | `Round.score_before` por ronda (mismo corte `code_version >= Y9S4` que `by_score_state`, `aggregates.py:430`) + `Match.won`; maxima diferencia a favor y en contra por partida | S | idea |
 
 ### escuadra: el equipo con el que juegas
 
@@ -59,6 +62,7 @@ Reconciliado otra vez el 2026-10-13 (sesion 20261013T1915Z) contra `main`
 | C1 | Winrate por grupo exacto de compañeros | Saber que stack completo te funciona, no solo que pares | `teammate_synergy` (`aggregates.py:383`) agrupa de a uno; `team_index` y `player` por ronda | M | idea |
 | C2 | Matriz de trades del equipo | Quien venga a quien, y a quien nadie venga | `Event.traded` (`models.py:195`), `trade_kills`, `was_traded` (`models.py:146-147`) | M | idea |
 | C3 | Alineacion de operadores de tu equipo contra el resultado | Que combinaciones de tu lado ganan mas por mapa y lado | `RoundPlayer.operator` de tus compañeros por ronda, `operators/catalog/` | M | idea |
+| C4 | Primero de tu equipo en caer | Cuantas rondas eres el primero de tu equipo en morir (no solo la primera muerte de la ronda) y el winrate de esas rondas contra cuando cae otro: si tu forma de abrir le cuesta rondas al equipo | `RoundPlayer.death_elapsed` de las filas de tu equipo por ronda (`team_index`, `models.py:127,150`); hoy `opening_death` solo mira la primera muerte de toda la ronda | S | idea |
 
 ### rivales: los rivales de tus replays
 
@@ -74,8 +78,8 @@ Reconciliado otra vez el 2026-10-13 (sesion 20261013T1915Z) contra `main`
 |---|---|---|---|---|---|
 | E1 | Curva de aprendizaje por operador | Tu rating en las primeras N rondas con un operador contra las siguientes: si practicarlo rinde | `RoundPlayer` por operador ordenado por fecha, como `trend_by_match`; fila nueva en `docs/metricas.md` | M | idea |
 | E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
-| E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | ficha 40 |
-| E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | idea |
+| E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | en main |
+| E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | ficha 44 |
 
 ### revision-de-rondas: revisar rondas
 
@@ -130,7 +134,7 @@ esperando en el papel) o como bug si lo son. Su estado es `idea (tests)` o
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | T1 | Barrido de parametros borde sobre toda la API como test de Django | Ningun filtro raro vuelve a dar 500 (las fichas 32 y 33 salieron de barridos a mano; el PO del 2026-10-10 repitio 19 endpoints x ~50 parametros sin dejar script) | `backend/tests/test_barrido_api.py`: recorre las 18 rutas GET de `replays/urls.py` (pk 1 y 999999) con 14 variantes fijas de query (`since=foo`, `until=2026-01-01T00:00Z`, `since=0001-01-01T00:00Z`, `days=99999999999`, `days=-1`, `page=-1`, `page=abc`, `side=`, `map=%00`, `operator=;`, `session=x`, `ranked_only=2`, `table=`, `table=maps&sep=;`) con el test client sobre base vacia y sobre `seed_demo`; afirma status < 500; una ruta nueva entra sola; menos de 20 s | S | idea (tests) |
-| T3 | `seed_demo` sin `score_before` | Las metricas por marcador (fichas 41 y B5) no se ven en el e2e porque la semilla deja `score_before` vacio | `seed_demo.py`: llenar `score_before`/`score_after` coherentes con `my_team_won`; cambia numeros que afirma el e2e. Entra con la 41 si su diseno lo pide | S | idea (tests) |
+| T3 | `seed_demo` sin `score_before` | Las metricas por marcador (fichas 41 y B5) no se ven en el e2e porque la semilla deja `score_before` vacio | `seed_demo.py`: llenar `score_before`/`score_after` coherentes con `my_team_won`; cambia numeros que afirma el e2e. Entra con la 41 si su diseno lo pide | S | en main (lo hizo la ficha 41) |
 | T2 | README sin cifras de tests que se pudren | El README no miente: `README.md:248` dice 306 tests y `:392` dice 366 cuando `grep -c 'def test_' backend/tests/*.py` suma 403 en main 0949f87 | `README.md`: no afirmar cifras que cambian con cada ficha; decir "la suite completa" y remitir a `check.sh` | S | idea (deuda) |
 
 ## Cubierto por PRs abiertos que no son del equipo
