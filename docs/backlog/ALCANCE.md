@@ -34,7 +34,7 @@ Reconciliado el 2026-10-14 (sesion 20261014T0911Z) contra `main` 3438ab2:
 B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 Reconciliado el 2026-10-14 (sesion 20261014T1911Z) contra `main` f74a16f:
 B5 (43), B6 (42) y E4 (44) en main; B7 -> ficha 45, C4 -> ficha 46,
-A2 -> ficha 47; nuevas B8, B9 y F6.
+A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
 
 ## Epicas
 
@@ -86,6 +86,7 @@ A2 -> ficha 47; nuevas B8, B9 y F6.
 | E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
 | E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | en main |
 | E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | en main (ficha 44) |
+| E5 | Mapas que mejoran y mapas que empeoran | En Tendencias, junto a la comparacion de periodos que ya muestra `Trends.jsx`, por cada mapa con muestra en los dos periodos, tu rating y winrate de las ultimas N partidas contra las N anteriores, ordenado por la diferencia: en que mapa estas mejorando y cual se te esta cayendo, con la banda de ruido que ya usa la comparacion general | `compare_periods` (`aggregates.py:1316`, `_periodo_por_partidas` y `_ruido`) hoy compara el total; agruparlo por `round__match__map_slug` como `by_map`. Mapas sin muestra minima en un periodo no se listan | S | idea |
 
 ### revision-de-rondas: revisar rondas
 
@@ -114,6 +115,7 @@ A2 -> ficha 47; nuevas B8, B9 y F6.
 |---|---|---|---|---|---|
 | H1 | Informe imprimible de una partida | Una pagina limpia para imprimir o guardar como PDF desde el navegador y mandarsela a quien te entrena | detalle de partida; solo CSS de impresion, sin dependencias | S | idea |
 | H2 | CSV por ronda y jugador | Cada fila de `RoundPlayer` exportable para analizar por fuera | tabla nueva en `export.py`; sin `assists` ni `score` | S | idea |
+| H3 | CSV de las tablas nuevas de Tendencias | Exportar mitades, inercia, marcador, match point, cierres de ronda y hora/dia como las demas tablas, para analizarlas en una planilla | `TABLES` de `export.py:22` hoy no incluye `by_half`, `by_previous_round`, `by_score_state`, `by_match_point`, `round_endings`, `by_hour` ni `by_weekday` (fichas 36-43); el selector de Exportar las toma de `export.tables()` | S | idea |
 
 ### escritorio: app de escritorio
 
