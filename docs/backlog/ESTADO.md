@@ -1,46 +1,43 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-13 23:45 UTC por qa (sesion 20261013T2311Z; motivo: por estado: 1 revisado; reloj: release, franja 0)
+actualizado: 2026-10-14 00:40 UTC por release (sesion 20261014T0012Z; motivo: por estado: 1 aprobado; reloj: release, franja 0)
 playbook: origin/main@5d2aecc
-rutina: TURNOS_SIN_RASTRO=3 en 48 h (10-11T21:01Z 10-12T00:01Z 10-12T03:01Z) | 12 de 47 en 7 dias
+rutina: TURNOS_SIN_RASTRO=2 en 48 h (10-12T00:01Z 10-12T03:01Z) | 12 de 48 en 7 dias; sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas | link | PR |
-|---|---|---|---|---|---|
-| claude/equipo-dev/39-inercia-entre-rondas | 39-inercia-entre-rondas | aprobado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/39-inercia-entre-rondas?expand=1 | no |
+Vacia: la 39 se mergeo a main (PR #28, merge 2a95f98).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=3
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=2
 
 ## Orden de merge sugerido
 
-Una sola rama abierta (39, aprobada), sin conflicto con main 5d2aecc. Despues de que la 39 se mergee se pueden implementar 41 y luego 40 (usan sus ayudantes).
+Sin ramas abiertas. Siguiente a implementar: 41 (marcador, usa los ayudantes de la 39, ya en main), despues 40.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:2 (36-mitades-y-prorroga 37-rivales-repetidos) otros:7.
-- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), 39 (B4, inercia) aprobada en su rama, 41 (B2 tramo 1, marcador) disenada, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) disenada.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 21 ideas libres.
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:3 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas) otros:7.
+- Epicas en curso: lado-y-marcador: B1 en main (36, PR #25), B4 en main (39, PR #28), 41 (B2 tramo 1, marcador) disenada, B5 (match point) como idea; rivales: D1 en main (37, PR #27), siguientes tramos como idea; progreso: 40 (E3, hora y dia) disenada.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 21 ideas libres (B4 pasa a `en main` en el proximo turno del PO).
 - Investigacion: ninguna todavia
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 39-inercia-entre-rondas | en curso (espejo; en su rama: aprobado) | funcionalidad | lado-y-marcador | 2 | fullstack | - |
 | 40-hora-y-dia-de-la-semana | disenado | funcionalidad | progreso | 3 | fullstack | - |
 | 41-ronda-segun-el-marcador | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 
-40 y 41 dicen "implementar despues de que #39 (y #41) se mergee": esperan a la 39. Proximo turno por estado: Release (39 aprobada).
+La 39 ya esta en main: 41 y luego 40 quedan tomables. Proximo turno por estado: Dev (disenado con cola vacia).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-13 18:35 | Entrega y mergea 37 (`aprobado` -> `entregado` -> main, funcionalidad, epica rivales). Puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin commits ni comentarios humanos, diff fuera de las rutas del humano; main ac18a6e ya fusionado; `check.sh` en `Todo en verde.` sobre el head exacto 9bab1ab (493 backend, 65 vitest, build, 26 e2e). PR #27 -> merge 5d2aecc. No pudo borrar la rama (el proxy corta `git push --delete`). Espejo de 37 quitado de `backlog`. `pruebas.sh`: `PRUEBAS_OK (10)`. Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-14 00:40 | Entrega y mergea 39 (`aprobado` -> `entregado` -> main, funcionalidad, epica lado-y-marcador). Puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin commits ni comentarios humanos, diff fuera de las rutas del humano; main 5d2aecc ya fusionado; `check.sh` en `Todo en verde.` sobre el head exacto eaea5ca (503 backend, 69 vitest, build, 27 e2e). PR #28 -> merge 2a95f98. No pudo borrar la rama (403 del proxy en `git push --delete`). Espejo de 39 quitado de `backlog`. `pruebas.sh`: `PRUEBAS_OK (10)`. Rutina: sin herramientas para comparar el prompt. |
 | revisor | 2026-10-13 22:30 | Revisa 39 (`implementado` -> `revisado`): revision ciega con `revision.md` sin hallazgos, confirmada por el lider (los 6 criterios con test; con `seed_demo` las tres filas suman el total en todo, `side=Attack`, `side=Defense` y `map=oregon`). Agrega `test_el_filtro_de_operador_no_cambia_la_ronda_anterior` (verde). Main 5d2aecc ya fusionado; `check.sh` en `Todo en verde.` (503 backend, 69 vitest, build, 27 e2e). |
 | dev | 2026-10-13 21:20 | Implementa 39 (`disenado` -> `implementado`, rama `claude/equipo-dev/39-inercia-entre-rondas`): `by_previous_round` en `/api/trends/` (ronda `number - 1` leida de la partida entera), ayudantes `_filas_por_tramo`, `TablaDeCorte` y `muestra.js`, panel "Después de ganar o perder la ronda anterior" en Tendencias con CSV y aviso bajo 30 rondas, seccion `## Contexto de la ronda` en `metricas.md`, 9 tests backend, 4 vitest, e2e que afirma 0 %/100 % con `seed_demo`. Revision ciega: 4 menores, corregidos. `check.sh` en `Todo en verde.` (502 backend, 69 vitest, build, 27 e2e). |
 | qa | 2026-10-13 23:45 | Prueba 39 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (503 backend, 69 vitest, build, 27 e2e), sin conflicto con main 5d2aecc. Base vacia y base sembrada con `factories.py` (ronda faltante, anterior sin resultado, partida de una ronda, nick repetido, ronda sin bajas): `by_previous_round` da 2/1/4 como se esperaba a mano y suma igual que `overview` con `side`, `map`, `days`, `operator`; filtros raros 200. UI en Chromium con el aviso de muestra chica, consola limpia. Chunk inicial sin cambio (185.47 kB). 5 mutaciones caen. Sin pushes de codigo. |
@@ -49,7 +46,7 @@ Una sola rama abierta (39, aprobada), sin conflicto con main 5d2aecc. Despues de
 
 ## Para el humano
 
-- Ramas borrables (ya mergeadas o sin codigo). El turno no pudo borrarlas: el proxy de la sesion corta `git push --delete` (`fatal: the remote end hung up unexpectedly`). Pegar en tu PC:
+- Ramas borrables (ya mergeadas o sin codigo). El turno no pudo borrarlas: el proxy de la sesion corta `git push --delete` (`HTTP 403`, `fatal: the remote end hung up unexpectedly`). Pegar en tu PC:
   - `git push origin --delete claude/equipo-dev/30-tests-ganador-de-ronda` (mergeada, PR #15)
   - `git push origin --delete claude/equipo-dev/31-tests-stats-por-jugador` (mergeada, PR #16)
   - `git push origin --delete claude/equipo-dev/32-days-enorme-da-500` (mergeada, PR #17)
@@ -59,12 +56,13 @@ Una sola rama abierta (39, aprobada), sin conflicto con main 5d2aecc. Despues de
   - `git push origin --delete claude/equipo-dev/36-mitades-y-prorroga` (mergeada, PR #25)
   - `git push origin --delete claude/equipo-dev/38-dos-ganadores-por-ronda` (mergeada, PR #26)
   - `git push origin --delete claude/equipo-dev/37-rivales-repetidos` (mergeada, PR #27)
+  - `git push origin --delete claude/equipo-dev/39-inercia-entre-rondas` (mergeada, PR #28)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo commit de reclamo)
-- Rutina: 3 disparos sin rastro en 48 h (10-11T21:01Z 10-12T00:01Z 10-12T03:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Rutina: 2 disparos sin rastro en 48 h (10-12T00:01Z 10-12T03:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
-- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas antes que las fichas 39-41, el Dev resuelve el choque en `aggregates.py` y la 41 en `seed_demo.py` (P3).
+- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas antes que las fichas 40-41, el Dev resuelve el choque en `aggregates.py` y la 41 en `seed_demo.py` (P3).
 - Preguntas abiertas:
-  - **Ficha 39 (aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
+  - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
   - ~~Boton de backup y `REPLAY_DIR` desde la UI~~: resuelto por el #12 (main eb2633c), que suma `POST /api/settings/` y `POST /api/backup/` a `CLAUDE.md`. El PO ya no las tiene que esperar.
   - **Ficha 38 ya en main (PR #26):** manda la cabecera sobre el kill feed para el ganador de la ronda desde Y9S4. Si preferis que mande el feed y se corrija el marcador, pedilo en `## Para el equipo`.
   - **1vX con `PLAYER_LEAVE` (aviso de la ficha 31, ya en main):** si un compañero se desconecta, el ultimo vivo que gana 1v1 queda con `1vX == 0` porque el que se fue no cuenta como muerto. ¿Debe contar? Decision de producto; no se toca hasta que digas.
