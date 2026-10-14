@@ -1,7 +1,7 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
-estado: implementado
-candado: revisor 2026-10-14T02:11Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/41-ronda-segun-el-marcador
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B2 (rondas bajo presion), primer tramo; el match point queda para el segundo
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/factories.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_marcador.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z, revisor 20261014T0211Z
 
 ## PR
 
@@ -164,6 +164,37 @@ sin reimportar). Por eso:
 
 Fuera de `archivos:` no se toco nada. Verificacion: `check.sh` en
 `Todo en verde.` (512 tests backend, 69 frontend, build ok, 28 e2e).
+
+## Revision 2026-10-14 sobre 7838fdc
+
+(Revisor 20261014T0211Z. Revision ciega con `revision.md` sobre el diff sin
+`docs/backlog`, despues confirmada por el lider.)
+
+Sin hallazgos.
+
+- Criterios: `by_score_state` en `/api/trends/` con orden fijo
+  (`test_las_cuatro_filas_salen_en_orden_fijo`); `unknown` para largo != 2
+  (`test_marcador_vacio_o_de_otro_largo_va_a_sin_marcador`); suma igual a
+  `overview` con filtros (`test_las_filas_suman_las_rondas_del_resumen`);
+  0-0/1-0/1-1/1-2 y equipo 1 al reves con winrate
+  (`test_cero_cero_..._desde_tu_lado`, `test_siendo_el_equipo_uno_...`);
+  panel, CSV, aviso de muestra chica y `unknown` oculto (Trends.jsx + e2e
+  `Tendencias muestra las rondas segun el marcador`); fila en
+  `docs/metricas.md`; base vacia y filtros raros 200
+  (`test_base_vacia_y_filtros_raros_...`).
+- Desvio Y9S4 confirmado: `pydissect/header.py:146` pone `startingScore` en 0
+  antes de Y9S4 e `ingest.py:208` guarda `[0, 0]`; el filtro
+  `round__match__code_version__gte=Y9S4` es necesario y lo cubre
+  `test_antes_de_y9s4_...`. Fuera del parser `code_version` solo lo lee
+  `by_score_state`, asi que el default nuevo de `factories.make_match` y el
+  de `seed_demo` no mueven otros numeros.
+- Reglas: sin dependencias, sin escrituras, `pydissect/` sigue sin Django,
+  UI con tildes, identificadores sin tildes, sin `print`/`console.log`. El
+  diff no sale de `archivos:`.
+- `check.sh` en `Todo en verde.` sobre 7838fdc (main 2a95f98 ya fusionado):
+  512 tests backend, 69 frontend, build ok, 28 e2e.
+
+Veredicto: aprobar.
 
 ## Para el humano
 
