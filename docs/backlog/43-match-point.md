@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
-estado: implementado
-candado: revisor 2026-10-14T16:11Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/43-match-point
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B5, segundo tramo de B2 (rondas bajo presion); el primer tramo (adelante/empatado/atras) entro con la ficha 41
 archivos: backend/replays/analytics/reglas_partida.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_match_point.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z, revisor 20261014T1611Z
 
 ## PR
 
@@ -226,6 +226,50 @@ nada; la consulta dependia del orden de la tupla de reglas).
 
 Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
 80 frontend, build ok, 32 e2e).
+
+## Revision 2026-10-14 sobre 2fd322c
+
+(revisor 20261014T1611Z; main ya fusionado, sin merge necesario)
+
+Revision ciega (subagente con `revision.md`, sin leer el plan): sin
+hallazgos, veredicto aprobar. Confirmado por el lider leyendo el diff:
+3-2 `mine`, 3-3 `normal`, 4-3 `mine`, 4-4 `both`, 2-3 `theirs`; 4-0 cae en
+`normal`; sin regla, sin marcador, Y9S3 y marcador de tres equipos van a
+`unknown`; las cinco filas suman por construccion (`unknown` es el
+complemento de `con_regla`).
+
+Criterios:
+
+- Tabla de reglas con tipo inventado a "sin regla":
+  `test_un_tipo_sin_regla_va_a_unknown_y_no_a_normal`,
+  `test_quick_match_sin_fuente_va_a_unknown`, `test_regla_para_*`.
+- `GET /api/trends/` con las cinco filas que suman todo:
+  `test_las_cinco_filas_salen_en_orden_y_suman_todas_tus_rondas`,
+  `test_trends_con_datos_trae_el_match_point`,
+  `test_base_vacia_y_filtros_raros_dan_cinco_filas_en_cero`.
+- Reusa `score_before` con el corte Y9S4: `_marcador_conocido` extraido sin
+  tocar `test_marcador.py` (en verde); `test_una_partida_y9s3_va_a_unknown`.
+- Panel en Tendencias + e2e: `Tendencias muestra el match point` (seed_demo
+  sin tocar, numeros verificados contra `score_before` del seed).
+- Fila en `docs/metricas.md`: presente.
+
+Mutacion: `objetivo` sin prorroga tumba 5 tests (3-3, 4-3, tramos, suma,
+API); `unknown` calculado sobre `conocido` en vez de `qs` tumba 2 (Y9S3 y
+marcador vacio).
+
+Menores, no bloquean: `regla_para` solo la usan los tests (la consulta arma
+los tramos de version por su cuenta, cubierto por
+`test_con_dos_reglas_cada_partida_usa_la_de_su_version`); la fila de
+`metricas.md` nombra unranked, rapida y custom pero no `Standard` (id 8 de
+`MATCH_TYPES`), que tambien cae en "Sin marcador o sin regla".
+
+Estilo: sin tildes en codigo, UI con tildes, sin `print` ni `console.log`.
+Archivos: todos dentro de `archivos:`.
+
+Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
+80 frontend, build ok, 32 e2e).
+
+Veredicto: aprobar.
 
 ## Para el humano
 
