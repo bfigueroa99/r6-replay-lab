@@ -292,6 +292,93 @@ def recent_form(limit: int = 10, **filters) -> list[dict]:
     return out
 
 
+#: Minimos de los records: una partida de 3 rondas o un dia de una sola
+#: partida ganada 4-0 no son una marca.
+RECORD_MIN_RONDAS_PARTIDA = 6
+RECORD_MIN_RONDAS_DIA = 20
+
+
+def _record_de_partida(fila: dict | None, valor: str) -> dict | None:
+    if fila is None:
+        return None
+    return {
+        "match_id": fila["round__match_id"],
+        "played_at": fila["round__match__played_at"].isoformat(),
+        "map": fila["round__match__map_name"],
+        "value": fila[valor],
+        "rounds": fila["rounds"],
+    }
+
+
+def _record_de_ronda(rp: RoundPlayer | None, valor: str) -> dict | None:
+    if rp is None:
+        return None
+    return {
+        "match_id": rp.round.match_id,
+        "played_at": rp.round.match.played_at.isoformat(),
+        "map": rp.round.match.map_name,
+        "value": getattr(rp, valor),
+        "round_label": f"R{rp.round.number + 1}",
+    }
+
+
+def personal_records(**filters) -> dict:
+    """Tus mejores marcas con los filtros activos; `None` si no hay candidato.
+
+    A igual valor gana lo mas reciente: igualar un record lo mueve a la
+    partida nueva, que es la que el usuario quiere volver a mirar.
+    """
+    qs = base_queryset(**filters)
+    baseline = rating_baseline()
+    partidas = [
+        derive(dict(raw), baseline)
+        for raw in qs.values(*_MATCH_FIELDS).annotate(**AGGREGATES)
+    ]
+    # max() se queda con el primero de los empatados: ordenar de la mas
+    # reciente a la mas vieja hace que el empate lo gane la mas reciente
+    partidas.sort(key=lambda fila: fila["round__match__played_at"], reverse=True)
+
+    con_rating = [
+        fila for fila in partidas
+        if fila["rounds"] >= RECORD_MIN_RONDAS_PARTIDA and fila["rating"] is not None
+    ]
+    mejor = max(con_rating, key=lambda fila: fila["rating"], default=None)
+    con_bajas = [fila for fila in partidas if fila["kills"] > 0]
+    mas_bajas = max(con_bajas, key=lambda fila: fila["kills"], default=None)
+
+    orden_ronda = ("-round__match__played_at", "-round__number")
+    ronda = qs.filter(kills__gt=0).order_by("-kills", *orden_ronda).first()
+    clutch = qs.filter(one_vx__gt=0, won=True).order_by("-one_vx", *orden_ronda).first()
+
+    dias = (
+        qs.values(day=F("round__match__played_at__date"))
+        .annotate(rounds=Count("id"), rounds_won=Count("id", filter=Q(won=True)))
+        .filter(rounds__gte=RECORD_MIN_RONDAS_DIA)
+    )
+    dia = max(
+        dias,
+        key=lambda fila: (fila["rounds_won"] / fila["rounds"], fila["rounds_won"], fila["day"]),
+        default=None,
+    )
+
+    return {
+        "best_match_rating": _record_de_partida(mejor, "rating"),
+        "most_kills_match": _record_de_partida(mas_bajas, "kills"),
+        "most_kills_round": _record_de_ronda(ronda, "kills"),
+        "biggest_clutch": _record_de_ronda(clutch, "one_vx"),
+        "best_day": (
+            {
+                "day": dia["day"].isoformat(),
+                "value": _pct(dia["rounds_won"], dia["rounds"]),
+                "rounds": dia["rounds"],
+                "rounds_won": dia["rounds_won"],
+            }
+            if dia
+            else None
+        ),
+    }
+
+
 def by_map(min_rounds: int = 1, **filters) -> list[dict]:
     qs = base_queryset(**filters)
     rows = group_by(

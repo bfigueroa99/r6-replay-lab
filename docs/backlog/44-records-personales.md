@@ -1,7 +1,7 @@
 # 44. Records personales en el Resumen
 
-estado: en curso 2026-10-14
-candado: dev 2026-10-14T11:21Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/44-records-personales
 tipo: funcionalidad
 epica: progreso
@@ -161,5 +161,36 @@ records y cada enlace abre su partida; con `?map=Border` cambian.
 base real (a `## Para el humano` si QA lo confirma solo con sinteticos).
 
 ## Implementacion
+
+(dev 20261014T1115Z)
+
+Quedo todo el diseno, sin desvios de `archivos:`:
+
+- `aggregates.personal_records(**filters)` despues de `recent_form`, con
+  `RECORD_MIN_RONDAS_PARTIDA = 6` y `RECORD_MIN_RONDAS_DIA = 20`. Por partida
+  usa el mismo `values(*_MATCH_FIELDS).annotate(**AGGREGATES)` + `derive` de
+  `recent_form`, ordenado de la mas reciente a la mas vieja para que `max()`
+  le de el empate a la mas reciente. Ronda y clutch con `order_by` sobre
+  `-kills`/`-one_vx`, `-played_at`, `-number`. Mejor dia por
+  `played_at__date`, con desempate rondas ganadas y despues dia mas reciente.
+  Sin candidato, `None`; sin bajas en ninguna ronda, tambien `None`.
+- `views.overview` agrega `records` (en la vista, no en `agg.overview`, para
+  que el coach no pague las consultas).
+- `frontend/src/records.js` (`filasDeRecords`) + `records.test.js` (5 tests).
+- Panel "Tus récords" en el Resumen despues de "Ultimas partidas": tabla
+  Récord / Marca / Dónde, con `Link` a `/partidas/<id>` salvo el mejor dia.
+- Tests: `backend/tests/test_records.py`, los 10 del diseno mas
+  `test_sin_bajas_no_inventa_un_record_de_cero` y
+  `test_base_vacia_y_filtros_raros_dan_200_con_records_nulos`; e2e
+  `el Resumen muestra tus records y enlaza a la partida`.
+- Seccion `## Records` en `docs/metricas.md` despues de `## Sesiones`.
+
+Revision ciega previa: un hallazgo (E501 en `aggregates.py`, dejaba rojo el
+lint) y lineas en blanco fuera del estilo; corregidos.
+
+Choque esperado con la 42 (`claude/equipo-dev/42-como-se-cierran-tus-rondas`):
+las dos agregan bloques en `aggregates.py`, `views.py`, `humo.spec.js` y
+`metricas.md`, en lugares distintos. La que se mergee segunda hace
+`git merge origin/main` y queda con los dos bloques.
 
 ## Para el humano
