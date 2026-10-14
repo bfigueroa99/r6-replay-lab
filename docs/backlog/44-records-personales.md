@@ -1,7 +1,7 @@
 # 44. Records personales en el Resumen
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-14T12:12Z
 rama: claude/equipo-dev/44-records-personales
 tipo: funcionalidad
 epica: progreso
