@@ -102,6 +102,9 @@ esa partida sigue siendo la tercera de su noche.
 | **Curva de la sesion** | Las metricas de siempre (winrate, KPR, aperturas, momento de la muerte) cortadas por posicion. Responde "juego peor despues de la tercera" con el numero. |
 | **Caida de sesion** | Diferencia en puntos de winrate entre las 2 primeras partidas y de la 3a en adelante. El coach opina desde 30 rondas de cada lado y 10 puntos de diferencia. |
 
+El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
+con el que mas conviene es la forma barata de encontrar patrones que no existen.
+
 ## Records
 
 El panel **Tus récords** del Resumen. Se calculan con los filtros activos. En
@@ -116,9 +119,6 @@ muestra un 0 inventado.
 | **Mas bajas en una ronda** | El maximo de bajas tuyas en una ronda, con la etiqueta de la ronda (`R1`, `R2`...). A igual valor y misma partida, la ronda mas tardia. |
 | **Clutch mas grande** | El 1vX ganado de X mas alto (`one_vx` de una ronda que tu equipo gano). Sin clutches ganados, no hay record. |
 | **Mejor dia** | El winrate de rondas mas alto en un dia con al menos 20 rondas tuyas (`RECORD_MIN_RONDAS_DIA`); empata a favor de mas rondas ganadas y despues del dia mas reciente. No enlaza a una partida. Los dos minimos son a ojo. |
-
-El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
-con el que mas conviene es la forma barata de encontrar patrones que no existen.
 
 ## Cuando juegas
 
