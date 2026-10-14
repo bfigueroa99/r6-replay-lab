@@ -173,6 +173,8 @@ def overview(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     payload = agg.overview(**filters)
     payload["data_health"] = agg.data_health(**filters)
+    # va en la vista y no en agg.overview: el coach la llama y no usa records
+    payload["records"] = agg.personal_records(**filters)
     payload["filters"] = {k: str(v) for k, v in filters.items()}
     return _ok(payload)
 
@@ -225,6 +227,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_half": agg.by_half(**filters),
             "by_previous_round": agg.by_previous_round(**filters),
             "by_score_state": agg.by_score_state(**filters),
+            "round_endings": agg.round_endings(**filters),
             "by_start_side": agg.by_start_side(**filters),
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),

@@ -90,6 +90,19 @@ test('Tendencias muestra las rondas segun el marcador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Cómo se cierran tus rondas' })
+  await expect(panel).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Ataque', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Defensa', exact: true })).toBeVisible()
+  // seed_demo cierra todo por eliminacion: los numeros los afirman los tests de backend
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra hora y dia de la semana', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -138,6 +151,24 @@ test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page 
   for (const fila of filas) {
     expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}-${fila[col('Perdidas')]}`)
   }
+
+  expect(errores).toEqual([])
+})
+
+test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  const panel = page.locator('section.panel', { hasText: 'Tus récords' })
+  await expect(panel).toBeVisible()
+  const fila = panel.locator('tr', { hasText: 'Más bajas en una partida' })
+  await expect(fila).toBeVisible()
+  // el enlace tiene que abrir la partida del record, no una cualquiera
+  const respuesta = await page.request.get('/api/overview/')
+  const { match_id: matchId, map } = (await respuesta.json()).records.most_kills_match
+  await fila.getByRole('link').click()
+  await expect(page).toHaveURL(new RegExp(`/partidas/${matchId}$`))
+  await expect(page.locator('h1')).toContainText(map)
 
   expect(errores).toEqual([])
 })
