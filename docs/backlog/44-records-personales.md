@@ -1,7 +1,7 @@
 # 44. Records personales en el Resumen
 
-estado: implementado
-candado: revisor 2026-10-14T12:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/44-records-personales
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E4 (idea del PO 20261013T1915Z); epica progreso en curso (E3 en main por la ficha 40)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_records.py, frontend/src/pages/Dashboard.jsx, frontend/src/records.js, frontend/src/records.test.js, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1115Z, revisor 20261014T1211Z
 
 ## PR
 
@@ -192,5 +192,61 @@ Choque esperado con la 42 (`claude/equipo-dev/42-como-se-cierran-tus-rondas`):
 las dos agregan bloques en `aggregates.py`, `views.py`, `humo.spec.js` y
 `metricas.md`, en lugares distintos. La que se mergee segunda hace
 `git merge origin/main` y queda con los dos bloques.
+
+## Revision 2026-10-14 sobre 1f48922
+
+(revisor 20261014T1211Z; rama al dia con main 3438ab2, sin merge necesario)
+
+Revision a ciegas (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin bugs; dos hallazgos menores, los dos confirmados por el
+lider:
+
+- [estilo] `docs/metricas.md:104-118`
+  Que pasa: la seccion `## Records` quedo entre la tabla de Sesiones y su
+  parrafo de cierre ("El corte de la 3a partida esta fijo a proposito..."),
+  que ahora se lee como si hablara de los records.
+  Como reproducirlo: leer la doc justo debajo de la tabla de records.
+  Arreglo sugerido: mover `## Records` debajo de ese parrafo, antes de
+  `## Cuando juegas`.
+- [test] `frontend/e2e/humo.spec.js:150-155`
+  Que pasa: el e2e dice "enlaza a la partida" pero pasaria con un enlace a
+  cualquier otra partida: afirma `/partidas/\d+$` y un `h1` con
+  `Club House|Border|Bank`, que son todos los mapas de `seed_demo`.
+  Arreglo sugerido: leer el mapa de la celda "Dónde" antes del clic y
+  esperarlo en el `h1`, o comparar el id de la URL con
+  `records.most_kills_match.match_id` de `/api/overview/`.
+
+Ninguno cambia un dato que ve el usuario: van al Dev como pendientes si la
+ficha vuelve, o al Release para que los arrastre al PR.
+
+Confirmado ademas: empates por orden previo (partidas) y `-played_at,
+-number` (rondas); `R{number+1}` igual que el detalle de partida;
+`played_at__date` correcto con `USE_TZ=False` y `played_at` no nulo; `one_vx`
+con `won=True`.
+
+Criterios de aceptacion:
+
+- [x] `personal_records` en `/api/overview/` (clave `records`) con los cinco
+  records, `match_id`, fecha, mapa y valor; el dia sin `match_id`: los
+  `test_mejor_rating_*`, `test_mas_bajas_*`, `test_el_clutch_*`,
+  `test_mejor_dia_*` y `test_overview_trae_los_records`.
+- [x] Empate a la mas reciente: `test_en_un_empate_gana_la_partida_mas_reciente`
+  (tres records).
+- [x] Filtros: `test_el_filtro_de_mapa_cambia_el_record_de_bajas`.
+- [x] Nulos sin candidato, sin 500: `test_base_vacia_devuelve_todos_los_records_nulos`,
+  `test_sin_clutches_*`, `test_sin_bajas_no_inventa_un_record_de_cero`,
+  `test_base_vacia_y_filtros_raros_dan_200_con_records_nulos`.
+- [x] Panel "Tus récords" con enlaces; e2e en verde (ver hallazgo de test:
+  sigue el enlace, pero no afirma que sea la partida correcta).
+- [x] Seccion `## Records` en `docs/metricas.md` con cada record, minimos y
+  desempate (ver hallazgo de estilo sobre su ubicacion).
+
+Diff dentro de `archivos:`. Identificadores y comentarios sin tildes, UI con
+tildes, sin `print` ni `console.log`. Merge de prueba con la 42: limpio.
+
+`check.sh` en verde sobre cf60533 (ruff, 532 tests backend, 74 vitest, build,
+30 e2e).
+
+Veredicto: aprobar -> `revisado` (hallazgos menores, no bloquean).
 
 ## Para el humano
