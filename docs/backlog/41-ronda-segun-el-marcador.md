@@ -1,6 +1,6 @@
 # 41. Rondas segun el marcador: adelante, empatado o atras
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/41-ronda-segun-el-marcador
 tipo: funcionalidad
@@ -9,229 +9,95 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B2 (rondas bajo presion), primer tramo; el match point queda para el segundo
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/factories.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_marcador.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z, revisor 20261014T0211Z, qa 20261014T0311Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0111Z, revisor 20261014T0211Z, qa 20261014T0311Z, release 20261014T0411Z
 
 ## PR
 
-(La escribe el Release manager al final.)
+**Titulo:** `[equipo-dev][fullstack] Rondas segun el marcador en Tendencias`
+
+### Que cambia
+
+Tendencias suma el panel "Según el marcador": como rindes en las rondas que
+empezaste adelante, empatado o atras en el marcador (con CSV y aviso de
+muestra chica). `/api/trends/` devuelve `by_score_state` con cuatro filas
+fijas `ahead`, `tied`, `behind`, `unknown`.
+
+### Por que esto y no otra cosa
+
+Ficha 41, primer tramo de la epica `lado-y-marcador` (ALCANCE B2, rondas
+bajo presion). Es la parte que no depende de las reglas de cada modo; match
+point y ronda decisiva quedan para el segundo tramo.
+
+### Como se probo
+
+- `./scripts/check.sh` en `Todo en verde.` sobre la rama con `main` fusionado:
+  512 tests backend (4 skipped), 69 frontend, build ok, 28 e2e.
+- Tests nuevos (`backend/tests/test_marcador.py`): orden fijo de filas;
+  0-0/1-0/1-1/1-2 desde tu lado; equipo 1 lee el marcador al reves; `[]`,
+  `[1]`, `[1,2,3]` y equipo fuera de 0/1 van a sin marcador; replays antes
+  de Y9S4 (que siempre traen 0-0) van a sin marcador y no a empate; la suma
+  de filas es igual a las rondas de `/api/overview/`; base vacia y filtros
+  raros dan 200. E2E `Tendencias muestra las rondas segun el marcador`.
+- QA: con la semilla 87 adelante / 116 empatado / 0 atras / 0 sin marcador
+  (203 rondas); mutacion de 4 puntos de `by_score_state`, todas caen; chunk
+  inicial sin cambio (185503 bytes).
+
+### Riesgos y lo que no entra
+
+Sin migracion ni `recompute`: el estado se calcula al consultar desde
+`Round.score_before` y `Match.code_version`, asi que bases ya importadas lo
+ven sin reimportar. Replays anteriores a Y9S4 no traen el marcador real y
+caen en "Sin marcador" (visible solo si tiene rondas). `seed_demo` ahora
+llena `score_before` y `code_version=Y9S4`; ningun otro numero del seed
+cambia. Fuera: match point y ronda decisiva.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+
+Abrir `http://localhost:8000/tendencias`: panel "Según el marcador" con
+"Adelante" y "Empatado" y sin fila "Sin marcador". En
+`http://localhost:8000/api/trends/`, `by_score_state` trae 87 / 116 / 0 / 0.
+
+### Para el humano
+
+Nada. Con tu base real, si la mayoria de las rondas cae en "Sin marcador"
+es porque son replays anteriores a Y9S4: es lo esperado.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
 Ver como rindes segun como va la partida antes de la ronda: yendo adelante,
-empatado o atras en el marcador. Es la mitad de "rondas bajo presion" que no
-depende de las reglas de cada modo, asi que sirve igual en ranked, unranked o
-rapida.
+empatado o atras. Sirve igual en ranked, unranked o rapida.
 
-## Criterios de aceptacion
+## Diseno (resumen)
 
-- [ ] `GET /api/trends/` devuelve `by_score_state`: cuatro filas en orden fijo
-      `ahead`, `tied`, `behind`, `unknown`, con las metricas de `totals()`.
-      El estado sale de `Round.score_before` (`[equipo0, equipo1]`, de
-      `startingScore` en `ingest.py:208`) comparando tu equipo
-      (`RoundPlayer.team_index` de tu fila) contra el otro.
-- [ ] Va a `unknown` la ronda con `score_before` vacio o con largo distinto
-      de 2. La suma de `rounds` de las cuatro filas es igual a `rounds` de
-      `/api/overview/` con los mismos filtros (test).
-- [ ] Test con una partida 0-0, 1-0, 1-1, 1-2 desde tu lado, con tu equipo
-      como equipo 1 en al menos una partida (el indice del equipo no puede
-      darse vuelta sin que el test caiga).
-- [ ] Tendencias muestra el panel "Según el marcador" con las filas
-      conocidas, CSV y aviso de muestra chica bajo 30 rondas; `unknown` solo
-      se muestra si tiene rondas.
-- [ ] `docs/metricas.md` tiene la fila. `seed_demo` hoy no llena
-      `score_before`: si el diseno lo llena, los numeros del e2e cambian y se
-      ajustan en la misma ficha (CLAUDE.md); si no lo llena, el e2e afirma
-      el panel con todo en `unknown` oculto y un aviso de "sin marcador".
-- [ ] Base vacia y filtros raros devuelven 200.
-
-## Fuera de alcance
-
-- Match point y ronda decisiva: dependen de las reglas de cada modo (a cuanto
-  se gana, prorroga). Segundo tramo de B2, como idea en `ALCANCE.md`.
-- Inercia de la ronda anterior: ficha 39.
-
-## Diseno
-
-(Arquitecto 20261013T2011Z, sobre main 5d2aecc. Spike en el scratchpad:
-`KeyTransform` + `Cast` sobre `score_before` funciona en SQLite y
-`[]`/`[1]` caen en unknown.)
-
-**Implementar despues de que #39 se mergee**: usa `_filas_por_tramo`,
-`TablaDeCorte` y `muestra.js` que crea la 39 y toca los mismos archivos
-(prioriza, no bloquea: si se implementa antes, crear esos ayudantes con los
-mismos nombres y firmas que dice el diseno de la 39).
-
-**Decision: `seed_demo` llena `score_before`.** Asi el e2e ve filas reales.
-Para la ronda `n` (numerada desde 0, ganas las pares): `score_before=[(n + 1) // 2, n // 2]`
-(tu equipo es el 0). Resultado con la semilla: pares -> `tied`, impares ->
-`ahead`, `behind` en 0. Ningun otro numero del seed cambia (`score_before`
-solo lo lee `MatchDetail`, que pasa de mostrar "marcador " vacio a "0-0";
-el e2e no lo afirma). Correr `test_seed_demo.py`.
-
-**Archivos y por que**
-
-- `backend/replays/analytics/aggregates.py`:
-  - `MARCADOR = ("ahead", "tied", "behind", "unknown")`.
-  - `by_score_state(**filters)`:
-    ```python
-    s0 = Cast(KeyTransform("0", "round__score_before"), IntegerField())
-    s1 = Cast(KeyTransform("1", "round__score_before"), IntegerField())
-    qs = base_queryset(**filters).annotate(s0=s0, s1=s1, s2=KeyTransform("2", "round__score_before"))
-    qs = qs.annotate(
-        mio=Case(When(team_index=0, then=F("s0")), When(team_index=1, then=F("s1"))),
-        suyo=Case(When(team_index=0, then=F("s1")), When(team_index=1, then=F("s0"))),
-    )
-    conocido = qs.filter(mio__isnull=False, suyo__isnull=False, s2__isnull=True)
-    ```
-    tramos `ahead: conocido.filter(mio__gt=F("suyo"))`, `tied: ...mio=F("suyo")`,
-    `behind: ...mio__lt=F("suyo")`, `unknown: qs.exclude(pk__in=conocido.values("pk"))`.
-    `team_index` es el de tu `RoundPlayer` (el queryset es `is_me=True`);
-    un `team_index` fuera de 0/1 deja `mio` nulo y cae en `unknown`.
-    Devuelve `_filas_por_tramo("score_state", tramos)`.
-    Comentario de por que `s2`: un marcador de mas de dos equipos no se
-    puede leer como tuyo contra el otro.
-- `backend/replays/views.py`: `"by_score_state": agg.by_score_state(**filters)` en `trends`.
-- `backend/replays/management/commands/seed_demo.py`: `score_before` en
-  `Round.objects.create` de `_ronda` como arriba.
-- `backend/tests/factories.py`: `make_round(..., score_before: list | None = None)`
-  -> `score_before=score_before or []`.
-- `frontend/src/pages/Trends.jsx`: panel "Según el marcador" despues del de
-  ronda anterior, con `TablaDeCorte`; etiquetas `ahead` "Adelante", `tied`
-  "Empatado", `behind` "Atrás", `unknown` "Sin marcador". La fila `unknown`
-  se filtra si tiene 0 rondas. Hint: "Cómo rindes según cómo iba la partida
-  antes de la ronda." y el aviso de `filasConPocaMuestra` como en la 39.
-  `csvName="segun-marcador"`.
-- `docs/metricas.md`: en `## Contexto de la ronda` (la crea la 39) la fila
-  **Segun el marcador** (marcador al empezar la ronda, de `startingScore`;
-  tu equipo contra el otro; sin marcador o con otro largo que 2 va a "Sin
-  marcador"; no depende de a cuanto se gana el modo).
-- `backend/tests/test_marcador.py` (nuevo):
-  - `test_las_cuatro_filas_salen_en_orden_fijo`
-  - `test_cero_cero_uno_cero_uno_uno_uno_dos_desde_tu_lado` (equipo 0:
-    `[0,0]` tied, `[1,0]` ahead, `[1,1]` tied, `[1,2]` behind)
-  - `test_siendo_el_equipo_uno_el_marcador_se_lee_al_reves` (otra partida
-    con `make_round_player(team_index=1)` y `[2,1]` -> behind, `[0,3]` -> ahead)
-  - `test_marcador_vacio_o_de_otro_largo_va_a_sin_marcador` (`[]`, `[1]`, `[1,2,3]`)
-  - `test_las_filas_suman_las_rondas_del_resumen`
-  - `test_base_vacia_y_filtros_raros_dan_200_con_cuatro_filas_en_cero`
-- `frontend/e2e/humo.spec.js`: `Tendencias muestra las rondas segun el marcador`:
-  celdas "Adelante" y "Empatado" visibles, "Sin marcador" ausente
-  (`toHaveCount(0)`), consola limpia.
-
-**Orden:** factories + test -> aggregates -> views -> seed_demo ->
-Trends.jsx -> e2e -> metricas.md -> `check.sh`.
-
-**Que puede romperse:** `test_seed_demo.py` si afirma campos de `Round`;
-el e2e de detalle de partida si en algun lado lee el marcador. Sin migracion.
-Con datos reales importados antes de que `startingScore` existiera la fila
-`unknown` puede ser grande: es correcto, por eso se muestra si tiene rondas.
-
-**Verificacion manual:** `seed_demo`, `/api/trends/` -> `by_score_state`
-con 87 ahead / 116 tied / 0 behind / 0 unknown (sobre la semilla actual de
-203 rondas), y el panel en `/tendencias`.
+`aggregates.by_score_state` lee `score_before` (`[equipo0, equipo1]`) con
+`KeyTransform` + `Cast`, lo orienta segun tu `team_index` y exige largo 2 y
+`code_version >= Y9S4`; el resto va a `unknown`. Usa `_filas_por_tramo` y
+`TablaDeCorte` de la ficha 39. Detalle en `git log` de la rama.
 
 ## Implementacion
 
-(Dev 20261014T0111Z, sobre main 2a95f98.)
-
-Quedo todo el diseno:
-
-- `aggregates.by_score_state` con `MARCADOR` y `_filas_por_tramo("score_state", ...)`;
-  `"by_score_state"` en `/api/trends/`.
-- `seed_demo` llena `score_before=[(n + 1) // 2, n // 2]`: con la semilla
-  `by_score_state` da 87 ahead / 116 tied / 0 behind / 0 unknown (203 rondas,
-  verificado en una base temporal).
-- Panel "Según el marcador" en Tendencias despues del de ronda anterior, con
-  `TablaDeCorte`, CSV `segun-marcador`, aviso de muestra chica; la fila
-  "Sin marcador" se oculta si tiene 0 rondas.
-- Fila **Segun el marcador** en `docs/metricas.md` (`## Contexto de la ronda`).
-- `tests/test_marcador.py` (9 tests) y e2e `Tendencias muestra las rondas segun el marcador`.
-
-**Desvio del diseno (hallazgo de la revision ciega previa, confirmado):**
-antes de Y9S4 `pydissect/header.py` fuerza `startingScore = 0` y la ingesta
-guarda `score_before = [0, 0]` siempre, asi que con replays viejos todas las
-rondas caian en "Empatado" y `unknown` nunca se alcanzaba con datos reales.
-`by_score_state` exige ademas `round__match__code_version >= Y9S4` para el
-marcador conocido (se lee de `Match`, asi que corrige bases ya importadas
-sin reimportar). Por eso:
-- `factories.make_match` acepta `code_version` con default `Y9S4` (nadie mas
-  lee ese campo; la suite completa sigue verde).
-- `seed_demo` crea las partidas con `code_version=Y9S4`; ningun otro numero del
-  seed cambia (`code_version` no se muestra ni se agrega en ningun lado).
-- Test nuevo `test_antes_de_y9s4_el_cero_cero_es_sin_marcador_y_no_empate`
-  y `test_un_equipo_fuera_de_cero_y_uno_va_a_sin_marcador` (extra).
-- La fila de `metricas.md` lo dice.
-
-Fuera de `archivos:` no se toco nada. Verificacion: `check.sh` en
-`Todo en verde.` (512 tests backend, 69 frontend, build ok, 28 e2e).
+(Dev 20261014T0111Z.) Todo el diseno, mas el filtro Y9S4 (desvio confirmado
+por la revision: `pydissect/header.py:146` fuerza `startingScore = 0` antes
+de Y9S4). `factories.make_match` acepta `code_version` (default Y9S4).
 
 ## Revision 2026-10-14 sobre 7838fdc
 
-(Revisor 20261014T0211Z. Revision ciega con `revision.md` sobre el diff sin
-`docs/backlog`, despues confirmada por el lider.)
-
-Sin hallazgos.
-
-- Criterios: `by_score_state` en `/api/trends/` con orden fijo
-  (`test_las_cuatro_filas_salen_en_orden_fijo`); `unknown` para largo != 2
-  (`test_marcador_vacio_o_de_otro_largo_va_a_sin_marcador`); suma igual a
-  `overview` con filtros (`test_las_filas_suman_las_rondas_del_resumen`);
-  0-0/1-0/1-1/1-2 y equipo 1 al reves con winrate
-  (`test_cero_cero_..._desde_tu_lado`, `test_siendo_el_equipo_uno_...`);
-  panel, CSV, aviso de muestra chica y `unknown` oculto (Trends.jsx + e2e
-  `Tendencias muestra las rondas segun el marcador`); fila en
-  `docs/metricas.md`; base vacia y filtros raros 200
-  (`test_base_vacia_y_filtros_raros_...`).
-- Desvio Y9S4 confirmado: `pydissect/header.py:146` pone `startingScore` en 0
-  antes de Y9S4 e `ingest.py:208` guarda `[0, 0]`; el filtro
-  `round__match__code_version__gte=Y9S4` es necesario y lo cubre
-  `test_antes_de_y9s4_...`. Fuera del parser `code_version` solo lo lee
-  `by_score_state`, asi que el default nuevo de `factories.make_match` y el
-  de `seed_demo` no mueven otros numeros.
-- Reglas: sin dependencias, sin escrituras, `pydissect/` sigue sin Django,
-  UI con tildes, identificadores sin tildes, sin `print`/`console.log`. El
-  diff no sale de `archivos:`.
-- `check.sh` en `Todo en verde.` sobre 7838fdc (main 2a95f98 ya fusionado):
-  512 tests backend, 69 frontend, build ok, 28 e2e.
-
-Veredicto: aprobar.
+(Revisor 20261014T0211Z.) Sin hallazgos; cada criterio cubierto por un test
+con nombre; desvio Y9S4 confirmado. Veredicto: aprobar.
 
 ## QA 2026-10-14 sobre 3d6efd0
 
-(QA 20261014T0311Z. Se ejercito el sistema; no se releyo el diff. Base temporal en el
-scratchpad con `SQLITE_PATH`, servidor en `:8765`; nada de eso al repo.)
-
-- `./scripts/check.sh` -> `Todo en verde.`: 512 tests backend (4 skipped),
-  69 frontend, build ok, 28 e2e.
-- **Base vacia y filtros raros** (`migrate`, `runserver 8765`): `curl
-  localhost:8765/api/trends/<q>` con `q` en `""`, `?until=foo`, `?page=-1`,
-  `?map=`, `?side=`, `?since=2030-01-01`, `?match_type=Nada`, `?operator=`
-  -> 200 y `by_score_state` con `ahead, tied, behind, unknown` en 0.
-- **Semilla** (`manage.py seed_demo`, 29 partidas, 203 rondas): 87 ahead /
-  116 tied / 0 behind / 0 unknown, lo que dice el diseno.
-- **Bordes con `factories.py`** (script en `manage.py shell` sobre la base
-  sembrada): partida `code_version=0` con `[0,0]` -> unknown (no empate);
-  tu equipo 1 con `[2,1]` -> behind y `[0,3]` -> ahead; `[]`, `[1]`,
-  `[1,2,3]` -> unknown. Resultado 88 / 116 / 2 / 4 = 210.
-- **Suma contra el resumen**: `sum(by_score_state.rounds)` igual a
-  `/api/overview/ -> overall.rounds` con `""`, `?match_type=Ranked`,
-  `?until=2026-09-15` (203 = 203) y `?until=foo` (210 = 210).
-- **Pantalla** (Chromium sobre `:8765/tendencias` con la base anterior):
-  celdas "Adelante", "Empatado", "Atrás" y "Sin marcador" visibles (la
-  ultima porque tiene 4 rondas), consola sin errores. Con la semilla sola
-  el e2e confirma "Sin marcador" oculto.
-- **Chunk inicial**: `index-*.js` 185503 bytes en la rama y en `main`
-  (0 %); solo crece el chunk perezoso de Tendencias (13327 -> 13798).
-- **Mutacion** sobre `aggregates.by_score_state`, `manage.py test
-  tests.test_marcador`: quitar el filtro `code_version >= Y9S4` -> FAILED (1);
-  no invertir `mio/suyo` para el equipo 1 -> FAILED (1); quitar
-  `s2__isnull` -> FAILED (1); `ahead` con `>=` -> FAILED (3).
-- Nota, no hallazgo: un `score_before` con `null` adentro (`[None, 1]`)
-  se lee como 0 en SQLite y cae en `behind`. La ingesta no lo puede
-  producir (`header._int` siempre da entero y `ingest.py:208` usa
-  `startingScore` con default 0), asi que no se reporta.
-
-Veredicto: aprobado.
+(QA 20261014T0311Z.) check.sh verde; base vacia y filtros raros 200; semilla
+87/116/0/0; bordes con `factories.py` correctos; suma igual al resumen;
+pantalla limpia en Chromium; mutacion 4/4. Veredicto: aprobado.
 
 ## Para el humano
 
