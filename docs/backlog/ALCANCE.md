@@ -63,6 +63,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | C2 | Matriz de trades del equipo | Quien venga a quien, y a quien nadie venga | `Event.traded` (`models.py:195`), `trade_kills`, `was_traded` (`models.py:146-147`) | M | idea |
 | C3 | Alineacion de operadores de tu equipo contra el resultado | Que combinaciones de tu lado ganan mas por mapa y lado | `RoundPlayer.operator` de tus compañeros por ronda, `operators/catalog/` | M | idea |
 | C4 | Primero de tu equipo en caer | Cuantas rondas eres el primero de tu equipo en morir (no solo la primera muerte de la ronda) y el winrate de esas rondas contra cuando cae otro: si tu forma de abrir le cuesta rondas al equipo | `RoundPlayer.death_elapsed` de las filas de tu equipo por ronda (`team_index`, `models.py:127,150`); hoy `opening_death` solo mira la primera muerte de toda la ronda | S | idea |
+| C5 | Solo, en duo o en stack | Tu winrate y rating segun cuantos compañeros habituales (los que aparecen contigo en 5 o mas partidas) juegan esa partida: 0, 1, 2 o mas. Responde si te conviene entrar solo o esperar a tu grupo | filas `RoundPlayer` de tu equipo por partida (`team_index`, `player`, `is_me=False`); habitual = `player` con N partidas compartidas, como `teammate_synergy` (`aggregates.py:542`). N fijo en el diseno, sin ajuste en la UI | S | idea |
 
 ### rivales: los rivales de tus replays
 
@@ -89,6 +90,7 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 | F2 | Notas y marcadores por ronda | Anotar que paso en una ronda y volver a las marcadas | modelo nuevo + POST de accion explicita; candidato #22 de `mercado/2026-09-16` | M | decision (POST nuevo: ver Para el humano) |
 | F4 | Tira de rondas en el listado de partidas | En Partidas, cada fila muestra la secuencia de rondas ganadas y perdidas (y el lado) y no solo el marcador final: se ven las remontadas y los derrumbes sin abrir la partida | `Round.my_team_won`, `my_side`, `number` por partida; `match_list` (`views.py`) agrega una lista corta por partida en la misma consulta paginada. PR #14 toca `Matches.jsx` (filtros): disenar sin pisarlo o esperar | S | idea |
 | F3 | Cambios de operador y spawn en la linea de tiempo | Ver en el detalle de la ronda quien cambio de operador y desde que spawn salio cada uno | eventos `OPERATOR_SWAP` (`constants.py:292`), hoy una linea generica en `MatchDetail.jsx`; `spawn` ya viene en `matches/<id>/` y ninguna pagina lo pinta | S | idea |
+| F5 | Ventaja numerica tirada | Rondas que tu equipo perdio despues de quedar con un jugador mas (o dos), contadas por lado y mapa, con enlace a cada una: el error que mas duele y que el marcador no muestra | orden de las bajas por ronda (`Event` de tipo kill con su reloj y el `team_index` de victima y autor), conteo de vivos por equipo; `Round.my_team_won`. Los abandonos (`PLAYER_LEAVE`) cuentan como baja, igual que en `stats.py` | M | idea |
 
 ### datos: datos y configuracion
 
