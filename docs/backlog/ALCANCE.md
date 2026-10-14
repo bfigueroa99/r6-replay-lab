@@ -35,6 +35,8 @@ B2 tramo 1 (41), B4 (39), E3 (40) y T3 en main.
 Reconciliado el 2026-10-14 (sesion 20261014T1911Z) contra `main` f74a16f:
 B5 (43), B6 (42) y E4 (44) en main; B7 -> ficha 45, C4 -> ficha 46,
 A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
+Investigador 2026-10-14 (sesion 20261014T2010Z): nuevas B10, C6, D4, F7, F8,
+K1-K3, O1, O2 y P1-P4 (epicas nuevas `impacto` y `operadores`).
 
 ## Epicas
 
@@ -59,6 +61,7 @@ A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
 | B7 | Remontadas y derrumbes | Lista de partidas que ganaste yendo abajo por 2 o mas rondas y de las que perdiste yendo arriba por 2 o mas, con tu winrate de partida segun la diferencia en el cambio de lado: si sueltas las partidas que tienes ganadas | `Round.score_before` por ronda (mismo corte `code_version >= Y9S4` que `by_score_state`, `aggregates.py:543`) + `Match.won`; maxima diferencia a favor y en contra por partida | S | ficha 45 |
 | B8 | Primera ronda de cada mitad | Tu winrate en la ronda 1 y en la primera ronda tras el cambio de lado, contra el resto: si arrancas frio cada mitad. En Siege no hay ronda de pistola, pero la primera de cada lado marca el tono y se juega sin informacion | `Round.number` y la frontera de mitad que ya calcula `by_half` (`aggregates.py:456`, `_lado_inicial`); `Round.my_team_won`; sale en `/api/trends/` | S | idea |
 | B9 | Rondas cortas y largas | Tu winrate de ronda segun cuanto duro, por lado: si en ataque ganas solo las ejecuciones rapidas o si en defensa te quiebras en las rondas largas | `Round.clock_start` y `clock_end` (`models.py:101-102`, propiedad `Round.duration`), hoy sin mostrar; tramos fijos de duracion. Las rondas con `possible_plant` van en su propia fila, porque el reloj despues del plant no mide lo mismo (`docs/formato-rec.md`) | S | idea |
+| B10 | Partidas cerradas y partidas holgadas | Tu winrate y rating en partidas que se definieron por 1 ronda o fueron a prorroga, contra las que se definieron por 3 o mas: si cierras las parejas o solo ganas las que vas sobrado. B7 mira la trayectoria; esto, el margen final. [fuente](https://aurelix.app) (tarjeta "Close games") | marcador final de la ultima ronda (`Round.score_after`, `models.py:99`) y `Round.overtime_number` (`models.py:89`); `Match.won`. Mismo corte `code_version >= Y9S4` que `by_score_state` para el marcador | S | idea |
 
 ### escuadra: el equipo con el que juegas
 
@@ -69,6 +72,7 @@ A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
 | C3 | Alineacion de operadores de tu equipo contra el resultado | Que combinaciones de tu lado ganan mas por mapa y lado | `RoundPlayer.operator` de tus compañeros por ronda, `operators/catalog/` | M | idea |
 | C4 | Primero de tu equipo en caer | Cuantas rondas eres el primero de tu equipo en morir (no solo la primera muerte de la ronda) y el winrate de esas rondas contra cuando cae otro: si tu forma de abrir le cuesta rondas al equipo | `RoundPlayer.death_elapsed` de las filas de tu equipo por ronda (`team_index`, `models.py:127,150`); hoy `opening_death` solo mira la primera muerte de toda la ronda | S | ficha 46 |
 | C5 | Solo, en duo o en stack | Tu winrate y rating segun cuantos compañeros habituales (los que aparecen contigo en 5 o mas partidas) juegan esa partida: 0, 1, 2 o mas. Responde si te conviene entrar solo o esperar a tu grupo | filas `RoundPlayer` de tu equipo por partida (`team_index`, `player`, `is_me=False`); habitual = `player` con N partidas compartidas, como `teammate_synergy` (`aggregates.py:542`). N fijo en el diseno, sin ajuste en la UI | S | idea |
+| C6 | Tiempo de refrag | Histograma de cuantos segundos tarda tu equipo en matar a quien te mato (0-1, 1-2, 2-3, 3-5, 5-10, mas de 10 s), por lado: muestra los "casi trades" que la ventana de trade deja afuera y si el equipo llega tarde, sin depender de la ventana (`docs/metricas.md`, seccion trades). [fuente](https://r6-replay.com) ("refrag timing") | reloj de los eventos `KILL` (`pydissect/events.py`) y el `team_index` de autor y victima; la misma recorrida que `annotate_trades` (`replays/analytics/metrics.py:201`) sin cortar en la ventana | S | idea |
 
 ### rivales: los rivales de tus replays
 
@@ -77,6 +81,7 @@ A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
 | D1 | Rivales repetidos | Lista de los que te tocaron en 2 o mas partidas, con tu record contra cada uno; el detalle ya esta en la pagina de jugador | filas `RoundPlayer` del equipo rival por `profileID`. Solo gente de tus replays: no es scouting | S | en main |
 | D2 | Meta rival por mapa y sitio | Que operadores te ponen enfrente en cada mapa y como te va contra cada uno | extiende `rounds_vs_operator` (`aggregates.py:771`) con mapa y sitio; muestra chica, va con banda de ruido como el #10 | M | idea |
 | D3 | Abandonos | Partidas con alguien que se fue, y tu winrate en 5v4 y 4v5 | eventos `PLAYER_LEAVE` (`constants.py:294`), que hoy solo cuentan como muerte (`stats.py:126`). Verificar que el evento sigue saliendo en temporadas nuevas | S | idea |
+| D4 | Stacks rivales repetidos | Grupos de 2 o mas rivales que te tocaron juntos en 2 o mas partidas, con tu record contra cada grupo: reconocer al stack que ya te gano, no solo a la persona (D1 va de a uno). Solo gente de tus replays: no es scouting. [fuente](https://aurelix.app) ("Opponent Tracking") | filas `RoundPlayer` del equipo rival por partida (`team_index`, `player`), agrupadas por el conjunto de `profileID`; reusa la consulta de rivales repetidos de D1 | S | idea |
 
 ### progreso: progreso y metas
 
@@ -98,6 +103,28 @@ A2 -> ficha 47; nuevas B8, B9, E5, F6 y H3.
 | F3 | Cambios de operador y spawn en la linea de tiempo | Ver en el detalle de la ronda quien cambio de operador y desde que spawn salio cada uno | eventos `OPERATOR_SWAP` (`constants.py:292`), hoy una linea generica en `MatchDetail.jsx`; `spawn` ya viene en `matches/<id>/` y ninguna pagina lo pinta | S | idea |
 | F5 | Ventaja numerica tirada | Rondas que tu equipo perdio despues de quedar con un jugador mas (o dos), contadas por lado y mapa, con enlace a cada una: el error que mas duele y que el marcador no muestra | orden de las bajas por ronda (`Event` de tipo kill con su reloj y el `team_index` de victima y autor), conteo de vivos por equipo; `Round.my_team_won`. Los abandonos (`PLAYER_LEAVE`) cuentan como baja, igual que en `stats.py` | M | idea |
 | F6 | Saltar a la ronda desde los records y las listas | Desde Records, Remontadas y Clutches del Coach, el enlace abre el detalle de la partida ya posicionado en la ronda que importa (`#ronda-N`) y no en la primera | `RoundPlayer.round.number` ya esta en los agregados (`_record_de_ronda`, `aggregates.py:314`); ancla en `MatchDetail.jsx`. PR #14 agrega flechas de ronda en `MatchDetail.jsx`: disenar sin pisarlo o esperar | S | idea |
+| F7 | Matriz de duelos de la partida | En el detalle de una partida, una tabla 5x5 de quien mato a quien (con headshots): ver de un vistazo que rival te paso por encima esa partida. Duelos agrega entre partidas; esto es una sola. [fuente](https://cs-demo-manager.com/changelog) (v3.5.0, "players duels matrix") | eventos `KILL` de la partida con autor, victima y `headshot` (`Event`, `models.py`); `matches/<id>/` ya trae el feed por ronda | S | idea |
+| F8 | Duracion del multikill | Para cada ronda con 2 o mas bajas tuyas, los segundos entre la primera y la ultima: separa el multikill de un solo pico del que se arma a lo largo de la ronda. Columna en Records y filtro del buscador F1. [fuente](https://cs-demo-manager.com/changelog) (v3.11.0, "how long a multi kill event took") | reloj de tus eventos `KILL` por ronda; `RoundPlayer.kills`. Metrica nueva al importar en `metrics.py` + fila en `docs/metricas.md` | S | idea |
+
+### impacto: cuanto mueve cada baja la probabilidad de ganar la ronda
+
+La tecnica de HLTV Rating 3.0 ("Round Swing") y Leetify Rating, con la tabla
+armada sobre las rondas importadas (no hay tabla publica para Siege: los dos
+equipos de cada ronda aportan muestra). Nada de dano, utilidad ni economia:
+solo el conteo de vivos.
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
+| K1 | Tabla de conversion por estado de vivos | Cuanto ganas cuando llegas a 5v4, 4v3, 2v1... y cuanto pierdes en 4v5, por lado, contra la misma tabla de todas las rondas importadas: si sueltas ventajas o das vuelta desventajas mas que lo normal. Es la base de K2 y K3; F5 lista rondas, esto da las tasas. [fuente](https://nomiun.substack.com/p/flaws-of-win-probability) | feed de bajas por ronda con el `team_index` de la victima (`Event`), `PLAYER_LEAVE` como baja (igual que `stats.py:126`), `Round.my_team_won`, `my_side`; la misma recorrida que "segundos en inferioridad" del resumen de ronda. Banda de ruido por estado con poca muestra | M | idea |
+| K2 | Impacto por baja (probabilidad agregada) | Un numero por ronda y por partida que pesa distinto la baja que abre un 5v5 de la que remata un 5v2: cuanto movio tus bajas y tus muertes la chance de ganar. Las bajas que vengan una muerte (trade) se reparten entre quien mata y el vengado. Implementar despues de K1 | delta de la tabla K1 por cada baja y muerte tuya, calculado al importar en `metrics.py` (columna nueva en `RoundPlayer`, migracion + `recompute`); `Event.traded` para el reparto. Fila nueva en `docs/metricas.md`; no reemplaza al Rating. [fuente](https://www.hltv.org/news/42485/introducing-rating-30), [fuente](https://leetify.com/blog/introducing-leetify-rating/) | M | idea |
+| K3 | Clutch: intentos, conversion y lo esperado | Hoy `one_vx` solo cuenta los clutches ganados. Contar tambien los perdidos (cada ronda en que quedaste ultimo frente a X), con el % por X y por lado y, con K1, cuantos ganaste contra cuantos se esperaban. [fuente](https://siege.gg/blog/946-player-rating-rebalance), [fuente](https://www.vlr.gg/713548/vlr-cl-knowers-come) | el mismo calculo de `one_vx` (`metrics.py`, logica de r6-dissect) sin filtrar por ronda ganada: columna nueva `clutch_vs` al importar; la parte "esperado" despues de K1 | S | idea |
+
+### operadores: tus operadores segun el contexto
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
+| O1 | Operador por sitio contra la base del sitio | Por mapa y sitio, tu winrate de ronda con cada operador menos tu winrate en ese sitio: que operador te rinde en Cocina de Oregon y cual te hunde, desde 10 rondas y con banda de ruido. Hoy `by_operator` y `by_site` van por separado. [fuente](https://aurelix.app/blog/how-to-analyse-r6-siege-replays) | `RoundPlayer.operator`, `Round.site`, `round__match__map_slug`, `Round.my_team_won`; `_ruido` de `aggregates.py` | S | idea |
+| O2 | Rol inferido de la ronda | Cada ronda tuya clasificada por una regla a la vista (entrada: `entry_kill` o muerte de apertura; ancla: defensa con muerte tardia o vivo al final; el resto, soporte) y tu winrate y rating por rol y lado. Sin coordenadas no distingue roamer de ancla por posicion: la regla lo dice. [fuente](https://r6-replay.com/roadmap) ("Role Detection") | `entry_kill`, `opening_death`, `death_elapsed` (`models.py:140-150`), `my_side`, lado del operador en `operators/catalog/`. Umbral de "muerte tardia": calibrar con la base real | M | idea |
 
 ### datos: datos y configuracion
 
@@ -134,6 +161,10 @@ replays.
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
+| P1 | Catalogo Y10S4 a Y11S3 | Las partidas nuevas muestran el operador y el mapa con nombre y no `Unknown(...)`, y la temporada se lee bien (base de A3): operador 444310693746 (atacante; `SolidSnake` en el fork), code versions Y10S4 = 9394857 e Y11S1 = 9578674, mapa FortressY10 = 398899676157. [fuente](https://github.com/redraskal/r6-dissect/issues/130) (2026-09-30), [fuente](https://github.com/ImAAhmad/r6-dissect/tree/main/dissect) (`version.go`, `header.go:125,214`) | `pydissect/constants.py`: `OPERATORS`, `OPERATOR_SIDES`, `CODE_VERSIONS`, `MAPS_EXTRA`. Hoy no rompe (`header.py:185` cae en `Unknown` y `record_unknown`), pero el lado de ese operador sale `None`. Verificar con `.rec` reales en el PC | S | idea |
+| P2 | Ronda con los dos equipos marcados como ganadores | En replays Y11S3 r6-dissect ve `won: true` en los dos equipos en 3 de 5 rondas. `metrics.py:205` se queda con el ultimo sin avisar, asi que `my_team_won` puede salir al reves y mover todos los winrates. Desempatar con el marcador (`score` contra `startingScore`) o dejar la ronda sin ganador y anotar un aviso en `Match.warnings`. [fuente](https://github.com/redraskal/r6-dissect/issues/130) | `teams[i].won`, `score`, `startingScore` (`pydissect/match.py:95`, `header.py:133`); `analyse_round` (`replays/analytics/metrics.py:204-208`). Posible bug: verificar con `.rec` Y11S3 reales en el PC antes de escribir la ficha | S | idea |
+| P3 | Derribado (DBNO) y quien remata | Separar la baja de quien derriba de la de quien remata, y contar los derribos: arregla bajas atribuidas al jugador equivocado (issue #115 de r6-dissect). Lo lee un PR sin mergear: flag 20 bytes despues del headshot, o el marcador `22 96 E2 29 7F`. [fuente](https://github.com/redraskal/r6-dissect/pull/126) (`feedback.go`) | `pydissect/events.py`, `read_match_feedback`; columnas nuevas en `Event`. Heuristica sin mergear upstream: portar solo despues de verificar con `.rec` reales en el PC | M | idea |
+| P4 | Scoreboard con el formato Y10S4+ | Leer las bajas del scoreboard con los offsets nuevos desde Y10S4 y conciliarlas con el feed: menos rondas con bajas de mas o de menos en temporadas nuevas. [fuente](https://github.com/redraskal/r6-dissect/pull/126) (`scoreboard.go`, rama `CodeVersion >= Y10S4`) | `pydissect/events.py` `read_scoreboard_*`, que hoy usa los offsets viejos sin rama de version. `assists` y `score` siguen sin exponerse. Verificar con `.rec` reales en el PC | M | idea |
 
 ### deuda-y-tests: no son funcionalidad
 
@@ -177,4 +208,9 @@ mergear, sus ideas pasan a `idea`; si lo mergea, a `en main`.
 | Scouting de rivales fuera de tus partidas | El perfil existe para quien aparece en tus replays |
 | Scraping de stats.cc o R6 Tracker | Cloudflare; ver `CLAUDE.md` |
 | Overlay, ventana flotante, captura o lectura de memoria | No-goal del proyecto |
+| Posiciones x/y/z del fork ImAAhmad de r6-dissect (`reader.go`, listener `60 73 85 FE`) | Sin validar ni mergear upstream, y `CLAUDE.md` dice que no hay coordenadas. Solo como investigacion del parser en el PC, con `.rec` reales; no se propone feature encima (2026-10-14) |
+| Quien planto o desactivo por el bonus de +100 de score (PR #126 de r6-dissect) | Heuristica; plants y defuses de temporadas nuevas solo se infieren y no entran en metricas (`docs/formato-rec.md`) |
+| Operadores baneados (issue #127 de r6-dissect, 2026-03-12) | El autor dice haber visto los datos en replays viejos, pero no publico bytes; vuelve si aparece el decodificado |
+| MVP/ACE de la partida (OP.GG) | Sin link verificado (help.op.gg da 403); y es un ranking dentro de la partida que el Rating ya cubre |
+| Comparar dos jugadores lado a lado (Scope.gg) | Duplica las paginas Compañero y Jugador |
 | Cuentas, nube, telemetria, subir replays | Todo corre en el PC, a proposito |
