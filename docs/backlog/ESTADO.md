@@ -1,19 +1,19 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 11:28 UTC por dev (sesion 20261014T1115Z; motivo: por estado: 3 disenado, lugar en cola; reloj: revisor, franja 4)
+actualizado: 2026-10-14 12:35 UTC por revisor (sesion 20261014T1211Z; motivo: por estado: 2 implementado; reloj: revisor, franja 4)
 playbook: origin/main@3438ab2
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 51 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 52 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | tipo | horas | compare | PR |
 |---|---|---|---|---|---|---|
-| `claude/equipo-dev/42-como-se-cierran-tus-rondas` | 42 | implementado | funcionalidad | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/42-como-se-cierran-tus-rondas?expand=1) | no |
-| `claude/equipo-dev/44-records-personales` | 44 | implementado | funcionalidad | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/44-records-personales?expand=1) | no |
+| `claude/equipo-dev/42-como-se-cierran-tus-rondas` | 42 | revisado | funcionalidad | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/42-como-se-cierran-tus-rondas?expand=1) | no |
+| `claude/equipo-dev/44-records-personales` | 44 | revisado | funcionalidad | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/44-records-personales?expand=1) | no |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=2 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -22,7 +22,7 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:5 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39) y B2 tramo 1 (41) en main; B6 (42) implementado; B5 (43) disenado; B7 como idea. progreso: E3 (40) en main; E4 (44) implementado. rivales: D1 (37) en main, siguientes como idea.
+- Epicas en curso: lado-y-marcador: B1 (36), B4 (39) y B2 tramo 1 (41) en main; B6 (42) revisado; B5 (43) disenado; B7 como idea. progreso: E3 (40) en main; E4 (44) revisado. rivales: D1 (37) en main, siguientes como idea.
 - Papel: 1 `disenado` (43, funcionalidad). Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
 - `ALCANCE.md`: 22 ideas libres.
 - Investigacion: ninguna todavia
@@ -31,18 +31,18 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 42-como-se-cierran-tus-rondas | en curso (espejo; la rama dice implementado) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 42-como-se-cierran-tus-rondas | en curso (espejo; la rama dice revisado) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 43-match-point | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 44-records-personales | en curso (espejo; la rama dice implementado) | funcionalidad | progreso | 3 | fullstack | - |
+| 44-records-personales | en curso (espejo; la rama dice revisado) | funcionalidad | progreso | 3 | fullstack | - |
 
-Proximo turno por estado: Revisor (2 `implementado`). 43 espera a que 42 se mergee.
+Proximo turno por estado: QA (2 `revisado`). 43 espera a que 42 se mergee.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-14 08:11 | Entrega y mergea 40 (`aprobado` -> `entregado` -> main 3438ab2, funcionalidad, epica progreso). |
-| revisor | 2026-10-14 06:15 | Revisa 40 (`implementado` -> `revisado`): revision ciega con `revision.md`, confirmada por el lider. Un hallazgo menor preexistente, no bloquea: sin `datetime` en el header `_parse_ts` cae a `datetime.now()` y la partida cuenta en la hora de importacion (`ingest.py:313`). Criterios con test o e2e, diff dentro de `archivos:`, `metricas.md` al dia. Rama ya contiene main a233a03; `check.sh` en `Todo en verde.` (520 backend, 69 vitest, build, 29 e2e). Sin pushes de codigo. |
+| revisor | 2026-10-14 12:35 | Revisa 42 y 44 (`implementado` -> `revisado`): revisiones ciegas con `revision.md`, confirmadas por el lider. 42 sin hallazgos (`win_condition` solo toma `KilledOpponents`, `ObjectiveOrTime` o `""`, asi que las cuentas cubren todo). 44 sin bugs, dos hallazgos menores que no bloquean: `## Records` quedo entre la tabla de Sesiones y su parrafo de cierre en `metricas.md`, y el e2e no afirma que el enlace lleve a la partida del record. Criterios con test o e2e, diffs dentro de `archivos:`, merge de prueba 42 x 44 limpio. Ramas al dia con main 3438ab2; `check.sh` en `Todo en verde.` en las dos (42: 529 backend, 75 vitest, build, 30 e2e; 44: 532 backend, 74 vitest, build, 30 e2e). Sin pushes de codigo. |
 | dev | 2026-10-14 11:28 | Implementa 42 y 44 (`disenado` -> `implementado`). 42: `round_endings` por lado en `/api/trends/` (por eliminacion / sin eliminacion / sin dato, `unknown` por resta) y panel "Cómo se cierran tus rondas" en Tendencias con `cierres.js`; 9 tests backend, 6 vitest, e2e. 44: `personal_records` en `/api/overview/` (cinco records, empate a la mas reciente, nulos sin candidato) y panel "Tus récords" en el Resumen con `records.js`; 12 tests backend, 5 vitest, e2e. Revisiones ciegas: 3 hallazgos en 42 (101 % por redondeo, CSV sin conteos, lineas en blanco) y 1 en 44 (E501), corregidos. `check.sh` en `Todo en verde.` en las dos ramas (42: 529 backend, 75 vitest, build, 30 e2e; 44: 532 backend, 74 vitest, build, 30 e2e). |
 | qa | 2026-10-14 07:17 | Prueba 40 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (520 backend, 69 vitest, build, 29 e2e), rama ya con main a233a03. Base vacia y 9 filtros raros 200 con 8 franjas y 7 dias en 0; base de `factories.py` con domingo 23:30, lunes 00:30, 02:59:59 y 03:00 en su dia y franja; sumas de `by_hour` y `by_weekday` iguales a `overview` con 11 combinaciones de filtros; `seed_demo` igual al spike del diseno. Chunk inicial sin cambio (185.47 kB). 4 mutaciones caen (3 backend, 1 e2e). Sin pushes de codigo. |
 | arquitecto | 2026-10-14 10:17 | Disena 42 (`round_endings` por lado en `/api/trends/` desde `round__my_team_won` + `win_condition`; panel "Cómo se cierran tus rondas" con `cierres.js`), 43 (tabla `reglas_partida.py` solo con Ranked: gana a 4, con 3-3 prorroga a 5, fuente Dexerto 2024; los demas tipos a `unknown`; `by_match_point` reusa la lectura del marcador de `by_score_state`; va despues de 42) y 44 (`personal_records` en `/api/overview/` agregado en la vista, cinco records con desempate al mas reciente, panel "Tus récords" en el Resumen con `records.js`). Sin pushes de codigo. |
@@ -69,6 +69,7 @@ Proximo turno por estado: Revisor (2 `implementado`). 43 espera a que 42 se merg
 - Ficha 40 (aviso de QA, no bloquea): con datos reales casi siempre habra una franja con menos de 30 rondas, asi que el hint del panel mostrara el aviso de muestra chica y casi nunca la explicacion de la hora. Si molesta, ficha chica.
 - Ficha 41 (aviso, no bloquea): con replays anteriores a Y9S4 la fila "Sin marcador" de Tendencias puede ser grande; es correcto, el `.rec` viejo no trae el marcador.
 - Ficha 43 (match point, aviso, no bloquea): solo Ranked tiene regla citable (gana a 4; con 3-3 prorroga y gana el primero a 5; fuente: guia de Dexerto actualizada en 2024, no hay pagina oficial de Ubisoft con el dato). Unranked, rapida y custom van a "Sin marcador o sin regla" hasta que alguien cite la suya; si la sabes, es una linea en `reglas_partida.py`. Conviene mirarlo en el PC con una ranked real cuando llegue.
+- Ficha 44 (revision, no bloquea): dos hallazgos menores para arrastrar al PR si hay otro push: mover `## Records` de `docs/metricas.md` debajo del parrafo "El corte de la 3a partida...", y que el e2e de records compare el mapa de la celda "Dónde" con el `h1` del detalle.
 - Ficha 44 (aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
 - Preguntas abiertas:
   - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
