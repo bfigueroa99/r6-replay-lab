@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
 estado: revisado
-candado: -
+candado: qa 2026-10-14 17:15 UTC
 rama: claude/equipo-dev/43-match-point
 tipo: funcionalidad
 epica: lado-y-marcador
