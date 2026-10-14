@@ -16,6 +16,7 @@ import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { filasDeCierre, hayCierres } from '../cierres.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -54,6 +55,22 @@ const FRANJAS = Object.fromEntries([0, 3, 6, 9, 12, 15, 18, 21].map((h) => [h, `
 const DIAS = Object.fromEntries(
   ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((dia, i) => [i + 1, dia]),
 )
+
+const SIN_ELIMINACION =
+  'Objetivo o tiempo: el .rec de temporadas nuevas no separa plant, defuse ni tiempo agotado; se infiere del reloj.'
+
+/** Porcentaje con el conteo de rondas al lado, para que un 100 % de 2 rondas se vea como tal. */
+function columnaCierre(key, label, conteo, help) {
+  return {
+    key,
+    label,
+    sortable: false,
+    help,
+    render: (row) =>
+      row[key] === null || row[key] === undefined ? '—' : `${fmt(row[key], 0, '%')} (${row[conteo]})`,
+    csv: (row) => (row[key] === null || row[key] === undefined ? '' : String(row[key]).replace('.', ',')),
+  }
+}
 
 /** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
 function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
@@ -116,6 +133,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const porMarcador = (data.by_score_state ?? []).filter(
     (row) => row.score_state !== 'unknown' || row.rounds > 0,
   )
+  const cierres = filasDeCierre(data.round_endings)
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
@@ -449,6 +467,35 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             etiquetas={MARCADOR}
             rowKey="score_state"
             csvName="segun-marcador"
+          />
+        </Panel>
+      ) : null}
+
+      {hayCierres(cierres) ? (
+        <Panel
+          title="Cómo se cierran tus rondas"
+          hint={
+            filasConPocaMuestra(cierres).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Si en defensa pierdes casi todo por eliminación, el problema son los duelos; si pierdes sin eliminación, es el tiempo o el objetivo.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'lado', label: 'Lado', sortable: false, left: true },
+              { key: 'rounds', label: 'Rondas', sortable: false },
+              columnaCierre('won_elimination_pct', 'Ganadas por eliminación', 'won_elimination',
+                'De tus ganadas con dato, cuántas terminaron con el otro equipo eliminado. Entre paréntesis, las rondas.'),
+              columnaCierre('won_other_pct', 'Ganadas sin eliminación', 'won_other', SIN_ELIMINACION),
+              columnaCierre('lost_elimination_pct', 'Perdidas por eliminación', 'lost_elimination',
+                'De tus perdidas con dato, cuántas terminaron con tu equipo eliminado. Entre paréntesis, las rondas.'),
+              columnaCierre('lost_other_pct', 'Perdidas sin eliminación', 'lost_other', SIN_ELIMINACION),
+              { key: 'unknown', label: 'Sin dato', sortable: false, help: 'Rondas sin ganador o sin condición de cierre.' },
+            ]}
+            rows={cierres}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.side}
+            csvName="como-se-cierran"
           />
         </Panel>
       ) : null}
