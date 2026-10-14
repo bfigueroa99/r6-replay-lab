@@ -69,6 +69,10 @@ Claves utiles: `version`, `code`, `datetime`, `matchtype`, `worldid` (mapa),
 `teamname0/1`, `teamscore0/1`, `startingteamscore0/1` (desde Y9S4), `id`
 (match id, igual en todas las rondas de la partida).
 
+Desde Y9S4 el ganador de la ronda sale de comparar `teamscore` con
+`startingteamscore`, y manda sobre el kill feed: un defuse o un plant solo
+aporta la condicion de victoria si apunta al mismo equipo.
+
 `teamname1` suele venir como `"YOUR TEAM"`: es el equipo del que grabo.
 
 ### La telemetria

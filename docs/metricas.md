@@ -78,6 +78,15 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 | **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
 | **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
 
+## Contexto de la ronda
+
+En Tendencias, cada ronda se corta tambien por lo que paso antes de ella en la
+misma partida.
+
+| Metrica | Definicion |
+|---|---|
+| **Despues de ganar / perder** | Rondas cuya ronda anterior (la de numero `N - 1` en la misma partida) tu equipo gano o perdio. La anterior se lee de la partida entera: el filtro de lado o de operador limita las rondas que se cuentan, no cambia cual fue la anterior. La primera ronda, la que no tiene importada la anterior (falta su `.rec`) y la que tiene la anterior sin resultado van a "Sin ronda anterior". Las tres filas suman todas tus rondas. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. |
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
@@ -143,6 +152,8 @@ de las dos direcciones. Sale del kill feed, no del scoreboard.
 | **Mueres (contra un operador)** | Rondas en que moriste / rondas contra ese operador. |
 | **Ganas la ronda (contra un operador)** | Rondas ganadas / rondas contra ese operador. |
 | **vs. promedio** | Puntos de diferencia entre la tasa contra ese operador y la misma tasa sobre **todas** tus rondas filtradas. En "Mueres" es mejor negativo; en "Ganas" es mejor positivo. No trae banda de ruido: con 10 a 30 rondas, 10 o 15 puntos todavia pueden ser azar. |
+| **Rival repetido** | Persona (por profileID, no por nick) que estuvo en el equipo contrario en al menos una de tus rondas filtradas de N partidas distintas. Desde 2 partidas. Un rival que solo aparece en rondas que los filtros por ronda (`side`, `site`, `operator`) dejan afuera no cuenta en esa partida. |
+| **Récord contra un rival** | Partidas ganadas-perdidas de esas N. El winrate se calcula sobre las que tienen resultado: una partida sin resultado cuenta en Partidas y no en el winrate. Es tu record contra esa persona, no su nivel. |
 
 En ranked solo los rivales casi no se repiten, asi que la tabla por persona es
 anecdota antes que patron: el coach solo opina desde 8 duelos contra la misma
@@ -273,5 +284,6 @@ opinar:
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
 | Salida del spawn | 12 rondas del lado en ese mapa y 12 en el resto, y 4 muertes en la ventana |
+| Cortes de Tendencias (ronda anterior) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.

@@ -379,8 +379,47 @@ def by_half(**filters) -> list[dict]:
         "second": con_lado.exclude(round__my_side=F("lado_inicial")),
         "overtime": qs.filter(round__overtime_number__gt=0),
     }
+    return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
+
+
+def _filas_por_tramo(campo: str, tramos: dict[str, QuerySet[RoundPlayer]]) -> list[dict]:
+    """Una fila de `totals()` por tramo, en el orden del dict.
+
+    El baseline del rating se calcula una sola vez: es el mismo para todas
+    las filas y sale de toda la base, no del tramo.
+    """
     baseline = rating_baseline()
-    return [{"half": mitad, **totals(tramos[mitad], baseline)} for mitad in MITADES]
+    return [{campo: nombre, **totals(qs, baseline)} for nombre, qs in tramos.items()]
+
+
+#: Orden fijo de las filas de `by_previous_round`.
+RONDA_ANTERIOR = ("after_win", "after_loss", "no_previous")
+
+
+def _resultado_anterior() -> Subquery:
+    """Resultado de la ronda `number - 1` de la misma partida.
+
+    Se lee de `Round` y no del queryset filtrado, como `_lado_inicial`: con
+    `?side=Attack` la ronda anterior de defensa sigue existiendo y pesa igual.
+    """
+    return Subquery(
+        Round.objects.filter(
+            match_id=OuterRef("round__match_id"), number=OuterRef("round__number") - 1
+        ).values("my_team_won")[:1]
+    )
+
+
+def by_previous_round(**filters) -> list[dict]:
+    """Rondas despues de ganar, despues de perder y sin ronda anterior conocida."""
+    qs = base_queryset(**filters).annotate(anterior=_resultado_anterior())
+    # Nulo junta la primera ronda, la anterior que falta (sin su .rec) y la
+    # anterior sin resultado: ninguna dice nada sobre la inercia.
+    tramos = {
+        "after_win": qs.filter(anterior=True),
+        "after_loss": qs.filter(anterior=False),
+        "no_previous": qs.filter(anterior__isnull=True),
+    }
+    return _filas_por_tramo("previous", {nombre: tramos[nombre] for nombre in RONDA_ANTERIOR})
 
 
 def by_start_side(**filters) -> list[dict]:
@@ -755,6 +794,56 @@ def nemesis(min_duels: int = 3, **filters) -> list[dict]:
 
     _agregar_mapas(salida, contra_mi, a_favor)
     return sorted(salida, key=lambda r: (-r["duels"], r["balance"], r["username"]))
+
+
+def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
+    """Record de partidas contra cada persona que te toco de rival varias veces.
+
+    Rival es quien estuvo en el equipo contrario en al menos una de tus rondas
+    filtradas de esa partida: el equipo se lee por ronda, como en el perfil,
+    porque la misma persona puede ser companero en una partida y rival en otra.
+    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    mine = base_queryset(**filters)
+    cruces = (
+        RoundPlayer.objects.filter(Exists(mine.filter(round_id=OuterRef("round_id"))))
+        .exclude(player_id__in=me_ids)
+        .annotate(mi_equipo=_MI_EQUIPO)
+        .exclude(mi_equipo=None)
+        .exclude(team_index=F("mi_equipo"))
+        .values_list("player_id", "round__match_id")
+        .distinct()
+    )
+    partidas: dict[int, set[int]] = {}
+    for pid, match_id in cruces:
+        partidas.setdefault(pid, set()).add(match_id)
+    partidas = {pid: ids for pid, ids in partidas.items() if len(ids) >= min_matches}
+    if not partidas:
+        return []
+
+    match_ids = set().union(*partidas.values())
+    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
+
+    salida = []
+    for pid, ids in partidas.items():
+        wins = sum(1 for mid in ids if resultado.get(mid) is True)
+        losses = sum(1 for mid in ids if resultado.get(mid) is False)
+        salida.append(
+            {
+                "player_id": pid,
+                "username": nicks.get(pid, ""),
+                "matches": len(ids),
+                "wins": wins,
+                "losses": losses,
+                # las partidas sin resultado no ensucian el winrate
+                "winrate": _pct(wins, wins + losses),
+            }
+        )
+    return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
 
 
 def _agregar_mapas(salida: list[dict], contra_mi, a_favor) -> None:

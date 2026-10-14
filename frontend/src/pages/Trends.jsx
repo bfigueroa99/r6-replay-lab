@@ -24,6 +24,7 @@ import {
   Stat,
   fmt,
 } from '../components/ui.jsx'
+import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -51,6 +52,36 @@ function Delta({ metric }) {
 
 const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
 const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
+const RONDA_ANTERIOR = {
+  after_win: 'Después de ganar',
+  after_loss: 'Después de perder',
+  no_previous: 'Sin ronda anterior',
+}
+
+/** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
+function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
+  const rows = (filas || []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: etiquetas[row[rowKey]] || row[rowKey],
+  }))
+  return (
+    <DataTable
+      columns={[
+        { key: 'tramo', label: columna, sortable: false, left: true },
+        { key: 'rounds', label: 'Rondas', sortable: false },
+        { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
+        { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+        { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+        { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+      ]}
+      rows={rows}
+      initialSort={{ key: 'orden', dir: 'asc' }}
+      rowKey={(row) => row[rowKey]}
+      csvName={csvName}
+    />
+  )
+}
 
 export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
@@ -83,6 +114,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     lado: LADOS[row.side] || row.side,
   }))
+  const porAnterior = data.by_previous_round ?? []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
   const salida = data.spawn_exit
@@ -379,6 +411,25 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'orden', dir: 'asc' }}
             rowKey={(row) => row.side}
             csvName="por-lado-inicial"
+          />
+        </Panel>
+      ) : null}
+
+      {porAnterior.length ? (
+        <Panel
+          title="Después de ganar o perder la ronda anterior"
+          hint={
+            filasConPocaMuestra(porAnterior).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Si después de perder tu winrate o tu rating caen más que tu promedio, la ronda perdida te sigue pesando.'
+          }
+        >
+          <TablaDeCorte
+            filas={porAnterior}
+            columna="Ronda anterior"
+            etiquetas={RONDA_ANTERIOR}
+            rowKey="previous"
+            csvName="ronda-anterior"
           />
         </Panel>
       ) : null}

@@ -223,6 +223,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_match": agg.trend_by_match(limit=limit, **filters),
             "by_round_number": agg.by_round_number(**filters),
             "by_half": agg.by_half(**filters),
+            "by_previous_round": agg.by_previous_round(**filters),
             "by_start_side": agg.by_start_side(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
@@ -315,6 +316,10 @@ def duels(request: HttpRequest) -> JsonResponse:
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
+                **filters,
+            ),
+            "rivals": agg.repeated_rivals(
+                min_matches=_int_param(request, "min_matches", 2, minimum=1, maximum=1000),
                 **filters,
             ),
         }
