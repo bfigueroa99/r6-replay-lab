@@ -25,10 +25,10 @@ vivos y corrige lo que no. `ultima visita` y `senal` las actualiza cada turno
 |---|---|---|---|
 | 1. Parsers abiertos del `.rec` | r6-dissect (https://github.com/redraskal/r6-dissect): commits, releases e issues desde la ultima visita; sus forks; otros parsers que aparezcan. Upstream quieto desde e6c2ca8 (2025-09-16); lo nuevo esta en issues (#127, #130), PR #126 y el fork ImAAhmad | 2026-10-14 | alta |
 | 2. Herramientas de replay de Siege | r6-replay.com (y `/roadmap`), Aurelix (aurelix.app y su blog), R6TV (nuevo, 2026-06). r6.arenyze.com es SPA de stats, no visor: sacarlo. ReplayAnalysis: Excel sobre JSON de r6-dissect, nada nuevo | 2026-10-14 | alta |
-| 3. Trackers de API | stats.cc, R6 Tracker: descripcion publica, resenas, lo que se comenta. Detras de Cloudflare: si da 403, busqueda y seguir | - | - |
+| 3. Trackers de API | stats.cc, R6 Tracker: descripcion publica, resenas, lo que se comenta. Detras de Cloudflare: si da 403, busqueda y seguir. Rindio el articulo de tracker.gg sobre R6 Tracker 3.0 y la pagina de R6 Analyst (r6analyst.overwolf.com). stats.cc sin fuente abrible; r6data.eu sin DNS | 2026-10-14 | baja |
 | 4. Otros juegos tacticos | CS2: Leetify (blog), Scope.gg, CS Demo Manager (`/changelog` es lo unico util). Valorant: Blitz, tracker.gg (403), vlr.gg. MOBAs: OP.GG (help 403), Dotabuff (sin visitar) | 2026-10-14 | alta |
-| 5. Comunidad | r/Rainbow6, r/R6ProLeague, Siege.GG, contenido de coaching | - | - |
-| 6. Ubisoft | Notas de parche y de temporada: operadores, mapas, modos, cambios del sistema de replays | - | - |
+| 5. Comunidad | Reddit bloqueado desde la nube (WebSearch rechaza reddit.com, WebFetch no abre old.reddit): no se usan mirrors. Rindieron Siege.GG (news), shattered.io y boostroom.com (guias). Aimlabs, Metafy y 1v9: genericos o venta de coaching | 2026-10-14 | alta |
+| 6. Ubisoft | Paginas de temporada en ubisoft.com/.../news-updates/seasons/<nombre> (tenfoldpursuit, silenthunt, systemoverride) y news.ubisoft.com; Liquipedia para fechas de parche. Ninguna fuente publica da IDs ni code versions: eso sale de r6-dissect o del PC | 2026-10-14 | alta |
 | 7. Analitica de esports y deporte | Ratings compuestos, probabilidad de ganar la ronda por ventaja numerica, redes de trade, rating de clutch. Rindieron: nomiun.substack.com, HLTV Rating 3.0, Leetify Rating, Siege.GG blog. No hay tabla publica XvY para Siege | 2026-10-14 | alta |
 
 ## Trampas conocidas
@@ -55,6 +55,15 @@ La entrada mas nueva arriba. Formato:
 - Ideas agregadas a ALCANCE.md: <id> <titulo>, ...
 - Descartadas: <idea> porque <motivo>
 ```
+
+### 2026-10-14 (sesion 20261014T2111Z)
+
+- Familias: 3, 5, 6
+- Dio senal: tracker.gg (R6 Tracker 3.0: bajas en los primeros 30 s, MVPs, tiempo vivo por mapa, Rivals); R6 Analyst (muertes por spawn); Siege.GG (teamkills en su rating, spawn peeks); shattered.io (partida tras derrotas, revisar una derrota por sesion); boostroom (el ultimo minuto del ataque); Ubisoft (Solid Snake Y11S1 atacante, Calypso Casino Y11S2, Noor Y11S3 defensor, Villa rehecha en Y11S3, Fortress rehecha en Y10S4, replays en PC de 12 a 30).
+- Seco: stats.cc (sin fuente abrible), r6data.eu (sin DNS), Reddit (bloqueado), Aimlabs/Metafy/1v9, addendum Y11S3 (solo bugs), Ranked 3.0 (no cambia rondas para ganar ni reloj).
+- Ideas agregadas a ALCANCE.md: A4 mapas rehechos como su propia fila (trae un bug: `by_map` une el lado por nombre y no por slug), B11 cuando matas, C7 teamkills, E6 partida despues de perder seguido, E7 puesto en el lobby, F9 la ronda para revisar de la sesion, K4 el ultimo minuto del ataque; P1 ampliada con Noor, Snake y Calypso Casino.
+- Descartadas: muertes por spawn y spawn peeks (cubiertos por PR #22); tiempo vivo por mapa (duplica "Mueres a los" y "Sobrevives"); mejor mapa por compañero o rival (muestra chica); 12 -> 30 replays (el vigia ya importa solo); reglas de Dual Front (se retiro en Y11S2 segun Siege.GG, sin fuente oficial).
+- Proxima: familia 1 (forks lumina-r6/siege-dissect, aa-sasha, cliffside-git, defiancer6s-hub, PR #105 de r6-dissect), 2 y 4 (Dotabuff sin visitar). Reglas de match point para Unranked y Quick Match: ninguna fuente oficial las da todavia.
 
 ### 2026-10-14 (sesion 20261014T2010Z)
 
