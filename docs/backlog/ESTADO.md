@@ -1,44 +1,40 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 17:35 UTC por qa (sesion 20261014T1711Z; motivo: por estado: 1 revisado; reloj: qa, franja 6)
-playbook: origin/main@41cb46f
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 53 en 7 dias
+actualizado: 2026-10-14 18:50 UTC por release (sesion 20261014T1811Z; motivo: por estado: 1 aprobado; reloj: qa, franja 6)
+playbook: origin/main@f74a16f
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 54 en 7 dias; sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas desde el ultimo commit | compare | PR |
-|---|---|---|---|---|---|
-| `claude/equipo-dev/43-match-point` | 43-match-point (funcionalidad) | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/43-match-point?expand=1) | no |
+Vacia: 43 se mergeo (PR #33, main f74a16f).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-Solo 43 en cola; ya contiene main 41cb46f, sin conflicto.
+Nada en cola.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:7 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 44-records-personales) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 tramo 1 (41) y B6 (42) en main; B5 (43) aprobado; B7 como idea. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main, siguientes como idea.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0 (papel vacio: el proximo PO por estado propone). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 22 ideas libres (B6 y E4 pasan a `en main`; lo reconcilia el PO).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:8 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales) otros:7.
+- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 como idea. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main, siguientes como idea.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0 (papel vacio: el proximo turno por estado es PO). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 22 ideas libres (B2 y B5 marcados `en main` por el Release).
 - Investigacion: ninguna todavia
 
 ## Papel (rama backlog)
 
-| ficha | estado | tipo | epica | prioridad | area | candado |
-|---|---|---|---|---|---|---|
-Vacio: 43 paso a su rama de trabajo (espejo `en curso`).
+Vacio. Espejo de 43 quitado (ya en main).
 
-Proximo turno por estado: Release (43 `aprobado`).
+Proximo turno por estado: PO (papel vacio).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-14 14:30 | Entrega y mergea 42 (PR #31, main 0fec711) y 44 (PR #32, main 41cb46f), las dos `aprobado` -> `entregado` -> main, funcionalidad. 44: main fusionado (trae 42) y `## Records` movida en `metricas.md` como pidio el Revisor. `check.sh` en `Todo en verde.` sobre el commit exacto de cada PR (42: 529 backend, 75 vitest, build, 30 e2e; 44 con 42: 541 backend, 80 vitest, build, 31 e2e). Espejos quitados de backlog. Borrar ramas: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). |
+| release | 2026-10-14 18:50 | Entrega y mergea 43 (`aprobado` -> `entregado` -> main, PR #33, main f74a16f, funcionalidad). Rama ya traia main 41cb46f; `check.sh` en `Todo en verde.` sobre el commit exacto del PR 339b986 (561 backend, 80 vitest, build, 32 e2e). Ficha recortada con `## PR`; espejo quitado de backlog; B2/B5 a `en main` en `ALCANCE.md`. Borrar la rama: denegado en la sesion. pruebas.sh: PRUEBAS_OK (10). |
 | revisor | 2026-10-14 16:30 | Revisa 43 (`implementado` -> `revisado`): revision ciega con `revision.md` sin hallazgos, confirmada por el lider (3-2 mine, 3-3 normal por prorroga, 4-4 both; sin regla, sin marcador e Y9S3 a unknown; las cinco filas suman por construccion). Criterios cubiertos por tests y e2e, diff dentro de `archivos:`. Mutaciones: sin prorroga caen 5 tests; `unknown` sobre `conocido` caen 2. Menores, no bloquean: `regla_para` solo la usan los tests; `metricas.md` no nombra `Standard` entre los tipos sin regla. Rama ya al dia con main 41cb46f; `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). Sin pushes de codigo. |
 | dev | 2026-10-14 15:35 | Implementa 43 (`disenado` -> `implementado`, rama `claude/equipo-dev/43-match-point`): `reglas_partida.py` (solo Ranked desde Y9S4: gana a 4, con 3-3 prorroga a 5, fuente Dexerto), `by_match_point` en `/api/trends/` reusando `_marcador_conocido` extraido de `by_score_state`, panel "Match point" en Tendencias, e2e y fila en `metricas.md`; 20 tests en `test_match_point.py`. Revision ciega: sin bugs, 2 puntos de tests corregidos (filtros que no recortaban, orden de las reglas). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). |
 | qa | 2026-10-14 17:35 | Prueba 43 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). Base vacia: cinco filas en 0 y 200 con `until=foo`, `page=-1`, `match_type=`, `map=`, `since=2030-01-01`. Base sembrada con `factories.py` (ranked 0-0 a 4-4 como equipo 0 y como equipo 1, QuickMatch, Y9S3, marcador vacio, 4-0 y tres equipos): mine 3, theirs 2, both 2, normal 13, unknown 6, igual a lo calculado y suma igual a `by_score_state`, tambien con filtros. 3 mutaciones caen (10, 3 y 3 tests). Chunk inicial sin cambio (el panel va en el lazy `Trends`). Sin pushes de codigo. |
@@ -62,13 +58,14 @@ Proximo turno por estado: Release (43 `aprobado`).
   - `git push origin --delete claude/equipo-dev/40-hora-y-dia-de-la-semana` (mergeada, main 3438ab2)
   - `git push origin --delete claude/equipo-dev/42-como-se-cierran-tus-rondas` (mergeada, PR #31)
   - `git push origin --delete claude/equipo-dev/44-records-personales` (mergeada, PR #32)
+  - `git push origin --delete claude/equipo-dev/43-match-point` (mergeada, PR #33)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
 - PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
 - Ficha 40 (aviso, no bloquea): una partida cuyo `.rec` no trae `datetime` en el header cae en la franja y el dia en que se importo (fallback preexistente de `_parse_ts`). Con `.rec` reales el campo viene siempre; si ves una franja rara, avisa y va a ficha propia.
 - Ficha 40 (aviso de QA, no bloquea): con datos reales casi siempre habra una franja con menos de 30 rondas, asi que el hint del panel mostrara el aviso de muestra chica y casi nunca la explicacion de la hora. Si molesta, ficha chica.
 - Ficha 41 (aviso, no bloquea): con replays anteriores a Y9S4 la fila "Sin marcador" de Tendencias puede ser grande; es correcto, el `.rec` viejo no trae el marcador.
-- Ficha 43 (match point, aviso, no bloquea): solo Ranked tiene regla citable (gana a 4; con 3-3 prorroga y gana el primero a 5; fuente: guia de Dexerto actualizada en 2024, no hay pagina oficial de Ubisoft con el dato). Unranked, rapida y custom van a "Sin marcador o sin regla" hasta que alguien cite la suya; si la sabes, es una linea en `reglas_partida.py`. Conviene mirarlo en el PC con una ranked real cuando llegue. Revisor: el tipo `Standard` tambien cae en "sin regla" y la fila de `metricas.md` no lo nombra (menor).
+- Ficha 43 (ya en main, PR #33; match point, aviso, no bloquea): solo Ranked tiene regla citable (gana a 4; con 3-3 prorroga y gana el primero a 5; fuente: guia de Dexerto actualizada en 2024, no hay pagina oficial de Ubisoft con el dato). Unranked, rapida y custom van a "Sin marcador o sin regla" hasta que alguien cite la suya; si la sabes, es una linea en `reglas_partida.py`. Conviene mirarlo en el PC con una ranked real cuando llegue. Revisor: el tipo `Standard` tambien cae en "sin regla" y la fila de `metricas.md` no lo nombra (menor).
 - Ficha 44 (ya en main, PR #32; aviso de QA, no bloquea): `/api/overview/` tarda ~0,29 s con 2.000 partidas sinteticas (los records suman ~0,16 s). Si con tu base se siente lento, los records pueden ir a su propia request.
 - Ficha 44 (ya en main, PR #32; aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
 - Preguntas abiertas:
