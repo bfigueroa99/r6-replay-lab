@@ -1,7 +1,7 @@
 # 44. Records personales en el Resumen
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-14T10:12Z
 rama: -
 tipo: funcionalidad
 epica: progreso

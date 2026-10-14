@@ -1,7 +1,7 @@
 # 42. Como se cierran tus rondas: por eliminacion o sin ella, por lado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-14T10:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

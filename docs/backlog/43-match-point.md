@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-14T10:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
