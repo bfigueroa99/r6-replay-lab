@@ -1,49 +1,49 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 07:17 UTC por qa (sesion 20261014T0712Z; motivo: por estado: 1 revisado; reloj: arquitecto, franja 2)
-playbook: origin/main@a233a03
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 50 en 7 dias
+actualizado: 2026-10-14 09:40 UTC por po (sesion 20261014T0911Z; motivo: papel vacio; reloj: dev, franja 3)
+playbook: origin/main@3438ab2
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 51 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas desde el ultimo commit | compare | PR |
-|---|---|---|---|---|---|
-| claude/equipo-dev/40-hora-y-dia-de-la-semana | 40-hora-y-dia-de-la-semana | aprobado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/40-hora-y-dia-de-la-semana?expand=1 | no |
+Vacia: la 40 llego a main (3438ab2) y no hay ramas de trabajo abiertas.
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=21 sin_merge=no pausa=no sin_rastro_48h=0
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=22 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-Una sola rama abierta (40), sin conflicto con main a233a03 (nace de el).
+Sin ramas de trabajo abiertas.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:4 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 41-ronda-segun-el-marcador) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39) y B2 tramo 1 (41) en main, B5 (match point) como idea; rivales: D1 en main (37), siguientes tramos como idea; progreso: 40 (E3, hora y dia) aprobada por QA en su rama, espera Release.
-- Papel: funcionalidad:0 otros:0 (la 40 paso a la rama de trabajo). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 21 ideas libres (B2 tramo 1 y B4 pasan a `en main` en el proximo turno del PO).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:5 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador) otros:7.
+- Epicas en curso: lado-y-marcador: B1 (36), B4 (39) y B2 tramo 1 (41) en main; B6 (42) y B5 (43) en papel; B7 como idea. progreso: E3 (40) en main; E4 (44) en papel. rivales: D1 (37) en main, siguientes como idea.
+- Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 22 ideas libres. Ideas nuevas de este turno: B7 remontadas y derrumbes, C4 primero de tu equipo en caer, C5 solo, en duo o en stack, F5 ventaja numerica tirada.
 - Investigacion: ninguna todavia
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 40-hora-y-dia-de-la-semana | en curso (espejo; la rama manda: aprobado) | funcionalidad | progreso | 3 | fullstack | - |
+| 42-como-se-cierran-tus-rondas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 43-match-point | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 44-records-personales | propuesto | funcionalidad | progreso | 3 | fullstack | - |
 
-Papel sin `propuesto` ni `disenado`: proximo turno por estado, Release (40 aprobado); despues el PO llena el papel.
+Proximo turno por estado: Arquitecto (3 `propuesto`, 0 `disenado`).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-14 00:40 | Entrega y mergea 39 (`aprobado` -> `entregado` -> main, funcionalidad, epica lado-y-marcador). Puerta completa: `turnos:` con dev, revisor y qa de sesiones distintas, sin `PAUSA` ni `SIN_MERGE`, sin commits ni comentarios humanos, diff fuera de las rutas del humano; main 5d2aecc ya fusionado; `check.sh` en `Todo en verde.` sobre el head exacto eaea5ca (503 backend, 69 vitest, build, 27 e2e). PR #28 -> merge 2a95f98. No pudo borrar la rama (403 del proxy en `git push --delete`). Espejo de 39 quitado de `backlog`. `pruebas.sh`: `PRUEBAS_OK (10)`. Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-14 08:11 | Entrega y mergea 40 (`aprobado` -> `entregado` -> main 3438ab2, funcionalidad, epica progreso). |
 | revisor | 2026-10-14 06:15 | Revisa 40 (`implementado` -> `revisado`): revision ciega con `revision.md`, confirmada por el lider. Un hallazgo menor preexistente, no bloquea: sin `datetime` en el header `_parse_ts` cae a `datetime.now()` y la partida cuenta en la hora de importacion (`ingest.py:313`). Criterios con test o e2e, diff dentro de `archivos:`, `metricas.md` al dia. Rama ya contiene main a233a03; `check.sh` en `Todo en verde.` (520 backend, 69 vitest, build, 29 e2e). Sin pushes de codigo. |
 | dev | 2026-10-14 05:40 | Implementa 40 (`disenado` -> `implementado`, rama `claude/equipo-dev/40-hora-y-dia-de-la-semana`): `by_hour` (8 franjas de 3 h) y `by_weekday` (lunes a domingo con `iso_week_day`) en `/api/trends/`, paneles "Por hora del día" y "Por día de la semana" en Tendencias con CSV y aviso de muestra chica, seccion `## Cuando juegas` en `metricas.md`, 8 tests backend y e2e. Revision ciega: 2 hallazgos corregidos (test sin trackear, filtro de lado que no recortaba). `check.sh` en `Todo en verde.` (520 backend, 69 vitest, build, 29 e2e). Quita el espejo de 41 (ya en main, a233a03). |
 | qa | 2026-10-14 07:17 | Prueba 40 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (520 backend, 69 vitest, build, 29 e2e), rama ya con main a233a03. Base vacia y 9 filtros raros 200 con 8 franjas y 7 dias en 0; base de `factories.py` con domingo 23:30, lunes 00:30, 02:59:59 y 03:00 en su dia y franja; sumas de `by_hour` y `by_weekday` iguales a `overview` con 11 combinaciones de filtros; `seed_demo` igual al spike del diseno. Chunk inicial sin cambio (185.47 kB). 4 mutaciones caen (3 backend, 1 e2e). Sin pushes de codigo. |
 | arquitecto | 2026-10-13 20:16 | Disena 39 (`by_previous_round` con subconsulta a la ronda `number - 1` de la partida entera; ayudantes `_filas_por_tramo`, `TablaDeCorte`, `muestra.js` con aviso bajo 30 rondas), 41 (`by_score_state` con `KeyTransform`+`Cast` sobre `score_before` y tu `team_index`; `seed_demo` pasa a llenar `score_before`, solo cambia el panel nuevo) y 40 (`by_hour` en 8 franjas y `by_weekday` con `iso_week_day`). Spike en scratchpad con `seed_demo`: las sumas cuadran con el total (203). Orden 39 -> 41 -> 40. Sin pushes de codigo. |
-| po | 2026-10-13 19:18 | Papel vacio: propone 39 (funcionalidad, B4: winrate y rating despues de ganar o perder la ronda anterior, en Tendencias), 40 (funcionalidad, E3: por franja de 3 h y por dia de la semana, en Tendencias) y 41 (funcionalidad, B2 tramo 1: adelante, empatado o atras segun `score_before`). `ALCANCE.md`: reconciliado contra main 5d2aecc (B1 y D1 en main), ideas nuevas B5, B6, E4, F4 y T3; 21 ideas libres. PRs abiertos revisados con herramientas: #14, #22, #1 siguen abiertos. Sin pushes de codigo. |
+| po | 2026-10-14 09:40 | Papel vacio: propone 42 (B6: rondas ganadas y perdidas por eliminacion o sin ella, por lado, en Tendencias), 43 (B5: match point y ronda decisiva con tabla de reglas por tipo de partida) y 44 (E4: records personales en el Resumen con enlace a cada partida). Reconcilia `ALCANCE.md` con main 3438ab2 (B2 tramo 1, B4, E3 y T3 en main) y quita el espejo de 40. Ideas nuevas B7, C4, C5 y F5: 22 libres (20 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
 ## Para el humano
 
@@ -59,13 +59,14 @@ Papel sin `propuesto` ni `disenado`: proximo turno por estado, Release (40 aprob
   - `git push origin --delete claude/equipo-dev/37-rivales-repetidos` (mergeada, PR #27)
   - `git push origin --delete claude/equipo-dev/39-inercia-entre-rondas` (mergeada, PR #28)
   - `git push origin --delete claude/equipo-dev/41-ronda-segun-el-marcador` (mergeada, main a233a03)
+  - `git push origin --delete claude/equipo-dev/40-hora-y-dia-de-la-semana` (mergeada, main 3438ab2)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo commit de reclamo)
-- Rutina: 1 disparo sin rastro en 48 h (10-12T03:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
-- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas antes que la ficha 40, el choque en `aggregates.py` lo resuelve el equipo (P3).
+- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
 - Ficha 40 (aviso, no bloquea): una partida cuyo `.rec` no trae `datetime` en el header cae en la franja y el dia en que se importo (fallback preexistente de `_parse_ts`). Con `.rec` reales el campo viene siempre; si ves una franja rara, avisa y va a ficha propia.
 - Ficha 40 (aviso de QA, no bloquea): con datos reales casi siempre habra una franja con menos de 30 rondas, asi que el hint del panel mostrara el aviso de muestra chica y casi nunca la explicacion de la hora. Si molesta, ficha chica.
 - Ficha 41 (aviso, no bloquea): con replays anteriores a Y9S4 la fila "Sin marcador" de Tendencias puede ser grande; es correcto, el `.rec` viejo no trae el marcador.
+- Ficha 43 (match point, aviso, no bloquea): la tabla de reglas por tipo de partida (a cuantas rondas se gana y como es la prorroga) sale de fuentes publicas citadas por el Arquitecto; un tipo sin regla citable no cuenta como match point. Conviene mirarlo en el PC con una ranked y una rapida reales cuando llegue.
 - Preguntas abiertas:
   - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
   - ~~Boton de backup y `REPLAY_DIR` desde la UI~~: resuelto por el #12 (main eb2633c), que suma `POST /api/settings/` y `POST /api/backup/` a `CLAUDE.md`. El PO ya no las tiene que esperar.
