@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-14 21:20 UTC por investigador (sesion 20261014T2111Z; motivo: reloj: investigador; reloj: investigador, franja 7)
+actualizado: 2026-10-14 22:18 UTC por investigador (sesion 20261014T2211Z; motivo: reloj: investigador; reloj: investigador, franja 7)
 playbook: origin/main@f74a16f
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 55 en 7 dias
 pausa: no
@@ -10,7 +10,7 @@ pausa: no
 Vacia (main f74a16f, ultimo merge: 43, PR #33).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=45 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -21,8 +21,8 @@ Nada en cola.
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:8 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales) otros:7.
 - Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 en ficha 45; B8 y B9 como idea. escuadra: se abre con C4 (ficha 46). temporada-y-modo: A2 en ficha 47. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 45 ideas libres (38 al empezar el turno). Ideas nuevas del Investigador: A4 mapas rehechos como su propia fila (incluye un bug de numeros, ver Para el humano), B11 cuando matas, C7 teamkills, E6 partida despues de perder seguido, E7 puesto en el lobby, F9 la ronda para revisar de la sesion, K4 el ultimo minuto del ataque; P1 ampliada con Solid Snake (Y11S1), Calypso Casino (Y11S2) y Noor (Y11S3, defensor).
-- Investigacion: ultima entrada 2026-10-14 (familias 3, 5 y 6; antes 1, 2, 4 y 7). Todas las familias visitadas al menos una vez.
+- `ALCANCE.md`: 58 ideas libres (45 al empezar el turno). Ideas nuevas del Investigador: A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade convertidas, D5 cara a cara en el detalle de partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamaño, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 jugadores y kill feed de Y11S2, P6 picks de preparacion; F1 y F7 ampliadas.
+- Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
@@ -43,7 +43,7 @@ Proximo turno por estado: arquitecto (3 propuesto, 0 disenado).
 | dev | 2026-10-14 15:35 | Implementa 43 (`disenado` -> `implementado`, rama `claude/equipo-dev/43-match-point`): `reglas_partida.py` (solo Ranked desde Y9S4: gana a 4, con 3-3 prorroga a 5, fuente Dexerto), `by_match_point` en `/api/trends/` reusando `_marcador_conocido` extraido de `by_score_state`, panel "Match point" en Tendencias, e2e y fila en `metricas.md`; 20 tests en `test_match_point.py`. Revision ciega: sin bugs, 2 puntos de tests corregidos (filtros que no recortaban, orden de las reglas). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). |
 | qa | 2026-10-14 17:35 | Prueba 43 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (561 backend, 80 vitest, build, 32 e2e). Base vacia: cinco filas en 0 y 200 con `until=foo`, `page=-1`, `match_type=`, `map=`, `since=2030-01-01`. Base sembrada con `factories.py` (ranked 0-0 a 4-4 como equipo 0 y como equipo 1, QuickMatch, Y9S3, marcador vacio, 4-0 y tres equipos): mine 3, theirs 2, both 2, normal 13, unknown 6, igual a lo calculado y suma igual a `by_score_state`, tambien con filtros. 3 mutaciones caen (10, 3 y 3 tests). Chunk inicial sin cambio (el panel va en el lazy `Trends`). Sin pushes de codigo. |
 | arquitecto | 2026-10-14 10:17 | Disena 42 (`round_endings` por lado en `/api/trends/` desde `round__my_team_won` + `win_condition`; panel "Cómo se cierran tus rondas" con `cierres.js`), 43 (tabla `reglas_partida.py` solo con Ranked: gana a 4, con 3-3 prorroga a 5, fuente Dexerto 2024; los demas tipos a `unknown`; `by_match_point` reusa la lectura del marcador de `by_score_state`; va despues de 42) y 44 (`personal_records` en `/api/overview/` agregado en la vista, cinco records con desempate al mas reciente, panel "Tus récords" en el Resumen con `records.js`). Sin pushes de codigo. |
-| investigador | 2026-10-14 21:20 | Primera visita a las familias 3 (tracker.gg sobre R6 Tracker 3.0, R6 Analyst; stats.cc sin fuente abrible), 5 (Siege.GG, shattered.io, boostroom; Reddit bloqueado desde la nube) y 6 (paginas de temporada de Ubisoft Y10S4-Y11S3). 7 ideas nuevas en `ALCANCE.md` con fuente (38 -> 45 libres), P1 ampliada, 5 descartadas con motivo (dos por PR #22). Sin pushes de codigo. |
+| investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
 | po | 2026-10-14 19:35 | Papel vacio: propone 45 (B7: remontadas y derrumbes, con winrate de partida segun la diferencia al cambio de lado, en Tendencias), 46 (C4: primero de tu equipo en caer y su winrate, por lado, en Compañeros) y 47 (A2: modos y tipos de partida desconocidos en Datos, con etiqueta y retag sin reimportar). Reconcilia `ALCANCE.md` con main f74a16f (B6 y E4 en main). Ideas nuevas B8, B9, E5, F6 y H3: 24 libres (22 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
 ## Para el humano
@@ -74,6 +74,7 @@ Proximo turno por estado: arquitecto (3 propuesto, 0 disenado).
 - Ficha 44 (ya en main, PR #32; aviso de QA, no bloquea): `/api/overview/` tarda ~0,29 s con 2.000 partidas sinteticas (los records suman ~0,16 s). Si con tu base se siente lento, los records pueden ir a su propia request.
 - Ficha 44 (ya en main, PR #32; aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
 - Verificar en el PC (Investigador, 2026-10-14): r6-dissect issue #130 reporta replays Y11S3 con `won: true` en los dos equipos en 3 de 5 rondas. `replays/analytics/metrics.py:205` se queda con el ultimo equipo sin avisar, asi que `my_team_won` podria salir al reves en esas rondas. Si tienes un `.rec` Y11S3, mirar si alguna ronda tiene a los dos equipos ganadores (idea P2 de `ALCANCE.md`); si se confirma, es un bug para el PO con prioridad 1. Tambien falta el operador 444310693746 (sale `Unknown(...)`, se puede nombrar en Datos; idea P1).
+- Verificar en el PC (Investigador, 2026-10-14 22:11Z, idea P5): dos forks de r6-dissect (nicktstewart y defiancer6s-hub) cambian en Y11S2 (code version 9734089) el patron del DissectID a `8C 61 1A 75 23` y el layout del kill feed; sintoma: jugadores duplicados o faltantes y bajas de gente que no esta en la lista. `docs/formato-rec.md` dice que Y11S3 anda sin cambios, asi que puede afectar solo a Y11S2. Si tienes un `.rec` de Y11S2 (Calypso Casino, 2026-06 a 2026-09), importalo y mira si faltan jugadores o bajas.
 - Posible bug para el PO (Investigador, 2026-10-14, idea A4): `by_map` (`aggregates.py:383-402`) agrupa por nombre y slug, pero une el winrate por lado solo por `map_name`. Los mapas con version vieja y rehecha (`Fortress`/`FortressY10`, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...) salen como dos filas con el mismo nombre y el mismo winrate de ataque y defensa, mezclado. `by_site` tambien mezcla los sitios de los dos layouts. Leido en el codigo, no reproducido con datos: el PO puede abrirlo como `tipo: bug`.
 - Preguntas abiertas:
   - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
