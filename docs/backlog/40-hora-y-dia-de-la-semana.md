@@ -1,7 +1,7 @@
 # 40. Rendimiento por hora del dia y dia de la semana
 
-estado: implementado
-candado: revisor 2026-10-14T06:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/40-hora-y-dia-de-la-semana
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E3 (idea del PO 20261013T0511Z)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Trends.jsx, docs/metricas.md, backend/tests/test_hora_y_dia.py, frontend/e2e/humo.spec.js
-turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0511Z
+turnos: po 20261013T1915Z, arquitecto 20261013T2011Z, dev 20261014T0511Z, revisor 20261014T0611Z
 
 ## PR
 
@@ -142,6 +142,40 @@ raros -> `test_base_vacia_y_filtros_raros_dan_200`.
 
 Revision ciega previa: 2 hallazgos (archivo de tests sin trackear, filtro de
 lado que no recortaba), los dos corregidos.
+
+## Revision 2026-10-14 sobre 4f01bb7
+
+(Revisor 20261014T0611Z. Revision ciega con el prompt de `revision.md` sobre el diff sin
+`docs/backlog`, despues confirmacion del lider. `check.sh` en verde sobre la rama,
+que ya contiene main a233a03: 520 tests backend, 69 vitest, build ok, 29 e2e.)
+
+Hallazgos:
+
+- [bug, menor, preexistente] backend/replays/ingest.py:313 (lo expone aggregates.py:469)
+  Que pasa: si el header del `.rec` no trae `datetime` o lo trae invalido,
+  `_parse_ts` cae a `datetime.now()` y la partida cuenta en la franja y el dia
+  en que se importo, no en los que se jugo.
+  Como reproducirlo o por que es cierto: confirmado leyendo `_parse_ts`; un
+  header con `datetime=foo` importado un martes a las 10:00 suma sus rondas a
+  "9–12 h" y "Martes". El fallback ya existia y ya afectaba la fecha y las
+  sesiones; con los `.rec` reales el campo siempre viene, asi que no bloquea.
+  Arreglo sugerido: ficha aparte si alguien lo ve en datos reales (marcar las
+  partidas sin hora real y sacarlas de estos cortes); no se amplia esta.
+
+Ficha:
+
+- Cada criterio tiene test o verificacion: `by_hour` 8 franjas fijas y borde
+  2:59/3:00, `by_weekday` con `iso_week_day` y el cruce domingo 23:30 / lunes
+  00:30, sumas iguales a `overview` con filtros que recortan de verdad (16 y
+  24 rondas), base vacia y filtros raros 200, paneles y celdas en el e2e.
+- El diff no toca archivos fuera de `archivos:`.
+- `docs/metricas.md` tiene `## Cuando juegas` y la fila de muestra minima
+  actualizada; las filas en 0 no disparan el aviso (`filasConPocaMuestra`
+  exige `rounds > 0`).
+- Identificadores y comentarios sin tildes; UI con tildes (`Miércoles`,
+  `Sábado`, `Por día de la semana`); sin `print` ni `console.log`.
+
+Veredicto: aprobar.
 
 ## Para el humano
 
