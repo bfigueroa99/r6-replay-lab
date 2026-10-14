@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
-estado: revisado
-candado: qa 2026-10-14 17:15 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/43-match-point
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B5, segundo tramo de B2 (rondas bajo presion); el primer tramo (adelante/empatado/atras) entro con la ficha 41
 archivos: backend/replays/analytics/reglas_partida.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_match_point.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z, revisor 20261014T1611Z
+turnos: po 20261014T0911Z, arquitecto 20261014T1012Z, dev 20261014T1511Z, revisor 20261014T1611Z, qa 20261014T1711Z
 
 ## PR
 
@@ -270,6 +270,36 @@ Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
 80 frontend, build ok, 32 e2e).
 
 Veredicto: aprobar.
+
+## QA 2026-10-14 sobre 13fa7ff
+
+(qa 20261014T1711Z; main ya fusionado en la rama, sin merge necesario)
+
+- `./scripts/check.sh`: `Todo en verde.` (561 tests backend, 80 frontend,
+  build ok, 32 e2e; `Tendencias muestra el match point` pasa).
+- Base vacia (`SQLITE_PATH` y `R6_ENV_FILE` en el scratchpad, `migrate`,
+  `runserver 8765`): `curl localhost:8765/api/trends/` da las cinco filas
+  `mine, theirs, both, normal, unknown` en 0. `until=foo`, `page=-1`,
+  `match_type=`, `map=`, `since=2030-01-01`: 200.
+- Base sembrada con `factories.py` (script temporal): partida ranked 0-0 a
+  4-4 siendo equipo 0, la misma siendo equipo 1, QuickMatch 2 rondas, Y9S3
+  2 rondas, una ranked con marcador vacio, 4-0 (fuera de rango) y de tres
+  equipos, y otra con 3-2. Esperado a mano y obtenido:
+  `mine 3, theirs 2, both 2, normal 13, unknown 6`, suma 26 = suma de
+  `by_score_state`. `match_type=Ranked`: unknown 4 (suma 24);
+  `match_type=QuickMatch`: todo en unknown (2); `side=Attack`: suma 15 igual
+  a `by_score_state`. Siendo equipo 1 el marcador se lee al reves (3-2 del
+  equipo 0 cuenta como match point rival). `/tendencias`, `/api/summary/`,
+  `/api/matches/`: 200, sin trazas en el log.
+- Sin migracion; no toca parser, Electron ni `.ps1`.
+- Bundle: el texto nuevo vive solo en el chunk lazy `Trends-*.js`
+  (17,2 kB); el chunk inicial `index-*.js` (186,8 kB) no lo trae.
+- Mutacion sobre `test_match_point`: `cierra` con `>` en vez de `>=` tumba
+  10 tests; `con_regla = conocido` (sin filtrar por regla) tumba 3;
+  `normal` con `filter` en vez de `exclude` tumba 3. Codigo restaurado.
+
+Veredicto: aprobado. Lo que solo se ve con la base real ya esta en
+`## Para el humano` (ranked y rapida reales en el PC).
 
 ## Para el humano
 
