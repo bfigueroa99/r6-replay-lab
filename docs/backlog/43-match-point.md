@@ -1,7 +1,7 @@
 # 43. Match point y ronda decisiva
 
-estado: en curso 2026-10-14
-candado: dev 2026-10-14 15:15Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/43-match-point
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -183,6 +183,49 @@ sin regla".
 **Umbral:** ninguno nuevo; usa `MUESTRA_CORTE`.
 
 ## Implementacion
+
+(dev 20261014T1511Z)
+
+Quedo todo el diseno:
+
+- `backend/replays/analytics/reglas_partida.py`: `REGLAS` (solo `Ranked`
+  desde Y9S4, con la fuente de Dexerto en un comentario), `regla_para`,
+  `objetivo`, `cierra`, `estado` y `tramos`.
+- `aggregates.py`: `_marcador_conocido(qs)` extraido de `by_score_state`
+  (sin cambiar su salida: `test_marcador.py` sigue en verde sin tocarlo) y
+  `by_match_point` con `MATCH_POINT = (mine, theirs, both, normal, unknown)`.
+- `views.py`: `by_match_point` en `/api/trends/`.
+- `Trends.jsx`: panel "Match point" despues de "Según el marcador", con la
+  fila "Sin marcador o sin regla" solo si tiene rondas.
+- `humo.spec.js`: `Tendencias muestra el match point` (seed_demo sin tocar).
+- `docs/metricas.md`: fila "Match point" bajo "Segun el marcador".
+- `backend/tests/test_match_point.py`: los 11 tests del diseno mas
+  `test_ranked_cuatro_a_tres_vuelve_a_ser_tu_match_point`,
+  `test_los_tramos_no_traen_marcadores_de_partida_terminada`,
+  `test_ranked_no_tiene_regla_antes_de_y9s4`,
+  `test_un_marcador_fuera_de_rango_cae_en_normal`,
+  `test_marcador_vacio_va_a_unknown` y dos de API (base vacia y filtros
+  raros; con datos).
+
+Desvios del diseno:
+
+- `tramos(regla)` no recibe `desde`/`hasta`: el tramo de version lo arma la
+  consulta en `aggregates.py`, y la funcion pura solo enumera marcadores.
+  Ademas omite los marcadores de partida ya terminada (p. ej. 4-0 en
+  ranked): esa ronda no existe, y si un dato raro la trae cae en `normal`
+  por construccion (test).
+- `by_match_point` ordena las reglas de cada tipo por `desde` antes de
+  armar los tramos de version (test con dos reglas desordenadas via
+  `mock.patch.dict`: `test_con_dos_reglas_cada_partida_usa_la_de_su_version`).
+- `regla_para` acepta un `reglas` opcional para probar con una tabla
+  inventada sin parchear `REGLAS`.
+
+Revision ciega previa (subagente con `revision.md`): sin bugs; sus dos
+puntos de tests se corrigieron (los filtros del test de suma no recortaban
+nada; la consulta dependia del orden de la tupla de reglas).
+
+Verificacion: `./scripts/check.sh` en `Todo en verde.` (561 tests backend,
+80 frontend, build ok, 32 e2e).
 
 ## Para el humano
 

@@ -31,6 +31,7 @@ from django.db.models.functions import Cast, Floor
 from pydissect.constants import Y9S4
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
+from . import reglas_partida
 from .metrics import trade_window
 
 # --------------------------------------------------------------------- filtros
@@ -514,15 +515,15 @@ def by_previous_round(**filters) -> list[dict]:
 MARCADOR = ("ahead", "tied", "behind", "unknown")
 
 
-def by_score_state(**filters) -> list[dict]:
-    """Rondas yendo adelante, empatado o atras en el marcador antes de jugarlas."""
+def _marcador_conocido(
+    qs: QuerySet[RoundPlayer],
+) -> tuple[QuerySet[RoundPlayer], QuerySet[RoundPlayer]]:
+    """`qs` anotado con `mio`/`suyo` del marcador antes de la ronda, y sus filas legibles."""
     s0 = Cast(KeyTransform("0", "round__score_before"), IntegerField())
     s1 = Cast(KeyTransform("1", "round__score_before"), IntegerField())
     # Un marcador de mas de dos equipos no se puede leer como tuyo contra el
     # otro: el tercer elemento lo manda a `unknown`.
-    qs = base_queryset(**filters).annotate(
-        s0=s0, s1=s1, s2=KeyTransform("2", "round__score_before")
-    )
+    qs = qs.annotate(s0=s0, s1=s1, s2=KeyTransform("2", "round__score_before"))
     # El queryset es de tus filas, asi que `team_index` es tu equipo; uno
     # fuera de 0/1 deja `mio` nulo y la ronda cae en `unknown`.
     qs = qs.annotate(
@@ -536,6 +537,12 @@ def by_score_state(**filters) -> list[dict]:
         mio__isnull=False, suyo__isnull=False, s2__isnull=True,
         round__match__code_version__gte=Y9S4,
     )
+    return qs, conocido
+
+
+def by_score_state(**filters) -> list[dict]:
+    """Rondas yendo adelante, empatado o atras en el marcador antes de jugarlas."""
+    qs, conocido = _marcador_conocido(base_queryset(**filters))
     tramos = {
         "ahead": conocido.filter(mio__gt=F("suyo")),
         "tied": conocido.filter(mio=F("suyo")),
@@ -543,6 +550,46 @@ def by_score_state(**filters) -> list[dict]:
         "unknown": qs.exclude(pk__in=conocido.values("pk")),
     }
     return _filas_por_tramo("score_state", {nombre: tramos[nombre] for nombre in MARCADOR})
+
+
+#: Orden fijo de las filas de `by_match_point`.
+MATCH_POINT = ("mine", "theirs", "both", "normal", "unknown")
+
+
+def by_match_point(**filters) -> list[dict]:
+    """Rondas segun si alguien cerraba la partida ganandolas.
+
+    A cuanto se gana sale de `reglas_partida.REGLAS`: un tipo o una version
+    sin regla va a `unknown` junto con las rondas sin marcador, en vez de
+    contarse como ronda sin match point.
+    """
+    qs, conocido = _marcador_conocido(base_queryset(**filters))
+    con_regla_q = Q(pk__in=[])
+    por_estado = {nombre: Q(pk__in=[]) for nombre in reglas_partida.ESTADOS}
+    for tipo, reglas in reglas_partida.REGLAS.items():
+        # el tramo de version de cada regla termina donde arranca la siguiente
+        reglas = sorted(reglas, key=lambda r: r["desde"])
+        for i, regla in enumerate(reglas):
+            version = Q(
+                round__match__match_type=tipo, round__match__code_version__gte=regla["desde"]
+            )
+            if i + 1 < len(reglas):
+                version &= Q(round__match__code_version__lt=reglas[i + 1]["desde"])
+            con_regla_q |= version
+            for nombre, pares in reglas_partida.tramos(regla).items():
+                if pares:
+                    marcadores = Q(pk__in=[])
+                    for mio, suyo in pares:
+                        marcadores |= Q(mio=mio, suyo=suyo)
+                    por_estado[nombre] |= version & marcadores
+    con_regla = conocido.filter(con_regla_q)
+    tramos = {nombre: con_regla.filter(por_estado[nombre]) for nombre in ("mine", "theirs", "both")}
+    # `normal` es lo que queda: asi un marcador fuera de rango no se pierde.
+    tramos["normal"] = con_regla.exclude(
+        por_estado["mine"] | por_estado["theirs"] | por_estado["both"]
+    )
+    tramos["unknown"] = qs.exclude(pk__in=con_regla.values("pk"))
+    return _filas_por_tramo("match_point", {nombre: tramos[nombre] for nombre in MATCH_POINT})
 
 
 #: Orden fijo de las filas de `round_endings`.
