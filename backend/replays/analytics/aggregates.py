@@ -458,6 +458,62 @@ def by_score_state(**filters) -> list[dict]:
     return _filas_por_tramo("score_state", {nombre: tramos[nombre] for nombre in MARCADOR})
 
 
+#: Orden fijo de las filas de `round_endings`.
+LADOS_CIERRE = ("Attack", "Defense")
+
+
+def round_endings(**filters) -> list[dict]:
+    """Tus rondas de cada lado segun como terminaron: por eliminacion o sin ella.
+
+    "Sin eliminacion" es `ObjectiveOrTime`, que en temporadas nuevas se infiere
+    del reloj: no se parte en plant, defuse o tiempo porque el `.rec` no lo dice.
+    """
+    # Se usa `round__my_team_won` y no `won`: `won` es False cuando la ronda
+    # no tiene ganador y la mandaria a perdidas en vez de a `unknown`.
+    def _cuenta(gano: bool, condicion: str) -> Count:
+        return Count("id", filter=Q(round__my_team_won=gano, round__win_condition=condicion))
+
+    por_lado = {
+        fila["side"]: fila
+        for fila in base_queryset(**filters)
+        .filter(side__in=LADOS_CIERRE)
+        .values("side")
+        .annotate(
+            rounds=Count("id"),
+            won_elimination=_cuenta(True, "KilledOpponents"),
+            won_other=_cuenta(True, "ObjectiveOrTime"),
+            lost_elimination=_cuenta(False, "KilledOpponents"),
+            lost_other=_cuenta(False, "ObjectiveOrTime"),
+        )
+    }
+    filas = []
+    for lado in LADOS_CIERRE:
+        fila = por_lado.get(lado, {})
+        cuentas = {
+            clave: fila.get(clave, 0)
+            for clave in ("won_elimination", "won_other", "lost_elimination", "lost_other")
+        }
+        rounds = fila.get("rounds", 0)
+        filas.append(
+            {
+                "side": lado,
+                "rounds": rounds,
+                **cuentas,
+                # Resta y no filtro propio: sin ganador, sin condicion o una
+                # condicion que el parser agregue manana caen aca, y la fila
+                # suma todas tus rondas por construccion.
+                "unknown": rounds - sum(cuentas.values()),
+                "won_elimination_pct": _pct(
+                    cuentas["won_elimination"], cuentas["won_elimination"] + cuentas["won_other"]
+                ),
+                "lost_elimination_pct": _pct(
+                    cuentas["lost_elimination"], cuentas["lost_elimination"] + cuentas["lost_other"]
+                ),
+            }
+        )
+    return filas
+
+
 def by_hour(**filters) -> list[dict]:
     """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
 
