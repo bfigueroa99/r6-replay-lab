@@ -1,30 +1,26 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 10:25 UTC por qa (sesion 20261015T1012Z; motivo: por estado: 2 revisado; reloj: dev, franja 3)
+actualizado: 2026-10-15 11:50 UTC por release (sesion 20261015T1111Z; motivo: por estado: 2 aprobado; reloj: revisor, franja 4)
 playbook: origin/main@17f0ae1
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias | sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas | compare | PR |
-|---|---|---|---|---|---|
-| claude/equipo-dev/46-primero-de-tu-equipo-en-caer | docs/backlog/46-primero-de-tu-equipo-en-caer.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/46-primero-de-tu-equipo-en-caer?expand=1) | sin PR |
-| claude/equipo-dev/47-modos-desconocidos-en-datos | docs/backlog/47-modos-desconocidos-en-datos.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/47-modos-desconocidos-en-datos?expand=1) | sin PR |
+Vacia: 46 y 47 mergeadas en este turno (PR #35 y #36).
 
-COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=2 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/46-primero-de-tu-equipo-en-caer`: la mas vieja, sin choque con main 17f0ae1.
-2. `claude/equipo-dev/47-modos-desconocidos-en-datos`: sin choque con main ni con la 46 (merge de prueba 46+47 limpio de nuevo en este turno, aunque las dos tocan `views.py` y `humo.spec.js`).
+Nada abierto. Las dos ramas de este turno se fusionaron limpias (46 primero; 47 con main b3b33a6 fusionado y `check.sh` en verde de nuevo).
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 (45, PR #34) en main; B8 y B9 como idea. escuadra: C4 (ficha 46) aprobado. temporada-y-modo: A2 (ficha 47) aprobado. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:1 (48, bug). Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:7.
+- Epicas en curso: escuadra: C4 (46, PR #35) en main; C1-C3 y C5 libres. temporada-y-modo: A2 (47, PR #36) en main; A1 lo toca PR #14, A3 libre. lado-y-marcador: B1-B7 en main; B8 y B9 como idea. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:1 (48, bug). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 58 ideas libres. Ideas nuevas de este turno: ninguna. Ultimas del Investigador (2026-10-14): A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade convertidas, D5 cara a cara en el detalle de partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamaño, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 jugadores y kill feed de Y11S2, P6 picks de preparacion; F1 y F7 ampliadas.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -32,17 +28,15 @@ RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | titulo | estado | tipo | epica | prioridad |
 |---|---|---|---|---|---|
-| 46 | Primero de tu equipo en caer | aprobado (rama de trabajo) | funcionalidad | escuadra | 3 |
-| 47 | Modos y tipos de partida desconocidos en Datos | aprobado (rama de trabajo) | funcionalidad | temporada-y-modo | 4 |
 | 48 | POST de etiquetas y de Ubisoft aceptan formularios de otra pagina | propuesto | bug | - | 2 |
 
-Papel: 1 propuesto (48, bug, lo abrio QA), 0 disenado, ninguna funcionalidad. Proximo turno por estado: release para mergear 46 y 47; despues po (papel sin funcionalidades) y arquitecto para la 48.
+Papel: 1 propuesto (48, bug), 0 disenado, ninguna funcionalidad. Proximo turno por estado: po (menos de 6 propuesto; el papel necesita funcionalidades, p. ej. el siguiente tramo de escuadra) o arquitecto para la 48.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-15 05:50 | Entrega y mergea 45 (`aprobado` -> `entregado` -> main, PR #34, main 17f0ae1, funcionalidad; cierra B7 de lado-y-marcador). Puerta completa: dev/revisor/qa en sesiones distintas, rama con main f74a16f, `check.sh` en `Todo en verde.` sobre el commit exacto del PR 780ee84 (585 backend, 86 vitest, build, 33 e2e). Ficha recortada con `## PR`; espejo quitado de backlog; B7 a `en main` en `ALCANCE.md`. Borrar la rama: el push de borrado no tuvo efecto. pruebas.sh: PRUEBAS_OK (10). |
+| release | 2026-10-15 11:50 | Entrega y mergea 46 (PR #35, main b3b33a6) y 47 (PR #36, main 591a300), las dos funcionalidad (`aprobado` -> `entregado` -> main). Puerta completa en las dos: dev/revisor/qa en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, `check.sh` en `Todo en verde.` sobre la rama con main fusionado (46: 604 backend, 86 vitest, build, 34 e2e; 47 con main b3b33a6: 629, 86, build, 36). Fichas recortadas con `## PR`; espejos quitados de backlog; C4 y A2 a `en main` en `ALCANCE.md`. Borrado de ramas cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). |
 | dev | 2026-10-15 08:45 | Corrige 46 (`con hallazgos` -> `implementado`): fila de `metricas.md` define el % de "Caíste primero"/"Cayó un compañero"; `_primer_orden_de_muerte` con `Exists` correlacionado y test con el tope de SQLite bajado a 50 (falla sin el arreglo). Implementa 47 (`disenado` -> `implementado`, rama `claude/equipo-dev/47-modos-desconocidos-en-datos`, funcionalidad, A2 de temporada-y-modo): modos y tipos `Unknown(<id>)` anotados por el parser, listados en `/api/unknown/` y Datos, etiquetados por `POST /api/overrides/` y reetiquetados por `retag` sin reimportar; `unknown_ids` y README. Revision ciega: contador de partidas reetiquetadas contado una vez por campo, corregido. `check.sh` en `Todo en verde.` en las dos ramas (46: 603 backend, 86 vitest, build, 34 e2e; 47: 610, 86, build, 35). |
 | revisor | 2026-10-15 09:16 | Revisa 46 (segunda pasada) y 47 (`implementado` -> `revisado` las dos). `check.sh` en `Todo en verde.` en las dos ramas (46: 603 backend, 86 vitest, build, 34 e2e; 47: 610, 86, build, 35). 46: los dos hallazgos de la primera pasada corregidos y verificados; revision ciega nueva sin bugs, su unico punto (clasificacion calculada al consultar) lo fijo el diseno y va como aviso. 47: revision ciega sin hallazgos; cada criterio con tests nombrados; largos de campo confirmados (32). Sin pushes de codigo. |
 | qa | 2026-10-15 10:25 | Prueba 46 y 47 (`revisado` -> `aprobado` las dos). `check.sh` en `Todo en verde.` (46: 604 backend con el test de borde agregado, 86 vitest, build, 34 e2e; 47: 610, 86, build, 35). 46: base vacia 200 con filtros raros; 9 rondas sembradas calculadas a mano (rival antes, empates con y sin feed, elapsed nulo, partida de un jugador) coinciden con la API por lado y filtro; 4 mutaciones, 3 caian y la cuarta (fila sin lado sumada a Attack) sobrevivia: agregue `test_fila_sin_lado_cuenta_solo_en_el_total`. 47: `overrides.json` viejo, `/api/unknown/` con pistas y fechas, 6 POST invalidos -> 400, retag de modo y tipo sin degradar ni tocar `Unknown(0)`/`Unknown(abc)`, `unknown_ids --write`, `retag --dry-run`, Datos real en Chromium sin errores; 4 mutaciones caen. Chunk inicial sin cambio en las dos. Propone 48 (bug, prioridad 2): `/api/overrides/` y el POST de Ubisoft aceptan `text/plain` de otra pagina. |
@@ -69,6 +63,8 @@ Papel: 1 propuesto (48, bug, lo abrio QA), 0 disenado, ninguna funcionalidad. Pr
   - `git push origin --delete claude/equipo-dev/44-records-personales` (mergeada, PR #32)
   - `git push origin --delete claude/equipo-dev/43-match-point` (mergeada, PR #33)
   - `git push origin --delete claude/equipo-dev/45-remontadas-y-derrumbes` (mergeada, PR #34)
+  - `git push origin --delete claude/equipo-dev/46-primero-de-tu-equipo-en-caer` (mergeada, PR #35)
+  - `git push origin --delete claude/equipo-dev/47-modos-desconocidos-en-datos` (mergeada, PR #36)
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
 - PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
 - Ficha 40 (aviso, no bloquea): una partida cuyo `.rec` no trae `datetime` en el header cae en la franja y el dia en que se importo (fallback preexistente de `_parse_ts`). Con `.rec` reales el campo viene siempre; si ves una franja rara, avisa y va a ficha propia.
@@ -82,11 +78,11 @@ Papel: 1 propuesto (48, bug, lo abrio QA), 0 disenado, ninguna funcionalidad. Pr
 - Posible bug para el PO (Investigador, 2026-10-14, idea A4): `by_map` (`aggregates.py:383-402`) agrupa por nombre y slug, pero une el winrate por lado solo por `map_name`. Los mapas con version vieja y rehecha (`Fortress`/`FortressY10`, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...) salen como dos filas con el mismo nombre y el mismo winrate de ataque y defensa, mezclado. `by_site` tambien mezcla los sitios de los dos layouts. Leido en el codigo, no reproducido con datos: el PO puede abrirlo como `tipo: bug`.
 - Ficha 45 (ya en main, PR #34; aviso del Dev, no bloquea): una partida con un `.rec` de ronda faltante, en el medio o al principio, no entra a remontadas, derrumbes ni a la tabla del cambio de lado (evita numeros falsos). Si faltan las ultimas no se detecta: el resultado de la partida ya sale truncado del ultimo `.rec` para toda la app. Con la base real, abrir una remontada y confirmar en el detalle que el marcador estuvo 2 abajo.
 - Ficha 45 (ya en main, PR #34; aviso del Revisor, no bloquea): con `matches_known == 0` el panel dice "hace falta Y9S4 o posterior", pero tambien saca partidas Y9S4 con rondas faltantes o sin resultado; cambio de texto de una linea (Trends.jsx:546); el Release no implementa, queda para una ficha chica.
-- Ficha 46 (aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.
-- Ficha 46 (aviso del Revisor, no bloquea): la clasificacion "primero en caer" se calcula al consultar (lee `Event` si hay empates), como los Duelos. Si pesa con tu base, la alternativa es una columna `first_team_death` en `RoundPlayer` marcada al importar (migracion + `recompute`), ficha aparte.
-- Ficha 48 (QA, propuesta como bug, prioridad 2): `POST /api/overrides/` y `POST /api/players/<id>/ubisoft/` no exigen `application/json` (Ajustes y Respaldo si): un formulario de cualquier pagina abierta en el navegador puede reescribir `overrides.json` y renombrar partidas, o disparar la consulta a Ubisoft sin el clic. Preexistente en main; la 47 lo extiende a modos y tipos.
-- Verificar en el PC (ficha 47, toca el parser): desde `backend/`, `..\.venv\Scripts\python.exe manage.py unknown_ids` y `... manage.py retag --dry-run` sobre tu base: sin error, y si hay modos o tipos `Unknown(...)` aparecen en Datos > Sin identificar.
-- Ficha 47 (aviso del Arquitecto, no bloquea): `Match` no guarda el id del modo ni del tipo de partida, asi que el retag lo lee del texto `Unknown(<id>)`; una etiqueta puesta mal no se corrige sobre lo ya importado. Corregirla pediria columnas `gamemode_id`/`match_type_id` con migracion y `recompute` (ficha aparte si la queres).
+- Ficha 46 (ya en main, PR #35; aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.
+- Ficha 46 (ya en main, PR #35; aviso del Revisor, no bloquea): la clasificacion "primero en caer" se calcula al consultar (lee `Event` si hay empates), como los Duelos. Si pesa con tu base, la alternativa es una columna `first_team_death` en `RoundPlayer` marcada al importar (migracion + `recompute`), ficha aparte.
+- Ficha 48 (QA, propuesta como bug, prioridad 2; la 47 ya esta en main, asi que ahora tambien alcanza a modos y tipos): `POST /api/overrides/` y `POST /api/players/<id>/ubisoft/` no exigen `application/json` (Ajustes y Respaldo si): un formulario de cualquier pagina abierta en el navegador puede reescribir `overrides.json` y renombrar partidas, o disparar la consulta a Ubisoft sin el clic. Preexistente en main; la 47 lo extiende a modos y tipos.
+- Verificar en el PC (ficha 47, ya en main, PR #36, toca el parser): desde `backend/`, `..\.venv\Scripts\python.exe manage.py unknown_ids` y `... manage.py retag --dry-run` sobre tu base: sin error, y si hay modos o tipos `Unknown(...)` aparecen en Datos > Sin identificar.
+- Ficha 47 (ya en main, PR #36; aviso del Arquitecto, no bloquea): `Match` no guarda el id del modo ni del tipo de partida, asi que el retag lo lee del texto `Unknown(<id>)`; una etiqueta puesta mal no se corrige sobre lo ya importado. Corregirla pediria columnas `gamemode_id`/`match_type_id` con migracion y `recompute` (ficha aparte si la queres).
 - Preguntas abiertas:
   - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
   - ~~Boton de backup y `REPLAY_DIR` desde la UI~~: resuelto por el #12 (main eb2633c), que suma `POST /api/settings/` y `POST /api/backup/` a `CLAUDE.md`. El PO ya no las tiene que esperar.
