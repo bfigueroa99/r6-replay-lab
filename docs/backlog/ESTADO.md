@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 17:15 UTC por po (sesion 20261015T1711Z; motivo: papel vacio; reloj: qa, franja 6)
+actualizado: 2026-10-15 18:35 UTC por arquitecto (sesion 20261015T1811Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: qa, franja 6)
 playbook: origin/main@2a6c86b
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
 pausa: no
@@ -13,7 +13,7 @@ pausa: no
 Ninguna rama de trabajo abierta: la 48 se mergeo en el turno anterior (PR #37, main 2a6c86b).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -22,8 +22,8 @@ Nada que mergear: no hay ramas de trabajo abiertas.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
-- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 en papel (50); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 en papel (49, bug); A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 en papel (51). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:1. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 disenada (50); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 disenada (51). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 59 ideas libres (58 al empezar el turno; A4, B10 y F7 pasaron a fichas). Ideas nuevas de este turno: C10 compañeros por lado, E10 operadores que mejoran y empeoran, G6 partidas incompletas en Datos, H4 copiar el resumen de una partida como texto.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -31,11 +31,11 @@ Nada que mergear: no hay ramas de trabajo abiertas.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 49-mapas-rehechos-mezclan-lados | propuesto | bug | temporada-y-modo | 2 | backend | - |
-| 50-partidas-cerradas-y-holgadas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 51-matriz-de-duelos-de-la-partida | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 50-partidas-cerradas-y-holgadas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 51-matriz-de-duelos-de-la-partida | disenado | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: arquitecto (regla 9), primero la 49 (prioridad 2).
+Proximo turno por estado: dev (regla 8), primero la 50 (la mas vieja a igual prioridad; las dos son independientes y no pisan archivos). 0 `propuesto`: el PO vuelve a llenar el papel cuando el Dev tome una.
 
 ## Ultimo turno de cada rol
 
@@ -45,7 +45,7 @@ Proximo turno por estado: arquitecto (regla 9), primero la 49 (prioridad 2).
 | dev | 2026-10-15 13:40 | Implementa 48 (bug, `disenado` -> `implementado`, rama `claude/equipo-dev/48-posts-sin-json-desde-otra-pagina`): `player_ubisoft` (antes del 404), `save_overrides` y `run_import` devuelven 415 sin `application/json`; `api.js` manda `{}` JSON por defecto en todo `post`. 3 tests de 415 (text/plain y urlencoded; `abrir` prohibido, `start_import` no llamado, `overrides.json` sin escribir) y e2e `los POST de la UI mandan JSON` (cae con el `api.js` de main). Fuera de `archivos:`: `test_ajustes.py` tambien postea a `/api/import/`. Revision ciega: aprobar. `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). |
 | revisor | 2026-10-15 14:14 | Revisa 48 (bug, `implementado` -> `revisado`). Rama al dia con main 591a300, `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Revision ciega: aprobar, sin hallazgos; confirmado a mano el orden de los 415, que todo POST de la UI pasa por `post()` y que los tests nuevos caen con el bug. Nota preexistente (tambien en main): `test_ajustes.VigilanteTests` da 4 fallos si se corre junto con `test_import_job` (dependen del orden). Sin pushes de codigo. |
 | qa | 2026-10-15 15:17 | Prueba 48 (bug, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Base vacia y sembrada: overrides, import (`?force=1`) y Ubisoft (id real e inexistente) dan 415 con text/plain, urlencoded, multipart y sin cuerpo, y no escriben `overrides.json`; con JSON (tambien `; charset=utf-8`) siguen igual. UI en Chromium: Importar, respaldo, interruptor de Ajustes, Datos (reetiqueta un `Unknown(424242)`) y Consultar Ubisoft (interceptado, sin red) mandan `application/json`. Mutacion: cada chequeo quitado hace caer su test. Chunk 186.78 kB (main 186.80). Sin pushes de codigo. |
-| arquitecto | 2026-10-15 12:13 | Disena 48 (bug, `propuesto` -> `disenado`): `_es_json` + 415 al principio de `player_ubisoft` (antes del 404 y de `configurado()`), `save_overrides` y tambien `run_import` (con `?force=1` una pagina ajena forzaba la reimportacion entera; cuesta una linea); `api.js` manda `{}` JSON por defecto en todo `post`, asi `App.jsx` y `PerfilUbisoft.jsx` no cambian; helpers de tests a JSON, 3 tests nuevos de 415 y un e2e que intercepta `/api/import/` y afirma `application/json`. Sin pushes de codigo. |
+| arquitecto | 2026-10-15 18:35 | Disena 50 (`by_margin` en `/api/trends/` desde `Match.my_score/opponent_score`, corte Y9S4, prorroga primero, `side` ignorado, rating sobre la partida entera; `margen.js` + panel en Tendencias + e2e: seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el navegador: `matrizDuelos.js` + componente `MatrizDuelos.jsx`, insertado entre Rondas y Scoreboard para no chocar con PR #14). Descarta 49: `map_slug` colapsa las versiones de un mapa a proposito (`header.py:227`, `test_pydissect.py:178`), no hay dos filas ni mezcla; separar versiones es decision de producto. `ALCANCE.md` A4 anotada. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
 | po | 2026-10-15 17:15 | Papel vacio: propone 49 (bug A4: `by_map` une el winrate por lado por `map_name` y mezcla Fortress con FortressY10; `by_site`/`by_spawn` mezclan layouts; verificado en `aggregates.py:383-430`), 50 (B10: partidas cerradas y holgadas en Tendencias) y 51 (F7: matriz de duelos 5x5 en el detalle de partida, solo frontend). Reconcilia `ALCANCE.md` con main 2a6c86b. Ideas nuevas C10, E10, G6 y H4: 59 libres (58 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
@@ -82,7 +82,7 @@ Proximo turno por estado: arquitecto (regla 9), primero la 49 (prioridad 2).
 - Ficha 44 (ya en main, PR #32; aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
 - Verificar en el PC (Investigador, 2026-10-14): r6-dissect issue #130 reporta replays Y11S3 con `won: true` en los dos equipos en 3 de 5 rondas. `replays/analytics/metrics.py:205` se queda con el ultimo equipo sin avisar, asi que `my_team_won` podria salir al reves en esas rondas. Si tienes un `.rec` Y11S3, mirar si alguna ronda tiene a los dos equipos ganadores (idea P2 de `ALCANCE.md`); si se confirma, es un bug para el PO con prioridad 1. Tambien falta el operador 444310693746 (sale `Unknown(...)`, se puede nombrar en Datos; idea P1).
 - Verificar en el PC (Investigador, 2026-10-14 22:11Z, idea P5): dos forks de r6-dissect (nicktstewart y defiancer6s-hub) cambian en Y11S2 (code version 9734089) el patron del DissectID a `8C 61 1A 75 23` y el layout del kill feed; sintoma: jugadores duplicados o faltantes y bajas de gente que no esta en la lista. `docs/formato-rec.md` dice que Y11S3 anda sin cambios, asi que puede afectar solo a Y11S2. Si tienes un `.rec` de Y11S2 (Calypso Casino, 2026-06 a 2026-09), importalo y mira si faltan jugadores o bajas.
-- Ficha 49 propuesta (PO 2026-10-15) a partir de este aviso. Posible bug para el PO (Investigador, 2026-10-14, idea A4): `by_map` (`aggregates.py:383-402`) agrupa por nombre y slug, pero une el winrate por lado solo por `map_name`. Los mapas con version vieja y rehecha (`Fortress`/`FortressY10`, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...) salen como dos filas con el mismo nombre y el mismo winrate de ataque y defensa, mezclado. `by_site` tambien mezcla los sitios de los dos layouts. Leido en el codigo, no reproducido con datos: el PO puede abrirlo como `tipo: bug`.
+- Ficha 49 **descartada** (Arquitecto 2026-10-15): el bug no existe. `map_slug()` sale del nombre legible y colapsa las versiones de un mapa a proposito (`pydissect/header.py:227-232`, `tests/test_pydissect.py:178`): `Consulate`, `ConsulateY7` y `ConsulateY10` son todos `Consulate`/`consulate`, asi que Mapas da una sola fila y el winrate por lado no se mezcla entre filas. `FortressY10` todavia no esta en `MAPS` (idea P1). **Decision tuya (P10, cambia como se agrupa un numero que ya se muestra):** ¿queres ver cada version de un mapa en su propia fila ("Consulate (Y10)")? Si si, es una funcionalidad barata: agrupar por `Match.map_id` (ya guardado) con el sufijo del identificador interno de `MAPS`, sin migracion ni reimportar. Decilo en `## Para el equipo` y el PO abre la ficha.
 - Ficha 45 (ya en main, PR #34; aviso del Dev, no bloquea): una partida con un `.rec` de ronda faltante, en el medio o al principio, no entra a remontadas, derrumbes ni a la tabla del cambio de lado (evita numeros falsos). Si faltan las ultimas no se detecta: el resultado de la partida ya sale truncado del ultimo `.rec` para toda la app. Con la base real, abrir una remontada y confirmar en el detalle que el marcador estuvo 2 abajo.
 - Ficha 45 (ya en main, PR #34; aviso del Revisor, no bloquea): con `matches_known == 0` el panel dice "hace falta Y9S4 o posterior", pero tambien saca partidas Y9S4 con rondas faltantes o sin resultado; cambio de texto de una linea (Trends.jsx:546); el Release no implementa, queda para una ficha chica.
 - Ficha 46 (ya en main, PR #35; aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.
