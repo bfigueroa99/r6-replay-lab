@@ -1,7 +1,7 @@
 # 49. Mapas rehechos mezclan el winrate por lado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-15T18:12Z
 rama: -
 tipo: bug
 epica: temporada-y-modo

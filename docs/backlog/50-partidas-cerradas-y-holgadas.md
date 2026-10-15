@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-15T18:12Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

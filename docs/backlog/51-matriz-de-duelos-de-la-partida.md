@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-15T18:12Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
