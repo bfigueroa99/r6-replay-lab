@@ -1,8 +1,8 @@
 # 51. Matriz de duelos de la partida
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
 area: frontend
