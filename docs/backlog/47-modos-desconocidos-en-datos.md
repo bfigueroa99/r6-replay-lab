@@ -1,6 +1,6 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
-estado: en curso 2026-10-15
+estado: aprobado
 candado: -
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad

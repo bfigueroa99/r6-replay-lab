@@ -1,6 +1,6 @@
 # 46. Primero de tu equipo en caer
 
-estado: implementado
+estado: aprobado
 candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
