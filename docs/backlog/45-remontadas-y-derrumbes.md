@@ -1,8 +1,8 @@
 # 45. Remontadas y derrumbes
 
-estado: disenado
+estado: en curso 2026-10-15
 candado: -
-rama: -
+rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
