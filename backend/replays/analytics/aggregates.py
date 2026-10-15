@@ -717,6 +717,70 @@ def comebacks(**filters) -> dict:
     }
 
 
+#: Orden fijo de las filas de `by_margin`: la prorroga va primero porque gana
+#: a cualquier margen (una partida a prorroga es cerrada aunque termine 2 arriba).
+TRAMOS_MARGEN = ("overtime", "1", "2", "3+")
+
+
+def _tramo_margen(margen: int) -> str | None:
+    if margen >= 3:
+        return "3+"
+    return str(margen) if margen > 0 else None
+
+
+def by_margin(**filters) -> dict:
+    """Partidas segun el margen final del marcador: prorroga, 1, 2 o 3 o mas rondas.
+
+    Los filtros eligen partidas y cada partida se lee entera, como en
+    `comebacks`: el lado no parte una partida, asi que `side` se ignora.
+    """
+    filtros = {k: v for k, v in filters.items() if k != "side"}
+    ids = base_queryset(**filtros).values_list("round__match_id", flat=True).distinct()
+    partidas = Match.objects.filter(id__in=ids)
+    # Antes de Y9S4 el marcador no es confiable (ver `_marcador_conocido`);
+    # sin resultado (empate o desconocido) no hay margen que leer.
+    conocidas = partidas.filter(code_version__gte=Y9S4).exclude(won__isnull=True)
+    con_prorroga = set(
+        Round.objects.filter(match_id__in=conocidas.values("id"), overtime_number__gt=0)
+        .values_list("match_id", flat=True)
+    )
+    por_tramo: dict[str, list[int]] = {tramo: [] for tramo in TRAMOS_MARGEN}
+    ganadas = dict.fromkeys(TRAMOS_MARGEN, 0)
+    for p in conocidas.values("id", "my_score", "opponent_score", "won"):
+        if p["id"] in con_prorroga:
+            tramo = "overtime"
+        else:
+            tramo = _tramo_margen(abs(p["my_score"] - p["opponent_score"]))
+        if tramo is None:
+            continue
+        por_tramo[tramo].append(p["id"])
+        ganadas[tramo] += 1 if p["won"] else 0
+
+    baseline = rating_baseline()
+    filas = []
+    for tramo in TRAMOS_MARGEN:
+        n = len(por_tramo[tramo])
+        # Todas tus rondas de esas partidas, sin recortar por operador o
+        # sitio: la partida se lee entera.
+        t = totals(RoundPlayer.objects.filter(is_me=True, round__match_id__in=por_tramo[tramo]),
+                   baseline)
+        filas.append({
+            "margin": tramo,
+            "matches": n,
+            "wins": ganadas[tramo],
+            "winrate": _pct(ganadas[tramo], n),
+            "rounds": t["rounds"] or 0,
+            "rating": t["rating"],
+            "kpr": t["kpr"],
+        })
+    medidas = sum(len(v) for v in por_tramo.values())
+    return {
+        "rows": filas,
+        "matches_known": medidas,
+        "matches_excluded": partidas.count() - medidas,
+    }
+
+
 #: Orden fijo de las filas de `round_endings`.
 LADOS_CIERRE = ("Attack", "Defense")
 

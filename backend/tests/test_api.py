@@ -113,6 +113,12 @@ class PopulatedApiTests(TestCase):
         self.assertTrue(data["by_day"])
         self.assertTrue(data["by_round_number"])
 
+    def test_trends_trae_by_margin(self):
+        resp = self.client.get("/api/trends/")
+        self.assertEqual(resp.status_code, 200)
+        filas = resp.json()["by_margin"]["rows"]
+        self.assertEqual([f["margin"] for f in filas], ["overtime", "1", "2", "3+"])
+
     def test_coach_devuelve_estructura_estable(self):
         data = self.client.get("/api/coach/").json()
         self.assertIn("insights", data)
