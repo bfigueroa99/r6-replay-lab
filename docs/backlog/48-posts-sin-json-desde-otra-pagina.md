@@ -1,7 +1,7 @@
 # 48. POST de etiquetas y de Ubisoft aceptan formularios de otra pagina
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15T13:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/48-posts-sin-json-desde-otra-pagina
 tipo: bug
 epica: -
@@ -138,8 +138,46 @@ lineas entre codigo y tests.
 
 ## Implementacion
 
+Dev 20261015T1311Z. Todo el diseno, sin desvios de alcance.
+
+- `views.py`: `player_ubisoft`, `save_overrides` y `run_import` devuelven
+  415 (`se esperaba application/json`, el texto de siempre) si no llega
+  JSON. En `player_ubisoft` el chequeo va antes del 404 y de
+  `configurado()`. El docstring de `_es_json` nombra los cinco POST.
+- `api.js`: `post(path, params, body = {})` manda siempre la cabecera y el
+  cuerpo JSON. `App.jsx` y `PerfilUbisoft.jsx` no cambian.
+- Tests nuevos, uno por criterio:
+  `test_externo.PerfilJugadorTests.test_un_formulario_de_otra_pagina_no_consulta_a_ubisoft`
+  (text/plain y urlencoded dan 415, con `abrir` prohibido; un id
+  inexistente tambien da 415 y no 404; no crea `PerfilUbisoft`),
+  `test_unknowns.EndpointTests.test_un_formulario_de_otra_pagina_no_reetiqueta`
+  (415, no escribe `overrides.json`, `map_name` sigue `Unknown(...)`) y
+  `test_import_job.HiloTests.test_un_formulario_de_otra_pagina_no_lanza_la_importacion`
+  (`?force=1` con text/plain y urlencoded da 415 y `start_import` no se
+  llama). El e2e `los POST de la UI mandan JSON` intercepta
+  `/api/import/`, hace clic en Importar replays y comprueba la cabecera.
+- Los POST existentes a `/api/import/` y a Ubisoft en los tests ahora
+  mandan JSON (helper `_importar` en `HiloTests`).
+- **Desvio de `archivos:`:** tambien `backend/tests/test_ajustes.py:428`
+  (`OrigenDelTrabajoTests` postea a `/api/import/` y daba 415), y lo
+  reformatee con `ruff format` en `test_externo.py`, que ya estaba
+  formateado en main.
+- Verificado: con los helpers viejos, 15 tests en rojo (415). Mutacion del
+  e2e: con el `api.js` de main falla `expect(tipo).toContain('application/json')`.
+  Revision ciega: aprobar, sin bugs; dos notas menores (abajo).
+- `check.sh`: `Todo en verde.` (632 tests backend con 4 saltados, 86
+  vitest, build, 37 e2e).
+
 ## Revision
 
 ## QA
 
 ## Para el humano
+
+- `CLAUDE.md` ("La API es de lectura") dice que exigen `application/json`
+  "los que cambian configuracion". Con esta ficha lo exigen todos los
+  POST. La ficha dice que no se toque `CLAUDE.md`, asi que si se quiere
+  cambiar la frase la cambia el humano.
+- Despues de mergear, `npm run build` antes de `runserver`: un
+  `frontend/dist` viejo manda los POST sin cabecera, y los botones de
+  Importar y de Ubisoft darian 415.

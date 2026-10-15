@@ -146,6 +146,14 @@ class EndpointTests(OverridesTestCase):
     def test_get_no_guarda(self):
         self.assertEqual(self.client.get("/api/overrides/").status_code, 405)
 
+    def test_un_formulario_de_otra_pagina_no_reetiqueta(self):
+        cuerpo = json.dumps({"maps": {str(MAPA_NUEVO): "Nighthaven Labs"}})
+        for tipo in ("text/plain", "application/x-www-form-urlencoded"):
+            respuesta = self.client.post("/api/overrides/", data=cuerpo, content_type=tipo)
+            self.assertEqual(respuesta.status_code, 415, tipo)
+        self.assertFalse(self.path.exists())
+        self.assertEqual(Match.objects.get().map_name, f"Unknown({MAPA_NUEVO})")
+
 
 class ModosYTiposTests(OverridesTestCase):
     def _post(self, payload):

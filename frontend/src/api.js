@@ -20,11 +20,14 @@ export async function get(path, params) {
   return response.json()
 }
 
-export async function post(path, params, body) {
-  const options = { method: 'POST' }
-  if (body !== undefined) {
-    options.headers = { 'Content-Type': 'application/json' }
-    options.body = JSON.stringify(body)
+// Siempre JSON, aunque no haya nada que mandar: el backend rechaza con 415 los
+// POST sin application/json para que un formulario de otra pagina no pueda
+// dispararlos.
+export async function post(path, params, body = {}) {
+  const options = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   }
   const response = await fetch(`${BASE}${path}${qs(params)}`, options)
   if (!response.ok) {

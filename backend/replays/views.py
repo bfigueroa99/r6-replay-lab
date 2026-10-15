@@ -109,7 +109,9 @@ def _ok(payload: dict, status: int = 200) -> JsonResponse:
 
 
 def _es_json(request: HttpRequest) -> bool:
-    """Los POST que cambian la configuracion exigen JSON de verdad.
+    """Todos los POST de la API exigen JSON de verdad: `/api/import/`,
+    `/api/overrides/`, `/api/players/<id>/ubisoft/`, `/api/settings/` y
+    `/api/backup/`.
 
     Son `csrf_exempt` porque la app es local y sin sesiones, pero un formulario
     de cualquier pagina abierta en el navegador puede postear a 127.0.0.1. Lo
@@ -267,8 +269,12 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
     """Trae rango y temporada desde la API de Ubisoft y los deja guardados.
 
     Es POST porque sale a internet y escribe la base: un GET que hace eso lo
-    dispara cualquier prefetch del navegador.
+    dispara cualquier prefetch del navegador. El chequeo de JSON va antes del
+    404 y de `configurado()`: una pagina ajena no puede sondear que ids
+    existen ni si hay cuenta configurada.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     player = Player.objects.filter(pk=pk).first()
     if player is None:
         raise Http404("jugador no encontrado")
@@ -593,6 +599,8 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     Escribe un archivo del disco, asi que valida antes de tocar nada: la app es
     local, pero eso no es excusa para dejar entrar cualquier cosa.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     try:
         payload = json.loads(request.body or b"{}")
     except json.JSONDecodeError:
@@ -690,7 +698,11 @@ def run_import(request: HttpRequest) -> JsonResponse:
 
     Antes bloqueaba hasta terminar: con 30 carpetas el boton quedaba minutos
     colgado sin decir nada. El avance se consulta en `/api/import/progress/`.
+    Los parametros van en la query; el cuerpo JSON solo cierra la puerta a
+    formularios ajenos que fuercen una reimportacion entera.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     force = request.GET.get("force", "").lower() in ("1", "true", "si", "yes")
     limit = _int_param(request, "limit", 0, minimum=0, maximum=1000) or None
 
