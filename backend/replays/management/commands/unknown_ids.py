@@ -1,4 +1,4 @@
-"""Lista los IDs de mapa/operador que el parser no supo nombrar.
+"""Lista los IDs de mapa, operador, modo y tipo de partida que el parser no supo nombrar.
 
 Cada temporada de Siege trae IDs nuevos. Este comando los saca de la base ya
 importada para que puedas etiquetarlos en `data/overrides.json`. La pagina
@@ -13,7 +13,7 @@ from replays import unknowns
 
 
 class Command(BaseCommand):
-    help = "Muestra mapas y operadores sin nombre y como etiquetarlos."
+    help = "Muestra mapas, operadores, modos y tipos de partida sin nombre y como etiquetarlos."
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
@@ -25,9 +25,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options) -> None:
         maps = unknowns.unknown_maps()
         operators = unknowns.unknown_operators()
+        gamemodes = unknowns.unknown_gamemodes()
+        match_types = unknowns.unknown_match_types()
         path = unknowns.overrides_path()
 
-        if not maps and not operators:
+        if not (maps or operators or gamemodes or match_types):
             self.stdout.write(self.style.SUCCESS("Todo identificado, nada que etiquetar."))
             return
 
@@ -47,9 +49,24 @@ class Command(BaseCommand):
                 lado = ", ".join(row["sides"]) or "lado desconocido"
                 self.stdout.write(f"  {row['id']}  ({row['rounds']} rondas, {lado})")
 
+        if gamemodes:
+            self.stdout.write(self.style.WARNING("Modos sin nombre:"))
+            for row in gamemodes:
+                tipos = ", ".join(row["match_types"]) or "tipo desconocido"
+                self.stdout.write(f"  {row['id']}  ({row['matches']} partidas, {tipos})")
+
+        if match_types:
+            self.stdout.write(self.style.WARNING("Tipos de partida sin nombre:"))
+            for row in match_types:
+                modos = ", ".join(row["gamemodes"]) or "modo desconocido"
+                self.stdout.write(f"  {row['id']}  ({row['matches']} partidas, {modos})")
+
         if options["write"]:
             unknowns.add_placeholders(
-                [row["id"] for row in maps], [row["id"] for row in operators]
+                [row["id"] for row in maps],
+                [row["id"] for row in operators],
+                [row["id"] for row in gamemodes],
+                [row["id"] for row in match_types],
             )
             self.stdout.write(
                 self.style.SUCCESS(
@@ -60,6 +77,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(
                 f"\nEtiquetalos en {path} (o corre este comando con --write) asi:\n"
-                '  {"maps": {"436375283234": "Coastline"}, "operators": {}}\n'
+                '  {"maps": {"436375283234": "Coastline"}, "operators": {},\n'
+                '   "gamemodes": {}, "match_types": {}}\n'
                 "Tambien se pueden etiquetar desde la pagina Datos de la app."
             )

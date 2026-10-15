@@ -577,6 +577,8 @@ def unknown(request: HttpRequest) -> JsonResponse:
         {
             "maps": unknowns.unknown_maps(),
             "operators": unknowns.unknown_operators(),
+            "gamemodes": unknowns.unknown_gamemodes(),
+            "match_types": unknowns.unknown_match_types(),
             "overrides_path": str(unknowns.overrides_path()),
         }
     )
@@ -600,18 +602,25 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     try:
         maps = unknowns.clean_labels(payload.get("maps"))
         operators = unknowns.clean_labels(payload.get("operators"))
+        gamemodes = unknowns.clean_labels(payload.get("gamemodes"))
+        match_types = unknowns.clean_labels(payload.get("match_types"))
     except unknowns.LabelError as exc:
         return _ok({"error": str(exc)}, status=400)
 
-    if not maps and not operators:
+    if not (maps or operators or gamemodes or match_types):
         return _ok({"error": "no mandaste ninguna etiqueta"}, status=400)
 
-    unknowns.write_overrides(maps, operators)
+    unknowns.write_overrides(maps, operators, gamemodes, match_types)
     # retag recarga el cache de overrides, que si no queda viejo hasta reiniciar
     result = retag()
     return _ok(
         {
-            "saved": {"maps": maps, "operators": operators},
+            "saved": {
+                "maps": maps,
+                "operators": operators,
+                "gamemodes": gamemodes,
+                "match_types": match_types,
+            },
             "matches": result.matches,
             "round_players": result.round_players,
             "changes": [

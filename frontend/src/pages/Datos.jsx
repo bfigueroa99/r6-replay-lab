@@ -9,6 +9,8 @@ const fecha = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().slice(0, 2).
 /** "1 partida" y no "1 partidas": se ve en cada fila. */
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
 
+const VACIAS = { maps: {}, operators: {}, gamemodes: {}, match_types: {} }
+
 const rango = (row) =>
   row.first_seen === row.last_seen
     ? fecha(row.first_seen)
@@ -17,7 +19,7 @@ const rango = (row) =>
 export default function Datos() {
   const unknown = useApi('/unknown/')
   const status = useApi('/import/status/')
-  const [labels, setLabels] = useState({ maps: {}, operators: {} })
+  const [labels, setLabels] = useState(VACIAS)
   const [saving, setSaving] = useState(false)
   const [flash, setFlash] = useState(null)
 
@@ -26,12 +28,15 @@ export default function Datos() {
 
   const maps = unknown.data?.maps || []
   const operators = unknown.data?.operators || []
+  const gamemodes = unknown.data?.gamemodes || []
+  const matchTypes = unknown.data?.match_types || []
   const set = (kind, id) => (event) =>
     setLabels((current) => ({ ...current, [kind]: { ...current[kind], [id]: event.target.value } }))
 
-  const pendientes =
-    Object.values(labels.maps).filter((v) => v.trim()).length +
-    Object.values(labels.operators).filter((v) => v.trim()).length
+  const pendientes = Object.values(labels).reduce(
+    (n, porId) => n + Object.values(porId).filter((v) => v.trim()).length,
+    0,
+  )
 
   const guardar = async () => {
     setSaving(true)
@@ -46,8 +51,10 @@ export default function Datos() {
       const result = await post('/overrides/', undefined, {
         maps: limpiar(labels.maps),
         operators: limpiar(labels.operators),
+        gamemodes: limpiar(labels.gamemodes),
+        match_types: limpiar(labels.match_types),
       })
-      setLabels({ maps: {}, operators: {} })
+      setLabels(VACIAS)
       setFlash({
         ok: true,
         text: result.changes.length
@@ -80,13 +87,14 @@ export default function Datos() {
 
       {flash ? <div className={`flash ${flash.ok ? '' : 'bad'}`}>{flash.text}</div> : null}
 
-      {maps.length || operators.length ? (
+      {maps.length || operators.length || gamemodes.length || matchTypes.length ? (
         <Panel
           title="Sin identificar"
           hint={
-            'Ubisoft cambia los IDs de los mapas revampeados y agrega operadores, y el parser ' +
-            'guarda el ID crudo en vez de inventar un nombre. Ponle el nombre y el historial ' +
-            'ya importado se reetiqueta solo: no hay que volver a leer los replays.'
+            'Ubisoft cambia los IDs de los mapas revampeados y agrega operadores, modos y tipos ' +
+            'de partida, y el parser guarda el ID crudo en vez de inventar un nombre. Ponle el ' +
+            'nombre y el historial ya importado se reetiqueta solo: no hay que volver a leer ' +
+            'los replays.'
           }
           right={
             <button className="btn primary small" onClick={guardar} disabled={!pendientes || saving}>
@@ -154,11 +162,54 @@ export default function Datos() {
               />
             </div>
           ))}
+
+          {gamemodes.map((row) => (
+            <div key={`modo-${row.id}`} className="unknown">
+              <div className="unknown-head">
+                <span className="unknown-id">{row.label}</span>
+                <span className="note">
+                  Modo de juego · {plural(row.matches, 'partida', 'partidas')} · {rango(row)}
+                </span>
+              </div>
+              {row.match_types.length ? (
+                <div className="note">Tipos de partida vistos: {row.match_types.join(', ')}</div>
+              ) : null}
+              <input
+                type="text"
+                placeholder="Nombre del modo de juego"
+                value={labels.gamemodes[row.id] ?? row.pending}
+                onChange={set('gamemodes', row.id)}
+                maxLength={32}
+              />
+            </div>
+          ))}
+
+          {matchTypes.map((row) => (
+            <div key={`tipo-${row.id}`} className="unknown">
+              <div className="unknown-head">
+                <span className="unknown-id">{row.label}</span>
+                <span className="note">
+                  Tipo de partida · {plural(row.matches, 'partida', 'partidas')} · {rango(row)}
+                </span>
+              </div>
+              {row.gamemodes.length ? (
+                <div className="note">Modos vistos: {row.gamemodes.join(', ')}</div>
+              ) : null}
+              <input
+                type="text"
+                placeholder="Nombre del tipo de partida"
+                value={labels.match_types[row.id] ?? row.pending}
+                onChange={set('match_types', row.id)}
+                maxLength={32}
+              />
+            </div>
+          ))}
         </Panel>
       ) : (
         <Panel title="Sin identificar">
           <p className="note" style={{ margin: 0 }}>
-            Todo identificado: no hay mapas ni operadores sin nombre. Cuando salga una temporada
+            Todo identificado: no hay mapas, operadores, modos ni tipos de partida sin nombre.
+            Cuando salga una temporada
             nueva van a aparecer aca solos.
           </p>
         </Panel>

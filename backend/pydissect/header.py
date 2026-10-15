@@ -17,7 +17,13 @@ from .constants import (
     Y9S4,
 )
 from .errors import EndOfFile, InvalidFile
-from .overrides import extra_map, extra_operator, record_unknown
+from .overrides import (
+    extra_gamemode,
+    extra_map,
+    extra_match_type,
+    extra_operator,
+    record_unknown,
+)
 
 log = logging.getLogger(__name__)
 
@@ -227,11 +233,19 @@ def map_slug(map_id: int) -> str:
 
 
 def match_type_name(match_type_id: int) -> str:
-    return MATCH_TYPES.get(match_type_id, f"Unknown({match_type_id})")
+    nombre = MATCH_TYPES.get(match_type_id) or extra_match_type(match_type_id)
+    if nombre:
+        return nombre
+    record_unknown("match_types", match_type_id)
+    return f"Unknown({match_type_id})"
 
 
 def gamemode_name(gamemode_id: int) -> str:
-    return GAME_MODES.get(gamemode_id, f"Unknown({gamemode_id})")
+    nombre = GAME_MODES.get(gamemode_id) or extra_gamemode(gamemode_id)
+    if nombre:
+        return nombre
+    record_unknown("gamemodes", gamemode_id)
+    return f"Unknown({gamemode_id})"
 
 
 def operator_side(op_id: int) -> str | None:

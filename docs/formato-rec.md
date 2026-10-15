@@ -170,6 +170,9 @@ mecanismos:
   ese mapa, que alcanzan para identificarlo (por ejemplo `2F Hookah Lounge, 2F
   Billiards Room` + `1F Kitchen, 1F Service Entrance` es Coastline). Se etiqueta
   en `data/overrides.json` y se reimporta con `--force`.
+- **Modos y tipos de partida**: `gamemode_name()` y `match_type_name()` usan
+  las claves `gamemodes` y `match_types` de `overrides.json` y anotan el ID con
+  `record_unknown` si no hay etiqueta, igual que los mapas.
 
 `MAPS_EXTRA` en `constants.py` ya trae los IDs identificados por este metodo.
 

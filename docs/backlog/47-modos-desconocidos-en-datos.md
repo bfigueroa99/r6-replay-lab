@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15 08:24Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -185,6 +185,49 @@ abrir Datos, nombrarlo, guardar, y ver en Partidas el nombre nuevo.
 --dry-run` sobre la base real.
 
 ## Implementacion
+
+Dev 20261015T0812Z, sobre `origin/main@17f0ae1`.
+
+Quedo todo el diseno:
+- Parser: `overrides.CLAVES` con `gamemodes` y `match_types`;
+  `extra_gamemode` / `extra_match_type`; `gamemode_name` y `match_type_name`
+  usan la etiqueta y si no la hay anotan el id con `record_unknown`. Un JSON
+  viejo sin las claves nuevas da dicts vacios.
+- `unknowns.py`: `id_de_unknown` (publica: la usa `retag.py`),
+  `_desconocidos_de_partida` compartida por `unknown_gamemodes` (pista:
+  `match_types`) y `unknown_match_types` (pista: `gamemodes`);
+  `read_overrides`, `write_overrides` y `add_placeholders` con las cuatro
+  claves (kwargs opcionales, lo viejo no cambia).
+- `retag.py`: `_retag_texto` para `gamemode` y `match_type`; nunca degrada,
+  ignora `Unknown(0)` y textos sin id numerico.
+- `/api/unknown/` trae `gamemodes` y `match_types`; `POST /api/overrides/`
+  acepta y valida las dos claves nuevas (400 si no hay ninguna etiqueta en las
+  cuatro). `manage.py unknown_ids` lista y `--write` las dos claves nuevas.
+- Datos: dos bloques mas en "Sin identificar" (modo con tipos vistos, tipo con
+  modos vistos), contador y POST con las cuatro claves; texto vacio nuevo.
+- Tests: 6 en `test_pydissect.py` (incluido `test_pydissect_no_importa_django`
+  con `ast`), 8 en `test_retag.py`, 11 en `test_unknowns.py`; `make_match`
+  acepta `gamemode`. e2e: `Datos muestra Sin identificar sin pendientes`
+  (sobre `seed_demo`) y `Datos lista modos y tipos de partida sin nombre`
+  (respuesta de `/api/unknown/` armada con `page.route`, porque `seed_demo` no
+  trae desconocidos y no se toca).
+- README (seccion de temporadas nuevas y tabla de comandos) y
+  `docs/formato-rec.md`.
+
+Desvios del diseno:
+- `test_archivo_roto_no_revienta` afirmaba la forma vieja de
+  `read_overrides()` (dos claves); ahora afirma las cuatro, que es el contrato
+  nuevo del diseno.
+- `read_overrides()` tambien tolera un JSON que no es objeto (antes
+  `raw.get` reventaba con una lista).
+- `docs/formato-rec.md` y `docs/metricas.md`: no hay numero nuevo; solo se
+  documento el mecanismo en `formato-rec.md` (fuera de `archivos:`).
+- Revision ciega previa: con mapa, modo y tipo reetiquetados en la misma
+  partida, `RetagResult.matches` la contaba una vez por campo ("Reetiquetadas
+  2 partidas" con una sola). Ahora `retag` junta los ids en
+  `RetagResult.partidas` y `matches` es su tamano (tambien para mapas);
+  test `test_modo_y_tipo_de_la_misma_partida_cuentan_una_partida`.
+- `check.sh` en `Todo en verde.` (610 backend, 86 vitest, build, 35 e2e).
 
 ## Revision
 

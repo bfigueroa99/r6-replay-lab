@@ -7,6 +7,7 @@ test tambien corre contra ese archivo.
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import tempfile
@@ -22,8 +23,10 @@ from pydissect.constants import ATTACK, DEFENSE, RECRUIT
 from pydissect.errors import InvalidFile
 from pydissect.header import (
     derive_team_roles,
+    gamemode_name,
     map_name,
     map_slug,
+    match_type_name,
     operator_label,
     operator_side,
 )
@@ -327,6 +330,73 @@ class LadoDeLosEquiposTests(SimpleTestCase):
         self.assertTrue(overrides.unknown_ids())
         self.tearDown()
         self.assertEqual(overrides.unknown_ids(), {})
+
+
+class ModoYTipoDesconocidoTests(SimpleTestCase):
+    """Modos y tipos de partida nuevos: etiqueta del override o anotados como mapas."""
+
+    def setUp(self):
+        overrides.reset_unknown()
+
+    def tearDown(self):
+        overrides.reset_unknown()
+        # el cache es global: sin recargarlo, otros tests verian las etiquetas
+        overrides.load(force=True)
+
+    def _con_overrides(self, contenido):
+        carpeta = tempfile.TemporaryDirectory()
+        self.addCleanup(carpeta.cleanup)
+        ruta = Path(carpeta.name) / "overrides.json"
+        ruta.write_text(json.dumps(contenido), encoding="utf-8")
+        parche = mock.patch.dict(os.environ, {overrides.ENV_VAR: str(ruta)})
+        parche.start()
+        self.addCleanup(parche.stop)
+        overrides.load(force=True)
+
+    def test_modo_desconocido_usa_la_etiqueta_del_override(self):
+        self._con_overrides({"gamemodes": {"999": "Arcade"}, "match_types": {"77": "Evento"}})
+        self.assertEqual(gamemode_name(999), "Arcade")
+        self.assertEqual(match_type_name(77), "Evento")
+        self.assertEqual(overrides.unknown_ids(), {})
+
+    def test_modo_desconocido_sin_etiqueta_queda_anotado(self):
+        self.assertEqual(gamemode_name(999), "Unknown(999)")
+        self.assertEqual(overrides.unknown_ids(), {"gamemodes": [999]})
+
+    def test_tipo_de_partida_desconocido_queda_anotado(self):
+        self.assertEqual(match_type_name(77), "Unknown(77)")
+        self.assertEqual(overrides.unknown_ids(), {"match_types": [77]})
+
+    def test_modo_y_tipo_conocidos_no_se_anotan(self):
+        self.assertEqual(gamemode_name(327933806), "Bomb")
+        self.assertEqual(match_type_name(2), "Ranked")
+        gamemode_name(0)
+        self.assertEqual(overrides.unknown_ids(), {})
+
+    def test_overrides_viejo_sin_claves_nuevas_se_lee(self):
+        self._con_overrides({"maps": {"1": "Viejo"}, "operators": {}})
+        self.assertEqual(map_name(1), "Viejo")
+        self.assertEqual(gamemode_name(999), "Unknown(999)")
+        self.assertEqual(overrides.load()["gamemodes"], {})
+        self.assertEqual(overrides.load()["match_types"], {})
+
+
+class SinDjangoTests(SimpleTestCase):
+    def test_pydissect_no_importa_django(self):
+        carpeta = Path(__file__).resolve().parents[1] / "pydissect"
+        archivos = sorted(carpeta.rglob("*.py"))
+        self.assertTrue(archivos)
+        for archivo in archivos:
+            arbol = ast.parse(archivo.read_text(encoding="utf-8"))
+            for nodo in ast.walk(arbol):
+                if isinstance(nodo, ast.Import):
+                    modulos = [a.name for a in nodo.names]
+                elif isinstance(nodo, ast.ImportFrom):
+                    modulos = [nodo.module or ""]
+                else:
+                    continue
+                for modulo in modulos:
+                    self.assertNotEqual(modulo.split(".")[0], "django", f"{archivo.name} importa {modulo}")
 
 
 class CompatTradeTests(SimpleTestCase):

@@ -297,3 +297,49 @@ test('Datos avisa cuando la carpeta de replays no existe', async ({ page }) => {
 
   expect(errores).toEqual([])
 })
+
+test('Datos muestra Sin identificar sin pendientes', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/datos')
+
+  // seed_demo no tiene IDs desconocidos: el panel se renderiza con las cuatro listas vacias
+  const panel = page.locator('.panel', { hasText: 'Sin identificar' })
+  await expect(panel).toContainText('no hay mapas, operadores, modos ni tipos de partida sin nombre')
+
+  expect(errores).toEqual([])
+})
+
+test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no trae desconocidos y no se toca: la respuesta se arma aca
+  await page.route('**/api/unknown/', (route) =>
+    route.fulfill({
+      json: {
+        maps: [],
+        operators: [],
+        gamemodes: [
+          {
+            id: '999', label: 'Unknown(999)', matches: 2, match_types: ['Ranked'],
+            first_seen: '2026-09-01T20:00:00', last_seen: '2026-09-05T20:00:00', pending: '',
+          },
+        ],
+        match_types: [
+          {
+            id: '77', label: 'Unknown(77)', matches: 1, gamemodes: ['Bomb'],
+            first_seen: '2026-09-01T20:00:00', last_seen: '2026-09-01T20:00:00', pending: 'Evento',
+          },
+        ],
+        overrides_path: 'data/overrides.json',
+      },
+    }),
+  )
+  await page.goto('/datos')
+
+  await expect(page.getByText('Unknown(999)')).toBeVisible()
+  await expect(page.getByText('Tipos de partida vistos: Ranked')).toBeVisible()
+  await expect(page.getByPlaceholder('Nombre del tipo de partida')).toHaveValue('Evento')
+  await page.getByPlaceholder('Nombre del modo de juego').fill('Arcade')
+  await expect(page.getByRole('button', { name: 'Guardar y reetiquetar (1)' })).toBeEnabled()
+
+  expect(errores).toEqual([])
+})
