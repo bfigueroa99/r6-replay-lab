@@ -246,6 +246,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
         {
             "synergy": agg.teammate_synergy(min_rounds=_min_rounds(request, 10), **filters),
             "clutches": agg.clutch_detail(**filters),
+            "first_down": agg.first_teammate_death(**filters),
         }
     )
 
