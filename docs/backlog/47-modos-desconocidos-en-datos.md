@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
 estado: revisado
-candado: -
+candado: qa 2026-10-15T10:12Z
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 4
 fuente: ALCANCE.md A2; candidato de `mercado/2026-09-13`. `gamemode_name` y `match_type_name` (`backend/pydissect/header.py:229-234`) devuelven `Unknown(<id>)` sin llamar a `record_unknown`, a diferencia de mapas y operadores
 archivos: backend/pydissect/overrides.py, backend/pydissect/header.py, backend/replays/unknowns.py, backend/replays/retag.py, backend/replays/views.py, backend/replays/management/commands/unknown_ids.py, backend/tests/test_pydissect.py, backend/tests/test_unknowns.py, backend/tests/test_retag.py, backend/tests/factories.py, frontend/src/pages/Datos.jsx, frontend/e2e/humo.spec.js, README.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0812Z, revisor 20261015T0912Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0812Z, revisor 20261015T0912Z, qa 20261015T1012Z
 
 ## PR
 
