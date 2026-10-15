@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: revisado
-candado: qa 2026-10-15T10:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -294,7 +294,47 @@ y la pasada anterior ya lo dejo anotado. Va como aviso a `## Para el humano`.
 
 Veredicto: aprobar -> `revisado`.
 
-## QA
+## QA 2026-10-15 sobre 215f7d6
+
+QA 20261015T1012Z (sesion distinta de dev y revisor). Rama con
+`origin/main@17f0ae1` (main no se movio). Base de prueba en el scratchpad
+(`SQLITE_PATH` y `R6_ENV_FILE` apuntando ahi), nunca al repo.
+
+- `./scripts/check.sh`: `Todo en verde.` (603 backend, 86 vitest, build, 34
+  e2e); con el test de borde agregado, `Todo en verde.` con 604 backend.
+- **Base vacia** (`migrate` + `runserver 8765`): `curl -s -o /dev/null -w
+  "%{http_code}" "localhost:8765/api/teammates/$q"` con `q` en `""`,
+  `?until=foo`, `?page=-1`, `?side=`, `?map=`, `?session=-1`, `?side=Attack`,
+  `?min_rounds=abc`: todos 200; `first_down` trae las tres filas en 0 con
+  winrates `null`.
+- **Base sembrada con `factories.py`** (script `seed.py` por `manage.py
+  shell`): 8 rondas calculadas a mano (rival cae antes que vos; companero
+  primero; sin bajas; vos vivo y cae companero; vos con `died=True` y
+  elapsed nulo; empate 45/45 con tu evento primero en el feed; empate 50/50
+  sin eventos; rival a los 10 s y vos antes que el companero) mas una
+  partida de un jugador solo (`Border`, vos caes a los 20 s). Esperado y
+  obtenido en `/api/teammates/`:
+  Attack 5 rondas, caiste 2 (2 ganadas, 100 %), companero 3 (1, 33.3 %),
+  sin bajas 0; Defense 4, caiste 2 (1, 50 %), companero 1 (0, 0 %), sin
+  bajas 1 (1, 100 %); total 9, 4/4/1. `?side=Attack` deja Defense en 0;
+  `?map=border` da solo la ronda solitaria (1, caiste); `?map=Nada` todo
+  en 0; `?until=foo` igual que sin filtro. Vecinos `/api/synergy/`,
+  `/api/matches/`, `/api/overview/`, `/api/duels/`: 200.
+- **Chunk inicial** (`vite build`): `index-*.js` 186.80 kB en main y en la
+  rama (0 %); `Teammates-*.js` pasa de 3.33 a 4.50 kB (carga diferida).
+- **Mutacion** sobre `aggregates.py` y `tests.test_primero_en_caer`:
+  empate sin eventos resuelto a tu favor -> cae
+  `test_empate_sin_eventos_va_al_companero`; sin `team_index` en el
+  `Exists` -> caen 3 (`test_los_rivales_no_cuentan_como_companeros`, ...);
+  reloj en 0 fuera del feed -> caen `test_reloj_en_cero_lo_decide_el_feed`
+  y `test_clasifica_cada_caso`; fila sin lado sumada a Attack -> **no caia
+  ninguno**. Agregue `test_fila_sin_lado_cuenta_solo_en_el_total` (pasa con
+  el codigo de la rama, cae con ese mutante).
+- Criterios: los seis con evidencia (tests de la rama, curls de arriba, e2e
+  `Compañeros muestra quien cae primero`, filas en `metricas.md`).
+
+Sin migracion, parser, Electron ni `.ps1`: no hace falta `## Verificar en el
+PC`. Veredicto: `aprobado`.
 
 ## Para el humano
 

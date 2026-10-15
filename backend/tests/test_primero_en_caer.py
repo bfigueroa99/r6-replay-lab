@@ -127,6 +127,14 @@ class PrimeroEnCaerTests(TestCase):
         self.assertEqual(_lado(filas, "Defense")["mate_first"], 1)
         self.assertEqual(_total(filas)["rounds"], 3)
 
+    def test_fila_sin_lado_cuenta_solo_en_el_total(self):
+        rnd = self._ronda(30.0, [50.0], side="Attack")
+        rnd.players.filter(is_me=True).update(side="")
+        filas = agg.first_teammate_death()
+        self.assertEqual(_lado(filas, "Attack")["rounds"], 0)
+        self.assertEqual(_lado(filas, "Defense")["rounds"], 0)
+        self.assertEqual(_total(filas)["me_first"], 1)
+
     def test_winrate_por_grupo(self):
         self._ronda(30.0, [50.0], won=True)
         self._ronda(30.0, [50.0], won=False)
