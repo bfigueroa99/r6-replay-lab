@@ -1,8 +1,8 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
