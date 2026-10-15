@@ -1,7 +1,7 @@
 # 49. Mapas rehechos mezclan el winrate por lado
 
-estado: propuesto
-candado: arquitecto 2026-10-15T18:12Z
+estado: descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre; separarlas es decision de producto P10)
+candado: -
 rama: -
 tipo: bug
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: ALCANCE.md A4 (Investigador 2026-10-14); verificado por el PO contra main 2a6c86b en `aggregates.py:383-414`
 archivos: -
-turnos: po 20261015T1711Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z
 
 ## PR
 
@@ -54,7 +54,29 @@ dejan de sumarse.
 
 ## Diseno
 
-(Arquitecto)
+(Arquitecto 20261015T1811Z, sobre main 2a6c86b) **Descartada: la premisa del bug no se
+reproduce en main.**
+
+- `pydissect/header.py:227-232`: `map_slug()` sale del nombre legible (`entry[1]`), no
+  del identificador interno. Las variantes por temporada colapsan al mismo slug **a
+  proposito** (docstring "las variantes por temporada colapsan al base", y
+  `tests/test_pydissect.py:178`: `map_slug(837214085) == map_slug(407193663917)`).
+  Comprobado: `Consulate`, `ConsulateY7` y `ConsulateY10` dan los tres
+  `map_name="Consulate"`, `map_slug="consulate"`.
+- Como `map_name` y `map_slug` salen de la misma entrada de `MAPS`, un nombre siempre
+  tiene un solo slug: `by_map` no puede dar dos filas "Fortress", y unir el lado por
+  `map_name` da el mismo resultado que unirlo por slug. No hay numero mal.
+- `FortressY10` no esta en `MAPS` (`constants.py:72-115`): es la idea P1 de
+  `ALCANCE.md` (IDs nuevos). Hoy un Fortress rehecho entra como `Unknown(<id>)` /
+  `unknown-<id>` hasta que se agregue su ID, y entonces colapsara a "fortress".
+
+Lo que la ficha pide en el fondo (separar versiones de un mapa) es una
+**funcionalidad**, no un arreglo, y cambia como se agrupa una metrica que ya se muestra
+(Mapas, Coach, CSV, filtro de mapa por slug): decision de producto que toca la
+definicion de un numero visible (P10). Si el humano la quiere, el camino barato es
+agrupar por `Match.map_id` (ya guardado, `ingest.py:160`) con la etiqueta del
+identificador interno de `MAPS` (sufijo `Y7`/`Y10`/`Y11`), sin migracion ni reimportar.
+Va a `## Para el humano` de `ESTADO.md`.
 
 ## Implementacion
 
