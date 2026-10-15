@@ -917,18 +917,25 @@ def _quien_cae_primero(mi_elapsed: float | None, elapsed_companeros: list[float]
     return "tie"
 
 
-def _primer_orden_de_muerte(round_ids: set[int]) -> dict[tuple[int, int], int]:
+def _primer_orden_de_muerte(mias, round_ids: set[int]) -> dict[tuple[int, int], int]:
     """(round_id, player_id) -> `order` del primer evento de muerte del jugador.
 
     Misma eleccion que `metrics.analyse_round`: la primera muerte del feed.
     """
     primero: dict[tuple[int, int], int] = {}
+    # Correlacionada en vez de `round_id__in`: con muchas rondas empatadas la
+    # lista pasaria el tope de parametros de SQLite. Se filtra en Python.
     eventos = (
-        Event.objects.filter(round_id__in=round_ids, kind__in=(Event.KILL, Event.DEATH))
+        Event.objects.filter(
+            Exists(mias.filter(round_id=OuterRef("round_id"))),
+            kind__in=(Event.KILL, Event.DEATH),
+        )
         .order_by("order")
         .values("round_id", "order", "kind", "actor_id", "target_id")
     )
     for e in eventos:
+        if e["round_id"] not in round_ids:
+            continue
         victima = e["target_id"] if e["kind"] == Event.KILL else e["actor_id"]
         if victima is not None:
             primero.setdefault((e["round_id"], victima), e["order"])
@@ -971,7 +978,7 @@ def first_teammate_death(**filters) -> list[dict]:
             empates.append(round_id)
 
     if empates:
-        orden = _primer_orden_de_muerte(set(empates))
+        orden = _primer_orden_de_muerte(mias, set(empates))
         for round_id in empates:
             ronda = por_ronda[round_id]
             mio = orden.get((round_id, ronda["me"]["player_id"]))

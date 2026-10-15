@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sqlite3
+
+from django.db import connection
 from django.test import SimpleTestCase, TestCase
 
 from replays.analytics import aggregates as agg
@@ -134,6 +137,21 @@ class PrimeroEnCaerTests(TestCase):
         self.assertEqual(total["me_first_winrate"], 33.3)
         self.assertEqual(total["mate_first_winrate"], 100.0)
         self.assertIsNone(total["no_deaths_winrate"])
+
+    def test_muchos_empates_no_pasan_el_tope_de_parametros(self):
+        for _ in range(60):
+            rnd = self._ronda(30.0, [30.0])
+            make_event(rnd, 1, "rival0", ME)
+            make_event(rnd, 2, "rival0", "mate0")
+        connection.ensure_connection()
+        crudo = connection.connection
+        tope = crudo.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+        crudo.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 50)
+        try:
+            total = _total(agg.first_teammate_death())
+        finally:
+            crudo.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, tope)
+        self.assertEqual((total["me_first"], total["mate_first"]), (60, 0))
 
     def test_respeta_el_filtro_de_lado(self):
         self._ronda(30.0, [50.0], side="Attack")

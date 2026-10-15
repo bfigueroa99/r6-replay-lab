@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15 08:15Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -207,6 +207,21 @@ Anotado y no cambiado:
   tiene hora, como dice el diseno. Quedo escrito en `metricas.md`.
 - `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa
   (preexistente, no se toca): por eso el panel demo muestra 100 % y 0 %.
+
+Correccion de hallazgos, dev 20261015T0812Z:
+- `metricas.md`: la fila "Primero de tu equipo en caer" dice que el % junto a
+  *Caíste primero* y *Cayó un compañero* es sobre todas las rondas del lado,
+  incluidas las *Sin bajas*.
+- `_primer_orden_de_muerte` recibe `mias` y filtra los eventos con un `Exists`
+  correlacionado en vez de `round_id__in`; las rondas no empatadas se
+  descartan en Python. Test nuevo
+  `test_muchos_empates_no_pasan_el_tope_de_parametros` (60 rondas empatadas,
+  tope bajado a 50 con `setlimit`): falla con `too many SQL variables` sin el
+  arreglo y pasa con el.
+- Costo anotado (revision ciega): con al menos un empate se leen los
+  KILL/DEATH de todas las rondas filtradas, no solo las empatadas. Es una
+  lectura por consulta, sin efecto en los numeros.
+- `check.sh` en `Todo en verde.` (603 backend, 86 vitest, build, 34 e2e).
 
 ## Revision 2026-10-15 sobre dd00dc4
 
