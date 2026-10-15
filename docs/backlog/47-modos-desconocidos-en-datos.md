@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-15 09:12
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad
 epica: temporada-y-modo
