@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Bar as RBar,
   BarChart,
@@ -17,6 +18,7 @@ import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
+import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -85,6 +87,34 @@ function columnaCierre(key, label, conteo, help) {
   }
 }
 
+/** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
+function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
+  const rows = filasDePartidas(partidas, clave)
+  if (!rows.length) return <p className="note">{vacio}</p>
+  return (
+    <>
+      <DataTable
+        columns={[
+          {
+            key: 'fecha',
+            label: 'Cuándo',
+            sortable: false,
+            render: (row) => <Link to={`/partidas/${row.match_id}`}>{row.fecha}</Link>,
+          },
+          { key: 'map', label: 'Mapa', sortable: false, left: true },
+          { key: 'score', label: 'Final', sortable: false },
+          { key: 'diferencia', label: columna, sortable: false },
+        ]}
+        rows={rows}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        rowKey={(row) => row.match_id}
+        csvName={csvName}
+      />
+      {total > rows.length ? <p className="note">Se muestran {rows.length} de {total}.</p> : null}
+    </>
+  )
+}
+
 /** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
 function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
   const rows = (filas || []).map((row, orden) => ({
@@ -150,6 +180,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     (row) => row.match_point !== 'unknown' || row.rounds > 0,
   )
   const cierres = filasDeCierre(data.round_endings)
+  const remontadas = data.comebacks
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
@@ -503,6 +534,52 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey="match_point"
             csvName="match-point"
           />
+        </Panel>
+      ) : null}
+
+      {remontadas ? (
+        <Panel
+          title="Remontadas y derrumbes"
+          hint="Partidas que ganaste yendo 2 o más rondas abajo, y las que perdiste yendo 2 o más arriba. Solo cuentan partidas desde Y9S4, que traen el marcador."
+        >
+          {remontadas.matches_known === 0 ? (
+            <p className="note">Sin partidas con marcador conocido (hace falta Y9S4 o posterior).</p>
+          ) : (
+            <>
+              <h3>Remontadas</h3>
+              <TablaDePartidas
+                partidas={remontadas.remontadas}
+                clave="max_deficit"
+                columna="Peor marcador"
+                total={remontadas.remontadas_total}
+                vacio="Ninguna remontada de 2 o más rondas todavía."
+                csvName="remontadas"
+              />
+              <h3>Derrumbes</h3>
+              <TablaDePartidas
+                partidas={remontadas.derrumbes}
+                clave="max_lead"
+                columna="Mejor marcador"
+                total={remontadas.derrumbes_total}
+                vacio="Ningún derrumbe de 2 o más rondas todavía."
+                csvName="derrumbes"
+              />
+              <h3>Por diferencia al cambio de lado</h3>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Diferencia', sortable: false, left: true,
+                    help: 'Tus rondas menos las del rival antes de la primera ronda de la segunda mitad.' },
+                  { key: 'matches', label: 'Partidas', sortable: false },
+                  { key: 'wins', label: 'Ganadas', sortable: false },
+                  { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%', sortable: false },
+                ]}
+                rows={filasDeCambio(remontadas.by_side_change_diff)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.diff}
+                csvName="cambio-de-lado"
+              />
+            </>
+          )}
         </Panel>
       ) : null}
 

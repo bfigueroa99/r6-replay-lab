@@ -106,6 +106,27 @@ test('Tendencias muestra el match point', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra remontadas y derrumbes', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Remontadas y derrumbes', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo alterna el marcador (nunca 2 de diferencia) y gana sus 29 partidas,
+  // todas Y9S4: listas vacias y todas llegan +1 al cambio de lado
+  await expect(panel.getByText('Ninguna remontada de 2 o más rondas todavía.')).toBeVisible()
+  await expect(panel.getByText('Ningún derrumbe de 2 o más rondas todavía.')).toBeVisible()
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(5)
+  const masUno = filas.filter({ has: page.getByRole('cell', { name: '+1', exact: true }) })
+  await expect(masUno.getByRole('cell', { name: '29', exact: true })).toHaveCount(2)
+  await expect(masUno.getByRole('cell', { name: '100%', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

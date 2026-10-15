@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15T00:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -182,6 +182,50 @@ Nota para tests: `make_match` no recibe `won`; la partida sin resultado se
 arma con `Match.objects.filter(pk=m.pk).update(won=None)`.
 
 ## Implementacion
+
+Dev 20261015T0011Z. Todo el diseno, sin desvios de alcance:
+
+- `aggregates.comebacks()` debajo de `by_match_point`, con `_marcador_de_ronda`,
+  `_tramo_cambio`, `UMBRAL_REMONTADA = 2`, `TOPE_LISTA = 20` y
+  `TRAMOS_CAMBIO`. Las partidas Y9S4 se filtran ya en la query (`code_version`);
+  las rondas tuyas se leen enteras para las partidas que eligen los filtros.
+- `/api/trends/` trae `comebacks`.
+- `frontend/src/remontadas.js` (+ vitest, 6 tests) y panel "Remontadas y
+  derrumbes" en Tendencias despues de Match point: dos tablas chicas con
+  enlace a `/partidas/<id>`, nota "Se muestran N de M" si pasa el tope, y la
+  tabla "Por diferencia al cambio de lado" con las cinco filas.
+- e2e `Tendencias muestra remontadas y derrumbes`: sobre `seed_demo` (29
+  partidas Y9S4, todas ganadas, marcador alternado) las listas quedan vacias
+  y el tramo `+1` tiene 29 partidas, 29 ganadas, 100 %.
+- `docs/metricas.md`: seccion `## Remontadas y derrumbes` despues de
+  `## Contexto de la ronda`.
+- `backend/tests/test_remontadas.py`: 24 tests (los del diseno mas orden,
+  tope, filtro de lado, ronda ilegible y ronda faltante).
+
+Desvios del diseno:
+
+- **Ronda faltante saca la partida** (hallazgo de la revision ciega): si los
+  `number` de tus rondas no son consecutivos (falta un `.rec`), la partida no
+  entra a nada. Sin eso, faltar la ronda del pozo bajaba la desventaja, y
+  faltar la primera de la segunda mitad mandaba la partida al tramo de la
+  ronda siguiente. Test `test_una_ronda_que_falta_saca_la_partida`.
+- `test_el_marcador_final_no_cuenta_como_desventaja` del diseno no podia
+  fallar (el final siempre juega en contra del resultado); quedo
+  `test_el_marcador_antes_de_la_ultima_ronda_cuenta`, que si cae si se
+  excluye la ultima ronda.
+- Subtitulo de la tabla: "Por diferencia al cambio de lado" y no "Segun el
+  marcador...": el e2e existente busca el panel por el texto "Según el
+  marcador" y con dos paneles violaba el modo estricto.
+- `test_trends_con_filtros_raros_da_200` prueba tambien `days=-1` y `map=`.
+
+Revision ciega (subagente con `revision.md`): 1 bug (ronda faltante), 1 test
+que no podia fallar, 1 ejemplo imposible en metricas.md; los tres corregidos.
+
+Verificacion: `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 584 tests
+backend, 86 frontend, build ok, 33 e2e).
+
+Verificacion manual sugerida en el PC: con la base real, abrir una remontada
+del panel y confirmar en el detalle que el marcador estuvo 2 abajo.
 
 ## Revision
 

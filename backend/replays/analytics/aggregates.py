@@ -592,6 +592,127 @@ def by_match_point(**filters) -> list[dict]:
     return _filas_por_tramo("match_point", {nombre: tramos[nombre] for nombre in MATCH_POINT})
 
 
+#: Rondas de diferencia para que una partida cuente como remontada o
+#: derrumbe. Con 1 entra cualquier partida que perdiste la primera ronda: no
+#: dice nada de como reaccionas al marcador.
+UMBRAL_REMONTADA = 2
+#: Tope de partidas por lista; `*_total` trae el conteo entero.
+TOPE_LISTA = 20
+#: Orden fijo de las filas de `by_side_change_diff`; los extremos juntan
+#: todo lo que pasa de 2.
+TRAMOS_CAMBIO = ("+2", "+1", "0", "-1", "-2")
+
+
+def _marcador_de_ronda(score_before, team_index) -> tuple[int, int] | None:
+    """`(mio, suyo)` antes de la ronda, con la misma regla que `_marcador_conocido`."""
+    if not isinstance(score_before, list) or len(score_before) != 2:
+        return None
+    if not all(isinstance(s, int) and not isinstance(s, bool) for s in score_before):
+        return None
+    if team_index == 0:
+        return score_before[0], score_before[1]
+    if team_index == 1:
+        return score_before[1], score_before[0]
+    return None
+
+
+def _tramo_cambio(diferencia: int) -> str:
+    if diferencia >= 2:
+        return "+2"
+    if diferencia <= -2:
+        return "-2"
+    return f"{diferencia:+d}" if diferencia else "0"
+
+
+def comebacks(**filters) -> dict:
+    """Partidas ganadas yendo abajo, perdidas yendo arriba, y winrate segun el
+    marcador al cambio de lado.
+
+    Los filtros eligen partidas; cada partida se lee entera, como en
+    `by_start_side`: con `?side=Attack` el pozo de la defensa sigue siendo
+    parte de la remontada.
+    """
+    ids = base_queryset(**filters).values_list("round__match_id", flat=True).distinct()
+    partidas = {
+        p["id"]: p
+        for p in Match.objects.filter(id__in=ids, code_version__gte=Y9S4).values(
+            "id", "map_name", "played_at", "my_score", "opponent_score", "won"
+        )
+    }
+    filas = (
+        RoundPlayer.objects.filter(is_me=True, round__match_id__in=ids,
+                                   round__match__code_version__gte=Y9S4)
+        .values("round__match_id", "round__number", "round__overtime_number",
+                "round__my_side", "round__score_before", "team_index")
+        .order_by("round__match_id", "round__number", "id")
+    )
+    rondas: dict[int, dict[int, dict]] = {}
+    for fila in filas:
+        # Una fila tuya por ronda; si hubiera dos, manda la primera.
+        rondas.setdefault(fila["round__match_id"], {}).setdefault(fila["round__number"], fila)
+
+    remontadas, derrumbes = [], []
+    por_tramo = {tramo: [0, 0] for tramo in TRAMOS_CAMBIO}
+    conocidas = 0
+    for match_id, por_numero in rondas.items():
+        partida = partidas.get(match_id)
+        if partida is None or partida["won"] is None:
+            continue
+        numeros = sorted(por_numero)
+        orden = [por_numero[n] for n in numeros]
+        marcadores = [_marcador_de_ronda(r["round__score_before"], r["team_index"]) for r in orden]
+        # Una ronda ilegible o que falta (sin su `.rec`) puede esconder el pozo
+        # o el cambio de lado: la partida entera queda afuera en vez de
+        # medirse a medias.
+        if any(m is None for m in marcadores) or numeros[-1] - numeros[0] + 1 != len(numeros):
+            continue
+        conocidas += 1
+        # El `score_before` de la ultima ronda es el marcador antes de
+        # jugarla; el final no cuenta como ventaja ni desventaja.
+        desventaja = max(suyo - mio for mio, suyo in marcadores)
+        ventaja = max(mio - suyo for mio, suyo in marcadores)
+        item = {
+            "match_id": match_id,
+            "map": partida["map_name"],
+            "played_at": partida["played_at"].isoformat(),
+            "score": f"{partida['my_score']}-{partida['opponent_score']}",
+        }
+        if partida["won"] and desventaja >= UMBRAL_REMONTADA:
+            remontadas.append({**item, "max_deficit": desventaja})
+        elif not partida["won"] and ventaja >= UMBRAL_REMONTADA:
+            derrumbes.append({**item, "max_lead": ventaja})
+
+        sin_prorroga = [
+            (r["round__my_side"], m)
+            for r, m in zip(orden, marcadores, strict=True)
+            if r["round__overtime_number"] == 0
+        ]
+        if not sin_prorroga or not sin_prorroga[0][0]:
+            continue
+        lado_inicial = sin_prorroga[0][0]
+        cambio = next((m for lado, m in sin_prorroga if lado and lado != lado_inicial), None)
+        if cambio is None:
+            continue
+        cuenta = por_tramo[_tramo_cambio(cambio[0] - cambio[1])]
+        cuenta[0] += 1
+        cuenta[1] += 1 if partida["won"] else 0
+
+    # Mayor diferencia primero y, a igual diferencia, la mas reciente.
+    for lista, clave in ((remontadas, "max_deficit"), (derrumbes, "max_lead")):
+        lista.sort(key=lambda p: (p[clave], p["played_at"]), reverse=True)
+    return {
+        "remontadas": remontadas[:TOPE_LISTA],
+        "derrumbes": derrumbes[:TOPE_LISTA],
+        "remontadas_total": len(remontadas),
+        "derrumbes_total": len(derrumbes),
+        "by_side_change_diff": [
+            {"diff": tramo, "matches": n, "wins": g, "winrate": _pct(g, n)}
+            for tramo, (n, g) in por_tramo.items()
+        ],
+        "matches_known": conocidas,
+    }
+
+
 #: Orden fijo de las filas de `round_endings`.
 LADOS_CIERRE = ("Attack", "Defense")
 

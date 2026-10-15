@@ -90,6 +90,20 @@ misma partida.
 | **Match point** | Rondas segun si alguien podia cerrar la partida ganandola, leido del marcador antes de la ronda (el mismo de "Segun el marcador"). *Tu match point*: tu equipo gana la partida si gana esa ronda; *match point rival*: al reves; *los dos a una ronda*: las dos cosas. Depende de a cuanto se gana cada tipo de partida, que sale de una tabla con fuente (`replays/analytics/reglas_partida.py`): hoy solo ranked (gana a 4; con 3-3 hay prorroga y gana el primero a 5, asi que 3-3 no es match point y 4-4 es de los dos). Unranked, rapida y custom no tienen regla confirmada y van a "Sin marcador o sin regla", junto con las rondas sin marcador o anteriores a Y9S4; esa fila solo se muestra si tiene rondas. Las cinco filas suman todas tus rondas. |
 | **Como se cierran tus rondas** | Tus rondas de cada lado (ataque, defensa) segun como terminaron, de `Round.win_condition` y `Round.my_team_won`. *Por eliminacion*: el equipo perdedor termino con todos muertos (`KilledOpponents`). *Sin eliminacion*: hubo ganador sin que nadie quedara eliminado del todo (`ObjectiveOrTime`); el `.rec` de temporadas nuevas no dice si fue plant, defuse o tiempo, asi que es inferido del reloj y nunca se separa. Un plant seguido de la eliminacion de los atacantes y un defuse cuenta como eliminacion. *Sin dato*: ronda sin ganador o sin condicion. Los porcentajes son sobre tus ganadas (o perdidas) con dato, y entre parentesis va el conteo de rondas. Las cinco columnas de conteo suman todas tus rondas de ese lado; las rondas sin lado no entran. |
 
+## Remontadas y derrumbes
+
+Panel de Tendencias. Solo partidas desde Y9S4 (antes el `.rec` no trae el
+marcador), con resultado, con todas sus rondas importadas y con el marcador legible
+(dos equipos) en todas: una ronda que falta o ilegible saca la partida entera. Los filtros eligen
+partidas y cada partida se lee entera, como en "Lado inicial".
+
+| Metrica | Definicion |
+|---|---|
+| **Desventaja / ventaja maxima** | El peor (o mejor) `tus rondas - las del rival` del marcador antes de cada ronda (`Round.score_before`, leido con tu `team_index`). Cuenta el marcador antes de la ultima ronda, no el final: perder 3-4 desde 3-2 es ventaja maxima 1. |
+| **Remontada** | Partida ganada con desventaja maxima de 2 o mas rondas. El corte de 2 es fijo: con 1 entraria toda partida que perdiste la primera ronda. Se listan las 20 de mayor desventaja (a igual, la mas reciente) y se cuentan todas. |
+| **Derrumbe** | Partida perdida con ventaja maxima de 2 o mas rondas. Mismo tope y orden que las remontadas. |
+| **Winrate segun la diferencia al cambio de lado** | Partidas y winrate de partida segun `tus rondas - las del rival` antes de la primera ronda de la segunda mitad: la primera ronda sin prorroga cuyo lado es distinto del de la ronda mas baja sin prorroga (la misma frontera que "Mitades y prorroga"). Tramos `+2 o mas`, `+1`, `Empatado`, `-1`, `-2 o menos`; las cinco filas se muestran aunque esten en 0. Una partida sin ronda de segunda mitad importada no entra. |
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
