@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: implementado
-candado: revisor 2026-10-15T07:11Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C4 (idea del PO); abre la epica escuadra (C1-C5 libres)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_primero_en_caer.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z, revisor 20261015T0711Z
 
 ## PR
 
@@ -208,7 +208,55 @@ Anotado y no cambiado:
 - `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa
   (preexistente, no se toca): por eso el panel demo muestra 100 % y 0 %.
 
-## Revision
+## Revision 2026-10-15 sobre dd00dc4
+
+Revisor 20261015T0711Z. Rama con `origin/main@17f0ae1` ya fusionado; `check.sh` en
+`Todo en verde.` (602 backend, 86 vitest, build, 34 e2e). Revision ciega con
+`revision.md` sobre el diff sin `docs/backlog`; cada hallazgo confirmado por
+el lider.
+
+Criterios: los seis cubiertos. Caiste primero con rival antes
+(`test_caiste_primero_aunque_antes_muriera_un_rival`), empate y nulos
+(`test_empate_*`, `test_elapsed_nulo_*`, reloj en 0), API con base vacia y
+filtros raros (`PrimeroEnCaerApiTests`), panel en el e2e (203 rondas y
+`53 (26%)`, recalculado sobre `seed_demo` por el revisor), filas en
+`metricas.md`. Casos borde revisados a mano (varios companeros con reloj en
+0, empate con companeros que murieron despues, filas sin lado solo en el
+total): bien. Sin tildes en identificadores, sin `print` ni `console.log`;
+el diff no sale de `archivos:`.
+
+Hallazgos:
+
+- [regla] frontend/src/pages/Teammates.jsx:140 y :146 contra docs/metricas.md:166-167
+  Que pasa: la UI muestra un % junto a "Caíste primero" y "Cayó un
+  compañero" (`me_first / rounds`, el `26%` del e2e) que `metricas.md` no
+  define; tampoco dice que el denominador incluye las rondas *Sin bajas*.
+  `CLAUDE.md`: todo numero de la UI tiene definicion.
+  Arreglo sugerido: una frase en la fila "Primero de tu equipo en caer":
+  "El % junto a cada conteo es sobre todas las rondas del lado, incluidas
+  las sin bajas."
+- [bug, menor] backend/replays/analytics/aggregates.py:927 (`_primer_orden_de_muerte`)
+  Que pasa: `Event.objects.filter(round_id__in=set(empates))` manda un
+  parametro por ronda empatada; la misma funcion evita ese tope con un
+  `Exists` correlacionado unas lineas arriba. Con el tope bajado a 150 y
+  todas las rondas de `seed_demo` empatadas, `first_teammate_death()` lanza
+  `OperationalError: too many SQL variables` (y `/api/teammates/` daria 500)
+  mientras `teammate_synergy()` sigue andando. Con el tope real (32766 en
+  SQLite 3.45) hacen falta mas de 32k rondas empatadas: poco probable, pero
+  el arreglo es de dos lineas.
+  Arreglo sugerido: pasarle `mias` y filtrar
+  `Event.objects.filter(Exists(mias.filter(round_id=OuterRef("round_id"))), kind__in=...)`,
+  quedandose en Python solo con las rondas de `empates`; test con
+  `connection.connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 50)`
+  y mas de 50 rondas empatadas.
+
+Anotado y no reportado como hallazgo: la clasificacion se calcula al
+consultar y copia la regla "primera muerte del feed" de
+`metrics.analyse_round` (lo fijo el diseno, hay precedente en los duelos;
+el Dev ya dejo la alternativa de columna `first_team_death` en
+Implementacion).
+
+Veredicto: corregir (los dos hallazgos, chicos y locales) -> `con hallazgos`.
 
 ## QA
 
