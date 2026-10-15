@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
-estado: implementado
-candado: revisor 2026-10-15 09:12
+estado: revisado
+candado: -
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 4
 fuente: ALCANCE.md A2; candidato de `mercado/2026-09-13`. `gamemode_name` y `match_type_name` (`backend/pydissect/header.py:229-234`) devuelven `Unknown(<id>)` sin llamar a `record_unknown`, a diferencia de mapas y operadores
 archivos: backend/pydissect/overrides.py, backend/pydissect/header.py, backend/replays/unknowns.py, backend/replays/retag.py, backend/replays/views.py, backend/replays/management/commands/unknown_ids.py, backend/tests/test_pydissect.py, backend/tests/test_unknowns.py, backend/tests/test_retag.py, backend/tests/factories.py, frontend/src/pages/Datos.jsx, frontend/e2e/humo.spec.js, README.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0812Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0812Z, revisor 20261015T0912Z
 
 ## PR
 
@@ -229,7 +229,48 @@ Desvios del diseno:
   test `test_modo_y_tipo_de_la_misma_partida_cuentan_una_partida`.
 - `check.sh` en `Todo en verde.` (610 backend, 86 vitest, build, 35 e2e).
 
-## Revision
+## Revision 2026-10-15 sobre 75d7e0c
+
+Revisor 20261015T0912Z. La rama ya tiene `origin/main@17f0ae1` (main no se movio);
+`check.sh` en `Todo en verde.` (610 backend, 86 vitest, build, 35 e2e).
+Revision ciega con `revision.md` sobre el diff sin `docs/backlog`: sin
+hallazgos. El lider confirmo a mano los puntos sensibles.
+
+Criterios:
+- Parser con `gamemodes` y `match_types`, etiqueta antes de `Unknown`,
+  `record_unknown` sin etiqueta, sin Django:
+  `test_modo_desconocido_usa_la_etiqueta_del_override`,
+  `test_modo_desconocido_sin_etiqueta_queda_anotado`,
+  `test_tipo_de_partida_desconocido_queda_anotado`,
+  `test_modo_y_tipo_conocidos_no_se_anotan`, `test_pydissect_no_importa_django`.
+- `/api/unknown/` con id, partidas, fechas, pendiente y listas vacias:
+  `test_modo_desconocido_lista_sus_partidas_y_fechas`,
+  `test_tipo_desconocido_trae_los_modos_como_pista`,
+  `test_etiqueta_pendiente_se_muestra`, `test_base_sin_desconocidos_da_listas_vacias`,
+  `test_unknown_0_no_se_lista`.
+- `POST /api/overrides/` con las claves nuevas, 400 con id no numerico, JSON
+  viejo: `test_guardar_etiqueta_de_modo_y_reetiqueta`,
+  `test_solo_etiquetas_de_tipo_alcanza_para_guardar`,
+  `test_id_de_modo_no_numerico_da_400_y_no_escribe`,
+  `test_overrides_viejo_sin_claves_nuevas_se_lee` (parser y `replays`),
+  `test_guardar_mapa_no_borra_las_etiquetas_de_modo`. La etiqueta vacia pasa
+  por el mismo `clean_labels` que mapas (tests existentes).
+- `retag` sin reimportar y sin degradar: `test_modo_unknown_999_pasa_a_la_etiqueta`,
+  `test_tipo_unknown_pasa_a_la_etiqueta`, `test_no_toca_un_modo_que_ya_tenia_nombre`,
+  `test_sin_etiqueta_el_modo_sigue_unknown`, `test_dry_run_no_escribe_el_modo`,
+  `test_el_texto_que_no_es_unknown_con_id_no_se_toca`,
+  `test_modo_y_tipo_de_la_misma_partida_cuentan_una_partida`.
+- Datos con las dos tablas: e2e `Datos muestra Sin identificar sin pendientes`
+  (`seed_demo`) y `Datos lista modos y tipos de partida sin nombre`
+  (`/api/unknown/` armado con `page.route`).
+
+Confirmado a mano: `Match.gamemode` y `match_type` son de 32 y `MAX_LABEL`
+es 32; `Unknown(<id de 64 bits>)` cabe (29). El diff solo sale de
+`archivos:` en `docs/formato-rec.md`, explicado en Implementacion. Sin
+numero nuevo en la UI (los conteos siguen el patron de mapas y operadores).
+Sin tildes en identificadores, UI con tildes, sin `print` ni `console.log`.
+
+Veredicto: aprobar -> `revisado`.
 
 ## QA
 
