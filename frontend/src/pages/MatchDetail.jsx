@@ -12,6 +12,7 @@ import {
   fmt,
   pct,
 } from '../components/ui.jsx'
+import MatrizDuelos from '../components/MatrizDuelos.jsx'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -153,6 +154,13 @@ export default function MatchDetail() {
             />
           </div>
         </div>
+      </Panel>
+
+      <Panel title="Matriz de duelos" hint="Quién mató a quién en esta partida. Filas: el que mata.">
+        <MatrizDuelos
+          rounds={rounds}
+          miEquipo={rounds.length && myTeam(rounds[0]) >= 0 ? myTeam(rounds[0]) : match.my_team_index}
+        />
       </Panel>
 
       <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las metricas derivadas.">

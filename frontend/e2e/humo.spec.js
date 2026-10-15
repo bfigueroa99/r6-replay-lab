@@ -221,6 +221,25 @@ test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el detalle de una partida muestra la matriz de duelos', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Matriz de duelos', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo pone bajas tuyas y contra ti entre equipos distintos: la matriz no sale vacia
+  await expect(panel.locator('table.matriz')).toHaveCount(2)
+  await expect(panel.locator('td.con-dato').first()).toHaveText(/^\d+/)
+  await panel.getByRole('button', { name: 'Solo aperturas' }).click()
+  await expect(panel.locator('td.con-dato').first()).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
