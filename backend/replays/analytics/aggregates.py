@@ -971,7 +971,7 @@ def first_teammate_death(**filters) -> list[dict]:
         for round_id in empates:
             ronda = por_ronda[round_id]
             mio = orden.get((round_id, ronda["me"]["player_id"]))
-            menor = min(m["death_elapsed"] for m in ronda["mates"] if m["death_elapsed"] is not None)
+            menor = ronda["me"]["death_elapsed"]  # en un empate, la tuya es la menor
             suyos = [
                 orden.get((round_id, m["player_id"]))
                 for m in ronda["mates"]
