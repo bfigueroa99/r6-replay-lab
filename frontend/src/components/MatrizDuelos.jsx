@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { celda, matrizDeDuelos } from '../matrizDuelos.js'
 
 /** Una tabla de la matriz: filas el que mata, columnas el que muere. */
-function Tabla({ titulo, matriz, filas, columnas }) {
+function Tabla({ titulo, matriz, direccion, filas, columnas }) {
   return (
     <>
       <h3>{titulo}</h3>
@@ -22,7 +22,7 @@ function Tabla({ titulo, matriz, filas, columnas }) {
               <tr key={autor}>
                 <th scope="row">{autor}</th>
                 {columnas.map((victima) => {
-                  const { bajas, headshots } = celda(matriz, autor, victima)
+                  const { bajas, headshots } = celda(matriz, direccion, autor, victima)
                   return (
                     <td
                       key={victima}
@@ -70,12 +70,14 @@ export default function MatrizDuelos({ rounds, miEquipo }) {
           <Tabla
             titulo="Tu equipo contra el rival"
             matriz={matriz}
+            direccion="aFavor"
             filas={matriz.mios}
             columnas={matriz.rivales}
           />
           <Tabla
             titulo="El rival contra tu equipo"
             matriz={matriz}
+            direccion="enContra"
             filas={matriz.rivales}
             columnas={matriz.mios}
           />

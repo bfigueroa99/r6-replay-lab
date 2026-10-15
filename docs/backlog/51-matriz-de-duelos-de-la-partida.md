@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: en curso 2026-10-15T20:07Z
-candado: dev 2026-10-15T20:07Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -121,3 +121,45 @@ celda con el timeline de sus rondas contando a mano.
 **Archivos ocupados:** ninguna rama de trabajo abierta.
 
 ## Implementacion
+
+(Dev 20261015T2004Z)
+
+Quedo todo el diseno, todo en el navegador (sin backend):
+
+- `frontend/src/matrizDuelos.js`: `matrizDeDuelos(rondas, { soloAperturas, miEquipo })`
+  y `celda(matriz, direccion, autor, victima)`.
+- `frontend/src/components/MatrizDuelos.jsx`: botones "Todas / Solo aperturas"
+  en un `div.round-tabs` con `round-tab active` (el marcado de las pestañas de
+  ronda), dos tablas `table.matriz`, `·` para cero, `(n HS)` chico, `title` en
+  cada celda, texto vacio si `total === 0`.
+- `MatchDetail.jsx`: un import y el panel "Matriz de duelos" entre "Rondas" y
+  "Scoreboard de la partida". `miEquipo` = `myTeam(rounds[0])` si da >= 0, si no
+  `match.my_team_index`.
+- `styles.css`: `.matriz` y `.matriz-scroll` al final del archivo.
+- Fila **Matriz de duelos (partida)** en `docs/metricas.md`, seccion Duelos.
+
+**Desvio del diseno** (por la revision ciega previa, hallazgo real): el diseno
+asignaba cada nick a un grupo una sola vez y comparaba con el equipo de
+`rounds[0]`. Si un nick cambia de `team_index` entre rondas (el parser reparte
+equipos por orden de lectura, `pydissect/events.py`), una baja se contaba en
+`total` y no aparecia en ninguna tabla. Ahora el lado de cada baja se decide
+ronda por ronda con tu `team_index` de esa ronda (tu fila; si no esta, el
+`miEquipo` de la partida), y la matriz guarda dos direcciones: `aFavor` y
+`enContra`. Por eso `celda` recibe la direccion; un nick puede aparecer en las
+dos tablas si jugo en los dos lados.
+
+Tests (`src/matrizDuelos.test.js`, 7): matriz de dos rondas con HS; teamkills y
+bajas sin autor; solo aperturas; teamkill no abre; sin eventos; nick que cambia
+de equipo entre rondas; ronda sin tu fila usa el equipo de la partida. E2e:
+`el detalle de una partida muestra la matriz de duelos`.
+
+Criterios -> tests: 1 `arma la matriz de una partida de dos rondas con bajas y
+headshots`; 2 `ignora teamkills y bajas sin autor`; 3 `solo aperturas cuenta la
+primera baja entre rivales de cada ronda` + `un teamkill no cuenta como
+apertura`; 4 `una partida sin eventos devuelve total cero` (el componente
+muestra el texto); 5 e2e.
+
+Revision ciega previa: corregir (el bug de arriba, corregido) y un menor de doc
+(la fila de metricas ahora dice que el teamkill tampoco abre la matriz, a
+diferencia de Duelos de apertura).
+
