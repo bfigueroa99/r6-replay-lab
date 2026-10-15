@@ -1,7 +1,7 @@
 # 48. POST de etiquetas y de Ubisoft aceptan formularios de otra pagina
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-15T12:12Z
 rama: -
 tipo: bug
 epica: -
