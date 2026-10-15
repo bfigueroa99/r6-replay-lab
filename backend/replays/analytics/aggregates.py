@@ -663,8 +663,12 @@ def comebacks(**filters) -> dict:
         marcadores = [_marcador_de_ronda(r["round__score_before"], r["team_index"]) for r in orden]
         # Una ronda ilegible o que falta (sin su `.rec`) puede esconder el pozo
         # o el cambio de lado: la partida entera queda afuera en vez de
-        # medirse a medias.
-        if any(m is None for m in marcadores) or numeros[-1] - numeros[0] + 1 != len(numeros):
+        # medirse a medias. Los huecos del medio se ven en la numeracion; los
+        # del principio no (se numera desde 0 o desde 1), pero si en que la
+        # primera ronda no arranca 0-0.
+        if (any(m is None for m in marcadores)
+                or numeros[-1] - numeros[0] + 1 != len(numeros)
+                or marcadores[0] != (0, 0)):
             continue
         conocidas += 1
         # El `score_before` de la ultima ronda es el marcador antes de

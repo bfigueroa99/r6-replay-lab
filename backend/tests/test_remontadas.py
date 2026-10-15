@@ -89,6 +89,17 @@ class RemontadasTests(TestCase):
         self.assertEqual(datos["matches_known"], 0)
         self.assertEqual(sum(n for n, _ in _por_tramo(datos).values()), 0)
 
+    def test_si_faltan_las_primeras_rondas_la_partida_no_entra(self):
+        # Sin las rondas 0 a 2 no se ve el 0-2 ni de donde arranco el lado.
+        m = make_match(index=0, my_score=4, opponent_score=2)
+        for numero, marcador, lado in ((3, [1, 2], "Attack"), (4, [2, 2], "Defense"),
+                                       (5, [3, 2], "Defense")):
+            make_round_player(make_round(m, numero, side=lado, score_before=marcador))
+        datos = agg.comebacks()
+        self.assertEqual(datos["matches_known"], 0)
+        self.assertEqual(datos["remontadas"], [])
+        self.assertEqual(sum(n for n, _ in _por_tramo(datos).values()), 0)
+
     def test_partida_anterior_a_y9s4_no_aparece_en_nada(self):
         _partida([[0, 0], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2]], code_version=Y9S3)
         _partida([[0, 0], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2]], index=1)

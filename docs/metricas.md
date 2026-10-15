@@ -94,7 +94,7 @@ misma partida.
 
 Panel de Tendencias. Solo partidas desde Y9S4 (antes el `.rec` no trae el
 marcador), con resultado, con todas sus rondas importadas y con el marcador legible
-(dos equipos) en todas: una ronda que falta o ilegible saca la partida entera. Los filtros eligen
+(dos equipos) en todas: una ronda que falta (tambien las primeras: la primera presente tiene que arrancar 0-0) o ilegible saca la partida entera. Si faltan las ultimas no se nota: el resultado de la partida sale del ultimo `.rec` importado, para este panel y para toda la app. Los filtros eligen
 partidas y cada partida se lee entera, como en "Lado inicial".
 
 | Metrica | Definicion |

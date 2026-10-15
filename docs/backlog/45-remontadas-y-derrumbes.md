@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15T02:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -226,6 +226,24 @@ backend, 86 frontend, build ok, 33 e2e).
 
 Verificacion manual sugerida en el PC: con la base real, abrir una remontada
 del panel y confirmar en el detalle que el marcador estuvo 2 abajo.
+
+### Correccion de la revision (dev 20261015T0211Z)
+
+- Hallazgo del revisor (faltan las primeras rondas): corregido. `comebacks()`
+  exige ademas que la primera ronda presente arranque `0-0`; test nuevo
+  `test_si_faltan_las_primeras_rondas_la_partida_no_entra` con las rondas 3, 4
+  y 5 del repro (`matches_known == 0`, tabla en 0). Mutacion: sin la condicion
+  el test cae. `docs/metricas.md` lo dice.
+- La revision ciega de este turno marco el caso simetrico (faltan las ultimas
+  rondas). No se agrega control: el resultado de la partida (`my_score`,
+  `opponent_score`, `won`) sale del `teamscore` del ultimo `.rec` importado
+  (`ingest.py:146`), asi que con rondas finales faltantes el resultado ya esta
+  truncado para toda la app y un control "marcador antes de la ultima + 1 ==
+  final" nunca saltaria con datos reales. Queda anotado en `docs/metricas.md`.
+- `seed_demo` arranca cada partida en 0-0: los numeros del e2e no cambian.
+
+Verificacion: `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 585 tests
+backend, 86 frontend, build ok, 33 e2e).
 
 ## Revision 2026-10-15 sobre 6739aac
 
