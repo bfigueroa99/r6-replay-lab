@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: implementado
-candado: revisor 2026-10-15 09:12
+estado: revisado
+candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C4 (idea del PO); abre la epica escuadra (C1-C5 libres)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_primero_en_caer.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z, revisor 20261015T0711Z, dev 20261015T0812Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z, revisor 20261015T0711Z, dev 20261015T0812Z, revisor 20261015T0912Z
 
 ## PR
 
@@ -273,6 +273,33 @@ Implementacion).
 
 Veredicto: corregir (los dos hallazgos, chicos y locales) -> `con hallazgos`.
 
+## Revision 2026-10-15 sobre c62b7b3
+
+Revisor 20261015T0912Z (segunda pasada, sesion distinta de la primera). La rama ya tiene
+`origin/main@17f0ae1` (main no se movio); `check.sh` en `Todo en verde.`
+(603 backend, 86 vitest, build, 34 e2e).
+
+Hallazgos de la pasada anterior, verificados sobre `git diff 93d3b54 c62b7b3`:
+- [regla] % sin definicion: corregido; la fila de `metricas.md` dice que el %
+  es sobre todas las rondas del lado, incluidas las *Sin bajas*.
+- [bug, menor] tope de parametros: corregido; `_primer_orden_de_muerte` usa el
+  `Exists` correlacionado y `test_muchos_empates_no_pasan_el_tope_de_parametros`
+  (60 empates, tope en 50) lo cubre.
+
+Revision ciega nueva con `revision.md` sobre el diff completo: sin bugs; el
+subagente recalculo el e2e sobre `seed_demo` (203 rondas, 53 = 26 %). Su unico
+hallazgo, [regla] "metrica calculada al consultar", no se reporta como
+hallazgo: lo fijo el diseno, tiene precedente en Duelos (`_PRIMER_EVENTO`)
+y la pasada anterior ya lo dejo anotado. Va como aviso a `## Para el humano`.
+
+Veredicto: aprobar -> `revisado`.
+
 ## QA
 
 ## Para el humano
+
+- Revisor 20261015T0912Z (aviso, no frena): la clasificacion se calcula al consultar
+  (lee `Event` si hay empates). Si pesa o se quiere alinear con "metricas al
+  importar", la alternativa es una columna `first_team_death` en
+  `RoundPlayer` marcada en `metrics.analyse_round` (migracion + `recompute`),
+  en ficha aparte.
