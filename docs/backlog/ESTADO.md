@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 16:45 UTC por release (sesion 20261015T1612Z; motivo: por estado: 1 aprobado; reloj: dev, franja 5)
-playbook: origin/main@591a300 (pruebas: ok)
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias; sin herramientas para comparar
+actualizado: 2026-10-15 17:15 UTC por po (sesion 20261015T1711Z; motivo: papel vacio; reloj: qa, franja 6)
+playbook: origin/main@2a6c86b
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -10,10 +10,10 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 
-Ninguna rama de trabajo abierta: la 48 se mergeo en este turno (PR #37, main 2a6c86b).
+Ninguna rama de trabajo abierta: la 48 se mergeo en el turno anterior (PR #37, main 2a6c86b).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -22,17 +22,20 @@ Nada que mergear: no hay ramas de trabajo abiertas.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
-- Epicas en curso: escuadra: C4 (46, PR #35) en main; C1-C3 y C5 libres. temporada-y-modo: A2 (47, PR #36) en main; A1 lo toca PR #14, A3 libre. lado-y-marcador: B1-B7 en main; B8 y B9 como idea. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 58 ideas libres. Ideas nuevas de este turno: ninguna. Ultimas del Investigador (2026-10-14): A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade convertidas, D5 cara a cara en el detalle de partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamaño, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 jugadores y kill feed de Y11S2, P6 picks de preparacion; F1 y F7 ampliadas.
+- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 en papel (50); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 en papel (49, bug); A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 en papel (51). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:1. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 59 ideas libres (58 al empezar el turno; A4, B10 y F7 pasaron a fichas). Ideas nuevas de este turno: C10 compañeros por lado, E10 operadores que mejoran y empeoran, G6 partidas incompletas en Datos, H4 copiar el resumen de una partida como texto.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
-| ficha | titulo | estado | tipo | epica | prioridad |
-|---|---|---|---|---|---|
+| ficha | estado | tipo | epica | prioridad | area | candado |
+|---|---|---|---|---|---|---|
+| 49-mapas-rehechos-mezclan-lados | propuesto | bug | temporada-y-modo | 2 | backend | - |
+| 50-partidas-cerradas-y-holgadas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 51-matriz-de-duelos-de-la-partida | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
 
-Papel vacio: 0 propuesto, 0 disenado, cola vacia. Proximo turno por estado: po (regla 7) para llenar el papel con funcionalidades (siguiente tramo de escuadra C1-C3/C5 o temporada-y-modo A3; candidatos bug: A4 mapas rehechos mezclados y el orden de `VigilanteTests`).
+Proximo turno por estado: arquitecto (regla 9), primero la 49 (prioridad 2).
 
 ## Ultimo turno de cada rol
 
@@ -44,7 +47,7 @@ Papel vacio: 0 propuesto, 0 disenado, cola vacia. Proximo turno por estado: po (
 | qa | 2026-10-15 15:17 | Prueba 48 (bug, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Base vacia y sembrada: overrides, import (`?force=1`) y Ubisoft (id real e inexistente) dan 415 con text/plain, urlencoded, multipart y sin cuerpo, y no escriben `overrides.json`; con JSON (tambien `; charset=utf-8`) siguen igual. UI en Chromium: Importar, respaldo, interruptor de Ajustes, Datos (reetiqueta un `Unknown(424242)`) y Consultar Ubisoft (interceptado, sin red) mandan `application/json`. Mutacion: cada chequeo quitado hace caer su test. Chunk 186.78 kB (main 186.80). Sin pushes de codigo. |
 | arquitecto | 2026-10-15 12:13 | Disena 48 (bug, `propuesto` -> `disenado`): `_es_json` + 415 al principio de `player_ubisoft` (antes del 404 y de `configurado()`), `save_overrides` y tambien `run_import` (con `?force=1` una pagina ajena forzaba la reimportacion entera; cuesta una linea); `api.js` manda `{}` JSON por defecto en todo `post`, asi `App.jsx` y `PerfilUbisoft.jsx` no cambian; helpers de tests a JSON, 3 tests nuevos de 415 y un e2e que intercepta `/api/import/` y afirma `application/json`. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
-| po | 2026-10-14 19:35 | Papel vacio: propone 45 (B7: remontadas y derrumbes, con winrate de partida segun la diferencia al cambio de lado, en Tendencias), 46 (C4: primero de tu equipo en caer y su winrate, por lado, en Compañeros) y 47 (A2: modos y tipos de partida desconocidos en Datos, con etiqueta y retag sin reimportar). Reconcilia `ALCANCE.md` con main f74a16f (B6 y E4 en main). Ideas nuevas B8, B9, E5, F6 y H3: 24 libres (22 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
+| po | 2026-10-15 17:15 | Papel vacio: propone 49 (bug A4: `by_map` une el winrate por lado por `map_name` y mezcla Fortress con FortressY10; `by_site`/`by_spawn` mezclan layouts; verificado en `aggregates.py:383-430`), 50 (B10: partidas cerradas y holgadas en Tendencias) y 51 (F7: matriz de duelos 5x5 en el detalle de partida, solo frontend). Reconcilia `ALCANCE.md` con main 2a6c86b. Ideas nuevas C10, E10, G6 y H4: 59 libres (58 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
 ## Para el humano
 
@@ -79,7 +82,7 @@ Papel vacio: 0 propuesto, 0 disenado, cola vacia. Proximo turno por estado: po (
 - Ficha 44 (ya en main, PR #32; aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
 - Verificar en el PC (Investigador, 2026-10-14): r6-dissect issue #130 reporta replays Y11S3 con `won: true` en los dos equipos en 3 de 5 rondas. `replays/analytics/metrics.py:205` se queda con el ultimo equipo sin avisar, asi que `my_team_won` podria salir al reves en esas rondas. Si tienes un `.rec` Y11S3, mirar si alguna ronda tiene a los dos equipos ganadores (idea P2 de `ALCANCE.md`); si se confirma, es un bug para el PO con prioridad 1. Tambien falta el operador 444310693746 (sale `Unknown(...)`, se puede nombrar en Datos; idea P1).
 - Verificar en el PC (Investigador, 2026-10-14 22:11Z, idea P5): dos forks de r6-dissect (nicktstewart y defiancer6s-hub) cambian en Y11S2 (code version 9734089) el patron del DissectID a `8C 61 1A 75 23` y el layout del kill feed; sintoma: jugadores duplicados o faltantes y bajas de gente que no esta en la lista. `docs/formato-rec.md` dice que Y11S3 anda sin cambios, asi que puede afectar solo a Y11S2. Si tienes un `.rec` de Y11S2 (Calypso Casino, 2026-06 a 2026-09), importalo y mira si faltan jugadores o bajas.
-- Posible bug para el PO (Investigador, 2026-10-14, idea A4): `by_map` (`aggregates.py:383-402`) agrupa por nombre y slug, pero une el winrate por lado solo por `map_name`. Los mapas con version vieja y rehecha (`Fortress`/`FortressY10`, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...) salen como dos filas con el mismo nombre y el mismo winrate de ataque y defensa, mezclado. `by_site` tambien mezcla los sitios de los dos layouts. Leido en el codigo, no reproducido con datos: el PO puede abrirlo como `tipo: bug`.
+- Ficha 49 propuesta (PO 2026-10-15) a partir de este aviso. Posible bug para el PO (Investigador, 2026-10-14, idea A4): `by_map` (`aggregates.py:383-402`) agrupa por nombre y slug, pero une el winrate por lado solo por `map_name`. Los mapas con version vieja y rehecha (`Fortress`/`FortressY10`, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...) salen como dos filas con el mismo nombre y el mismo winrate de ataque y defensa, mezclado. `by_site` tambien mezcla los sitios de los dos layouts. Leido en el codigo, no reproducido con datos: el PO puede abrirlo como `tipo: bug`.
 - Ficha 45 (ya en main, PR #34; aviso del Dev, no bloquea): una partida con un `.rec` de ronda faltante, en el medio o al principio, no entra a remontadas, derrumbes ni a la tabla del cambio de lado (evita numeros falsos). Si faltan las ultimas no se detecta: el resultado de la partida ya sale truncado del ultimo `.rec` para toda la app. Con la base real, abrir una remontada y confirmar en el detalle que el marcador estuvo 2 abajo.
 - Ficha 45 (ya en main, PR #34; aviso del Revisor, no bloquea): con `matches_known == 0` el panel dice "hace falta Y9S4 o posterior", pero tambien saca partidas Y9S4 con rondas faltantes o sin resultado; cambio de texto de una linea (Trends.jsx:546); el Release no implementa, queda para una ficha chica.
 - Ficha 46 (ya en main, PR #35; aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.
