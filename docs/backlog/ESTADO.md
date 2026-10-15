@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 06:40 UTC por dev (sesion 20261015T0611Z; motivo: por estado: 2 disenado, lugar en cola; reloj: arquitecto, franja 2)
+actualizado: 2026-10-15 07:24 UTC por revisor (sesion 20261015T0711Z; motivo: por estado: 1 implementado; reloj: arquitecto, franja 2)
 playbook: origin/main@17f0ae1
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
 pausa: no
@@ -9,10 +9,10 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/46-primero-de-tu-equipo-en-caer | docs/backlog/46-primero-de-tu-equipo-en-caer.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/46-primero-de-tu-equipo-en-caer?expand=1) | sin PR |
+| claude/equipo-dev/46-primero-de-tu-equipo-en-caer | docs/backlog/46-primero-de-tu-equipo-en-caer.md | con hallazgos | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/46-primero-de-tu-equipo-en-caer?expand=1) | sin PR |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -21,7 +21,7 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes) otros:7.
-- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 (45, PR #34) en main; B8 y B9 como idea. escuadra: C4 (ficha 46) implementado en su rama. temporada-y-modo: A2 en ficha 47 (disenado). progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1 (36), B4 (39), B2 (41 y 43), B5 (43) y B6 (42) en main; B7 (45, PR #34) en main; B8 y B9 como idea. escuadra: C4 (ficha 46) con hallazgos en su rama. temporada-y-modo: A2 en ficha 47 (disenado). progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 58 ideas libres. Ideas nuevas de este turno: ninguna. Ultimas del Investigador (2026-10-14): A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade convertidas, D5 cara a cara en el detalle de partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamaño, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 jugadores y kill feed de Y11S2, P6 picks de preparacion; F1 y F7 ampliadas.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
@@ -30,17 +30,17 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 | ficha | titulo | estado | tipo | epica | prioridad |
 |---|---|---|---|---|---|
-| 46 | Primero de tu equipo en caer | implementado (rama de trabajo) | funcionalidad | escuadra | 3 |
+| 46 | Primero de tu equipo en caer | con hallazgos (rama de trabajo) | funcionalidad | escuadra | 3 |
 | 47 | Modos y tipos de partida desconocidos en Datos | disenado | funcionalidad | temporada-y-modo | 4 |
 
-Proximo turno por estado: revisor para 46; despues dev para 47 (prioridad 4).
+Proximo turno por estado: dev para 46 (con hallazgos: una frase en `metricas.md` y `Exists` en `_primer_orden_de_muerte`); despues dev para 47 (prioridad 4).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-15 05:50 | Entrega y mergea 45 (`aprobado` -> `entregado` -> main, PR #34, main 17f0ae1, funcionalidad; cierra B7 de lado-y-marcador). Puerta completa: dev/revisor/qa en sesiones distintas, rama con main f74a16f, `check.sh` en `Todo en verde.` sobre el commit exacto del PR 780ee84 (585 backend, 86 vitest, build, 33 e2e). Ficha recortada con `## PR`; espejo quitado de backlog; B7 a `en main` en `ALCANCE.md`. Borrar la rama: el push de borrado no tuvo efecto. pruebas.sh: PRUEBAS_OK (10). |
-| revisor | 2026-10-15 03:15 | Revisa 45, segunda pasada (`implementado` -> `revisado`): el arreglo de las primeras rondas faltantes esta y su test cae si se quita la condicion (mutacion, 1 de 24). Revision ciega con `revision.md`: un solo hallazgo menor (texto de vacio de Trends.jsx:546 solo nombra Y9S4; tambien saca partidas con rondas faltantes), a `## Para el humano`. Criterios cubiertos; e2e = `seed_demo`. `check.sh` en `Todo en verde.` (585 backend, 86 vitest, build, 33 e2e). Sin pushes de codigo. |
+| revisor | 2026-10-15 07:24 | Revisa 46 (`implementado` -> `con hallazgos`). `check.sh` en `Todo en verde.` (602 backend, 86 vitest, build, 34 e2e). Revision ciega con `revision.md`, hallazgos confirmados: (1) el % de "Caíste primero"/"Cayó un compañero" no tiene definicion en `metricas.md` (regla de `CLAUDE.md`); (2) `_primer_orden_de_muerte` usa `round_id__in` con un parametro por ronda empatada (reproducido con el tope de SQLite bajado; arreglo: `Exists` como el resto). Criterios cubiertos; e2e recalculado sobre `seed_demo` (203, 53). Sin pushes de codigo. |
 | dev | 2026-10-15 06:40 | Implementa 46 (`disenado` -> `implementado`, rama `claude/equipo-dev/46-primero-de-tu-equipo-en-caer`, funcionalidad, abre la epica escuadra): `first_teammate_death` en `/api/teammates/` como `first_down`, panel "Primero en caer" en Compañeros, 17 tests, e2e, dos filas en `metricas.md`. Revision ciega previa: reloj en 0 mandado al feed y etiquetas de CSV distintas; calculo al consultar (como fijo el diseno) y muertes sin hora a "Sin bajas" anotados en la ficha. `check.sh` en `Todo en verde.` (602 backend, 86 vitest, build, 34 e2e). |
 | qa | 2026-10-15 04:50 | Prueba 45 (`revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (585 backend, 86 vitest, build, 33 e2e). Base vacia: listas vacias, cinco tramos en 0, 200 con `until=foo`, `page=-1`, `map=`. Base sembrada con `factories.py` (31 partidas: remontada 0-3, derrumbe 3-0 con `team_index=1` numerado desde 1, pre-Y9S4, ronda faltante, `won` nulo, tres equipos, 25 remontadas para el tope): `matches_known 27`, 26 remontadas con 20 listadas, 1 derrumbe, tramos esperados; filtros coherentes con `by_half`. UI en Chromium: listas, "Se muestran 20 de 26.", enlaces al detalle, consola limpia. Chunk inicial sin cambio. 5 mutaciones caen (4 backend, 1 vitest). Sin pushes de codigo. |
 | arquitecto | 2026-10-14 23:16 | Disena 45 (`comebacks` en `/api/trends/`: remontadas/derrumbes con umbral fijo 2 sobre `score_before` de toda la partida, solo Y9S4+ y marcador legible en todas las rondas; tabla por diferencia al cambio de lado en cinco tramos; panel en Tendencias con `remontadas.js`), 46 (`first_teammate_death` en `/api/teammates/` como `first_down`: menor `death_elapsed` de tu equipo, empate por `Event.order`, sin evento va al compañero; panel "Primero en caer" en Compañeros) y 47 (claves `gamemodes`/`match_types` en `overrides.json`, `record_unknown` en el parser, listas en `/api/unknown/`, retag leyendo el id del texto `Unknown(<id>)`, sin migracion; tablas en Datos). Sin pushes de codigo. |
