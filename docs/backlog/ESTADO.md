@@ -1,28 +1,29 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 15:17 UTC por qa (sesion 20261015T1511Z; motivo: por estado: 1 revisado; reloj: dev, franja 5)
-playbook: origin/main@591a300
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
+actualizado: 2026-10-15 16:45 UTC por release (sesion 20261015T1612Z; motivo: por estado: 1 aprobado; reloj: dev, franja 5)
+playbook: origin/main@591a300 (pruebas: ok)
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias; sin herramientas para comparar
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/48-posts-sin-json-desde-otra-pagina | docs/backlog/48-posts-sin-json-desde-otra-pagina.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/48-posts-sin-json-desde-otra-pagina?expand=1) |
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
+Ninguna rama de trabajo abierta: la 48 se mergeo en este turno (PR #37, main 2a6c86b).
+
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=58 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/48-posts-sin-json-desde-otra-pagina`: unica rama abierta, no choca con nada. Libera `views.py`, `api.js`, `humo.spec.js` y los tests de import, overrides y Ubisoft.
+Nada que mergear: no hay ramas de trabajo abiertas.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:7.
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
 - Epicas en curso: escuadra: C4 (46, PR #35) en main; C1-C3 y C5 libres. temporada-y-modo: A2 (47, PR #36) en main; A1 lo toca PR #14, A3 libre. lado-y-marcador: B1-B7 en main; B8 y B9 como idea. progreso: E3 (40) y E4 (44) en main; E5 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 1 ramas de trabajo (48, bug).
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 58 ideas libres. Ideas nuevas de este turno: ninguna. Ultimas del Investigador (2026-10-14): A5 mapas para banear, B12 cuanto tardas en ganar, C8 diferencial de trade, C9 oportunidades de trade convertidas, D5 cara a cara en el detalle de partida, E8 banda de ruido en winrates, E9 contra el promedio de tus lobbies, F10 multikills por tamaño, O3 contra la media del operador, O4 participacion en aperturas, O5 presencia y delta por operador, P5 jugadores y kill feed de Y11S2, P6 picks de preparacion; F1 y F7 ampliadas.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -30,15 +31,14 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | titulo | estado | tipo | epica | prioridad |
 |---|---|---|---|---|---|
-| 48 | POST de etiquetas y de Ubisoft aceptan formularios de otra pagina | en curso (espejo; la rama dice `aprobado`) | bug | - | 2 |
 
-Papel vacio: 0 propuesto, 0 disenado. Proximo turno por estado: release para la 48 (puerta de merge); despues el PO tiene que llenar el papel con funcionalidades (siguiente tramo de escuadra C1-C3/C5 o temporada-y-modo A3).
+Papel vacio: 0 propuesto, 0 disenado, cola vacia. Proximo turno por estado: po (regla 7) para llenar el papel con funcionalidades (siguiente tramo de escuadra C1-C3/C5 o temporada-y-modo A3; candidatos bug: A4 mapas rehechos mezclados y el orden de `VigilanteTests`).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-15 11:50 | Entrega y mergea 46 (PR #35, main b3b33a6) y 47 (PR #36, main 591a300), las dos funcionalidad (`aprobado` -> `entregado` -> main). Puerta completa en las dos: dev/revisor/qa en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, `check.sh` en `Todo en verde.` sobre la rama con main fusionado (46: 604 backend, 86 vitest, build, 34 e2e; 47 con main b3b33a6: 629, 86, build, 36). Fichas recortadas con `## PR`; espejos quitados de backlog; C4 y A2 a `en main` en `ALCANCE.md`. Borrado de ramas cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). |
+| release | 2026-10-15 16:45 | Entrega y mergea 48 (bug, `aprobado` -> `entregado` -> main, PR #37, main 2a6c86b). Puerta completa: dev 1311Z, revisor 1411Z y qa 1511Z en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, PR abierto, `check.sh` en `Todo en verde.` sobre 70f8958 con main 591a300 fusionado (632 backend con 4 saltados, 86 vitest, build, 37 e2e). Ficha recortada con `## PR`; espejo quitado de backlog. Borrado de la rama cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-15 13:40 | Implementa 48 (bug, `disenado` -> `implementado`, rama `claude/equipo-dev/48-posts-sin-json-desde-otra-pagina`): `player_ubisoft` (antes del 404), `save_overrides` y `run_import` devuelven 415 sin `application/json`; `api.js` manda `{}` JSON por defecto en todo `post`. 3 tests de 415 (text/plain y urlencoded; `abrir` prohibido, `start_import` no llamado, `overrides.json` sin escribir) y e2e `los POST de la UI mandan JSON` (cae con el `api.js` de main). Fuera de `archivos:`: `test_ajustes.py` tambien postea a `/api/import/`. Revision ciega: aprobar. `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). |
 | revisor | 2026-10-15 14:14 | Revisa 48 (bug, `implementado` -> `revisado`). Rama al dia con main 591a300, `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Revision ciega: aprobar, sin hallazgos; confirmado a mano el orden de los 415, que todo POST de la UI pasa por `post()` y que los tests nuevos caen con el bug. Nota preexistente (tambien en main): `test_ajustes.VigilanteTests` da 4 fallos si se corre junto con `test_import_job` (dependen del orden). Sin pushes de codigo. |
 | qa | 2026-10-15 15:17 | Prueba 48 (bug, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Base vacia y sembrada: overrides, import (`?force=1`) y Ubisoft (id real e inexistente) dan 415 con text/plain, urlencoded, multipart y sin cuerpo, y no escriben `overrides.json`; con JSON (tambien `; charset=utf-8`) siguen igual. UI en Chromium: Importar, respaldo, interruptor de Ajustes, Datos (reetiqueta un `Unknown(424242)`) y Consultar Ubisoft (interceptado, sin red) mandan `application/json`. Mutacion: cada chequeo quitado hace caer su test. Chunk 186.78 kB (main 186.80). Sin pushes de codigo. |
@@ -67,6 +67,8 @@ Papel vacio: 0 propuesto, 0 disenado. Proximo turno por estado: release para la 
   - `git push origin --delete claude/equipo-dev/45-remontadas-y-derrumbes` (mergeada, PR #34)
   - `git push origin --delete claude/equipo-dev/46-primero-de-tu-equipo-en-caer` (mergeada, PR #35)
   - `git push origin --delete claude/equipo-dev/47-modos-desconocidos-en-datos` (mergeada, PR #36)
+  - `git push origin --delete claude/equipo-dev/48-posts-sin-json-desde-otra-pagina` (mergeada, PR #37)
+  - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
 - PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
 - Ficha 40 (aviso, no bloquea): una partida cuyo `.rec` no trae `datetime` en el header cae en la franja y el dia en que se importo (fallback preexistente de `_parse_ts`). Con `.rec` reales el campo viene siempre; si ves una franja rara, avisa y va a ficha propia.
@@ -82,7 +84,7 @@ Papel vacio: 0 propuesto, 0 disenado. Proximo turno por estado: release para la 
 - Ficha 45 (ya en main, PR #34; aviso del Revisor, no bloquea): con `matches_known == 0` el panel dice "hace falta Y9S4 o posterior", pero tambien saca partidas Y9S4 con rondas faltantes o sin resultado; cambio de texto de una linea (Trends.jsx:546); el Release no implementa, queda para una ficha chica.
 - Ficha 46 (ya en main, PR #35; aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.
 - Ficha 46 (ya en main, PR #35; aviso del Revisor, no bloquea): la clasificacion "primero en caer" se calcula al consultar (lee `Event` si hay empates), como los Duelos. Si pesa con tu base, la alternativa es una columna `first_team_death` en `RoundPlayer` marcada al importar (migracion + `recompute`), ficha aparte.
-- Ficha 48 (bug, prioridad 2, `aprobado` por QA 2026-10-15, espera al Release): `POST /api/overrides/`, `POST /api/players/<id>/ubisoft/` y (decision del Arquitecto) `POST /api/import/` pasan a exigir `application/json` como Ajustes y Respaldo; la UI manda `{}` JSON en todo POST. Reversible; si preferis dejar `/api/import/` abierto, decilo en `## Para el equipo`. Dos avisos del Dev: (1) `CLAUDE.md` ("La API es de lectura") dice que exigen JSON "los que cambian configuracion", y ahora lo exigen todos los POST; el equipo no toca `CLAUDE.md`, asi que la frase la cambias vos si queres. (2) Despues del merge, `npm run build` antes de `runserver`: con un `frontend/dist` viejo, los botones de Importar y de Ubisoft dan 415.
+- Ficha 48 (ya en main, PR #37, main 2a6c86b): los cinco POST de la API (`/api/import/`, `/api/overrides/`, `/api/players/<id>/ubisoft/`, `/api/settings/`, `/api/backup/`) exigen `application/json`; la UI manda `{}` JSON en todo POST. Reversible; si preferis dejar `/api/import/` abierto, decilo en `## Para el equipo`. (1) `CLAUDE.md` ("La API es de lectura") dice que exigen JSON "los que cambian configuracion": ahora lo exigen todos; la frase la cambias vos si queres. (2) **Despues de bajar main, `npm run build` antes de `runserver`**: con un `frontend/dist` viejo, los botones de Importar y de Ubisoft dan 415.
 - Tests dependientes del orden (Revisor 2026-10-15, preexistente en main 591a300, no bloquea): desde `backend/`, `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `test_ajustes.VigilanteTests`; la suite completa y cada modulo solo pasan. Candidato a ficha `tests` del PO.
 - Verificar en el PC (ficha 47, ya en main, PR #36, toca el parser): desde `backend/`, `..\.venv\Scripts\python.exe manage.py unknown_ids` y `... manage.py retag --dry-run` sobre tu base: sin error, y si hay modos o tipos `Unknown(...)` aparecen en Datos > Sin identificar.
 - Ficha 47 (ya en main, PR #36; aviso del Arquitecto, no bloquea): `Match` no guarda el id del modo ni del tipo de partida, asi que el retag lo lee del texto `Unknown(<id>)`; una etiqueta puesta mal no se corrige sobre lo ya importado. Corregirla pediria columnas `gamemode_id`/`match_type_id` con migracion y `recompute` (ficha aparte si la queres).
