@@ -1,6 +1,6 @@
 # 51. Matriz de duelos de la partida
 
-estado: en curso
+estado: implementado
 candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad

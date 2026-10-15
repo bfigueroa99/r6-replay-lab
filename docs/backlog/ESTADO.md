@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 18:35 UTC por arquitecto (sesion 20261015T1811Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: qa, franja 6)
+actualizado: 2026-10-15 20:50 UTC por dev (sesion 20261015T2004Z; motivo: por estado: 2 disenado, lugar en cola; reloj: revisor, franja 7)
 playbook: origin/main@2a6c86b
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
 pausa: no
@@ -9,21 +9,22 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
+| claude/equipo-dev/50-partidas-cerradas-y-holgadas | docs/backlog/50-partidas-cerradas-y-holgadas.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/50-partidas-cerradas-y-holgadas?expand=1) |
+| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
 
-Ninguna rama de trabajo abierta: la 48 se mergeo en el turno anterior (PR #37, main 2a6c86b).
-
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
+COLA=2/4  TOTAL=2/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-Nada que mergear: no hay ramas de trabajo abiertas.
+1. `claude/equipo-dev/50-partidas-cerradas-y-holgadas`: no choca con main ni con la 51 (`git merge-tree` limpio). Libera `aggregates.py`, `views.py`, `Trends.jsx`.
+2. `claude/equipo-dev/51-matriz-de-duelos-de-la-partida`: no choca con main ni con la 50; las dos tocan `frontend/e2e/humo.spec.js` y `docs/metricas.md` en zonas distintas. Libera `MatchDetail.jsx` y `styles.css` (la unica zona que comparte con PR #14 es el import de `MatchDetail.jsx`).
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
-- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 disenada (50); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 disenada (51). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 implementada (50, en cola); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 implementada (51, en cola). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
 - `ALCANCE.md`: 59 ideas libres (58 al empezar el turno; A4, B10 y F7 pasaron a fichas). Ideas nuevas de este turno: C10 compañeros por lado, E10 operadores que mejoran y empeoran, G6 partidas incompletas en Datos, H4 copiar el resumen de una partida como texto.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -31,18 +32,18 @@ Nada que mergear: no hay ramas de trabajo abiertas.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 50-partidas-cerradas-y-holgadas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 51-matriz-de-duelos-de-la-partida | disenado | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 50-partidas-cerradas-y-holgadas | en curso (implementado en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 51-matriz-de-duelos-de-la-partida | en curso (implementado en su rama) | funcionalidad | revision-de-rondas | 3 | frontend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: dev (regla 8), primero la 50 (la mas vieja a igual prioridad; las dos son independientes y no pisan archivos). 0 `propuesto`: el PO vuelve a llenar el papel cuando el Dev tome una.
+Proximo turno por estado: revisor (regla 3), las dos `implementado`, la 50 primero. Papel vacio (0 `propuesto`, 0 `disenado`): despues de revisor y QA, el PO.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-15 16:45 | Entrega y mergea 48 (bug, `aprobado` -> `entregado` -> main, PR #37, main 2a6c86b). Puerta completa: dev 1311Z, revisor 1411Z y qa 1511Z en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, PR abierto, `check.sh` en `Todo en verde.` sobre 70f8958 con main 591a300 fusionado (632 backend con 4 saltados, 86 vitest, build, 37 e2e). Ficha recortada con `## PR`; espejo quitado de backlog. Borrado de la rama cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
-| dev | 2026-10-15 13:40 | Implementa 48 (bug, `disenado` -> `implementado`, rama `claude/equipo-dev/48-posts-sin-json-desde-otra-pagina`): `player_ubisoft` (antes del 404), `save_overrides` y `run_import` devuelven 415 sin `application/json`; `api.js` manda `{}` JSON por defecto en todo `post`. 3 tests de 415 (text/plain y urlencoded; `abrir` prohibido, `start_import` no llamado, `overrides.json` sin escribir) y e2e `los POST de la UI mandan JSON` (cae con el `api.js` de main). Fuera de `archivos:`: `test_ajustes.py` tambien postea a `/api/import/`. Revision ciega: aprobar. `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). |
+| dev | 2026-10-15 20:50 | Implementa 50 (`by_margin` en `/api/trends/` + panel "Partidas cerradas y holgadas" en Tendencias, 9 tests backend + 1 api + 4 vitest + e2e; seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el detalle de partida, solo frontend: `matrizDuelos.js` + `MatrizDuelos.jsx`, 7 vitest + e2e). Las dos `disenado` -> `implementado`. Revision ciega previa: 50 aprobar con 3 menores corregidos (texto de la nota de excluidas, test del corte sin resultado, comentario del e2e); 51 corregir: el lado de cada baja se decidia con el equipo de la primera ronda y una baja podia contarse sin aparecer en ninguna tabla; ahora se decide ronda por ronda (desvio del diseno anotado). `check.sh` en `Todo en verde.` en las dos (50: 643 backend, 90 vitest, build, 38 e2e; 51: 632 backend, 93 vitest, build, 38 e2e). |
 | revisor | 2026-10-15 14:14 | Revisa 48 (bug, `implementado` -> `revisado`). Rama al dia con main 591a300, `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Revision ciega: aprobar, sin hallazgos; confirmado a mano el orden de los 415, que todo POST de la UI pasa por `post()` y que los tests nuevos caen con el bug. Nota preexistente (tambien en main): `test_ajustes.VigilanteTests` da 4 fallos si se corre junto con `test_import_job` (dependen del orden). Sin pushes de codigo. |
 | qa | 2026-10-15 15:17 | Prueba 48 (bug, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Base vacia y sembrada: overrides, import (`?force=1`) y Ubisoft (id real e inexistente) dan 415 con text/plain, urlencoded, multipart y sin cuerpo, y no escriben `overrides.json`; con JSON (tambien `; charset=utf-8`) siguen igual. UI en Chromium: Importar, respaldo, interruptor de Ajustes, Datos (reetiqueta un `Unknown(424242)`) y Consultar Ubisoft (interceptado, sin red) mandan `application/json`. Mutacion: cada chequeo quitado hace caer su test. Chunk 186.78 kB (main 186.80). Sin pushes de codigo. |
 | arquitecto | 2026-10-15 18:35 | Disena 50 (`by_margin` en `/api/trends/` desde `Match.my_score/opponent_score`, corte Y9S4, prorroga primero, `side` ignorado, rating sobre la partida entera; `margen.js` + panel en Tendencias + e2e: seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el navegador: `matrizDuelos.js` + componente `MatrizDuelos.jsx`, insertado entre Rondas y Scoreboard para no chocar con PR #14). Descarta 49: `map_slug` colapsa las versiones de un mapa a proposito (`header.py:227`, `test_pydissect.py:178`), no hay dos filas ni mezcla; separar versiones es decision de producto. `ALCANCE.md` A4 anotada. Sin pushes de codigo. |

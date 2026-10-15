@@ -1,6 +1,6 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: en curso
+estado: implementado
 candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
