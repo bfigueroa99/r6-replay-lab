@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: implementado
-candado: revisor 2026-10-15T01:11Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B7 (idea del PO); cierra la epica lado-y-marcador despues de las fichas 36, 41 y 43
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_remontadas.py, frontend/src/remontadas.js, frontend/src/remontadas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z
 
 ## PR
 
@@ -227,7 +227,36 @@ backend, 86 frontend, build ok, 33 e2e).
 Verificacion manual sugerida en el PC: con la base real, abrir una remontada
 del panel y confirmar en el detalle que el marcador estuvo 2 abajo.
 
-## Revision
+## Revision 2026-10-15 sobre 6739aac
+
+Revisor 20261015T0110Z. Revision ciega (subagente con `revision.md`, sin leer la
+ficha) y despues confirmacion local. `./scripts/check.sh` -> `Todo en verde.`
+sobre la rama (main ya incluido). Reglas: sin dependencias, sin escrituras
+nuevas, sin tocar `pydissect/` ni `electron/`, filas en `docs/metricas.md`,
+UI con tildes, identificadores sin tildes, sin `print`/`console.log`. El e2e
+coincide con `comebacks()` sobre `seed_demo` (29 en `+1`, 100 %, listas
+vacias). Criterios de aceptacion: todos cubiertos por tests salvo el que cae
+con el hallazgo.
+
+Hallazgos:
+
+- [bug] backend/replays/analytics/aggregates.py:667
+  Que pasa: el control de "partida completa" solo ve huecos en el medio; si
+  faltan las **primeras** rondas (entraste o reconectaste tarde, o no estan
+  sus `.rec`), la partida cuenta como conocida, puede perder la remontada y
+  cae en un tramo equivocado de la tabla del cambio de lado.
+  Como reproducirlo (confirmado): partida Y9S4 ganada con solo las rondas 3
+  (`[1, 2]`, Attack), 4 (`[2, 2]`, Defense) y 5 (`[3, 2]`, Defense) ->
+  `matches_known == 1`, `remontadas_total == 0` (el 0-2 que hubo no se ve)
+  y la partida suma al tramo `0` aunque el cambio de lado real no se vio.
+  Contradice `docs/metricas.md` ("con todas sus rondas importadas").
+  Arreglo sugerido: exigir ademas que el marcador de la primera ronda
+  presente sea `(0, 0)` (sirve con numeracion desde 0 o desde 1) y agregar
+  `test_si_faltan_las_primeras_rondas_la_partida_no_entra` con las rondas
+  de arriba: `matches_known == 0` y las cinco filas de la tabla en 0.
+
+Veredicto: corregir (por el unico hallazgo, que es un bug de numeros; el
+arreglo es una condicion y un test).
 
 ## QA
 
