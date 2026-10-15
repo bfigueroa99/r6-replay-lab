@@ -1,7 +1,7 @@
 # 48. POST de etiquetas y de Ubisoft aceptan formularios de otra pagina
 
 estado: revisado
-candado: -
+candado: qa 2026-10-15T15:11Z
 rama: claude/equipo-dev/48-posts-sin-json-desde-otra-pagina
 tipo: bug
 epica: -
