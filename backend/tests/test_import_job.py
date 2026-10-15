@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
@@ -120,6 +121,16 @@ class ProgresoTests(TestCase):
 
 
 class HiloTests(TestCase):
+    def _importar(self):
+        return self.client.post("/api/import/", data="{}", content_type="application/json")
+
+    def test_un_formulario_de_otra_pagina_no_lanza_la_importacion(self):
+        with mock.patch("replays.views.start_import") as lanzar:
+            for tipo in ("text/plain", "application/x-www-form-urlencoded"):
+                respuesta = self.client.post("/api/import/?force=1", data="{}", content_type=tipo)
+                self.assertEqual(respuesta.status_code, 415, tipo)
+        lanzar.assert_not_called()
+
     def test_el_post_ya_trae_el_total(self):
         """El total se calcula antes de lanzar el hilo, para el "3 de 12"."""
         raiz = Path(tempfile.mkdtemp())
@@ -130,7 +141,7 @@ class HiloTests(TestCase):
             (sub / "r.rec").write_bytes(b"x")
 
         with self.settings(REPLAY_DIR=str(raiz), IMPORT_QUIET_SECONDS=0):
-            data = self.client.post("/api/import/").json()
+            data = self._importar().json()
         self.assertEqual(data["total"], 2)
 
         for _ in range(200):
@@ -140,7 +151,7 @@ class HiloTests(TestCase):
 
     def test_el_post_vuelve_enseguida(self):
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):
-            respuesta = self.client.post("/api/import/")
+            respuesta = self._importar()
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn("running", respuesta.json())
 
@@ -156,7 +167,7 @@ class HiloTests(TestCase):
         self.addCleanup(setattr, ingest, "_job", ingest.ImportJob())
 
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):
-            data = self.client.post("/api/import/").json()
+            data = self._importar().json()
         self.assertTrue(data["running"])
         self.assertEqual(data["total"], 7)
         self.assertEqual(data["current"], "Match-x")

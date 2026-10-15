@@ -246,7 +246,7 @@ class ImportEndpointTests(TestCase):
 
     def test_import_sin_replays_no_importa_nada(self):
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):
-            data = self.client.post("/api/import/").json()
+            data = self.client.post("/api/import/", data="{}", content_type="application/json").json()
             self.assertEqual(data["count"], 0)
             self.assertEqual(Match.objects.count(), 0)
 

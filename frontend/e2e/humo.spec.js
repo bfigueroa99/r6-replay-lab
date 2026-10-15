@@ -283,6 +283,37 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   expect(errores).toEqual([])
 })
 
+test('los POST de la UI mandan JSON', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // no se llega al backend: una importacion real cambiaria lo que ven las demas pruebas
+  let tipo = null
+  await page.route('**/api/import/', (route) => {
+    tipo = route.request().headers()['content-type'] ?? ''
+    route.fulfill({
+      json: {
+        running: false,
+        origin: 'manual',
+        total: 0,
+        done: 0,
+        current: '',
+        started_at: null,
+        finished_at: null,
+        error: '',
+        imported: [],
+        count: 0,
+        errors: 0,
+      },
+    })
+  })
+
+  await page.goto('/')
+  await page.locator('.topbar').getByRole('button', { name: 'Importar replays' }).click()
+  await expect(page.getByText('No habia partidas nuevas para importar.')).toBeVisible()
+  expect(tipo).toContain('application/json')
+
+  expect(errores).toEqual([])
+})
+
 test('una ruta que no existe no rompe la app', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/no-existe')
