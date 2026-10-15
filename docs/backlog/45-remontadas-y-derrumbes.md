@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: revisado
-candado: qa 2026-10-15T04:11Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B7 (idea del PO); cierra la epica lado-y-marcador despues de las fichas 36, 41 y 43
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_remontadas.py, frontend/src/remontadas.js, frontend/src/remontadas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z, dev 20261015T0211Z, revisor 20261015T0310Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z, dev 20261015T0211Z, revisor 20261015T0310Z, qa 20261015T0411Z
 
 ## PR
 
@@ -307,7 +307,94 @@ Hallazgos:
 
 Veredicto: aprobar (el unico hallazgo es un texto de vacio en un caso borde).
 
-## QA
+## QA 2026-10-15 sobre d98db16
+
+QA 20261015T0411Z. Rama con `origin/main@f74a16f` ya incluido (merge-tree limpio).
+
+- **check.sh**: `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 585 tests
+  backend, 86 vitest, build ok, 33 e2e).
+- **Base vacia** (`SQLITE_PATH=<scratch>/empty.sqlite3 python manage.py migrate`,
+  `runserver 8046`): `curl localhost:8046/api/trends/` -> 200, listas vacias,
+  `matches_known: 0`, cinco filas `+2 +1 0 -1 -2` en 0 con `winrate: null`.
+  `?until=foo`, `?page=-1`, `?map=` -> 200.
+- **Base sembrada** con `factories.py` (script abajo; 31 partidas): 1 remontada
+  0-3 -> 4-3 (Oregon), 1 derrumbe 3-0 -> 3-4 numerado desde 1 con
+  `team_index=1` (Bank), 1 pre-Y9S4, 1 sin la ronda 2, 1 con `won` nulo, 1 con
+  marcador de tres equipos, 25 remontadas 0-2 -> 4-2 (Kafe); una ronda sin
+  bajas por partida. `curl localhost:8045/api/trends/ | jq .comebacks` ->
+  `matches_known 27` (las cuatro trampa afuera), `remontadas_total 26` con 20
+  en la lista (Oregon primero, `max_deficit 3`; despues la mas reciente),
+  `derrumbes_total 1` (`max_lead 3`, el `team_index=1` leido al reves bien),
+  tabla `+2: 1/0 0 %`, `-1: 25/25 100 %`, `-2: 1/1 100 %` (el -3 de Oregon
+  junto en -2). Todo lo esperado a mano.
+- **Filtros** (200 en todos): `until=foo`, `since=bar`, `page=-1`, `map=`,
+  `side=` se ignoran (27); `map=oregon` -> 1 remontada, `map=bank` -> 1
+  derrumbe, `map=NoExiste` -> 0; `side=Defense` -> 27 (la partida se lee
+  entera, como dice el diseno); `since=2026-09-03` -> 4; `until=2026-09-01`
+  -> 2; `days=-1` y `session=-1` -> 0, igual que `by_half` con los mismos
+  parametros.
+- **UI** (Chromium sobre la base sembrada, `/tendencias`): panel con 20 filas
+  de remontadas, "Se muestran 20 de 26.", derrumbe "Ibas +3", tabla con
+  "+2 o más / +1 / Empatado / -1 / -2 o menos" y `—` en los tramos vacios; 21
+  enlaces `/partidas/<id>`, el primero abre el detalle de Oregon 4-3; consola
+  sin errores. El estado vacio lo afirma el e2e sobre `seed_demo`.
+- **Bundle**: `vite build` en la rama y en `origin/main`: chunk inicial
+  `index-*.js` 186.80 kB en los dos (0 %); `Trends-*.js` (lazy) 17.16 ->
+  19.41 kB.
+- **Mutaciones** (`python manage.py test tests.test_remontadas` con el codigo
+  roto a proposito, restaurado despues): `UMBRAL_REMONTADA = 3` -> 7 fallos y
+  4 errores; `team_index 1` sin invertir -> cae; `_tramo_cambio` sin juntar
+  `>= 2` -> cae; sin el filtro de `won` nulo -> cae. Vitest: signo fijo `-`
+  en `filasDePartidas` -> 1 de 6 cae. Las cinco detectadas.
+- Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: no hace
+  falta `## Verificar en el PC`.
+
+Criterios de aceptacion: los seis se cumplen. El hallazgo menor del revisor
+(texto de vacio que solo nombra Y9S4) sigue abierto y no bloquea.
+
+Veredicto: aprobado.
+
+Script de siembra (`SQLITE_PATH=/ruta/seed.sqlite3 python manage.py migrate`
+y despues `SQLITE_PATH=/ruta/seed.sqlite3 python manage.py shell < sembrar.py`
+desde `backend/`):
+
+```python
+# Uso: SQLITE_PATH=... python manage.py shell < sembrar.py
+from tests.factories import make_match, make_round, make_round_player
+from replays.models import Match
+from pydissect.constants import Y9S4
+
+def partida(idx, marcadores, lados, mio, suyo, *, mapa="Club House", ti=0, cv=Y9S4, start=0):
+    m = make_match(index=idx, my_score=mio, opponent_score=suyo, map_name=mapa, code_version=cv)
+    prev = None
+    for i, (sc, lado) in enumerate(zip(marcadores, lados)):
+        sb = list(sc) if ti == 0 else [sc[1], sc[0]]
+        nxt = marcadores[i + 1] if i + 1 < len(marcadores) else (mio, suyo)
+        gane = nxt[0] > sc[0]
+        r = make_round(m, start + i, side=lado, won=gane, score_before=sb)
+        make_round_player(r, team_index=ti, kills=0 if i == 1 else 1)  # ronda sin bajas incluida
+    return m
+
+A, D = "Attack", "Defense"
+L6 = [A, A, A, D, D, D, D, D]
+# 1: remontada 0-3 -> 4-3 (desventaja 3), cambio de lado en ronda 3 con 0-3 -> tramo -2
+partida(1, [(0,0),(0,1),(0,2),(0,3),(1,3),(2,3),(3,3)], L6, 4, 3, mapa="Oregon")
+# 2: derrumbe 3-0 -> 3-4, numerada desde 1, team_index 1
+partida(2, [(0,0),(1,0),(2,0),(3,0),(3,1),(3,2),(3,3)], L6, 3, 4, ti=1, start=1, mapa="Bank")
+# 3: pre-Y9S4 con remontada: no debe aparecer
+partida(3, [(0,0),(0,1),(0,2),(1,2),(2,2),(3,2)], L6, 4, 2, cv=Y9S4 - 1)
+# 4: falta la ronda 2: fuera
+m = partida(4, [(0,0),(0,1),(0,2),(1,2),(2,2),(3,2)], L6, 4, 2)
+m.rounds.filter(number=2).delete() if hasattr(m, "rounds") else m.round_set.filter(number=2).delete()
+# 5: sin resultado
+m = partida(5, [(0,0),(0,1),(0,2),(1,2),(2,2),(3,2)], L6, 4, 2); Match.objects.filter(pk=m.pk).update(won=None)
+# 6: tres equipos en el marcador
+partida(6, [(0,0,0),(0,1,0),(0,2,0),(1,2,0),(2,2,0),(3,2,0)], L6, 4, 2)
+# 7..31: 25 remontadas 0-2 -> 4-2 para el tope de 20
+for k in range(7, 32):
+    partida(k, [(0,0),(0,1),(0,2),(1,2),(2,2),(3,2)], L6, 4, 2, mapa="Kafe Dostoyevsky")
+print("ok", Match.objects.count())
+```
 
 ## Para el humano
 
