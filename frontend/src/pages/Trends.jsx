@@ -614,12 +614,12 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               />
               {margen.matches_excluded > 0 ? (
                 <p className="note">
-                  {margen.matches_excluded} {margen.matches_excluded === 1 ? 'partida' : 'partidas'} sin marcador confiable quedaron fuera.
+                  {margen.matches_excluded} {margen.matches_excluded === 1 ? 'partida quedó' : 'partidas quedaron'} fuera (anteriores a Y9S4, empates o sin resultado).
                 </p>
               ) : null}
             </>
           ) : (
-            <p className="note">Sin partidas con marcador conocido (hace falta Y9S4 o posterior).</p>
+            <p className="note">Sin partidas con margen legible: hace falta Y9S4 o posterior, y que la partida tenga ganador.</p>
           )}
         </Panel>
       ) : null}

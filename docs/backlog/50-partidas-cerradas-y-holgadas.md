@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: en curso 2026-10-15T20:04Z
-candado: dev 2026-10-15T20:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -125,3 +125,43 @@ otra `section.panel`, no lo afecta. Chunk de Trends crece poco (una tabla).
 `Trends.jsx`).
 
 ## Implementacion
+
+(Dev 20261015T2004Z)
+
+Quedo todo el diseno, sin desvios de alcance:
+
+- `aggregates.by_margin()` + `TRAMOS_MARGEN` + `_tramo_margen()` justo antes de
+  `round_endings`. `matches_excluded` = partidas elegidas por los filtros menos
+  las que cayeron en un tramo (pre-Y9S4, sin resultado y, por si acaso, margen 0
+  con resultado). `rounds` de cada fila sale de `totals()` (0 si no hay).
+- `/api/trends/` trae `by_margin`.
+- `frontend/src/margen.js`: `filasDeMargen`, `hayMargen`, `etiquetaMargen` y
+  `MUESTRA_PARTIDAS = 10` (el umbral del aviso, exportado en vez de numero suelto
+  en la pagina).
+- Panel "Partidas cerradas y holgadas" en `Trends.jsx` despues de Remontadas.
+- Fila **Margen final** en `docs/metricas.md`, seccion Remontadas y derrumbes,
+  aclarando que su corte es mas laxo (no exige todas las rondas).
+
+Tests: `tests/test_margen.py` (9: tramos y orden, prorroga gana al margen, Y9S3
+fuera, empate fuera, sin resultado fuera, `side` ignorado, filtro de mapa, el
+rating mira todas tus rondas aunque se filtre operador, base vacia),
+`test_api.test_trends_trae_by_margin`, `src/margen.test.js` (4) y el e2e
+`Tendencias muestra partidas cerradas y holgadas`.
+
+Criterios -> tests: 1 `test_los_tramos_salen_en_orden_fijo_con_partidas_y_winrate`
++ `test_trends_trae_by_margin`; 2 `test_una_partida_anterior_a_y9s4_queda_fuera_y_se_cuenta`;
+3 `test_una_partida_con_prorroga_cae_en_prorroga_aunque_gane_por_dos`;
+4 `test_el_filtro_de_lado_no_parte_la_partida`, `test_el_filtro_de_mapa_recorta_partidas`,
+`test_base_vacia_devuelve_los_cuatro_tramos_en_cero`; 5 e2e; 6 fila en metricas.md.
+
+Revision ciega previa (subagente con `revision.md`): aprobar con 3 menores,
+corregidos: la nota de excluidas culpaba solo al marcador (tambien cuenta
+empates y sin resultado); test nuevo que pasa de verdad por el
+`exclude(won__isnull=True)`; comentario del e2e que aclara que el 4-3 de
+`seed_demo` es sintetico.
+
+Para el Revisor: en ranked real un 3-3 va a prorroga; si un `.rec` no trae
+`overtimeRoundNumber`, un 5-4 caeria en "1 ronda" y no en "Prorroga". Es la
+misma fuente que usa Mitades y prorroga; no se infiere de `reglas_partida` para
+no tener dos definiciones de prorroga.
+

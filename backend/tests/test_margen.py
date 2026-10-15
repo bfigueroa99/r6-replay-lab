@@ -6,6 +6,7 @@ from django.test import SimpleTestCase, TestCase
 
 from pydissect.constants import Y9S3, Y9S4
 from replays.analytics import aggregates as agg
+from replays.models import Match
 
 from .factories import make_match, make_round, make_round_player
 
@@ -74,6 +75,13 @@ class MargenTests(TestCase):
 
     def test_un_empate_queda_fuera_y_se_cuenta(self):
         _partida(3, 3)
+        datos = agg.by_margin()
+        self.assertEqual(datos["matches_known"], 0)
+        self.assertEqual(datos["matches_excluded"], 1)
+
+    def test_una_partida_sin_resultado_queda_fuera_aunque_tenga_margen(self):
+        m = _partida(4, 2)
+        Match.objects.filter(pk=m.pk).update(won=None)
         datos = agg.by_margin()
         self.assertEqual(datos["matches_known"], 0)
         self.assertEqual(datos["matches_excluded"], 1)
