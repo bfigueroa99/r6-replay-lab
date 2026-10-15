@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: implementado
-candado: revisor 2026-10-15T03:11Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B7 (idea del PO); cierra la epica lado-y-marcador despues de las fichas 36, 41 y 43
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_remontadas.py, frontend/src/remontadas.js, frontend/src/remontadas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z, dev 20261015T0211Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z, dev 20261015T0211Z, revisor 20261015T0310Z
 
 ## PR
 
@@ -276,6 +276,39 @@ Hallazgos:
 Veredicto: corregir (por el unico hallazgo, que es un bug de numeros; el
 arreglo es una condicion y un test).
 
+## Revision 2026-10-15 sobre 822da4f (segunda pasada)
+
+Revisor 20261015T0310Z. Revision ciega (subagente con `revision.md`, sin leer la ficha)
+y confirmacion local. `./scripts/check.sh` -> `Todo en verde.` sobre la rama
+(main ya incluido): ruff ok, 585 tests backend, 86 frontend, build ok, 33 e2e.
+
+- Hallazgo anterior (faltan las primeras rondas): corregido en 822da4f.
+  `test_si_faltan_las_primeras_rondas_la_partida_no_entra` cubre el repro;
+  mutacion confirmada (sin `marcadores[0] != (0, 0)` el test cae, 1 de 24).
+- Criterios de aceptacion: los seis cubiertos (24 tests en
+  `test_remontadas.py`, 6 vitest, e2e `Tendencias muestra remontadas y
+  derrumbes`, filas en `docs/metricas.md`). El subagente reprodujo los numeros
+  del e2e sobre `seed_demo` (29 partidas, listas vacias, `+1` 29/29 100 %).
+- Reglas: sin dependencias, endpoint de lectura, sin `pydissect/` ni
+  `electron/`, UI con tildes, identificadores sin tildes, sin `print` ni
+  `console.log`. El diff no sale de `archivos:`.
+
+Hallazgos:
+
+- [estilo, menor] frontend/src/pages/Trends.jsx:546
+  Que pasa: con `matches_known === 0` el panel dice "hace falta Y9S4 o
+  posterior", pero tambien quedan afuera partidas Y9S4 con rondas faltantes,
+  sin 0-0 inicial, marcador ilegible o `won` nulo.
+  Como reproducirlo: una sola partida Y9S4 sin el `.rec` de la ronda 2 ->
+  `matches_known: 0` y la UI pide Y9S4, que el usuario ya tiene.
+  Arreglo sugerido: "Sin partidas con marcador conocido (hace falta Y9S4 o
+  posterior, con todas sus rondas importadas)." No bloquea: el texto no da un
+  numero equivocado.
+
+Veredicto: aprobar (el unico hallazgo es un texto de vacio en un caso borde).
+
 ## QA
 
 ## Para el humano
+
+- Revisor 20261015T0310Z: texto de vacio del panel (Trends.jsx:546) menciona solo Y9S4; tambien saca partidas con rondas faltantes. Cambio de una linea, no bloquea; se puede corregir en la entrega o despues.
