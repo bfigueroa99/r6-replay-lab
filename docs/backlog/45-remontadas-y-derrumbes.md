@@ -1,6 +1,6 @@
 # 45. Remontadas y derrumbes
 
-estado: en curso 2026-10-15
+estado: implementado
 candado: -
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
