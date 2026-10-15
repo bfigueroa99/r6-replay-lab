@@ -1,7 +1,7 @@
 # 47. Modos y tipos de partida desconocidos en Datos
 
-estado: revisado
-candado: qa 2026-10-15T10:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/47-modos-desconocidos-en-datos
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -272,7 +272,65 @@ Sin tildes en identificadores, UI con tildes, sin `print` ni `console.log`.
 
 Veredicto: aprobar -> `revisado`.
 
-## QA
+## QA 2026-10-15 sobre 2e02c03
+
+QA 20261015T1012Z (sesion distinta de dev y revisor). Rama con
+`origin/main@17f0ae1`. Todo en el scratchpad: `SQLITE_PATH`, `R6_ENV_FILE`,
+`DATA_DIR` y `OVERRIDES_PATH` apuntando ahi; nada al repo.
+
+- `./scripts/check.sh`: `Todo en verde.` (610 backend, 86 vitest, build, 35 e2e).
+- **JSON viejo**: arranque con `overrides.json` = `{"maps": {"55": "Mapa
+  Viejo"}, "operators": {}}`. `/api/unknown/` con base vacia: 200, cuatro
+  listas vacias. Tras guardar modos y tipos, el archivo conserva `maps.55`
+  y suma `gamemodes` y `match_types`.
+- **Base sembrada** (`factories.make_match` con `gamemode=`/`match_type=`):
+  `Unknown(999)` en 2 partidas, `Unknown(77)` en 2, `Unknown(0)` y
+  `Unknown(abc)`. `/api/unknown/`: modo 999 (2 partidas, 01-09 a 05-09,
+  pista `Ranked`, `Unknown(77)`) y tipo 77 (2, 01-09 a 09-09, pista `Bomb`,
+  `Unknown(999)`); `Unknown(0)` y `Unknown(abc)` no se listan.
+- **`POST /api/overrides/`** (`curl -X POST -H "Content-Type:
+  application/json" --data ...`): id `abc` -> 400; id `-5` -> 400; nombre
+  de 41 caracteres -> 400; `"gamemodes": []` -> 400; `{}` -> 400; nombre
+  vacio -> 200 y borra la entrada (igual que mapas, `clean_labels`).
+  `{"gamemodes": {"999": "Ataque nuevo"}}` -> 200, `matches: 2`, cambio
+  `modo Unknown(999) -> Ataque nuevo`; `{"match_types": {"77": "Torneo"}}`
+  -> 200, `matches: 2`. `/api/matches/` muestra los nombres nuevos, la
+  partida `Bomb` sigue `Bomb`, `Unknown(0)` y `Unknown(abc)` intactos.
+  Cambiar despues 999 a otro nombre: 200, `matches: 0` (el limite asumido
+  del diseno, anotado abajo).
+- **Comandos**: `manage.py unknown_ids` lista "Modos sin nombre" y "Tipos de
+  partida sin nombre" con pista; `--write` deja `"31": ""` y `"5": ""` sin
+  pisar las etiquetas puestas; `manage.py retag --dry-run` con placeholders
+  vacios: "Nada que reetiquetar" (un placeholder vacio no degrada).
+- **UI real** (Chromium headless contra ese `runserver`, sin `page.route`):
+  `/datos` muestra "Modo de juego", "Tipo de partida", `Unknown(31)` y
+  `Unknown(5)`; consola sin errores.
+- **Chunk inicial** (`vite build`): `index-*.js` 186.80 kB en main y en la
+  rama (0 %); `Datos-*.js` de 5.52 a 6.83 kB (carga diferida).
+- **Mutacion** (`tests.test_pydissect tests.test_retag tests.test_unknowns`):
+  sin `record_unknown` en `gamemode_name` -> cae
+  `test_modo_desconocido_sin_etiqueta_queda_anotado`; `gamemode_name` sin
+  `extra_gamemode` -> caen 5; `id_de_unknown` aceptando 0 -> caen 3
+  (`test_unknown_0_no_se_lista`, ...); `_retag_texto` sin la guarda de "nunca
+  degrada" -> caen `test_sin_etiqueta_el_modo_sigue_unknown` y otro.
+- Parser: `tests.test_pydissect` (fixture sintetica) en verde dentro de
+  `check.sh`, con `test_pydissect_no_importa_django`.
+
+Criterios: los cinco con evidencia (arriba y en los tests de la Revision).
+Veredicto: `aprobado`.
+
+## Verificar en el PC
+
+Toca el parser (`header.py`, `overrides.py`). Sobre la base y los `.rec`
+reales:
+
+```powershell
+cd backend; ..\.venv\Scripts\python.exe manage.py unknown_ids
+cd backend; ..\.venv\Scripts\python.exe manage.py retag --dry-run
+```
+
+Esperado: sin error; si hay modos o tipos `Unknown(...)`, aparecen en la
+lista y en Datos > Sin identificar.
 
 ## Para el humano
 
@@ -281,3 +339,9 @@ Veredicto: aprobar -> `revisado`.
   ya importado (solo sobre lo que se importe despues). Si se quiere poder
   corregirla, hace falta una ficha aparte con columnas `gamemode_id` y
   `match_type_id`, migracion y `recompute`.
+- QA 20261015T1012Z (aviso, no frena, preexistente en main): `POST
+  /api/overrides/` no exige `application/json` (`_es_json` lo usan los POST
+  de configuracion, este no): un `text/plain` desde cualquier pagina abierta
+  en el navegador escribe `overrides.json` y reetiqueta. Con esta ficha
+  tambien alcanza a modos y tipos. Queda como ficha `propuesto` tipo bug en
+  `backlog`.
