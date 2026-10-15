@@ -43,7 +43,7 @@ Investigador 2026-10-14 (sesion 20261014T2211Z): nuevas A5, B12, C8, C9, D5, E8,
 F10, O3, O4, O5, P5 y P6; F1 y F7 ampliadas.
 Reconciliado el 2026-10-15 (sesion 20261015T1711Z) contra `main` 2a6c86b:
 ficha 48 (bug, sin idea) en main; A4 -> ficha 49, B10 -> ficha 50, F7 -> ficha 51;
-nuevas C10 y E10.
+nuevas C10, E10, G6 y H4.
 
 ## Epicas
 
@@ -162,6 +162,7 @@ solo el conteo de vivos.
 | G3 | Unir jugadores y alias desde Datos | Juntar dos perfiles que son la misma persona | alias de `Player`, `retag.py`. Reescribe datos: disenar reversible (tabla de equivalencias) o va a P10 | M | idea |
 | G4 | Boton de backup en Datos | Respaldar la base desde la app (deuda del #16) | `replays/backup.py` + POST | S | en main |
 | G5 | Carpeta de replays desde la UI | Fijar `REPLAY_DIR` sin editar un `.env` (deuda del #19 y #20) | `config/replay_dir.py` + POST | S | en main |
+| G6 | Partidas incompletas en Datos | Una lista en Datos de las partidas a las que les falta algun `.rec` de ronda (huecos en la numeracion o primera ronda con marcador distinto de 0-0), con cuantas rondas faltan y la carpeta: saber por que esa partida no entra en remontadas, mitades o marcador, y poder reimportarla. Hoy la ficha 45 las descarta en silencio | `Round.number` por partida (huecos), `Round.score_before` de la ronda mas baja (desde Y9S4), `Match.source_path` (`models.py:49`); la misma deteccion de rondas faltantes que usa `comebacks` en `aggregates.py` | S | idea |
 
 ### exportar: exportar y compartir en local
 
@@ -170,6 +171,7 @@ solo el conteo de vivos.
 | H1 | Informe imprimible de una partida | Una pagina limpia para imprimir o guardar como PDF desde el navegador y mandarsela a quien te entrena | detalle de partida; solo CSS de impresion, sin dependencias | S | idea |
 | H2 | CSV por ronda y jugador | Cada fila de `RoundPlayer` exportable para analizar por fuera | tabla nueva en `export.py`; sin `assists` ni `score` | S | idea |
 | H3 | CSV de las tablas nuevas de Tendencias | Exportar mitades, inercia, marcador, match point, cierres de ronda y hora/dia como las demas tablas, para analizarlas en una planilla | `TABLES` de `export.py:22` hoy no incluye `by_half`, `by_previous_round`, `by_score_state`, `by_match_point`, `round_endings`, `by_hour` ni `by_weekday` (fichas 36-43); el selector de Exportar las toma de `export.tables()` | S | idea |
+| H4 | Copiar el resumen de una partida como texto | Un boton en el detalle de partida que copia al portapapeles un resumen en texto plano (mapa, marcador, tu linea de stats, rondas ganadas por lado, la ronda de tu mejor multikill) para pegarlo en un chat del equipo; sin subir nada: es el portapapeles del navegador | `/api/matches/<id>/` (ya trae todo); `navigator.clipboard.writeText` en `MatchDetail.jsx`, logica de armado en una funcion pura con vitest | S | idea |
 
 ### escritorio: app de escritorio
 
