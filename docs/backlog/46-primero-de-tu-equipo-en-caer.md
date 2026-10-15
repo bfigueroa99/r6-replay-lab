@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: en curso 2026-10-15
-candado: dev 2026-10-15T06:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -169,6 +169,44 @@ base real, abrir una ronda contada como "caiste primero" en el detalle de
 la partida y confirmar en el feed que fuiste la primera baja de tu equipo.
 
 ## Implementacion
+
+Dev 20261015T0611Z, sobre `origin/main@17f0ae1`.
+
+Quedo todo el diseno:
+- `aggregates.first_teammate_death(**filters)` con el helper puro
+  `_quien_cae_primero` y `_primer_orden_de_muerte` (feed, solo para las
+  rondas empatadas); `LADOS_PRIMERA_CAIDA`. Salida con las claves del diseno.
+- `/api/teammates/` trae `first_down` (sin `min_rounds`).
+- Panel "Primero en caer" en Compañeros, despues de Sinergia; filas fijas
+  Ataque, Defensa, Total (columna oculta `orden`, como Trends), CSV
+  `primero-en-caer`.
+- 17 tests en `backend/tests/test_primero_en_caer.py` (todos los del diseno,
+  mas `test_empate_cuenta_las_muertes_sin_asesino`,
+  `test_respeta_el_filtro_de_lado` y dos de reloj en 0) y e2e
+  `Compañeros muestra quien cae primero` (Total: 203 rondas, `53 (26%)`).
+- Dos filas en `docs/metricas.md`, `## Duelos de apertura`.
+
+Desvios del diseno, por la revision ciega previa:
+- **Reloj en 0.** `metrics.analyse_round` pone `elapsed = 0.0` cuando el
+  evento no trae reloj, y el reloj tambien marca 0:00 al cierre: esa muerte
+  quedaba como la mas temprana. Ahora un elapsed 0 en la ronda (tuyo o de un
+  companero) manda la ronda al feed y se compara contra todos los companeros
+  que murieron; misma regla conservadora si falta un evento.
+- Etiquetas de winrate distintas (`Winrate si caíste`, `Winrate si cayó
+  otro`, `Winrate sin bajas`) para que el CSV no traiga tres columnas
+  iguales. El hint dice "apertura perdida de Duelos" en vez de «Primera
+  muerte», que no existe como etiqueta en la UI.
+
+Anotado y no cambiado:
+- Se calcula al consultar, no al importar, como fijo el diseno (cruza filas
+  de la ronda, igual que `teammate_synergy`; sin migracion ni recompute). Si
+  pesa con un historial grande, una columna `first_team_death` en
+  `RoundPlayer` calculada en `analyse_round` lo reemplaza.
+- Una muerte del scoreboard sin evento en el feed (`died=True`,
+  `death_elapsed=None`) no cuenta como muerte: va a "Sin bajas" si nadie mas
+  tiene hora, como dice el diseno. Quedo escrito en `metricas.md`.
+- `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa
+  (preexistente, no se toca): por eso el panel demo muestra 100 % y 0 %.
 
 ## Revision
 

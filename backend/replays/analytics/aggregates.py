@@ -898,7 +898,9 @@ def _quien_cae_primero(mi_elapsed: float | None, elapsed_companeros: list[float]
     """Clasifica una ronda segun quien de tu equipo cayo primero.
 
     `"tie"` queda para que lo resuelva el feed: el elapsed sale del reloj en
-    segundos y un doble kill empata seguido.
+    segundos y un doble kill empata seguido. Un elapsed 0 tambien va al feed:
+    `metrics` lo pone cuando el evento no trae reloj (o el reloj ya marcaba
+    0:00 al cierre), asi que no prueba que esa muerte fuera la primera.
     """
     muertes = [e for e in elapsed_companeros if e is not None]
     if mi_elapsed is None:
@@ -906,6 +908,8 @@ def _quien_cae_primero(mi_elapsed: float | None, elapsed_companeros: list[float]
     if not muertes:
         return "me"
     menor = min(muertes)
+    if mi_elapsed == 0 or menor == 0:
+        return "tie"
     if mi_elapsed < menor:
         return "me"
     if mi_elapsed > menor:
@@ -971,11 +975,15 @@ def first_teammate_death(**filters) -> list[dict]:
         for round_id in empates:
             ronda = por_ronda[round_id]
             mio = orden.get((round_id, ronda["me"]["player_id"]))
-            menor = ronda["me"]["death_elapsed"]  # en un empate, la tuya es la menor
+            mi_elapsed = ronda["me"]["death_elapsed"]
+            # Con un reloj en 0 de por medio el elapsed no ordena nada: se compara
+            # contra todos los companeros que murieron, no solo los empatados.
+            sin_reloj = mi_elapsed == 0 or any(m["death_elapsed"] == 0 for m in ronda["mates"])
             suyos = [
                 orden.get((round_id, m["player_id"]))
                 for m in ronda["mates"]
-                if m["death_elapsed"] == menor
+                if m["death_elapsed"] is not None
+                and (sin_reloj or m["death_elapsed"] == mi_elapsed)
             ]
             if mio is None or any(o is None for o in suyos):
                 clases[round_id] = "mate"

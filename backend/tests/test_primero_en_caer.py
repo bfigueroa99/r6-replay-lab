@@ -25,6 +25,8 @@ class QuienCaePrimeroTests(SimpleTestCase):
         self.assertEqual(agg._quien_cae_primero(None, [None]), "none")
         self.assertEqual(agg._quien_cae_primero(30.0, []), "me")
         self.assertEqual(agg._quien_cae_primero(30.0, [30.0, 60.0]), "tie")
+        self.assertEqual(agg._quien_cae_primero(0.0, [40.0]), "tie")
+        self.assertEqual(agg._quien_cae_primero(40.0, [0.0]), "tie")
 
 
 class PrimeroEnCaerTests(TestCase):
@@ -85,6 +87,19 @@ class PrimeroEnCaerTests(TestCase):
     def test_empate_cuenta_las_muertes_sin_asesino(self):
         rnd = self._ronda(30.0, [30.0])
         make_event(rnd, 1, ME, kind="Death")
+        make_event(rnd, 2, "rival0", "mate0")
+        self.assertEqual(_total(agg.first_teammate_death())["me_first"], 1)
+
+    def test_reloj_en_cero_lo_decide_el_feed(self):
+        # moriste con el reloj en 0:00, despues del companero que cayo a los 40 s
+        rnd = self._ronda(0.0, [40.0])
+        make_event(rnd, 1, "rival0", "mate0")
+        make_event(rnd, 2, "rival0", ME)
+        self.assertEqual(_total(agg.first_teammate_death())["mate_first"], 1)
+
+    def test_reloj_en_cero_y_feed_a_tu_favor_es_tuya(self):
+        rnd = self._ronda(0.0, [40.0])
+        make_event(rnd, 1, "rival0", ME)
         make_event(rnd, 2, "rival0", "mate0")
         self.assertEqual(_total(agg.first_teammate_death())["me_first"], 1)
 
