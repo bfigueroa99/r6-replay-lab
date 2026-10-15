@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
 estado: aprobado
-candado: -
+candado: release 2026-10-15T11:12Z
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
