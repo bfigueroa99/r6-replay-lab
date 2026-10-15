@@ -1,7 +1,7 @@
 # 48. POST de etiquetas y de Ubisoft aceptan formularios de otra pagina
 
-estado: revisado
-candado: qa 2026-10-15T15:11Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/48-posts-sin-json-desde-otra-pagina
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: QA 20261015T1012Z probando la ficha 47: `curl -X POST -H "Content-Type: text/plain" --data '{"gamemodes": {"999": "Ataque nuevo"}}' localhost:8766/api/overrides/` -> 200 y reetiqueta 2 partidas. `save_overrides` (views.py:587 en main 17f0ae1) y `player_ubisoft` (views.py:264) no llaman a `_es_json`; `app_settings` y `make_backup` si.
 archivos: backend/replays/views.py, frontend/src/api.js, backend/tests/test_unknowns.py, backend/tests/test_externo.py, backend/tests/test_import_job.py, backend/tests/test_api.py, frontend/e2e/humo.spec.js
-turnos: qa 20261015T1012Z, arquitecto 20261015T1211Z, dev 20261015T1311Z, revisor 20261015T1411Z
+turnos: qa 20261015T1012Z, arquitecto 20261015T1211Z, dev 20261015T1311Z, revisor 20261015T1411Z, qa 20261015T1511Z
 
 ## PR
 
@@ -204,7 +204,52 @@ completa y el modulo solo pasan). Candidato a ficha `bug`/`tests` del PO.
 
 Veredicto: aprobar.
 
-## QA
+## QA 2026-10-15 sobre b538bd2
+
+QA 20261015T1511Z. Codigo de 31529d4, rama al dia con `origin/main`
+(591a300). Bases en el scratchpad con `R6_ENV_FILE` propio: una vacia
+(`migrate`) y una con `seed_demo` (29 partidas). Nada de eso al repo.
+
+- `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 632 tests backend con
+  4 saltados, 86 vitest, build, 37 e2e).
+- **415 sin JSON**, en las dos bases (`B=localhost:<puerto>/api`):
+  `curl -X POST -H "Content-Type: text/plain" --data '{"gamemodes":{"999":"X"}}' $B/overrides/`,
+  `--data 'gamemodes=x'` (urlencoded), `-F a=b` (multipart), sin cuerpo,
+  `$B/import/?force=1` text/plain, `"$B/import/?force=1&limit=foo"`
+  urlencoded, `$B/players/1/ubisoft/` y `$B/players/99999/ubisoft/`
+  text/plain -> todos 415 `{"error": "se esperaba application/json"}`.
+  Despues de esos POST no existe `overrides.json` en ninguna base. El id
+  inexistente da 415 y no 404 (no se pueden sondear ids).
+- **Con JSON sigue igual:** overrides `{"gamemodes":{"999":"Ataque nuevo"}}`
+  -> 200 y escribe el archivo; `import/?force=1` con `{}` -> 200 con la
+  forma de `job.as_dict()`; Ubisoft id 1 -> 400 `Falta configurar
+  UBI_EMAIL...` (base sembrada) y 404 (base vacia, id 99999);
+  `application/json; charset=utf-8` y `APPLICATION/JSON` -> 400 de
+  configuracion, no 415. Cuerpo `no-json` -> 400, `[]` -> 400. GET a
+  overrides e import -> 405. Settings y backup siguen en 415.
+- **UI en Chromium** (script de Playwright temporal contra la base
+  sembrada, consola sin errores propios): Importar replays -> POST
+  `application/json` 200; Ajustes: respaldo y el interruptor de
+  importacion automatica -> POST `application/json` 200; Datos: con una
+  partida pasada a `Unknown(424242)`, "Guardar y reetiquetar" -> 200 y el
+  aviso `Unknown(424242) → Mapa QA. Reetiquetadas 1 partidas`; Perfil con
+  `UBI_EMAIL` falso en el `.env`: "Consultar Ubisoft" manda
+  `application/json` con cuerpo `{}` (interceptado con `page.route` y
+  respondido en el navegador: nada salio a la red) y el panel muestra el
+  error.
+- **Mutacion** (con `PYTHONDONTWRITEBYTECODE=1`; con `.pyc` el resultado
+  se corre de a uno): sacar el chequeo de `player_ubisoft`, de
+  `save_overrides` o de `run_import` hace caer solo
+  `test_un_formulario_de_otra_pagina_no_consulta_a_ubisoft`,
+  `..._no_reetiqueta` y `..._no_lanza_la_importacion` respectivamente (el
+  ultimo como ERROR: el `start_import` falso devuelve un MagicMock que no
+  serializa; igual lo atrapa). El e2e ya tenia su mutacion anotada por Dev.
+- **Chunk inicial:** `index-*.js` 186.78 kB contra 186.80 kB de main. No
+  crece.
+- Sin migraciones, parser, `recompute`, Electron ni `.ps1`: no hace falta
+  `## Verificar en el PC`.
+
+Criterios: los 5 con evidencia arriba. Veredicto: aprobar.
 
 ## Para el humano
 
