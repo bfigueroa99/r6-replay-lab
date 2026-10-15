@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-15T03:11Z
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
