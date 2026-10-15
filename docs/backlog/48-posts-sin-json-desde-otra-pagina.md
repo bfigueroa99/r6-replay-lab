@@ -1,7 +1,7 @@
 # 48. POST de etiquetas y de Ubisoft aceptan formularios de otra pagina
 
-estado: implementado
-candado: revisor 2026-10-15T14:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/48-posts-sin-json-desde-otra-pagina
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: QA 20261015T1012Z probando la ficha 47: `curl -X POST -H "Content-Type: text/plain" --data '{"gamemodes": {"999": "Ataque nuevo"}}' localhost:8766/api/overrides/` -> 200 y reetiqueta 2 partidas. `save_overrides` (views.py:587 en main 17f0ae1) y `player_ubisoft` (views.py:264) no llaman a `_es_json`; `app_settings` y `make_backup` si.
 archivos: backend/replays/views.py, frontend/src/api.js, backend/tests/test_unknowns.py, backend/tests/test_externo.py, backend/tests/test_import_job.py, backend/tests/test_api.py, frontend/e2e/humo.spec.js
-turnos: qa 20261015T1012Z, arquitecto 20261015T1211Z, dev 20261015T1311Z
+turnos: qa 20261015T1012Z, arquitecto 20261015T1211Z, dev 20261015T1311Z, revisor 20261015T1411Z
 
 ## PR
 
@@ -168,7 +168,41 @@ Dev 20261015T1311Z. Todo el diseno, sin desvios de alcance.
 - `check.sh`: `Todo en verde.` (632 tests backend con 4 saltados, 86
   vitest, build, 37 e2e).
 
-## Revision
+## Revision 2026-10-15 sobre 31529d4
+
+Revisor 20261015T1411Z. Rama al dia con `origin/main` (591a300), sin
+conflicto. `check.sh` en `Todo en verde.` antes de revisar (632 tests
+backend con 4 saltados, 86 vitest, build, 37 e2e).
+
+Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): aprobar, sin bugs ni reglas rotas. Confirmado a mano:
+
+- Los tres chequeos 415 van antes del 404, de `configurado()` y de
+  `start_import`; el texto es el mismo que usan `app_settings` y
+  `make_backup`.
+- Todo POST del frontend pasa por `post()` de `api.js` (App, PerfilUbisoft,
+  Datos, Ajustes x3); `frontend/electron/` y `scripts/` no postean a la API.
+  `grep 'client.post('` en `backend/tests`: los que quedan sin
+  `content_type` son a `/import/progress/` (espera 405) o ya mandan JSON.
+- Los tests nuevos caen con el bug presente (darian 200/404, crearian
+  `PerfilUbisoft`, llamarian `start_import`, escribirian `overrides.json`).
+
+Criterios: 415 en overrides -> `test_unknowns...test_un_formulario_de_otra_pagina_no_reetiqueta`;
+415 en Ubisoft sin `abrir` -> `test_externo...test_un_formulario_de_otra_pagina_no_consulta_a_ubisoft`;
+JSON sigue igual -> suite existente en verde; UI manda JSON -> e2e
+`los POST de la UI mandan JSON` (importar; Ubisoft cubierto por el mismo
+`post()`, sin e2e porque sale a la red); docstring de `_es_json` -> diff.
+Desvio de `archivos:` (`test_ajustes.py:428`) explicado en Implementacion.
+
+Hallazgos: ninguno que bloquee. La frase de `CLAUDE.md` ya esta en
+`## Para el humano`.
+
+Nota fuera de esta ficha (preexistente, tambien en `origin/main`):
+`python3 manage.py test tests.test_import_job tests.test_ajustes` da 4
+fallos en `test_ajustes.VigilanteTests` (dependen del orden; la suite
+completa y el modulo solo pasan). Candidato a ficha `bug`/`tests` del PO.
+
+Veredicto: aprobar.
 
 ## QA
 
