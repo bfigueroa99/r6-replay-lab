@@ -232,6 +232,20 @@ test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra quien cae primero', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', { hasText: 'Primero en caer' })
+  await expect(panel).toBeVisible()
+  // seed_demo: 203 rondas tuyas, 53 en que caiste primero de tu equipo
+  const total = panel.locator('tbody tr', { hasText: 'Total' })
+  await expect(total).toContainText('203')
+  await expect(total).toContainText('53 (26%)')
+
+  expect(errores).toEqual([])
+})
+
 test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', async ({ page }) => {
   const errores = vigilarConsola(page)
   const afuera = []

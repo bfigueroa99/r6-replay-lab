@@ -39,6 +39,9 @@ export default function Teammates({ filters, setFilters, runImport, importing })
     delta: baseline === null || row.winrate === null ? null : row.winrate - baseline,
   }))
   const clutches = data?.clutches || []
+  // El orden del backend (Ataque, Defensa, Total) se fija con `orden` para que la tabla no lo cambie al ordenar.
+  const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
+  const firstDownTotal = firstDown.find((row) => row.side === 'total')
 
   return (
     <>
@@ -112,6 +115,45 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           csvName="companeros"
           empty={`Nadie llega a ${minRounds} rondas contigo con estos filtros.`}
         />
+      </Panel>
+
+      <Panel
+        title="Primero en caer"
+        hint="Primero de tu equipo, no de la ronda: si ya había caído un rival, sigue contando. Distinto de la apertura perdida de Duelos. En un empate al segundo decide el orden del feed."
+      >
+        {!firstDownTotal || firstDownTotal.rounds === 0 ? (
+          <p className="dim">Sin rondas con estos filtros.</p>
+        ) : (
+          <DataTable
+            columns={[
+              {
+                key: 'side',
+                label: 'Lado',
+                left: true,
+                render: (row) => (row.side === 'total' ? 'Total' : <SideChip side={row.side} />),
+              },
+              { key: 'rounds', label: 'Rondas' },
+              {
+                key: 'me_first',
+                label: 'Caíste primero',
+                render: (row) => `${fmt(row.me_first)} (${pct(row.rounds ? (row.me_first / row.rounds) * 100 : null)})`,
+              },
+              { key: 'me_first_winrate', label: 'Winrate si caíste', render: (row) => pct(row.me_first_winrate) },
+              {
+                key: 'mate_first',
+                label: 'Cayó un compañero',
+                render: (row) => `${fmt(row.mate_first)} (${pct(row.rounds ? (row.mate_first / row.rounds) * 100 : null)})`,
+              },
+              { key: 'mate_first_winrate', label: 'Winrate si cayó otro', render: (row) => pct(row.mate_first_winrate) },
+              { key: 'no_deaths', label: 'Sin bajas' },
+              { key: 'no_deaths_winrate', label: 'Winrate sin bajas', render: (row) => pct(row.no_deaths_winrate) },
+            ]}
+            rows={firstDown}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.side}
+            csvName="primero-en-caer"
+          />
+        )}
       </Panel>
 
       <Panel
