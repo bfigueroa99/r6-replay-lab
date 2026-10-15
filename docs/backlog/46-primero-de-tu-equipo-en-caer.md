@@ -1,7 +1,7 @@
 # 46. Primero de tu equipo en caer
 
-estado: con hallazgos
-candado: -
+estado: en curso 2026-10-15
+candado: dev 2026-10-15 08:15Z
 rama: claude/equipo-dev/46-primero-de-tu-equipo-en-caer
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C4 (idea del PO); abre la epica escuadra (C1-C5 libres)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_primero_en_caer.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z, revisor 20261015T0711Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0611Z, revisor 20261015T0711Z, dev 20261015T0812Z
 
 ## PR
 
