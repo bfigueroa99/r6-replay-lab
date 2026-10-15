@@ -891,6 +891,120 @@ def teammate_synergy(min_rounds: int = 10, **filters) -> list[dict]:
     ]
 
 
+LADOS_PRIMERA_CAIDA = ("Attack", "Defense", "total")
+
+
+def _quien_cae_primero(mi_elapsed: float | None, elapsed_companeros: list[float]) -> str:
+    """Clasifica una ronda segun quien de tu equipo cayo primero.
+
+    `"tie"` queda para que lo resuelva el feed: el elapsed sale del reloj en
+    segundos y un doble kill empata seguido.
+    """
+    muertes = [e for e in elapsed_companeros if e is not None]
+    if mi_elapsed is None:
+        return "mate" if muertes else "none"
+    if not muertes:
+        return "me"
+    menor = min(muertes)
+    if mi_elapsed < menor:
+        return "me"
+    if mi_elapsed > menor:
+        return "mate"
+    return "tie"
+
+
+def _primer_orden_de_muerte(round_ids: set[int]) -> dict[tuple[int, int], int]:
+    """(round_id, player_id) -> `order` del primer evento de muerte del jugador.
+
+    Misma eleccion que `metrics.analyse_round`: la primera muerte del feed.
+    """
+    primero: dict[tuple[int, int], int] = {}
+    eventos = (
+        Event.objects.filter(round_id__in=round_ids, kind__in=(Event.KILL, Event.DEATH))
+        .order_by("order")
+        .values("round_id", "order", "kind", "actor_id", "target_id")
+    )
+    for e in eventos:
+        victima = e["target_id"] if e["kind"] == Event.KILL else e["actor_id"]
+        if victima is not None:
+            primero.setdefault((e["round_id"], victima), e["order"])
+    return primero
+
+
+def first_teammate_death(**filters) -> list[dict]:
+    """Rondas en que fuiste el primero de tu equipo en caer, y su winrate.
+
+    Distinto de `opening_death`, que es la primera baja de toda la ronda: aca
+    una muerte rival anterior no cuenta. En un empate de `death_elapsed`
+    decide el orden del feed; si falta el evento de alguno, va al companero,
+    para no cargarte una muerte que no se puede probar.
+    """
+    mias = base_queryset(**filters)
+    # Correlacionada por el tope de parametros de SQLite, como teammate_synergy.
+    mismo_equipo = mias.filter(round_id=OuterRef("round_id"), team_index=OuterRef("team_index"))
+    equipo = (
+        RoundPlayer.objects.filter(Exists(mismo_equipo))
+        .values("round_id", "player_id", "is_me", "death_elapsed")
+    )
+    por_ronda: dict[int, dict] = {}
+    for fila in equipo:
+        ronda = por_ronda.setdefault(fila["round_id"], {"me": None, "mates": []})
+        if fila["is_me"]:
+            ronda["me"] = fila
+        else:
+            ronda["mates"].append(fila)
+
+    clases: dict[int, str] = {}
+    empates: list[int] = []
+    for round_id, ronda in por_ronda.items():
+        if ronda["me"] is None:
+            continue
+        clase = _quien_cae_primero(
+            ronda["me"]["death_elapsed"], [m["death_elapsed"] for m in ronda["mates"]]
+        )
+        clases[round_id] = clase
+        if clase == "tie":
+            empates.append(round_id)
+
+    if empates:
+        orden = _primer_orden_de_muerte(set(empates))
+        for round_id in empates:
+            ronda = por_ronda[round_id]
+            mio = orden.get((round_id, ronda["me"]["player_id"]))
+            menor = min(m["death_elapsed"] for m in ronda["mates"] if m["death_elapsed"] is not None)
+            suyos = [
+                orden.get((round_id, m["player_id"]))
+                for m in ronda["mates"]
+                if m["death_elapsed"] == menor
+            ]
+            if mio is None or any(o is None for o in suyos):
+                clases[round_id] = "mate"
+            else:
+                clases[round_id] = "me" if mio < min(suyos) else "mate"
+
+    grupos = {"me": "me_first", "mate": "mate_first", "none": "no_deaths"}
+    cuentas = {lado: {g: [0, 0] for g in grupos.values()} for lado in LADOS_PRIMERA_CAIDA}
+    for fila in mias.values("round_id", "side", "won"):
+        clase = clases.get(fila["round_id"])
+        if clase is None:
+            continue
+        lados = ["total"] + ([fila["side"]] if fila["side"] in ("Attack", "Defense") else [])
+        for lado in lados:
+            par = cuentas[lado][grupos[clase]]
+            par[0] += 1
+            par[1] += 1 if fila["won"] else 0
+
+    salida = []
+    for lado in LADOS_PRIMERA_CAIDA:
+        fila = {"side": lado, "rounds": sum(n for n, _ in cuentas[lado].values())}
+        for grupo, (n, ganadas) in cuentas[lado].items():
+            fila[grupo] = n
+            fila[f"{grupo}_won"] = ganadas
+            fila[f"{grupo}_winrate"] = _pct(ganadas, n)
+        salida.append(fila)
+    return salida
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [

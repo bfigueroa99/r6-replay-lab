@@ -163,6 +163,8 @@ quien muere lo pierde. Si la primera muerte no tiene asesino registrado (evento
 | **Winrate tras ganar la apertura** | Rondas ganadas entre las rondas donde te llevaste la primera baja. En Siege esta arriba del 70% para casi cualquier jugador: por eso el primer duelo importa tanto. |
 | **Winrate tras perder la apertura** | Lo mismo del otro lado. |
 | **Entry kill** | La primera baja **de tu equipo** en la ronda (distinto de la primera de la ronda: si el rival abrio, tu entry sigue estando en juego). |
+| **Primero de tu equipo en caer** | En cada ronda tuya, quien de tu equipo tiene la menor hora de muerte (`death_elapsed`). Es la primera baja **de tu equipo**, no de la ronda: si antes cayó un rival, sigue contando (distinto de *Primera muerte*). Si tu equipo no perdió a nadie, la ronda va a *Sin bajas*. Empate en el mismo segundo: cae primero quien aparece antes en el feed; si falta el evento de alguno, la ronda cuenta para el compañero. Página Compañeros, panel *Primero en caer*, por lado y total. |
+| **Winrate cuando caes primero / cuando cae un compañero / sin bajas** | Rondas ganadas sobre rondas de cada grupo de la fila anterior. El lado es el de tu fila de la ronda. |
 
 ## Trades
 
