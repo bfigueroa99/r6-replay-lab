@@ -1,7 +1,7 @@
 # 45. Remontadas y derrumbes
 
-estado: con hallazgos
-candado: -
+estado: en curso 2026-10-15
+candado: dev 2026-10-15T02:11Z
 rama: claude/equipo-dev/45-remontadas-y-derrumbes
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B7 (idea del PO); cierra la epica lado-y-marcador despues de las fichas 36, 41 y 43
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_remontadas.py, frontend/src/remontadas.js, frontend/src/remontadas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z
+turnos: po 20261014T1911Z, arquitecto 20261014T2311Z, dev 20261015T0011Z, revisor 20261015T0110Z, dev 20261015T0211Z
 
 ## PR
 
