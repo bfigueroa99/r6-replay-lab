@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-16T00:04Z
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
