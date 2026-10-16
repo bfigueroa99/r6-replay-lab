@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
 estado: revisado
-candado: -
+candado: qa 2026-10-16T12:05Z
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
