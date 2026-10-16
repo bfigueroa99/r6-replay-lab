@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
 estado: aprobado
-candado: -
+candado: release 2026-10-16 16:10 UTC
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
