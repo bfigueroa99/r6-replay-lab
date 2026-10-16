@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: con hallazgos
-candado: -
+estado: en curso 2026-10-16
+candado: dev 2026-10-16T04:04Z
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
