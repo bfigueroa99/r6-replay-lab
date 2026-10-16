@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: implementado
-candado: revisor 2026-10-16T00:04Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B10 ([aurelix](https://aurelix.app), tarjeta "Close games")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_margen.py, backend/tests/test_api.py, frontend/src/margen.js, frontend/src/margen.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z
 
 ## PR
 
@@ -165,3 +165,39 @@ Para el Revisor: en ranked real un 3-3 va a prorroga; si un `.rec` no trae
 misma fuente que usa Mitades y prorroga; no se infiere de `reglas_partida` para
 no tener dos definiciones de prorroga.
 
+
+## Revision 2026-10-16 sobre a98a1b1
+
+(Revisor 20261016T0004Z. Subagente ciego con `revision.md` y lectura propia;
+cada hallazgo reproducido por el lider. Rama con `origin/main` 2a6c86b ya
+fusionado; `check.sh`: `Todo en verde.`, 643 tests backend, 90 vitest, build
+ok, 38 e2e.)
+
+- [test] backend/tests/test_margen.py:90 (`test_el_filtro_de_lado_no_parte_la_partida`)
+  Que pasa: el test pasa aunque `by_margin` no descarte `side`.
+  Como reproducirlo o por que es cierto: mutacion
+  `filtros = {k: v ... if k != "side"}` -> `filtros = dict(filters)` en
+  `aggregates.py:737` y `manage.py test tests.test_margen` sigue en `OK`:
+  las dos partidas de `_partida` tienen una ronda tuya de ataque, asi que
+  `side="Attack"` elige las mismas partidas con o sin el filtro, y `totals`
+  ya lee todas las rondas por su cuenta.
+  Arreglo sugerido: agregar una partida con solo rondas tuyas de defensa (p. ej.
+  `make_match` + dos `make_round(..., side="Defense")`, marcador 4-1) y
+  afirmar que con `side="Attack"` sigue en el tramo `3+` y en
+  `matches_known`. Con la mutacion de arriba el test nuevo tiene que caer.
+
+Aviso, no bloquea esta ficha (viene de antes): `ingest.py:146-169` saca
+`my_score`/`opponent_score` y `won` del ultimo `.rec` importado. Si falta
+el de la ronda final (ranked 4-2 importada hasta 3-2), la partida cuenta como
+ganada "por 1 ronda". Es el mismo dato que ya muestran Partidas y el winrate
+de toda la app, asi que no se corrige aca; queda como candidato a ficha
+`tipo: bug` (marcar `won=None` cuando el marcador final no cierra la
+partida segun `reglas_partida`), ver `## Para el humano` de ESTADO.md.
+
+Ficha contra el diff: los 6 criterios tienen test o e2e con nombre (el 4 con
+el hueco de arriba); el diff toca solo `archivos:`; fila en
+`docs/metricas.md`; UI con tildes, identificadores sin; sin `print` ni
+`console.log`; sin migracion ni dependencias.
+
+Veredicto: corregir antes de entregar (el hallazgo [test]: el criterio 4 no
+queda probado; el arreglo es un test).
