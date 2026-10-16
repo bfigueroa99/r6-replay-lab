@@ -1,6 +1,6 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: entregado
+estado: entregado (PR pendiente de merge: el clasificador de permisos de la sesion 20261016T1604Z nego el merge; PR #38 listo, puerta a-f cumplida sobre 0f735c1)
 candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
