@@ -88,4 +88,15 @@ describe('matrizDeDuelos', () => {
     expect(celda(m, 'aFavor', 'a', 'b').bajas).toBe(1)
     expect(m.mios).toEqual(['a'])
   })
+
+  it('una ronda sin tu fila usa el teams[].mine de esa ronda', () => {
+    const rondas = [{
+      teams: [{ mine: true }, { mine: false }],
+      players: [jugador('Amigo', 0), jugador('Rival', 1)],
+      events: [baja(1, 'Amigo', 'Rival')],
+    }]
+    const m = matrizDeDuelos(rondas, { miEquipo: 1 })
+    expect(celda(m, 'aFavor', 'Amigo', 'Rival').bajas).toBe(1)
+    expect(m.mios).toEqual(['Amigo'])
+  })
 })

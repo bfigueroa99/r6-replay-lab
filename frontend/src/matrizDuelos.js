@@ -22,10 +22,16 @@ function bajasEntreRivales(ronda) {
     })
 }
 
-/** Tu `team_index` en una ronda: el de tu fila si estas; si no, el de la partida. */
+/**
+ * Tu `team_index` en una ronda: el de tu fila si estas; si no, el equipo que
+ * la ronda marca como tuyo (`teams[].mine`), y el de la partida como ultimo
+ * recurso. La ingesta puede saltar tu fila y dejar la marca del equipo.
+ */
 function tuEquipoEn(ronda, miEquipo) {
   const yo = (ronda.players || []).find((p) => p.is_me)
-  return yo ? yo.team_index : miEquipo
+  if (yo) return yo.team_index
+  const marcado = (ronda.teams || []).findIndex((t) => t && t.mine)
+  return marcado >= 0 ? marcado : miEquipo
 }
 
 /**
