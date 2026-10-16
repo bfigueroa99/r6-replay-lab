@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: revisado
-candado: qa 2026-10-16T12:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B10 ([aurelix](https://aurelix.app), tarjeta "Close games")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_margen.py, backend/tests/test_api.py, frontend/src/margen.js, frontend/src/margen.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, qa 20261016T1204Z
 
 ## PR
 
@@ -240,3 +240,56 @@ Sigue en pie el aviso de la revision anterior sobre `ingest.py` (marcador
 del ultimo `.rec`): no bloquea esta ficha.
 
 Veredicto: aprobar.
+
+## QA 2026-10-16 sobre fc452e6
+
+(QA 20261016T1204Z. Rama con `origin/main` 2a6c86b ya fusionado. Datos
+sinteticos, nunca `.rec` reales; el script de siembra usa
+`tests/factories.py` y vive fuera del repo.)
+
+- **check.sh**: `./scripts/check.sh` -> `Todo en verde.` (644 tests backend
+  OK con 4 skipped, 90 vitest, build ok, 38 e2e).
+- **Base sembrada** (`SQLITE_PATH=<tmp>/sembrada.sqlite3 python manage.py migrate`
+  y `manage.py shell < sembrar.py`): 9 partidas con `make_match/make_round/
+  make_round_player`: 4-3 Club House, 4-2 Club House, 2-4 Oregon, 4-0 Oregon
+  solo defensa, 5-4 y 5-3 Bank con `overtime_number=1` desde la ronda 7, 4-1
+  Bank con `code_version=Y9S4-1`, 3-3 Bank con `won=None`, 4-3 Kafe de un
+  solo jugador con 0 bajas. `runserver 8765` y
+  `curl -s "localhost:8765/api/trends/<qs>"`:
+  - sin filtros: `known 7 excl 2`; prorroga 2/2 (100 %, incluye el 5-3),
+    1 ronda 2/2, 2 rondas 2/1 (50 %), 3+ 1/1. Lo esperado a mano.
+  - `?side=Attack`, `?side=Defense`, `?side=`: identico a sin filtros (el lado
+    no parte la partida; la 4-0 solo de defensa sigue en 3+).
+  - `?map=club-house` -> known 2 excl 0; `?map=bank` -> prorroga 2, excl 2
+    (Y9S3 y empate); `?side=Attack&map=oregon` -> 2 rondas 1/0, 3+ 1/1.
+  - `?since=2026-09-01&until=2026-09-01` -> known 3; `?until=foo`,
+    `?since=foo`, `?page=-1`, `?map=`, `?ranked=0|1` -> 200, como sin filtros.
+  - `?operator=Ash`, `?session=foo`, `?map=Bank` (no es slug) -> 200 con los
+    cuatro tramos en 0, igual que `comebacks` con los mismos parametros.
+  - Ningun 500 en el log del servidor.
+- **Base vacia** (`runserver 8766`): `/api/trends/`, `?side=Attack`,
+  `?until=foo` -> 200, `known 0 excl 0`, cuatro tramos en 0.
+- **UI en Chromium** (script Playwright temporal sobre `/tendencias`): con la
+  base sembrada el panel muestra Prórroga/1 ronda/2 rondas/3 o más con
+  2/2/2/1 partidas, el aviso de menos de 10 partidas y "2 partidas quedaron
+  fuera (anteriores a Y9S4, empates o sin resultado)."; con base vacia sale
+  el estado vacio general de la app; consola limpia en ambas.
+- **Chunk inicial**: `npx vite build` sobre `origin/main` y sobre la rama:
+  `index-*.js` 186.78 kB en los dos (sin cambio); `Trends-*.js` (lazy) 19.41
+  -> 20.91 kB (+7.7 %), una tabla mas.
+- **Mutaciones** (cada una revertida despues):
+  - `aggregates.py`: `if p["id"] in con_prorroga:` -> `if False:` ->
+    cae `test_una_partida_con_prorroga_cae_en_prorroga_aunque_gane_por_dos`.
+  - `partidas.filter(code_version__gte=Y9S4)` -> `partidas.filter()` -> cae
+    `test_una_partida_anterior_a_y9s4_queda_fuera_y_se_cuenta`.
+  - `_tramo_margen`: `margen > 0` -> `margen >= 0` -> caen
+    `test_un_empate_queda_fuera_y_se_cuenta` y
+    `test_tres_o_mas_se_juntan_y_cero_no_tiene_tramo`.
+  - `margen.js`: `'Prórroga'` -> `'Prorroga'` -> caen 2 tests de
+    `margen.test.js`; `hayMargen` -> `true` -> cae `hayMargen > dice si hay
+    partidas con margen legible`.
+- Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: no hay
+  `## Verificar en el PC`.
+
+Criterios: 1 a 6 cumplidos con la evidencia de arriba (el 5 por el e2e de
+`check.sh` y el recorrido en Chromium). Veredicto: aprobado.
