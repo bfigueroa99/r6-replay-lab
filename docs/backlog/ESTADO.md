@@ -1,19 +1,19 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-15 20:50 UTC por dev (sesion 20261015T2004Z; motivo: por estado: 2 disenado, lugar en cola; reloj: revisor, franja 7)
+actualizado: 2026-10-16 00:09 UTC por revisor (sesion 20261016T0004Z; motivo: por estado: 2 implementado; reloj: release, franja 0)
 playbook: origin/main@2a6c86b
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 12 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=1 en 48 h (10-15T21:01Z) | 13 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/50-partidas-cerradas-y-holgadas | docs/backlog/50-partidas-cerradas-y-holgadas.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/50-partidas-cerradas-y-holgadas?expand=1) |
-| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
+| claude/equipo-dev/50-partidas-cerradas-y-holgadas | docs/backlog/50-partidas-cerradas-y-holgadas.md | con hallazgos | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/50-partidas-cerradas-y-holgadas?expand=1) |
+| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | con hallazgos | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=2 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=1
 
 ## Orden de merge sugerido
 
@@ -32,11 +32,11 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 50-partidas-cerradas-y-holgadas | en curso (implementado en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 51-matriz-de-duelos-de-la-partida | en curso (implementado en su rama) | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 50-partidas-cerradas-y-holgadas | en curso (con hallazgos en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 51-matriz-de-duelos-de-la-partida | en curso (con hallazgos en su rama) | funcionalidad | revision-de-rondas | 3 | frontend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: revisor (regla 3), las dos `implementado`, la 50 primero. Papel vacio (0 `propuesto`, 0 `disenado`): despues de revisor y QA, el PO.
+Proximo turno por estado: dev (regla 4), las dos `con hallazgos`, la 50 primero; cada una es un test y, en la 51, dos lineas. Papel vacio (0 `propuesto`, 0 `disenado`): despues de revisor y QA, el PO.
 
 ## Ultimo turno de cada rol
 
@@ -44,7 +44,7 @@ Proximo turno por estado: revisor (regla 3), las dos `implementado`, la 50 prime
 |---|---|---|
 | release | 2026-10-15 16:45 | Entrega y mergea 48 (bug, `aprobado` -> `entregado` -> main, PR #37, main 2a6c86b). Puerta completa: dev 1311Z, revisor 1411Z y qa 1511Z en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, PR abierto, `check.sh` en `Todo en verde.` sobre 70f8958 con main 591a300 fusionado (632 backend con 4 saltados, 86 vitest, build, 37 e2e). Ficha recortada con `## PR`; espejo quitado de backlog. Borrado de la rama cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-15 20:50 | Implementa 50 (`by_margin` en `/api/trends/` + panel "Partidas cerradas y holgadas" en Tendencias, 9 tests backend + 1 api + 4 vitest + e2e; seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el detalle de partida, solo frontend: `matrizDuelos.js` + `MatrizDuelos.jsx`, 7 vitest + e2e). Las dos `disenado` -> `implementado`. Revision ciega previa: 50 aprobar con 3 menores corregidos (texto de la nota de excluidas, test del corte sin resultado, comentario del e2e); 51 corregir: el lado de cada baja se decidia con el equipo de la primera ronda y una baja podia contarse sin aparecer en ninguna tabla; ahora se decide ronda por ronda (desvio del diseno anotado). `check.sh` en `Todo en verde.` en las dos (50: 643 backend, 90 vitest, build, 38 e2e; 51: 632 backend, 93 vitest, build, 38 e2e). |
-| revisor | 2026-10-15 14:14 | Revisa 48 (bug, `implementado` -> `revisado`). Rama al dia con main 591a300, `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Revision ciega: aprobar, sin hallazgos; confirmado a mano el orden de los 415, que todo POST de la UI pasa por `post()` y que los tests nuevos caen con el bug. Nota preexistente (tambien en main): `test_ajustes.VigilanteTests` da 4 fallos si se corre junto con `test_import_job` (dependen del orden). Sin pushes de codigo. |
+| revisor | 2026-10-16 00:09 | Revisa 50 y 51 (`implementado` -> `con hallazgos` las dos). Ramas al dia con main 2a6c86b; `check.sh` en `Todo en verde.` (50: 643 backend, 90 vitest, build, 38 e2e; 51: 632 backend, 93 vitest, build, 38 e2e). 50: `test_el_filtro_de_lado_no_parte_la_partida` pasa aunque se quite el descarte de `side` (mutacion confirmada); falta una partida con solo rondas de defensa. 51: una ronda sin tu fila decide el lado con el equipo de la partida y no con `round.teams[i].mine`, y las bajas de esa ronda salen invertidas (test que falla escrito en la ficha). Sin pushes de codigo. |
 | qa | 2026-10-15 15:17 | Prueba 48 (bug, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (632 backend, 86 vitest, build, 37 e2e). Base vacia y sembrada: overrides, import (`?force=1`) y Ubisoft (id real e inexistente) dan 415 con text/plain, urlencoded, multipart y sin cuerpo, y no escriben `overrides.json`; con JSON (tambien `; charset=utf-8`) siguen igual. UI en Chromium: Importar, respaldo, interruptor de Ajustes, Datos (reetiqueta un `Unknown(424242)`) y Consultar Ubisoft (interceptado, sin red) mandan `application/json`. Mutacion: cada chequeo quitado hace caer su test. Chunk 186.78 kB (main 186.80). Sin pushes de codigo. |
 | arquitecto | 2026-10-15 18:35 | Disena 50 (`by_margin` en `/api/trends/` desde `Match.my_score/opponent_score`, corte Y9S4, prorroga primero, `side` ignorado, rating sobre la partida entera; `margen.js` + panel en Tendencias + e2e: seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el navegador: `matrizDuelos.js` + componente `MatrizDuelos.jsx`, insertado entre Rondas y Scoreboard para no chocar con PR #14). Descarta 49: `map_slug` colapsa las versiones de un mapa a proposito (`header.py:227`, `test_pydissect.py:178`), no hay dos filas ni mezcla; separar versiones es decision de producto. `ALCANCE.md` A4 anotada. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
@@ -103,6 +103,8 @@ Proximo turno por estado: revisor (regla 3), las dos `implementado`, la 50 prime
 - Verificar en el PC (38, PR #26, parser): `manage.py backup` y despues `manage.py import_replays --force <carpeta>` (`recompute` no reparsea) para corregir rondas Y9S4+ ya importadas; confirmar con `.rec` reales que el ganador de cada ronda coincide con el marcador, y `$env:R6_TEST_REPLAY="<ruta a un .rec Y9S4+>"; python manage.py test tests.test_pydissect`.
 - Verificar en el PC: la 34 ya esta en main (PR #20). Desde `backend/`: `..\.venv\Scripts\python.exe manage.py recompute --dry-run`, `manage.py backup` y `manage.py recompute` para corregir las trade kills contadas doble en partidas ya importadas (detalle en `## Verificar en el PC` de la ficha 34).
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
+- Rutina: 1 disparo sin rastro en 48 h (10-15T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
