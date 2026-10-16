@@ -92,6 +92,16 @@ class MargenTests(TestCase):
         self.assertEqual(agg.by_margin(side="Attack"), agg.by_margin())
         self.assertEqual(agg.by_margin(side="Attack")["rows"][1]["rounds"], 2)
 
+    def test_una_partida_solo_de_defensa_sigue_contando_con_filtro_de_ataque(self):
+        # Sin rondas tuyas de ataque, `side=Attack` la dejaria fuera si el
+        # filtro de lado eligiera partidas.
+        match = make_match(index=0, my_score=4, opponent_score=1)
+        for numero in range(2):
+            make_round_player(make_round(match, numero, side="Defense"))
+        datos = agg.by_margin(side="Attack")
+        self.assertEqual(_por_tramo(datos)["3+"], (1, 1))
+        self.assertEqual(datos["matches_known"], 1)
+
     def test_el_filtro_de_mapa_recorta_partidas(self):
         _partida(4, 3, index=0, map_name="Club House")
         _partida(4, 1, index=1, map_name="Oregon")
