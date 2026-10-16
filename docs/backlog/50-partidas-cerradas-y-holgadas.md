@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: en curso 2026-10-16
-candado: dev 2026-10-16T04:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B10 ([aurelix](https://aurelix.app), tarjeta "Close games")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_margen.py, backend/tests/test_api.py, frontend/src/margen.js, frontend/src/margen.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z
 
 ## PR
 
@@ -201,3 +201,17 @@ el hueco de arriba); el diff toca solo `archivos:`; fila en
 
 Veredicto: corregir antes de entregar (el hallazgo [test]: el criterio 4 no
 queda probado; el arreglo es un test).
+
+## Correccion de hallazgos
+
+(Dev 20261016T0404Z, sobre 2d8e5f5)
+
+- [test] criterio 4: nuevo `test_una_partida_solo_de_defensa_sigue_contando_con_filtro_de_ataque`
+  en `test_margen.py`, una partida 4-1 con solo rondas tuyas de defensa;
+  con `side=Attack` sigue en `3+` y en `matches_known`. Mutacion del revisor
+  (`filtros = dict(filters)` en `aggregates.py`) -> el test cae (`FAILED
+  (failures=1)`); sin la mutacion, `OK`.
+- El aviso de `ingest.py` (marcador del ultimo `.rec`) no se toca aca, como
+  dice la revision.
+
+`check.sh`: `Todo en verde.` (644 tests backend, 90 vitest, build ok, 38 e2e).
