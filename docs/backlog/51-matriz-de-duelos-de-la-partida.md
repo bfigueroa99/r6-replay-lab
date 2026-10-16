@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: implementado
-candado: revisor 2026-10-16T08:05Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -221,3 +221,47 @@ datos legitimos; el arreglo son dos lineas y un test).
   viejo `sin tu fila en la ronda usa el equipo de la partida` sigue verde.
 
 `check.sh`: `Todo en verde.` (632 tests backend, 94 vitest, build ok, 38 e2e).
+
+## Revision 2026-10-16 sobre 5a92ccb
+
+(Revisor 20261016T0805Z, segunda pasada. Subagente ciego con `revision.md` y
+lectura propia; el hallazgo lo reproduje con un test temporal. Rama al dia con
+`origin/main` 2a6c86b; `check.sh`: `Todo en verde.`, 632 tests backend, 94
+vitest, build ok, 38 e2e.)
+
+Hallazgo de la revision anterior (`teams[].mine` en una ronda sin tu fila):
+corregido en 2d555ed y verificado.
+
+- [bug] frontend/src/matrizDuelos.js:61 (`soloAperturas ? bajas.slice(0, 1)`)
+  Que pasa: "Solo aperturas" toma la primera baja **entre rivales con autor**
+  de la ronda, mientras que la columna "Aperturas" del scoreboard de la misma
+  pagina (`MatchDetail.jsx:188`, `opening_kill`/`opening_death` de
+  `pydissect/stats.py:13-24`) y `docs/metricas.md` (## Duelos de apertura)
+  definen la apertura como la primera `Kill` o `Death` de la ronda. En las
+  rondas que abren con un `Death` suelto o con un teamkill, la matriz muestra
+  como apertura una baja que el scoreboard, en la misma pantalla, no cuenta.
+  Tambien contradice el criterio 3 ("solo cuenta la primera baja de cada
+  ronda").
+  Como reproducirlo: ronda con `players` Yo (0, is_me), R1 (1), R2 (1) y
+  `events` `[{kind:'Death', target:'R1', order:1}, {kind:'Kill', actor:'Yo',
+  target:'R2', order:2}]`; `matrizDeDuelos(rondas, {soloAperturas:true,
+  miEquipo:0})` da `celda(m,'aFavor','Yo','R2').bajas === 1`; el scoreboard le
+  da a R1 la apertura perdida y a Yo 0 aperturas ganadas.
+  Arreglo sugerido: con `soloAperturas`, tomar el primer evento `Kill` o
+  `Death` de la ronda por `order` (la misma regla que `opening_death`); si
+  es una baja entre rivales con autor y victima conocidos, cuenta; si no
+  (`Death` suelto, teamkill, nick sin equipo), la ronda no aporta nada a la
+  matriz. Cambiar el test `un teamkill no cuenta como apertura` para que
+  afirme que esa ronda no suma (hoy afirma que suma la baja siguiente),
+  agregar el caso de arriba como test y ajustar la fila **Matriz de duelos
+  (partida)** de `docs/metricas.md` para que diga que "solo aperturas" usa la
+  misma apertura que Duelos de apertura.
+
+Ficha contra el diff: los 5 criterios con test o e2e con nombre (el 3 con el
+desvio de arriba); el diff toca solo `archivos:`; fila en
+`docs/metricas.md`; UI con tildes, identificadores sin; sin `console.log`;
+sin dependencias ni backend.
+
+Veredicto: corregir antes de entregar (el [bug]: dos numeros llamados
+apertura que no cuadran en la misma pagina; el arreglo es una funcion y dos
+tests).
