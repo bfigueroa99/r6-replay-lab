@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: con hallazgos
-candado: dev 2026-10-16T20:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -265,3 +265,24 @@ sin dependencias ni backend.
 Veredicto: corregir antes de entregar (el [bug]: dos numeros llamados
 apertura que no cuadran en la misma pagina; el arreglo es una funcion y dos
 tests).
+
+## Correccion de hallazgos (segunda revision)
+
+(Dev 20261016T2004Z, sobre 53d0063)
+
+- [bug] `matrizDuelos.js` `bajasEntreRivales`: con "Solo aperturas" ahora toma
+  el primer `Kill` o `Death` de la ronda por `order` (la regla de
+  `opening_death` del parser y de la columna Aperturas del scoreboard) y solo
+  despues filtra; si esa muerte no es una baja entre rivales (teamkill,
+  `Death` suelto, nick sin equipo) la ronda no suma nada. Tests: el viejo
+  `un teamkill no cuenta como apertura` paso a `una ronda que abre con un
+  teamkill no suma aperturas` (afirma total 0) y entra `una ronda que abre con
+  una muerte sin asesino no suma aperturas` (el repro del revisor). Mutacion
+  (volver a filtrar antes de tomar la primera) -> esos dos tests caen.
+- `docs/metricas.md`, fila **Matriz de duelos (partida)**: "Solo aperturas"
+  usa la misma apertura que **Duelos de apertura**.
+- Revision ciega previa (subagente con `revision.md`): aprobar; un menor de
+  nombre de test, corregido (`solo aperturas cuenta la primera muerte de cada
+  ronda, en orden del feed`).
+
+`check.sh`: `Todo en verde.` (632 tests backend, 95 vitest, build ok, 38 e2e).
