@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: implementado
-candado: revisor 2026-10-16T00:04Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F7 ([CS Demo Manager v3.5.0](https://cs-demo-manager.com/changelog), "players duels matrix"; selector de aperturas de [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: frontend/src/matrizDuelos.js, frontend/src/matrizDuelos.test.js, frontend/src/components/MatrizDuelos.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z
 
 ## PR
 
@@ -163,3 +163,47 @@ Revision ciega previa: corregir (el bug de arriba, corregido) y un menor de doc
 (la fila de metricas ahora dice que el teamkill tampoco abre la matriz, a
 diferencia de Duelos de apertura).
 
+
+## Revision 2026-10-16 sobre be7b10f
+
+(Revisor 20261016T0004Z. Subagente ciego con `revision.md` y lectura propia;
+cada hallazgo reproducido por el lider. Rama con `origin/main` 2a6c86b ya
+fusionado; `check.sh`: `Todo en verde.`, 632 tests backend, 93 vitest, build
+ok, 38 e2e.)
+
+- [bug] frontend/src/matrizDuelos.js:26-28
+  Que pasa: si una ronda no trae tu fila (`is_me`), el lado se decide con el
+  `miEquipo` de la partida (ronda 0) y no con el equipo tuyo de esa ronda, que
+  la API ya trae en `round.teams[i].mine` (`ingest.py:219`, `views.py:478`).
+  Como reproducirlo o por que es cierto: `ingest.py:228-231` salta a un
+  jugador sin entrada en `analysis["players"]`, asi que una ronda puede quedar
+  sin tu fila con `teams[0].mine = true` mientras `miEquipo = 1`: las bajas
+  de esa ronda caen invertidas (las de tu equipo en "El rival contra tu
+  equipo"). Contradice la fila nueva de `docs/metricas.md` ("ronda por ronda
+  con tu `team_index` de esa ronda"). Test que hoy falla (agregarlo a
+  `matrizDuelos.test.js`):
+
+  ```js
+  it('una ronda sin tu fila usa el teams[].mine de esa ronda', () => {
+    const rondas = [{
+      teams: [{ mine: true }, { mine: false }],
+      players: [{ username: 'Amigo', team_index: 0 }, { username: 'Rival', team_index: 1 }],
+      events: [{ kind: 'Kill', actor: 'Amigo', target: 'Rival', order: 1 }],
+    }]
+    const m = matrizDeDuelos(rondas, { miEquipo: 1 })
+    expect(celda(m, 'aFavor', 'Amigo', 'Rival').bajas).toBe(1)   // hoy da 0
+  })
+  ```
+
+  Arreglo sugerido: en `tuEquipoEn`, sin tu fila usar
+  `(ronda.teams || []).findIndex((t) => t.mine)` si da `>= 0` (lo mismo que
+  `myTeam` de `MatchDetail.jsx:237`) y dejar `miEquipo` como ultimo recurso.
+  El test existente `ronda sin tu fila usa el equipo de la partida` tiene que
+  seguir pasando (no trae `teams`).
+
+Ficha contra el diff: los 5 criterios tienen test o e2e con nombre; el diff
+toca solo `archivos:`; fila en `docs/metricas.md`; UI con tildes,
+identificadores sin; sin `console.log`. Sin dependencias, sin backend.
+
+Veredicto: corregir antes de entregar (el bug de arriba: numero invertido con
+datos legitimos; el arreglo son dos lineas y un test).
