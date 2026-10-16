@@ -1,7 +1,7 @@
 # 50. Partidas cerradas y partidas holgadas
 
-estado: implementado
-candado: revisor 2026-10-16T08:05Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/50-partidas-cerradas-y-holgadas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -215,3 +215,28 @@ queda probado; el arreglo es un test).
   dice la revision.
 
 `check.sh`: `Todo en verde.` (644 tests backend, 90 vitest, build ok, 38 e2e).
+
+## Revision 2026-10-16 sobre 69eac5c
+
+(Revisor 20261016T0805Z, segunda pasada. Subagente ciego con `revision.md` y
+lectura propia. Rama al dia con `origin/main` 2a6c86b, sin merge nuevo;
+`check.sh`: `Todo en verde.`, 644 tests backend, 90 vitest, build ok, 38 e2e.)
+
+Sin hallazgos. El subagente ciego reviso `by_margin` (prorroga antes que
+margen, empates y sin resultado en `matches_excluded`, `side` ignorado,
+rating sobre todas tus rondas, base vacia), los tests (cada uno cae con el bug
+que nombra, incluido el nuevo de la partida solo de defensa) y el e2e (29
+partidas 4-3 de `seed_demo`, Y9S4, sin prorroga).
+
+Hallazgo de la revision anterior: corregido en 269f464 y verificado (el test
+nuevo cubre el criterio 4).
+
+Ficha contra el diff: los 6 criterios con test o e2e con nombre; el diff toca
+solo `archivos:`; fila en `docs/metricas.md`; UI con tildes,
+identificadores sin; sin `print` ni `console.log`; sin migracion ni
+dependencias.
+
+Sigue en pie el aviso de la revision anterior sobre `ingest.py` (marcador
+del ultimo `.rec`): no bloquea esta ficha.
+
+Veredicto: aprobar.
