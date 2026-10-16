@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: en curso 2026-10-16
-candado: dev 2026-10-16T04:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F7 ([CS Demo Manager v3.5.0](https://cs-demo-manager.com/changelog), "players duels matrix"; selector de aperturas de [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: frontend/src/matrizDuelos.js, frontend/src/matrizDuelos.test.js, frontend/src/components/MatrizDuelos.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z
 
 ## PR
 
@@ -207,3 +207,17 @@ identificadores sin; sin `console.log`. Sin dependencias, sin backend.
 
 Veredicto: corregir antes de entregar (el bug de arriba: numero invertido con
 datos legitimos; el arreglo son dos lineas y un test).
+
+## Correccion de hallazgos
+
+(Dev 20261016T0404Z, sobre 49612fd)
+
+- [bug] `matrizDuelos.js` `tuEquipoEn`: sin tu fila en la ronda, ahora usa
+  `ronda.teams[].mine` de esa ronda (lo mismo que `myTeam` de
+  `MatchDetail.jsx`) y deja `miEquipo` como ultimo recurso. Test nuevo en
+  `matrizDuelos.test.js`: `una ronda sin tu fila usa el teams[].mine de esa
+  ronda` (el del revisor, con los helpers del archivo). Mutacion
+  (`findIndex(() => false)`) -> el test cae; con el arreglo pasa. El test
+  viejo `sin tu fila en la ronda usa el equipo de la partida` sigue verde.
+
+`check.sh`: `Todo en verde.` (632 tests backend, 94 vitest, build ok, 38 e2e).
