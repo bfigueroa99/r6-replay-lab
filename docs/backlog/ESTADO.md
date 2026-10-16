@@ -1,29 +1,29 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-16 12:25 UTC por qa (sesion 20261016T1204Z; motivo: por estado: 1 revisado; reloj: revisor, franja 4)
+actualizado: 2026-10-16 16:40 UTC por release (sesion 20261016T1604Z; motivo: por estado: 1 aprobado; reloj: dev, franja 5)
 playbook: origin/main@2a6c86b
-rutina: TURNOS_SIN_RASTRO=2 en 48 h (10-15T21:01Z 10-16T09:01Z) | 13 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=2 en 48 h (10-15T21:01Z 10-16T09:01Z) | 13 de 56 en 7 dias; sin herramientas para comparar
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/50-partidas-cerradas-y-holgadas | docs/backlog/50-partidas-cerradas-y-holgadas.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/50-partidas-cerradas-y-holgadas?expand=1) |
-| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | con hallazgos | 4 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
+| claude/equipo-dev/50-partidas-cerradas-y-holgadas | docs/backlog/50-partidas-cerradas-y-holgadas.md | entregado (PR pendiente de merge: permiso de merge denegado en la sesion) | 0 | [PR #38](https://github.com/bfigueroa99/r6-replay-lab/pull/38) |
+| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | con hallazgos | 8 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=1 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=2
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=2
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/50-partidas-cerradas-y-holgadas`: no choca con main ni con la 51 (`git merge-tree` limpio). Libera `aggregates.py`, `views.py`, `Trends.jsx`.
+1. `claude/equipo-dev/50-partidas-cerradas-y-holgadas` (PR #38, listo para mergear): no choca con main ni con la 51 (`git merge-tree` limpio). Libera `aggregates.py`, `views.py`, `Trends.jsx`.
 2. `claude/equipo-dev/51-matriz-de-duelos-de-la-partida`: no choca con main ni con la 50; las dos tocan `frontend/e2e/humo.spec.js` y `docs/metricas.md` en zonas distintas. Libera `MatchDetail.jsx` y `styles.css` (la unica zona que comparte con PR #14 es el import de `MatchDetail.jsx`).
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
-- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 `aprobado` (50, en cola, espera Release); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 `con hallazgos` (51, en cola: "Solo aperturas" no usa la misma apertura que el scoreboard). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 `entregado` (50, PR #38 abierto, espera merge); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 `con hallazgos` (51, en cola: "Solo aperturas" no usa la misma apertura que el scoreboard). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
 - `ALCANCE.md`: 59 ideas libres (58 al empezar el turno; A4, B10 y F7 pasaron a fichas). Ideas nuevas de este turno: C10 compañeros por lado, E10 operadores que mejoran y empeoran, G6 partidas incompletas en Datos, H4 copiar el resumen de una partida como texto.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
@@ -32,17 +32,17 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 50-partidas-cerradas-y-holgadas | en curso (aprobado en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 50-partidas-cerradas-y-holgadas | en curso (entregado en su rama, PR #38) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 51-matriz-de-duelos-de-la-partida | en curso (con hallazgos en su rama) | funcionalidad | revision-de-rondas | 3 | frontend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: release (regla 1) para la 50 `aprobado`; despues dev para la 51 `con hallazgos` (regla 4). Con el papel vacio (0 `propuesto`, 0 `disenado`), el PO cuando la cola se vacie de etapas pendientes.
+Proximo turno por estado: dev para la 51 `con hallazgos` (regla 4); la 50 espera el merge de PR #38 (el Release lo reintenta por reloj, regla 5). Con el papel vacio (0 `propuesto`, 0 `disenado`), el PO cuando la cola se vacie de etapas pendientes.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-15 16:45 | Entrega y mergea 48 (bug, `aprobado` -> `entregado` -> main, PR #37, main 2a6c86b). Puerta completa: dev 1311Z, revisor 1411Z y qa 1511Z en sesiones distintas, sin pedidos del humano ni preguntas abiertas, diff fuera de lo que mergea el humano, PR abierto, `check.sh` en `Todo en verde.` sobre 70f8958 con main 591a300 fusionado (632 backend con 4 saltados, 86 vitest, build, 37 e2e). Ficha recortada con `## PR`; espejo quitado de backlog. Borrado de la rama cortado por el proxy. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-16 16:40 | Entrega 50 (funcionalidad, `aprobado` -> `entregado`): `turnos:` con dev, revisor y qa de sesiones distintas, main 2a6c86b ya fusionado, `check.sh` en `Todo en verde.` dos veces (644 backend, 90 vitest, build, 38 e2e; la segunda sobre 0f735c1, el commit de la ficha recortada). `## PR` escrito, ficha recortada, PR #38 abierto. El merge (`merge_pull_request`) fallo una vez por un sha corto y el reintento lo nego el clasificador de permisos de la sesion: queda `entregado (PR pendiente de merge)`. Merge de prueba 50x51 limpio. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-16 04:15 | Corrige los hallazgos de 50 y 51 (`con hallazgos` -> `implementado` las dos). 50: test nuevo `test_una_partida_solo_de_defensa_sigue_contando_con_filtro_de_ataque` (partida 4-1 solo con rondas de defensa); con la mutacion del revisor (`filtros = dict(filters)`) cae. 51: `tuEquipoEn` usa `ronda.teams[].mine` cuando la ronda no trae tu fila, `miEquipo` como ultimo recurso; test del revisor agregado, cae sin el arreglo. `check.sh` en `Todo en verde.` en las dos con main 2a6c86b incluido (50: 644 backend, 90 vitest, build, 38 e2e; 51: 632 backend, 94 vitest, build, 38 e2e). |
 | revisor | 2026-10-16 08:10 | Segunda pasada sobre 50 y 51, ramas al dia con main 2a6c86b, `check.sh` en `Todo en verde.` en las dos (50: 644 backend, 90 vitest, build, 38 e2e; 51: 632 backend, 94 vitest, build, 38 e2e). 50: sin hallazgos, el test nuevo del filtro de lado cubre el criterio 4 (`implementado` -> `revisado`). 51: "Solo aperturas" toma la primera baja entre rivales con autor y no la primera `Kill`/`Death` de la ronda que usa la columna "Aperturas" del scoreboard de la misma pagina; reproducido con un `Death` suelto antes de una baja tuya (`implementado` -> `con hallazgos`, arreglo y tests sugeridos en la ficha). Sin pushes de codigo. |
 | qa | 2026-10-16 12:25 | Prueba 50 (funcionalidad, `revisado` -> `aprobado`). `check.sh` en `Todo en verde.` (644 backend con 4 saltados, 90 vitest, build, 38 e2e). Base sembrada con 9 partidas sinteticas (4-3, 4-2, 2-4, 4-0 solo defensa, 5-4 y 5-3 con prorroga, Y9S3, empate, partida de un jugador): `/api/trends/` da known 7 excl 2 y los tramos esperados; `side` no cambia nada; mapa, fechas, operador, sesion, `until=foo`, `page=-1` dan 200; base vacia 200 con tramos en 0. UI en Chromium con nota de excluidas, consola limpia. Chunk inicial 186.78 kB sin cambio. 5 mutaciones, todas caen. Sin pushes de codigo. |
@@ -104,6 +104,7 @@ Proximo turno por estado: release (regla 1) para la 50 `aprobado`; despues dev p
 - Verificar en el PC: la 34 ya esta en main (PR #20). Desde `backend/`: `..\.venv\Scripts\python.exe manage.py recompute --dry-run`, `manage.py backup` y `manage.py recompute` para corregir las trade kills contadas doble en partidas ya importadas (detalle en `## Verificar en el PC` de la ficha 34).
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
 - Rutina: 2 disparos sin rastro en 48 h (10-15T21:01Z 10-16T09:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- **PR #38 (ficha 50, partidas cerradas y holgadas) listo para mergear.** Paso la puerta entera (dev, revisor y qa en sesiones distintas, sin rutas del humano, main fusionado, `check.sh` verde sobre 0f735c1), pero el clasificador de permisos de la sesion cloud nego `merge_pull_request` (`Merge Without Review`). Despues entro un commit solo de la ficha (estado). Mergealo desde la web (metodo merge) o, si queres que el equipo siga mergeando solo, revisa los permisos de la Routine; el proximo Release lo reintenta.
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
