@@ -6,20 +6,28 @@
 
 const clave = (autor, victima) => `${autor}\u0000${victima}`
 
-/** Bajas entre rivales de una ronda, en orden del feed. */
-function bajasEntreRivales(ronda) {
+/**
+ * Bajas entre rivales de una ronda, en orden del feed. Con `soloAperturas`,
+ * la apertura es el primer `Kill` o `Death` de la ronda, la misma regla que la
+ * columna Aperturas del scoreboard (`opening_death` del parser): si esa baja
+ * no es entre rivales (teamkill, `Death` suelto, nick sin equipo) la ronda no
+ * aporta nada, para que la matriz no muestre una apertura que la misma
+ * pantalla no cuenta.
+ */
+function bajasEntreRivales(ronda, soloAperturas) {
   // Los eventos traen solo nombres; el equipo sale de los jugadores de la
   // misma ronda, donde un nick no puede estar en los dos lados.
   const equipo = new Map((ronda.players || []).map((p) => [p.username, p.team_index]))
-  return (ronda.events || [])
-    .filter((e) => e.kind === 'Kill')
+  const muertes = (ronda.events || [])
+    .filter((e) => e.kind === 'Kill' || e.kind === 'Death')
     .slice()
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .filter((e) => {
-      if (!e.actor || !e.target) return false
-      if (!equipo.has(e.actor) || !equipo.has(e.target)) return false
-      return equipo.get(e.actor) !== equipo.get(e.target)
-    })
+  const valida = (e) => {
+    if (e.kind !== 'Kill' || !e.actor || !e.target) return false
+    if (!equipo.has(e.actor) || !equipo.has(e.target)) return false
+    return equipo.get(e.actor) !== equipo.get(e.target)
+  }
+  return (soloAperturas ? muertes.slice(0, 1) : muertes).filter(valida)
 }
 
 /**
@@ -36,8 +44,8 @@ function tuEquipoEn(ronda, miEquipo) {
 
 /**
  * `{ mios, rivales, aFavor, enContra, total }` para `rondas`. Con
- * `soloAperturas` cuenta solo la primera baja entre rivales de cada ronda: un
- * teamkill no abre la ronda. `miEquipo` es tu `team_index` cuando una ronda no
+ * `soloAperturas` cuenta solo la apertura de cada ronda (ver
+ * `bajasEntreRivales`). `miEquipo` es tu `team_index` cuando una ronda no
  * trae tu fila.
  *
  * El lado de cada baja se decide ronda por ronda: el mismo nick puede caer en
@@ -56,9 +64,8 @@ export function matrizDeDuelos(rondas, { soloAperturas = false, miEquipo } = {})
     for (const p of ronda.players || []) {
       suma(p.team_index === tuyo ? mios : rivales, p.username, 0)
     }
-    const bajas = bajasEntreRivales(ronda)
     const equipo = new Map((ronda.players || []).map((p) => [p.username, p.team_index]))
-    for (const e of soloAperturas ? bajas.slice(0, 1) : bajas) {
+    for (const e of bajasEntreRivales(ronda, soloAperturas)) {
       const tuya = equipo.get(e.actor) === tuyo
       const celdas = tuya ? aFavor : enContra
       const c = (celdas[clave(e.actor, e.target)] ??= { bajas: 0, headshots: 0 })

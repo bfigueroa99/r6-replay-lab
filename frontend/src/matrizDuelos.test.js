@@ -43,7 +43,7 @@ describe('matrizDeDuelos', () => {
     expect(m.enContra).toEqual({})
   })
 
-  it('solo aperturas cuenta la primera baja entre rivales de cada ronda', () => {
+  it('solo aperturas cuenta la primera muerte de cada ronda, en orden del feed', () => {
     const rondas = [
       { players: JUGADORES, events: [baja(2, 'rival1', 'yo'), baja(1, 'yo', 'rival2')] },
       { players: JUGADORES, events: [baja(1, 'rival1', 'compa'), baja(2, 'yo', 'rival1')] },
@@ -55,11 +55,25 @@ describe('matrizDeDuelos', () => {
     expect(celda(m, 'enContra', 'rival1', 'yo').bajas).toBe(0)
   })
 
-  it('un teamkill no cuenta como apertura', () => {
+  it('una ronda que abre con un teamkill no suma aperturas', () => {
     const rondas = [{ players: JUGADORES, events: [baja(1, 'rival1', 'rival2'), baja(2, 'compa', 'rival1')] }]
     const m = matrizDeDuelos(rondas, { soloAperturas: true, miEquipo: 0 })
-    expect(m.total).toBe(1)
-    expect(celda(m, 'aFavor', 'compa', 'rival1').bajas).toBe(1)
+    expect(m.total).toBe(0)
+    expect(celda(m, 'aFavor', 'compa', 'rival1').bajas).toBe(0)
+  })
+
+  it('una ronda que abre con una muerte sin asesino no suma aperturas', () => {
+    const rondas = [
+      {
+        players: JUGADORES,
+        events: [{ kind: 'Death', order: 1, target: 'rival1' }, baja(2, 'yo', 'rival2')],
+      },
+    ]
+    const m = matrizDeDuelos(rondas, { soloAperturas: true, miEquipo: 0 })
+    expect(m.total).toBe(0)
+    expect(celda(m, 'aFavor', 'yo', 'rival2').bajas).toBe(0)
+    // Con todas las bajas la del feed sigue contando.
+    expect(celda(matrizDeDuelos(rondas, { miEquipo: 0 }), 'aFavor', 'yo', 'rival2').bajas).toBe(1)
   })
 
   it('una partida sin eventos devuelve total cero', () => {
