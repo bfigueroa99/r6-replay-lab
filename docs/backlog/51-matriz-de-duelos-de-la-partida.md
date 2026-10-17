@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: implementado
-candado: revisor 2026-10-17T00:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F7 ([CS Demo Manager v3.5.0](https://cs-demo-manager.com/changelog), "players duels matrix"; selector de aperturas de [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: frontend/src/matrizDuelos.js, frontend/src/matrizDuelos.test.js, frontend/src/components/MatrizDuelos.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z, revisor 20261017T0004Z
 
 ## PR
 
@@ -286,3 +286,40 @@ tests).
   ronda, en orden del feed`).
 
 `check.sh`: `Todo en verde.` (632 tests backend, 95 vitest, build ok, 38 e2e).
+
+## Revision 2026-10-17 sobre 9e02069
+
+(Revisor 20261017T0004Z, tercera pasada. Subagente ciego con `revision.md` y
+lectura propia; cada hallazgo confirmado contra el codigo. Rama al dia con
+`origin/main` 2a6c86b; `check.sh`: `Todo en verde.`, 632 tests backend, 95
+vitest, build ok, 38 e2e.)
+
+Hallazgo de la segunda revision (apertura = primer `Kill` o `Death` de la
+ronda): corregido en 51f4d53 y verificado contra `pydissect/stats.py`
+`opening_death` y la seccion Duelos de apertura de `docs/metricas.md`.
+
+- [test] frontend/src/matrizDuelos.test.js:66 (corregido en esta revision)
+  Que pasa: el fixture de "muerte sin asesino" ponia a la victima en
+  `target`; los `Death` reales la traen en `actor` (`pydissect/events.py:266`
+  `{"type": DEATH, "username": target}` -> `actor_name`, `ingest.py:279`).
+  El test pasaba igual porque todo `Death` se descarta por `kind`.
+  Arreglo: fixture `{ kind: 'Death', order: 1, actor: 'rival1', target: '' }`;
+  sigue verde.
+- [test] frontend/e2e/humo.spec.js:237-238 (menor, no bloquea)
+  Que pasa: despues del clic en "Solo aperturas" el e2e solo comprueba que
+  haya una celda con dato, lo que tambien pasa si el boton no filtrara.
+  Arreglo sugerido: sumar el texto numerico de `td.con-dato` antes y despues
+  del clic y afirmar que baja (seed_demo tiene rondas de 2 y 3 bajas).
+
+Ficha contra el diff: los 5 criterios con test o e2e con nombre; el diff toca
+solo `archivos:`; fila en `docs/metricas.md`; UI con tildes, identificadores
+sin; sin `console.log`; sin dependencias ni backend.
+
+Veredicto: aprobar. Tercera pasada con solo hallazgos menores: `revisado`, y
+el menor del e2e queda en `## Para el humano`.
+
+## Para el humano
+
+- (Revisor 20261017T0004Z) El e2e de la matriz no distingue "Todas" de "Solo
+  aperturas" (ver revision del 2026-10-17); un test mas fuerte cabe en una
+  ficha `tests` si se quiere. No bloquea la entrega.

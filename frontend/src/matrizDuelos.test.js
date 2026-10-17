@@ -66,7 +66,7 @@ describe('matrizDeDuelos', () => {
     const rondas = [
       {
         players: JUGADORES,
-        events: [{ kind: 'Death', order: 1, target: 'rival1' }, baja(2, 'yo', 'rival2')],
+        events: [{ kind: 'Death', order: 1, actor: 'rival1', target: '' }, baja(2, 'yo', 'rival2')],
       },
     ]
     const m = matrizDeDuelos(rondas, { soloAperturas: true, miEquipo: 0 })
