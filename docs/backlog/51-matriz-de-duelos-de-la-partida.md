@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
 estado: aprobado
-candado: -
+candado: release 2026-10-17T08:04Z
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
