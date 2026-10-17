@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-17 12:30 UTC por po (sesion 20261017T1204Z; motivo: papel vacio; reloj: revisor, franja 4)
+actualizado: 2026-10-17 16:40 UTC por arquitecto (sesion 20261017T1603Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: dev, franja 5)
 playbook: origin/main@9e3d660
 rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-15T21:01Z 10-16T09:01Z 10-16T21:01Z 10-17T09:01Z) | 15 de 56 en 7 dias
 pausa: no
@@ -10,7 +10,7 @@ pausa: no
 Vacia: no hay ramas de trabajo abiertas (la 51 se mergeo en PR #39, main 9e3d660).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -19,21 +19,21 @@ Nada que mergear: no quedan ramas de trabajo abiertas, no hay pares que probar.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:13 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida) otros:5.
-- Epicas en curso: lado-y-marcador: B1-B7 y B10 en main; B9+B12 en papel (ficha 52); B8, B11 y B13 como idea. revision-de-rondas: F7 en main (51); F10 en papel (ficha 53). escuadra: C4 (46) en main; C5 en papel (ficha 54); C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B7 y B10 en main; B9+B12 en papel (ficha 52, disenada); B8, B11 y B13 como idea. revision-de-rondas: F7 en main (51); F10 disenada (ficha 53). escuadra: C4 (46) en main; C5 disenada (ficha 54); C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 60 ideas libres (59 al empezar el turno; B9, B12, F10 y C5 pasaron a fichas). Ideas nuevas de este turno: B13 racha de rondas dentro de la partida, C11 quien abre en tu equipo, E11 que mapas te tocan, G7 partidas con resultado dudoso en Datos (el aviso de la ficha 50), H5 CSV de la matriz de duelos.
+- `ALCANCE.md`: 60 ideas libres (59 al empezar el turno; B9, B12, F10 y C5 pasaron a fichas). Ideas nuevas de este turno: ninguna (turno de Arquitecto con 3 `propuesto` que disenar).
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 52-rondas-cortas-y-largas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 53-multikills-por-tamano | propuesto | funcionalidad | revision-de-rondas | 3 | fullstack | - |
-| 54-solo-duo-o-stack | propuesto | funcionalidad | escuadra | 3 | fullstack | - |
+| 52-rondas-cortas-y-largas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 53-multikills-por-tamano | disenado | funcionalidad | revision-de-rondas | 3 | fullstack | - |
+| 54-solo-duo-o-stack | disenado | funcionalidad | escuadra | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: arquitecto (3 `propuesto`, 0 `disenado`; regla 9).
+Proximo turno por estado: dev (3 `disenado`, cola vacia; regla 8). Orden sugerido para el Dev: 53, 54, 52 (misma prioridad; ninguna pisa lineas de otra, solo comparten `aggregates.py`, `views.py`, `humo.spec.js` y `metricas.md` en funciones distintas).
 
 ## Ultimo turno de cada rol
 
@@ -43,7 +43,7 @@ Proximo turno por estado: arquitecto (3 `propuesto`, 0 `disenado`; regla 9).
 | dev | 2026-10-16 20:18 | Corrige el hallazgo de la segunda revision de 51 (`con hallazgos` -> `implementado`): "Solo aperturas" toma el primer `Kill` o `Death` de la ronda por `order` (la regla de `opening_death` y de la columna Aperturas del scoreboard) y, si no es baja entre rivales, la ronda no suma. Tests: teamkill de apertura y `Death` suelto de apertura no suman (los dos caen con la mutacion); fila de `docs/metricas.md` alineada con Duelos de apertura. Revision ciega previa: aprobar (un nombre de test, corregido). `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e) con main 2a6c86b ya en la rama. |
 | revisor | 2026-10-17 00:40 | Tercera pasada sobre 51, rama al dia con main 2a6c86b, `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e) antes y despues del push. Hallazgo de la segunda revision (apertura = primer `Kill`/`Death`) verificado. Revision ciega: aprobar con dos menores de tests: fixture del `Death` suelto con la victima en `target` en vez de `actor` (corregido en esta revision, test que pasa) y e2e de "Solo aperturas" que no distingue el filtro (a `## Para el humano`). `implementado` -> `revisado`. |
 | qa | 2026-10-17 04:55 | Prueba 51 (funcionalidad, `revisado` -> `aprobado`) sobre f0d410b con main 2a6c86b. `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e). Base sembrada con 4 partidas sinteticas (sin bajas; solo teamkill y `Death` suelto; 3 rondas con apertura `Death`, nick que cambia de lado, ronda sin tu fila y nick sin equipo; sin rondas) en Chromium: celdas, HS y "Solo aperturas" cuadran a mano, texto vacio correcto, 375 px sin scroll horizontal, consola limpia. 3 mutaciones, todas caen. Chunk inicial 186,78 -> 186,82 kB. Fuera de la ficha: una partida sin rondas rompe el detalle (`MatchDetail.jsx:93`, codigo de main). Sin pushes de codigo. |
-| arquitecto | 2026-10-15 18:35 | Disena 50 (`by_margin` en `/api/trends/` desde `Match.my_score/opponent_score`, corte Y9S4, prorroga primero, `side` ignorado, rating sobre la partida entera; `margen.js` + panel en Tendencias + e2e: seed_demo da 29 partidas en "1 ronda") y 51 (matriz de duelos en el navegador: `matrizDuelos.js` + componente `MatrizDuelos.jsx`, insertado entre Rondas y Scoreboard para no chocar con PR #14). Descarta 49: `map_slug` colapsa las versiones de un mapa a proposito (`header.py:227`, `test_pydissect.py:178`), no hay dos filas ni mezcla; separar versiones es decision de producto. `ALCANCE.md` A4 anotada. Sin pushes de codigo. |
+| arquitecto | 2026-10-17 16:40 | Disena 52 (`by_round_length` en `/api/trends/`: 4 tramos de 45 s por lado desde `clock_start - clock_end`, reloj desconocido aparte, `Posible plant` solo con conteo; `summary` con duracion media ganada/perdida por lado; seed_demo: todo en "135 s o más"), 53 (dict `MULTIKILLS` k2/k3/k4/aces en `AGGREGATES`, aplicado en un `annotate` previo en `_match_scoreboard` por un `misuse of aggregate` de SQLite; columna "Multikills" `2×2K · 1×3K`, Jugador y Resumen; `kills` incluye teamkills y se documenta) y 54 (`by_stack` en `/api/teammates/`: habitual = 5 partidas en todo el historial, grupo de la partida sin filtros, 5 consultas fijas; seed_demo: 29 partidas en stack). Las tres probadas contra seed_demo en una base temporal. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
 | po | 2026-10-17 12:30 | Papel vacio: propone 52 (B9+B12: rondas cortas y largas por lado en Tendencias, posible plant y reloj desconocido aparte), 53 (F10: 2K/3K/4K/ace en el scoreboard de la partida, Jugador y Resumen; hoy ninguna pantalla muestra multikills) y 54 (C5: solo, duo, trio o stack en Compañeros, habitual = 5 partidas en todo el historial). Reconcilia `ALCANCE.md` con main 9e3d660 (B10 y F7 en main). Ideas nuevas B13, C11, E11, G7 y H5: 60 libres (59 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
 
@@ -106,6 +106,9 @@ Proximo turno por estado: arquitecto (3 `propuesto`, 0 `disenado`; regla 9).
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`. PO 2026-10-17: queda como idea G7 de `ALCANCE.md` (marcar en Datos, sin cambiar `won`); cambiar `won` mueve todos los winrates y es P10, decision tuya.
 - Ficha 51 (ya en main, PR #39; aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
 - Ficha 51 (ya en main, PR #39; aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere. PO 2026-10-17: no entra; con `.rec` reales no pasa, solo con datos armados a mano.
+- Ficha 53 (Arquitecto 2026-10-17, P10, no bloquea): `RoundPlayer.kills` incluye teamkills (`pydissect/stats.py:81-85`), asi que K/D, KPR, rating y los multikills nuevos los cuentan. El diseno lo deja asi y lo documenta. Si preferis excluirlos de `kills`, cambia numeros que ya se muestran: decilo en `## Para el equipo` y va a ficha propia.
+- Ficha 54 (Arquitecto 2026-10-17, aviso, no bloquea): bug latente en main: un empate queda con `won=None` (`ingest.py:169`) y `match_result` mira `won is None` antes que el empate (`models.py:13-20`), asi que un empate se muestra como "incompleta" en toda la app. Candidato a ficha `bug` del PO.
+- Ficha 52 (Arquitecto 2026-10-17, aviso, no bloquea): un plant seguido de barrida no se marca `possible_plant` (`metrics.py:236`) y entra a un tramo de duracion medido hasta el plant; no se puede separar con lo que trae el `.rec`. Los tramos de 45 s no se calibraron con la base real (en seed_demo todo cae en "135 s o más").
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
