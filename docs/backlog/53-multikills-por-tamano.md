@@ -1,7 +1,7 @@
 # 53. Multikills por tamaño: 2K, 3K, 4K y ace
 
-estado: en curso 2026-10-17
-candado: dev 2026-10-17T20:19Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/53-multikills-por-tamano
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -276,6 +276,47 @@ solo `_match_scoreboard` (`:515`): sin solape de lineas con ninguna de las dos. 
 cruzado: si la 52 o la 54 escriben un test que compara el set exacto de claves de una
 fila de `totals`, el que mergee segundo tiene que sumar `k2, k3, k4, aces`. Las dos
 fichas que usen `totals`/`group_by` reciben las claves nuevas sin hacer nada.
+
+## Implementacion
+
+(Dev 20261017T2004Z, sobre main 9e3d660)
+
+Quedo el diseno completo: `MULTIKILLS` en `aggregates.py` (dentro de `AGGREGATES` en el
+lugar de `multikill_rounds`) y `derive` completa las cinco claves en entero;
+`_match_scoreboard` hace `.annotate(**agg.MULTIKILLS)` antes de su annotate con el alias
+`kills`; `multikills.js` con su test; columna "Multikills" en el scoreboard (ordena por
+`multikill_rounds`, CSV con el texto), stat en "Sus numeros" de Jugador y `Stat3` en el
+Resumen; tres e2e; filas **Multikill (2K, 3K, 4K, ace)** y **Bajas / muertes** en
+`docs/metricas.md`.
+
+Desvios del diseno:
+
+- El e2e del scoreboard prueba el orden con dos clics (flecha y BearF99 primero en
+  desc, ultimo en asc): BearF99 ya encabezaba el orden inicial por bajas, asi que un
+  solo clic no probaba nada (hallazgo de la revision ciega).
+- El comentario y `metricas.md` ya no dicen "con revives": en Siege un revive no suma
+  baja. Pasar de 5 sale de un teamkill o de un modo con respawn; con un teamkill entre
+  las 5 la ronda sale ACE sin haber matado a los 5 rivales. Va documentado (ver Para el
+  humano del Arquitecto: `kills` incluye teamkills).
+- `test_el_scoreboard_cuenta_rondas_por_tamano_y_seis_es_ace` tambien fija que el alias
+  `kills` del scoreboard sigue siendo la suma.
+
+Tests por criterio: 1 `test_el_scoreboard_cuenta_rondas_por_tamano_y_seis_es_ace`,
+`test_el_scoreboard_no_mezcla_jugadores`, `test_los_cuatro_tamanos_suman_multikill_rounds`;
+2 `test_detalle_de_partida_trae_multikills_en_scoreboard_y_my_totals`, e2e `el scoreboard
+de la partida muestra multikills`, `multikills.test.js`; 3 `test_totals_trae_los_cuatro_conteos`,
+`test_overview_trae_los_conteos_en_overall_y_por_lado`,
+`test_el_perfil_trae_los_conteos_del_jugador_en_theirs`, `test_el_filtro_de_lado_recorta_los_conteos`,
+`test_group_by_mapa_trae_los_conteos`, `test_derive_sin_las_claves_las_deja_en_cero`, e2e
+`el Resumen muestra tus multikills` y la linea `14×2K` en el e2e del perfil; 4
+`test_un_teamkill_suma_a_las_bajas_del_autor`; 5 `test_multikill_pct_no_cambia` y la fila
+de `metricas.md`; 6 e2e del scoreboard.
+
+Revision ciega previa (subagente con `revision.md`): aprobar, con tres hallazgos menores
+corregidos (orden del e2e, tildes en comentarios y nombres de test de `multikills*.js`,
+"con revives").
+
+`check.sh`: Todo en verde (656 tests backend, 104 frontend, build ok, 41 e2e).
 
 ## Para el humano
 
