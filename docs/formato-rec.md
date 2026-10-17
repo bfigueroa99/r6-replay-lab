@@ -138,7 +138,8 @@ cuando el modo es Bomb, el perdedor no fue barrido y el reloj se corto sobre los
 5 segundos: la razon es que al plantar, el juego reemplaza el reloj principal por
 el del defuser y deja de emitir el paquete de tiempo, asi que un corte muy
 arriba con datos despues es señal de plant. Es una inferencia y se muestra como
-tal; no entra en ninguna metrica.
+tal; no entra en ninguna metrica, salvo para sacar la ronda de los tramos de
+duracion de Tendencias, donde se cuenta aparte sin metricas.
 
 **Por donde seguir**: comparar dos rondas del mismo mapa, una con plant y otra
 sin, y diffear los patrones de 5-6 bytes que aparecen solo en la primera. Lo

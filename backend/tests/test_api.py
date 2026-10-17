@@ -119,6 +119,15 @@ class PopulatedApiTests(TestCase):
         filas = resp.json()["by_margin"]["rows"]
         self.assertEqual([f["margin"] for f in filas], ["overtime", "1", "2", "3+"])
 
+    def test_trends_trae_by_round_length(self):
+        resp = self.client.get("/api/trends/")
+        self.assertEqual(resp.status_code, 200)
+        datos = resp.json()["by_round_length"]
+        self.assertEqual([f["length"] for f in datos["rows"]],
+                         ["0-45", "45-90", "90-135", "135+", "plant"])
+        self.assertEqual(set(datos["summary"]), {"Attack", "Defense", "total"})
+        self.assertIn("rounds_unknown_clock", datos)
+
     def test_coach_devuelve_estructura_estable(self):
         data = self.client.get("/api/coach/").json()
         self.assertIn("insights", data)
