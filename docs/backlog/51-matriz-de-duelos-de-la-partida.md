@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: aprobado
-candado: release 2026-10-17T08:04Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,13 +9,63 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F7 ([CS Demo Manager v3.5.0](https://cs-demo-manager.com/changelog), "players duels matrix"; selector de aperturas de [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: frontend/src/matrizDuelos.js, frontend/src/matrizDuelos.test.js, frontend/src/components/MatrizDuelos.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z, revisor 20261017T0004Z, qa 20261017T0404Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z, revisor 20261017T0004Z, qa 20261017T0404Z, release 20261017T0804Z
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][frontend] Matriz de duelos de la partida`
+
+### Que cambia
+
+El detalle de una partida suma el panel "Matriz de duelos": dos tablas de
+quién mató a quién (tu equipo contra el rival y al revés), con headshots, y
+un selector "Todas / Solo aperturas". De un vistazo se ve qué rival te pasó
+por encima esa partida y a quién le ganaste todos los duelos. Todo se arma en
+el navegador con lo que ya trae `/api/matches/<id>/`: sin backend nuevo.
+
+### Por que esto y no otra cosa
+
+Ficha 51, epica `revision-de-rondas` (ALCANCE.md F7, "players duels matrix"
+de CS Demo Manager). Duelos agrega entre partidas; esto es una sola. El lado
+de cada baja se decide ronda por ronda (tu fila, si no `teams[].mine`, si no
+el equipo de la partida) porque el parser puede repartir un nick en otro
+equipo entre rondas. "Solo aperturas" usa la misma apertura que la columna
+Aperturas del scoreboard (primer `Kill` o `Death` de la ronda), para que los
+dos números de la misma pantalla cuadren.
+
+### Como se probo
+
+- `./scripts/check.sh`: `Todo en verde.` (644 tests backend, 99 vitest, build ok, 39 e2e) sobre la rama con `origin/main` 06e3351 fusionado.
+- `src/matrizDuelos.test.js` (9): matriz de dos rondas con HS; teamkills y bajas sin autor fuera; solo aperturas en orden del feed; ronda que abre con teamkill o con muerte sin asesino no suma; sin eventos da total 0; nick que cambia de equipo; ronda sin tu fila usa `teams[].mine` o el equipo de la partida. E2e `el detalle de una partida muestra la matriz de duelos`.
+- QA con base sembrada (partida sin bajas, solo teamkill, 3 rondas con cambio de equipo y ronda sin tu fila): celdas contadas a mano, texto vacío correcto, 375 px sin scroll horizontal, consola limpia; mutaciones en `matrizDuelos.js` hacen caer los tests que corresponden.
+
+### Riesgos y lo que no entra
+
+Sin migración, `recompute`, parser ni Electron. Chunk inicial +0,02 %; el de
+MatchDetail (lazy) pasa de 6,45 a 9,24 kB. Fuera: matriz entre partidas (es
+Duelos), endpoint nuevo, flechas de ronda del PR #14.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+Abrir `http://localhost:8000/partidas`, entrar a cualquier partida: entre
+"Rondas" y "Scoreboard de la partida" aparece "Matriz de duelos" con las dos
+tablas; "Solo aperturas" deja menos bajas.
+
+### Para el humano
+
+Nada que decidir. Avisos: el e2e no distingue "Todas" de "Solo aperturas"
+(cabe en una ficha `tests`); una partida sin rondas (solo con datos armados a
+mano) rompe el detalle en `MatchDetail.jsx:93`, código de main.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
+
 
 En el detalle de una partida, una tabla 5x5 de quien mato a quien (filas tu
 equipo, columnas el rival, y al reves), con los headshots: de un vistazo se
@@ -47,324 +97,36 @@ backend: `/api/matches/<id>/` ya trae el feed de cada ronda.
 
 ## Diseno
 
-(Arquitecto 20261015T1811Z, sobre main 2a6c86b)
-
-Todo en el navegador: `/api/matches/<id>/` ya trae por ronda `players` (`username`,
-`team_index`, `is_me`) y `events` (`kind`, `actor`, `target`, `headshot`, `order`,
-`elapsed`), ver `views.py:match_detail`. Los eventos solo traen nombres: el equipo de
-cada uno se saca de los `players` **de la misma ronda** (un nick repetido entre equipos
-es imposible dentro de una ronda; entre rondas no importa).
-
-**Archivos**
-
-- `frontend/src/matrizDuelos.js` (nuevo; no `duelos.js` para no confundir con
-  `pages/Duelos.jsx`). Exporta `matrizDeDuelos(rondas, { soloAperturas = false,
-  miEquipo })`:
-  1. Por ronda, `equipo = Map(username -> team_index)` desde `round.players`.
-  2. Bajas = `events` con `kind === 'Kill'`, ordenados por `order`. Con `soloAperturas`
-     solo la primera de ellas que pase el filtro del paso 3 (la apertura es la primera
-     baja valida entre rivales; un teamkill no abre la ronda).
-  3. Se descartan: sin `actor` o sin `target`, autor o victima fuera de `equipo` (sin
-     equipo conocido), y mismo `team_index` (teamkill).
-  4. Acumula en `celdas[`${autor}|${victima}`] = { bajas, headshots }`.
-  5. Devuelve `{ mios: [...nombres de miEquipo], rivales: [...], celdas, total }`.
-     Orden de filas/columnas: por bajas totales desc y nick asc como desempate, para que
-     sea estable. `miEquipo` lo pasa la pagina (la funcion `myTeam` que ya existe en
-     `MatchDetail.jsx` se aplica a la primera ronda; si no hay, `match.my_team_index`).
-  Tambien `celda(matriz, autor, victima)` -> `{ bajas: 0, headshots: 0 }` si no existe.
-- `frontend/src/matrizDuelos.test.js` (vitest). Tests:
-  - `arma la matriz de una partida de dos rondas con bajas y headshots`
-  - `ignora teamkills y bajas sin autor`
-  - `solo aperturas cuenta la primera baja entre rivales de cada ronda`
-  - `un teamkill no cuenta como apertura`
-  - `una partida sin eventos devuelve total cero`
-- `frontend/src/components/MatrizDuelos.jsx` (nuevo, componente aparte para que
-  `MatchDetail.jsx` cambie lo minimo y no choque con PR #14). Props `rounds`,
-  `miEquipo`. Estado local `soloAperturas`; dos botones "Todas" / "Solo aperturas"
-  dentro de un `div.round-tabs` (`styles.css:344`, el mismo contenedor de las pestañas de ronda), con el mismo marcado de boton activo que usan esas pestañas en `MatchDetail.jsx`. Dos tablas `<table className="matriz">`: "Tu equipo
-  contra el rival" (filas `mios`, columnas `rivales`) y "El rival contra tu equipo"
-  (al reves). Celda: `bajas` y, si hay, `(n HS)` en texto chico; 0 se muestra como `·`
-  para que se lean las celdas con dato. `title` en la celda: "X mató a Y n veces".
-  `total === 0` -> `<p className="note">Esta partida no registró bajas entre equipos.</p>`.
-  Textos de UI con tildes.
-- `frontend/src/pages/MatchDetail.jsx`: un `import` y un `<Panel title="Matriz de duelos"
-  hint="Quién mató a quién en esta partida. Filas: el que mata.">` con
-  `<MatrizDuelos rounds={match.rounds} miEquipo={...} />`, **entre** el panel "Rondas" y
-  el "Scoreboard de la partida" (linea ~157 de main). Ahi PR #14 no tiene hunk (los
-  suyos estan en 145-152 y 164-170): minimiza el conflicto. No tocar `Timeline` ni las
-  flechas de ronda.
-- `frontend/src/styles.css`: regla `.matriz` minima (celdas centradas, `tabular-nums`,
-  cabecera de columna que no rompa en mobile: `overflow-x: auto` en un `div` contenedor).
-  Al final del archivo, para no chocar con los 53 lineas que PR #14 agrega.
-- `frontend/e2e/humo.spec.js`: `test('el detalle de una partida muestra la matriz de
-  duelos')`: abre `/partidas/<id>` de la primera partida de `/api/matches/`, ve el panel
-  "Matriz de duelos" con al menos una celda con numero, clic en "Solo aperturas", la
-  tabla sigue visible, consola limpia. `seed_demo` crea bajas tuyas y contra ti con
-  `actor_name`/`target_name` de jugadores con `team_index` distinto
-  (`seed_demo.py:273-289`), asi que la matriz no sale vacia.
-
-Sin backend, sin metrica nueva: los numeros son conteos crudos de bajas del feed; igual
-una fila en `docs/metricas.md`, seccion `## Duelos`: **Matriz de duelos (partida)** =
-bajas del feed entre jugadores de equipos distintos en esa partida; solo aperturas =
-primera de esas bajas por ronda; teamkills y bajas sin autor no cuentan.
-
-**Orden:** matrizDuelos.js + test -> MatrizDuelos.jsx -> MatchDetail.jsx -> css -> e2e ->
-metricas.md -> `npm run build` -> `check.sh`.
-
-**Que puede romperse:** build (import nuevo); e2e del detalle de partida existente
-(solo agrega un panel, no cambia los que ya cuenta). Si PR #14 se mergea antes, el Dev
-mergea main y resuelve el import de `MatchDetail.jsx` (unica zona compartida).
-
-**Verificacion manual:** `npm run dev`, abrir una partida de `seed_demo`, comparar una
-celda con el timeline de sus rondas contando a mano.
-
-**Archivos ocupados:** ninguna rama de trabajo abierta.
+(Arquitecto 20261015T1811Z) Todo en el navegador: `matrizDuelos.js`
+(`matrizDeDuelos(rondas, { soloAperturas, miEquipo })` y `celda`), componente
+`MatrizDuelos.jsx`, un panel en `MatchDetail.jsx` entre "Rondas" y
+"Scoreboard", `.matriz` al final de `styles.css`, e2e y fila en
+`docs/metricas.md` (## Duelos). Detalle completo en `git log` de esta ficha.
 
 ## Implementacion
 
-(Dev 20261015T2004Z)
+(Dev 20261015T2004Z, correcciones 20261016T0404Z y 20261016T2004Z) Quedo todo
+el diseno. Desvio: el lado de cada baja se decide ronda por ronda y la matriz
+guarda `aFavor` y `enContra` (un nick puede saltar de equipo entre rondas).
 
-Quedo todo el diseno, todo en el navegador (sin backend):
+## Revision
 
-- `frontend/src/matrizDuelos.js`: `matrizDeDuelos(rondas, { soloAperturas, miEquipo })`
-  y `celda(matriz, direccion, autor, victima)`.
-- `frontend/src/components/MatrizDuelos.jsx`: botones "Todas / Solo aperturas"
-  en un `div.round-tabs` con `round-tab active` (el marcado de las pestañas de
-  ronda), dos tablas `table.matriz`, `·` para cero, `(n HS)` chico, `title` en
-  cada celda, texto vacio si `total === 0`.
-- `MatchDetail.jsx`: un import y el panel "Matriz de duelos" entre "Rondas" y
-  "Scoreboard de la partida". `miEquipo` = `myTeam(rounds[0])` si da >= 0, si no
-  `match.my_team_index`.
-- `styles.css`: `.matriz` y `.matriz-scroll` al final del archivo.
-- Fila **Matriz de duelos (partida)** en `docs/metricas.md`, seccion Duelos.
+(Revisor 20261016T0004Z, 20261016T0805Z, 20261017T0004Z) Veredicto final:
+aprobar. Hallazgos corregidos: ronda sin tu fila usaba el equipo de la
+partida en vez de `teams[].mine` (2d555ed); "Solo aperturas" no usaba la misma
+apertura que el scoreboard (51f4d53); fixture de `Death` con la victima en el
+campo equivocado. Menor abierto: el e2e no distingue los dos modos.
 
-**Desvio del diseno** (por la revision ciega previa, hallazgo real): el diseno
-asignaba cada nick a un grupo una sola vez y comparaba con el equipo de
-`rounds[0]`. Si un nick cambia de `team_index` entre rondas (el parser reparte
-equipos por orden de lectura, `pydissect/events.py`), una baja se contaba en
-`total` y no aparecia en ninguna tabla. Ahora el lado de cada baja se decide
-ronda por ronda con tu `team_index` de esa ronda (tu fila; si no esta, el
-`miEquipo` de la partida), y la matriz guarda dos direcciones: `aFavor` y
-`enContra`. Por eso `celda` recibe la direccion; un nick puede aparecer en las
-dos tablas si jugo en los dos lados.
+## QA
 
-Tests (`src/matrizDuelos.test.js`, 7): matriz de dos rondas con HS; teamkills y
-bajas sin autor; solo aperturas; teamkill no abre; sin eventos; nick que cambia
-de equipo entre rondas; ronda sin tu fila usa el equipo de la partida. E2e:
-`el detalle de una partida muestra la matriz de duelos`.
-
-Criterios -> tests: 1 `arma la matriz de una partida de dos rondas con bajas y
-headshots`; 2 `ignora teamkills y bajas sin autor`; 3 `solo aperturas cuenta la
-primera baja entre rivales de cada ronda` + `un teamkill no cuenta como
-apertura`; 4 `una partida sin eventos devuelve total cero` (el componente
-muestra el texto); 5 e2e.
-
-Revision ciega previa: corregir (el bug de arriba, corregido) y un menor de doc
-(la fila de metricas ahora dice que el teamkill tampoco abre la matriz, a
-diferencia de Duelos de apertura).
-
-
-## Revision 2026-10-16 sobre be7b10f
-
-(Revisor 20261016T0004Z. Subagente ciego con `revision.md` y lectura propia;
-cada hallazgo reproducido por el lider. Rama con `origin/main` 2a6c86b ya
-fusionado; `check.sh`: `Todo en verde.`, 632 tests backend, 93 vitest, build
-ok, 38 e2e.)
-
-- [bug] frontend/src/matrizDuelos.js:26-28
-  Que pasa: si una ronda no trae tu fila (`is_me`), el lado se decide con el
-  `miEquipo` de la partida (ronda 0) y no con el equipo tuyo de esa ronda, que
-  la API ya trae en `round.teams[i].mine` (`ingest.py:219`, `views.py:478`).
-  Como reproducirlo o por que es cierto: `ingest.py:228-231` salta a un
-  jugador sin entrada en `analysis["players"]`, asi que una ronda puede quedar
-  sin tu fila con `teams[0].mine = true` mientras `miEquipo = 1`: las bajas
-  de esa ronda caen invertidas (las de tu equipo en "El rival contra tu
-  equipo"). Contradice la fila nueva de `docs/metricas.md` ("ronda por ronda
-  con tu `team_index` de esa ronda"). Test que hoy falla (agregarlo a
-  `matrizDuelos.test.js`):
-
-  ```js
-  it('una ronda sin tu fila usa el teams[].mine de esa ronda', () => {
-    const rondas = [{
-      teams: [{ mine: true }, { mine: false }],
-      players: [{ username: 'Amigo', team_index: 0 }, { username: 'Rival', team_index: 1 }],
-      events: [{ kind: 'Kill', actor: 'Amigo', target: 'Rival', order: 1 }],
-    }]
-    const m = matrizDeDuelos(rondas, { miEquipo: 1 })
-    expect(celda(m, 'aFavor', 'Amigo', 'Rival').bajas).toBe(1)   // hoy da 0
-  })
-  ```
-
-  Arreglo sugerido: en `tuEquipoEn`, sin tu fila usar
-  `(ronda.teams || []).findIndex((t) => t.mine)` si da `>= 0` (lo mismo que
-  `myTeam` de `MatchDetail.jsx:237`) y dejar `miEquipo` como ultimo recurso.
-  El test existente `ronda sin tu fila usa el equipo de la partida` tiene que
-  seguir pasando (no trae `teams`).
-
-Ficha contra el diff: los 5 criterios tienen test o e2e con nombre; el diff
-toca solo `archivos:`; fila en `docs/metricas.md`; UI con tildes,
-identificadores sin; sin `console.log`. Sin dependencias, sin backend.
-
-Veredicto: corregir antes de entregar (el bug de arriba: numero invertido con
-datos legitimos; el arreglo son dos lineas y un test).
-
-## Correccion de hallazgos
-
-(Dev 20261016T0404Z, sobre 49612fd)
-
-- [bug] `matrizDuelos.js` `tuEquipoEn`: sin tu fila en la ronda, ahora usa
-  `ronda.teams[].mine` de esa ronda (lo mismo que `myTeam` de
-  `MatchDetail.jsx`) y deja `miEquipo` como ultimo recurso. Test nuevo en
-  `matrizDuelos.test.js`: `una ronda sin tu fila usa el teams[].mine de esa
-  ronda` (el del revisor, con los helpers del archivo). Mutacion
-  (`findIndex(() => false)`) -> el test cae; con el arreglo pasa. El test
-  viejo `sin tu fila en la ronda usa el equipo de la partida` sigue verde.
-
-`check.sh`: `Todo en verde.` (632 tests backend, 94 vitest, build ok, 38 e2e).
-
-## Revision 2026-10-16 sobre 5a92ccb
-
-(Revisor 20261016T0805Z, segunda pasada. Subagente ciego con `revision.md` y
-lectura propia; el hallazgo lo reproduje con un test temporal. Rama al dia con
-`origin/main` 2a6c86b; `check.sh`: `Todo en verde.`, 632 tests backend, 94
-vitest, build ok, 38 e2e.)
-
-Hallazgo de la revision anterior (`teams[].mine` en una ronda sin tu fila):
-corregido en 2d555ed y verificado.
-
-- [bug] frontend/src/matrizDuelos.js:61 (`soloAperturas ? bajas.slice(0, 1)`)
-  Que pasa: "Solo aperturas" toma la primera baja **entre rivales con autor**
-  de la ronda, mientras que la columna "Aperturas" del scoreboard de la misma
-  pagina (`MatchDetail.jsx:188`, `opening_kill`/`opening_death` de
-  `pydissect/stats.py:13-24`) y `docs/metricas.md` (## Duelos de apertura)
-  definen la apertura como la primera `Kill` o `Death` de la ronda. En las
-  rondas que abren con un `Death` suelto o con un teamkill, la matriz muestra
-  como apertura una baja que el scoreboard, en la misma pantalla, no cuenta.
-  Tambien contradice el criterio 3 ("solo cuenta la primera baja de cada
-  ronda").
-  Como reproducirlo: ronda con `players` Yo (0, is_me), R1 (1), R2 (1) y
-  `events` `[{kind:'Death', target:'R1', order:1}, {kind:'Kill', actor:'Yo',
-  target:'R2', order:2}]`; `matrizDeDuelos(rondas, {soloAperturas:true,
-  miEquipo:0})` da `celda(m,'aFavor','Yo','R2').bajas === 1`; el scoreboard le
-  da a R1 la apertura perdida y a Yo 0 aperturas ganadas.
-  Arreglo sugerido: con `soloAperturas`, tomar el primer evento `Kill` o
-  `Death` de la ronda por `order` (la misma regla que `opening_death`); si
-  es una baja entre rivales con autor y victima conocidos, cuenta; si no
-  (`Death` suelto, teamkill, nick sin equipo), la ronda no aporta nada a la
-  matriz. Cambiar el test `un teamkill no cuenta como apertura` para que
-  afirme que esa ronda no suma (hoy afirma que suma la baja siguiente),
-  agregar el caso de arriba como test y ajustar la fila **Matriz de duelos
-  (partida)** de `docs/metricas.md` para que diga que "solo aperturas" usa la
-  misma apertura que Duelos de apertura.
-
-Ficha contra el diff: los 5 criterios con test o e2e con nombre (el 3 con el
-desvio de arriba); el diff toca solo `archivos:`; fila en
-`docs/metricas.md`; UI con tildes, identificadores sin; sin `console.log`;
-sin dependencias ni backend.
-
-Veredicto: corregir antes de entregar (el [bug]: dos numeros llamados
-apertura que no cuadran en la misma pagina; el arreglo es una funcion y dos
-tests).
-
-## Correccion de hallazgos (segunda revision)
-
-(Dev 20261016T2004Z, sobre 53d0063)
-
-- [bug] `matrizDuelos.js` `bajasEntreRivales`: con "Solo aperturas" ahora toma
-  el primer `Kill` o `Death` de la ronda por `order` (la regla de
-  `opening_death` del parser y de la columna Aperturas del scoreboard) y solo
-  despues filtra; si esa muerte no es una baja entre rivales (teamkill,
-  `Death` suelto, nick sin equipo) la ronda no suma nada. Tests: el viejo
-  `un teamkill no cuenta como apertura` paso a `una ronda que abre con un
-  teamkill no suma aperturas` (afirma total 0) y entra `una ronda que abre con
-  una muerte sin asesino no suma aperturas` (el repro del revisor). Mutacion
-  (volver a filtrar antes de tomar la primera) -> esos dos tests caen.
-- `docs/metricas.md`, fila **Matriz de duelos (partida)**: "Solo aperturas"
-  usa la misma apertura que **Duelos de apertura**.
-- Revision ciega previa (subagente con `revision.md`): aprobar; un menor de
-  nombre de test, corregido (`solo aperturas cuenta la primera muerte de cada
-  ronda, en orden del feed`).
-
-`check.sh`: `Todo en verde.` (632 tests backend, 95 vitest, build ok, 38 e2e).
-
-## Revision 2026-10-17 sobre 9e02069
-
-(Revisor 20261017T0004Z, tercera pasada. Subagente ciego con `revision.md` y
-lectura propia; cada hallazgo confirmado contra el codigo. Rama al dia con
-`origin/main` 2a6c86b; `check.sh`: `Todo en verde.`, 632 tests backend, 95
-vitest, build ok, 38 e2e.)
-
-Hallazgo de la segunda revision (apertura = primer `Kill` o `Death` de la
-ronda): corregido en 51f4d53 y verificado contra `pydissect/stats.py`
-`opening_death` y la seccion Duelos de apertura de `docs/metricas.md`.
-
-- [test] frontend/src/matrizDuelos.test.js:66 (corregido en esta revision)
-  Que pasa: el fixture de "muerte sin asesino" ponia a la victima en
-  `target`; los `Death` reales la traen en `actor` (`pydissect/events.py:266`
-  `{"type": DEATH, "username": target}` -> `actor_name`, `ingest.py:279`).
-  El test pasaba igual porque todo `Death` se descarta por `kind`.
-  Arreglo: fixture `{ kind: 'Death', order: 1, actor: 'rival1', target: '' }`;
-  sigue verde.
-- [test] frontend/e2e/humo.spec.js:237-238 (menor, no bloquea)
-  Que pasa: despues del clic en "Solo aperturas" el e2e solo comprueba que
-  haya una celda con dato, lo que tambien pasa si el boton no filtrara.
-  Arreglo sugerido: sumar el texto numerico de `td.con-dato` antes y despues
-  del clic y afirmar que baja (seed_demo tiene rondas de 2 y 3 bajas).
-
-Ficha contra el diff: los 5 criterios con test o e2e con nombre; el diff toca
-solo `archivos:`; fila en `docs/metricas.md`; UI con tildes, identificadores
-sin; sin `console.log`; sin dependencias ni backend.
-
-Veredicto: aprobar. Tercera pasada con solo hallazgos menores: `revisado`, y
-el menor del e2e queda en `## Para el humano`.
-
-## QA 2026-10-17 sobre f0d410b
-
-(QA 20261017T0404Z. Rama al dia con `origin/main` 2a6c86b, sin conflicto.)
-
-- `./scripts/check.sh` -> `Todo en verde.`: ruff ok, 632 tests backend, 95
-  vitest, build ok, 38 e2e (incluido `el detalle de una partida muestra la
-  matriz de duelos`).
-- Base sembrada con `factories.py` (script en el scratchpad,
-  `SQLITE_PATH` y `R6_ENV_FILE` temporales), `runserver 8765` y Chromium
-  (playwright) sobre `/partidas/<id>`:
-  - Partida sin eventos de baja -> texto "Esta partida no registró bajas
-    entre equipos." en Todas y en Solo aperturas, sin tabla (criterio 4).
-  - Partida con solo un teamkill y un `Death` suelto -> el mismo texto
-    (criterio 2).
-  - Partida de 3 rondas: ronda 0 abre con `Death` suelto y sigue con Yo->Flip
-    (HS) y Flip->Yo; ronda 1 Flip cambia a tu equipo y mata a R2 (HS), R2->Yo;
-    ronda 2 sin tu fila (`teams[0].mine`), Amigo->R2 y una baja de un nick sin
-    equipo. Todas: a favor Yo->Flip `1 (1 HS)`, Flip->R2 `1 (1 HS)`,
-    Amigo->R2 `1`; en contra Flip->Yo `1`, R2->Yo `1`; la baja del nick sin
-    equipo no aparece. Solo aperturas: Flip->R2 y Amigo->R2, la ronda 0 no
-    suma (abre con `Death`) (criterios 1 y 3). Cuadra contado a mano.
-  - 375 px de ancho: `scrollWidth` 375, sin scroll horizontal de pagina.
-  - Consola limpia en las tres partidas.
-  - `/api/matches/999999/` 404; el endpoint no cambio (diff solo frontend).
-- Mutacion (`src/matrizDuelos.js`, vitest): sin el filtro de mismo equipo ->
-  caen `ignora teamkills y bajas sin autor` y `una ronda que abre con un
-  teamkill no suma aperturas`; sin sumar headshots -> cae `arma la matriz de
-  una partida de dos rondas...`; sin el `slice(0, 1)` de aperturas -> caen
-  los 3 tests de aperturas. Restaurado, 9/9 verdes.
-- Bundle: chunk inicial `index-*.js` 186,78 kB en main -> 186,82 kB en la
-  rama (+0,02 %); `MatchDetail-*.js` (lazy) 6,45 -> 9,24 kB.
-- Sin migracion, parser, Electron ni `.ps1`: no hace falta `## Verificar en
-  el PC`.
-
-Observacion fuera de la ficha: una partida **sin rondas** rompe el detalle
-(`TypeError ... reading 'label'` en `MatchDetail.jsx:93`, `round.label` con
-`rounds[sel]` indefinido). Esa linea es de main y el diff no la toca; con
-datos importados de verdad una partida siempre trae rondas, asi que no
-bloquea. Queda anotado en `## Para el humano`.
-
+(QA 20261017T0404Z sobre f0d410b) `check.sh` en verde; base sembrada con
+`factories.py`, `runserver` y Chromium sobre tres partidas armadas: los 5
+criterios con evidencia, 375 px sin scroll, consola limpia, mutaciones caen.
 Veredicto: aprobado.
 
 ## Para el humano
 
 - (Revisor 20261017T0004Z) El e2e de la matriz no distingue "Todas" de "Solo
-  aperturas" (ver revision del 2026-10-17); un test mas fuerte cabe en una
-  ficha `tests` si se quiere. No bloquea la entrega.
-- (QA 20261017T0404Z) Informativo: el detalle de una partida sin rondas
-  (solo posible con datos armados a mano) tira un error de runtime en codigo
-  de main (`MatchDetail.jsx:93`), no de esta ficha.
+  aperturas"; no bloquea.
+- (QA 20261017T0404Z) Informativo: una partida sin rondas rompe el detalle
+  (`MatchDetail.jsx:93`, codigo de main, no de esta ficha).
