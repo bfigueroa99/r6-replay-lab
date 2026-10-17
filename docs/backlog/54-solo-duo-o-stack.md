@@ -1,7 +1,7 @@
 # 54. Solo, en duo o en stack
 
-estado: en curso 2026-10-17
-candado: dev 2026-10-17T20:14Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
 epica: escuadra
@@ -284,6 +284,43 @@ despues de `teammate_synergy`, linea ~956), `views.py` (52 `trends`, 221-243; 53
 separados por pocas lineas, merge limpio si nadie reformatea), `humo.spec.js` y
 `metricas.md` (las tres agregan tests/filas en lugares distintos). `Teammates.jsx` es
 solo de la 54.
+
+## Implementacion
+
+(Dev 20261017T2004Z, sobre main 9e3d660)
+
+Quedo el diseno completo: `MIN_PARTIDAS_HABITUAL`, `GRUPOS` y `by_stack()` despues de
+`teammate_synergy`; clave `by_stack` en `/api/teammates/`; `grupo.js` con su test; panel
+"Solo, en dúo o en stack" en Compañeros despues de Sinergia (CSV `solo-duo-stack`); e2e
+despues de "Compañeros muestra quien cae primero"; fila **Tamaño del grupo** en
+`docs/metricas.md`.
+
+Desvios tecnicos del diseno:
+
+- Los pares (partida, habitual) llevan `.order_by()` antes de `.distinct()`: el
+  `ordering` de `RoundPlayer` entraba al DISTINCT y contaba un habitual de mas.
+- `rounds` y `rounds_won` de una fila vacia salen en 0, no `None`.
+- Tests extra: `test_una_derrota_baja_el_winrate_de_partida`; el de consultas fija 5
+  con 2 y con 3 habituales mas partidas (el helper siempre crea habituales).
+- Fila de la 53 sin tocar: aviso del diseno sobre `_fold`/`_PROMEDIOS` sigue en pie
+  para quien implemente la 53.
+
+Tests por criterio: 1 `test_cinco_partidas_juntas_hacen_habitual_y_cuatro_no`,
+`test_un_rival_frecuente_no_es_habitual`, `test_el_filtro_de_mapa_no_cambia_quien_es_habitual`;
+2 `test_las_cuatro_filas_salen_en_orden_aunque_esten_vacias`,
+`test_cada_partida_cae_en_una_sola_fila_segun_sus_habituales`,
+`test_cuatro_habituales_tambien_es_stack`, `test_teammates_trae_by_stack`; 3
+`test_un_empate_cuenta_en_partidas_y_rondas_pero_no_en_el_winrate_de_partida`,
+`test_un_cambio_de_nick_no_parte_al_habitual`; 4
+`test_el_filtro_de_lado_recorta_rondas_pero_no_el_grupo_de_la_partida`,
+`test_sin_habituales_todo_cae_en_solo`, `test_base_vacia_devuelve_las_cuatro_filas_en_cero`,
+`test_teammates_trae_by_stack_con_base_vacia`; 5 e2e `Compañeros muestra solo, en dúo o en
+stack` + `grupo.test.js`; 6 fila en `docs/metricas.md`.
+
+Revision ciega previa (subagente con `revision.md`): aprobar; un hallazgo de texto en
+`metricas.md` (stack de 4 no requiere abandono), corregido.
+
+`check.sh`: Todo en verde (662 tests backend, 103 frontend, build ok, 40 e2e).
 
 ## Para el humano
 
