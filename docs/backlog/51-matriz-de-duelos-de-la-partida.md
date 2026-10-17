@@ -1,7 +1,7 @@
 # 51. Matriz de duelos de la partida
 
-estado: revisado
-candado: qa 2026-10-17T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/51-matriz-de-duelos-de-la-partida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F7 ([CS Demo Manager v3.5.0](https://cs-demo-manager.com/changelog), "players duels matrix"; selector de aperturas de [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: frontend/src/matrizDuelos.js, frontend/src/matrizDuelos.test.js, frontend/src/components/MatrizDuelos.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z, revisor 20261017T0004Z
+turnos: po 20261015T1711Z, arquitecto 20261015T1811Z, dev 20261015T2004Z, revisor 20261016T0004Z, dev 20261016T0404Z, revisor 20261016T0805Z, dev 20261016T2004Z, revisor 20261017T0004Z, qa 20261017T0404Z
 
 ## PR
 
@@ -318,8 +318,53 @@ sin; sin `console.log`; sin dependencias ni backend.
 Veredicto: aprobar. Tercera pasada con solo hallazgos menores: `revisado`, y
 el menor del e2e queda en `## Para el humano`.
 
+## QA 2026-10-17 sobre f0d410b
+
+(QA 20261017T0404Z. Rama al dia con `origin/main` 2a6c86b, sin conflicto.)
+
+- `./scripts/check.sh` -> `Todo en verde.`: ruff ok, 632 tests backend, 95
+  vitest, build ok, 38 e2e (incluido `el detalle de una partida muestra la
+  matriz de duelos`).
+- Base sembrada con `factories.py` (script en el scratchpad,
+  `SQLITE_PATH` y `R6_ENV_FILE` temporales), `runserver 8765` y Chromium
+  (playwright) sobre `/partidas/<id>`:
+  - Partida sin eventos de baja -> texto "Esta partida no registró bajas
+    entre equipos." en Todas y en Solo aperturas, sin tabla (criterio 4).
+  - Partida con solo un teamkill y un `Death` suelto -> el mismo texto
+    (criterio 2).
+  - Partida de 3 rondas: ronda 0 abre con `Death` suelto y sigue con Yo->Flip
+    (HS) y Flip->Yo; ronda 1 Flip cambia a tu equipo y mata a R2 (HS), R2->Yo;
+    ronda 2 sin tu fila (`teams[0].mine`), Amigo->R2 y una baja de un nick sin
+    equipo. Todas: a favor Yo->Flip `1 (1 HS)`, Flip->R2 `1 (1 HS)`,
+    Amigo->R2 `1`; en contra Flip->Yo `1`, R2->Yo `1`; la baja del nick sin
+    equipo no aparece. Solo aperturas: Flip->R2 y Amigo->R2, la ronda 0 no
+    suma (abre con `Death`) (criterios 1 y 3). Cuadra contado a mano.
+  - 375 px de ancho: `scrollWidth` 375, sin scroll horizontal de pagina.
+  - Consola limpia en las tres partidas.
+  - `/api/matches/999999/` 404; el endpoint no cambio (diff solo frontend).
+- Mutacion (`src/matrizDuelos.js`, vitest): sin el filtro de mismo equipo ->
+  caen `ignora teamkills y bajas sin autor` y `una ronda que abre con un
+  teamkill no suma aperturas`; sin sumar headshots -> cae `arma la matriz de
+  una partida de dos rondas...`; sin el `slice(0, 1)` de aperturas -> caen
+  los 3 tests de aperturas. Restaurado, 9/9 verdes.
+- Bundle: chunk inicial `index-*.js` 186,78 kB en main -> 186,82 kB en la
+  rama (+0,02 %); `MatchDetail-*.js` (lazy) 6,45 -> 9,24 kB.
+- Sin migracion, parser, Electron ni `.ps1`: no hace falta `## Verificar en
+  el PC`.
+
+Observacion fuera de la ficha: una partida **sin rondas** rompe el detalle
+(`TypeError ... reading 'label'` en `MatchDetail.jsx:93`, `round.label` con
+`rounds[sel]` indefinido). Esa linea es de main y el diff no la toca; con
+datos importados de verdad una partida siempre trae rondas, asi que no
+bloquea. Queda anotado en `## Para el humano`.
+
+Veredicto: aprobado.
+
 ## Para el humano
 
 - (Revisor 20261017T0004Z) El e2e de la matriz no distingue "Todas" de "Solo
   aperturas" (ver revision del 2026-10-17); un test mas fuerte cabe en una
   ficha `tests` si se quiere. No bloquea la entrega.
+- (QA 20261017T0404Z) Informativo: el detalle de una partida sin rondas
+  (solo posible con datos armados a mano) tira un error de runtime en codigo
+  de main (`MatchDetail.jsx:93`), no de esta ficha.
