@@ -1,7 +1,7 @@
 # 52. Rondas cortas y rondas largas
 
-estado: en curso 2026-10-17
-candado: dev 2026-10-17T20:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -312,6 +312,44 @@ agrega un bloque nuevo despues de `round_endings` y no edita ninguno de los dos)
 `humo.spec.js` (las tres agregan tests; esta inserta despues del test de cierres, no al
 final). `factories.py` y `Trends.jsx` no los toca ninguna de las otras dos segun lo
 declarado. Si 53 o 54 agregan kwargs a `make_round`, el merge es trivial.
+
+## Implementacion
+
+(Dev 20261017T2004Z, sobre main 9e3d660)
+
+Quedo el diseno completo, sin desvios de alcance:
+
+- `aggregates.by_round_length()` despues de `round_endings()`, con `TRAMOS_DURACION`,
+  `FILA_PLANT`, `_duracion()`, `_promedios_de_duracion()`, `_celda()` y `_celdas_por_lado()`;
+  clave `by_round_length` en `/api/trends/`.
+- `make_round` acepta `clock_start`, `clock_end` y `possible_plant` (defaults de siempre).
+- Panel "Rondas cortas y largas" en Tendencias, despues de "Cómo se cierran tus rondas",
+  con la tabla por tramo (CSV `por-duracion`) y la de promedios (CSV `duracion-promedio`).
+- `docs/metricas.md` (fila **Duracion de la ronda**) y `docs/formato-rec.md`.
+
+Desvios tecnicos del diseno:
+
+- La duracion se declara con `alias()` y no con `annotate()`: una anotacion seleccionada
+  entra al GROUP BY de `values("side")`. Como Django no deja agregar sobre un alias, los
+  dos promedios arman su propia `_duracion()` dentro de `Avg`.
+- Test extra: `test_un_clock_end_en_cero_con_inicio_cuenta_como_reloj_desconocido`.
+- vitest suma `sube rating y kpr del total a la fila`.
+
+Tests por criterio: 1 `test_los_tramos_salen_en_orden_fijo_con_ataque_defensa_y_total`,
+`test_un_tramo_vacio_trae_cero_rondas_y_winrate_nulo`, `test_trends_trae_by_round_length`;
+2 `test_un_posible_plant_cuenta_solo_en_su_fila_y_sin_metricas`,
+`test_una_ronda_con_reloj_desconocido_no_cuenta_en_ninguna_fila`; 3
+`test_el_filtro_de_lado_deja_el_otro_lado_en_cero`, `test_el_filtro_de_mapa_recorta_las_rondas`,
+`test_base_vacia_trae_las_cinco_filas_en_cero`; 4
+`test_los_promedios_de_ganadas_y_perdidas_van_con_un_decimal`,
+`test_una_ronda_sin_ganador_no_entra_en_los_promedios`; 5 e2e `Tendencias muestra rondas
+cortas y largas` + `duracion.test.js`; 6 fila en `docs/metricas.md`.
+
+Revision ciega previa (subagente con `revision.md`): aprobar, sin hallazgos. Anoto su
+observacion: la duracion se resta en SQL al consultar, no se escribe al importar; es la
+resta de dos columnas que ya se guardan, como `Round.duration` y `rating_points_expr`.
+
+`check.sh`: Todo en verde (661 tests backend, 106 frontend, build ok, 40 e2e).
 
 ## Para el humano
 
