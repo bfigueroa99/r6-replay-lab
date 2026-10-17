@@ -19,6 +19,7 @@ import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../compone
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
+import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -181,6 +182,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   )
   const cierres = filasDeCierre(data.round_endings)
   const remontadas = data.comebacks
+  const margen = data.by_margin
+  const filasMargen = filasDeMargen(margen)
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
@@ -579,6 +582,44 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                 csvName="cambio-de-lado"
               />
             </>
+          )}
+        </Panel>
+      ) : null}
+
+      {margen ? (
+        <Panel
+          title="Partidas cerradas y holgadas"
+          hint={
+            filasConPocaMuestra(filasMargen.map((f) => ({ rounds: f.matches })), MUESTRA_PARTIDAS).length
+              ? `Ojo: algún tramo tiene menos de ${MUESTRA_PARTIDAS} partidas; la diferencia puede ser varianza.`
+              : 'Margen final de la partida. Solo desde Y9S4.'
+          }
+        >
+          {hayMargen(margen) ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Margen', sortable: false, left: true,
+                    help: 'Diferencia de rondas del marcador final. Una partida que fue a prórroga cuenta como prórroga aunque termine 2 arriba.' },
+                  { key: 'matches', label: 'Partidas', sortable: false },
+                  { key: 'wins', label: 'Ganadas', sortable: false },
+                  { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%', sortable: false },
+                  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Sobre todas tus rondas de esas partidas.' },
+                  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+                ]}
+                rows={filasMargen}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.margin}
+                csvName="por-margen"
+              />
+              {margen.matches_excluded > 0 ? (
+                <p className="note">
+                  {margen.matches_excluded} {margen.matches_excluded === 1 ? 'partida quedó' : 'partidas quedaron'} fuera (anteriores a Y9S4, empates o sin resultado).
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Sin partidas con margen legible: hace falta Y9S4 o posterior, y que la partida tenga ganador.</p>
           )}
         </Panel>
       ) : null}

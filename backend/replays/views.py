@@ -231,6 +231,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_score_state": agg.by_score_state(**filters),
             "by_match_point": agg.by_match_point(**filters),
             "comebacks": agg.comebacks(**filters),
+            "by_margin": agg.by_margin(**filters),
             "round_endings": agg.round_endings(**filters),
             "by_start_side": agg.by_start_side(**filters),
             "by_hour": agg.by_hour(**filters),
