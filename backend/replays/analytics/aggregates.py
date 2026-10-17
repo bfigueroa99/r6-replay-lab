@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -953,6 +954,84 @@ def teammate_synergy(min_rounds: int = 10, **filters) -> list[dict]:
         }
         for r in rows
     ]
+
+
+#: Partidas juntas en tu equipo para ser habitual. Se mide sobre todo el
+#: historial y sin filtros: un filtro de mapa no cambia con quien jugas.
+MIN_PARTIDAS_HABITUAL = 5
+
+#: Orden fijo de `by_stack`; el indice es la cantidad de habituales (3 o mas = stack).
+GRUPOS = ("solo", "duo", "trio", "stack")
+
+
+def by_stack(**filters) -> dict:
+    """Tus partidas segun cuantos companeros habituales jugaron en tu equipo.
+
+    El grupo es un dato de la partida, no de la ronda: se cuenta sobre todas
+    sus rondas, sin filtros. Los filtros solo eligen que partidas y que rondas
+    entran a cada fila.
+    """
+    # Sin filtros y correlacionada, como `teammate_synergy` (tope de
+    # parametros de SQLite con un IN de round_ids).
+    mia = RoundPlayer.objects.filter(
+        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    companeros = RoundPlayer.objects.filter(is_me=False).filter(Exists(mia))
+    # El nombre sale de Player: un cambio de nick no parte al habitual.
+    habituales = list(
+        companeros.values("player_id", "player__username")
+        .annotate(n=Count("round__match_id", distinct=True))
+        .filter(n__gte=MIN_PARTIDAS_HABITUAL)
+        .order_by("-n", "player__username")
+    )
+    ids_hab = [h["player_id"] for h in habituales]
+
+    por_partida = _por_partida(**filters)
+    ids = base_queryset(**filters).values("round__match_id")
+    grupo: Counter[int] = Counter()
+    if ids_hab:
+        grupo = Counter(
+            mid for mid, _ in companeros.filter(player_id__in=ids_hab, round__match_id__in=ids)
+            .values_list("round__match_id", "player_id")
+            # sin el orden del modelo: entraria al DISTINCT y repetiria pares
+            .order_by()
+            .distinct()
+        )
+    won = dict(Match.objects.filter(id__in=ids).values_list("id", "won"))
+    baseline = rating_baseline()
+
+    por_grupo: dict[str, list[int]] = {g: [] for g in GRUPOS}
+    for mid in por_partida:
+        por_grupo[GRUPOS[min(grupo.get(mid, 0), len(GRUPOS) - 1)]].append(mid)
+
+    filas = []
+    for i, g in enumerate(GRUPOS):
+        mids = por_grupo[g]
+        t = _fold([por_partida[m] for m in mids], baseline)
+        # Resultado entero de la partida aunque un filtro de lado recorte sus
+        # rondas, como `by_start_side`. Sin resultado (empate o incompleta)
+        # no entra al winrate de partida.
+        decididas = [won[m] for m in mids if won.get(m) is not None]
+        filas.append({
+            "group": g,
+            "regulars": i,
+            "matches": len(mids),
+            "matches_decided": len(decididas),
+            "matches_won": sum(decididas),
+            "match_winrate": _pct(sum(decididas), len(decididas)),
+            "rounds": t["rounds"] or 0,
+            "rounds_won": t["rounds_won"] or 0,
+            "winrate": t["winrate"],
+            "rating": t["rating"],
+        })
+    return {
+        "rows": filas,
+        "regulars": [
+            {"player_id": h["player_id"], "username": h["player__username"], "matches": h["n"]}
+            for h in habituales
+        ],
+        "min_matches": MIN_PARTIDAS_HABITUAL,
+    }
 
 
 LADOS_PRIMERA_CAIDA = ("Attack", "Defense", "total")
