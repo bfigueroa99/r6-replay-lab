@@ -1,16 +1,16 @@
-/** Tests del texto de multikills por tamaño. */
+/** Tests del texto de multikills por tamano. */
 
 import { describe, expect, it } from 'vitest'
 
 import { detalleMultikills, partesMultikills, rondasConMultikill, textoMultikills } from './multikills.js'
 
 describe('textoMultikills', () => {
-  it('arma el texto solo con los tamaños mayores que cero, de menor a mayor', () => {
+  it('arma el texto solo con los tamanos mayores que cero, de menor a mayor', () => {
     expect(textoMultikills({ k2: 2, k3: 1, k4: 0, aces: 1 })).toBe('2×2K · 1×3K · 1×ACE')
     expect(textoMultikills({ aces: 3, k4: 1 })).toBe('1×4K · 3×ACE')
   })
 
-  it('sin multikills devuelve texto vacío', () => {
+  it('sin multikills devuelve texto vacio', () => {
     expect(textoMultikills({ k2: 0, k3: 0, k4: 0, aces: 0 })).toBe('')
   })
 

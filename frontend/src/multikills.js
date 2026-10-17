@@ -1,5 +1,5 @@
 /**
- * Texto de multikills por tamaño (2K, 3K, 4K, ace) para el scoreboard, el
+ * Texto de multikills por tamano (2K, 3K, 4K, ace) para el scoreboard, el
  * perfil de jugador y el Resumen. Separado de las paginas para probarlo solo.
  */
 
@@ -11,14 +11,14 @@ export const TAMANOS = [
   ['aces', 'ACE', 5],
 ]
 
-/** Solo los tamaños con alguna ronda, en orden de tamaño. */
+/** Solo los tamanos con alguna ronda, en orden de tamano. */
 export function partesMultikills(fila) {
   if (!fila) return []
   return TAMANOS.map(([clave, etiqueta, bajas]) => ({ clave, etiqueta, bajas, rondas: fila[clave] || 0 }))
     .filter((parte) => parte.rondas > 0)
 }
 
-/** "2×2K · 1×ACE": rondas × tamaño. Sin multikills, cadena vacia. */
+/** "2×2K · 1×ACE": rondas × tamano. Sin multikills, cadena vacia. */
 export function textoMultikills(fila) {
   return partesMultikills(fila)
     .map((parte) => `${parte.rondas}×${parte.etiqueta}`)
@@ -36,7 +36,7 @@ export function detalleMultikills(fila) {
     .join(' · ')
 }
 
-/** Rondas con 2 o mas bajas; una respuesta sin el total suma los cuatro tamaños. */
+/** Rondas con 2 o mas bajas; una respuesta sin el total suma los cuatro tamanos. */
 export function rondasConMultikill(fila) {
   if (fila?.multikill_rounds !== undefined && fila?.multikill_rounds !== null) return fila.multikill_rounds
   return partesMultikills(fila).reduce((suma, parte) => suma + parte.rondas, 0)

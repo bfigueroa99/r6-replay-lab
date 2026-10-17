@@ -273,8 +273,14 @@ test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   await expect(panel.locator('th', { hasText: 'Multikills' })).toBeVisible()
   await expect(panel.locator('tbody tr', { hasText: 'BearF99' })).toContainText('2×2K')
   await expect(panel.locator('tbody tr', { hasText: 'Chamo' })).not.toContainText('×')
+  // BearF99 ya encabeza el orden inicial por bajas: el orden ascendente es el que prueba la columna
   await panel.locator('th', { hasText: 'Multikills' }).click()
+  await expect(panel.locator('th', { hasText: 'Multikills' })).toContainText('↓')
   await expect(panel.locator('tbody tr').first()).toContainText('BearF99')
+  await panel.locator('th', { hasText: 'Multikills' }).click()
+  await expect(panel.locator('th', { hasText: 'Multikills' })).toContainText('↑')
+  await expect(panel.locator('tbody tr').first()).not.toContainText('BearF99')
+  await expect(panel.locator('tbody tr').last()).toContainText('BearF99')
 
   expect(errores).toEqual([])
 })

@@ -129,7 +129,7 @@ def rating_baseline() -> float | None:
 
 #: Rondas por cantidad de bajas. Separado de AGGREGATES porque el scoreboard de
 #: la partida tiene su propio annotate y tiene que contar exactamente igual.
-#: Ace es 5 o mas y no 5 justo: con revives o un teamkill una ronda pasa de 5.
+#: Ace es 5 o mas y no 5 justo: un teamkill (cuenta en `kills`) o un modo con respawn la pasan de 5.
 MULTIKILLS = {
     "k2": Count("id", filter=Q(kills=2)),
     "k3": Count("id", filter=Q(kills=3)),
