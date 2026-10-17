@@ -516,6 +516,10 @@ def _match_scoreboard(match: Match) -> list[dict]:
     rows = (
         RoundPlayer.objects.filter(round__match=match)
         .values("player_id", "username", "team_index", "is_me")
+        # Antes del annotate de abajo: su alias `kills=Sum("kills")` pisa el
+        # campo en los `Q(kills=...)` que vengan despues y SQLite revienta con
+        # "misuse of aggregate function".
+        .annotate(**agg.MULTIKILLS)
         .annotate(
             rounds=Count("id"),
             kills=Sum("kills"),

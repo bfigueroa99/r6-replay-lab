@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import { filasDeRecords } from '../records.js'
+import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import Filters from '../components/Filters.jsx'
 import {
   Bar,
@@ -68,6 +69,12 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         />
         <Stat3 label="KST" value={pct(total.kst_pct)} sub="rondas donde aportas algo" value_={total.kst_pct} />
         <Stat3 label="Sobrevives" value={pct(total.survival_pct)} sub={`${total.survived} rondas`} value_={total.survival_pct} />
+        <Stat3
+          label="Multikills"
+          value={String(rondasConMultikill(total))}
+          sub={`${textoMultikills(total) || 'ninguna'} · ${pct(total.multikill_pct)} de tus rondas`}
+          value_={null}
+        />
         <Stat3
           label="Muertes sin trade"
           value={pct(total.untraded_death_pct)}

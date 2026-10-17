@@ -259,6 +259,37 @@ test('el detalle de una partida muestra la matriz de duelos', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('el scoreboard de la partida muestra multikills', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo: demo-17 tiene dos rondas tuyas de 2 bajas; la primera de la lista no tiene ninguna
+  const respuesta = await page.request.get('/api/matches/?limit=200')
+  const { matches } = await respuesta.json()
+  const partida = matches.find((m) => m.match_id === 'demo-17')
+  await page.goto(`/partidas/${partida.id}`)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Scoreboard de la partida', exact: true }),
+  })
+  await expect(panel.locator('th', { hasText: 'Multikills' })).toBeVisible()
+  await expect(panel.locator('tbody tr', { hasText: 'BearF99' })).toContainText('2×2K')
+  await expect(panel.locator('tbody tr', { hasText: 'Chamo' })).not.toContainText('×')
+  await panel.locator('th', { hasText: 'Multikills' }).click()
+  await expect(panel.locator('tbody tr').first()).toContainText('BearF99')
+
+  expect(errores).toEqual([])
+})
+
+test('el Resumen muestra tus multikills', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  const stat = page.locator('.stat', { has: page.locator('.label', { hasText: /^Multikills$/ }) })
+  await expect(stat.locator('.value')).toHaveText('14')
+  await expect(stat.locator('.sub')).toHaveText('14×2K · 7% de tus rondas')
+
+  expect(errores).toEqual([])
+})
+
 test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
@@ -316,6 +347,12 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel).toContainText('Consultado el 01-09-2026 12:00 · temporada Y10S2.')
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
   await expect(panel.getByRole('button')).toHaveCount(0)
+
+  // tus 203 rondas de seed_demo: 14 de 2 bajas
+  const numeros = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Sus numeros', exact: true }),
+  })
+  await expect(numeros).toContainText('14×2K')
 
   expect(afuera, 'la app pidio algo fuera de localhost').toEqual([])
   expect(errores).toEqual([])

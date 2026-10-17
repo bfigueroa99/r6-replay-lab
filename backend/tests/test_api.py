@@ -95,6 +95,13 @@ class PopulatedApiTests(TestCase):
         self.assertEqual(len(data["matches"]), 1)
         self.assertEqual(data["offset"], 1)
 
+    def test_detalle_de_partida_trae_multikills_en_scoreboard_y_my_totals(self):
+        data = self.client.get(f"/api/matches/{self.match.id}/").json()
+        claves = {"k2", "k3", "k4", "aces", "multikill_rounds"}
+        for fila in data["scoreboard"]:
+            self.assertTrue(claves <= set(fila))
+        self.assertTrue(claves <= set(data["my_totals"]))
+
     def test_detalle_de_partida(self):
         data = self.client.get(f"/api/matches/{self.match.id}/").json()
         self.assertEqual(data["match"]["map"], "Club House")

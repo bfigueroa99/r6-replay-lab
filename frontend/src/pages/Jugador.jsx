@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import PerfilUbisoft from '../components/PerfilUbisoft.jsx'
+import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import {
   Bar,
   DataTable,
@@ -169,6 +170,11 @@ export default function Jugador() {
           <div className="stat">
             <div className="label">Sobrevive</div>
             <div className="value">{pct(theirs.survival_pct)}</div>
+          </div>
+          <div className="stat">
+            <div className="label">Multikills</div>
+            <div className="value">{rondasConMultikill(theirs)}</div>
+            <div className="sub">{textoMultikills(theirs) || 'ninguna ronda de 2 o más bajas'}</div>
           </div>
         </div>
 

@@ -10,7 +10,7 @@ aca esta la definicion exacta.
 |---|---|
 | **Rondas** | Rondas tuyas importadas que pasan los filtros activos. |
 | **Rondas ganadas (winrate)** | Rondas donde tu equipo gano / rondas jugadas. Es winrate **de rondas**, no de partidas: mide mejor porque una partida son 6-9 muestras. |
-| **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. |
+| **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. Las bajas incluyen teamkills; Duelos y la Matriz de duelos los descartan. |
 | **K/D** | bajas / muertes. |
 | **KPR** | bajas / rondas. Mas honesto que el K/D porque no premia esconderse. Referencia razonable en ranked: 0.7-0.9. |
 | **HS%** | headshots / bajas. El replay marca el headshot en cada kill. |
@@ -219,7 +219,7 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 |---|---|
 | **KST** | Rondas donde mataste, sobreviviste o tu muerte se tradeo, sobre el total. Es el clasico KOST **sin la O** de objetivo, porque los eventos de plant/defuse no estan disponibles (ver `formato-rec.md`). Bajo 65% significa que hay muchas rondas donde tu equipo jugo con uno menos. |
 | **1vX (clutch)** | Rondas donde quedaste ultimo de tu equipo y ganaste. El `X` es la cantidad de rivales vivos cuando quedaste solo. Se calcula con la misma logica que r6-dissect. |
-| **Multikill** | Rondas con 2 o mas bajas. |
+| **Multikill (2K, 3K, 4K, ace)** | Rondas con exactamente 2, 3 y 4 bajas, y ace = 5 o mas (con revives o un teamkill una ronda puede pasar de 5). Las bajas son las de la columna Bajas: todo evento Kill del feed con tu nick como autor, **teamkills incluidos**. El scoreboard de la partida las muestra como `2×2K · 1×ACE` (rondas × tamaño, solo los tamaños con alguna ronda) y ordena por el total de rondas con 2 o mas; el Resumen y el perfil de un jugador muestran el mismo texto sobre las rondas filtradas. `multikill_pct` (rondas con 2 o mas / rondas) no cambia. |
 | **Cuando mueres** | La distribucion completa, en tramos de 30 segundos y separada por lado. El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir mitad a los 20 y mitad a los 170, y las dos cosas se arreglan distinto. |
 | **Sales muy temprano** | Muertes en los primeros 30 **segundos jugados**. La ronda todavia no se arma: mueres sin informacion. El coach opina desde 25 muertes del lado y un 25% concentrado ahi (el reparto uniforme daria 17%). |
 | **Te quedas sin tiempo** | Muertes con menos de 30 segundos **de reloj**. Es otro eje: no importa cuanto jugaste, importa que la ronda ya estaba decidida. En ataque significa que la ejecucion nunca llego a empezar. |
