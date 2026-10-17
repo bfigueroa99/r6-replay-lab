@@ -1,8 +1,8 @@
 # 52. Rondas cortas y rondas largas
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
