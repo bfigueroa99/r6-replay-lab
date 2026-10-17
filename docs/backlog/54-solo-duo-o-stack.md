@@ -1,8 +1,8 @@
 # 54. Solo, en duo o en stack
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
 epica: escuadra
 area: fullstack
