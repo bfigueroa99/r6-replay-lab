@@ -1,28 +1,26 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-17 04:55 UTC por qa (sesion 20261017T0404Z; motivo: por estado: 1 revisado; reloj: po, franja 1)
+actualizado: 2026-10-17 08:09 UTC por release (sesion 20261017T0804Z; motivo: por estado: 1 aprobado; reloj: dev, franja 3)
 playbook: origin/main@06e3351
-rutina: TURNOS_SIN_RASTRO=3 en 48 h (10-15T21:01Z 10-16T09:01Z 10-16T21:01Z) | 14 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=3 en 48 h (10-15T21:01Z 10-16T09:01Z 10-16T21:01Z) | 14 de 56 en 7 dias | sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas sin commits | PR / compare |
-|---|---|---|---|---|
-| claude/equipo-dev/51-matriz-de-duelos-de-la-partida | docs/backlog/51-matriz-de-duelos-de-la-partida.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/51-matriz-de-duelos-de-la-partida?expand=1) |
+Vacia: la 51 se mergeo en este turno (PR #39, main 9e3d660).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=3
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=59 sin_merge=no pausa=no sin_rastro_48h=3
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/51-matriz-de-duelos-de-la-partida` (`aprobado`, unica rama en cola): `git merge-tree` contra main 06e3351 limpio. Le faltan los 16 commits de main que trajo PR #38: el Release hace `git merge origin/main` y `check.sh` antes del PR (puerta f). Libera `MatchDetail.jsx` y `styles.css` (la unica zona que comparte con PR #14 es el import de `MatchDetail.jsx`).
+Nada que mergear: no quedan ramas de trabajo abiertas, no hay pares que probar.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:11 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos) otros:8 (incluye 48, bug, PR #37 en main 2a6c86b).
-- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 en main (50, PR #38, main 06e3351); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 `aprobado` (51, QA 2026-10-17, espera al Release). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:13 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida) otros:5.
+- Epicas en curso: lado-y-marcador: B1-B7 en main, B10 en main (50, PR #38, main 06e3351); B8, B9, B11 y B12 como idea. temporada-y-modo: A2 (47) en main, A4 descartada como bug (49) y en espera de decision del humano; A1 lo toca PR #14, A3 libre. revision-de-rondas: F7 en main (51, PR #39, main 9e3d660). escuadra: C4 (46) en main; C1-C3, C5 y C10 libres. progreso: E3 (40) y E4 (44) en main; E5 y E10 como idea. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 59 ideas libres (58 al empezar el turno; A4, B10 y F7 pasaron a fichas). Ideas nuevas de este turno: C10 compañeros por lado, E10 operadores que mejoran y empeoran, G6 partidas incompletas en Datos, H4 copiar el resumen de una partida como texto.
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -30,16 +28,15 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 51-matriz-de-duelos-de-la-partida | en curso (aprobado en su rama) | funcionalidad | revision-de-rondas | 3 | frontend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo turno por estado: release para la 51 `aprobado` (regla 1): merge de main 06e3351, `check.sh`, `## PR`, PR y puerta. Con el papel vacio (0 `propuesto`, 0 `disenado`), despues le toca al PO.
+Proximo turno por estado: po (papel vacio: 0 `propuesto`, 0 `disenado`; regla 7).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-16 16:40 | Entrega 50 (funcionalidad, `aprobado` -> `entregado`): `turnos:` con dev, revisor y qa de sesiones distintas, main 2a6c86b ya fusionado, `check.sh` en `Todo en verde.` dos veces (644 backend, 90 vitest, build, 38 e2e; la segunda sobre 0f735c1, el commit de la ficha recortada). `## PR` escrito, ficha recortada, PR #38 abierto. El merge (`merge_pull_request`) fallo una vez por un sha corto y el reintento lo nego el clasificador de permisos de la sesion: queda `entregado (PR pendiente de merge)`. 2026-10-17: el humano pidio el merge en la sesion; PR #38 mergeado (main 06e3351), espejo quitado de backlog; el borrado de la rama lo corto el proxy. Merge de prueba 50x51 limpio. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-17 08:09 | Entrega y mergea 51 (funcionalidad, `aprobado` -> `entregado` -> main): `turnos:` con dev, revisor y qa de sesiones distintas, main 06e3351 fusionado en la rama, `check.sh` en `Todo en verde.` (644 backend, 99 vitest, build, 39 e2e). `## PR` escrito, ficha recortada, PR #39 abierto y mergeado por la puerta a-f (main 9e3d660); espejo quitado de backlog. El borrado de la rama lo corto el proxy (403). Sin ramas abiertas para merge de prueba. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-16 20:18 | Corrige el hallazgo de la segunda revision de 51 (`con hallazgos` -> `implementado`): "Solo aperturas" toma el primer `Kill` o `Death` de la ronda por `order` (la regla de `opening_death` y de la columna Aperturas del scoreboard) y, si no es baja entre rivales, la ronda no suma. Tests: teamkill de apertura y `Death` suelto de apertura no suman (los dos caen con la mutacion); fila de `docs/metricas.md` alineada con Duelos de apertura. Revision ciega previa: aprobar (un nombre de test, corregido). `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e) con main 2a6c86b ya en la rama. |
 | revisor | 2026-10-17 00:40 | Tercera pasada sobre 51, rama al dia con main 2a6c86b, `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e) antes y despues del push. Hallazgo de la segunda revision (apertura = primer `Kill`/`Death`) verificado. Revision ciega: aprobar con dos menores de tests: fixture del `Death` suelto con la victima en `target` en vez de `actor` (corregido en esta revision, test que pasa) y e2e de "Solo aperturas" que no distingue el filtro (a `## Para el humano`). `implementado` -> `revisado`. |
 | qa | 2026-10-17 04:55 | Prueba 51 (funcionalidad, `revisado` -> `aprobado`) sobre f0d410b con main 2a6c86b. `check.sh` en `Todo en verde.` (632 backend, 95 vitest, build, 38 e2e). Base sembrada con 4 partidas sinteticas (sin bajas; solo teamkill y `Death` suelto; 3 rondas con apertura `Death`, nick que cambia de lado, ronda sin tu fila y nick sin equipo; sin rondas) en Chromium: celdas, HS y "Solo aperturas" cuadran a mano, texto vacio correcto, 375 px sin scroll horizontal, consola limpia. 3 mutaciones, todas caen. Chunk inicial 186,78 -> 186,82 kB. Fuera de la ficha: una partida sin rondas rompe el detalle (`MatchDetail.jsx:93`, codigo de main). Sin pushes de codigo. |
@@ -70,6 +67,7 @@ Proximo turno por estado: release para la 51 `aprobado` (regla 1): merge de main
   - `git push origin --delete claude/equipo-dev/47-modos-desconocidos-en-datos` (mergeada, PR #36)
   - `git push origin --delete claude/equipo-dev/48-posts-sin-json-desde-otra-pagina` (mergeada, PR #37)
   - `git push origin --delete claude/equipo-dev/50-partidas-cerradas-y-holgadas` (mergeada, PR #38)
+  - `git push origin --delete claude/equipo-dev/51-matriz-de-duelos-de-la-partida` (mergeada, PR #39)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
 - PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
@@ -103,8 +101,8 @@ Proximo turno por estado: release para la 51 `aprobado` (regla 1): merge de main
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
 - Rutina: 3 disparos sin rastro en 48 h (10-15T21:01Z 10-16T09:01Z 10-16T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`.
-- Ficha 51 (aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
-- Ficha 51 (aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere.
+- Ficha 51 (ya en main, PR #39; aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
+- Ficha 51 (ya en main, PR #39; aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
