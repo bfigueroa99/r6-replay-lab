@@ -127,6 +127,25 @@ test('Tendencias muestra remontadas y derrumbes', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra partidas cerradas y holgadas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Partidas cerradas y holgadas', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo gana sus 29 partidas 4-3 sin prorroga, todas Y9S4. Es sintetico: en ranked
+  // un 3-3 va a prorroga, pero el panel lee la prorroga de `overtime_number`, como Mitades
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(4)
+  const unaRonda = filas.filter({ has: page.getByRole('cell', { name: '1 ronda', exact: true }) })
+  await expect(unaRonda.getByRole('cell', { name: '29', exact: true })).toHaveCount(2)
+  await expect(unaRonda.getByRole('cell', { name: '100%', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
