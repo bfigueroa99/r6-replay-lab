@@ -545,3 +545,14 @@ body.streamer .ruleta-head h1 { display: none; }
 body.streamer .ruleta { grid-template-columns: 1fr; justify-items: center; }
 body.streamer .ruleta-centro { background: transparent; border-color: transparent; }
 body.streamer .ruleta-head { justify-content: flex-end; }
+
+/* ------------------------------------------------------------ matriz de duelos */
+
+.matriz-scroll { overflow-x: auto; margin-bottom: 14px; }
+.matriz { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.matriz th, .matriz td { padding: 5px 9px; border: 1px solid var(--border); text-align: center; white-space: nowrap; }
+.matriz thead th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.matriz tbody th { text-align: left; font-weight: 600; }
+.matriz td { color: var(--muted); }
+.matriz td.con-dato { color: var(--text); font-weight: 600; }
+.matriz td small { font-weight: 400; color: var(--muted); }
