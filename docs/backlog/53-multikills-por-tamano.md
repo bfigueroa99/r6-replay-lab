@@ -1,7 +1,7 @@
 # 53. Multikills por tamaño: 2K, 3K, 4K y ace
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-17T16:04Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas

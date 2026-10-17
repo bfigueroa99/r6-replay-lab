@@ -1,7 +1,7 @@
 # 52. Rondas cortas y rondas largas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-17T16:04Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

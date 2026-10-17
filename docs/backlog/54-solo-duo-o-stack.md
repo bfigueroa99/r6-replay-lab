@@ -1,7 +1,7 @@
 # 54. Solo, en duo o en stack
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-17T16:04Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
