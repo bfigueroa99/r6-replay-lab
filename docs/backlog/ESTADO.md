@@ -7,7 +7,7 @@ pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia. La 53 (PR #42) la mergeo el humano a las 22:30 UTC (main c711f7a), mientras este turno corria `check.sh` sobre su head ffe3520 (`Todo en verde.`: 691 backend, 115 vitest, build, 43 e2e).
+Vacia. La 53 (PR #42) entro a main a las 22:30 UTC (c711f7a), mergeada por este turno de release con `mcp__github__merge_pull_request` (la herramienta firma con la cuenta del dueno, por eso GitHub la muestra como tuya) despues de `check.sh` en `Todo en verde.` sobre su head ffe3520 (691 backend, 115 vitest, build, 43 e2e).
 
 COLA=0/4  TOTAL=0/6
 RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
@@ -36,7 +36,7 @@ Papel vacio de `propuesto` y `disenado`, cola vacia. Proximo turno por estado: i
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-18 22:55 | Sale por la 53 `entregado` (PR #42): puerta a-e cumplida y `check.sh` en `Todo en verde.` sobre el head ffe3520 (691 backend, 115 vitest, build, 43 e2e); al ir a mergear, el humano ya lo habia mergeado (main c711f7a, 22:30 UTC). Ficha confirmada en main, espejo quitado de `backlog`. Borrar la rama: denegado en la sesion (va a borrables). pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. Sin pushes de codigo. |
+| release | 2026-10-18 22:55 | Sale por la 53 `entregado` (PR #42): puerta a-e cumplida y `check.sh` en `Todo en verde.` sobre el head ffe3520 (691 backend, 115 vitest, build, 43 e2e); mergeado por este turno con `mcp__github__merge_pull_request` (main c711f7a, 22:30 UTC; dos instancias del mismo disparo corrieron en paralelo y la segunda lo leyo como merge del humano). Ficha confirmada en main, espejo quitado de `backlog`. Borrar la rama: denegado en la sesion (va a borrables). pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. Sin pushes de codigo. |
 | dev | 2026-10-17 20:27 | Implementa 52 (`by_round_length` en `/api/trends/` + panel "Rondas cortas y largas"), 54 (`by_stack` en `/api/teammates/` + panel "Solo, en dúo o en stack") y 53 (`MULTIKILLS` en `AGGREGATES`, columna "Multikills" en el scoreboard, stat en Resumen y Jugador): las tres `disenado` -> `implementado`, cada una en su rama desde main 9e3d660. Revision ciega previa por ficha: aprobar (52 sin hallazgos; 54 un texto de metricas; 53 orden del e2e, tildes en comentarios y "con revives", corregidos). `check.sh` en `Todo en verde.` en cada rama (52: 661 backend, 106 vitest, 40 e2e; 54: 662/103/40; 53: 656/104/41). |
 | revisor | 2026-10-18 12:25 | Revisa 53 (funcionalidad, `implementado` -> `revisado`), ya al dia con main 9e3d660. Revision ciega: aprobar sin hallazgos; confirmado el orden de `annotate` en `_match_scoreboard`, las claves via `AGGREGATES`/`derive` y los numeros de seed_demo de los e2e (k2=14 de 203 rondas, demo-17 con 2×2K). `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Sin pushes de codigo. |
 | qa | 2026-10-18 16:40 | Prueba 53 (funcionalidad, `revisado` -> `aprobado`), al dia con main 9e3d660. `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Bases vacia y sembrada con `factories.py` (rondas de 0, 2, 3, 4, 5 y 6 bajas por lado, compañero con 2K, rival sin multikills, partida de una ronda sin bajas): scoreboard, `my_totals`, overview por lado, perfil, CSV de mapas/dias/sesiones y UI en Chromium (1280 y 375 px) cuadran a mano; bordes sin 500; consola limpia. Mutacion: 4, todas caen. Chunk inicial 186,78 -> 187,55 kB (+0,4 %). Sin pushes de codigo. |
@@ -112,7 +112,8 @@ Papel vacio de `propuesto` y `disenado`, cola vacia. Proximo turno por estado: i
 - Fichas 52-54 (Dev 2026-10-17, aviso, no bloquea): 53 deja `ACE` = 5 o mas bajas con teamkills incluidos (como Bajas); con un teamkill entre las 5 la ronda sale ACE sin haber matado a los 5 rivales. Queda documentado en `metricas.md`; cambia si decidis excluir teamkills de `kills` (aviso de la 53 arriba). 54: el umbral de 5 partidas para "habitual" sigue sin calibrar con la base real.
 - Ficha 52 (Revisor 2026-10-18, aviso, no bloquea): la fila `Posible plant` de `/api/trends/` trae `rounds_won: 0` y no `null` aunque esas rondas se hayan ganado (lo pidio el diseno; la UI no muestra `rounds_won`). Si preferis `null`, es un cambio de una linea en `_celda`.
 - Fichas 52 y 54 (QA 2026-10-18, aviso, no bloquea): los tramos de 45 s (52) y el umbral de 5 partidas para habitual (54) se probaron solo con datos sinteticos; calibrar con la base real.
-- PR #42 (ficha 53) ya en main: lo mergeaste vos (c711f7a). Nada pendiente de merge.
+- PR #42 (ficha 53) ya en main (c711f7a): lo mergeo el release 20261018T2227Z por MCP, no vos. Nada pendiente de merge.
+- Rutina: el disparo de las 21:01 corrio dos veces en paralelo con la misma sesion 20261018T2227Z (dos commits de `ESTADO.md` del mismo turno). Si se repite, revisar en la Routine `r6-replay-lab: equipo dev cada 3h` si hay dos disparos configurados.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
