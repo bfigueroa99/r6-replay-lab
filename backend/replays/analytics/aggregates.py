@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -851,6 +852,107 @@ def round_endings(**filters) -> list[dict]:
     return filas
 
 
+#: Tramos fijos de `by_round_length`: (nombre, desde, hasta) en segundos de la
+#: fase de accion. Cuartos de los 180 s de ranked; un modo mas corto llena
+#: menos el ultimo.
+TRAMOS_DURACION = (("0-45", 0, 45), ("45-90", 45, 90), ("90-135", 90, 135), ("135+", 135, None))
+FILA_PLANT = "plant"
+LADOS_DURACION = ("Attack", "Defense")
+CAMPOS_DURACION = (
+    "rounds", "rounds_won", "winrate", "rating", "kpr", "avg_duration_won", "avg_duration_lost",
+)
+
+
+def _duracion() -> ExpressionWrapper:
+    """`Round.duration` en SQL; funcion por lo mismo que `rating_points_expr`."""
+    return ExpressionWrapper(
+        F("round__clock_start") - F("round__clock_end"), output_field=FloatField()
+    )
+
+
+def _promedios_de_duracion() -> dict:
+    # `round__my_team_won` y no `won`: una ronda sin ganador no es "lo que
+    # tardas en perder" (misma razon que en `round_endings`).
+    return {
+        "avg_duration_won": Avg(_duracion(), filter=Q(round__my_team_won=True)),
+        "avg_duration_lost": Avg(_duracion(), filter=Q(round__my_team_won=False)),
+    }
+
+
+def _celda(raw: dict | None, baseline: float | None, *, con_metricas: bool = True) -> dict:
+    if not raw or not raw.get("rounds"):
+        return {campo: 0 if campo in ("rounds", "rounds_won") else None
+                for campo in CAMPOS_DURACION}
+    if not con_metricas:
+        # Fila de posible plant: solo el conteo. Un winrate sobre un plant
+        # inferido seria una metrica de plant, que el `.rec` no sostiene.
+        celda = dict.fromkeys(CAMPOS_DURACION)
+        celda.update({"rounds": raw["rounds"], "rounds_won": 0})
+        return celda
+    fila = derive(dict(raw), baseline)
+    for clave in ("avg_duration_won", "avg_duration_lost"):
+        if fila.get(clave) is not None:
+            fila[clave] = round(fila[clave], 1)
+    return {campo: fila.get(campo) for campo in CAMPOS_DURACION}
+
+
+def _celdas_por_lado(qs: QuerySet[RoundPlayer], baseline: float | None, *,
+                     con_metricas: bool = True) -> dict:
+    """Ataque, defensa y total. El total cuenta tambien las rondas sin lado."""
+    por_lado = {
+        fila["side"]: fila
+        for fila in qs.filter(side__in=LADOS_DURACION)
+        .values("side")
+        .annotate(**AGGREGATES, **_promedios_de_duracion())
+    }
+    total = qs.aggregate(**AGGREGATES, **_promedios_de_duracion())
+    celdas = {lado: _celda(por_lado.get(lado), baseline, con_metricas=con_metricas)
+              for lado in LADOS_DURACION}
+    celdas["total"] = _celda(total, baseline, con_metricas=con_metricas)
+    return celdas
+
+
+def by_round_length(**filters) -> dict:
+    """Tus rondas por cuanto duro la fase de accion, por lado.
+
+    Un posible plant va a su fila y no a un tramo: despues del plant el reloj
+    principal deja de correr y la resta no mide lo mismo. Un plant que termina
+    en barrida no se marca y entra a un tramo con la duracion hasta el plant;
+    el `.rec` no deja separarlo.
+    """
+    qs = base_queryset(**filters)
+    baseline = rating_baseline()
+    # `clock_last` ignora ceros: un `clock_end` en 0 solo sale del fallback de
+    # `metrics._clock_start` y la resta no seria una duracion.
+    sin_reloj = Q(round__clock_start__lte=0) | Q(round__clock_end__lte=0)
+    # `alias` y no `annotate`: una anotacion seleccionada entraria al GROUP BY
+    # de `values("side")` y partiria las filas por duracion. Por eso los
+    # promedios arman su propia expresion en vez de leer el alias.
+    con_reloj = qs.exclude(sin_reloj).alias(duracion=_duracion())
+    medibles = con_reloj.filter(round__possible_plant=False)
+
+    filas = []
+    for nombre, desde, hasta in TRAMOS_DURACION:
+        tramo = medibles
+        # Sin piso en el primero: una resta negativa cae en 0-45, como el
+        # `max(..., 0)` de `Round.duration`.
+        if desde:
+            tramo = tramo.filter(duracion__gte=desde)
+        if hasta is not None:
+            tramo = tramo.filter(duracion__lt=hasta)
+        filas.append({"length": nombre, **_celdas_por_lado(tramo, baseline)})
+    filas.append({
+        "length": FILA_PLANT,
+        **_celdas_por_lado(con_reloj.filter(round__possible_plant=True), baseline,
+                           con_metricas=False),
+    })
+    return {
+        "rows": filas,
+        "summary": _celdas_por_lado(medibles, baseline),
+        "rounds_unknown_clock": qs.filter(sin_reloj).count(),
+    }
+
+
 def by_hour(**filters) -> list[dict]:
     """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
 
@@ -967,6 +1069,84 @@ def teammate_synergy(min_rounds: int = 10, **filters) -> list[dict]:
         }
         for r in rows
     ]
+
+
+#: Partidas juntas en tu equipo para ser habitual. Se mide sobre todo el
+#: historial y sin filtros: un filtro de mapa no cambia con quien jugas.
+MIN_PARTIDAS_HABITUAL = 5
+
+#: Orden fijo de `by_stack`; el indice es la cantidad de habituales (3 o mas = stack).
+GRUPOS = ("solo", "duo", "trio", "stack")
+
+
+def by_stack(**filters) -> dict:
+    """Tus partidas segun cuantos companeros habituales jugaron en tu equipo.
+
+    El grupo es un dato de la partida, no de la ronda: se cuenta sobre todas
+    sus rondas, sin filtros. Los filtros solo eligen que partidas y que rondas
+    entran a cada fila.
+    """
+    # Sin filtros y correlacionada, como `teammate_synergy` (tope de
+    # parametros de SQLite con un IN de round_ids).
+    mia = RoundPlayer.objects.filter(
+        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    companeros = RoundPlayer.objects.filter(is_me=False).filter(Exists(mia))
+    # El nombre sale de Player: un cambio de nick no parte al habitual.
+    habituales = list(
+        companeros.values("player_id", "player__username")
+        .annotate(n=Count("round__match_id", distinct=True))
+        .filter(n__gte=MIN_PARTIDAS_HABITUAL)
+        .order_by("-n", "player__username")
+    )
+    ids_hab = [h["player_id"] for h in habituales]
+
+    por_partida = _por_partida(**filters)
+    ids = base_queryset(**filters).values("round__match_id")
+    grupo: Counter[int] = Counter()
+    if ids_hab:
+        grupo = Counter(
+            mid for mid, _ in companeros.filter(player_id__in=ids_hab, round__match_id__in=ids)
+            .values_list("round__match_id", "player_id")
+            # sin el orden del modelo: entraria al DISTINCT y repetiria pares
+            .order_by()
+            .distinct()
+        )
+    won = dict(Match.objects.filter(id__in=ids).values_list("id", "won"))
+    baseline = rating_baseline()
+
+    por_grupo: dict[str, list[int]] = {g: [] for g in GRUPOS}
+    for mid in por_partida:
+        por_grupo[GRUPOS[min(grupo.get(mid, 0), len(GRUPOS) - 1)]].append(mid)
+
+    filas = []
+    for i, g in enumerate(GRUPOS):
+        mids = por_grupo[g]
+        t = _fold([por_partida[m] for m in mids], baseline)
+        # Resultado entero de la partida aunque un filtro de lado recorte sus
+        # rondas, como `by_start_side`. Sin resultado (empate o incompleta)
+        # no entra al winrate de partida.
+        decididas = [won[m] for m in mids if won.get(m) is not None]
+        filas.append({
+            "group": g,
+            "regulars": i,
+            "matches": len(mids),
+            "matches_decided": len(decididas),
+            "matches_won": sum(decididas),
+            "match_winrate": _pct(sum(decididas), len(decididas)),
+            "rounds": t["rounds"] or 0,
+            "rounds_won": t["rounds_won"] or 0,
+            "winrate": t["winrate"],
+            "rating": t["rating"],
+        })
+    return {
+        "rows": filas,
+        "regulars": [
+            {"player_id": h["player_id"], "username": h["player__username"], "matches": h["n"]}
+            for h in habituales
+        ],
+        "min_matches": MIN_PARTIDAS_HABITUAL,
+    }
 
 
 LADOS_PRIMERA_CAIDA = ("Attack", "Defense", "total")

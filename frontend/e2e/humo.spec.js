@@ -159,6 +159,34 @@ test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra rondas cortas y largas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas cortas y largas', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo: todas las rondas van de 180 a 20 en el reloj (160 s) y ninguna es posible
+  // plant, asi que todo cae en "135 s o mas". El reparto lo prueban los tests de backend
+  const tramos = panel.locator('table').first().locator('tbody tr')
+  await expect(tramos).toHaveCount(5)
+  const larga = tramos.filter({ has: page.getByRole('cell', { name: '135 s o más', exact: true }) })
+  for (const texto of ['100% (116)', '0% (87)', '57% (203)', '1.00', '0.49']) {
+    await expect(larga.getByRole('cell', { name: texto, exact: true })).toBeVisible()
+  }
+  const corta = tramos.filter({ has: page.getByRole('cell', { name: '0–45 s', exact: true }) })
+  await expect(corta.getByRole('cell', { name: '—', exact: true })).toHaveCount(5)
+
+  const promedios = panel.locator('table').nth(1).locator('tbody tr')
+  const fila = (lado) => promedios.filter({ has: page.getByRole('cell', { name: lado, exact: true }) })
+  await expect(fila('Ataque').locator('td')).toHaveText(['Ataque', '116', '160 s', '—'])
+  await expect(fila('Defensa').locator('td')).toHaveText(['Defensa', '87', '—', '160 s'])
+  await expect(fila('Total').locator('td')).toHaveText(['Total', '203', '160 s', '160 s'])
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra hora y dia de la semana', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -317,6 +345,28 @@ test('Compañeros muestra quien cae primero', async ({ page }) => {
   const total = panel.locator('tbody tr', { hasText: 'Total' })
   await expect(total).toContainText('203')
   await expect(total).toContainText('53 (26%)')
+
+  expect(errores).toEqual([])
+})
+
+test('Compañeros muestra solo, en dúo o en stack', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Solo, en dúo o en stack', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo: Chamo, Seba y Nico juegan contigo las 29 partidas, asi que todo cae en Stack
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(4)
+  const stack = filas.filter({ has: page.getByRole('cell', { name: 'Stack', exact: true }) })
+  for (const texto of ['29', '100%', '203', '57%', '1.00']) {
+    await expect(stack.getByRole('cell', { name: texto, exact: true })).toBeVisible()
+  }
+  const solo = filas.filter({ has: page.getByRole('cell', { name: 'Solo', exact: true }) })
+  await expect(solo.getByRole('cell', { name: '0', exact: true })).toHaveCount(3)
+  await expect(panel).toContainText('Chamo')
 
   expect(errores).toEqual([])
 })

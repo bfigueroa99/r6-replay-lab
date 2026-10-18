@@ -60,6 +60,9 @@ def make_round(
     won: bool = True,
     overtime_number: int = 0,
     score_before: list | None = None,
+    clock_start: float = 180,
+    clock_end: float = 30,
+    possible_plant: bool = False,
 ) -> Round:
     return Round.objects.create(
         match=match,
@@ -69,8 +72,9 @@ def make_round(
         my_side=side,
         my_team_won=won,
         win_condition="KilledOpponents",
-        clock_start=180,
-        clock_end=30,
+        clock_start=clock_start,
+        clock_end=clock_end,
+        possible_plant=possible_plant,
         teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
         score_before=score_before or [],
     )
