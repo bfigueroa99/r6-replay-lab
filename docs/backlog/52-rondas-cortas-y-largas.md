@@ -1,7 +1,7 @@
 # 52. Rondas cortas y rondas largas
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-18T00:04Z
 rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
 epica: lado-y-marcador
