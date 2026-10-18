@@ -1,7 +1,7 @@
 # 52. Rondas cortas y rondas largas
 
-estado: revisado
-candado: qa 2026-10-18T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B9 (y B12, que entra como columna de este tramo)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/factories.py, backend/tests/test_duracion.py, backend/tests/test_api.py, backend/tests/test_seed_demo.py, frontend/src/duracion.js, frontend/src/duracion.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md, docs/formato-rec.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z, qa 20261018T0404Z
 
 ## PR
 
@@ -383,6 +383,50 @@ frontend, build ok, 40 e2e).
 
 Veredicto: aprobar -> `revisado`.
 
+## QA 2026-10-18 sobre 920bbdb
+
+(QA 20261018T0404Z. Rama al dia con main 9e3d660: sin merge. 920bbdb = beb373a + candado.)
+
+**check.sh completo:** `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 661 tests backend,
+106 frontend, build ok, 40 e2e incluido `Tendencias muestra rondas cortas y largas`).
+
+**Chunk inicial:** `index-*.js` 186.78 kB en la rama y 186.78 kB en `origin/main` (0 %):
+el panel vive en el chunk lazy de Tendencias.
+
+**Base sembrada** (script en el scratchpad con `tests/factories.py`, base temporal
+`SQLITE_PATH=<scratch>/qa52.sqlite3`, `runserver 8061`): 2 partidas (Bank, Border), 12
+rondas: 30 s, 45 s exacto, 80 s, 135 s exacto, final del reloj (`clock_end=1`), 110 s,
+sin ganador de 130 s, 10 s, dos `possible_plant`, una con `clock_start=0` y una con
+`clock_end=0`. `curl -s localhost:8061/api/trends/<q>`:
+
+| criterio | evidencia |
+|---|---|
+| 1 cinco filas, tramo vacio | Sin filtros: `0-45` A 2, `45-90` A 1 (el de 45 s) + D 1, `90-135` A 2, `135+` A 1 (179 s) + D 1 (135 s), `plant` D 2; Defensa `0-45` y `90-135` en `rounds: 0, winrate: null`. Base vacia (`runserver 8062`): las cinco filas y `summary` en 0, `rounds_unknown_clock: 0`. |
+| 2 plant y reloj desconocido | `plant` total `{rounds: 2, rounds_won: 0, winrate/rating/kpr/promedios: null}` y en ningun tramo; `rounds_unknown_clock: 2` (`clock_start=0` y `clock_end=0`). 8 medibles + 2 plant + 2 sin reloj = 12. |
+| 3 filtros | `?side=Attack`: Defensa en 0, total 6, unknown 1. `?side=Defense`: Ataque en 0, total 2, plant 2. `?map=bank`: total 5, plant 1, unknown 1. `?map=nada`, `?since=2030-01-01`, `?session=99999`, `?days=0`: todo en 0, 200. `?until=foo`, `?page=-1`, `?days=abc`: 200, sin filtrar (como el resto de Tendencias). |
+| 4 promedios | Ataque `avg_duration_won` 82.2 ((30+179+110+10)/4) y `avg_duration_lost` 45.0: la ronda sin ganador de 130 s no entra. Defensa 80.0 / 135.0. Total 81.8 / 90.0. |
+| total con rondas sin lado | Con tu fila de la ronda de 10 s en `side=''`: `0-45` Ataque 1, total 2; summary Ataque 5/3 (106.3), total 8. |
+| 5 panel y e2e | e2e `Tendencias muestra rondas cortas y largas` en verde, consola limpia; `duracion.test.js` 7 verdes. |
+| 6 docs | `docs/metricas.md:92` fila **Duracion de la ronda**; `docs/formato-rec.md:141` con el matiz. |
+
+**Mutacion** (codigo roto a proposito, test que cae, `git checkout` despues):
+- `medibles = con_reloj` (plant en los tramos) -> caen
+  `test_un_posible_plant_cuenta_solo_en_su_fila_y_sin_metricas` y
+  `test_el_resumen_junta_los_cuatro_tramos_sin_plant`.
+- `duracion__gte` -> `duracion__gt` -> cae `test_una_ronda_de_45_segundos_cae_en_45_a_90`.
+- `avg_duration_lost` con `won=False` en vez de `round__my_team_won=False` -> cae
+  `test_una_ronda_sin_ganador_no_entra_en_los_promedios`.
+- sin `| Q(round__clock_end__lte=0)` -> cae
+  `test_un_clock_end_en_cero_con_inicio_cuenta_como_reloj_desconocido`.
+- `duracion.js`: la fila plant en `celdasConPocaMuestra` y `'0% (0)'` en vez de `'—'` -> cae
+  un test de vitest cada una.
+
+Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: no hay `## Verificar en
+el PC`. Los tramos de 45 s solo se probaron con datos sinteticos: calibrar con la base real
+(ya anotado en `## Para el humano`).
+
+Veredicto: todos los criterios con evidencia -> `aprobado`.
+
 ## Para el humano
 
 Los tramos de 45 s son una eleccion del PO sobre una fase de accion de
@@ -390,4 +434,5 @@ Los tramos de 45 s son una eleccion del PO sobre una fase de accion de
 ajustarlos antes de implementar; es reversible.
 
 - Arquitecto 2026-10-17: la fila `Posible plant` queda solo con `rounds` (winrate, rating, KPR y promedios en `null`): una metrica sobre un plant inferido choca con CLAUDE.md. Un plant seguido de barrida no se marca `possible_plant` y entra a un tramo con la duracion hasta el plant; no se puede separar con lo que trae el `.rec` y queda documentado. Tramos de 45 s sin cambio; calibrar con la base real.
+- QA 2026-10-18: tramos de 45 s probados solo con datos sinteticos; calibrar con la base real.
 - Revisor 2026-10-18: `rounds_won` de la fila `plant` sale en 0 y no en `null` (lo pidio el diseno; la UI no lo muestra). Si preferis `null`, es un cambio de una linea.
