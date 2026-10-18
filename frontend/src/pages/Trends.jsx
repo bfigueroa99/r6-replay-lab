@@ -20,6 +20,12 @@ import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
+import {
+  celdasConPocaMuestra,
+  filasDeDuracion,
+  hayDuracion,
+  resumenDeDuracion,
+} from '../duracion.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -87,6 +93,24 @@ function columnaCierre(key, label, conteo, help) {
         : `${String(row[key]).replace('.', ',')} (${row[conteo]})`,
   }
 }
+
+/** Winrate y rondas de un lado del tramo; el CSV lleva el winrate exacto. */
+function columnaDuracion(lado, label) {
+  return {
+    key: lado,
+    label,
+    sortable: false,
+    render: (row) => row.vista[lado],
+    csv: (row) => {
+      const celda = row[lado] || {}
+      return celda.winrate === null || celda.winrate === undefined
+        ? `(${celda.rounds || 0})`
+        : `${String(celda.winrate).replace('.', ',')} (${celda.rounds})`
+    },
+  }
+}
+
+const segundos = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} s`)
 
 /** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
 function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
@@ -184,6 +208,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const remontadas = data.comebacks
   const margen = data.by_margin
   const filasMargen = filasDeMargen(margen)
+  const duracion = data.by_round_length
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
@@ -650,6 +675,60 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.side}
             csvName="como-se-cierran"
           />
+        </Panel>
+      ) : null}
+
+      {duracion ? (
+        <Panel
+          title="Rondas cortas y largas"
+          hint={
+            celdasConPocaMuestra(duracion).length
+              ? `Ojo: alguna celda tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Winrate según cuánto duró la fase de acción. Llegar al final del reloj cae en 135 s o más: en ataque es derrota y en defensa victoria.'
+          }
+        >
+          {hayDuracion(duracion) ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Duración', sortable: false, left: true,
+                    help: 'Segundos de la fase de acción, del reloj de la ronda. Posible plant: el reloj se cortó arriba de 5 s sin barrida; esas rondas no entran en ningún tramo.' },
+                  columnaDuracion('Attack', 'Ataque'),
+                  columnaDuracion('Defense', 'Defensa'),
+                  columnaDuracion('total', 'Total'),
+                  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Sobre el total del tramo.' },
+                  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+                ]}
+                rows={filasDeDuracion(duracion)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.length}
+                csvName="por-duracion"
+              />
+              <h3>Cuánto tardas en ganar y en perder</h3>
+              <DataTable
+                columns={[
+                  { key: 'lado', label: 'Lado', sortable: false, left: true },
+                  { key: 'rounds', label: 'Rondas', sortable: false },
+                  { key: 'avg_duration_won', label: 'Ganadas en', sortable: false,
+                    render: (row) => segundos(row.avg_duration_won),
+                    help: 'Duración promedio de tus rondas ganadas, sin posible plant ni rondas sin ganador.' },
+                  { key: 'avg_duration_lost', label: 'Perdidas en', sortable: false,
+                    render: (row) => segundos(row.avg_duration_lost) },
+                ]}
+                rows={resumenDeDuracion(duracion)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.clave}
+                csvName="duracion-promedio"
+              />
+            </>
+          ) : (
+            <p className="note">Sin rondas con reloj legible.</p>
+          )}
+          {duracion.rounds_unknown_clock > 0 ? (
+            <p className="note">
+              {duracion.rounds_unknown_clock} {duracion.rounds_unknown_clock === 1 ? 'ronda sin reloj quedó' : 'rondas sin reloj quedaron'} fuera.
+            </p>
+          ) : null}
         </Panel>
       ) : null}
 
