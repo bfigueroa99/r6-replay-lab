@@ -1,7 +1,7 @@
 # 53. Multikills por tamaño: 2K, 3K, 4K y ace
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-18T12:06Z
 rama: claude/equipo-dev/53-multikills-por-tamano
 tipo: funcionalidad
 epica: revision-de-rondas
