@@ -1,6 +1,6 @@
 # 54. Solo, en duo o en stack
 
-estado: entregado (PR pendiente de merge: el merge fue denegado por los permisos de la sesion; lo mergea el humano o el proximo Release)
+estado: entregado
 candado: -
 rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C5 (historial acumulado: la app es la unica que ve con quien jugaste cada partida)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_grupo.py, backend/tests/test_api.py, frontend/src/grupo.js, frontend/src/grupo.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z, qa 20261018T0404Z, release 20261018T0804Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z, qa 20261018T0404Z, release 20261018T0804Z, release 20261018T2003Z
 
 ## PR
 
