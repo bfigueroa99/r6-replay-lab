@@ -1,7 +1,7 @@
 # 53. Multikills por tamaño: 2K, 3K, 4K y ace
 
-estado: revisado
-candado: qa 2026-10-18 16:05 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/53-multikills-por-tamano
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F10 ([CS Demo Manager](https://cs-demo-manager.com/changelog), [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_multikills.py, backend/tests/test_player_stats.py, backend/tests/test_api.py, frontend/src/multikills.js, frontend/src/multikills.test.js, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T1205Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T1205Z, qa 20261018T1603Z
 
 ## PR
 
@@ -346,6 +346,50 @@ uno: cada nombre prueba lo que dice). El test de `test_api.py` solo verifica pre
 de claves, que es lo que su nombre promete; los valores los cubre `test_multikills.py`.
 
 Veredicto: aprobar -> `revisado`.
+
+## QA 2026-10-18 sobre 97b933e
+
+(QA 20261018T1603Z. Main 9e3d660 ya fusionado en la rama: `git merge-tree` sin conflicto
+y main no se movio desde la revision.)
+
+- **check.sh**: `./scripts/check.sh` -> `Todo en verde.` (656 tests backend OK, 4 skipped;
+  104 vitest; build ok; 41 e2e).
+- **Bases**: vacia y sembrada con `tests/factories.py` (script temporal en el scratchpad,
+  `SQLITE_PATH=<tmp>.sqlite3 python manage.py migrate` + script): partida Bank con tus
+  rondas de 0, 2, 3, 4, 5, 6 y 2 bajas alternando Attack/Defense, un compañero con un 2K,
+  un rival con 1 baja por ronda; partida Border de una sola ronda sin bajas.
+  `runserver 8011` (vacia) y `8012` (sembrada).
+- **C1** `curl -s localhost:8012/api/matches/1/`: BearF99 `kills 22, k2 2, k3 1, k4 1,
+  aces 2, multikill_rounds 6` (la de 6 bajas es ace); Compa `k2 1`; Rival todo 0.
+  `/api/matches/2/` (ronda sin bajas): todo 0, `multikill_pct 0.0`.
+- **C2** `my_totals` de la partida 1: `k2 2, k3 1, k4 1, aces 2, multikill_rounds 6,
+  multikill_pct 85.7`. UI (Chromium, 1280 y 375 px) en `/partidas/1`: celda
+  `2×2K · 1×3K · 1×4K · 2×ACE`, title `2 rondas de 2 bajas · 1 de 3 · 1 de 4 · 2 de 5 o más`;
+  sin scroll horizontal de pagina; el orden por la columna lo prueba el e2e (verde).
+- **C3** `/api/overview/`: overall 2/1/1/2/6; `?side=Attack` 1/1/0/1/3; `?side=Defense`
+  1/0/1/1/3 (cuadra con las rondas sembradas). `/api/players/2/` (Compa) `theirs.k2 1`;
+  `/api/players/3/` todo 0. CSV de `/api/export/?table=maps|days|sessions` traen las 5
+  columnas; `sessions` suma las dos partidas (`_fold`) sin promediar. UI: Resumen
+  `6 | 2×2K · 1×3K · 1×4K · 2×ACE · 75% de tus rondas` (6 de 8 rondas); perfil de Compa
+  `1 | 1×2K`.
+- **C4** `test_un_teamkill_suma_a_las_bajas_del_autor` pasa; `metricas.md` lo dice.
+- **C5** `multikill_pct` igual a `multikill_rounds / rondas` (85.7 = 6/7).
+- **C6** e2e `el scoreboard de la partida muestra multikills` verde, consola limpia.
+  Script Playwright propio sobre la base sembrada y la vacia: `errores consola: []`.
+- **Bordes** en las dos bases: `?until=foo`, `?page=-1`, `?map=Nada`,
+  `?since=2030-01-01`, `/api/matches/?page=-1&limit=0`, trends, sessions, compare,
+  operators, teammates, duels, coach, export: todo 200 salvo `export?table=nada` (400,
+  esperado) y partida/jugador inexistente (404). Cero 500 en los logs de runserver.
+- **Bundle**: chunk inicial `index-*.js` 186.78 kB en main -> 187.55 kB (+0.4 %).
+- **Mutacion**: (1) `aces` con `Q(kills=5)` -> caen 5 tests de `test_multikills`
+  (incluido `..._seis_es_ace`); (2) `.annotate(**agg.MULTIKILLS)` despues del alias
+  `kills` -> `OperationalError: misuse of aggregate function SUM()` en los tests de
+  scoreboard y `test_api`; (3) `derive` sin completar claves -> cae
+  `test_derive_sin_las_claves_las_deja_en_cero`; (4) `parte.rondas >= 0` en
+  `multikills.js` -> 4 de 5 vitest fallan. Todo restaurado.
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hace falta `## Verificar en el PC`.
+
+Veredicto: `aprobado`.
 
 ## Para el humano
 
