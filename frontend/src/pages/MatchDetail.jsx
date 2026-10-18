@@ -13,6 +13,7 @@ import {
   pct,
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
+import { detalleMultikills, textoMultikills } from '../multikills.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -191,6 +192,13 @@ export default function MatchDetail() {
             { key: 'trade_kills', label: 'Trades' },
             { key: 'untraded_deaths', label: 'Sin trade' },
             { key: 'clutches', label: '1vX' },
+            {
+              key: 'multikill_rounds',
+              label: 'Multikills',
+              help: 'Rondas con 2, 3, 4 y 5 o más bajas. Ordena por el total de rondas con 2 o más.',
+              render: (row) => <span title={detalleMultikills(row)}>{textoMultikills(row)}</span>,
+              csv: textoMultikills,
+            },
             { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
           ]}
           rows={scoreboard}

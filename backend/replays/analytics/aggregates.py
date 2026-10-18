@@ -128,6 +128,17 @@ def rating_baseline() -> float | None:
     return promedio["v"] or None
 
 
+#: Rondas por cantidad de bajas. Separado de AGGREGATES porque el scoreboard de
+#: la partida tiene su propio annotate y tiene que contar exactamente igual.
+#: Ace es 5 o mas y no 5 justo: un teamkill (cuenta en `kills`) o un modo con respawn la pasan de 5.
+MULTIKILLS = {
+    "k2": Count("id", filter=Q(kills=2)),
+    "k3": Count("id", filter=Q(kills=3)),
+    "k4": Count("id", filter=Q(kills=4)),
+    "aces": Count("id", filter=Q(kills__gte=5)),
+    "multikill_rounds": Count("id", filter=Q(kills__gte=2)),
+}
+
 # Los alias no pueden repetir nombres de campos del modelo: si `kills` fuera a
 # la vez alias y campo, Django no podria resolver los filtros que usan `kills`.
 AGGREGATES = {
@@ -145,7 +156,7 @@ AGGREGATES = {
     "untraded_deaths": Count("id", filter=Q(untraded_death=True)),
     "kst_rounds": Count("id", filter=Q(kst=True)),
     "clutch_rounds": Count("id", filter=Q(one_vx__gt=0)),
-    "multikill_rounds": Count("id", filter=Q(kills__gte=2)),
+    **MULTIKILLS,
     "triple_plus_rounds": Count("id", filter=Q(kills__gte=3)),
     "won_after_opening_kill": Count("id", filter=Q(opening_kill=True, won=True)),
     "won_after_opening_death": Count("id", filter=Q(opening_death=True, won=True)),
@@ -178,6 +189,9 @@ def derive(row: dict, baseline: float | None = None) -> dict:
     ok = row.get("opening_kills") or 0
     od = row.get("opening_deaths") or 0
     duels = ok + od
+    # Una fila armada a mano (tests, `_fold`) trae los conteos igual, en entero.
+    for clave in MULTIKILLS:
+        row[clave] = row.get(clave) or 0
 
     row.update(
         {
