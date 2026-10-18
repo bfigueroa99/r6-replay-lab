@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-18 12:25 UTC por revisor (sesion 20261018T1205Z; motivo: por estado: 1 implementado; reloj: revisor, franja 4)
+actualizado: 2026-10-18 16:40 UTC por qa (sesion 20261018T1603Z; motivo: por estado: 1 revisado; reloj: dev, franja 5)
 playbook: origin/main@9e3d660
-rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-16T21:01Z 10-17T09:01Z 10-17T21:01Z 10-18T09:01Z) | 12 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-16T21:01Z 10-17T09:01Z 10-17T21:01Z 10-18T09:01Z) | 11 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -10,11 +10,11 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/52-rondas-cortas-y-largas | docs/backlog/52-rondas-cortas-y-largas.md | entregado (PR pendiente de merge: merge denegado por los permisos de la sesion) | 0 | [PR #40](https://github.com/bfigueroa99/r6-replay-lab/pull/40) |
-| claude/equipo-dev/53-multikills-por-tamano | docs/backlog/53-multikills-por-tamano.md | revisado | 0 | sin PR; [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/53-multikills-por-tamano?expand=1) |
+| claude/equipo-dev/53-multikills-por-tamano | docs/backlog/53-multikills-por-tamano.md | aprobado | 0 | sin PR; [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/53-multikills-por-tamano?expand=1) |
 | claude/equipo-dev/54-solo-duo-o-stack | docs/backlog/54-solo-duo-o-stack.md | entregado (PR pendiente de merge: merge denegado por los permisos de la sesion) | 0 | [PR #41](https://github.com/bfigueroa99/r6-replay-lab/pull/41) |
 
 COLA=3/4  TOTAL=3/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=2 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=2 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -22,12 +22,12 @@ Merge de prueba por pares (release 2026-10-18 sobre 52 d7b0c88, 53 ff60754, 54 4
 
 1. `claude/equipo-dev/52-rondas-cortas-y-largas` (PR #40): no choca con nada. `check.sh` en verde sobre 66a3302 (= d7b0c88 sin la linea de estado).
 2. `claude/equipo-dev/54-solo-duo-o-stack` (PR #41): no choca con nada. `check.sh` en verde sobre 4a8240c (codigo; el ultimo commit es docs).
-3. `claude/equipo-dev/53-multikills-por-tamano`: no choca (revisor 2026-10-18 sobre 97b933e: 53x52 y 53x54 limpios); revisada, falta QA.
+3. `claude/equipo-dev/53-multikills-por-tamano`: no choca (revisor 2026-10-18 sobre 97b933e: 53x52 y 53x54 limpios); aprobada por QA 2026-10-18 sobre 97b933e (contiene main 9e3d660); falta que el Release la entregue y abra el PR.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:13 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida) otros:5.
-- Epicas en curso: lado-y-marcador: B1-B7 y B10 en main; B9+B12 en PR #40 (ficha 52, entregado); B8, B11 y B13 como idea. revision-de-rondas: F7 en main (51); F10 en cola (ficha 53, revisado). escuadra: C4 (46) en main; C5 en PR #41 (ficha 54, entregado); C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B7 y B10 en main; B9+B12 en PR #40 (ficha 52, entregado); B8, B11 y B13 como idea. revision-de-rondas: F7 en main (51); F10 en cola (ficha 53, aprobado). escuadra: C4 (46) en main; C5 en PR #41 (ficha 54, entregado); C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:3 de 3 ramas de trabajo.
 - `ALCANCE.md`: 60 ideas libres. Ideas nuevas de este turno: ninguna (turno de Release).
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
@@ -37,11 +37,11 @@ Merge de prueba por pares (release 2026-10-18 sobre 52 d7b0c88, 53 ff60754, 54 4
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 52-rondas-cortas-y-largas | en curso (espejo; la rama dice entregado, PR #40) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 53-multikills-por-tamano | en curso (espejo; la rama dice revisado) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
+| 53-multikills-por-tamano | en curso (espejo; la rama dice aprobado) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
 | 54-solo-duo-o-stack | en curso (espejo; la rama dice entregado, PR #41) | funcionalidad | escuadra | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: QA para la 53 (regla 2); despues PO para llenar el papel. Los PRs #40 y #41 esperan merge (regla 5: el Release los reintenta por reloj).
+Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: Release para la 53 (regla 1: `aprobado`); despues PO para llenar el papel. Los PRs #40 y #41 esperan merge (regla 5: el Release los reintenta por reloj).
 
 ## Ultimo turno de cada rol
 
@@ -50,7 +50,7 @@ Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: QA para la 53
 | release | 2026-10-18 08:12 | Entrega 52 y 54 (funcionalidad, `aprobado` -> `entregado`): `turnos:` con dev, revisor y qa de sesiones distintas, las dos ya contenian main 9e3d660. `## PR` escrito y fichas recortadas; `check.sh` en `Todo en verde.` (52: 661 backend, 106 vitest, build, 40 e2e, dos veces; 54: 662/103/40). PRs #40 y #41 abiertos. El merge de #40 lo denego el control de permisos de la sesion; no se reintento: las dos quedan `entregado (PR pendiente de merge)`. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-17 20:27 | Implementa 52 (`by_round_length` en `/api/trends/` + panel "Rondas cortas y largas"), 54 (`by_stack` en `/api/teammates/` + panel "Solo, en dúo o en stack") y 53 (`MULTIKILLS` en `AGGREGATES`, columna "Multikills" en el scoreboard, stat en Resumen y Jugador): las tres `disenado` -> `implementado`, cada una en su rama desde main 9e3d660. Revision ciega previa por ficha: aprobar (52 sin hallazgos; 54 un texto de metricas; 53 orden del e2e, tildes en comentarios y "con revives", corregidos). `check.sh` en `Todo en verde.` en cada rama (52: 661 backend, 106 vitest, 40 e2e; 54: 662/103/40; 53: 656/104/41). |
 | revisor | 2026-10-18 12:25 | Revisa 53 (funcionalidad, `implementado` -> `revisado`), ya al dia con main 9e3d660. Revision ciega: aprobar sin hallazgos; confirmado el orden de `annotate` en `_match_scoreboard`, las claves via `AGGREGATES`/`derive` y los numeros de seed_demo de los e2e (k2=14 de 203 rondas, demo-17 con 2×2K). `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Sin pushes de codigo. |
-| qa | 2026-10-18 04:35 | Prueba 52 y 54 (funcionalidad, `revisado` -> `aprobado`), las dos al dia con main 9e3d660. `check.sh` en `Todo en verde.` en cada rama (52: 661 backend, 106 vitest, build, 40 e2e; 54: 662/103/40). Bases sembradas con `factories.py` y `curl` con filtros borde: 52 con rondas de 45 s y 135 s exactos, final del reloj, sin ganador, dos posibles plant, `clock_start=0`, `clock_end=0` y fila sin lado; 54 con habituales de 6/6/5 partidas, uno de 4, rivales frecuentes, cambio de nick y un empate. Todos los numeros cuadran a mano; base vacia con filas en 0. Mutacion: 6 en 52 y 6 en 54, todas caen. Chunk inicial 186,78 -> 186,78 kB (52) y 186,86 kB (54). Sin pushes de codigo. |
+| qa | 2026-10-18 16:40 | Prueba 53 (funcionalidad, `revisado` -> `aprobado`), al dia con main 9e3d660. `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Bases vacia y sembrada con `factories.py` (rondas de 0, 2, 3, 4, 5 y 6 bajas por lado, compañero con 2K, rival sin multikills, partida de una ronda sin bajas): scoreboard, `my_totals`, overview por lado, perfil, CSV de mapas/dias/sesiones y UI en Chromium (1280 y 375 px) cuadran a mano; bordes sin 500; consola limpia. Mutacion: 4, todas caen. Chunk inicial 186,78 -> 187,55 kB (+0,4 %). Sin pushes de codigo. |
 | arquitecto | 2026-10-17 16:40 | Disena 52 (`by_round_length` en `/api/trends/`: 4 tramos de 45 s por lado desde `clock_start - clock_end`, reloj desconocido aparte, `Posible plant` solo con conteo; `summary` con duracion media ganada/perdida por lado; seed_demo: todo en "135 s o más"), 53 (dict `MULTIKILLS` k2/k3/k4/aces en `AGGREGATES`, aplicado en un `annotate` previo en `_match_scoreboard` por un `misuse of aggregate` de SQLite; columna "Multikills" `2×2K · 1×3K`, Jugador y Resumen; `kills` incluye teamkills y se documenta) y 54 (`by_stack` en `/api/teammates/`: habitual = 5 partidas en todo el historial, grupo de la partida sin filtros, 5 consultas fijas; seed_demo: 29 partidas en stack). Las tres probadas contra seed_demo en una base temporal. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
 | po | 2026-10-17 12:30 | Papel vacio: propone 52 (B9+B12: rondas cortas y largas por lado en Tendencias, posible plant y reloj desconocido aparte), 53 (F10: 2K/3K/4K/ace en el scoreboard de la partida, Jugador y Resumen; hoy ninguna pantalla muestra multikills) y 54 (C5: solo, duo, trio o stack en Compañeros, habitual = 5 partidas en todo el historial). Reconcilia `ALCANCE.md` con main 9e3d660 (B10 y F7 en main). Ideas nuevas B13, C11, E11, G7 y H5: 60 libres (59 al empezar). PRs #1, #14 y #22 siguen abiertos. Sin pushes de codigo. |
