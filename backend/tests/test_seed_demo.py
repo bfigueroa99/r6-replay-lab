@@ -59,6 +59,12 @@ class FormaTests(TestCase):
         self.assertEqual(Round.objects.count(), sum(c for _, _, c, _ in PERFIL))
         self.assertEqual(Round.objects.count(), 203)
 
+    def test_todas_las_rondas_duran_lo_que_afirma_el_e2e(self):
+        # el e2e de "Rondas cortas y largas" da por hecho que todo cae en 135 s o mas
+        self.assertFalse(Round.objects.exclude(clock_start=180).exists())
+        self.assertFalse(Round.objects.exclude(clock_end=20).exists())
+        self.assertFalse(Round.objects.filter(possible_plant=True).exists())
+
     def test_hay_un_solo_jugador_principal(self):
         self.assertEqual(Player.objects.filter(is_me=True).count(), 1)
         self.assertEqual(RoundPlayer.objects.filter(is_me=True).count(), 203)

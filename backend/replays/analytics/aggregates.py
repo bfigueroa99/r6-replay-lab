@@ -838,6 +838,107 @@ def round_endings(**filters) -> list[dict]:
     return filas
 
 
+#: Tramos fijos de `by_round_length`: (nombre, desde, hasta) en segundos de la
+#: fase de accion. Cuartos de los 180 s de ranked; un modo mas corto llena
+#: menos el ultimo.
+TRAMOS_DURACION = (("0-45", 0, 45), ("45-90", 45, 90), ("90-135", 90, 135), ("135+", 135, None))
+FILA_PLANT = "plant"
+LADOS_DURACION = ("Attack", "Defense")
+CAMPOS_DURACION = (
+    "rounds", "rounds_won", "winrate", "rating", "kpr", "avg_duration_won", "avg_duration_lost",
+)
+
+
+def _duracion() -> ExpressionWrapper:
+    """`Round.duration` en SQL; funcion por lo mismo que `rating_points_expr`."""
+    return ExpressionWrapper(
+        F("round__clock_start") - F("round__clock_end"), output_field=FloatField()
+    )
+
+
+def _promedios_de_duracion() -> dict:
+    # `round__my_team_won` y no `won`: una ronda sin ganador no es "lo que
+    # tardas en perder" (misma razon que en `round_endings`).
+    return {
+        "avg_duration_won": Avg(_duracion(), filter=Q(round__my_team_won=True)),
+        "avg_duration_lost": Avg(_duracion(), filter=Q(round__my_team_won=False)),
+    }
+
+
+def _celda(raw: dict | None, baseline: float | None, *, con_metricas: bool = True) -> dict:
+    if not raw or not raw.get("rounds"):
+        return {campo: 0 if campo in ("rounds", "rounds_won") else None
+                for campo in CAMPOS_DURACION}
+    if not con_metricas:
+        # Fila de posible plant: solo el conteo. Un winrate sobre un plant
+        # inferido seria una metrica de plant, que el `.rec` no sostiene.
+        celda = dict.fromkeys(CAMPOS_DURACION)
+        celda.update({"rounds": raw["rounds"], "rounds_won": 0})
+        return celda
+    fila = derive(dict(raw), baseline)
+    for clave in ("avg_duration_won", "avg_duration_lost"):
+        if fila.get(clave) is not None:
+            fila[clave] = round(fila[clave], 1)
+    return {campo: fila.get(campo) for campo in CAMPOS_DURACION}
+
+
+def _celdas_por_lado(qs: QuerySet[RoundPlayer], baseline: float | None, *,
+                     con_metricas: bool = True) -> dict:
+    """Ataque, defensa y total. El total cuenta tambien las rondas sin lado."""
+    por_lado = {
+        fila["side"]: fila
+        for fila in qs.filter(side__in=LADOS_DURACION)
+        .values("side")
+        .annotate(**AGGREGATES, **_promedios_de_duracion())
+    }
+    total = qs.aggregate(**AGGREGATES, **_promedios_de_duracion())
+    celdas = {lado: _celda(por_lado.get(lado), baseline, con_metricas=con_metricas)
+              for lado in LADOS_DURACION}
+    celdas["total"] = _celda(total, baseline, con_metricas=con_metricas)
+    return celdas
+
+
+def by_round_length(**filters) -> dict:
+    """Tus rondas por cuanto duro la fase de accion, por lado.
+
+    Un posible plant va a su fila y no a un tramo: despues del plant el reloj
+    principal deja de correr y la resta no mide lo mismo. Un plant que termina
+    en barrida no se marca y entra a un tramo con la duracion hasta el plant;
+    el `.rec` no deja separarlo.
+    """
+    qs = base_queryset(**filters)
+    baseline = rating_baseline()
+    # `clock_last` ignora ceros: un `clock_end` en 0 solo sale del fallback de
+    # `metrics._clock_start` y la resta no seria una duracion.
+    sin_reloj = Q(round__clock_start__lte=0) | Q(round__clock_end__lte=0)
+    # `alias` y no `annotate`: una anotacion seleccionada entraria al GROUP BY
+    # de `values("side")` y partiria las filas por duracion. Por eso los
+    # promedios arman su propia expresion en vez de leer el alias.
+    con_reloj = qs.exclude(sin_reloj).alias(duracion=_duracion())
+    medibles = con_reloj.filter(round__possible_plant=False)
+
+    filas = []
+    for nombre, desde, hasta in TRAMOS_DURACION:
+        tramo = medibles
+        # Sin piso en el primero: una resta negativa cae en 0-45, como el
+        # `max(..., 0)` de `Round.duration`.
+        if desde:
+            tramo = tramo.filter(duracion__gte=desde)
+        if hasta is not None:
+            tramo = tramo.filter(duracion__lt=hasta)
+        filas.append({"length": nombre, **_celdas_por_lado(tramo, baseline)})
+    filas.append({
+        "length": FILA_PLANT,
+        **_celdas_por_lado(con_reloj.filter(round__possible_plant=True), baseline,
+                           con_metricas=False),
+    })
+    return {
+        "rows": filas,
+        "summary": _celdas_por_lado(medibles, baseline),
+        "rounds_unknown_clock": qs.filter(sin_reloj).count(),
+    }
+
+
 def by_hour(**filters) -> list[dict]:
     """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
 
