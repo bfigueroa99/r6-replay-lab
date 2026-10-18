@@ -1,7 +1,7 @@
 # 53. Multikills por tamaño: 2K, 3K, 4K y ace
 
-estado: implementado
-candado: revisor 2026-10-18T12:06Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/53-multikills-por-tamano
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F10 ([CS Demo Manager](https://cs-demo-manager.com/changelog), [vlr.gg](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance))
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_multikills.py, backend/tests/test_player_stats.py, backend/tests/test_api.py, frontend/src/multikills.js, frontend/src/multikills.test.js, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T1205Z
 
 ## PR
 
@@ -317,6 +317,35 @@ corregidos (orden del e2e, tildes en comentarios y nombres de test de `multikill
 "con revives").
 
 `check.sh`: Todo en verde (656 tests backend, 104 frontend, build ok, 41 e2e).
+
+## Revision 2026-10-18 sobre ff60754
+
+(Revisor 20261018T1205Z. Main 9e3d660 ya fusionado en la rama; `check.sh` en verde
+antes de revisar: 656 tests backend, 104 frontend, build ok, 41 e2e.)
+
+Revision ciega (subagente con `revision.md`, sin leer la ficha): aprobar, sin
+hallazgos. Confirmado por el lider:
+
+- `_match_scoreboard`: `.annotate(**agg.MULTIKILLS)` va antes del alias
+  `kills=Sum("kills")`; `test_el_scoreboard_cuenta_rondas_por_tamano_y_seis_es_ace`
+  explota con `OperationalError` si se invierte el orden y ademas fija `kills == 20`.
+- `MULTIKILLS` entra en `AGGREGATES` en el mismo lugar que tenia `multikill_rounds`;
+  `derive` completa las cinco claves en entero, asi que `_fold`, `group_by`,
+  `overview` y `player_profile` las traen sin codigo extra. Sin migracion ni recompute.
+- Numeros de `seed_demo` verificados en base aparte: 203 rondas tuyas, `k2=14`, sin
+  3K/4K/ace, `multikill_pct` 6.9 (la UI muestra "7%"); en `demo-17` BearF99 tiene
+  2x2K y el resto 0. Coincide con lo que afirman los tres e2e.
+- La fila de `docs/metricas.md` dice lo que hace el codigo (`kills` incluye teamkills;
+  `_solo_rivales` los descarta en Duelos).
+- Columna `csv: textoMultikills` respeta el contrato `col.csv(row)` de `ui.jsx:86`.
+- Estilo: identificadores y comentarios sin tildes, UI con tildes, sin `print` ni
+  `console.log`. Diff dentro de `archivos:`.
+
+Criterios: 1 a 6 cubiertos por los tests que lista Implementacion (revisados uno por
+uno: cada nombre prueba lo que dice). El test de `test_api.py` solo verifica presencia
+de claves, que es lo que su nombre promete; los valores los cubre `test_multikills.py`.
+
+Veredicto: aprobar -> `revisado`.
 
 ## Para el humano
 
