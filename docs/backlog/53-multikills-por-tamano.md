@@ -32,7 +32,7 @@ rondas por tamaño (va con F1) y tocar `multikill_pct` o el rating.
 
 ### Como se probo
 
-- `./scripts/check.sh` sobre la rama con main fusionado: ver la linea de abajo.
+- `./scripts/check.sh` sobre la rama con main 4b7a6c3 fusionado: `Todo en verde.` (691 tests backend, 115 vitest, build ok, 43 e2e).
 - Tests nuevos: `test_multikills.py` (10: tamaños, ace = 5 o mas, jugadores separados,
   totals, overview por lado, perfil, filtro de lado, group_by, derive, `multikill_pct`),
   `test_un_teamkill_suma_a_las_bajas_del_autor`, `test_detalle_de_partida_trae_multikills_en_scoreboard_y_my_totals`,
