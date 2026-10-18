@@ -14,6 +14,9 @@ import {
   fmt,
   pct,
 } from '../components/ui.jsx'
+import { filasDeGrupo, textoHabituales } from '../grupo.js'
+import { MUESTRA_PARTIDAS } from '../margen.js'
+import { filasConPocaMuestra } from '../muestra.js'
 
 const SAMPLES = [
   { value: 5, label: '5+ rondas' },
@@ -42,6 +45,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   // El orden del backend (Ataque, Defensa, Total) se fija con `orden` para que la tabla no lo cambie al ordenar.
   const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
   const firstDownTotal = firstDown.find((row) => row.side === 'total')
+  const grupos = filasDeGrupo(data?.by_stack)
 
   return (
     <>
@@ -116,6 +120,36 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           empty={`Nadie llega a ${minRounds} rondas contigo con estos filtros.`}
         />
       </Panel>
+
+      {data?.by_stack ? (
+        <Panel
+          title="Solo, en dúo o en stack"
+          hint={
+            filasConPocaMuestra(grupos.map((f) => ({ rounds: f.matches })), MUESTRA_PARTIDAS).length
+              ? `Ojo: algún grupo tiene menos de ${MUESTRA_PARTIDAS} partidas; la diferencia puede ser varianza.`
+              : `Habitual: jugó en tu equipo en ${data.by_stack.min_matches} o más partidas de todo tu historial; los filtros no lo cambian. Una partida cuenta por los habituales que estuvieron en cualquiera de sus rondas. El winrate de partida deja fuera empates e incompletas.`
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'etiqueta', label: 'Grupo', sortable: false, left: true },
+              { key: 'habituales', label: 'Habituales', sortable: false,
+                help: 'Compañeros habituales distintos que jugaron en tu equipo esa partida.' },
+              { key: 'matches', label: 'Partidas', sortable: false },
+              { key: 'match_winrate', label: 'Winrate partida', digits: 0, suffix: '%', sortable: false,
+                help: 'Sobre las partidas con ganador; empates e incompletas no entran.' },
+              { key: 'rounds', label: 'Rondas', sortable: false },
+              { key: 'winrate', label: 'Winrate rondas', digits: 0, suffix: '%', sortable: false },
+              { key: 'rating', label: 'Rating', digits: 2, sortable: false },
+            ]}
+            rows={grupos}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.group}
+            csvName="solo-duo-stack"
+          />
+          <p className="note">{textoHabituales(data.by_stack)}</p>
+        </Panel>
+      ) : null}
 
       <Panel
         title="Primero en caer"

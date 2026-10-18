@@ -39,6 +39,12 @@ class EmptyApiTests(TestCase):
     def test_partida_inexistente_da_404(self):
         self.assertEqual(self.client.get("/api/matches/999/").status_code, 404)
 
+    def test_teammates_trae_by_stack_con_base_vacia(self):
+        datos = self.client.get("/api/teammates/").json()["by_stack"]
+        self.assertEqual([f["group"] for f in datos["rows"]], ["solo", "duo", "trio", "stack"])
+        self.assertTrue(all(f["matches"] == 0 for f in datos["rows"]))
+        self.assertEqual(datos["regulars"], [])
+
 
 class PopulatedApiTests(TestCase):
     def setUp(self):
@@ -112,6 +118,16 @@ class PopulatedApiTests(TestCase):
         self.assertTrue(data["by_match"])
         self.assertTrue(data["by_day"])
         self.assertTrue(data["by_round_number"])
+
+    def test_teammates_trae_by_stack(self):
+        resp = self.client.get("/api/teammates/")
+        self.assertEqual(resp.status_code, 200)
+        filas = resp.json()["by_stack"]["rows"]
+        self.assertEqual([f["group"] for f in filas], ["solo", "duo", "trio", "stack"])
+        for fila in filas:
+            self.assertTrue({"matches", "matches_won", "match_winrate", "rounds", "rounds_won",
+                             "winrate", "rating"} <= set(fila))
+        self.assertEqual(filas[0]["matches"], 2)
 
     def test_trends_trae_by_margin(self):
         resp = self.client.get("/api/trends/")

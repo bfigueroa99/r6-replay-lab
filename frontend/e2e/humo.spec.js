@@ -312,6 +312,28 @@ test('Compañeros muestra quien cae primero', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra solo, en dúo o en stack', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Solo, en dúo o en stack', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo: Chamo, Seba y Nico juegan contigo las 29 partidas, asi que todo cae en Stack
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(4)
+  const stack = filas.filter({ has: page.getByRole('cell', { name: 'Stack', exact: true }) })
+  for (const texto of ['29', '100%', '203', '57%', '1.00']) {
+    await expect(stack.getByRole('cell', { name: texto, exact: true })).toBeVisible()
+  }
+  const solo = filas.filter({ has: page.getByRole('cell', { name: 'Solo', exact: true }) })
+  await expect(solo.getByRole('cell', { name: '0', exact: true })).toHaveCount(3)
+  await expect(panel).toContainText('Chamo')
+
+  expect(errores).toEqual([])
+})
+
 test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', async ({ page }) => {
   const errores = vigilarConsola(page)
   const afuera = []
