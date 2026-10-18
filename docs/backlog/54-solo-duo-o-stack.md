@@ -1,7 +1,7 @@
 # 54. Solo, en duo o en stack
 
-estado: revisado
-candado: qa 2026-10-18T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C5 (historial acumulado: la app es la unica que ve con quien jugaste cada partida)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_grupo.py, backend/tests/test_api.py, frontend/src/grupo.js, frontend/src/grupo.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z, qa 20261018T0404Z
 
 ## PR
 
@@ -354,9 +354,51 @@ frontend, build ok, 40 e2e).
 
 Veredicto: aprobar -> `revisado`.
 
+## QA 2026-10-18 sobre 0017292
+
+(QA 20261018T0404Z. Rama al dia con main 9e3d660: sin merge. 0017292 = d67fa86 + candado.)
+
+**check.sh completo:** `./scripts/check.sh` -> `Todo en verde.` (ruff ok, 662 tests backend,
+103 frontend, build ok, 40 e2e incluido `Compañeros muestra solo, en dúo o en stack`).
+
+**Chunk inicial:** `index-*.js` 186.86 kB contra 186.78 kB de `origin/main` (+0.04 %).
+
+**Base sembrada** (script en el scratchpad con `tests/factories.py`, base temporal
+`SQLITE_PATH=<scratch>/qa54.sqlite3`, `runserver 8061`): 10 partidas de 2 rondas en Bank y
+Border; companeros A (6 partidas, en una con el nick `A_nuevo` sobre el mismo `Player`),
+B (6), C (5), D (4: no llega); rivales E y F en las 10 partidas (`team_index=1`); un empate
+(`won=None`, como lo guarda `ingest.py:169`). `curl -s localhost:8061/api/teammates/<q>`:
+
+| criterio | evidencia |
+|---|---|
+| 1 habitual | `regulars` = A 6, B 6, C 5; D (4) y los rivales E/F (10) no entran. El nick cambiado no parte a A: sigue con 6 y la partida del nick nuevo cae en `duo`. Con `?map=bank` la lista de habituales es la misma. |
+| 2 cuatro filas, una por partida | Sin filtros: solo 3 partidas (2 ganadas, 66.7 %), duo 1 (100 %), trio 2 (50 %), stack 4; 3+1+2+4 = 10. La partida con A, B, C y D cae en `stack`. |
+| 3 empate | `stack`: `matches: 4`, `matches_decided: 3`, `matches_won: 2`, `match_winrate: 66.7`; sus 2 rondas si entran (`rounds: 8`, `rounds_won: 5`). |
+| 4 filtros y base vacia | `?side=Attack`: mismas partidas por fila, rondas a la mitad (stack 4 rondas, 75 %). `?map=bank`: solo 1, duo 0 con `match_winrate: null`, trio 2, stack 2. `?map=nada`, `?since=2030-01-01`, `?session=99999`: cuatro filas en 0, 200. `?until=foo`, `?page=-1`: 200, sin filtrar. Base vacia (`runserver 8062`): cuatro filas en 0 y `regulars: []`. |
+| 5 panel y e2e | e2e `Compañeros muestra solo, en dúo o en stack` en verde, consola limpia; `grupo.test.js` 4 verdes. |
+| 6 docs | `docs/metricas.md:243` fila **Tamaño del grupo** con la definicion y el aviso de historial completo. |
+
+**Mutacion** (codigo roto a proposito, test que cae, `git checkout` despues):
+- `MIN_PARTIDAS_HABITUAL = 4` -> caen 6, entre ellos
+  `test_cinco_partidas_juntas_hacen_habitual_y_cuatro_no`.
+- sin `.filter(Exists(mia))` (cuenta rivales) -> cae `test_un_rival_frecuente_no_es_habitual`.
+- `decididas = [bool(won[m]) for m in mids]` (empate como derrota) -> cae
+  `test_un_empate_cuenta_en_partidas_y_rondas_pero_no_en_el_winrate_de_partida`.
+- sin el `.order_by()` antes de `.distinct()` -> caen 6, entre ellos
+  `test_cada_partida_cae_en_una_sola_fila_segun_sus_habituales`.
+- `grupo.js`: `habituales` sin el "3 o más" y `textoHabituales` sin el aviso -> cae un test
+  de vitest cada una.
+
+Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: no hay `## Verificar en
+el PC`. El umbral de 5 partidas solo se probo con datos sinteticos: calibrar con la base
+real (ya anotado en `## Para el humano`).
+
+Veredicto: todos los criterios con evidencia -> `aprobado`.
+
 ## Para el humano
 
 El umbral de 5 partidas sale de C5 y no se calibro con la base real. Si en
 tu historial casi todo cae en `solo`, se baja en el diseno; es reversible.
 
 - Arquitecto 2026-10-17: bug latente fuera de esta ficha: un empate queda con `won=None` (`ingest.py:169`) y `match_result` mira `won is None` antes que el empate (`models.py:13-20`), asi que en toda la app un empate se muestra como "incompleta". Candidato a ficha `bug` del PO.
+- QA 2026-10-18: umbral de 5 partidas probado solo con datos sinteticos; calibrar con la base real.
