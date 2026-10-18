@@ -1,7 +1,7 @@
 # 54. Solo, en duo o en stack
 
 estado: revisado
-candado: -
+candado: qa 2026-10-18T04:04Z
 rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
 epica: escuadra
