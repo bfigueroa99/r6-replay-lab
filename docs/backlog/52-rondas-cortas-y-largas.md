@@ -1,6 +1,6 @@
 # 52. Rondas cortas y rondas largas
 
-estado: entregado
+estado: entregado (PR pendiente de merge: el merge fue denegado por los permisos de la sesion; lo mergea el humano o el proximo Release)
 candado: -
 rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
