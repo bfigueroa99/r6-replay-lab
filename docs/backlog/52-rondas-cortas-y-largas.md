@@ -1,7 +1,7 @@
 # 52. Rondas cortas y rondas largas
 
-estado: implementado
-candado: revisor 2026-10-18T00:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/52-rondas-cortas-y-largas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B9 (y B12, que entra como columna de este tramo)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/factories.py, backend/tests/test_duracion.py, backend/tests/test_api.py, backend/tests/test_seed_demo.py, frontend/src/duracion.js, frontend/src/duracion.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md, docs/formato-rec.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z
 
 ## PR
 
@@ -351,6 +351,38 @@ resta de dos columnas que ya se guardan, como `Round.duration` y `rating_points_
 
 `check.sh`: Todo en verde (661 tests backend, 106 frontend, build ok, 40 e2e).
 
+## Revision 2026-10-18 sobre 7795ad2
+
+(Revisor 20261018T0004Z. Main sin moverse desde 9e3d660: no hizo falta merge.)
+
+Revision a ciegas (subagente con `revision.md`, sin leer `docs/backlog/`): aprobar.
+Un hallazgo menor, confirmado leyendo el codigo:
+
+- [bug, menor] backend/replays/analytics/aggregates.py:875 (`_celda`, rama `con_metricas=False`)
+  Que pasa: la fila `plant` devuelve `rounds_won: 0` aunque esas rondas se hayan ganado;
+  la API da un dato falso en vez de "sin dato".
+  Como reproducirlo: una ronda `possible_plant=True` ganada ->
+  `by_round_length()["rows"][4]["total"]` = `{"rounds": 1, "rounds_won": 0, ...}`.
+  `test_un_posible_plant_cuenta_solo_en_su_fila_y_sin_metricas` fija ese 0.
+  No bloquea: es lo que pidio el diseno ("`rounds_won` en 0", correccion 1) y la UI no
+  muestra `rounds_won`. Arreglo sugerido si alguien lo quiere: `None` y `assertIsNone`.
+
+Ficha contra codigo:
+
+- Cada criterio tiene test con nombre (lista de Implementacion verificada contra
+  `tests/test_duracion.py`, `test_api.py`, `duracion.test.js` y el e2e).
+- El diff no toca archivos fuera de `archivos:`; sin `print` ni `console.log`.
+- Fila **Duracion de la ronda** en `docs/metricas.md:92` con tramos, exclusion de posible
+  plant y de reloj desconocido.
+- Identificadores y comentarios sin tildes; textos de UI con tildes.
+- Reglas: sin dependencias, sin escrituras nuevas, sin migracion; la duracion es la resta
+  de dos columnas que ya se guardan al importar (mismo patron que `Round.duration`).
+
+`check.sh` sobre 3a68847 (= 7795ad2 + candado): Todo en verde (661 tests backend, 106
+frontend, build ok, 40 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
 ## Para el humano
 
 Los tramos de 45 s son una eleccion del PO sobre una fase de accion de
@@ -358,3 +390,4 @@ Los tramos de 45 s son una eleccion del PO sobre una fase de accion de
 ajustarlos antes de implementar; es reversible.
 
 - Arquitecto 2026-10-17: la fila `Posible plant` queda solo con `rounds` (winrate, rating, KPR y promedios en `null`): una metrica sobre un plant inferido choca con CLAUDE.md. Un plant seguido de barrida no se marca `possible_plant` y entra a un tramo con la duracion hasta el plant; no se puede separar con lo que trae el `.rec` y queda documentado. Tramos de 45 s sin cambio; calibrar con la base real.
+- Revisor 2026-10-18: `rounds_won` de la fila `plant` sale en 0 y no en `null` (lo pidio el diseno; la UI no lo muestra). Si preferis `null`, es un cambio de una linea.
