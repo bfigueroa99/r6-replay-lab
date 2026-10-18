@@ -1,47 +1,42 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-18 20:45 UTC por release (sesion 20261018T2003Z; motivo: por estado: 1 aprobado; reloj: investigador, franja 7)
-playbook: origin/main@9e3d660 (pruebas.sh: PRUEBAS_OK (10))
-rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-16T21:01Z 10-17T09:01Z 10-17T21:01Z 10-18T09:01Z) | 10 de 56 en 7 dias | sin herramientas para comparar el prompt
+actualizado: 2026-10-18 22:55 UTC por release (sesion 20261018T2227Z; motivo: por estado: 1 entregado; reloj: investigador, franja 7)
+playbook: origin/main@c711f7a (pruebas.sh: PRUEBAS_OK (10))
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-16T21:01Z 10-17T09:01Z 10-17T21:01Z 10-18T09:01Z) | 9 de 56 en 7 dias | sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas sin commits | PR / compare |
-|---|---|---|---|---|
-| claude/equipo-dev/53-multikills-por-tamano | docs/backlog/53-multikills-por-tamano.md | entregado (PR #42 abierto; no se mergeo por el tope de 2 merges por turno) | 0 | [PR #42](https://github.com/bfigueroa99/r6-replay-lab/pull/42) |
+Vacia. La 53 (PR #42) la mergeo el humano a las 22:30 UTC (main c711f7a), mientras este turno corria `check.sh` sobre su head ffe3520 (`Todo en verde.`: 691 backend, 115 vitest, build, 43 e2e).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=1 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=60 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
-Una sola rama abierta: no hay pares que probar.
-
-1. `claude/equipo-dev/53-multikills-por-tamano` (PR #42, head ffe3520): contiene main 4b7a6c3 (con 52 y 54 ya mergeadas); `check.sh` en `Todo en verde.` sobre 2258c83 (691 backend, 115 vitest, build, 43 e2e; ffe3520 solo cambia una linea de la ficha). La mergea el proximo Release (regla 1: `entregado`).
+Sin ramas abiertas: no hay pares que probar.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:15 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida 52-rondas-cortas-y-largas 54-solo-duo-o-stack) otros:5.
-- Epicas en curso: lado-y-marcador: B1-B7, B9, B10 y B12 en main (52, PR #40); B8, B11 y B13 como idea. revision-de-rondas: F7 en main (51); F10 en PR #42 (ficha 53, entregado). escuadra: C4 (46) y C5 (54, PR #41) en main; C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 60 ideas libres (el PO tiene que pasar B9, B12 y C5 a `en main`). Ideas nuevas de este turno: ninguna (turno de Release).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:16 (36-mitades-y-prorroga 37-rivales-repetidos 39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida 52-rondas-cortas-y-largas 53-multikills-por-tamano 54-solo-duo-o-stack) otros:5.
+- Epicas en curso: lado-y-marcador: B1-B7, B9, B10 y B12 en main; B8, B11 y B13 como idea. revision-de-rondas: F7 (51) y F10 (53, PR #42) en main. escuadra: C4 (46) y C5 (54) en main; C1-C3, C10 y C11 libres. temporada-y-modo: A2 (47) en main, A4 descartada (49) y en espera de decision del humano; A1 lo toca PR #14. progreso: E3 (40) y E4 (44) en main. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 60 ideas libres (el PO tiene que pasar B9, B12, C5 y F10 a `en main`). Ideas nuevas de este turno: ninguna (turno de Release).
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 53-multikills-por-tamano | en curso (espejo; la rama dice entregado, PR #42) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: Release para mergear la 53 (regla 1: `entregado`); despues PO para llenar el papel (regla 7). Espejos de 52 y 54 quitados (ya en main).
+Papel vacio de `propuesto` y `disenado`, cola vacia. Proximo turno por estado: investigador si el reloj lo dice, si no PO (regla 7) para llenar el papel. Espejo de la 53 quitado (ya en main).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-18 20:45 | Mergea PR #40 (ficha 52) y PR #41 (ficha 54) a main (c9f0dd5 y 4b7a6c3): `check.sh` en `Todo en verde.` sobre el head exacto de cada uno (52 d7b0c88: 661 backend, 106 vitest, build, 40 e2e; 54 con main c9f0dd5 fusionado, 4971956: 679/110/41). Entrega 53 (`aprobado` -> `entregado`): main 4b7a6c3 fusionado, `## PR`, ficha recortada a 95 lineas, `check.sh` verde (691/115/43), PR #42 abierto; no se mergea por el tope de 2 merges. Borrado de ramas: el proxy corta `git push --delete`. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-18 22:55 | Sale por la 53 `entregado` (PR #42): puerta a-e cumplida y `check.sh` en `Todo en verde.` sobre el head ffe3520 (691 backend, 115 vitest, build, 43 e2e); al ir a mergear, el humano ya lo habia mergeado (main c711f7a, 22:30 UTC). Ficha confirmada en main, espejo quitado de `backlog`. Borrar la rama: denegado en la sesion (va a borrables). pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. Sin pushes de codigo. |
 | dev | 2026-10-17 20:27 | Implementa 52 (`by_round_length` en `/api/trends/` + panel "Rondas cortas y largas"), 54 (`by_stack` en `/api/teammates/` + panel "Solo, en dúo o en stack") y 53 (`MULTIKILLS` en `AGGREGATES`, columna "Multikills" en el scoreboard, stat en Resumen y Jugador): las tres `disenado` -> `implementado`, cada una en su rama desde main 9e3d660. Revision ciega previa por ficha: aprobar (52 sin hallazgos; 54 un texto de metricas; 53 orden del e2e, tildes en comentarios y "con revives", corregidos). `check.sh` en `Todo en verde.` en cada rama (52: 661 backend, 106 vitest, 40 e2e; 54: 662/103/40; 53: 656/104/41). |
 | revisor | 2026-10-18 12:25 | Revisa 53 (funcionalidad, `implementado` -> `revisado`), ya al dia con main 9e3d660. Revision ciega: aprobar sin hallazgos; confirmado el orden de `annotate` en `_match_scoreboard`, las claves via `AGGREGATES`/`derive` y los numeros de seed_demo de los e2e (k2=14 de 203 rondas, demo-17 con 2×2K). `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Sin pushes de codigo. |
 | qa | 2026-10-18 16:40 | Prueba 53 (funcionalidad, `revisado` -> `aprobado`), al dia con main 9e3d660. `check.sh` en `Todo en verde.` (656 backend, 104 vitest, build, 41 e2e). Bases vacia y sembrada con `factories.py` (rondas de 0, 2, 3, 4, 5 y 6 bajas por lado, compañero con 2K, rival sin multikills, partida de una ronda sin bajas): scoreboard, `my_totals`, overview por lado, perfil, CSV de mapas/dias/sesiones y UI en Chromium (1280 y 375 px) cuadran a mano; bordes sin 500; consola limpia. Mutacion: 4, todas caen. Chunk inicial 186,78 -> 187,55 kB (+0,4 %). Sin pushes de codigo. |
@@ -75,6 +70,7 @@ Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: Release para 
   - `git push origin --delete claude/equipo-dev/51-matriz-de-duelos-de-la-partida` (mergeada, PR #39)
   - `git push origin --delete claude/equipo-dev/52-rondas-cortas-y-largas` (mergeada, PR #40)
   - `git push origin --delete claude/equipo-dev/54-solo-duo-o-stack` (mergeada, PR #41)
+  - `git push origin --delete claude/equipo-dev/53-multikills-por-tamano` (mergeada, PR #42)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
 - PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
@@ -116,7 +112,7 @@ Papel vacio de `propuesto` y `disenado`. Proximo turno por estado: Release para 
 - Fichas 52-54 (Dev 2026-10-17, aviso, no bloquea): 53 deja `ACE` = 5 o mas bajas con teamkills incluidos (como Bajas); con un teamkill entre las 5 la ronda sale ACE sin haber matado a los 5 rivales. Queda documentado en `metricas.md`; cambia si decidis excluir teamkills de `kills` (aviso de la 53 arriba). 54: el umbral de 5 partidas para "habitual" sigue sin calibrar con la base real.
 - Ficha 52 (Revisor 2026-10-18, aviso, no bloquea): la fila `Posible plant` de `/api/trends/` trae `rounds_won: 0` y no `null` aunque esas rondas se hayan ganado (lo pidio el diseno; la UI no muestra `rounds_won`). Si preferis `null`, es un cambio de una linea en `_celda`.
 - Fichas 52 y 54 (QA 2026-10-18, aviso, no bloquea): los tramos de 45 s (52) y el umbral de 5 partidas para habitual (54) se probaron solo con datos sinteticos; calibrar con la base real.
-- **PR #42 (ficha 53) entregado** (release 2026-10-18 20:45): pasa la puerta a-f; no se mergeo solo por el tope de 2 merges por turno. Lo mergea el proximo Release; si lo queres antes, mergealo vos (metodo merge). PRs #40 y #41 ya estan en main.
+- PR #42 (ficha 53) ya en main: lo mergeaste vos (c711f7a). Nada pendiente de merge.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
