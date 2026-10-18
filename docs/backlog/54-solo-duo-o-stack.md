@@ -1,7 +1,7 @@
 # 54. Solo, en duo o en stack
 
-estado: implementado
-candado: revisor 2026-10-18T00:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/54-solo-duo-o-stack
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C5 (historial acumulado: la app es la unica que ve con quien jugaste cada partida)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_grupo.py, backend/tests/test_api.py, frontend/src/grupo.js, frontend/src/grupo.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z
+turnos: po 20261017T1204Z, arquitecto 20261017T1603Z, dev 20261017T2004Z, revisor 20261018T0004Z
 
 ## PR
 
@@ -321,6 +321,38 @@ Revision ciega previa (subagente con `revision.md`): aprobar; un hallazgo de tex
 `metricas.md` (stack de 4 no requiere abandono), corregido.
 
 `check.sh`: Todo en verde (662 tests backend, 103 frontend, build ok, 40 e2e).
+
+## Revision 2026-10-18 sobre d01dbd1
+
+(Revisor 20261018T0004Z. Main sin moverse desde 9e3d660: no hizo falta merge.)
+
+Revision a ciegas (subagente con `revision.md`, sin leer `docs/backlog/`): aprobar, sin
+hallazgos. Lo que confirmo:
+
+- Habituales sin filtros, por `player_id`, solo en tu equipo (`team_index` de la misma
+  ronda) y por partidas distintas; un rival frecuente no cuenta.
+- Empate o partida incompleta: suma en partidas y rondas, fuera del winrate de partida.
+- `by_stack()` sobre `seed_demo` en base temporal: Stack con 29 partidas, 100 %, 203
+  rondas, 57,1 %, rating 1.00 (habituales Chamo, Nico y Seba): lo que afirma el e2e.
+- Consultas constantes (5, fijado por test); los IN grandes son subconsultas.
+- Los tests muerden: agrupar por `username` rompe `test_un_cambio_de_nick_no_parte_al_habitual`;
+  calcular el grupo sobre las rondas filtradas rompe
+  `test_el_filtro_de_lado_recorta_rondas_pero_no_el_grupo_de_la_partida`.
+
+Ficha contra codigo:
+
+- Cada criterio tiene test con nombre (lista de Implementacion verificada).
+- El diff no toca archivos fuera de `archivos:`; sin `print` ni `console.log`.
+- Fila **Tamaño del grupo** en `docs/metricas.md:243` con la definicion de habitual y el
+  aviso de que el umbral mira todo el historial.
+- Identificadores y comentarios sin tildes; textos de UI con tildes.
+- Reglas: sin dependencias, sin escrituras, sin migracion; solo agrega columnas que ya se
+  calculan al importar.
+
+`check.sh` sobre 7b4865a (= d01dbd1 + candado): Todo en verde (662 tests backend, 103
+frontend, build ok, 40 e2e).
+
+Veredicto: aprobar -> `revisado`.
 
 ## Para el humano
 
