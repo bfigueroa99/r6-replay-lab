@@ -77,4 +77,14 @@ if [ "${#fallos[@]}" -gt 0 ]; then
     echo "Fallo: $(printf '%s, ' "${fallos[@]}" | sed 's/, $//')"
     exit 1
 fi
+# Constancia del verde para la puerta de merge del equipo (condicion f de
+# scripts/equipo-dev/puerta.sh): que commit exacto paso, cuando y con o sin
+# e2e. Solo si el arbol versionado esta limpio: con cambios sin commitear el
+# verde no es de ningun commit. Vive en .git/, nunca se commitea.
+if gitdir="$(git -C "$repo" rev-parse --git-dir 2>/dev/null)" \
+    && [ -z "$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+    case "$gitdir" in /*) ;; *) gitdir="$repo/$gitdir" ;; esac
+    echo "$(git -C "$repo" rev-parse HEAD) $(date -u +%s) $([ "${SIN_E2E:-}" = 1 ] && echo sin-e2e || echo e2e)" \
+        >> "$gitdir/check-verde" 2>/dev/null || true
+fi
 echo "Todo en verde."

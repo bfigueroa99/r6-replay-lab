@@ -23,6 +23,12 @@ Dos frases: que puede ver o hacer que hoy no puede. Si es trabajo interno
 (`tipo: tests` o `deuda`), que riesgo baja. Si es tramo de una epica, que
 deja visible este tramo por si solo y cual es el siguiente.
 
+## Repro
+
+(Solo `tipo: bug`. Severidad S1-S3 de `SKILL.md`; el comando exacto, el
+input y la salida, sobre que sha de main. Para el parser, los bytes armados
+en linea, nunca un `.rec`. Borrar la seccion si no es un bug.)
+
 ## Criterios de aceptacion
 
 - [ ] Cada casilla se puede convertir en un test o en un `curl`.
