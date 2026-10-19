@@ -272,7 +272,27 @@ Hallazgos:
   `test_solo_desde_el_inicio_cuenta_todos_los_rivales`. Menor, pero es un
   numero mal y el arreglo son tres lineas.
 
-Duda sin verificar (va a `## Para el humano`): antes de Y9S1 `PlayerLeave`
+Duda sin verificar (va a `## Correccion 2026-10-19
+
+Dev 20261019T2004Z, sobre los dos hallazgos de la Revision 2b44e75:
+
+- [regla] README: restaurado desde `origin/main` con sus CRLF y reaplicada
+  solo la linea de `recompute`; `git diff --stat origin/main -- README.md`
+  da 1 linea. Ningun otro archivo de la rama cambio finales de linea
+  (comparado `--numstat` con y sin `--ignore-cr-at-eol`).
+- [bug] `clutch_vs`: la condicion "quede solo" se evalua tambien antes del
+  primer evento (`marcar_solos()` antes del loop). Tests nuevos
+  `test_solo_desde_el_inicio_cuenta_todos_los_rivales` y
+  `test_solo_desde_el_inicio_y_caer_primero_es_un_intento_perdido`.
+  Dos fixtures que tenian un equipo de un solo jugador cambian de valor con
+  la regla corregida: `test_un_uno_contra_uno_le_da_uno_a_los_dos` ahora usa
+  un 1v1 real desde el inicio, y el caso viejo (r1 arranca 1v2) quedo como
+  `test_quien_ya_estaba_solo_conserva_su_primer_valor`; en
+  `ComandoTests.setUp` de `test_recompute.py` el rival arranca solo frente a
+  dos y su `clutch_vs` esperado pasa de 1 a 2. `docs/metricas.md` lo aclara.
+  `seed_demo` asigna `clutch_vs` a mano y no se mueve.
+
+## Para el humano`): antes de Y9S1 `PlayerLeave`
 sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
 abandonos despues del final de la ronda, un compañero que se va tras ganar
 por tiempo deja a otro "solo con rivales vivos" y suma un intento falso. El

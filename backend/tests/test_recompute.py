@@ -154,11 +154,12 @@ class ComandoTests(TestCase):
         match = make_match(index=0)
         rnd = make_round(match, 0)
         make_round_player(rnd, username=ME, kills=0, died=True)
-        # como lo deja el import de hoy: tras mi muerte quedan 1v1, con clutch_vs ya calculado
+        # como lo deja el import de hoy: el rival arranca solo frente a dos y tras
+        # mi muerte quedan 1v1, con clutch_vs ya calculado
         make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False,
                           clutch_vs=1)
         make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True,
-                          clutch_vs=1)
+                          clutch_vs=2)
         make_event(rnd, 0, "rival", ME, clock=100.0)
         make_event(rnd, 1, "amigo", "rival", clock=94.0)
 

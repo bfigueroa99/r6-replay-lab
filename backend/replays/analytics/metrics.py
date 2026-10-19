@@ -107,6 +107,21 @@ def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
     """
     vivos = set(team_of)
     valor = dict.fromkeys(team_of, 0)
+
+    def marcar_solos() -> None:
+        por_equipo: dict[int, list[str]] = {}
+        for nick in vivos:
+            por_equipo.setdefault(team_of[nick], []).append(nick)
+        for nicks in por_equipo.values():
+            if len(nicks) != 1 or valor[nicks[0]]:
+                continue
+            rivales = len(vivos) - 1
+            if rivales:
+                valor[nicks[0]] = rivales
+
+    # un equipo puede arrancar con uno solo (abandonos de rondas previas,
+    # custom): ese 1vX empieza antes de la primera baja
+    marcar_solos()
     for e in eventos:
         kind = e.get("kind")
         if kind == KILL:
@@ -118,15 +133,7 @@ def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
         if muerto not in vivos:
             continue
         vivos.discard(muerto)
-        por_equipo: dict[int, list[str]] = {}
-        for nick in vivos:
-            por_equipo.setdefault(team_of[nick], []).append(nick)
-        for nicks in por_equipo.values():
-            if len(nicks) != 1 or valor[nicks[0]]:
-                continue
-            rivales = len(vivos) - 1
-            if rivales:
-                valor[nicks[0]] = rivales
+        marcar_solos()
     return valor
 
 

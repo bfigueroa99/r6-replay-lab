@@ -27,9 +27,13 @@ class ClutchVsTests(TestCase):
         self.assertEqual(valores["r1"], 0)
 
     def test_un_uno_contra_uno_le_da_uno_a_los_dos(self):
-        # cae a1 y quedan yo y r1 solos, uno frente al otro
-        valores = clutch_vs([kill("r1", "a1")], {"yo": 0, "a1": 0, "r1": 1})
+        valores = clutch_vs([kill("yo", "r1")], {"yo": 0, "r1": 1})
         self.assertEqual((valores["yo"], valores["r1"]), (1, 1))
+
+    def test_quien_ya_estaba_solo_conserva_su_primer_valor(self):
+        # r1 arranca 1v2; cae a1 y yo quedo 1v1, pero r1 sigue con su 2
+        valores = clutch_vs([kill("r1", "a1")], {"yo": 0, "a1": 0, "r1": 1})
+        self.assertEqual((valores["yo"], valores["r1"]), (1, 2))
 
     def test_el_player_leave_cuenta_como_muerte(self):
         eventos = [{"kind": "PlayerLeave", "actor": "a1", "target": ""}, kill("r1", "a2")]
@@ -50,6 +54,14 @@ class ClutchVsTests(TestCase):
         valores = clutch_vs(eventos, EQUIPOS)
         self.assertNotIn("fantasma", valores)
         self.assertEqual(valores["yo"], 3)
+
+    def test_solo_desde_el_inicio_cuenta_todos_los_rivales(self):
+        equipos = {"yo": 0, "r1": 1, "r2": 1, "r3": 1}
+        self.assertEqual(clutch_vs([kill("yo", "r1")], equipos)["yo"], 3)
+
+    def test_solo_desde_el_inicio_y_caer_primero_es_un_intento_perdido(self):
+        equipos = {"yo": 0, "r1": 1, "r2": 1, "r3": 1}
+        self.assertEqual(clutch_vs([kill("r1", "yo")], equipos)["yo"], 3)
 
 
 def round_data(ganamos: bool, rivales: int) -> dict:
