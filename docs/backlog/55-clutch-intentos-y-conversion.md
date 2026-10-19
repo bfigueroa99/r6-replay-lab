@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: en curso 2026-10-19
-candado: dev 2026-10-19 08:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -194,6 +194,44 @@ Compañeros -> Clutches muestra la tabla nueva arriba. Con base real:
 reportar cambios de `clutch_vs` (la migracion ya los lleno).
 
 ## Implementacion
+
+Dev 20261019T0804Z. Todo el diseno, sin desvios de alcance.
+
+- `metrics.clutch_vs` pura (unica regla) la usan `analyse_round`, `recompute`
+  y la migracion `0003_roundplayer_clutch_vs` (`AddField` + `RunPython`
+  `llenar`, tolera rondas sin jugadores y eventos sin nick).
+- `recompute`: `clutch_vs` entra a `CAMPOS`, asi que `--dry-run` y el
+  conteo de filas lo incluyen.
+- `aggregates.clutch_conversion` + `/api/teammates/` -> `clutch_conversion`.
+- Compañeros -> Clutches: tabla "Conversión por rivales" arriba y
+  "Clutches ganados" debajo; hint nuevo. Las columnas de lado se aplanan en
+  la pagina (`attack_pct`, `defense_pct`) para que ordenen y salgan al CSV.
+- `seed_demo`: segunda rama de `clutch_vs = 2` en intentos perdidos; ningun
+  otro campo cambia.
+- `docs/metricas.md`: fila "Clutch: intentos y conversión".
+
+Tests: `tests/test_clutch.py` (15: funcion pura, import, conversion, API con
+`?side=Attack`, migracion) y `RecomputeClutchTests` en `test_recompute.py`.
+Desvio: `ComandoTests.setUp` de `test_recompute.py` ahora crea a `amigo` y
+`rival` con `clutch_vs=1`, que es lo que el import de hoy deja en esa ronda
+(tras la primera baja quedan 1v1). Sin eso `test_sin_cambios_lo_dice`
+reportaba el clutch como cambio pendiente: el fixture representaba una
+importacion sin la columna.
+
+Revision ciega (subagente) antes del push, corregido: el e2e chocaba en modo
+estricto con las celdas `1v1` de la tabla de ganados (ahora afirma las filas
+de la primera tabla); `clutch_conversion` excluye rondas con
+`my_team_won = None` y cuenta ganados por `round__my_team_won` (test
+`test_una_ronda_sin_ganador_conocido_no_cuenta_como_intento`, aclarado en
+`metricas.md`); docstring, `help` y README de `recompute` mencionan
+`clutch_vs` (desvio de `archivos:`: `management/commands/recompute.py` y
+`README.md`).
+
+`check.sh`: Todo en verde (708 tests backend, 115 frontend, build, 44 e2e).
+
+Nota para la Revision: el criterio 1 del diseno dice "Un 1v1 simultaneo le
+da 1 a los dos"; el test lo cubre como "cae el tercero y quedan uno frente a
+otro".
 
 ## Para el humano
 

@@ -42,6 +42,12 @@ export default function Teammates({ filters, setFilters, runImport, importing })
     delta: baseline === null || row.winrate === null ? null : row.winrate - baseline,
   }))
   const clutches = data?.clutches || []
+  // DataTable ordena y exporta por clave plana: los lados se aplanan aca
+  const conversion = (data?.clutch_conversion || []).map((row) => ({
+    ...row,
+    attack_pct: row.attack.pct,
+    defense_pct: row.defense.pct,
+  }))
   // El orden del backend (Ataque, Defensa, Total) se fija con `orden` para que la tabla no lo cambie al ordenar.
   const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
   const firstDownTotal = firstDown.find((row) => row.side === 'total')
@@ -192,8 +198,25 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Clutches"
-        hint="Rondas que cerraste quedandote solo. El .rec no dice cuando quedaste ultimo, asi que el 1vX sale del scoreboard de la ronda."
+        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda."
       >
+        <h3>Conversión por rivales</h3>
+        <DataTable
+          columns={[
+            { key: 'label', label: 'Situación', left: true },
+            { key: 'attempts', label: 'Intentos', render: (row) => fmt(row.attempts) },
+            { key: 'won', label: 'Ganados', render: (row) => fmt(row.won) },
+            { key: 'pct', label: 'Conversión', render: (row) => pct(row.pct) },
+            { key: 'attack_pct', label: 'Ataque', render: (row) => pct(row.attack_pct) },
+            { key: 'defense_pct', label: 'Defensa', render: (row) => pct(row.defense_pct) },
+          ]}
+          rows={conversion}
+          initialSort={{ key: 'vs', dir: 'asc' }}
+          rowKey={(row) => row.vs}
+          csvName="clutch-conversion"
+          empty="Todavía no quedaste último en ninguna ronda."
+        />
+        <h3>Clutches ganados</h3>
         <DataTable
           columns={[
             {

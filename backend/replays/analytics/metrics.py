@@ -14,6 +14,7 @@ was_traded     un compañero vengo su muerte dentro de la ventana de trade
 untraded_death murio y nadie lo vengo (la muerte mas caras del juego)
 death_elapsed  segundos jugados de la fase de accion hasta su muerte
 kst            aporto en la ronda: mato, sobrevivio o su muerte fue tradeada
+clutch_vs      rivales vivos cuando quedo como unico vivo de su equipo (0 si nunca)
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ TRADE_WINDOW = 3.0
 
 KILL = "Kill"
 DEATH = "Death"
+PLAYER_LEAVE = "PlayerLeave"
 ATTACK = "Attack"
 DEFENSE = "Defense"
 
@@ -93,6 +95,41 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
         m["kst"] = bool(m.get("kills") or m.get("survived") or m["was_traded"])
 
 
+def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
+    """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
+
+    Unica implementacion: la usan el import, `recompute` y la migracion que
+    llena lo ya importado. No mira quien gano: un intento perdido tambien
+    cuenta, que es justo lo que `one_vx` no deja ver.
+
+    A diferencia de `died`, aca `PlayerLeave` mata: alguien que se fue no esta
+    vivo para ayudarte.
+    """
+    vivos = set(team_of)
+    valor = dict.fromkeys(team_of, 0)
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        vivos.discard(muerto)
+        por_equipo: dict[int, list[str]] = {}
+        for nick in vivos:
+            por_equipo.setdefault(team_of[nick], []).append(nick)
+        for nicks in por_equipo.values():
+            if len(nicks) != 1 or valor[nicks[0]]:
+                continue
+            rivales = len(vivos) - 1
+            if rivales:
+                valor[nicks[0]] = rivales
+    return valor
+
+
 def analyse_round(round_data: dict, window: float | None = None) -> dict:
     """Devuelve eventos anotados + metricas por jugador para una ronda."""
     players = round_data.get("players", [])
@@ -153,6 +190,7 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
             "assists": int(s.get("assists", 0)),
             "score": int(s.get("score", 0)),
             "one_vx": int(s.get("1vX", 0)),
+            "clutch_vs": 0,
             "opening_kill": False,
             "opening_death": False,
             "entry_kill": False,
@@ -197,6 +235,10 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
             m["death_elapsed"] = e["elapsed"]
         m["died"] = True
         m["survived"] = False
+
+    for nick, vs in clutch_vs(events, team_of).items():
+        if nick in metrics:
+            metrics[nick]["clutch_vs"] = vs
 
     # ---------------------------------------------------------------- trades
     annotate_trades(kill_events, team_of, metrics, trade_window() if window is None else window)

@@ -349,6 +349,23 @@ test('Compañeros muestra quien cae primero', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra la conversion de clutch', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Conversión por rivales' })).toBeVisible()
+  // seed_demo: los 1v1 son los clutches ganados; los 1v2 son intentos que se perdieron.
+  // La primera tabla es la de conversion: la de ganados tambien tiene celdas 1v1
+  const conversion = panel.locator('table').first()
+  await expect(conversion.getByRole('row', { name: /^1v1 2 2 100%/ })).toBeVisible()
+  await expect(conversion.getByRole('row', { name: /^1v2 8 0 0%/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra solo, en dúo o en stack', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')

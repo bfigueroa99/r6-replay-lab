@@ -231,6 +231,11 @@ class Command(BaseCommand):
             spawn=SPAWNS[mapa][indice % 2] if lado == "Attack" else "",
             kills=bajas, died=murio, headshots=1 if bajas and indice % 3 == 0 else 0,
             one_vx=1 if (gane and not murio and indice % 17 == 0) else 0,
+            # los ganados son los mismos de one_vx; la segunda rama suma intentos perdidos
+            clutch_vs=(
+                1 if (gane and not murio and indice % 17 == 0)
+                else (2 if (not gane and murio and not fuera and indice % 7 == 3) else 0)
+            ),
             opening_kill=bajas > 0 and indice % 6 == 0,
             opening_death=fuera and indice % 5 == 0,
             entry_kill=bajas > 0 and indice % 6 == 0,
