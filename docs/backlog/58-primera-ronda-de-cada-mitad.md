@@ -1,7 +1,7 @@
 # 58. Primera ronda de cada mitad
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-19T04:04Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

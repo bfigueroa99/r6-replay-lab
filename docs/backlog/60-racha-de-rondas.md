@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-19T04:04Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

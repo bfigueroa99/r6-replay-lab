@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-19T04:04Z
 rama: -
 tipo: funcionalidad
 epica: impacto
