@@ -49,7 +49,7 @@ B10 (50) y F7 (51) en main; B9 y B12 -> ficha 52, F10 -> ficha 53,
 C5 -> ficha 54; nuevas B13, C11, E11, G7 y H5.
 Reconciliado el 2026-10-19 (sesion 20261019T0004Z) contra `main` c711f7a:
 B9 y B12 (52), F10 (53) y C5 (54) en main; K3 -> ficha 55, E5 y E10 -> ficha 56,
-C7 -> ficha 57; nuevas C12, F11, K5 y K6.
+C7 -> ficha 57; nuevas C12, F11, K5, K6 y O6.
 
 ## Epicas
 
@@ -165,6 +165,7 @@ solo el conteo de vivos.
 | O3 | Tu operador contra la media de ese operador | Tu KPR, KST, supervivencia y aperturas con un operador comparados con la media y el desvio de todos los que lo jugaron en tus replays, rivales incluidos: un ancla no queda castigada por matar poco. Solo la normalizacion; Siege.GG no publica pesos, asi que no se copia un rating. [fuente](https://siege.gg/blog/946-player-rating-rebalance), [fuente](https://siege.gg/news/support-value-in-siege-explained-with-the-new-rating-model) | `RoundPlayer.operator`, `kills`, `kst`, `survived`, `opening_kill` de los 10 jugadores | M | idea |
 | O4 | Participacion en aperturas | Porcentaje de tus rondas en que estuviste en el primer duelo, por lado y operador: separa al que entra del que ancla. Hoy se muestra cuantas aperturas ganas, no cuantas veces te metes. Complementa O2 sin depender de el. [fuente](https://refrag.gg/blog/refrag-rating-explained/) | `RoundPlayer.opening_kill` y `opening_death` sobre las rondas jugadas | S | idea |
 | O5 | Presencia y delta de winrate por operador | En Operadores, por operador y lado: % de tus rondas de ese lado jugadas con el y su winrate menos tu winrate base del lado. Version global de O1; puede ser su primer tramo. [fuente](https://r6tv.online/how-it-works), [fuente](https://aurelix.app/blog/how-to-analyse-r6-siege-replays) | `RoundPlayer.operator`, `side`, `won`; tabla de `frontend/src/pages/Operators.jsx` | S | idea |
+| O6 | Clutch por operador | Despues de la ficha 55: intentos y conversion de clutch por operador y lado, para saber con que operador cierras las rondas que quedan en tus manos y con cual las sueltas. Implementar despues de #55 | `RoundPlayer.clutch_vs` (columna de la ficha 55), `operator`, `side`, `won`; agrupacion como `by_operator` (`aggregates.py`), con la muestra minima por operador que ya usan las tablas de operadores | S | idea |
 
 ### datos: datos y configuracion
 
