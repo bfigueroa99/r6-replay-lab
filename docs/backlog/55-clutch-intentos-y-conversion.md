@@ -1,8 +1,8 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: disenado
+estado: en curso 2026-10-19
 candado: -
-rama: -
+rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
 area: fullstack
