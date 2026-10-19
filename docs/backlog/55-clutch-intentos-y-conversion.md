@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-19T16:04Z
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md K3 ([Siege.GG](https://siege.gg/blog/946-player-rating-rebalance), [vlr.gg](https://www.vlr.gg/713548/vlr-cl-knowers-come))
 archivos: backend/replays/analytics/metrics.py, backend/replays/models.py, backend/replays/migrations/0003_roundplayer_clutch_vs.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/test_clutch.py, backend/tests/test_recompute.py, backend/tests/factories.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z
+turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z, revisor 20261019T1604Z
 
 ## PR
 
