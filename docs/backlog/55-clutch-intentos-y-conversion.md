@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: en curso 2026-10-19
-candado: dev 2026-10-19 20:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -291,6 +291,11 @@ Dev 20261019T2004Z, sobre los dos hallazgos de la Revision 2b44e75:
   `ComandoTests.setUp` de `test_recompute.py` el rival arranca solo frente a
   dos y su `clutch_vs` esperado pasa de 1 a 2. `docs/metricas.md` lo aclara.
   `seed_demo` asigna `clutch_vs` a mano y no se mueve.
+
+Revision ciega (subagente) sobre la correccion: sin hallazgos (casos borde
+probados: `team_of` vacio, equipo sin rivales, tres equipos, actor
+desconocido). `check.sh`: Todo en verde (711 tests backend, 115 frontend,
+build, 44 e2e).
 
 ## Para el humano`): antes de Y9S1 `PlayerLeave`
 sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
