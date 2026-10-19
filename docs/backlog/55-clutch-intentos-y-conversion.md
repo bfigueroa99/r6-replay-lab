@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: implementado
-candado: revisor 2026-10-19T16:04Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -233,9 +233,62 @@ Nota para la Revision: el criterio 1 del diseno dice "Un 1v1 simultaneo le
 da 1 a los dos"; el test lo cubre como "cae el tercero y quedan uno frente a
 otro".
 
+## Revision 2026-10-19 sobre 2b44e75
+
+Revisor 20261019T1604Z. Rama al dia con `origin/main`; `check.sh` en verde
+antes de revisar (708 tests backend, 115 frontend, build, 44 e2e). Revision
+ciega por subagente y cada hallazgo reproducido por el lider.
+
+Criterios: los 5 cubiertos. (1) `ClutchVsTests` e `ImportClutchTests`; (2)
+`RecomputeClutchTests` y `test_la_migracion_llena_lo_ya_importado`, ademas la
+migracion se aplico sin error sobre una base sembrada (`migrate replays 0002`
+y `migrate` de nuevo); (3) `ConversionTests` + API con `?side=`; filtros por
+`base_queryset` (`is_me=True`, mapa, fechas, ranked, sesion); (4) e2e
+`Compañeros muestra la conversion de clutch` (seed: 1v1 2/2 100 %, 1v2 8/0 0 %);
+(5) fila en `docs/metricas.md`. Desvios de `archivos:` (`recompute.py` del
+comando, README) explicados en Implementacion. Sin `print` ni `console.log`;
+UI con tildes, identificadores sin.
+
+Hallazgos:
+
+- [regla] README.md (todo el archivo)
+  Que pasa: la rama convierte los finales de linea del README de CRLF a LF;
+  el diff muestra 932 lineas cambiadas para un cambio de una linea.
+  Como reproducirlo: `git show origin/main:README.md | grep -c $'\r'` da 466;
+  en la rama da 0. `git diff --stat origin/main...<rama> --ignore-cr-at-eol -- README.md`
+  da 1 linea. Cualquier otra rama que toque el README choca contra esta, el PR
+  es ilegible y `git blame` pierde la historia del archivo.
+  Arreglo sugerido: restaurar el README de main con sus CRLF y reaplicar solo
+  la linea de `recompute` (`git checkout origin/main -- README.md`, editar
+  conservando `\r\n`, confirmar con `--stat` que el diff es de 1 linea).
+- [bug] backend/replays/analytics/metrics.py:98 (`clutch_vs`)
+  Que pasa: la condicion "quede solo" se evalua solo despues de una muerte,
+  nunca sobre los vivos iniciales.
+  Como reproducirlo: `clutch_vs([kill("yo","r1")], {"yo":0,"r1":1,"r2":1,"r3":1})`
+  da `{"yo": 2}` (esperado 3: arranco 1v3); con `kill("r1","yo")` primero da 0
+  (esperado 3, un 1v3 perdido). Pasa en rondas donde un equipo ya arranca con
+  uno (abandonos de rondas previas, custom).
+  Arreglo sugerido: evaluar la misma condicion una vez antes del loop; test
+  `test_solo_desde_el_inicio_cuenta_todos_los_rivales`. Menor, pero es un
+  numero mal y el arreglo son tres lineas.
+
+Duda sin verificar (va a `## Para el humano`): antes de Y9S1 `PlayerLeave`
+sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
+abandonos despues del final de la ronda, un compañero que se va tras ganar
+por tiempo deja a otro "solo con rivales vivos" y suma un intento falso. El
+`1vX` de `pydissect/stats.py` comparte el supuesto. No se puede confirmar sin
+`.rec` reales; no bloquea.
+
+Veredicto: corregir (los dos hallazgos).
+
 ## Para el humano
 
 Si `clutch_vs` y `one_vx` difieren en el X de una misma ronda ganada (la
 logica de r6-dissect cuenta los rivales de otra forma), la tabla usa
 `clutch_vs` para agrupar y `one_vx` queda como estaba. Es reversible; avisar
 si se prefiere unificarlas.
+
+Revisor 2026-10-19: verificar con `.rec` reales de temporadas anteriores a
+Y9S1 si aparecen `PlayerLeave` despues del final de la ronda (ver Revision);
+si aparecen, `clutch_vs` cuenta intentos falsos y convendria ignorar eventos
+posteriores a `Round.clock_end`.
