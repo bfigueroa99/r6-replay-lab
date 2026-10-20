@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-20T00:04Z
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
