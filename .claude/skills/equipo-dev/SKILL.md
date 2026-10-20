@@ -497,7 +497,9 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
      (a) bug real con numeros mal, 500 con datos legitimos o importacion que
      se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso;
-     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros;
+     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros
+     (a igual tamano, primero un `must` de la epica `paridad-referencia`,
+     que la referencia tiene y la app no);
      (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
      funcionalidades esperando. Al menos una de las fichas del turno es
      funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`
@@ -704,6 +706,13 @@ pozo del que el PO saca.
   7. **Analitica de esports y deporte**: ratings compuestos, probabilidad de
      ganar la ronda segun la ventaja numerica, redes de trade, rating de
      clutch.
+  8. **Paridad con la referencia (Replica)**: la pasada del pack Replica
+     sobre la app de referencia (recon, columna `clone` contra `main`,
+     `parity.py`, resenas reales), siguiendo
+     `.claude/skills/equipo-dev/replica.md` (leerlo de `$REF`), que dice cual
+     es la referencia y como cambiarla. No rota como las demas: va primero en
+     el primer turno en que su fila de la tabla de Fuentes lleve 7 dias o mas
+     sin visita, o no exista; asi corre una vez por semana.
 - **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
   existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
   con link verificado, fecha y una linea de que hace. Despues el lider
@@ -732,13 +741,15 @@ pozo del que el PO saca.
   extrae y ninguna pantalla muestra, ramas `mercado/*` y PRs cerrados sin
   mergear, y las ideas van igual a `ALCANCE.md`. Se anota "sin red" en
   `INVESTIGACION.md`, y una sola vez en `## Para el humano` de `ESTADO.md`,
-  con la configuracion de red del entorno como causa probable.
+  con la configuracion de red del entorno como causa probable. Si le toca
+  la familia 8, igual actualiza `clone` y corre `parity.py`, que no usan red.
 - **Prioridades:** P1, P2 y P3 como cualquier rol. P4 a P7 no le tocan:
   nunca implementa, revisa ni prueba.
 - **Salida:** commits `Investiga: <familias>` en `backlog`, solo
-  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md` (mas
-  `ESTADO.md` al cerrar). Nunca fichas: priorizar es del PO. Nunca PR,
-  nunca rama de trabajo, nunca codigo.
+  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md`, mas
+  `docs/backlog/replica/*` con la familia 8 (y `ESTADO.md` al cerrar). Nunca
+  fichas: priorizar es del PO. Nunca PR, nunca rama de trabajo, nunca
+  codigo.
 - **Turno bien hecho:** al menos 3 ideas nuevas en `ALCANCE.md` que pasan
   los tres filtros, cada una con su fuente real; el PO siguiente (cuando
   el estado lo pide; por reloj, franja 1) puede convertir cualquiera en
