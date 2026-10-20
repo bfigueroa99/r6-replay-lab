@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: implementado
-candado: revisor 2026-10-20T00:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md K3 ([Siege.GG](https://siege.gg/blog/946-player-rating-rebalance), [vlr.gg](https://www.vlr.gg/713548/vlr-cl-knowers-come))
 archivos: backend/replays/analytics/metrics.py, backend/replays/models.py, backend/replays/migrations/0003_roundplayer_clutch_vs.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/test_clutch.py, backend/tests/test_recompute.py, backend/tests/factories.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z, revisor 20261019T1604Z, dev 20261019T2004Z
+turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z, revisor 20261019T1604Z, dev 20261019T2004Z, revisor 20261020T0003Z
 
 ## PR
 
@@ -305,6 +305,35 @@ Revision ciega (subagente) sobre la correccion: sin hallazgos (casos borde
 probados: `team_of` vacio, equipo sin rivales, tres equipos, actor
 desconocido). `check.sh`: Todo en verde (711 tests backend, 115 frontend,
 build, 44 e2e).
+
+## Revision 2026-10-20 sobre a96ed14
+
+Revisor 20261020T0003Z (segunda pasada, sesion distinta de dev y de la primera
+revision). Rama al dia con `origin/main`; `check.sh` en verde (711 tests
+backend, 115 frontend, build, 44 e2e). Revision ciega por subagente: sin
+hallazgos.
+
+Hallazgos de la Revision 2b44e75, confirmados corregidos:
+
+- [regla] README: `git diff --stat origin/main...HEAD -- README.md` da 1
+  linea (CRLF restaurados).
+- [bug] `clutch_vs` desde el inicio: `clutch_vs([kill("yo","r1")], {yo:0,
+  r1..r3:1})` y `clutch_vs([kill("r1","yo")], ...)` dan `yo: 3` en los dos
+  casos; un 1v1 desde el inicio da 1 a los dos.
+
+Casos borde que miro el subagente sin encontrar fallas: ronda sin bajas,
+nick desconocido o vacio, bajas duplicadas, `PlayerLeave` de un muerto,
+teamkills, equipo de un jugador, partida sin rivales, ronda sin jugadores
+en la migracion, `my_team_won` nulo, X >= 5 agrupado. Import, `recompute` y
+migracion usan la misma funcion. Numeros del e2e coinciden con `seed_demo`
+(1v1 2/2 100 %, 1v2 8/0 0 %).
+
+Dato, no hallazgo: `recompute` sobre la base de `seed_demo` vacia la tabla
+de conversion (24 filas cambian), porque el seed no arma un feed coherente
+con las columnas; en `main` ya pasa lo mismo con los trades. No afecta
+datos reales.
+
+Veredicto: aprobar.
 
 ## Para el humano
 
