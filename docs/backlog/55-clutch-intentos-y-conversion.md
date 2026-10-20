@@ -1,7 +1,7 @@
 # 55. Clutch: intentos y conversion por X
 
-estado: revisado
-candado: qa 2026-10-20T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/55-clutch-intentos-y-conversion
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md K3 ([Siege.GG](https://siege.gg/blog/946-player-rating-rebalance), [vlr.gg](https://www.vlr.gg/713548/vlr-cl-knowers-come))
 archivos: backend/replays/analytics/metrics.py, backend/replays/models.py, backend/replays/migrations/0003_roundplayer_clutch_vs.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/test_clutch.py, backend/tests/test_recompute.py, backend/tests/factories.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z, revisor 20261019T1604Z, dev 20261019T2004Z, revisor 20261020T0003Z
+turnos: po 20261019T0004Z, arquitecto 20261019T0404Z, dev 20261019T0804Z, revisor 20261019T1604Z, dev 20261019T2004Z, revisor 20261020T0003Z, qa 20261020T0404Z
 
 ## PR
 
@@ -272,7 +272,61 @@ Hallazgos:
   `test_solo_desde_el_inicio_cuenta_todos_los_rivales`. Menor, pero es un
   numero mal y el arreglo son tres lineas.
 
-Duda sin verificar (va a `## Para el humano`): antes de Y9S1 `PlayerLeave`
+Duda sin verificar (va a `## QA 2026-10-20 sobre b70e347
+
+QA 20261020T0404Z (sesion distinta de dev y de las dos revisiones). Rama al dia con
+`origin/main` (`git merge-tree` limpio, sin commits nuevos en main).
+
+- `./scripts/check.sh`: `Todo en verde.` (ruff ok, 711 tests backend con 4
+  skipped, 115 frontend, build, 44 e2e).
+- Chunk inicial de `vite build`: `index-*.js` 187.63 kB en la rama y en
+  `origin/main` (0 %). `Teammates-*.js` pasa de 6.21 a 6.97 kB (lazy).
+
+Base sintetica con eventos coherentes (script en el scratchpad con
+`tests/factories.py` de `origin/main`, `SQLITE_PATH` aparte; 3 partidas, 9
+rondas: 1v4 perdido, 1v3 ganado, ronda sin nadie solo, `PlayerLeave` que deja
+1v2 ganado, 1v5 en ronda con `my_team_won` nulo, ronda sin bajas, 6v6 custom
+con 1v6, partida de un solo jugador, feed con nick vacio y desconocido).
+
+| Criterio | Evidencia |
+|---|---|
+| 1. `clutch_vs` al importar, gane o pierda, con `PlayerLeave` | Tras migrar, `clutch_vs` de BearF99 por ronda: 4, 3, 0, 2, 5, 0, 6, 0, 5; rivales: r5 = 5 en la ronda que ganamos 5v0, r1 = 1 en el 1v1 final. Todos los valores a mano coinciden. |
+| 2. Migracion y `recompute` llenan lo viejo | Base con esquema de `origin/main` (`0002`) + `migrate` (aplica `0003` sin error); `recompute --dry-run` despues: "las 9 rondas ya estan al dia" (migracion = recompute). Con `clutch_vs` puesto a 0: `--dry-run` reporta 10 filas, `recompute` escribe 10, segunda corrida "al dia", mismos valores. `migrate replays 0002` revierte y `migrate` reaplica. |
+| 3. Endpoint por X y lado, con filtros | `curl /api/teammates/`: 1v2 1/1, 1v3 1/1, 1v4 1/0, 1v5+ 2/1 (1v6 custom perdido + 1v5 ganado; el 1v5 con ganador nulo queda afuera). `?side=Attack`: 1v4 1/0, 1v5+ 1/0; `?side=Defense`: 1v2, 1v3, 1v5+ 1/1. `?map=border`: 1v5+ 1/0; `?match_type=Ranked` saca el custom; `?since=2030-01-01`: `[]`. `until=foo`, `page=-1`, `side=`, `map=`, `days=99999999999`, `session=abc`: 200 sin 500. Base vacia: 200 y `[]` en todos. |
+| 4. UI + texto vacio + e2e | e2e `Compañeros muestra la conversion de clutch` en verde. Chromium sobre base con partidas y `clutch_vs = 0`: aparece "Conversión por rivales" y "Todavía no quedaste último en ninguna ronda.", consola limpia. Base vacia: la pagina muestra el estado de importar de siempre. |
+| 5. Fila en `docs/metricas.md` | Presente en Impacto, con la diferencia contra `one_vx` y la exclusion de rondas sin ganador. |
+
+Prueba de mutacion (codigo roto a proposito, `tests.test_clutch` y
+`tests.test_recompute`; todo restaurado con `git checkout`):
+
+- sin `marcar_solos()` antes del loop: caen 5 (entre ellos
+  `test_solo_desde_el_inicio_cuenta_todos_los_rivales`);
+- `PlayerLeave` no mata: cae `test_el_player_leave_cuenta_como_muerte`;
+- el primer valor se pisa: caen 4 (`test_matar_despues_de_quedar_solo_no_cambia_el_valor`);
+- sin excluir `my_team_won` nulo: cae `test_una_ronda_sin_ganador_conocido_no_cuenta_como_intento`;
+- sin agrupar en 5+: cae `test_x_de_seis_se_agrupa_en_cinco_mas`;
+- `clutch_vs` fuera de `CAMPOS` de `recompute`: caen los 2 de `RecomputeClutchTests`.
+
+Dato, no hallazgo: el filtro `side` distingue mayusculas (`?side=defense`
+da `[]`); es el comportamiento de `_filters` en todos los endpoints y la UI
+manda `Attack`/`Defense`.
+
+Veredicto: aprobado.
+
+## Verificar en el PC
+
+Toca migracion y `recompute`. Con la base real (hacer `POST /api/backup/` o
+copiar `data/db.sqlite3` antes):
+
+```powershell
+cd backend; ..\.venv\Scripts\python.exe manage.py migrate
+..\.venv\Scripts\python.exe manage.py recompute --dry-run   # esperado: sin cambios de clutch_vs
+```
+
+Despues, Compañeros -> Clutches: la tabla "Conversión por rivales" tiene que
+tener intentos >= los clutches ganados de la lista de abajo.
+
+## Para el humano`): antes de Y9S1 `PlayerLeave`
 sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
 abandonos despues del final de la ronda, un compañero que se va tras ganar
 por tiempo deja a otro "solo con rivales vivos" y suma un intento falso. El
