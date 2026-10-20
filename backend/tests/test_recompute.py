@@ -154,8 +154,12 @@ class ComandoTests(TestCase):
         match = make_match(index=0)
         rnd = make_round(match, 0)
         make_round_player(rnd, username=ME, kills=0, died=True)
-        make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False)
-        make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True)
+        # como lo deja el import de hoy: el rival arranca solo frente a dos y tras
+        # mi muerte quedan 1v1, con clutch_vs ya calculado
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False,
+                          clutch_vs=1)
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True,
+                          clutch_vs=2)
         make_event(rnd, 0, "rival", ME, clock=100.0)
         make_event(rnd, 1, "amigo", "rival", clock=94.0)
 
@@ -180,6 +184,28 @@ class ComandoTests(TestCase):
         err = StringIO()
         call_command("recompute", "--window", "0", stderr=err)
         self.assertIn("mayor que cero", err.getvalue())
+
+
+class RecomputeClutchTests(TestCase):
+    def setUp(self):
+        rnd = make_round(make_match(index=0), 0)
+        # importada antes de la columna: clutch_vs quedo en 0
+        make_round_player(rnd, username=ME, kills=0, died=True, team_index=0)
+        for nick in ("a1", "a2"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=0, kills=0, died=True)
+        for nick in ("r1", "r2", "r3"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=1, kills=0, died=False)
+        make_event(rnd, 0, "r1", "a1", clock=120.0)
+        make_event(rnd, 1, "r2", "a2", clock=110.0)
+
+    def test_recompute_llena_clutch_vs_de_una_partida_vieja(self):
+        self.assertTrue(recompute(window=3.0).changed)
+        self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 3)
+        self.assertEqual(RoundPlayer.objects.get(username="r1").clutch_vs, 0)
+
+    def test_dry_run_no_escribe_clutch_vs(self):
+        self.assertTrue(recompute(window=3.0, dry_run=True).changed)
+        self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 0)
 
 
 class ApiTests(TestCase):

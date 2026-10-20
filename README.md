@@ -265,7 +265,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa, operador, modo y tipo de partida que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
+| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada, y los intentos de clutch de partidas importadas antes. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
 | `manage.py test tests` | Corre la suite (419 tests). |
 | `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |

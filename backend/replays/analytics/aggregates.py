@@ -1278,6 +1278,52 @@ def first_teammate_death(**filters) -> list[dict]:
     return salida
 
 
+#: Desde aca los clutches se agrupan: 1v5 y lo que pase de ahi (rondas con
+#: mas de cinco por lado, modos raros) van a la misma fila.
+CLUTCH_X_MAX = 5
+
+
+def clutch_conversion(**filters) -> list[dict]:
+    """Intentos y ganados por cantidad de rivales cuando quedaste ultimo.
+
+    Lee `clutch_vs`, no `one_vx`: `one_vx` solo existe cuando ganaste, asi que
+    con el no hay denominador.
+    """
+    # una ronda sin ganador conocido (.rec cortado justo al final, que es donde
+    # esta el clutch) tiene won=False: contarla seria sumar un intento perdido
+    filas = (
+        base_queryset(**filters)
+        .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
+        .values("clutch_vs", "side")
+        .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+    por_x: dict[int, dict] = {}
+    for f in filas:
+        vs = min(f["clutch_vs"], CLUTCH_X_MAX)
+        fila = por_x.setdefault(vs, {"attempts": 0, "won": 0, "Attack": [0, 0], "Defense": [0, 0]})
+        fila["attempts"] += f["attempts"]
+        fila["won"] += f["won"]
+        if f["side"] in ("Attack", "Defense"):
+            fila[f["side"]][0] += f["attempts"]
+            fila[f["side"]][1] += f["won"]
+
+    def _lado(par):
+        return {"attempts": par[0], "won": par[1], "pct": _pct(par[1], par[0])}
+
+    return [
+        {
+            "vs": vs,
+            "label": f"1v{vs}+" if vs == CLUTCH_X_MAX else f"1v{vs}",
+            "attempts": fila["attempts"],
+            "won": fila["won"],
+            "pct": _pct(fila["won"], fila["attempts"]),
+            "attack": _lado(fila["Attack"]),
+            "defense": _lado(fila["Defense"]),
+        }
+        for vs, fila in sorted(por_x.items())
+    ]
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [

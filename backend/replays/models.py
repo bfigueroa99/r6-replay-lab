@@ -138,6 +138,8 @@ class RoundPlayer(models.Model):
     assists = models.IntegerField(default=0)
     score = models.IntegerField(default=0)
     one_vx = models.IntegerField(default=0)
+    # rivales vivos cuando quedaste solo, ganes o pierdas; 0 si nunca
+    clutch_vs = models.IntegerField(default=0)
 
     # --- metricas derivadas
     opening_kill = models.BooleanField(default=False)
