@@ -6,7 +6,10 @@
 
 line-length = 100
 target-version = "py311"
-extend-exclude = [".venv", "frontend", "data", "**/migrations"]
+# .claude/skills/replica-* es el pack Replica (MIT) tal como viene de su repo:
+# no se edita para que se pueda actualizar copiandolo encima, asi que su estilo
+# no es asunto de este lint.
+extend-exclude = [".venv", "frontend", "data", "**/migrations", ".claude/skills/replica-*"]
 
 [lint]
 select = [
