@@ -1,7 +1,7 @@
 # 58. Primera ronda de cada mitad
 
-estado: revisado
-candado: qa 2026-10-20 20:10 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/58-primera-ronda-de-cada-mitad
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B8
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_mitades.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261020T1205Z, revisor 20261020T1604Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261020T1205Z, revisor 20261020T1604Z, qa 20261020T2004Z
 
 ## PR
 
@@ -219,3 +219,36 @@ Contra la ficha:
 `check.sh`: Todo en verde (720 tests backend, 115 frontend, build ok, 44 e2e).
 
 Veredicto: aprobar.
+
+## QA 2026-10-20 sobre 41b208c
+
+QA 20261020T2004Z. Ejercite la app, no relei el diff. Bases en el scratchpad
+(`SQLITE_PATH` y `R6_ENV_FILE` apuntando ahi; nada al repo).
+
+- **check.sh**: `./scripts/check.sh` -> `Todo en verde.` antes y despues de
+  agregar el test de borde (721 tests backend, 115 frontend, build ok, 44 e2e).
+- **Base sembrada desde `factories.py`** (script `sembrar.py`): partida A
+  `A A A D D D` + 2 de prorroga; partida B toda en defensa numerada desde 0;
+  partida C sin lado; partida D `D, "", D, A, A` con un segundo jugador
+  `BearF99x` y rondas sin bajas. Esperado a mano: 3 / 2 / 9.
+  `python3 manage.py runserver 8811` y `curl /api/trends/<params>`:
+  - sin filtros: `match_start 3, side_switch 2, rest 9` (= 14 rondas sin prorroga con lado; la prorroga no entra). OK.
+  - `?side=Defense`: `2, 1, 6`; `?side=Attack`: `1, 1, 3` (la primera no cambia con el filtro). OK.
+  - `?map=bank` (partida sin cambio): `1, 0, 3`; `?map=Oregon`, `?side=foo`, `?since=2030-01-01`, `?session=foo`: tres filas en 0, winrate `null`. OK.
+  - `?until=foo`, `?days=abc`, `?page=-1`, `?side=&map=&until=`, `?operator=Zofia`, `?ranked_only=1`: 200, mismos numeros que sin filtro.
+  - Base vacia (`runserver 8812`): `/api/trends/`, `?side=Defense`, `?until=foo` -> 200, tres filas en 0.
+  - `/api/summary/`, `/api/matches/`: 200. Cero 500 en los dos logs.
+- **seed_demo** (`seed_demo --force` en base temporal): 29 partidas;
+  `match_start 29, side_switch 29, rest 145`, que suman las 203 rondas de
+  `by_half` (116 + 87). Las tres filas del e2e tienen rondas: el comentario
+  que marco el Revisor es cierto con estos datos.
+- **Bundle**: chunk inicial `index-*.js` 187.63 kB en main y en la rama (sin
+  cambio); `Trends-*.js` 23.80 -> 24.36 kB (lazy).
+- **Mutaciones** sobre `aggregates.py` (`python3 manage.py test tests.test_mitades`):
+  - `match_start` con `F("primera") + 1`: cae `test_una_ronda_sin_lado_no_es_el_cambio`.
+  - `rest` sin el `exclude` de la primera: caen 5 tests.
+  - `_primera_tras_el_cambio` con `order_by("-number")` (toma la ULTIMA ronda del otro lado): **sobrevivia**; los tests solo cuentan rondas y la R6 tambien es una. Agregue `test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra` (solo la R4 se pierde: winrate 100 / 0 / 100); con la mutacion cae, sin ella pasa.
+  - `_primera_ronda` sin `overtime_number=0`: sobrevive, pero es equivalente (la prorroga siempre se numera despues de las rondas normales).
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hace falta Verificar en el PC.
+
+Veredicto: aprobado.

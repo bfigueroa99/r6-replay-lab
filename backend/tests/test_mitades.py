@@ -162,3 +162,13 @@ class PrimeraRondaTests(TestCase):
         filas = respuesta.json()["by_half_opener"]
         self.assertEqual([f["opener"] for f in filas], ["match_start", "side_switch", "rest"])
         self.assertEqual([f["rounds"] for f in filas], [0, 1, 2])
+
+    def test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra(self):
+        # contar rondas no alcanza: la R6 tambien da una ronda; solo la R4 se pierde
+        match = make_match()
+        for numero, lado in enumerate(["Attack"] * 3 + ["Defense"] * 3, start=1):
+            make_round_player(make_round(match, numero, side=lado, won=numero != 4))
+        aperturas = _por_apertura(agg.by_half_opener())
+        self.assertEqual(aperturas["match_start"]["winrate"], 100.0)
+        self.assertEqual(aperturas["side_switch"]["winrate"], 0.0)
+        self.assertEqual(aperturas["rest"]["winrate"], 100.0)
