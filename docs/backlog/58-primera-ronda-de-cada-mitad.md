@@ -1,7 +1,7 @@
 # 58. Primera ronda de cada mitad
 
-estado: implementado
-candado: revisor 2026-10-20T16:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/58-primera-ronda-de-cada-mitad
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md B8
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_mitades.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261020T1205Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261020T1205Z, revisor 20261020T1604Z
 
 ## PR
 
@@ -191,3 +191,31 @@ Dev 20261020T1205Z. Quedo todo el diseno, sin desvios de alcance.
 Revision ciega (subagente con `revision.md`): aprobar, dos hallazgos menores
 (test de ronda sin lado entre arranque y cambio; doc del `.rec` faltante en
 el cambio), los dos corregidos.
+
+## Revision 2026-10-20 sobre 3c91fb2
+
+Revisor 20261020T1604Z. Revision ciega (subagente con `revision.md` sobre el
+diff sin `docs/backlog`) y despues contra la ficha. main ya estaba fusionado.
+
+- [test] frontend/e2e/humo.spec.js:57 (menor, no bloquea)
+  Que pasa: el comentario dice que las tres filas tienen rondas, pero el e2e
+  solo afirma que estan las celdas de etiqueta, que salen igual con 0 rondas.
+  Como reproducirlo o por que es cierto: si `by_half_opener` devolviera
+  `rounds=0` en las tres filas, la tabla se dibuja igual y el e2e pasa.
+  Arreglo sugerido: afirmar que la celda Rondas de cada fila no es 0, o
+  sacar esa afirmacion del comentario. El backend ya lo cubre con
+  `test_seis_rondas_con_cambio_en_la_cuatro_dan_uno_uno_y_cuatro`.
+
+Contra la ficha:
+- Criterio 1 (agregado y orden fijo): `test_seis_rondas_con_cambio_en_la_cuatro_dan_uno_uno_y_cuatro`,
+  `test_la_prorroga_no_cae_en_ninguna_fila`, `test_trends_trae_by_half_opener_en_orden_fijo`.
+- Criterio 2 (`?side=`): `test_el_filtro_de_lado_no_cambia_cual_es_la_primera` y el test de API con `?side=Defense`.
+- Criterio 3 (sin lado inicial, base vacia): `test_una_partida_sin_lado_inicial_no_aporta`, `test_base_vacia_da_tres_filas_en_cero`.
+- Criterio 4 (UI y e2e): tabla, CSV y aviso de muestra en `Trends.jsx`; e2e `Tendencias muestra la tabla por mitad` (ver hallazgo menor).
+- Criterio 5: fila en `docs/metricas.md` con la advertencia de `.rec` faltantes.
+- Diff dentro de `archivos:`; el desvio (`COLUMNAS_POR_TRAMO` compartida) esta explicado en Implementacion.
+- Sin tildes en identificadores, UI con tildes, sin `print` ni `console.log`.
+
+`check.sh`: Todo en verde (720 tests backend, 115 frontend, build ok, 44 e2e).
+
+Veredicto: aprobar.
