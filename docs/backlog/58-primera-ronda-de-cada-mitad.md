@@ -1,8 +1,8 @@
 # 58. Primera ronda de cada mitad
 
-estado: disenado
+estado: en curso 2026-10-20
 candado: -
-rama: -
+rama: claude/equipo-dev/58-primera-ronda-de-cada-mitad
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
