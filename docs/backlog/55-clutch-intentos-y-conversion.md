@@ -272,7 +272,16 @@ Hallazgos:
   `test_solo_desde_el_inicio_cuenta_todos_los_rivales`. Menor, pero es un
   numero mal y el arreglo son tres lineas.
 
-Duda sin verificar (va a `## Correccion 2026-10-19
+Duda sin verificar (va a `## Para el humano`): antes de Y9S1 `PlayerLeave`
+sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
+abandonos despues del final de la ronda, un compañero que se va tras ganar
+por tiempo deja a otro "solo con rivales vivos" y suma un intento falso. El
+`1vX` de `pydissect/stats.py` comparte el supuesto. No se puede confirmar sin
+`.rec` reales; no bloquea.
+
+Veredicto: corregir (los dos hallazgos).
+
+## Correccion 2026-10-19
 
 Dev 20261019T2004Z, sobre los dos hallazgos de la Revision 2b44e75:
 
@@ -296,15 +305,6 @@ Revision ciega (subagente) sobre la correccion: sin hallazgos (casos borde
 probados: `team_of` vacio, equipo sin rivales, tres equipos, actor
 desconocido). `check.sh`: Todo en verde (711 tests backend, 115 frontend,
 build, 44 e2e).
-
-## Para el humano`): antes de Y9S1 `PlayerLeave`
-sale de mensajes de texto (`pydissect/events.py:300`); si el `.rec` registra
-abandonos despues del final de la ronda, un compañero que se va tras ganar
-por tiempo deja a otro "solo con rivales vivos" y suma un intento falso. El
-`1vX` de `pydissect/stats.py` comparte el supuesto. No se puede confirmar sin
-`.rec` reales; no bloquea.
-
-Veredicto: corregir (los dos hallazgos).
 
 ## Para el humano
 
