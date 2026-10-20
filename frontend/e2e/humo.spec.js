@@ -54,6 +54,11 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   await expect(panel).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Primera mitad', exact: true })).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Segunda mitad', exact: true })).toBeVisible()
+  // seed_demo alterna el lado cada ronda: la primera tras el cambio es R2 y las tres filas tienen rondas
+  await expect(panel.getByText('Primera ronda de cada lado')).toBeVisible()
+  for (const tramo of ['Ronda 1', 'Primera tras el cambio', 'Resto']) {
+    await expect(panel.getByRole('cell', { name: tramo, exact: true })).toBeVisible()
+  }
   await expect(panel.getByText('Según el lado con que arrancas')).toBeVisible()
 
   expect(errores).toEqual([])
