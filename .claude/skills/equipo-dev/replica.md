@@ -11,18 +11,21 @@ que mandan sobre lo que digan ellas.
 
 ## Referencia
 
-- **Apps:** stats.cc (https://stats.cc/siege) y R6 Tracker
-  (https://r6.tracker.network/), los trackers que nombra `CLAUDE.md` y que el
-  perfil de cada jugador ya enlaza.
+- **Apps:** r6-replay.com (https://r6-replay.com/) y Aurelix
+  (https://aurelix.app/), las herramientas de replay que `docs/roadmap.md`
+  ("Que hacen los competidores") llama la competencia real.
 - **Tajada:** lo que un jugador de Siege mira de sus propias partidas: perfil,
   historial, detalle de una partida, desglose por operador, mapa y modo,
   comparacion con otros jugadores y progreso en el tiempo.
 - **Para quien:** quien usa r6-replay-lab, un jugador que analiza sus replays
   en su PC.
 
-Los dos leen la API de Ubisoft y no los replays (`docs/roadmap.md`, "Que
-hacen los competidores"), asi que buena parte de su matriz va a ser `skip`.
-Eso es esperado: la paridad mide lo que si se puede hacer con el `.rec`.
+Las dos parsean el mismo `.rec` que este proyecto, asi que casi toda su
+matriz se puede comparar de igual a igual. Lo que muestren y el `.rec` no
+entregue segun `docs/formato-rec.md` va como `skip` con el motivo, igual que
+lo que venga de la API de Ubisoft. Los trackers de API (stats.cc, R6 Tracker)
+quedaron fuera de la referencia el 2026-10-20, a pedido del humano: leen la
+API de Ubisoft y no los replays, y la mayor parte de su matriz era `skip`.
 
 **Como cambiarla.** Editar este bloque en un PR (desde la web de GitHub
 alcanza) y mergearlo; toca `.claude/`, asi que lo mergea el humano. Cada
@@ -123,7 +126,7 @@ vuelve a definir. Las skills se leen enteras antes de empezar:
    - Sin capturas: nada de `screens/`.
    - La matriz (paso 7) lleva dos columnas mas al final, que `parity.py`
      ignora: `feature,area,priority,original,clone,notes,referencia,evidencia`.
-     `referencia` es `stats.cc`, `r6tracker` o `ambas`; `evidencia` es una URL
+     `referencia` es `r6replay`, `aurelix` o `ambas`; `evidencia` es una URL
      que el turno abrio. Sin URL abierta, la fila no entra. `priority` dice
      cuanto pesa la funcion en la referencia (`must`: por lo que la gente la
      usa), no cuanto le costaria a la app.

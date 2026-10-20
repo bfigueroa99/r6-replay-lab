@@ -76,8 +76,8 @@ la referencia hace, matriz de funciones con lo que la app ya tiene, puntaje de
 `parity.py` y resenas reales de sus usuarios. Lo que la referencia tiene y el
 `.rec` no puede dar queda como `skip`; los `must` que faltan entran a
 `ALCANCE.md` en la epica `paridad-referencia`. Los archivos quedan en
-`docs/backlog/replica/*` de la rama `backlog`. La referencia es **stats.cc y
-R6 Tracker**, y el procedimiento completo esta en
+`docs/backlog/replica/*` de la rama `backlog`. La referencia es **r6-replay.com y
+Aurelix**, y el procedimiento completo esta en
 `.claude/skills/equipo-dev/replica.md`. Las semillas de
 los dos archivos estan en `docs/backlog/` del playbook y se copian a
 `backlog` la primera vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
