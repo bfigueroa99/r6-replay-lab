@@ -1,7 +1,7 @@
 # 58. Primera ronda de cada mitad
 
-estado: en curso 2026-10-20
-candado: dev 2026-10-20T12:05Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/58-primera-ronda-de-cada-mitad
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -165,3 +165,29 @@ Agregado + tests de Django, vista, UI, e2e, docs, `check.sh`.
 tabla debajo de las mitades.
 
 ## Implementacion
+
+Dev 20261020T1205Z. Quedo todo el diseno, sin desvios de alcance.
+
+- `aggregates.py`: `APERTURAS_DE_MITAD`, `_primera_ronda`,
+  `_primera_tras_el_cambio` y `by_half_opener` debajo de `by_half`, con el
+  `~Q(...) | Q(cambio__isnull=True)` para que las partidas sin cambio sigan
+  sumando a `rest`. `views.py`: `by_half_opener` en `/api/trends/`.
+- `Trends.jsx`: tabla "Primera ronda de cada lado" dentro del panel de
+  mitades, con CSV y el aviso de muestra chica. Desvio menor: las columnas de
+  la tabla de mitades pasaron a una constante `COLUMNAS_POR_TRAMO` que usan
+  las dos tablas, en vez de duplicar el arreglo.
+- Tests (`test_mitades.py`, clase `PrimeraRondaTests`, 9): los 7 del diseno,
+  mas `test_la_primera_ronda_es_la_mas_baja_aunque_no_sea_la_uno` y
+  `test_una_ronda_sin_lado_no_es_el_cambio` (de la revision ciega). El test
+  de API usa `?side=Defense` y cubre el criterio 2 por la vista.
+  Mutaciones probadas: sin `.exclude(my_side="")` en el cambio cae
+  `test_una_ronda_sin_lado_no_es_el_cambio`; con `exclude(F("cambio"))` en
+  vez del `Q` cae `test_una_partida_sin_cambio_de_lado_suma_al_resto`.
+- e2e: `Tendencias muestra la tabla por mitad` afirma el titulo y las celdas
+  `Ronda 1`, `Primera tras el cambio` y `Resto`.
+- `docs/metricas.md`: fila "Primera ronda de cada lado" debajo de "Lado
+  inicial", con la advertencia de `.rec` faltantes del arranque y del cambio.
+
+Revision ciega (subagente con `revision.md`): aprobar, dos hallazgos menores
+(test de ronda sin lado entre arranque y cambio; doc del `.rec` faltante en
+el cambio), los dos corregidos.

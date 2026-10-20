@@ -142,6 +142,10 @@ class PrimeraRondaTests(TestCase):
         _partida(["Defense", "Attack", "Attack"], primera=0)
         self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [1, 1, 1])
 
+    def test_una_ronda_sin_lado_no_es_el_cambio(self):
+        _partida(["Attack", "", "Defense", "Defense"])
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [1, 1, 1])
+
     def test_una_partida_sin_lado_inicial_no_aporta(self):
         _partida(["", "", ""])
         self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [0, 0, 0])
