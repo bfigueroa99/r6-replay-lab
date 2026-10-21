@@ -174,7 +174,7 @@ Dev 20261021T0404Z.
 - Frontend: `rachas.js` (`textoDeRachas`) + `rachas.test.js`; fila
   "Racha de rondas" en `records.js` despues del clutch; parrafo `.note` debajo
   del encabezado de `MatchDetail.jsx`.
-- Tests backend (`test_rachas.py`, 13): los 6 puros del diseno, 2 de API
+- Tests backend (`test_rachas.py`, 12): los 6 puros del diseno, 2 de API
   (incluye `losses` nulo), 4 de record (incluye que el filtro de lado elige
   partidas y la racha usa todas sus rondas). `test_records.py`: el test de base
   vacia lista la clave nueva.
