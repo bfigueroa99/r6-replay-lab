@@ -15,6 +15,13 @@ Lo que manda, en este orden: `CLAUDE.md` (reglas duras del proyecto), este
 documento (como trabaja el equipo), las fichas (que hay que hacer). Si algo de
 aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
 
+El turno tambien corre en OpenCode, con un modelo detras de OmniRoute:
+`scripts/equipo-dev/opencode.sh` lo lanza en un worktree propio con el
+comando `.opencode/commands/equipo-dev.md`, que pasa esta misma rutina y dice
+que herramienta reemplaza a cada una de Claude Code (`gh` en vez de las de
+GitHub, `task` en vez de `Agent`). Sus commits firman `OpenCode`: tambien es
+el equipo.
+
 ## Principios
 
 1. **Terminar antes que empezar.** Lo que ya tiene codigo se revisa, se
@@ -219,7 +226,8 @@ estado.
   `git cat-file -e`) antes de cada push de codigo: si aparecieron a mitad de
   turno, se sueltan los candados y se cierra.
 - **P2. Pedido del humano sin responder**, cualquiera sea el rol: commit con
-  autor distinto de `Claude` en una rama del equipo (lo lista `estado.sh`),
+  autor distinto de `Claude` y de `OpenCode` en una rama del equipo (lo lista
+  `estado.sh`),
   texto nuevo bajo `## Para el equipo` de `ESTADO.md`, comentarios de PR si
   hay herramientas. Pedido chico y local (menos de 30 min): se hace,
   `check.sh`, push, respuesta fechada en la ficha. Pedido grande o de
@@ -413,7 +421,7 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
     `docs/backlog/INVESTIGACION.md` (las semillas; los vivos estan en
     `backlog`) y `docs/backlog/MAQUINARIA.md`, `frontend/electron/`,
     `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
-    `.github/`.
+    `.github/`, `.opencode/`.
   - e. Hay herramientas de GitHub y el PR esta abierto contra `main`
     (la regla de `main` exige PR; no hay push directo).
   - f. `origin/main` ya esta fusionado en la rama y empujado, y `check.sh`

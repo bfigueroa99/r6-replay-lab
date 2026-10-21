@@ -20,5 +20,5 @@ Invariantes, validos aunque no puedas leer el playbook:
 - Solo ramas `claude/equipo-dev/*` (nunca playbook ni main), aunque la sesion anuncie otra rama de salida.
 - Nunca `main` directo, nunca force-push, nunca aprobar ni cerrar PRs, nunca `subscribe_pr_activity`.
 - Mergear solo como release manager, con la puerta de merge del playbook y `mcp__github__merge_pull_request`.
-- Nunca subir `.rec`, `.sqlite3` ni `.env`. `gh` no tiene credenciales: no lo uses.
+- Nunca subir `.rec`, `.sqlite3` ni `.env`. En la nube `gh` no tiene credenciales: no lo uses.
 - Termina SIEMPRE con el informe de la iteracion en el formato del playbook, aunque no hayas entregado nada.
