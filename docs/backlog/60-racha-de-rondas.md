@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
 estado: con hallazgos
-candado: -
+candado: dev 2026-10-21T16:05Z
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_rachas.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z, dev 20261021T1605Z
 
 ## PR
 
