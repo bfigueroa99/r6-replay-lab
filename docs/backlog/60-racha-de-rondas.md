@@ -1,6 +1,6 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: en curso 2026-10-21
+estado: en curso 2026-10-21 (implementado en su rama)
 candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
