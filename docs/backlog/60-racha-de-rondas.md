@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: en curso 2026-10-21
-candado: dev 2026-10-21 04:04 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -162,3 +162,25 @@ ganada desde R1 · 1 perdida desde R2"; Resumen -> Tus records muestra
 "Racha de rondas".
 
 ## Implementacion
+
+Dev 20261021T0404Z.
+
+- Hecho segun el diseno, sin desvios de forma: `rachas_de_rondas` en
+  `aggregates.py`; `round_streaks` en `/api/matches/<id>/` (helper
+  `_racha_con_etiqueta` en la vista); `longest_round_streak` en
+  `personal_records` via `_record_de_racha` (una query de rondas por las
+  partidas filtradas, una de fechas, un `get` para el ganador); el empate se
+  resuelve con `max` sobre `(largo, played_at, match_id)`.
+- Frontend: `rachas.js` (`textoDeRachas`) + `rachas.test.js`; fila
+  "Racha de rondas" en `records.js` despues del clutch; parrafo `.note` debajo
+  del encabezado de `MatchDetail.jsx`.
+- Tests backend (`test_rachas.py`, 13): los 6 puros del diseno, 2 de API
+  (incluye `losses` nulo), 4 de record (incluye que el filtro de lado elige
+  partidas y la racha usa todas sus rondas). `test_records.py`: el test de base
+  vacia lista la clave nueva.
+- e2e (`humo.spec.js`): el detalle abierto desde la lista afirma "Racha: 1
+  ganada desde R1 · 1 perdida desde R2"; el test de records del Resumen
+  afirma la fila "Racha de rondas" con "1 ronda ganada".
+- `docs/metricas.md`: fila **Racha de rondas** en `## Records`.
+- Revision ciega con `revision.md`: sin hallazgos.
+- `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
