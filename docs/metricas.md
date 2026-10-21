@@ -77,6 +77,7 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 | **Primera / segunda mitad** | Rondas sin prorroga. Primera mitad: las jugadas en el lado inicial de la partida; segunda: las del otro lado. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. Rondas sin lado, o de una partida sin lado inicial, no entran en ninguna. Si faltan los `.rec` de la primera mitad, la segunda se lee como primera. |
 | **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
 | **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
+| **Primera ronda de cada lado** | Ronda 1: tu ronda sin prorroga de numero mas bajo de la partida. Primera tras el cambio: la ronda sin prorroga de numero mas bajo cuyo lado no es el inicial (una partida que nunca cambio de lado no tiene). Resto: tus demas rondas sin prorroga con lado. La prorroga no entra en ninguna fila. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia cual es la primera. Si faltan los `.rec` del arranque, la primera ronda que quedo se lee como "Ronda 1"; si falta el de la primera ronda del otro lado, la siguiente se lee como "Primera tras el cambio". |
 
 ## Contexto de la ronda
 

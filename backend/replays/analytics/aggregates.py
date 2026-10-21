@@ -486,6 +486,57 @@ def by_half(**filters) -> list[dict]:
     return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
 
 
+#: Orden fijo de las filas de `by_half_opener`.
+APERTURAS_DE_MITAD = ("match_start", "side_switch", "rest")
+
+
+def _primera_ronda(match_ref: str) -> Subquery:
+    """Numero de la ronda mas baja sin prorroga: la misma que lee `_lado_inicial`."""
+    return Subquery(
+        Round.objects.filter(match_id=OuterRef(match_ref), overtime_number=0)
+        .order_by("number")
+        .values("number")[:1]
+    )
+
+
+def _primera_tras_el_cambio(match_ref: str, lado_ref: str) -> Subquery:
+    """Numero de la ronda mas baja sin prorroga jugada del lado que no es el inicial."""
+    return Subquery(
+        Round.objects.filter(match_id=OuterRef(match_ref), overtime_number=0)
+        .exclude(my_side="")
+        .exclude(my_side=OuterRef(lado_ref))
+        .order_by("number")
+        .values("number")[:1]
+    )
+
+
+def by_half_opener(**filters) -> list[dict]:
+    """Ronda 1, primera ronda despues del cambio de lado y el resto, sin prorroga."""
+    qs = base_queryset(**filters)
+    # Dos annotate seguidos: la segunda subquery referencia `lado_inicial`.
+    con_lado = (
+        qs.filter(round__overtime_number=0)
+        .annotate(lado_inicial=_lado_inicial("round__match_id"))
+        .exclude(lado_inicial__isnull=True)
+        .exclude(lado_inicial="")
+        .exclude(round__my_side="")
+        .annotate(
+            primera=_primera_ronda("round__match_id"),
+            cambio=_primera_tras_el_cambio("round__match_id", "lado_inicial"),
+        )
+    )
+    tramos = {
+        "match_start": con_lado.filter(round__number=F("primera")),
+        "side_switch": con_lado.filter(round__number=F("cambio")),
+        # Un exclude con F contra un nulo descarta la fila en SQL: sin el Q,
+        # las partidas que nunca cambiaron de lado desaparecen del resto.
+        "rest": con_lado.exclude(round__number=F("primera")).filter(
+            ~Q(round__number=F("cambio")) | Q(cambio__isnull=True)
+        ),
+    }
+    return _filas_por_tramo("opener", {t: tramos[t] for t in APERTURAS_DE_MITAD})
+
+
 def _filas_por_tramo(campo: str, tramos: dict[str | int, QuerySet[RoundPlayer]]) -> list[dict]:
     """Una fila de `totals()` por tramo, en el orden del dict.
 

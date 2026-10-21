@@ -52,6 +52,16 @@ function Delta({ metric }) {
 }
 
 const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
+// La tabla de mitades y la de primera ronda se leen una al lado de la otra.
+const COLUMNAS_POR_TRAMO = [
+  { key: 'tramo', label: 'Tramo', sortable: false, left: true },
+  { key: 'rounds', label: 'Rondas', sortable: false },
+  { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
+  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+  { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+]
+const APERTURAS = { match_start: 'Ronda 1', side_switch: 'Primera tras el cambio', rest: 'Resto' }
 const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
 const RONDA_ANTERIOR = {
   after_win: 'Después de ganar',
@@ -190,6 +200,11 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     ...row,
     orden,
     tramo: MITADES[row.half] || row.half,
+  }))
+  const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: APERTURAS[row.opener] || row.opener,
   }))
   const porLadoInicial = (data.by_start_side ?? []).map((row, orden) => ({
     ...row,
@@ -480,19 +495,29 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
           }
         >
           <DataTable
-            columns={[
-              { key: 'tramo', label: 'Tramo', sortable: false, left: true },
-              { key: 'rounds', label: 'Rondas', sortable: false },
-              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
-              { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
-              { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
-              { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
-            ]}
+            columns={COLUMNAS_POR_TRAMO}
             rows={porMitad}
             initialSort={{ key: 'orden', dir: 'asc' }}
             rowKey={(row) => row.half}
             csvName="por-mitad"
           />
+          {porApertura.length ? (
+            <>
+              <h3 style={{ margin: '16px 0 8px' }}>Primera ronda de cada lado</h3>
+              <DataTable
+                columns={COLUMNAS_POR_TRAMO}
+                rows={porApertura}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.opener}
+                csvName="primera-ronda-de-cada-lado"
+              />
+              {filasConPocaMuestra(porApertura).length ? (
+                <p className="note">
+                  Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : null}
           <h3 style={{ margin: '16px 0 8px' }}>Según el lado con que arrancas</h3>
           <DataTable
             columns={[

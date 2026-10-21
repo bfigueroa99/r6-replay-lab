@@ -110,3 +110,65 @@ class TendenciasApiTests(TestCase):
         self.assertEqual([f["rounds"] for f in data["by_half"]], [0, 0, 0])
         self.assertEqual([f["side"] for f in data["by_start_side"]], ["Attack", "Defense"])
         self.assertTrue(all(f["matches"] == 0 for f in data["by_start_side"]))
+
+
+def _por_apertura(filas: list[dict]) -> dict[str, dict]:
+    return {fila["opener"]: fila for fila in filas}
+
+
+class PrimeraRondaTests(TestCase):
+    def test_seis_rondas_con_cambio_en_la_cuatro_dan_uno_uno_y_cuatro(self):
+        _partida(["Attack"] * 3 + ["Defense"] * 3)
+        filas = agg.by_half_opener()
+        self.assertEqual([f["opener"] for f in filas], ["match_start", "side_switch", "rest"])
+        self.assertEqual([f["rounds"] for f in filas], [1, 1, 4])
+
+    def test_la_prorroga_no_cae_en_ninguna_fila(self):
+        _partida(["Attack"] * 3 + ["Defense"] * 3, prorroga=2)
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [1, 1, 4])
+
+    def test_el_filtro_de_lado_no_cambia_cual_es_la_primera(self):
+        _partida(["Attack"] * 3 + ["Defense"] * 3)
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener(side="Defense")], [0, 1, 2])
+
+    def test_una_partida_sin_cambio_de_lado_suma_al_resto(self):
+        _partida(["Attack"] * 5)
+        aperturas = _por_apertura(agg.by_half_opener())
+        self.assertEqual(aperturas["match_start"]["rounds"], 1)
+        self.assertEqual(aperturas["side_switch"]["rounds"], 0)
+        self.assertEqual(aperturas["rest"]["rounds"], 4)
+
+    def test_la_primera_ronda_es_la_mas_baja_aunque_no_sea_la_uno(self):
+        _partida(["Defense", "Attack", "Attack"], primera=0)
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [1, 1, 1])
+
+    def test_una_ronda_sin_lado_no_es_el_cambio(self):
+        _partida(["Attack", "", "Defense", "Defense"])
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [1, 1, 1])
+
+    def test_una_partida_sin_lado_inicial_no_aporta(self):
+        _partida(["", "", ""])
+        self.assertEqual([f["rounds"] for f in agg.by_half_opener()], [0, 0, 0])
+
+    def test_base_vacia_da_tres_filas_en_cero(self):
+        filas = agg.by_half_opener()
+        self.assertEqual([f["rounds"] for f in filas], [0, 0, 0])
+        self.assertTrue(all(f["winrate"] is None for f in filas))
+
+    def test_trends_trae_by_half_opener_en_orden_fijo(self):
+        _partida(["Attack"] * 3 + ["Defense"] * 3)
+        respuesta = self.client.get("/api/trends/?side=Defense")
+        self.assertEqual(respuesta.status_code, 200)
+        filas = respuesta.json()["by_half_opener"]
+        self.assertEqual([f["opener"] for f in filas], ["match_start", "side_switch", "rest"])
+        self.assertEqual([f["rounds"] for f in filas], [0, 1, 2])
+
+    def test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra(self):
+        # contar rondas no alcanza: la R6 tambien da una ronda; solo la R4 se pierde
+        match = make_match()
+        for numero, lado in enumerate(["Attack"] * 3 + ["Defense"] * 3, start=1):
+            make_round_player(make_round(match, numero, side=lado, won=numero != 4))
+        aperturas = _por_apertura(agg.by_half_opener())
+        self.assertEqual(aperturas["match_start"]["winrate"], 100.0)
+        self.assertEqual(aperturas["side_switch"]["winrate"], 0.0)
+        self.assertEqual(aperturas["rest"]["winrate"], 100.0)
