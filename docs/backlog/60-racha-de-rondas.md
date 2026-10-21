@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: implementado
-candado: revisor 2026-10-21T08:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_rachas.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z
 
 ## PR
 
@@ -184,3 +184,36 @@ Dev 20261021T0404Z.
 - `docs/metricas.md`: fila **Racha de rondas** en `## Records`.
 - Revision ciega con `revision.md`: sin hallazgos.
 - `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
+
+## Revision 2026-10-21 sobre 51815b8
+
+Revisor 20261021T0804Z. Revision ciega con `revision.md` (subagente) y
+confirmacion del lider.
+
+- Criterios de aceptacion: los cinco cubiertos. Funcion pura con los casos
+  del diseno (`G G P G G G`, hueco, nulo, empate, vacio, orden) en
+  `test_rachas.py`; `round_streaks` con test de API (incluye `losses`
+  nulo); `longest_round_streak` con dos partidas, desempate por fecha
+  (fecha intermedia en el indice 2: fallaria si desempatara por id), sin
+  ganadas y filtro de lado; UI en `MatchDetail.jsx` y `records.js` con
+  vitest y e2e; fila en `docs/metricas.md`.
+- Diff dentro de `archivos:` salvo `backend/tests/test_records.py` (una
+  linea: la clave nueva en el test de base vacia), explicado en
+  Implementacion.
+- Etiquetas `R<n>` con `number + 1`, igual que `_record_de_ronda` y el
+  detalle de rondas. `played_at` no es nulo: el `max` del desempate no
+  rompe. Sin dependencias, sin escrituras, sin tildes en identificadores,
+  UI con tildes, sin `print` ni `console.log`.
+- Hallazgo menor (no bloquea, no cambia numeros):
+  - [estilo] frontend/src/records.js:20 (`detalle`)
+    Que pasa: la fila "Racha de rondas" muestra "ronda R3 · mapa · fecha",
+    que en "Mas bajas en una ronda" significa la ronda donde paso; aca es la
+    ronda donde empieza la racha.
+    Como reproducirlo: racha de 5 desde R3 -> "5 rondas ganadas seguidas |
+    ronda R3 · Oregon · 2026-09-02"; el detalle de partida dice "desde R3".
+    Arreglo sugerido: para `longest_round_streak`, "desde R3 · mapa ·
+    fecha" y ajustar `records.test.js` (y el e2e si afirma el detalle).
+- `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
+
+Veredicto: aprobar -> `revisado`. El hallazgo menor puede viajar en esta
+entrega si alguien vuelve a tocar la rama, o quedar para despues.
