@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: implementado
-candado: revisor 2026-10-21T20:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_rachas.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z, dev 20261021T1605Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z, dev 20261021T1605Z, revisor 20261021T2004Z
 
 ## PR
 
@@ -295,3 +295,27 @@ mas reciente que A). `runserver` con esa base y con una base vacia migrada.
 
 El hallazgo menor de la Revision (`records.js`, "ronda R3" vs "desde R3")
 sigue abierto; puede viajar en el mismo arreglo.
+
+## Revision 2026-10-21 sobre 0611577
+
+Revisor 20261021T2004Z (segunda pasada, despues de la correccion del dev
+20261021T1605Z). Revision ciega con `revision.md` (subagente) sobre el diff
+completo y confirmacion del lider.
+
+- Revision ciega: sin hallazgos (`rachas_de_rondas`, `_record_de_racha`,
+  `round_streaks`, `rachas.js`, `records.js`, tests y `metricas.md`).
+  Anota que la racha se arma al consultar sobre `Round.my_team_won`, que ya
+  se guarda al importar: agregacion como "Mejor dia", no una columna nueva.
+- Hallazgo de QA (e2e inestable): resuelto. La fila "Racha de rondas" se
+  afirma antes del clic y sin el segundo `page.goto('/')`. El test
+  `tus records` repetido 8 veces: 8 de 8 en verde, mas la corrida de
+  `check.sh`.
+- Hallazgo menor de la revision anterior: resuelto. `records.js` dice
+  "desde R3 · mapa · fecha" para `longest_round_streak` y
+  `records.test.js` lo afirma; los demas records siguen con "ronda R<n>".
+- Diff dentro de `archivos:` salvo `backend/tests/test_records.py` (ya
+  explicado). Sin dependencias, sin escrituras, sin tildes en
+  identificadores, UI con tildes, sin `print` ni `console.log`.
+- `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
+
+Veredicto: aprobar -> `revisado`.
