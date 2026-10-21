@@ -1,8 +1,8 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: disenado
+estado: en curso 2026-10-21
 candado: -
-rama: -
+rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
