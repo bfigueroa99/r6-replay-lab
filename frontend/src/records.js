@@ -11,6 +11,7 @@ const RECORDS = [
   ['most_kills_match', 'Más bajas en una partida', (r) => `${r.value} ${r.value === 1 ? 'baja' : 'bajas'}`],
   ['most_kills_round', 'Más bajas en una ronda', (r) => `${r.value} ${r.value === 1 ? 'baja' : 'bajas'}`],
   ['biggest_clutch', 'Clutch más grande', (r) => `1v${r.value}`],
+  ['longest_round_streak', 'Racha de rondas', (r) => `${r.value} ${r.value === 1 ? 'ronda ganada' : 'rondas ganadas seguidas'}`],
   ['best_day', 'Mejor día', (r) => `${Math.round(r.value)} % de rondas ganadas`],
 ]
 

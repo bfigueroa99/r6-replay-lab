@@ -14,6 +14,7 @@ import {
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
+import { textoDeRachas } from '../rachas.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -25,6 +26,7 @@ export default function MatchDetail() {
   if (!data) return null
 
   const { match, rounds, scoreboard, my_totals: mine } = data
+  const rachas = textoDeRachas(data.round_streaks)
   const round = rounds[Math.min(selected, rounds.length - 1)]
 
   return (
@@ -39,6 +41,7 @@ export default function MatchDetail() {
             {match.played_at.slice(0, 16).replace('T', ' ')} · {match.match_type} · {match.gamemode} ·{' '}
             {match.game_version}
           </p>
+          {rachas && <p className="note">{rachas}</p>}
         </div>
         <Link className="btn small" to="/partidas">
           Volver
