@@ -1,7 +1,7 @@
 # 58. Primera ronda de cada mitad
 
 estado: aprobado
-candado: -
+candado: release 2026-10-21 00:10Z
 rama: claude/equipo-dev/58-primera-ronda-de-cada-mitad
 tipo: funcionalidad
 epica: lado-y-marcador
