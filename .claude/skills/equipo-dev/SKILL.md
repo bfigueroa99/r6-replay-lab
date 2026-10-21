@@ -497,7 +497,9 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
      (a) bug real con numeros mal, 500 con datos legitimos o importacion que
      se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso;
-     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros;
+     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros
+     (a igual tamano, primero un `must` de la epica `paridad-referencia`,
+     que la referencia tiene y la app no);
      (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
      funcionalidades esperando. Al menos una de las fichas del turno es
      funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`
@@ -543,7 +545,11 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   partir en tramos de la misma epica: el diseno cubre el primer tramo que
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de
-  descarte; solo lo son los filtros duros. Spikes en el scratchpad, nunca
+  descarte; solo lo son los filtros duros. Si una ficha admite disenos
+  genuinamente distintos y la eleccion importa, el diseno sale de una arena
+  (`.claude/skills/equipo-dev/arena.md`, leerlo de `$REF`): una por turno,
+  `--agents 4`, en un worktree de `$EQUIPO_REF`; con una sola forma obvia,
+  no hay arena. Spikes en el scratchpad, nunca
   codigo commiteado. `estado: disenado`, `candado: -`.
 - **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
 - **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
@@ -577,7 +583,12 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
   repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
   explican por que). Dos subagentes para backend y frontend si son
-  independientes. Antes del ultimo push: subagente ciego con `revision.md`
+  independientes. Si el diseno deja abierto un punto con enfoques
+  genuinamente distintos (un algoritmo, la decodificacion de un campo) y no
+  lo decidio una arena del Arquitecto, ese punto se juega en una arena
+  (`.claude/skills/equipo-dev/arena.md`): una por turno, `--agents 4`, el
+  diff del ganador pasa por los mismos tests, `check.sh` y revision que
+  cualquier cambio. Antes del ultimo push: subagente ciego con `revision.md`
   sobre `git diff origin/main...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
   filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
   es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
@@ -704,6 +715,13 @@ pozo del que el PO saca.
   7. **Analitica de esports y deporte**: ratings compuestos, probabilidad de
      ganar la ronda segun la ventaja numerica, redes de trade, rating de
      clutch.
+  8. **Paridad con la referencia (Replica)**: la pasada del pack Replica
+     sobre la app de referencia (recon, columna `clone` contra `main`,
+     `parity.py`, resenas reales), siguiendo
+     `.claude/skills/equipo-dev/replica.md` (leerlo de `$REF`), que dice cual
+     es la referencia y como cambiarla. No rota como las demas: va primero en
+     el primer turno en que su fila de la tabla de Fuentes lleve 7 dias o mas
+     sin visita, o no exista; asi corre una vez por semana.
 - **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
   existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
   con link verificado, fecha y una linea de que hace. Despues el lider
@@ -732,13 +750,15 @@ pozo del que el PO saca.
   extrae y ninguna pantalla muestra, ramas `mercado/*` y PRs cerrados sin
   mergear, y las ideas van igual a `ALCANCE.md`. Se anota "sin red" en
   `INVESTIGACION.md`, y una sola vez en `## Para el humano` de `ESTADO.md`,
-  con la configuracion de red del entorno como causa probable.
+  con la configuracion de red del entorno como causa probable. Si le toca
+  la familia 8, igual actualiza `clone` y corre `parity.py`, que no usan red.
 - **Prioridades:** P1, P2 y P3 como cualquier rol. P4 a P7 no le tocan:
   nunca implementa, revisa ni prueba.
 - **Salida:** commits `Investiga: <familias>` en `backlog`, solo
-  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md` (mas
-  `ESTADO.md` al cerrar). Nunca fichas: priorizar es del PO. Nunca PR,
-  nunca rama de trabajo, nunca codigo.
+  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md`, mas
+  `docs/backlog/replica/*` con la familia 8 (y `ESTADO.md` al cerrar). Nunca
+  fichas: priorizar es del PO. Nunca PR, nunca rama de trabajo, nunca
+  codigo.
 - **Turno bien hecho:** al menos 3 ideas nuevas en `ALCANCE.md` que pasan
   los tres filtros, cada una con su fuente real; el PO siguiente (cuando
   el estado lo pide; por reloj, franja 1) puede convertir cualquiera en
