@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-21 00:35 UTC por release (sesion 20261021T0004Z; motivo: por estado: 1 aprobado; reloj: release, franja 0)
-playbook: origin/main@6c3e640
+actualizado: 2026-10-21 04:10 UTC por dev (sesion 20261021T0404Z; motivo: por estado: 1 disenado, lugar en cola; reloj: po, franja 1)
+playbook: origin/main@44c525b
 rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-19T09:01Z 10-19T12:01Z 10-19T21:01Z 10-20T09:01Z 10-20T21:01Z) | 11 de 56 en 7 dias; sin herramientas para comparar
 pausa: no
 
@@ -9,20 +9,20 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| (vacia) | - | - | - | - |
+| claude/equipo-dev/60-racha-de-rondas | 60-racha-de-rondas | implementado | 0 | sin PR; [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/60-racha-de-rondas?expand=1) |
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
-Nada abierto: la 58 entro a main (PR #46, 44c525b). La 60 (disenado) ya puede tomar `aggregates.py`, `views.py`, `Trends.jsx`, `humo.spec.js` y `metricas.md`.
+Una sola rama: la 60 (`implementado`) sale limpia contra main 44c525b; toca `aggregates.py`, `views.py`, `records.js`, `MatchDetail.jsx`, `humo.spec.js` y `metricas.md`.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:16 (39-inercia-entre-rondas 40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida 52-rondas-cortas-y-largas 53-multikills-por-tamano 54-solo-duo-o-stack 55-clutch-intentos-y-conversion 58-primera-ronda-de-cada-mitad) otros:1.
-- Epicas en curso: lado-y-marcador: B1-B7, B9, B10 y B12 en main; B8 (58, PR #46) en main y B13 -> ficha 60 (disenado); B11 y B14 como idea. revision-de-rondas: F7 (51) y F10 (53) en main. escuadra: C4 (46) y C5 (54) en main; C7 -> ficha 57 (propuesto). impacto: K3 (55) en main, PR #43; K5 -> ficha 59 (propuesto, ya desbloqueada); O6 y K7 como idea. progreso: E3 (40) y E4 (44) en main; E5+E10 -> ficha 56 (propuesto). temporada-y-modo: A2 (47) en main, A4 descartada (49); A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:4 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:15 (40-hora-y-dia-de-la-semana 41-ronda-segun-el-marcador 42-como-se-cierran-tus-rondas 43-match-point 44-records-personales 45-remontadas-y-derrumbes 46-primero-de-tu-equipo-en-caer 47-modos-desconocidos-en-datos 50-partidas-cerradas-y-holgadas 51-matriz-de-duelos-de-la-partida 52-rondas-cortas-y-largas 53-multikills-por-tamano 54-solo-duo-o-stack 55-clutch-intentos-y-conversion 58-primera-ronda-de-cada-mitad) otros:1.
+- Epicas en curso: lado-y-marcador: B1-B7, B9, B10 y B12 en main; B8 (58, PR #46) en main y B13 -> ficha 60 (implementado, en su rama); B11 y B14 como idea. revision-de-rondas: F7 (51) y F10 (53) en main. escuadra: C4 (46) y C5 (54) en main; C7 -> ficha 57 (propuesto). impacto: K3 (55) en main, PR #43; K5 -> ficha 59 (propuesto, ya desbloqueada); O6 y K7 como idea. progreso: E3 (40) y E4 (44) en main; E5+E10 -> ficha 56 (propuesto). temporada-y-modo: A2 (47) en main, A4 descartada (49); A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:4 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 62 ideas libres (sin cambios en este turno).
 - Investigacion: ultima entrada 2026-10-14 22:11Z (familias 1, 2, 4 y 7; antes 3, 5 y 6). Proxima: 3, 5 y 6.
 
@@ -33,17 +33,17 @@ Nada abierto: la 58 entro a main (PR #46, 44c525b). La 60 (disenado) ya puede to
 | 56-mapas-y-operadores-que-mejoran | propuesto | funcionalidad | progreso | 3 | fullstack | - |
 | 57-teamkills | propuesto | funcionalidad | escuadra | 3 | fullstack | - |
 | 59-clutch-por-mapa-y-sitio | propuesto (#55 ya en main) | funcionalidad | impacto | 3 | fullstack | - |
-| 60-racha-de-rondas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 60-racha-de-rondas | en curso (implementado en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa: las versiones de un mapa ya comparten slug y nombre) | bug | temporada-y-modo | 2 | backend | - |
 
-Un `disenado` (60) y tres `propuesto` (56, 57, 59). La 58 ya esta en main (PR #46). Proximo turno por estado: dev (regla 8) sobre la 60.
+Cero `disenado` y tres `propuesto` (56, 57, 59). La 60 esta `implementado` en su rama. Proximo turno por estado: revisor (regla 3) sobre la 60.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-21 00:35 | Entrega y mergea la 58 (`aprobado` -> `entregado` -> main): main 6c3e640 fusionado en la rama, puerta a-f cumplida (dev, revisor y qa de sesiones distintas; diff fuera de archivos del humano; sin preguntas abiertas), `check.sh` en `Todo en verde.` sobre el head 637425b (721 backend, 115 vitest, build, 44 e2e); PR #46 abierto y mergeado por MCP (main 44c525b). Ficha con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta (va a borrables). pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
-| dev | 2026-10-20 12:40 | Implementa 58 (`disenado` -> `implementado`, rama `claude/equipo-dev/58-primera-ronda-de-cada-mitad`): `by_half_opener` en `/api/trends/` (Ronda 1, Primera tras el cambio, Resto; prorroga fuera; el `Q` con nulo para partidas sin cambio), tabla "Primera ronda de cada lado" en el panel de mitades de Tendencias con CSV y aviso de muestra chica, 9 tests de Django, e2e, fila en `metricas.md`. Revision ciega: aprobar, 2 hallazgos menores corregidos. Dos mutaciones caen. `check.sh` en `Todo en verde.` (720 backend, 115 vitest, build, 44 e2e). |
+| dev | 2026-10-21 04:10 | Implementa 60 (`disenado` -> `implementado`, rama `claude/equipo-dev/60-racha-de-rondas`): `rachas_de_rondas` pura (cortan perdida, sin resultado y hueco), `round_streaks` en `/api/matches/<id>/`, record `longest_round_streak` sobre todas las rondas de la partida (empate: la mas reciente), texto "Racha: ..." en el encabezado del detalle (`rachas.js`) y fila "Racha de rondas" en Records; 12 tests de Django, vitest, e2e, fila en `metricas.md`. Revision ciega: sin hallazgos. `check.sh` en `Todo en verde.` (733 backend, 120 vitest, build, 44 e2e). |
 | revisor | 2026-10-20 16:20 | Revisa 58 (funcionalidad, `implementado` -> `revisado`), rama al dia con main afd72ae. `check.sh` en `Todo en verde.` (720 backend, 115 vitest, build, 44 e2e). Revision ciega: aprobar; un hallazgo menor confirmado (el e2e solo afirma las etiquetas de las tres filas, no que tengan rondas; el backend si lo cubre). Los 5 criterios con test o verificacion anotada. Sin pushes de codigo. |
 | qa | 2026-10-20 20:30 | Prueba 58 (funcionalidad, `revisado` -> `aprobado`), rama al dia con main afd72ae. `check.sh` en `Todo en verde.` (721 backend, 115 vitest, build, 44 e2e). Base sembrada desde `factories.py` (cambio en la 4 con prorroga, sin cambio numerada desde 0, sin lado, ronda sin lado antes del cambio, nick repetido): `/api/trends/` da 3/2/9 como se esperaba a mano, con `?side=` 2/1/6 y 1/1/3, bordes (`until=foo`, `days=abc`, `page=-1`, filtros vacios) sin 500; base vacia tres filas en 0. seed_demo: 29/29/145 = 203 rondas. Chunk inicial sin cambio. Mutaciones: 4; una no equivalente sobrevivia (tomar la ultima ronda del otro lado): test de borde agregado que la mata. |
 | arquitecto | 2026-10-19 04:30 | Disena 55 (`clutch_vs` en `RoundPlayer`: funcion pura en `metrics.py` usada por import, `recompute` y migracion `0003` con `RunPython` que llena lo ya importado; cuenta `Kill`, `Death` y `PlayerLeave`; `clutch_conversion` en `/api/teammates/` por X y lado; tabla en Compañeros > Clutches; seed: intentos 1v1 ganados y 1v2 perdidos), 58 (`by_half_opener` en `/api/trends/` con subqueries de primera ronda y primera tras el cambio, ojo con `exclude(F)` sobre nulo; tabla en el panel de mitades) y 60 (`rachas_de_rondas` pura; `round_streaks` en el detalle de partida, record `longest_round_streak` sobre la partida entera; `rachas.js` para el texto). Papel: 3 disenado, 3 propuesto. Sin pushes de codigo. |
