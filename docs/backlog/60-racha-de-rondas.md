@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: con hallazgos
-candado: dev 2026-10-21T16:05Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -183,6 +183,20 @@ Dev 20261021T0404Z.
   afirma la fila "Racha de rondas" con "1 ronda ganada".
 - `docs/metricas.md`: fila **Racha de rondas** en `## Records`.
 - Revision ciega con `revision.md`: sin hallazgos.
+- `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
+
+### Correccion de hallazgos (dev 20261021T1605Z)
+
+- QA (bloqueante, e2e inestable): en `humo.spec.js` la fila "Racha de
+  rondas" se afirma antes del clic al enlace del record y se quita el segundo
+  `page.goto('/')`, que cortaba el `/api/trends/` en vuelo. Se eligio esto y
+  no `networkidle`: no agrega una espera y no recarga. El test repetido 10
+  veces: 10 de 10 en verde.
+- Revision (menor): `records.js` muestra "desde R3 · mapa · fecha" para
+  `longest_round_streak` (la ronda donde empieza la racha), y
+  `records.test.js` lo afirma.
+- Delta de 10 lineas revisado por el lider; sin revision ciega por subagente
+  esta vez (la del diff completo se hizo en la implementacion).
 - `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
 
 ## Revision 2026-10-21 sobre 51815b8

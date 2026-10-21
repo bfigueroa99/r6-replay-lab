@@ -252,15 +252,15 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   await expect(panel).toBeVisible()
   const fila = panel.locator('tr', { hasText: 'Más bajas en una partida' })
   await expect(fila).toBeVisible()
+  // seed_demo alterna el resultado ronda a ronda: toda racha es de una. Se
+  // afirma antes del clic: recargar el Resumen corta sus requests en vuelo
+  await expect(panel.locator('tr', { hasText: 'Racha de rondas' })).toContainText('1 ronda ganada')
   // el enlace tiene que abrir la partida del record, no una cualquiera
   const respuesta = await page.request.get('/api/overview/')
   const { match_id: matchId, map } = (await respuesta.json()).records.most_kills_match
   await fila.getByRole('link').click()
   await expect(page).toHaveURL(new RegExp(`/partidas/${matchId}$`))
   await expect(page.locator('h1')).toContainText(map)
-  // seed_demo alterna el resultado ronda a ronda: toda racha es de una
-  await page.goto('/')
-  await expect(panel.locator('tr', { hasText: 'Racha de rondas' })).toContainText('1 ronda ganada')
 
   expect(errores).toEqual([])
 })

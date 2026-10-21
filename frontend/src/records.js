@@ -17,6 +17,8 @@ const RECORDS = [
 
 function detalle(clave, record) {
   if (clave === 'best_day') return `${fecha(record.day)} · ${record.rounds_won} de ${record.rounds} rondas`
+  // la racha arranca en esa ronda; en los demas records la ronda es donde paso
+  if (clave === 'longest_round_streak') return `desde ${record.round_label} · ${record.map} · ${fecha(record.played_at)}`
   if (record.round_label) return `ronda ${record.round_label} · ${record.map} · ${fecha(record.played_at)}`
   return `${record.map} · ${fecha(record.played_at)} · ${record.rounds} rondas`
 }

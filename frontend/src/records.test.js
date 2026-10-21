@@ -66,7 +66,7 @@ describe('filasDeRecords', () => {
   it('el detalle dice la ronda, el mapa y la fecha', () => {
     const filas = Object.fromEntries(filasDeRecords(RECORDS).map((f) => [f.clave, f.detalle]))
     expect(filas.most_kills_round).toBe('ronda R2 · Oregon · 2026-09-02')
-    expect(filas.longest_round_streak).toBe('ronda R3 · Oregon · 2026-09-02')
+    expect(filas.longest_round_streak).toBe('desde R3 · Oregon · 2026-09-02')
     expect(filas.most_kills_match).toBe('Oregon · 2026-09-02 · 9 rondas')
     expect(filas.best_day).toBe('2026-09-02 · 15 de 20 rondas')
   })
