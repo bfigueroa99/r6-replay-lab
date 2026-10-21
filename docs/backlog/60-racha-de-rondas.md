@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: revisado
-candado: qa 2026-10-21T12:04Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -217,3 +217,67 @@ confirmacion del lider.
 
 Veredicto: aprobar -> `revisado`. El hallazgo menor puede viajar en esta
 entrega si alguien vuelve a tocar la rama, o quedar para despues.
+
+## QA 2026-10-21 sobre 98648c1
+
+QA 20261021T1204Z. Veredicto: **con hallazgos** (un e2e inestable deja
+`check.sh` en rojo; la funcionalidad en si esta bien).
+
+### Hallazgo (bloquea: check.sh rojo)
+
+- [e2e] frontend/e2e/humo.spec.js:261 (`el Resumen muestra tus records y enlaza a la partida`)
+  Que pasa: el `page.goto('/')` nuevo recarga la pagina mientras el
+  `/api/trends/?limit=25` de la primera carga del Resumen sigue en vuelo; la
+  navegacion lo corta y `vigilarConsola` anota
+  `request fallida: http://127.0.0.1:8099/api/trends/?limit=25 (net::ERR_ABORTED)`.
+  Como reproducirlo: `./scripts/check.sh` (fallo en la primera corrida:
+  43 passed, 1 failed), o
+  `cd frontend && for i in $(seq 1 10); do npx playwright test e2e/humo.spec.js -g "tus records" | grep -E "^\s+1 (passed|failed)"; done`
+  -> en esta rama fallo 8 de 16 corridas; con el `humo.spec.js` de
+  `origin/main` (sin las dos lineas nuevas) paso 10 de 10.
+  Arreglo sugerido (probado en el scratchpad, 12 de 12 en verde): esperar a
+  que la primera carga termine antes de recargar:
+  ```js
+  // seed_demo alterna el resultado ronda a ronda: toda racha es de una
+  await page.waitForLoadState('networkidle')
+  await page.goto('/')
+  ```
+  (o afirmar "Racha de rondas" antes de hacer clic en el enlace, sin el
+  segundo `goto`). Despues, `check.sh` completo.
+
+### Evidencia por criterio
+
+Base sembrada con `factories.py` (script en el scratchpad, no commiteado):
+A `P P G G G G P P P` (Oregon), B `G G _ G G nulo G` (Bank, hueco en el
+indice 2), C `P P P` (Border), D sin rondas (Chalet), E `G G G G P` (Villa,
+mas reciente que A). `runserver` con esa base y con una base vacia migrada.
+
+- Funcion pura: `curl /api/matches/<id>/`:
+  A `wins 4 desde R3, losses 3 desde R7` (2 desde R1 queda atras);
+  B `wins 2 desde R1, losses null` (hueco y nulo cortan); C `wins null,
+  losses 3 desde R1`; D las dos `null`; id 999 -> 404. OK.
+- `round_streaks` en el detalle: formato `{length, from_round_label}` o
+  `null`, `R<n>` con `number + 1`. OK.
+- `longest_round_streak`: `/api/overview/` -> Villa, 4, R1 (empate 4-4 con
+  Oregon: gana la mas reciente). `?side=Attack` -> 4 (el filtro elige
+  partidas). `?map=chalet` y `?since=2030-01-01` -> `null`, 200.
+  `?until=foo`, `?page=-1`, `?map=` -> 200 sin cambio. Base vacia -> `null`,
+  200. (`?side=attack` en minuscula da todo vacio en todos los records: es
+  el comportamiento previo del filtro, no de esta ficha.) OK.
+- UI: el e2e afirma el parrafo "Racha: 1 ganada desde R1 · 1 perdida desde
+  R2" y la fila "Racha de rondas" (pasan cuando el test no se cae por el
+  hallazgo de arriba). OK salvo el hallazgo.
+- `docs/metricas.md`: fila "Racha de rondas" en `## Records`. OK.
+- Mutacion (4 de 4 caen): quitar `numero == anterior[0] + 1` (1 falla en
+  `test_rachas`); desempate por id en vez de fecha (1 falla); `>=` en vez
+  de `>` en la mejor racha (2 fallan); singular con `=== 0` en `rachas.js`
+  (1 falla en vitest).
+- Chunk inicial de `vite build`: `index-*.js` 187,63 kB en main -> 187,75
+  kB (+0,1 %). `MatchDetail` 9,41 -> 9,75 kB.
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hay `## Verificar en
+  el PC`.
+- `check.sh`: rojo en e2e por el hallazgo (733 tests backend y vitest en
+  verde, build ok, 43 de 44 e2e).
+
+El hallazgo menor de la Revision (`records.js`, "ronda R3" vs "desde R3")
+sigue abierto; puede viajar en el mismo arreglo.
