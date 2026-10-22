@@ -1,8 +1,8 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: disenado
+estado: en curso 2026-10-22 (implementado en su rama)
 candado: -
-rama: -
+rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
 epica: progreso
 area: fullstack
