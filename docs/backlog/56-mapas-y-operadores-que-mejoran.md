@@ -1,7 +1,7 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
 estado: revisado
-candado: -
+candado: qa 2026-10-22T20:05Z
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
 epica: progreso
