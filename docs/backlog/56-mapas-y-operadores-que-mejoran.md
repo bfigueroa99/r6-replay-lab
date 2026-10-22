@@ -1,7 +1,7 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: revisado
-candado: qa 2026-10-22T20:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E5 y E10
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_compare.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z, revisor 20261022T1604Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z, revisor 20261022T1604Z, qa 20261022T2004Z
 
 ## PR
 
@@ -231,3 +231,29 @@ asi que el e2e no pinta un chip mejor/peor ni una tabla de mapas con filas;
 los colores los cubren solo los tests de Django. Ya lo anoto el Dev.
 
 Veredicto: aprobar -> `revisado`.
+
+## QA 2026-10-22 sobre 6fe9317
+
+QA 20261022T2004Z. main sin cambios desde la revision (`git log HEAD..origin/main` vacio, `merge-tree` limpio).
+
+- `./scripts/check.sh` -> `Todo en verde.` (733 tests backend, 115 frontend, build ok, 45 e2e).
+- Chunk inicial: `index-*.js` 187,63 kB en la rama y en `origin/main` (no crece). `Trends-*.js` 24,36 -> 25,84 kB (+6 %, la tabla nueva).
+- Base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3`, `migrate`, `runserver`): `/api/compare/` con `""`, `?by=days&n=30`, `?n=-1`, `?by=foo`, `?min_rows=0` (se acota a 1), `?min_rows=foo` (default 10), `?until=foo`, `?side=defense`, `?map=` -> todos 200 con `by_map: []` y `by_operator: []`.
+- Base sembrada con `tests/factories.py` (script en el scratchpad, 5 partidas de 12 rondas: Club House y Bank en el periodo previo; Club House, Bank y Oregon en el actual con `n=2`; rival con nick `Rival` y operador vacio; rondas sin bajas) y `recompute`:
+  - `?n=2` -> `by_map` solo Bank (75 -> 41,7, delta -33,3, ruido 18,9, `peor`); Club House (solo previo) y Oregon (solo actual) no salen. `by_operator`: Ash Ataque 83,3 -> 50 y Mira Defensa 75 -> 41,7, ambos `peor`. Cuentas a mano: coinciden. Rondas del rival con operador vacio no forman fila.
+  - `?n=2&side=Defense` -> solo Mira Defensa. `?n=2&operator=Ash` -> solo Ash. `?n=2&map=bank`, `?n=1`, `?by=days&n=10` -> cortes vacios, coherente con el total (sin partidas en los dos periodos). `?n=2&min_rows=13` -> vacio. `?until=foo`, `?page=-1` -> se ignoran, 200. Cero 500 en el log.
+  - `?side=defense` en minuscula da vacio, igual que el total en `origin/main`: comportamiento previo de los filtros, no de esta ficha.
+- UI en Chromium sobre la base sembrada (ruta `/api/compare/` reescrita a `n=2` con `page.route`): "Mapas" con la fila Bank y "Operadores" con Ash Ataque y Mira Defensa, delta -33,3 % en chip rojo, chips de lado, CSV por tabla; consola sin errores ni warnings. El e2e cubre el texto vacio y las 6 filas de `seed_demo`.
+- Mutacion sobre `aggregates.py` (`manage.py test tests.test_compare`, restaurado despues de cada una):
+  - interseccion de claves -> union: caen `test_un_mapa_que_no_jugaste_antes_no_sale` y `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`.
+  - orden por delta invertido: cae `test_las_filas_vienen_ordenadas_por_delta`.
+  - operador agrupado sin lado: caen `test_el_operador_se_parte_por_lado` y `test_respeta_by_days_y_el_filtro_de_lado`.
+  - `min_rows` ignorado (1 fijo): caen `test_la_muestra_minima_por_fila_se_puede_pedir` y `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`.
+
+Criterios: 1 a 3 cubiertos por tests (las mutaciones los tumban) y por `curl`; 4 por el e2e y la pasada en Chromium; 5 por la fila en `docs/metricas.md`. Sin migracion, sin parser, sin Electron ni `.ps1`.
+
+Veredicto: `aprobado`.
+
+## Para el humano
+
+- Aviso (no bloquea): `COMPARE_MIN_ROUNDS_FILA = 10` se calibro solo con datos sinteticos. Calibrar con la base real: abrir `/tendencias` con ventana 10 y 30 partidas y contar filas de "Operadores"; si con 10 casi ninguna aparece, bajar la constante a 8 en `backend/replays/analytics/aggregates.py`.
