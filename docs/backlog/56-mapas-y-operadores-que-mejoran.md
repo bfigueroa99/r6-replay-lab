@@ -1,7 +1,7 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: implementado
-candado: revisor 2026-10-22T16:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E5 y E10
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_compare.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z, revisor 20261022T1604Z
 
 ## PR
 
@@ -198,3 +198,36 @@ Django; cambiar el seed moveria numeros de otras pruebas), y `Delta` muestra
 dos decimales con |delta| < 1 (codigo previo, cosmetico).
 
 check.sh: `Todo en verde.` (733 tests backend, 115 frontend, build ok, 45 e2e).
+
+## Revision 2026-10-22 sobre 6a5644a
+
+Revisor 20261022T1604Z. main ya estaba fusionado en la rama (sin cambios);
+`check.sh` en `Todo en verde.` (733 tests backend, 115 frontend, build ok,
+45 e2e).
+
+Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por el lider:
+
+- Los numeros de los asserts nuevos salen a mano: Club House 25 % -> 83,3 %
+  (+58,3); Bank -33,3 con banda ~18 (`peor`); Oregon +8,3 con banda ~20
+  (`ruido`); Villa +41,7 (`mejor`); con `min_rows=13` los operadores (12
+  rondas por periodo) quedan afuera y el mapa (24) queda.
+- El e2e cuadra con `seed_demo` (base temporal en el scratchpad): ventana de
+  10 partidas, `by_map` vacio y 6 filas en `by_operator`, Ash en ataque
+  entre ellas.
+- `_veredicto` conserva las reglas del total (los tests viejos de
+  `test_compare.py` siguen verdes sin tocarlos).
+- El corte por mapa agrupa por `map_slug` + `map_name`, igual que el
+  `by_map` existente; `retag` cambia los dos juntos, asi que no se parte una
+  fila.
+
+Ficha: cada criterio tiene test con nombre (lista de Implementacion); el diff
+no sale de `archivos:`; fila nueva en `docs/metricas.md`; sin tildes en
+identificadores, UI con tildes; sin `print` ni `console.log`; sin
+dependencias ni escrituras nuevas (`min_rows` es un parametro GET).
+
+Observacion, no hallazgo: en `seed_demo` todos los operadores dan delta 0,
+asi que el e2e no pinta un chip mejor/peor ni una tabla de mapas con filas;
+los colores los cubren solo los tests de Django. Ya lo anoto el Dev.
+
+Veredicto: aprobar -> `revisado`.
