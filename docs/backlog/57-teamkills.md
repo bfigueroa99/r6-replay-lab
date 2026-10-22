@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-22T08:05Z
 rama: -
 tipo: funcionalidad
 epica: escuadra

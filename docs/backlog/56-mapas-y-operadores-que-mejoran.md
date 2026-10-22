@@ -1,7 +1,7 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-22T08:05Z
 rama: -
 tipo: funcionalidad
 epica: progreso

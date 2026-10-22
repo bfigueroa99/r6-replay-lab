@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-22T08:05Z
 rama: -
 tipo: funcionalidad
 epica: impacto
