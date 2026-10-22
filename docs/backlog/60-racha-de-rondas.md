@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
 estado: aprobado
-candado: -
+candado: release 2026-10-22 04:10 UTC
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
