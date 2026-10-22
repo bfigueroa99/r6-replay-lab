@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
 estado: revisado
-candado: -
+candado: qa 2026-10-22T00:04Z
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
