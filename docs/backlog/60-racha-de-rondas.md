@@ -1,6 +1,6 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: entregado
+estado: entregado (PR pendiente de merge: la sesion no tuvo permiso para mergear, PR #48)
 candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
