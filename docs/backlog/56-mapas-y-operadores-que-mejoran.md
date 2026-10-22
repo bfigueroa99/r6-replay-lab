@@ -1,7 +1,7 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: en curso 2026-10-22
-candado: dev 2026-10-22T12:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
 epica: progreso
@@ -146,3 +146,55 @@ humano). Son zonas distintas de cada archivo: se puede implementar ya; si el
 merge de la 60 llega antes, `git merge origin/main` (P3).
 
 ## Implementacion
+
+Dev 20261022T1204Z.
+
+Que quedo, siguiendo el diseno:
+
+- `aggregates.py`: `_veredicto` extraido de `compare_periods` (mismas reglas;
+  los tests viejos de `test_compare.py` siguen verdes sin tocarlos, y
+  `test_el_veredicto_del_total_no_cambia` fija los casos borde),
+  `COMPARE_MIN_ROUNDS_FILA = 10`, `_corte_por_periodo` y las claves nuevas
+  `min_rows`, `by_map` (`slug`, `map`) y `by_operator` (`operator`, `side`,
+  sin las rondas con operador vacio). Orden: delta desc, `None` al final,
+  desempate por clave.
+- `views.compare`: acepta `min_rows` (1 a 10000), default la constante.
+- `Trends.jsx`: `TablaDeCambio` con dos `<h3>` "Mapas" y "Operadores" dentro
+  del panel Progreso; columnas rondas, ganadas, Cambio (`Delta`), Ruido y
+  rating antes/ahora; operador con `SideChip`; CSV `progreso-mapas` y
+  `progreso-operadores`; texto vacio con la muestra minima.
+- e2e `Tendencias muestra mapas y operadores que cambian`: mapas vacios y 6
+  filas de operadores, consola limpia (medido sobre `seed_demo` con la
+  ventana de 10 partidas: coincide con el diseno).
+- `docs/metricas.md`: fila "Cambio por mapa y operador" en `## Progreso`.
+
+Tests por criterio:
+1. `test_un_mapa_que_sube_con_muestra_sale_mejor`,
+   `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`,
+   `test_un_mapa_que_no_jugaste_antes_no_sale`,
+   `test_el_operador_se_parte_por_lado`, `test_trae_rating_de_cada_periodo`,
+   `test_las_rondas_sin_operador_no_forman_fila`,
+   `test_base_vacia_devuelve_cortes_vacios`.
+2. `test_las_filas_vienen_ordenadas_por_delta` (tambien cubre `peor` y `ruido`).
+3. `CortesApiTests.test_respeta_by_days_y_el_filtro_de_lado`,
+   `test_sin_filtro_de_lado_salen_los_dos`,
+   `test_la_muestra_minima_por_fila_se_puede_pedir`.
+4. e2e `Tendencias muestra mapas y operadores que cambian`.
+5. Fila en `docs/metricas.md`.
+
+Desvios: ninguno de fondo. Se agrego `min_rows` a la vista (el diseno lo
+dejaba opcional).
+
+Sin hacer: la calibracion con la base real (ventana 10 y 30 partidas) que
+pide la verificacion manual: la nube no tiene los replays del humano.
+"Verificar en el PC": abrir `/tendencias` y contar filas; si con 10
+partidas casi ningun operador llega a 10 rondas por lado, bajar
+`COMPARE_MIN_ROUNDS_FILA` a 8.
+
+Revision ciega previa (subagente con `revision.md`): sin bloqueantes. Dos
+menores que quedan como estan: en `seed_demo` todos los operadores dan delta
+0, asi que el e2e no ve un chip mejor/peor (cubierto por los tests de
+Django; cambiar el seed moveria numeros de otras pruebas), y `Delta` muestra
+dos decimales con |delta| < 1 (codigo previo, cosmetico).
+
+check.sh: `Todo en verde.` (733 tests backend, 115 frontend, build ok, 45 e2e).

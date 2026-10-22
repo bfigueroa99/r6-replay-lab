@@ -15,7 +15,7 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
@@ -49,6 +49,55 @@ function Delta({ metric }) {
   if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
   if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
   return <span className="chip">{texto}</span>
+}
+
+/** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
+function TablaDeCambio({ filas, columna, minRows, csvName }) {
+  if (!filas?.length) {
+    return <p className="dim">Sin muestra en los dos periodos ({minRows}+ rondas en cada uno).</p>
+  }
+  const rows = filas.map((row) => ({ ...row, key: row.slug ?? `${row.operator}-${row.side}` }))
+  return (
+    <DataTable
+      columns={[
+        columnaDeNombre(columna),
+        { key: 'previous_rounds', label: 'Rondas antes' },
+        { key: 'current_rounds', label: 'Rondas ahora' },
+        { key: 'previous_winrate', label: 'Ganadas antes', digits: 0, suffix: '%' },
+        { key: 'current_winrate', label: 'Ganadas ahora', digits: 0, suffix: '%' },
+        { key: 'delta', label: 'Cambio', render: (row) => <Delta metric={row} />, csv: (row) => row.delta },
+        {
+          key: 'noise',
+          label: 'Ruido',
+          help: 'La misma banda de la tabla de arriba, con las rondas de esta fila.',
+          render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
+          csv: (row) => row.noise,
+          dim: true,
+        },
+        { key: 'previous_rating', label: 'Rating antes', digits: 2 },
+        { key: 'current_rating', label: 'Rating ahora', digits: 2 },
+      ]}
+      rows={rows}
+      initialSort={{ key: 'delta', dir: 'desc' }}
+      rowKey={(row) => row.key}
+      csvName={csvName}
+    />
+  )
+}
+
+function columnaDeNombre(columna) {
+  if (columna === 'Mapa') return { key: 'map', label: 'Mapa', left: true }
+  return {
+    key: 'operator',
+    label: 'Operador',
+    left: true,
+    render: (row) => (
+      <>
+        {row.operator} <SideChip side={row.side} />
+      </>
+    ),
+    csv: (row) => `${row.operator} (${row.side})`,
+  }
 }
 
 const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
@@ -299,6 +348,22 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'label', dir: 'asc' }}
             rowKey={(row) => row.key}
             csvName="progreso"
+          />
+
+          <h3>Mapas</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_map}
+            columna="Mapa"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-mapas"
+          />
+
+          <h3>Operadores</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_operator}
+            columna="Operador"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-operadores"
           />
         </Panel>
       ) : null}

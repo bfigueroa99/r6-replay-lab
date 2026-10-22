@@ -279,6 +279,7 @@ anteriores, que siempre tiene muestra de los dos lados si jugaste 2N) y por
 |---|---|
 | **Cambio** | La diferencia entre los dos periodos, en puntos o en la unidad de la metrica. |
 | **Banda de ruido** | Error estandar de la diferencia entre las dos proporciones: `sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)`. Es **cuanto se mueve sola** una metrica con esa cantidad de rondas. Si el cambio no pasa la banda, la app lo marca como ruido y no como mejora ni empeora. |
+| **Cambio por mapa y operador** | Los mismos dos periodos partidos por mapa y por operador + lado. Una fila aparece solo si tiene al menos **10 rondas en cada periodo** (`COMPARE_MIN_ROUNDS_FILA`, mas baja que las 20 del total porque un operador rara vez junta 20 rondas de un lado en 10 partidas). El cambio es de winrate de ronda; la banda es la misma formula con las rondas de esa fila, y el veredicto (mejor, peor o ruido) sale igual que en el total. El rating de cada periodo se muestra sin banda. Las filas van de la que mas subio a la que mas cayo. |
 
 Un ejemplo real de por que hace falta: 10 partidas contra las 10 anteriores dio
 un winrate 9.3 puntos mas bajo. Suena a bajon, pero con ~50 rondas por lado la

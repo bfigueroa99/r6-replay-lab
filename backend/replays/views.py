@@ -307,7 +307,14 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rounds = _int_param(
         request, "min_rounds", agg.COMPARE_MIN_ROUNDS, minimum=1, maximum=10_000
     )
-    return _ok(agg.compare_periods(by=by, n=n, min_rounds=min_rounds, **_filters(request)))
+    min_rows = _int_param(
+        request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
+    )
+    return _ok(
+        agg.compare_periods(
+            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+        )
+    )
 
 
 @require_GET

@@ -1872,6 +1872,12 @@ COMPARE_METRICS = (
 #: Rondas minimas por lado para que la comparacion diga algo.
 COMPARE_MIN_ROUNDS = 20
 
+#: Rondas minimas por fila y por periodo en los cortes por mapa y operador.
+#: Mas baja que la del total porque con 10 partidas por periodo un operador
+#: rara vez junta 20 rondas de un mismo lado y la tabla quedaria siempre vacia;
+#: la banda de ruido de cada fila ya avisa cuando 10 rondas no alcanzan.
+COMPARE_MIN_ROUNDS_FILA = 10
+
 #: Las fechas y la sesion las define la propia comparacion.
 _FILTROS_DE_TIEMPO = ("since", "until", "session")
 
@@ -1893,6 +1899,66 @@ def _ruido(p_actual, n_actual, p_previo, n_previo) -> float | None:
     for p, n in ((p_actual / 100, n_actual), (p_previo / 100, n_previo)):
         varianza += p * (1 - p) / n
     return round(math.sqrt(varianza) * 100, 1)
+
+
+def _veredicto(delta, ruido, direccion) -> str | None:
+    if delta is None or direccion == "neutral" or delta == 0:
+        return None
+    if ruido is not None and abs(delta) <= ruido:
+        # se movio menos de lo que se mueve solo: no es un cambio
+        return "ruido"
+    mejoro = delta > 0 if direccion == "up" else delta < 0
+    return "mejor" if mejoro else "peor"
+
+
+def _corte_por_periodo(actual, previo, baseline, campos, labels, min_rows) -> list[dict]:
+    """Winrate y rating de cada grupo en los dos periodos, con su veredicto.
+
+    Solo entran los grupos con muestra en los dos periodos: un mapa que no
+    jugaste antes no tiene contra que compararse.
+    """
+    def indexar(qs):
+        return {
+            tuple(fila[label] for label in labels): fila
+            for fila in group_by(qs, *campos, labels=labels, min_rounds=min_rows, baseline=baseline)
+        }
+
+    ahora, antes = indexar(actual), indexar(previo)
+    filas = []
+    for clave in ahora.keys() & antes.keys():
+        cur, prev = ahora[clave], antes[clave]
+        delta = (
+            None
+            if cur["winrate"] is None or prev["winrate"] is None
+            else round(cur["winrate"] - prev["winrate"], 1)
+        )
+        ruido = _ruido(cur["winrate"], cur["rounds"], prev["winrate"], prev["rounds"])
+        rating_delta = (
+            None
+            if cur["rating"] is None or prev["rating"] is None
+            else round(cur["rating"] - prev["rating"], 2)
+        )
+        filas.append(
+            {
+                **dict(zip(labels, clave, strict=True)),
+                "current_rounds": cur["rounds"],
+                "previous_rounds": prev["rounds"],
+                "current_winrate": cur["winrate"],
+                "previous_winrate": prev["winrate"],
+                "delta": delta,
+                "noise": ruido,
+                "verdict": _veredicto(delta, ruido, "up"),
+                "current_rating": cur["rating"],
+                "previous_rating": prev["rating"],
+                "rating_delta": rating_delta,
+                "suffix": "%",
+                "direction": "up",
+            }
+        )
+    # la clave desempata para que el orden sea estable entre corridas
+    filas.sort(key=lambda f: tuple(str(f[label]) for label in labels))
+    filas.sort(key=lambda f: (f["delta"] is None, -(f["delta"] or 0)))
+    return filas
 
 
 def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
@@ -1923,7 +1989,11 @@ def _resumen(qs, baseline, etiqueta: str) -> dict:
 
 
 def compare_periods(
-    by: str = "matches", n: int = 10, min_rounds: int = COMPARE_MIN_ROUNDS, **filters
+    by: str = "matches",
+    n: int = 10,
+    min_rounds: int = COMPARE_MIN_ROUNDS,
+    min_rows: int = COMPARE_MIN_ROUNDS_FILA,
+    **filters,
 ) -> dict:
     """Compara el periodo reciente contra el inmediatamente anterior.
 
@@ -1962,16 +2032,6 @@ def compare_periods(
             if campo_muestra
             else None
         )
-
-        veredicto = None
-        if delta is not None and direccion != "neutral" and delta != 0:
-            if ruido is not None and abs(delta) <= ruido:
-                # se movio menos de lo que se mueve solo: no es un cambio
-                veredicto = "ruido"
-            else:
-                mejoro = delta > 0 if direccion == "up" else delta < 0
-                veredicto = "mejor" if mejoro else "peor"
-
         metricas.append(
             {
                 "key": clave,
@@ -1982,7 +2042,7 @@ def compare_periods(
                 "previous": antes,
                 "delta": delta,
                 "noise": ruido,
-                "verdict": veredicto,
+                "verdict": _veredicto(delta, ruido, direccion),
             }
         )
 
@@ -1994,6 +2054,23 @@ def compare_periods(
         "current": fila_actual,
         "previous": fila_previa,
         "metrics": metricas,
+        "min_rows": min_rows,
+        "by_map": _corte_por_periodo(
+            actual,
+            previo,
+            baseline,
+            ("round__match__map_slug", "round__match__map_name"),
+            ("slug", "map"),
+            min_rows,
+        ),
+        "by_operator": _corte_por_periodo(
+            actual.exclude(operator=""),
+            previo.exclude(operator=""),
+            baseline,
+            ("operator", "side"),
+            ("operator", "side"),
+            min_rows,
+        ),
     }
 
 
