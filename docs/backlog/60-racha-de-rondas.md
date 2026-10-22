@@ -1,7 +1,7 @@
 # 60. Racha de rondas dentro de la partida
 
-estado: revisado
-candado: qa 2026-10-22T00:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/60-racha-de-rondas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_rachas.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z, dev 20261021T1605Z, revisor 20261021T2004Z
+turnos: po 20261019T0325Z, arquitecto 20261019T0404Z, dev 20261021T0404Z, revisor 20261021T0804Z, qa 20261021T1204Z, dev 20261021T1605Z, revisor 20261021T2004Z, qa 20261022T0004Z
 
 ## PR
 
@@ -319,3 +319,39 @@ completo y confirmacion del lider.
 - `check.sh`: Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
 
 Veredicto: aprobar -> `revisado`.
+
+## QA 2026-10-22 sobre 6bca783
+
+QA 20261022T0004Z (segunda pasada, despues de la correccion del dev
+20261021T1605Z y la revision 20261021T2004Z). Veredicto: **aprobado**.
+
+- `./scripts/check.sh` sobre la rama (ya contiene `origin/main` 44c525b):
+  Todo en verde (733 tests backend, 120 vitest, build ok, 44 e2e).
+- Hallazgo anterior (e2e inestable): resuelto.
+  `cd frontend && for i in $(seq 1 10); do npx playwright test e2e/humo.spec.js -g "tus records" | grep -E "^\s+1 (passed|failed)"; done`
+  -> 10 de 10 `1 passed` (antes fallaba 8 de 16).
+- Base sembrada con `factories.py` (script en el scratchpad, no
+  commiteado), `SQLITE_PATH=<scratch>/qa60.sqlite3`, `migrate` y
+  `runserver 127.0.0.1:8123`; base vacia migrada en `:8124`. Partidas:
+  A Oregon `G G P G G P P P` con prorroga desde la ronda 6; B Bank
+  `P G G G G G` sin fila mia en las rondas 2 y 3; C Villa `G G G G G P`
+  Unranked y mas reciente; D Chalet `N N N`; E Border sin ronda 0 y
+  `G G P` desde la 1.
+- `curl /api/matches/<id>/` -> `round_streaks`: A `wins 2 desde R1`
+  (empate 2-2: queda la primera), `losses 3 desde R6` (cruza a la
+  prorroga); B `wins 5 desde R2` (rondas sin fila mia cuentan: la racha es
+  del equipo); C `wins 5 desde R1`; D las dos `null`; E `wins 2 desde
+  R2` (hueco inicial bien etiquetado); id 999 -> 404. OK.
+- `curl /api/overview/` -> `longest_round_streak`: sin filtro Villa 5 R1
+  (empate 5-5 con Bank: la mas reciente); `?match_type=Ranked` -> Bank 5 R2;
+  `?side=Attack` -> Villa 5 (el filtro elige partidas); `?map=chalet` y
+  `?since=2030-01-01` -> `null`; `?until=foo`, `?page=-1`, `?map=` -> 200
+  sin cambio. Base vacia: todos los records `null`, 200. OK.
+- Mutacion (4 de 4 caen, distintas de la QA anterior): etiqueta sin `+ 1`
+  en `_racha_con_etiqueta` (1 falla en `tests.test_rachas`); record sobre
+  `losses` en vez de `wins` (2 fallas y 2 errores); quitar
+  `anterior[1] is gano` (5 fallas); "ronda" en vez de "desde" en
+  `records.js` (1 falla en `records.test.js`). Arbol restaurado.
+- Chunk inicial de `vite build`: `index-*.js` 187,63 kB en main ->
+  187,83 kB (+0,1 %); `MatchDetail` 9,41 -> 9,75 kB.
+- Sin migracion, parser, Electron ni `.ps1`: no hay `## Verificar en el PC`.
