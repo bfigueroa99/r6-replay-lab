@@ -1,6 +1,6 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: en curso 2026-10-22 (revisado en su rama)
+estado: en curso 2026-10-22 (aprobado en su rama)
 candado: -
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
