@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
-estado: en curso 2026-10-23T20:04Z
-candado: dev 2026-10-23T20:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
@@ -127,3 +127,34 @@ origin/main` (P3). Con la 57 comparte `views.teammates` y `Teammates.jsx`:
 si las dos van en paralelo, la segunda en mergear resuelve.
 
 ## Implementacion
+
+Dev 20261023T2003Z sobre el diseno, sin desvios de alcance:
+
+- `aggregates.py`: `CLUTCH_SITIO_MIN = 5` y `clutch_by_site(**filters)` debajo
+  de `clutch_conversion`, mismo queryset (`clutch_vs__gt=0`, ganador conocido).
+  Por mapa (ordenados por nombre) una fila `kind: "map"` con `site: None` y
+  despues las de sitio por intentos desc y nombre; `""` sale como
+  `"Sin sitio"` y va ultima del mapa. `low_sample` en todas las filas.
+- `views.teammates`: clave `clutch_by_site`.
+- `tests/test_clutch.py`: clase `ClutchPorSitioTests` con los seis tests del
+  diseno (agrupa por mapa y sitio, sin sitio, borde 4/5, sin ganador, filtro de
+  lado via `/api/teammates/?side=Attack`, base vacia con 200).
+- `Teammates.jsx`: `<h3>Clutch por mapa y sitio</h3>` y `DataTable` entre la
+  tabla de conversion y la de ganados; Mapa / Sitio (fila total en negrita con
+  "Total"), Intentos, Ganados, Conversion con `Bar`; `*` con clase
+  `muestra-chica` y `title` "Menos de 5 intentos", explicado en el `help` de
+  la columna. Orden fijo con `orden`. CSV `clutch-por-sitio`, con "Total" en
+  la columna Sitio de las filas de mapa (hallazgo de la revision ciega: sin eso
+  quien suma la columna Intentos cuenta doble).
+- Desvio menor: el vacio usa `empty=` del `DataTable` (como la tabla de
+  conversion) en vez de un `<p className="dim">` aparte; mismo texto.
+- e2e `Compañeros muestra el clutch por mapa y sitio`: sobre `seed_demo` los
+  sitios salen con su nombre completo (`B Armory, B Archives`), asi que la
+  prueba afirma `Border Total 5 1 20%` sin marca, `Border B Armory, B Archives
+  3 1 33%` con marca y `Bank Total 3 1 33%`; consola limpia.
+- `docs/metricas.md`: fila "Clutch por mapa y sitio" en `## Impacto`.
+
+Entorno: el Chromium de la nube (`/opt/pw-browsers`, revision 1243) no es el
+que pide el Playwright fijado (1194). Se corrio el e2e con
+`PLAYWRIGHT_BROWSERS_PATH` apuntando a un alias en el scratchpad; nada del
+repo cambio por eso.

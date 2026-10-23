@@ -168,3 +168,72 @@ class MigracionTests(TestCase):
 
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 2)
         self.assertEqual(RoundPlayer.objects.get(username="r1").clutch_vs, 0)
+
+
+class ClutchPorSitioTests(TestCase):
+    def _ronda(self, indice: int, *, mapa: str, sitio: str, won: bool, side: str = "Attack"):
+        rnd = make_round(make_match(index=indice, map_name=mapa), 0, side=side, site=sitio, won=won)
+        make_round_player(rnd, clutch_vs=2, won=won, side=side)
+
+    def test_clutch_por_sitio_agrupa_por_mapa_y_sitio(self):
+        self._ronda(0, mapa="Border", sitio="B Armory", won=True)
+        self._ronda(1, mapa="Border", sitio="B Armory", won=False)
+        self._ronda(2, mapa="Border", sitio="A Ventilation", won=True)
+        self._ronda(3, mapa="Bank", sitio="B Lockers", won=False)
+        filas = agg.clutch_by_site()
+        self.assertEqual(
+            [(f["kind"], f["map"], f["site"], f["attempts"], f["won"]) for f in filas],
+            [
+                ("map", "Bank", None, 1, 0),
+                ("site", "Bank", "B Lockers", 1, 0),
+                ("map", "Border", None, 3, 2),
+                ("site", "Border", "B Armory", 2, 1),
+                ("site", "Border", "A Ventilation", 1, 1),
+            ],
+        )
+        self.assertEqual(filas[3]["pct"], 50.0)
+        self.assertEqual(filas[2]["slug"], "border")
+
+    def test_una_ronda_sin_sitio_va_a_sin_sitio(self):
+        self._ronda(0, mapa="Border", sitio="", won=True)
+        self._ronda(1, mapa="Border", sitio="", won=False)
+        self._ronda(2, mapa="Border", sitio="B Armory", won=True)
+        filas = agg.clutch_by_site()
+        self.assertEqual([f["site"] for f in filas], [None, "B Armory", "Sin sitio"])
+        self.assertEqual(filas[0]["attempts"], 3)
+        self.assertEqual(filas[2]["attempts"], 2)
+
+    def test_cuatro_intentos_son_muestra_chica_y_cinco_no(self):
+        for i in range(5):
+            self._ronda(i, mapa="Border", sitio="B Armory", won=i % 2 == 0)
+        for i in range(5, 9):
+            self._ronda(i, mapa="Border", sitio="A Ventilation", won=True)
+        total, armory, ventilation = agg.clutch_by_site()
+        self.assertEqual(agg.CLUTCH_SITIO_MIN, 5)
+        self.assertEqual((armory["site"], armory["attempts"], armory["low_sample"]), ("B Armory", 5, False))
+        self.assertEqual(
+            (ventilation["site"], ventilation["attempts"], ventilation["low_sample"]), ("A Ventilation", 4, True)
+        )
+        self.assertFalse(total["low_sample"])
+
+    def test_una_ronda_sin_ganador_no_cuenta_como_intento_por_sitio(self):
+        self._ronda(0, mapa="Border", sitio="B Armory", won=True)
+        rnd = make_round(make_match(index=1, map_name="Border"), 0, site="B Armory")
+        rnd.my_team_won = None
+        rnd.save(update_fields=["my_team_won"])
+        make_round_player(rnd, clutch_vs=2, won=False)
+        total, sitio = agg.clutch_by_site()
+        self.assertEqual((total["attempts"], sitio["attempts"], sitio["won"]), (1, 1, 1))
+
+    def test_clutch_por_sitio_respeta_el_filtro_de_lado(self):
+        self._ronda(0, mapa="Border", sitio="B Armory", won=True, side="Attack")
+        self._ronda(1, mapa="Border", sitio="B Armory", won=False, side="Defense")
+        self._ronda(2, mapa="Bank", sitio="B Lockers", won=False, side="Defense")
+        filas = self.client.get("/api/teammates/?side=Attack").json()["clutch_by_site"]
+        self.assertEqual([(f["map"], f["site"], f["attempts"]) for f in filas], [("Border", None, 1), ("Border", "B Armory", 1)])
+
+    def test_clutch_por_sitio_con_base_vacia_es_lista_vacia(self):
+        self.assertEqual(agg.clutch_by_site(), [])
+        respuesta = self.client.get("/api/teammates/")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()["clutch_by_site"], [])
