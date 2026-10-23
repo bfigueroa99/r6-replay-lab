@@ -390,6 +390,20 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra el panel de teamkills', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Teamkills', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo no tiene teamkills: el verdugo siempre es rival y tus bajas siempre sobre rivales
+  await expect(panel).toContainText('Ningún teamkill en las rondas filtradas.')
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra solo, en dúo o en stack', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')

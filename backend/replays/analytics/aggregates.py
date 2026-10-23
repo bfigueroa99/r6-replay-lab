@@ -1621,6 +1621,15 @@ def _mis_bajas(mine: QuerySet[RoundPlayer]) -> QuerySet[Event]:
     )
 
 
+def _equipo_de(campo: str) -> Subquery:
+    """El equipo, en la ronda del evento, del jugador que nombra `campo`."""
+    return Subquery(
+        RoundPlayer.objects.filter(
+            round_id=OuterRef("round_id"), player_id=OuterRef(campo)
+        ).values("team_index")[:1]
+    )
+
+
 def _solo_rivales(qs: QuerySet[Event], campo: str) -> QuerySet[Event]:
     """Descarta los teamkills: el otro tiene que estar en el equipo contrario.
 
@@ -1630,11 +1639,7 @@ def _solo_rivales(qs: QuerySet[Event], campo: str) -> QuerySet[Event]:
     return (
         qs.annotate(
             mi_equipo=_MI_EQUIPO,
-            equipo_rival=Subquery(
-                RoundPlayer.objects.filter(
-                    round_id=OuterRef("round_id"), player_id=OuterRef(campo)
-                ).values("team_index")[:1]
-            ),
+            equipo_rival=_equipo_de(campo),
             op_rival=Subquery(
                 RoundPlayer.objects.filter(
                     round_id=OuterRef("round_id"), player_id=OuterRef(campo)
@@ -1648,6 +1653,79 @@ def _solo_rivales(qs: QuerySet[Event], campo: str) -> QuerySet[Event]:
 
 def _me_ids() -> list[int]:
     return list(Player.objects.filter(is_me=True).values_list("id", flat=True))
+
+
+def _teamkills(mine: QuerySet[RoundPlayer]) -> QuerySet[Event]:
+    """Bajas entre companeros de tu equipo, el espejo de `_solo_rivales`.
+
+    El equipo se lee por ronda: la misma persona como rival en otra ronda no
+    es un teamkill. Un suicidio tampoco, aunque autor y victima coincidan.
+    """
+    return (
+        _mis_bajas(mine)
+        .annotate(
+            mi_equipo=_MI_EQUIPO,
+            eq_autor=_equipo_de("actor_id"),
+            eq_victima=_equipo_de("target_id"),
+        )
+        .exclude(mi_equipo=None)
+        .filter(eq_autor=F("mi_equipo"), eq_victima=F("mi_equipo"))
+        .exclude(actor_id=F("target_id"))
+    )
+
+
+def teamkills(**filters) -> dict:
+    """Teamkills hechos y sufridos, con quien, y que pasa con esas rondas.
+
+    No se restan de Bajas ni del Rating: aca solo se hacen visibles.
+    """
+    vacio = {
+        "mine": 0,
+        "suffered": 0,
+        "rounds_with": 0,
+        "rounds_without": 0,
+        "winrate_with": None,
+        "winrate_without": None,
+        "by_teammate": [],
+    }
+    me_ids = _me_ids()
+    if not me_ids:
+        return vacio
+    mine = base_queryset(**filters)
+    tks = _teamkills(mine)
+    rondas = set(tks.values_list("round_id", flat=True))
+    con = mine.filter(round_id__in=rondas)
+    sin = mine.exclude(round_id__in=rondas)
+    rounds_with, rounds_without = con.count(), sin.count()
+
+    rows: dict[int, dict] = {}
+
+    def sumar(qs, id_field: str, name_field: str, clave: str) -> None:
+        for raw in qs.values(id_field, name_field).annotate(n=Count("id")):
+            pid = raw[id_field]
+            if pid is None or pid in me_ids:
+                continue
+            fila = rows.setdefault(
+                pid, {"player_id": pid, "username": raw[name_field], "made": 0, "suffered": 0}
+            )
+            fila[clave] += raw["n"]
+
+    hechos = tks.filter(actor_id__in=me_ids)
+    sufridos = tks.filter(target_id__in=me_ids)
+    sumar(hechos, "target_id", "target__username", "made")
+    sumar(sufridos, "actor_id", "actor__username", "suffered")
+    for fila in rows.values():
+        fila["total"] = fila["made"] + fila["suffered"]
+
+    return {
+        "mine": hechos.count(),
+        "suffered": sufridos.count(),
+        "rounds_with": rounds_with,
+        "rounds_without": rounds_without,
+        "winrate_with": _pct(con.filter(won=True).count(), rounds_with),
+        "winrate_without": _pct(sin.filter(won=True).count(), rounds_without),
+        "by_teammate": sorted(rows.values(), key=lambda r: (-r["total"], r["username"])),
+    }
 
 
 def _duelos(mine: QuerySet[RoundPlayer], me_ids: list[int]):
