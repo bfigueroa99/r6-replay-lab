@@ -1,46 +1,43 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-23 12:20 UTC por qa (sesion 20261023T1205Z; motivo: por estado: 1 revisado; reloj: revisor, franja 4)
+actualizado: 2026-10-23 16:40 UTC por release (sesion 20261023T1606Z; motivo: por estado: 1 aprobado; reloj: dev, franja 5)
 playbook: origin/main@93fe22c
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z) | 15 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z) | 15 de 56 en 7 dias; sin herramientas para comparar
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas sin commits | PR / compare |
-|---|---|---|---|---|
-| claude/equipo-dev/57-teamkills | docs/backlog/57-teamkills.md | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/57-teamkills?expand=1) |
+Cola vacia: la 57 entro a main (PR #50, 9554a30).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/57-teamkills`: sola en la cola, al dia con main 93fe22c. Libera `aggregates.py` (seccion duelos), `views.teammates`, `Teammates.jsx` y `humo.spec.js` para la 59, que comparte el `return` de `views.teammates` y `Teammates.jsx`.
+Nada abierto. La 59 (disenado) comparte `views.teammates` y `Teammates.jsx` con la 57, que ya esta en main: arranca sin choque.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (50 51 52 53 54 55 56 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54) en main; C7 -> ficha 57 (aprobado, rama 57-teamkills). impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar B13 y E5/E10 `en main`, lo hace el PO).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (50 51 52 53 54 55 56 57 58 60) otros:0.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar C7 `en main`, B13 y E5/E10, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 57-teamkills | aprobado (rama `claude/equipo-dev/57-teamkills`) | funcionalidad | escuadra | 3 | fullstack | - |
 | 59-clutch-por-mapa-y-sitio | disenado | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-La 57 esta `aprobado`: proximo turno por estado, Release (regla 1). Queda 1 `disenado` (59) y 0 `propuesto`.
+Cola vacia y 1 `disenado` (59): proximo turno por estado, Dev (regla 8). 0 `propuesto`: el PO tiene que llenar el papel.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-23 00:30 | Mergea la 60 (PR #48, `entregado (pendiente de merge)` -> main ec438f9: `check.sh` en verde sobre su head c2b88de, 733 backend, 120 vitest, build, 44 e2e) y entrega y mergea la 56 (`aprobado` -> `entregado` -> PR #49 -> main 93fe22c): main ec438f9 fusionado en la rama, `## PR` escrito y ficha recortada, `check.sh` en `Todo en verde.` sobre el head d7e5c2f (745 backend, 120 vitest, build, 45 e2e). Puerta a-f cumplida en las dos. Espejos quitados de `backlog`. Borrar las ramas: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-23 16:40 | Entrega y mergea la 57 (`aprobado` -> `entregado` -> PR #50 -> main 9554a30). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, rama al dia con main 93fe22c, `check.sh` en `Todo en verde.` sobre el head f3bb8bd (757 backend, 120 vitest, build, 46 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-23 04:40 | Implementa 57 (`disenado` -> `implementado`, rama `claude/equipo-dev/57-teamkills`, 6c563d1): `_equipo_de` (tambien en `_solo_rivales`), `_teamkills` y `teamkills()` en `/api/teammates/`; panel "Teamkills" en Compañeros (hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero); e2e con el texto vacio; fila en `metricas.md`; 12 tests. Revision ciega sin bloqueantes (2 menores de tests corregidos). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). |
 | revisor | 2026-10-23 08:08 | Revisa 57 (funcionalidad, `implementado` -> `revisado`) sobre 6c563d1, rama al dia con main 93fe22c. Revision ciega sin hallazgos, confirmada por el lider (refactor de `_solo_rivales` equivalente, filtros por `base_queryset`, `me_ids` por ronda). Mutaciones: condicion de equipo del autor (3 tests caen) y exclusion de suicidios (1 cae). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Sin pushes de codigo. |
 | qa | 2026-10-23 12:20 | Prueba 57 (funcionalidad, `revisado` -> `aprobado`) sobre 8ee9f5b, rama al dia con main 93fe22c. `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Base vacia y base sembrada desde `factories.py` (teamkill hecho, sufrido, entre otros dos, el mismo jugador como rival, suicidio; filtros `side`/`map`/`since`, `until=foo`, `page=-1`, `side=foo`): valores a mano, cero 500; Duelos no cuenta el teamkill. Panel renderizado en Chromium con datos, con filtro de lado y vacio, consola limpia. Mutaciones 4 de 4 caen; chunk inicial sin cambio. Sin pushes de codigo. |
@@ -79,6 +76,7 @@ La 57 esta `aprobado`: proximo turno por estado, Release (regla 1). Queda 1 `dis
   - `git push origin --delete claude/equipo-dev/58-primera-ronda-de-cada-mitad` (mergeada, PR #46)
   - `git push origin --delete claude/equipo-dev/60-racha-de-rondas` (mergeada, PR #48)
   - `git push origin --delete claude/equipo-dev/56-mapas-y-operadores-que-mejoran` (mergeada, PR #49)
+  - `git push origin --delete claude/equipo-dev/57-teamkills` (mergeada, PR #50)
   - `git push origin --delete claude/equipo-dev/prueba-acceso` (si existe: prueba de acceso de un turno)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - PR #48 (ficha 60, racha de rondas) y PR #49 (ficha 56, mapas y operadores que mejoran) ya en main (release 20261023T0004Z). Sin migracion ni parser.
@@ -137,8 +135,9 @@ La 57 esta `aprobado`: proximo turno por estado, Release (regla 1). Queda 1 `dis
 - Ficha 55 (QA 2026-10-20, aviso, no bloquea, preexistente): el filtro `side` de la API distingue mayusculas (`?side=defense` da vacio); la UI manda `Attack`/`Defense`, asi que no se ve desde la app.
 - Ficha 58 (ya en main, PR #46; Revisor 2026-10-20, aviso, no bloquea): el e2e de "Primera ronda de cada lado" pasa aunque las tres filas tengan 0 rondas (solo mira las etiquetas); un assert sobre la celda Rondas cabe en una ficha `tests` o en la proxima correccion de la 58.
 - Ficha 58 (ya en main, PR #46; QA 2026-10-20, aviso, no bloquea): con `seed_demo` las tres filas tienen rondas (29/29/145), asi que el e2e no se apoya en 0; el hallazgo menor del Revisor queda como esta. QA agrego `test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra` (los tests solo contaban rondas y no distinguian la R4 de la R6). Sin migracion ni parser: nada que verificar en el PC.
-- Ficha 57 (QA 2026-10-23): `aprobado`, lista para el Release. Sin preguntas abiertas.
-- Ficha 57 (Dev 2026-10-23, aviso, no bloquea): el winrate de las rondas con y sin teamkill usa el mismo `won` que el Winrate general, asi que una ronda sin ganador conocido cuenta como no ganada (documentado en `metricas.md`). Verificar en el PC cuando llegue a main: `/companeros` con la base real y cruzar un teamkill con el feed de esa partida. Sin migracion ni parser.
+- Ficha 57 ya en main (PR #50, 9554a30; release 20261023T1606Z). Sin migracion ni parser. **Despues de bajar main, `cd frontend; npm run build`.**
+- Ficha 57 (ya en main, PR #50; Dev 2026-10-23, aviso, no bloquea): el winrate de las rondas con y sin teamkill usa el mismo `won` que el Winrate general, asi que una ronda sin ganador conocido cuenta como no ganada (documentado en `metricas.md`). Verificar en el PC cuando llegue a main: `/companeros` con la base real y cruzar un teamkill con el feed de esa partida. Sin migracion ni parser.
+- Entorno cloud (release 20261023T1606Z, aviso): el `@playwright/test` del repo pide `chromium_headless_shell-1194` y la imagen trae `-1243`; el e2e de `check.sh` falla con `Executable doesn't exist`. El turno lo corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a un directorio del scratchpad con enlaces a la 1243 (sin tocar el repo). Si queres que no haga falta, alinear la version de Playwright o el setup del entorno.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
