@@ -1,6 +1,6 @@
 # 56. Mapas y operadores que mejoran y empeoran
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/56-mapas-y-operadores-que-mejoran
 tipo: funcionalidad
@@ -9,11 +9,68 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E5 y E10
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_compare.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z, revisor 20261022T1604Z, qa 20261022T2004Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261022T1204Z, revisor 20261022T1604Z, qa 20261022T2004Z, release 20261023T0004Z
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][fullstack] Tendencias: mapas y operadores que mejoran y empeoran`
+
+### Que cambia
+
+Tendencias suma, dentro del panel Progreso, dos tablas: "Mapas" y
+"Operadores" (operador + lado). Cada fila compara tus ultimas N partidas
+contra las N anteriores: rondas, winrate y rating de cada periodo, el cambio
+y el veredicto `mejor`/`peor`/`ruido` con la misma banda de ruido del total.
+Solo salen las filas con 10+ rondas en los dos periodos. `/api/compare/`
+trae `by_map`, `by_operator` y `min_rows` (parametro GET opcional).
+
+### Por que esto y no otra cosa
+
+Ficha 56, tramo de la epica `progreso` (ALCANCE.md E5 y E10). Reusa
+`group_by` sobre los dos periodos que `compare_periods` ya arma: sin
+migracion ni endpoint nuevo. Se descarto usar la muestra del total (20
+rondas) por fila: con 10 partidas la tabla de operadores quedaria vacia.
+
+### Como se probo
+
+- `./scripts/check.sh` sobre la rama con `main` (ec438f9, con la 60 ya
+  mergeada) fusionado: `Todo en verde.` (745 tests backend, 120 frontend,
+  build ok, 45 e2e).
+- `backend/tests/test_compare.py`: mapa que sube sale `mejor`, sin muestra
+  en un periodo no sale, orden por delta, operador partido por lado, rating
+  por periodo, rondas sin operador no forman fila, base vacia, `by=days` +
+  filtro de lado, `min_rows` por parametro, veredicto del total sin cambios.
+- e2e `Tendencias muestra mapas y operadores que cambian` (sobre
+  `seed_demo`: mapas vacio y 6 filas de operadores, consola limpia).
+- QA: `curl` con parametros borde sobre base vacia y sembrada (cero 500),
+  pasada en Chromium y mutaciones que tumban los tests nuevos.
+
+### Riesgos y lo que no entra
+
+Sin migracion ni `recompute`. El JSON de `/api/compare/` crece con claves
+nuevas. Fuera: sitios, compañeros, graficos por mapa en el tiempo, cambiar
+la muestra o la formula del total.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py runserver
+```
+Abrir `http://127.0.0.1:8000/tendencias`: debajo de la tabla de Progreso
+aparecen "Mapas" y "Operadores". `curl "http://127.0.0.1:8000/api/compare/?n=10"`
+trae `by_map` y `by_operator`.
+
+Verificar en el PC: con la base real, ventana 10 y 30 partidas, contar filas
+de "Operadores"; si con 10 casi ninguna aparece, bajar
+`COMPARE_MIN_ROUNDS_FILA` a 8 en `backend/replays/analytics/aggregates.py`.
+
+### Para el humano
+
+Nada que decidir; solo el aviso de calibracion de arriba.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -52,207 +109,29 @@ practicas rinde, con la banda de ruido que ya separa lo real de lo casual.
 
 ## Diseno
 
-Una sola forma obvia: el corte reusa `group_by` sobre los dos querysets que
-`compare_periods` ya arma. Sin migracion, sin endpoint nuevo, sin modulo JS
-nuevo (`Delta` de `Trends.jsx` ya pinta delta + veredicto).
-
-**Backend, `backend/replays/analytics/aggregates.py`** (seccion de
-`compare_periods`):
-
-1. Extraer de `compare_periods` el calculo del veredicto a
-   `_veredicto(delta, ruido, direccion) -> str | None` (mismo codigo, sin
-   cambiar el comportamiento del total; `test_compare.py` actual tiene que
-   seguir verde sin tocarlo).
-2. Constante nueva `COMPARE_MIN_ROUNDS_FILA = 10` con comentario: es la
-   muestra minima **por fila y por periodo**; no se usa `COMPARE_MIN_ROUNDS`
-   (20) porque con 10 partidas por periodo un operador rara vez junta 20
-   rondas de un lado y la tabla quedaria siempre vacia. Desvio deliberado del
-   criterio 1 ("al menos `min_rounds`"): `min_rounds` sigue siendo la del
-   total, como dice Fuera de alcance. Calibrar con la base real (ver abajo).
-3. `_corte_por_periodo(actual, previo, baseline, campos, labels, min_rows)
-   -> list[dict]`: `group_by(actual, *campos, labels=labels, baseline=baseline)`
-   y lo mismo con `previo`, indexados por la tupla de `labels`; solo las
-   claves presentes en los dos con `rounds >= min_rows` en cada uno. Por fila:
-   las claves de `labels`, `current_rounds`, `previous_rounds`,
-   `current_winrate`, `previous_winrate`, `delta` (winrate, `round(.., 1)`),
-   `noise` (`_ruido(cur_wr, cur_rounds, prev_wr, prev_rounds)`), `verdict`
-   (`_veredicto(delta, noise, "up")`), `current_rating`, `previous_rating`,
-   `rating_delta` (None si falta alguno), y `suffix: "%"`,
-   `direction: "up"` para que `Delta` del frontend la pinte igual que una
-   metrica del total. Orden: `delta` de mayor a menor, `None` al final,
-   desempate por la clave (estable para el e2e).
-4. En `compare_periods`: firma nueva `min_rows: int = COMPARE_MIN_ROUNDS_FILA`;
-   en el dict de salida `min_rows`, `by_map` (campos
-   `round__match__map_slug`, `round__match__map_name`, labels `slug`, `map`)
-   y `by_operator` (sobre `actual.exclude(operator="")` y lo mismo en previo;
-   campos `operator`, `side`, labels `operator`, `side`).
-5. `views.compare` no cambia salvo pasar `min_rows` leido con
-   `_int_param(request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1,
-   maximum=10_000)`. Es una linea en `backend/replays/views.py`: si el Dev
-   prefiere no tocar `views.py` (lo toca la rama de la 60), el default
-   alcanza y el test usa el argumento de la funcion.
-
-**Tests, `backend/tests/test_compare.py`** (agregar, usando las factories del
-archivo):
-- `test_un_mapa_que_sube_con_muestra_sale_mejor`: periodo previo 12 rondas en
-  un mapa con 3 ganadas, actual 12 con 10 ganadas (por partidas, n=1 con una
-  partida por periodo, o `by=days`): fila `mejor`, delta positivo.
-- `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`.
-- `test_las_filas_vienen_ordenadas_por_delta`.
-- `test_el_operador_se_parte_por_lado`: mismo operador en ataque y defensa
-  son dos filas.
-- `test_respeta_by_days_y_el_filtro_de_lado` via `Client` a
-  `/api/compare/?by=days&n=30&side=Defense` (solo filas `side=Defense` en
-  `by_operator`).
-- `test_base_vacia_devuelve_cortes_vacios`.
-
-**Frontend, `frontend/src/pages/Trends.jsx`**: dentro del Panel "Progreso",
-debajo del `DataTable` actual, dos subtitulos `<h3>` "Mapas" y "Operadores",
-cada uno con un `DataTable` (`csvName` `progreso-mapas` y
-`progreso-operadores`): columnas nombre (operador con `SideChip` para el
-lado, si se importa de `ui.jsx`), rondas antes/ahora, winrate antes/ahora con
-`fmt(.., 0, '%')`, Cambio con `<Delta metric={row} />` (ya colorea solo si
-`verdict` no es `ruido`), Ruido como la tabla de arriba, rating antes/ahora.
-`rowKey` = slug o `operator + side`; `initialSort` por `delta` desc. Sin
-filas: `<p className="dim">Sin muestra en los dos periodos ({min_rows}+
-rondas en cada uno).</p>`.
-
-**e2e, `frontend/e2e/humo.spec.js`**: `test('Tendencias muestra mapas y
-operadores que cambian')`. Medido sobre `seed_demo` con la ventana por
-defecto (10 partidas): el periodo actual es todo Bank y el previo Border y
-Club House, asi que "Mapas" muestra el texto vacio; cada operador tiene 10 a
-14 rondas en los dos periodos, asi que "Operadores" tiene **6 filas**. El
-test afirma las dos cosas y la consola limpia.
-
-**`docs/metricas.md`**, seccion `## Progreso`: fila "Cambio por mapa y
-operador" (muestra minima `COMPARE_MIN_ROUNDS_FILA` por fila en cada periodo,
-banda = la misma formula sobre las rondas de esa fila, veredicto por fila,
-rating por fila sin banda).
-
-**Orden:** helper `_veredicto` -> `_corte_por_periodo` + tests -> vista ->
-Trends.jsx -> e2e -> metricas.md -> `check.sh`.
-
-**Que puede romperse:** el JSON de `/api/compare/` crece (las claves nuevas
-no pisan ninguna); el refactor del veredicto (cubierto por los tests
-existentes de `test_compare.py`).
-
-**Verificacion manual:** `/tendencias` con la base real, ventana 10 y 30
-partidas: cuantas filas salen. Si con 10 partidas casi ningun operador llega
-a 10 rondas por lado, el umbral pide bajarlo a 8; anotarlo en Implementacion.
-
-**Archivos ocupados:** `aggregates.py`, `views.py`, `metricas.md` y
-`humo.spec.js` tambien los toca la rama de la 60 (PR #48, esperando al
-humano). Son zonas distintas de cada archivo: se puede implementar ya; si el
-merge de la 60 llega antes, `git merge origin/main` (P3).
+Arquitecto 20261022T0804Z. Corte con `group_by` sobre los dos periodos de
+`compare_periods`; `_veredicto` extraido sin cambiar el total;
+`COMPARE_MIN_ROUNDS_FILA = 10` por fila y periodo; `by_map` y `by_operator`
+ordenados por delta desc; dos `DataTable` en `Trends.jsx`; e2e y fila en
+`docs/metricas.md`. Detalle en `git log`.
 
 ## Implementacion
 
-Dev 20261022T1204Z.
-
-Que quedo, siguiendo el diseno:
-
-- `aggregates.py`: `_veredicto` extraido de `compare_periods` (mismas reglas;
-  los tests viejos de `test_compare.py` siguen verdes sin tocarlos, y
-  `test_el_veredicto_del_total_no_cambia` fija los casos borde),
-  `COMPARE_MIN_ROUNDS_FILA = 10`, `_corte_por_periodo` y las claves nuevas
-  `min_rows`, `by_map` (`slug`, `map`) y `by_operator` (`operator`, `side`,
-  sin las rondas con operador vacio). Orden: delta desc, `None` al final,
-  desempate por clave.
-- `views.compare`: acepta `min_rows` (1 a 10000), default la constante.
-- `Trends.jsx`: `TablaDeCambio` con dos `<h3>` "Mapas" y "Operadores" dentro
-  del panel Progreso; columnas rondas, ganadas, Cambio (`Delta`), Ruido y
-  rating antes/ahora; operador con `SideChip`; CSV `progreso-mapas` y
-  `progreso-operadores`; texto vacio con la muestra minima.
-- e2e `Tendencias muestra mapas y operadores que cambian`: mapas vacios y 6
-  filas de operadores, consola limpia (medido sobre `seed_demo` con la
-  ventana de 10 partidas: coincide con el diseno).
-- `docs/metricas.md`: fila "Cambio por mapa y operador" en `## Progreso`.
-
-Tests por criterio:
-1. `test_un_mapa_que_sube_con_muestra_sale_mejor`,
-   `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`,
-   `test_un_mapa_que_no_jugaste_antes_no_sale`,
-   `test_el_operador_se_parte_por_lado`, `test_trae_rating_de_cada_periodo`,
-   `test_las_rondas_sin_operador_no_forman_fila`,
-   `test_base_vacia_devuelve_cortes_vacios`.
-2. `test_las_filas_vienen_ordenadas_por_delta` (tambien cubre `peor` y `ruido`).
-3. `CortesApiTests.test_respeta_by_days_y_el_filtro_de_lado`,
-   `test_sin_filtro_de_lado_salen_los_dos`,
-   `test_la_muestra_minima_por_fila_se_puede_pedir`.
-4. e2e `Tendencias muestra mapas y operadores que cambian`.
-5. Fila en `docs/metricas.md`.
-
-Desvios: ninguno de fondo. Se agrego `min_rows` a la vista (el diseno lo
-dejaba opcional).
-
-Sin hacer: la calibracion con la base real (ventana 10 y 30 partidas) que
-pide la verificacion manual: la nube no tiene los replays del humano.
-"Verificar en el PC": abrir `/tendencias` y contar filas; si con 10
-partidas casi ningun operador llega a 10 rondas por lado, bajar
-`COMPARE_MIN_ROUNDS_FILA` a 8.
-
-Revision ciega previa (subagente con `revision.md`): sin bloqueantes. Dos
-menores que quedan como estan: en `seed_demo` todos los operadores dan delta
-0, asi que el e2e no ve un chip mejor/peor (cubierto por los tests de
-Django; cambiar el seed moveria numeros de otras pruebas), y `Delta` muestra
-dos decimales con |delta| < 1 (codigo previo, cosmetico).
-
-check.sh: `Todo en verde.` (733 tests backend, 115 frontend, build ok, 45 e2e).
+Dev 20261022T1204Z. Todo el diseno, mas `min_rows` en la vista. Sin desvios
+de fondo. Revision ciega previa sin bloqueantes. Pendiente solo la
+calibracion con la base real (Verificar en el PC).
 
 ## Revision 2026-10-22 sobre 6a5644a
 
-Revisor 20261022T1604Z. main ya estaba fusionado en la rama (sin cambios);
-`check.sh` en `Todo en verde.` (733 tests backend, 115 frontend, build ok,
-45 e2e).
-
-Revision ciega (subagente con `revision.md` sobre el diff sin
-`docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por el lider:
-
-- Los numeros de los asserts nuevos salen a mano: Club House 25 % -> 83,3 %
-  (+58,3); Bank -33,3 con banda ~18 (`peor`); Oregon +8,3 con banda ~20
-  (`ruido`); Villa +41,7 (`mejor`); con `min_rows=13` los operadores (12
-  rondas por periodo) quedan afuera y el mapa (24) queda.
-- El e2e cuadra con `seed_demo` (base temporal en el scratchpad): ventana de
-  10 partidas, `by_map` vacio y 6 filas en `by_operator`, Ash en ataque
-  entre ellas.
-- `_veredicto` conserva las reglas del total (los tests viejos de
-  `test_compare.py` siguen verdes sin tocarlos).
-- El corte por mapa agrupa por `map_slug` + `map_name`, igual que el
-  `by_map` existente; `retag` cambia los dos juntos, asi que no se parte una
-  fila.
-
-Ficha: cada criterio tiene test con nombre (lista de Implementacion); el diff
-no sale de `archivos:`; fila nueva en `docs/metricas.md`; sin tildes en
-identificadores, UI con tildes; sin `print` ni `console.log`; sin
-dependencias ni escrituras nuevas (`min_rows` es un parametro GET).
-
-Observacion, no hallazgo: en `seed_demo` todos los operadores dan delta 0,
-asi que el e2e no pinta un chip mejor/peor ni una tabla de mapas con filas;
-los colores los cubren solo los tests de Django. Ya lo anoto el Dev.
-
-Veredicto: aprobar -> `revisado`.
+Revisor 20261022T1604Z. Revision ciega sin hallazgos; numeros de los asserts
+confirmados a mano; e2e cuadra con `seed_demo`. Veredicto: aprobar.
 
 ## QA 2026-10-22 sobre 6fe9317
 
-QA 20261022T2004Z. main sin cambios desde la revision (`git log HEAD..origin/main` vacio, `merge-tree` limpio).
-
-- `./scripts/check.sh` -> `Todo en verde.` (733 tests backend, 115 frontend, build ok, 45 e2e).
-- Chunk inicial: `index-*.js` 187,63 kB en la rama y en `origin/main` (no crece). `Trends-*.js` 24,36 -> 25,84 kB (+6 %, la tabla nueva).
-- Base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3`, `migrate`, `runserver`): `/api/compare/` con `""`, `?by=days&n=30`, `?n=-1`, `?by=foo`, `?min_rows=0` (se acota a 1), `?min_rows=foo` (default 10), `?until=foo`, `?side=defense`, `?map=` -> todos 200 con `by_map: []` y `by_operator: []`.
-- Base sembrada con `tests/factories.py` (script en el scratchpad, 5 partidas de 12 rondas: Club House y Bank en el periodo previo; Club House, Bank y Oregon en el actual con `n=2`; rival con nick `Rival` y operador vacio; rondas sin bajas) y `recompute`:
-  - `?n=2` -> `by_map` solo Bank (75 -> 41,7, delta -33,3, ruido 18,9, `peor`); Club House (solo previo) y Oregon (solo actual) no salen. `by_operator`: Ash Ataque 83,3 -> 50 y Mira Defensa 75 -> 41,7, ambos `peor`. Cuentas a mano: coinciden. Rondas del rival con operador vacio no forman fila.
-  - `?n=2&side=Defense` -> solo Mira Defensa. `?n=2&operator=Ash` -> solo Ash. `?n=2&map=bank`, `?n=1`, `?by=days&n=10` -> cortes vacios, coherente con el total (sin partidas en los dos periodos). `?n=2&min_rows=13` -> vacio. `?until=foo`, `?page=-1` -> se ignoran, 200. Cero 500 en el log.
-  - `?side=defense` en minuscula da vacio, igual que el total en `origin/main`: comportamiento previo de los filtros, no de esta ficha.
-- UI en Chromium sobre la base sembrada (ruta `/api/compare/` reescrita a `n=2` con `page.route`): "Mapas" con la fila Bank y "Operadores" con Ash Ataque y Mira Defensa, delta -33,3 % en chip rojo, chips de lado, CSV por tabla; consola sin errores ni warnings. El e2e cubre el texto vacio y las 6 filas de `seed_demo`.
-- Mutacion sobre `aggregates.py` (`manage.py test tests.test_compare`, restaurado despues de cada una):
-  - interseccion de claves -> union: caen `test_un_mapa_que_no_jugaste_antes_no_sale` y `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`.
-  - orden por delta invertido: cae `test_las_filas_vienen_ordenadas_por_delta`.
-  - operador agrupado sin lado: caen `test_el_operador_se_parte_por_lado` y `test_respeta_by_days_y_el_filtro_de_lado`.
-  - `min_rows` ignorado (1 fijo): caen `test_la_muestra_minima_por_fila_se_puede_pedir` y `test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale`.
-
-Criterios: 1 a 3 cubiertos por tests (las mutaciones los tumban) y por `curl`; 4 por el e2e y la pasada en Chromium; 5 por la fila en `docs/metricas.md`. Sin migracion, sin parser, sin Electron ni `.ps1`.
-
-Veredicto: `aprobado`.
+QA 20261022T2004Z. `check.sh` en verde; chunk inicial sin crecer; `curl`
+con bordes sobre base vacia y sembrada (cero 500, cuentas a mano
+coinciden); UI en Chromium con filas y chips; 4 mutaciones tumban los tests
+nuevos. Veredicto: `aprobado`.
 
 ## Para el humano
 
