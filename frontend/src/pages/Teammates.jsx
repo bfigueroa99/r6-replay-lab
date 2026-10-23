@@ -11,6 +11,7 @@ import {
   Loading,
   Panel,
   SideChip,
+  Stat,
   fmt,
   pct,
 } from '../components/ui.jsx'
@@ -52,6 +53,8 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
   const firstDownTotal = firstDown.find((row) => row.side === 'total')
   const grupos = filasDeGrupo(data?.by_stack)
+  const tk = data?.teamkills
+  const sinTeamkills = !tk || (tk.mine + tk.suffered === 0 && tk.rounds_with === 0)
 
   return (
     <>
@@ -193,6 +196,46 @@ export default function Teammates({ filters, setFilters, runImport, importing })
             rowKey={(row) => row.side}
             csvName="primero-en-caer"
           />
+        )}
+      </Panel>
+
+      <Panel
+        title="Teamkills"
+        hint="Bajas del feed con autor y víctima en tu equipo esa ronda. Siguen contando en Bajas, KPR, Rating y multikills: acá solo se hacen visibles."
+      >
+        {sinTeamkills ? (
+          <p className="dim">Ningún teamkill en las rondas filtradas.</p>
+        ) : (
+          <>
+            <div className="kpis" style={{ marginBottom: 14 }}>
+              <Stat label="Hechos" value={fmt(tk.mine)} sub="compañeros que mataste" />
+              <Stat label="Sufridos" value={fmt(tk.suffered)} sub="veces que te mató uno" />
+              <Stat
+                label="Rondas con teamkill"
+                value={fmt(tk.rounds_with)}
+                sub={`ganaste ${pct(tk.winrate_with)} · ${pct(tk.winrate_without)} en las demás`}
+                help="Rondas con algún teamkill de tu equipo, tuyo o entre otros dos compañeros, y su winrate contra el de las demás rondas filtradas."
+              />
+            </div>
+            <DataTable
+              columns={[
+                {
+                  key: 'username',
+                  label: 'Compañero',
+                  left: true,
+                  render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
+                },
+                { key: 'made', label: 'Hechos' },
+                { key: 'suffered', label: 'Sufridos' },
+                { key: 'total', label: 'Total' },
+              ]}
+              rows={tk.by_teammate}
+              initialSort={{ key: 'total', dir: 'desc' }}
+              rowKey={(row) => row.player_id}
+              csvName="teamkills"
+              empty="Los teamkills de estas rondas fueron entre otros compañeros."
+            />
+          </>
         )}
       </Panel>
 

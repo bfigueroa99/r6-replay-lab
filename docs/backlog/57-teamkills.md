@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
-estado: en curso 2026-10-23T04:04Z
-candado: dev 2026-10-23T04:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
@@ -131,3 +131,32 @@ origin/main` (P3). Con la 59 comparte el `return` de `views.teammates`: una
 linea cada una.
 
 ## Implementacion
+
+Hecho segun el diseno, sin desvios de alcance:
+
+- `aggregates.py`: helper `_equipo_de(campo)` (ahora tambien lo usa
+  `_solo_rivales`), `_teamkills(mine)` y `teamkills(**filters)` en la seccion
+  de duelos. Suicidios y bajas sin autor o sin victima no cuentan.
+- `views.teammates`: clave `teamkills`.
+- `Teammates.jsx`: Panel "Teamkills" entre "Primero en caer" y "Clutches",
+  con tres `Stat` (Hechos, Sufridos, Rondas con teamkill con su winrate
+  contra las demas) y `DataTable` por compañero (`csvName="teamkills"`).
+  Sin teamkills: "Ningún teamkill en las rondas filtradas.". Si solo hubo
+  teamkills entre otros dos compañeros, se ven los numeros y la tabla dice
+  que fueron entre otros.
+- e2e: `Compañeros muestra el panel de teamkills` (texto vacio, `seed_demo`
+  no tiene teamkills; no se toco el seed).
+- `docs/metricas.md`: fila "Teamkills" en `## Duelos`.
+- Tests: `backend/tests/test_teamkills.py`, 12 casos (los 7 del diseno mas
+  suicidio, bajas sobre rivales, orden con desempate por nick, baja sin
+  autor o sin victima y base vacia).
+
+Decision chica: el winrate de las rondas con y sin teamkill usa
+`RoundPlayer.won`, el mismo que el Winrate general (lo pide el diseno). Una
+ronda sin ganador conocido cuenta como no ganada; queda dicho en
+`metricas.md`. La revision ciega lo marco como menor; si el humano prefiere
+excluirlas, es cambiar dos filtros.
+
+Verificacion manual pendiente (no se puede en la nube): `/companeros` con la
+base real y cruzar un teamkill con el feed del detalle de la partida.
+
