@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
 estado: aprobado
-candado: -
+candado: release 2026-10-23T16:10Z
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C7 ([Siege.GG](https://siege.gg/news/support-value-in-siege-explained-with-the-new-rating-model), "Teamkills per Round")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_teamkills.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z, revisor 20261023T0805Z, qa 20261023T1205Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z, revisor 20261023T0805Z, qa 20261023T1205Z, release 20261023T1606Z
 
 ## PR
 
