@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
-estado: implementado
-candado: revisor 2026-10-23T08:05Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C7 ([Siege.GG](https://siege.gg/news/support-value-in-siege-explained-with-the-new-rating-model), "Teamkills per Round")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_teamkills.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z, revisor 20261023T0805Z
 
 ## PR
 
@@ -160,3 +160,31 @@ excluirlas, es cambiar dos filtros.
 Verificacion manual pendiente (no se puede en la nube): `/companeros` con la
 base real y cruzar un teamkill con el feed del detalle de la partida.
 
+
+## Revision 2026-10-23 sobre 6c563d1
+
+Veredicto: **aprobar** -> `revisado`.
+
+- Revision a ciegas (subagente con `revision.md` sobre el diff sin
+  `docs/backlog`): sin hallazgos. Confirmado por el lider: el refactor de
+  `_solo_rivales` arma la misma subconsulta (`test_duels` verde); los
+  filtros de la barra entran por `base_queryset` tanto en los teamkills
+  (`_mis_bajas` exige `Exists` en `mine`) como en las rondas; varias
+  cuentas propias se manejan con `me_ids` y `_MI_EQUIPO` por ronda.
+- Criterios: los 5 cubiertos. Agregado y casos tuyo/sufrido
+  (`test_un_teamkill_tuyo_cuenta_como_hecho`,
+  `test_un_teamkill_sufrido_cuenta_como_sufrido`), rival en otra ronda
+  (`test_la_misma_persona_como_rival_no_suma`), winrate aparte
+  (`test_las_rondas_con_teamkill_tienen_su_winrate_aparte`), filtro
+  (`test_respeta_el_filtro_de_lado`), panel y texto vacio en el e2e
+  (`Compañeros muestra el panel de teamkills`), fila "Teamkills" en
+  `docs/metricas.md`.
+- Diff dentro de `archivos:`; identificadores sin tildes, UI con tildes;
+  sin `print` ni `console.log`.
+- Mutaciones: sacar la condicion de equipo del autor tumba 3 tests; sacar
+  la exclusion de suicidios tumba `test_un_suicidio_no_es_teamkill`.
+- `check.sh` en `Todo en verde.` (757 tests backend, 120 vitest, build,
+  46 e2e). Rama al dia con `origin/main` (93fe22c).
+- Nota para QA: el e2e solo recorre el estado vacio (`seed_demo` no tiene
+  teamkills); las tarjetas y la tabla con datos conviene verlas con una
+  base sembrada desde `factories.py`.
