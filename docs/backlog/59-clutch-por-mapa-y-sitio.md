@@ -1,6 +1,6 @@
 # 59. Clutch por mapa y sitio
 
-estado: en curso 2026-10-23T20:04Z
+estado: implementado
 candado: -
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad

@@ -1,26 +1,28 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-23 16:40 UTC por release (sesion 20261023T1606Z; motivo: por estado: 1 aprobado; reloj: dev, franja 5)
-playbook: origin/main@93fe22c
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z) | 15 de 56 en 7 dias; sin herramientas para comparar
+actualizado: 2026-10-23 20:40 UTC por dev (sesion 20261023T2003Z; motivo: por estado: 1 disenado, lugar en cola; reloj: revisor, franja 7)
+playbook: origin/main@9554a30
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z) | 15 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Cola vacia: la 57 entro a main (PR #50, 9554a30).
+| rama | ficha | estado | horas | compare | PR |
+|---|---|---|---|---|---|
+| `claude/equipo-dev/59-clutch-por-mapa-y-sitio` | 59 Clutch por mapa y sitio (funcionalidad) | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/59-clutch-por-mapa-y-sitio?expand=1) | no |
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
-Nada abierto. La 59 (disenado) comparte `views.teammates` y `Teammates.jsx` con la 57, que ya esta en main: arranca sin choque.
+Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (50 51 52 53 54 55 56 57 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (implementado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar C7 `en main`, B13 y E5/E10, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
 
@@ -28,17 +30,16 @@ Nada abierto. La 59 (disenado) comparte `views.teammates` y `Teammates.jsx` con 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 59-clutch-por-mapa-y-sitio | disenado | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Cola vacia y 1 `disenado` (59): proximo turno por estado, Dev (regla 8). 0 `propuesto`: el PO tiene que llenar el papel.
+59 en su rama (`implementado`): proximo turno por estado, Revisor (regla 3). Papel vacio (0 `propuesto`, 0 `disenado`): despues del Revisor y la QA, el PO tiene que llenarlo.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-23 16:40 | Entrega y mergea la 57 (`aprobado` -> `entregado` -> PR #50 -> main 9554a30). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, rama al dia con main 93fe22c, `check.sh` en `Todo en verde.` sobre el head f3bb8bd (757 backend, 120 vitest, build, 46 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
-| dev | 2026-10-23 04:40 | Implementa 57 (`disenado` -> `implementado`, rama `claude/equipo-dev/57-teamkills`, 6c563d1): `_equipo_de` (tambien en `_solo_rivales`), `_teamkills` y `teamkills()` en `/api/teammates/`; panel "Teamkills" en Compañeros (hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero); e2e con el texto vacio; fila en `metricas.md`; 12 tests. Revision ciega sin bloqueantes (2 menores de tests corregidos). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). |
+| dev | 2026-10-23 20:40 | Implementa 59 (`disenado` -> `implementado`, rama `claude/equipo-dev/59-clutch-por-mapa-y-sitio`, c7b7964): `clutch_by_site` y `CLUTCH_SITIO_MIN = 5` en `/api/teammates/` (total por mapa + filas por sitio, "Sin sitio" ultima, `low_sample`); tabla "Clutch por mapa y sitio" en el panel Clutches de Compañeros con `*` de muestra chica y CSV; 6 tests y e2e sobre `seed_demo`; fila en `metricas.md`. Revision ciega: 1 hallazgo (fila total sin "Total" en el CSV), corregido. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). |
 | revisor | 2026-10-23 08:08 | Revisa 57 (funcionalidad, `implementado` -> `revisado`) sobre 6c563d1, rama al dia con main 93fe22c. Revision ciega sin hallazgos, confirmada por el lider (refactor de `_solo_rivales` equivalente, filtros por `base_queryset`, `me_ids` por ronda). Mutaciones: condicion de equipo del autor (3 tests caen) y exclusion de suicidios (1 cae). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Sin pushes de codigo. |
 | qa | 2026-10-23 12:20 | Prueba 57 (funcionalidad, `revisado` -> `aprobado`) sobre 8ee9f5b, rama al dia con main 93fe22c. `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Base vacia y base sembrada desde `factories.py` (teamkill hecho, sufrido, entre otros dos, el mismo jugador como rival, suicidio; filtros `side`/`map`/`since`, `until=foo`, `page=-1`, `side=foo`): valores a mano, cero 500; Duelos no cuenta el teamkill. Panel renderizado en Chromium con datos, con filtro de lado y vacio, consola limpia. Mutaciones 4 de 4 caen; chunk inicial sin cambio. Sin pushes de codigo. |
 | arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
