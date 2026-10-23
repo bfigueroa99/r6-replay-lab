@@ -338,6 +338,68 @@ def _record_de_ronda(rp: RoundPlayer | None, valor: str) -> dict | None:
     }
 
 
+def rachas_de_rondas(rondas: list[tuple[int, bool | None]]) -> dict:
+    """Racha mas larga de rondas ganadas y de perdidas seguidas de una partida.
+
+    Recibe pares `(number, my_team_won)`. Una ronda sin resultado o un hueco
+    en la numeracion (falta un `.rec`) corta la racha: no se puede afirmar que
+    siguio. A igual largo queda la primera de la partida.
+    """
+    mejores: dict[bool, dict | None] = {True: None, False: None}
+    actual: dict | None = None
+    anterior: tuple[int, bool | None] | None = None
+    for numero, gano in sorted(rondas, key=lambda par: par[0]):
+        sigue = (
+            gano is not None
+            and anterior is not None
+            and anterior[1] is gano
+            and numero == anterior[0] + 1
+        )
+        if not sigue:
+            actual = None if gano is None else {"length": 0, "from_number": numero}
+        if actual is not None:
+            actual["length"] += 1
+            mejor = mejores[gano]
+            if mejor is None or actual["length"] > mejor["length"]:
+                mejores[gano] = dict(actual)
+        anterior = (numero, gano)
+    return {"wins": mejores[True], "losses": mejores[False]}
+
+
+def _record_de_racha(qs) -> dict | None:
+    """La racha de rondas ganadas mas larga entre las partidas del filtro.
+
+    Se mide sobre todas las rondas de cada partida: el filtro elige partidas,
+    no rondas, y con un filtro de lado no habria rachas porque los lados
+    alternan.
+    """
+    ids = set(qs.values_list("round__match_id", flat=True))
+    if not ids:
+        return None
+    por_partida: dict[int, list[tuple[int, bool | None]]] = {}
+    for match_id, numero, gano in Round.objects.filter(match_id__in=ids).values_list(
+        "match_id", "number", "my_team_won"
+    ):
+        por_partida.setdefault(match_id, []).append((numero, gano))
+    fechas = dict(Match.objects.filter(pk__in=por_partida).values_list("pk", "played_at"))
+    candidatos = []
+    for match_id, rondas in por_partida.items():
+        racha = rachas_de_rondas(rondas)["wins"]
+        if racha is not None:
+            candidatos.append((racha["length"], fechas[match_id], match_id, racha))
+    if not candidatos:
+        return None
+    _, _, match_id, racha = max(candidatos, key=lambda c: (c[0], c[1], c[2]))
+    match = Match.objects.get(pk=match_id)
+    return {
+        "match_id": match.id,
+        "played_at": match.played_at.isoformat(),
+        "map": match.map_name,
+        "value": racha["length"],
+        "round_label": f"R{racha['from_number'] + 1}",
+    }
+
+
 def personal_records(**filters) -> dict:
     """Tus mejores marcas con los filtros activos; `None` si no hay candidato.
 
@@ -382,6 +444,7 @@ def personal_records(**filters) -> dict:
         "most_kills_match": _record_de_partida(mas_bajas, "kills"),
         "most_kills_round": _record_de_ronda(ronda, "kills"),
         "biggest_clutch": _record_de_ronda(clutch, "one_vx"),
+        "longest_round_streak": _record_de_racha(qs),
         "best_day": (
             {
                 "day": dia["day"].isoformat(),

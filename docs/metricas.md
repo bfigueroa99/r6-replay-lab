@@ -136,6 +136,7 @@ muestra un 0 inventado.
 | **Mas bajas en una partida** | La suma de tus bajas mas alta en una partida. Sin ninguna baja, no hay record. |
 | **Mas bajas en una ronda** | El maximo de bajas tuyas en una ronda, con la etiqueta de la ronda (`R1`, `R2`...). A igual valor y misma partida, la ronda mas tardia. |
 | **Clutch mas grande** | El 1vX ganado de X mas alto (`one_vx` de una ronda que tu equipo gano). Sin clutches ganados, no hay record. |
+| **Racha de rondas** | Las rondas ganadas seguidas mas largas de una partida, con la etiqueta de la ronda donde empieza. Se mide sobre todas las rondas de la partida, prorroga incluida: el filtro elige partidas, no rondas (con un filtro de lado no habria rachas, porque los lados alternan). La cortan una ronda perdida, una ronda sin resultado y un hueco en la numeracion (falta un `.rec`). En el encabezado del detalle de partida se muestran tambien las perdidas seguidas, con la misma regla; ahi, a igual largo, queda la primera racha de la partida. |
 | **Mejor dia** | El winrate de rondas mas alto en un dia con al menos 20 rondas tuyas (`RECORD_MIN_RONDAS_DIA`); empata a favor de mas rondas ganadas y despues del dia mas reciente. No enlaza a una partida. Los dos minimos son a ojo. |
 
 ## Cuando juegas

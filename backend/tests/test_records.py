@@ -93,7 +93,7 @@ class RecordsTests(TestCase):
             agg.personal_records(),
             dict.fromkeys(
                 ("best_match_rating", "most_kills_match", "most_kills_round",
-                 "biggest_clutch", "best_day"),
+                 "biggest_clutch", "longest_round_streak", "best_day"),
                 None,
             ),
         )

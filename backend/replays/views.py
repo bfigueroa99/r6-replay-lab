@@ -494,6 +494,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         datos["summary"] = describe_round(datos)
         rounds.append(datos)
 
+    rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
 
@@ -517,10 +518,17 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "warnings": match.warnings,
             },
             "rounds": rounds,
+            "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
             "my_totals": my_totals,
         }
     )
+
+
+def _racha_con_etiqueta(racha: dict | None) -> dict | None:
+    if racha is None:
+        return None
+    return {"length": racha["length"], "from_round_label": f"R{racha['from_number'] + 1}"}
 
 
 def _match_scoreboard(match: Match) -> list[dict]:
