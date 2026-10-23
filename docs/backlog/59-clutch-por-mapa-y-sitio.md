@@ -1,8 +1,8 @@
 # 59. Clutch por mapa y sitio
 
-estado: disenado
+estado: en curso 2026-10-23T20:04Z
 candado: -
-rama: -
+rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
 area: fullstack
