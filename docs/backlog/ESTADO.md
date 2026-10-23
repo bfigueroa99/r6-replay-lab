@@ -1,26 +1,28 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-23 00:30 UTC por release (sesion 20261023T0004Z; motivo: por estado: 1 aprobado; reloj: release, franja 0)
-playbook: origin/main@44c525b
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T09:01Z 10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z) | 15 de 56 en 7 dias; sin herramientas para comparar
+actualizado: 2026-10-23 04:40 UTC por dev (sesion 20261023T0404Z; motivo: por estado: 2 disenado, lugar en cola; reloj: po, franja 1)
+playbook: origin/main@93fe22c
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T09:01Z 10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z) | 15 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia: la 60 (PR #48) y la 56 (PR #49) se mergearon en este turno.
+| rama | ficha | estado | horas sin commits | PR / compare |
+|---|---|---|---|---|
+| claude/equipo-dev/57-teamkills | docs/backlog/57-teamkills.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/57-teamkills?expand=1) |
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
-Nada abierto. Las disenadas 57 y 59 tocan `aggregates.py`, `views.py` y `humo.spec.js`, ya con la 56 y la 60 en main: parten de main limpio.
+1. `claude/equipo-dev/57-teamkills`: sola en la cola, al dia con main 93fe22c. Libera `aggregates.py` (seccion duelos), `views.teammates`, `Teammates.jsx` y `humo.spec.js` para la 59, que comparte el `return` de `views.teammates` y `Teammates.jsx`.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (50 51 52 53 54 55 56 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54) en main; C7 -> ficha 57 (disenado). impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54) en main; C7 -> ficha 57 (implementado, rama 57-teamkills). impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar B13 y E5/E10 `en main`, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
 
@@ -28,18 +30,18 @@ Nada abierto. Las disenadas 57 y 59 tocan `aggregates.py`, `views.py` y `humo.sp
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 57-teamkills | disenado | funcionalidad | escuadra | 3 | fullstack | - |
+| 57-teamkills | implementado (rama `claude/equipo-dev/57-teamkills`) | funcionalidad | escuadra | 3 | fullstack | - |
 | 59-clutch-por-mapa-y-sitio | disenado | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Espejos de la 56 y la 60 quitados (ya en main). Cola vacia y 2 `disenado`: proximo turno por estado, dev (regla 8).
+La 57 esta `implementado`: proximo turno por estado, revisor (regla 3). Queda 1 `disenado` (59) y 0 `propuesto`.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-23 00:30 | Mergea la 60 (PR #48, `entregado (pendiente de merge)` -> main ec438f9: `check.sh` en verde sobre su head c2b88de, 733 backend, 120 vitest, build, 44 e2e) y entrega y mergea la 56 (`aprobado` -> `entregado` -> PR #49 -> main 93fe22c): main ec438f9 fusionado en la rama, `## PR` escrito y ficha recortada, `check.sh` en `Todo en verde.` sobre el head d7e5c2f (745 backend, 120 vitest, build, 45 e2e). Puerta a-f cumplida en las dos. Espejos quitados de `backlog`. Borrar las ramas: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
-| dev | 2026-10-22 12:11 | Implementa 56 (`disenado` -> `implementado`, rama `claude/equipo-dev/56-mapas-y-operadores-que-mejoran`, 7e268ab): `_veredicto` extraido, `_corte_por_periodo` con `by_map` y `by_operator` en `/api/compare/` (muestra `COMPARE_MIN_ROUNDS_FILA = 10`, parametro `min_rows`), tablas Mapas y Operadores en el panel Progreso de Tendencias, e2e (Mapas vacio, 6 operadores sobre `seed_demo`), fila en `metricas.md`. Revision ciega previa sin bloqueantes. `check.sh` en `Todo en verde.` (733 backend, 115 vitest, build, 45 e2e). |
+| dev | 2026-10-23 04:40 | Implementa 57 (`disenado` -> `implementado`, rama `claude/equipo-dev/57-teamkills`, 6c563d1): `_equipo_de` (tambien en `_solo_rivales`), `_teamkills` y `teamkills()` en `/api/teammates/`; panel "Teamkills" en Compañeros (hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero); e2e con el texto vacio; fila en `metricas.md`; 12 tests. Revision ciega sin bloqueantes (2 menores de tests corregidos). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). |
 | revisor | 2026-10-22 16:35 | Revisa 56 (funcionalidad, `implementado` -> `revisado`) sobre 6a5644a (codigo de 7e268ab), rama al dia con main 44c525b. Revision ciega sin hallazgos; numeros de los asserts recalculados a mano y e2e cuadrado contra `seed_demo` (Mapas vacio, 6 operadores). `check.sh` en `Todo en verde.` (733 backend, 115 vitest, build, 45 e2e). Sin pushes de codigo. |
 | qa | 2026-10-22 20:40 | Prueba 56 (funcionalidad, `revisado` -> `aprobado`) sobre 6fe9317, rama al dia con main 44c525b. `check.sh` en `Todo en verde.` (733 backend, 115 vitest, build, 45 e2e). Base vacia y base sembrada desde `factories.py` (mapa solo en un periodo, operador por lado, rival con operador vacio, filtros `side`/`operator`/`map`, `min_rows` 0/foo/13, `until=foo`, `page=-1`): valores a mano, cero 500. Tablas Mapas y Operadores renderizadas en Chromium con chip `peor` y consola limpia. Mutaciones 4 de 4 caen; chunk inicial sin cambio, Trends +6 %. Sin pushes de codigo. |
 | arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
@@ -135,6 +137,7 @@ Espejos de la 56 y la 60 quitados (ya en main). Cola vacia y 2 `disenado`: proxi
 - Ficha 55 (QA 2026-10-20, aviso, no bloquea, preexistente): el filtro `side` de la API distingue mayusculas (`?side=defense` da vacio); la UI manda `Attack`/`Defense`, asi que no se ve desde la app.
 - Ficha 58 (ya en main, PR #46; Revisor 2026-10-20, aviso, no bloquea): el e2e de "Primera ronda de cada lado" pasa aunque las tres filas tengan 0 rondas (solo mira las etiquetas); un assert sobre la celda Rondas cabe en una ficha `tests` o en la proxima correccion de la 58.
 - Ficha 58 (ya en main, PR #46; QA 2026-10-20, aviso, no bloquea): con `seed_demo` las tres filas tienen rondas (29/29/145), asi que el e2e no se apoya en 0; el hallazgo menor del Revisor queda como esta. QA agrego `test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra` (los tests solo contaban rondas y no distinguian la R4 de la R6). Sin migracion ni parser: nada que verificar en el PC.
+- Ficha 57 (Dev 2026-10-23, aviso, no bloquea): el winrate de las rondas con y sin teamkill usa el mismo `won` que el Winrate general, asi que una ronda sin ganador conocido cuenta como no ganada (documentado en `metricas.md`). Verificar en el PC cuando llegue a main: `/companeros` con la base real y cruzar un teamkill con el feed de esa partida. Sin migracion ni parser.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
