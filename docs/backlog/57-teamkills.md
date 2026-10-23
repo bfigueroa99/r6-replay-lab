@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-23T08:05Z
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
