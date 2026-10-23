@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-23 04:40 UTC por dev (sesion 20261023T0404Z; motivo: por estado: 2 disenado, lugar en cola; reloj: po, franja 1)
+actualizado: 2026-10-23 08:08 UTC por revisor (sesion 20261023T0805Z; motivo: por estado: 1 implementado; reloj: dev, franja 3)
 playbook: origin/main@93fe22c
 rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T09:01Z 10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z) | 15 de 56 en 7 dias
 pausa: no
@@ -9,10 +9,10 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/57-teamkills | docs/backlog/57-teamkills.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/57-teamkills?expand=1) |
+| claude/equipo-dev/57-teamkills | docs/backlog/57-teamkills.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/57-teamkills?expand=1) |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
@@ -21,7 +21,7 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (50 51 52 53 54 55 56 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54) en main; C7 -> ficha 57 (implementado, rama 57-teamkills). impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54) en main; C7 -> ficha 57 (revisado, rama 57-teamkills). impacto: K3 (55) en main; K5 -> ficha 59 (disenado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:1 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar B13 y E5/E10 `en main`, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
@@ -30,11 +30,11 @@ RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 57-teamkills | implementado (rama `claude/equipo-dev/57-teamkills`) | funcionalidad | escuadra | 3 | fullstack | - |
+| 57-teamkills | revisado (rama `claude/equipo-dev/57-teamkills`) | funcionalidad | escuadra | 3 | fullstack | - |
 | 59-clutch-por-mapa-y-sitio | disenado | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-La 57 esta `implementado`: proximo turno por estado, revisor (regla 3). Queda 1 `disenado` (59) y 0 `propuesto`.
+La 57 esta `revisado`: proximo turno por estado, QA (regla 2). Queda 1 `disenado` (59) y 0 `propuesto`.
 
 ## Ultimo turno de cada rol
 
@@ -42,7 +42,7 @@ La 57 esta `implementado`: proximo turno por estado, revisor (regla 3). Queda 1 
 |---|---|---|
 | release | 2026-10-23 00:30 | Mergea la 60 (PR #48, `entregado (pendiente de merge)` -> main ec438f9: `check.sh` en verde sobre su head c2b88de, 733 backend, 120 vitest, build, 44 e2e) y entrega y mergea la 56 (`aprobado` -> `entregado` -> PR #49 -> main 93fe22c): main ec438f9 fusionado en la rama, `## PR` escrito y ficha recortada, `check.sh` en `Todo en verde.` sobre el head d7e5c2f (745 backend, 120 vitest, build, 45 e2e). Puerta a-f cumplida en las dos. Espejos quitados de `backlog`. Borrar las ramas: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-23 04:40 | Implementa 57 (`disenado` -> `implementado`, rama `claude/equipo-dev/57-teamkills`, 6c563d1): `_equipo_de` (tambien en `_solo_rivales`), `_teamkills` y `teamkills()` en `/api/teammates/`; panel "Teamkills" en Compañeros (hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero); e2e con el texto vacio; fila en `metricas.md`; 12 tests. Revision ciega sin bloqueantes (2 menores de tests corregidos). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). |
-| revisor | 2026-10-22 16:35 | Revisa 56 (funcionalidad, `implementado` -> `revisado`) sobre 6a5644a (codigo de 7e268ab), rama al dia con main 44c525b. Revision ciega sin hallazgos; numeros de los asserts recalculados a mano y e2e cuadrado contra `seed_demo` (Mapas vacio, 6 operadores). `check.sh` en `Todo en verde.` (733 backend, 115 vitest, build, 45 e2e). Sin pushes de codigo. |
+| revisor | 2026-10-23 08:08 | Revisa 57 (funcionalidad, `implementado` -> `revisado`) sobre 6c563d1, rama al dia con main 93fe22c. Revision ciega sin hallazgos, confirmada por el lider (refactor de `_solo_rivales` equivalente, filtros por `base_queryset`, `me_ids` por ronda). Mutaciones: condicion de equipo del autor (3 tests caen) y exclusion de suicidios (1 cae). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Sin pushes de codigo. |
 | qa | 2026-10-22 20:40 | Prueba 56 (funcionalidad, `revisado` -> `aprobado`) sobre 6fe9317, rama al dia con main 44c525b. `check.sh` en `Todo en verde.` (733 backend, 115 vitest, build, 45 e2e). Base vacia y base sembrada desde `factories.py` (mapa solo en un periodo, operador por lado, rival con operador vacio, filtros `side`/`operator`/`map`, `min_rows` 0/foo/13, `until=foo`, `page=-1`): valores a mano, cero 500. Tablas Mapas y Operadores renderizadas en Chromium con chip `peor` y consola limpia. Mutaciones 4 de 4 caen; chunk inicial sin cambio, Trends +6 %. Sin pushes de codigo. |
 | arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |

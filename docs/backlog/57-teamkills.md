@@ -1,6 +1,6 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
-estado: implementado
+estado: revisado
 candado: -
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
