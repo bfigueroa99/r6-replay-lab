@@ -17,14 +17,23 @@ def metrica(payload, key):
     return next(m for m in payload["metrics"] if m["key"] == key)
 
 
-def partida(indice, *, cuando, rondas=6, ganadas=3, kills=1):
+def partida(indice, *, cuando, rondas=6, ganadas=3, kills=1, mapa="Club House",
+            operador="Zofia", lado="Attack"):
     match = make_match(
-        index=indice, played_at=cuando, my_score=ganadas, opponent_score=rondas - ganadas
+        index=indice,
+        played_at=cuando,
+        my_score=ganadas,
+        opponent_score=rondas - ganadas,
+        map_name=mapa,
     )
     for n in range(rondas):
-        rnd = make_round(match, n, won=n < ganadas)
-        make_round_player(rnd, kills=kills)
+        rnd = make_round(match, n, won=n < ganadas, side=lado)
+        make_round_player(rnd, kills=kills, operator=operador)
     return match
+
+
+def fila(filas, **clave):
+    return next(f for f in filas if all(f[k] == v for k, v in clave.items()))
 
 
 class PorPartidasTests(TestCase):
@@ -158,3 +167,113 @@ class ApiTests(TestCase):
         for url in ("/api/compare/?n=-5", "/api/compare/?n=abc", "/api/compare/?by=loquesea"):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
+
+
+class CortesPorMapaYOperadorTests(TestCase):
+    """Donde cambio: el mismo corte de periodos, partido por mapa y operador."""
+
+    def test_un_mapa_que_sube_con_muestra_sale_mejor(self):
+        partida(0, cuando=AHORA - timedelta(days=10), rondas=12, ganadas=3)
+        partida(1, cuando=AHORA - timedelta(days=1), rondas=12, ganadas=10)
+        d = agg.compare_periods(by="matches", n=1, min_rounds=1)
+        club = fila(d["by_map"], slug="club-house")
+        self.assertEqual(club["map"], "Club House")
+        self.assertEqual((club["previous_rounds"], club["current_rounds"]), (12, 12))
+        self.assertAlmostEqual(club["delta"], 58.3, places=1)
+        self.assertIsNotNone(club["noise"])
+        self.assertEqual(club["verdict"], "mejor")
+        self.assertEqual(d["min_rows"], agg.COMPARE_MIN_ROUNDS_FILA)
+
+    def test_un_mapa_sin_muestra_en_el_periodo_previo_no_sale(self):
+        partida(0, cuando=AHORA - timedelta(days=10, hours=1), rondas=12, mapa="Bank")
+        partida(1, cuando=AHORA - timedelta(days=10), rondas=4, mapa="Villa")
+        partida(2, cuando=AHORA - timedelta(days=1, hours=1), rondas=12, mapa="Bank")
+        partida(3, cuando=AHORA - timedelta(days=1), rondas=12, mapa="Villa")
+        d = agg.compare_periods(by="matches", n=2, min_rounds=1)
+        self.assertEqual([f["slug"] for f in d["by_map"]], ["bank"])
+
+    def test_un_mapa_que_no_jugaste_antes_no_sale(self):
+        partida(0, cuando=AHORA - timedelta(days=10), rondas=12, mapa="Bank")
+        partida(1, cuando=AHORA - timedelta(days=1), rondas=12, mapa="Villa")
+        d = agg.compare_periods(by="matches", n=1, min_rounds=1)
+        self.assertEqual(d["by_map"], [])
+
+    def test_las_filas_vienen_ordenadas_por_delta(self):
+        partida(0, cuando=AHORA - timedelta(days=10, hours=3), rondas=12, ganadas=6, mapa="Bank")
+        partida(1, cuando=AHORA - timedelta(days=10, hours=2), rondas=12, ganadas=6, mapa="Villa")
+        partida(2, cuando=AHORA - timedelta(days=10, hours=1), rondas=12, ganadas=6, mapa="Oregon")
+        partida(3, cuando=AHORA - timedelta(days=1, hours=3), rondas=12, ganadas=2, mapa="Bank")
+        partida(4, cuando=AHORA - timedelta(days=1, hours=2), rondas=12, ganadas=11, mapa="Villa")
+        partida(5, cuando=AHORA - timedelta(days=1, hours=1), rondas=12, ganadas=7, mapa="Oregon")
+        d = agg.compare_periods(by="matches", n=3, min_rounds=1)
+        self.assertEqual([f["slug"] for f in d["by_map"]], ["villa", "oregon", "bank"])
+        deltas = [f["delta"] for f in d["by_map"]]
+        self.assertEqual(deltas, sorted(deltas, reverse=True))
+        self.assertEqual(fila(d["by_map"], slug="bank")["verdict"], "peor")
+        self.assertEqual(fila(d["by_map"], slug="oregon")["verdict"], "ruido")
+
+    def test_el_operador_se_parte_por_lado(self):
+        partida(0, cuando=AHORA - timedelta(days=10, hours=1), rondas=12, operador="Ash")
+        partida(1, cuando=AHORA - timedelta(days=10), rondas=12, operador="Ash", lado="Defense")
+        partida(2, cuando=AHORA - timedelta(days=1, hours=1), rondas=12, operador="Ash")
+        partida(3, cuando=AHORA - timedelta(days=1), rondas=12, operador="Ash", lado="Defense")
+        d = agg.compare_periods(by="matches", n=2, min_rounds=1)
+        self.assertEqual(
+            sorted((f["operator"], f["side"]) for f in d["by_operator"]),
+            [("Ash", "Attack"), ("Ash", "Defense")],
+        )
+
+    def test_las_rondas_sin_operador_no_forman_fila(self):
+        partida(0, cuando=AHORA - timedelta(days=10), rondas=12, operador="")
+        partida(1, cuando=AHORA - timedelta(days=1), rondas=12, operador="")
+        d = agg.compare_periods(by="matches", n=1, min_rounds=1)
+        self.assertEqual(d["by_operator"], [])
+        self.assertEqual(len(d["by_map"]), 1)
+
+    def test_trae_rating_de_cada_periodo(self):
+        partida(0, cuando=AHORA - timedelta(days=10), rondas=12, kills=0)
+        partida(1, cuando=AHORA - timedelta(days=1), rondas=12, kills=2)
+        zofia = fila(agg.compare_periods(by="matches", n=1, min_rounds=1)["by_operator"],
+                     operator="Zofia")
+        self.assertGreater(zofia["current_rating"], zofia["previous_rating"])
+        self.assertGreater(zofia["rating_delta"], 0)
+
+    def test_base_vacia_devuelve_cortes_vacios(self):
+        d = agg.compare_periods(by="matches", n=10)
+        self.assertEqual(d["by_map"], [])
+        self.assertEqual(d["by_operator"], [])
+
+    def test_el_veredicto_del_total_no_cambia(self):
+        """El veredicto se extrajo a una funcion: mismas reglas que antes."""
+        self.assertIsNone(agg._veredicto(None, 1.0, "up"))
+        self.assertIsNone(agg._veredicto(5.0, None, "neutral"))
+        self.assertIsNone(agg._veredicto(0, None, "up"))
+        self.assertEqual(agg._veredicto(5.0, 5.0, "up"), "ruido")
+        self.assertEqual(agg._veredicto(-6.0, 5.0, "down"), "mejor")
+        self.assertEqual(agg._veredicto(6.0, None, "down"), "peor")
+
+
+class CortesApiTests(TestCase):
+    def setUp(self):
+        for lado, desfase in (("Attack", 0), ("Defense", 1)):
+            partida(desfase, cuando=AHORA - timedelta(days=40, hours=desfase), rondas=12,
+                    operador="Ash" if lado == "Attack" else "Mute", lado=lado)
+            partida(2 + desfase, cuando=AHORA - timedelta(days=2, hours=desfase), rondas=12,
+                    operador="Ash" if lado == "Attack" else "Mute", lado=lado)
+
+    def test_respeta_by_days_y_el_filtro_de_lado(self):
+        data = self.client.get("/api/compare/?by=days&n=30&side=Defense").json()
+        self.assertEqual(data["by"], "days")
+        self.assertEqual([(f["operator"], f["side"]) for f in data["by_operator"]],
+                         [("Mute", "Defense")])
+        self.assertEqual(data["by_map"][0]["current_rounds"], 12)
+
+    def test_sin_filtro_de_lado_salen_los_dos(self):
+        data = self.client.get("/api/compare/?by=days&n=30").json()
+        self.assertEqual(len(data["by_operator"]), 2)
+
+    def test_la_muestra_minima_por_fila_se_puede_pedir(self):
+        data = self.client.get("/api/compare/?by=days&n=30&min_rows=13").json()
+        self.assertEqual(data["min_rows"], 13)
+        self.assertEqual(data["by_operator"], [])
+        self.assertEqual(len(data["by_map"]), 1)  # el mapa junta 24 rondas por periodo

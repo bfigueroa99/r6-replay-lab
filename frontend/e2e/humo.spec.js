@@ -64,6 +64,21 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Progreso' }).first()
+  await expect(panel.getByRole('heading', { name: 'Mapas', exact: true })).toBeVisible()
+  // con la ventana de 10 partidas el seed juega Bank en una y Border y Club House en la otra
+  await expect(panel.getByText('Sin muestra en los dos periodos (10+ rondas en cada uno).')).toBeVisible()
+  // cada operador del seed junta 10 a 14 rondas por periodo
+  await expect(panel.locator('h3:text-is("Operadores") + .table-wrap tbody tr')).toHaveCount(6)
+  await expect(panel.getByRole('cell', { name: /^Ash Ataque$/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
