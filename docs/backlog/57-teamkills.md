@@ -1,8 +1,8 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
 area: fullstack
