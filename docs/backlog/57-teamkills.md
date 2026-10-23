@@ -1,7 +1,7 @@
 # 57. Teamkills: a quien mataste y quien te mato
 
-estado: revisado
-candado: qa 2026-10-23T12:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/57-teamkills
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C7 ([Siege.GG](https://siege.gg/news/support-value-in-siege-explained-with-the-new-rating-model), "Teamkills per Round")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_teamkills.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z, revisor 20261023T0805Z
+turnos: po 20261019T0004Z, arquitecto 20261022T0804Z, dev 20261023T0404Z, revisor 20261023T0805Z, qa 20261023T1205Z
 
 ## PR
 
@@ -188,3 +188,48 @@ Veredicto: **aprobar** -> `revisado`.
 - Nota para QA: el e2e solo recorre el estado vacio (`seed_demo` no tiene
   teamkills); las tarjetas y la tabla con datos conviene verlas con una
   base sembrada desde `factories.py`.
+
+## QA 2026-10-23 sobre 8ee9f5b
+
+Veredicto: **aprobado**. Rama al dia con `origin/main` (93fe22c), sin
+conflicto.
+
+- `./scripts/check.sh`: `Todo en verde.` (757 tests backend, 120 vitest,
+  build, 46 e2e).
+- Base sembrada desde `factories.py` (`build_dataset(matches=4)` mas una
+  partida en Border con: teamkill tuyo en ataque perdido, sufrido en
+  defensa perdido, entre dos companeros en defensa ganada, el mismo
+  "amigo" como rival matandote, y un suicidio). Script en el scratchpad,
+  `DATA_DIR=<tmp> python3 sembrar.py`, `runserver 127.0.0.1:8711`.
+  - `curl /api/teammates/` -> `mine 1, suffered 1, rounds_with 3,
+    rounds_without 26, winrate_with 33.3, winrate_without 53.8`,
+    `by_teammate [amigo 1/1/2]`: el rival y el suicidio no cuentan, el de
+    otros dos cuenta la ronda y no la tabla.
+  - `?side=Attack` -> `1, 0, 1 ronda, 0.0 vs 71.4`; `?side=Defense` ->
+    `0, 1, 2 rondas`. `?map=border` -> lo mismo que sin filtro (los
+    teamkills son de Border); `?map=club-house`, `?since=2099-01-01`,
+    `?side=foo` -> ceros, `winrate_* null`, lista vacia. `?until=foo`,
+    `?page=-1`, `?side=`, `?map=`, `?ranked=1` -> 200 sin cambios.
+  - Base vacia (`migrate` solo): `/api/teammates/` 200 con ceros; la
+    pagina muestra el EmptyState de importar (como antes).
+  - Vecino `/api/duels/`: `deaths 1` (la baja de "amigo" como rival); el
+    teamkill sufrido no entra a Duelos. 47 ms en las dos vistas.
+- UI (Playwright sobre la base sembrada, `/companeros`): tres tarjetas
+  (Hechos 1, Sufridos 1, Rondas con teamkill 3 "ganaste 33% · 54% en las
+  demas") y tabla `amigo 1 1 2` con CSV; con Lado = Ataque cambia a
+  `1 / 0 / 1`, `0% · 71%`; con mapa Club House, "Ningún teamkill en las
+  rondas filtradas.". Consola limpia.
+- Chunk inicial `index-*.js` 187.83 kB igual que `main`; `Teammates-*.js`
+  (lazy) 6.97 -> 8.22 kB.
+- Mutaciones (distintas de las del Revisor), todas caen: sin condicion de
+  equipo de la victima (2 tests), winrate con/sin cruzados
+  (`test_las_rondas_con_teamkill_tienen_su_winrate_aparte`), orden de la
+  tabla invertido (`test_ordena_por_total_y_despues_por_nick`), sin los
+  filtros de la barra (`test_respeta_el_filtro_de_lado`).
+- Sin migracion, parser, `recompute`, Electron ni `.ps1`.
+
+## Verificar en el PC
+
+`cd backend; python manage.py runserver` con la base real, abrir
+`/companeros` y cruzar un teamkill de la tabla con el feed del detalle de
+esa partida.
