@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
-estado: implementado
-candado: revisor 2026-10-24T00:05Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md K5
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_clutch.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z
+turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z, revisor 20261024T0004Z
 
 Implementar despues de #55: usa la columna `RoundPlayer.clutch_vs` que esa
 ficha agrega con su migracion.
@@ -27,23 +27,23 @@ revisar como se juega el final de ronda.
 
 ## Criterios de aceptacion
 
-- [ ] Agregado nuevo `clutch_by_site` en `replays/analytics/aggregates.py`:
+- [x] Agregado nuevo `clutch_by_site` en `replays/analytics/aggregates.py`:
   una fila por mapa y sitio (`Match.map_slug`, `map_name`, `Round.site`) y
   otra de total por mapa, con intentos (`clutch_vs > 0`), ganados
   (`clutch_vs > 0` y `won`) y %. Respeta los filtros de la barra (lado,
   fechas, ranked, operador). Rondas sin sitio van a una fila "Sin sitio" del
   mapa, no se pierden. Test de Django con dos mapas y tres sitios armados.
-- [ ] Muestra minima: un sitio con menos de 5 intentos sale igual pero con
+- [x] Muestra minima: un sitio con menos de 5 intentos sale igual pero con
   `low_sample: true`, para que la UI lo marque; el umbral es una constante
   con nombre. Test del borde (4 y 5 intentos).
-- [ ] Se sirve en el mismo endpoint que la tabla de conversion de la ficha
+- [x] Se sirve en el mismo endpoint que la tabla de conversion de la ficha
   55, como `clutch_by_site`; con base vacia devuelve lista vacia sin 500.
-- [ ] En la pagina donde la ficha 55 deja la tabla de conversion, una tabla
+- [x] En la pagina donde la ficha 55 deja la tabla de conversion, una tabla
   "Clutch por mapa y sitio" debajo, ordenada por mapa y con el % de cada
   sitio, boton CSV y la marca de muestra chica. Sin intentos dice
   "Todavía no quedaste último en ninguna ronda". Entra al e2e con
   `seed_demo`.
-- [ ] Fila nueva en `docs/metricas.md` ("Clutch por mapa y sitio") que remite
+- [x] Fila nueva en `docs/metricas.md` ("Clutch por mapa y sitio") que remite
   a la definicion de intento y ganado de la ficha 55.
 
 ## Fuera de alcance
@@ -158,3 +158,42 @@ Entorno: el Chromium de la nube (`/opt/pw-browsers`, revision 1243) no es el
 que pide el Playwright fijado (1194). Se corrio el e2e con
 `PLAYWRIGHT_BROWSERS_PATH` apuntando a un alias en el scratchpad; nada del
 repo cambio por eso.
+
+## Revision 2026-10-24 sobre c7b7964
+
+Revisor 20261024T0004Z. Revision a ciegas (subagente con `revision.md` sobre
+el diff sin `docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por
+el lider leyendo el diff y con `check.sh` en verde (ruff ok, 763 tests
+backend, 120 vitest, build ok, 47 e2e). Main no se movio desde la rama: sin
+merge.
+
+Criterios:
+
+- `clutch_by_site` con fila total por mapa y una por sitio, mismo queryset
+  que `clutch_conversion` (filtros de la barra via `base_queryset`), ""
+  como "Sin sitio" ultima: `test_clutch_por_sitio_agrupa_por_mapa_y_sitio`,
+  `test_una_ronda_sin_sitio_va_a_sin_sitio`,
+  `test_clutch_por_sitio_respeta_el_filtro_de_lado`. Cubierto.
+- `CLUTCH_SITIO_MIN = 5` y `low_sample` en todas las filas; borde 4/5 en
+  `test_cuatro_intentos_son_muestra_chica_y_cinco_no`. Cubierto.
+- Clave `clutch_by_site` en `/api/teammates/`; base vacia 200 con `[]`:
+  `test_clutch_por_sitio_con_base_vacia_es_lista_vacia`. Cubierto.
+- Tabla en el Panel Clutches despues de la de conversion (el e2e viejo con
+  `.first()` sigue verde), CSV `clutch-por-sitio` con "Total" en las filas
+  de mapa, `*` de muestra chica, texto vacio. e2e `Compañeros muestra el
+  clutch por mapa y sitio` afirma los numeros de `seed_demo` (el subagente
+  los recalculo aparte y coinciden). Cubierto.
+- Fila en `docs/metricas.md` que remite a la definicion de la ficha 55.
+  Cubierto.
+
+Archivos: el diff toca solo los de `archivos:`. Identificadores sin tildes,
+UI con tildes, sin `print` ni `console.log`.
+
+Nota de entorno para QA: Playwright 1.56 pide Chromium 1194 y la nube trae
+1243 con otra estructura de carpetas (`chrome-linux64`,
+`chrome-headless-shell-linux64`). El alias en el scratchpad tiene que ser
+`chromium_headless_shell-1194/chrome-linux -> .../chrome-headless-shell-linux64`
+(que ya trae `headless_shell`) y `chromium-1194/chrome-linux -> .../chrome-linux64`,
+con `PLAYWRIGHT_BROWSERS_PATH` apuntando ahi.
+
+Veredicto: aprobar -> revisado.
