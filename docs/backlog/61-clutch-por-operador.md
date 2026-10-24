@@ -1,7 +1,7 @@
 # 61. Clutch por operador
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-24T16:05Z
 rama: -
 tipo: funcionalidad
 epica: operadores

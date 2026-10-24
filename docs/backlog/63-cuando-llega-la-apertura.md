@@ -1,7 +1,7 @@
 # 63. Cuando llega la apertura
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-24T16:05Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
