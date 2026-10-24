@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-24 12:12 UTC por po (sesion 20261024T1204Z; motivo: papel vacio; reloj: revisor, franja 4)
+actualizado: 2026-10-24 16:09 UTC por arquitecto (sesion 20261024T1605Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: dev, franja 5)
 playbook: origin/main@5647aa1
 rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-22T21:01Z 10-23T09:01Z 10-23T21:01Z 10-24T09:01Z) | 15 de 56 en 7 dias
 pausa: no
@@ -10,7 +10,7 @@ pausa: no
 Sin ramas de trabajo: la 59 entro a main (PR #51, 5647aa1).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=63 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=63 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -28,12 +28,12 @@ Ninguna rama abierta: sin pares que probar.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 61-clutch-por-operador | propuesto | funcionalidad | operadores | 3 | fullstack | - |
-| 62-cuando-matas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 63-cuando-llega-la-apertura | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 61-clutch-por-operador | disenado | funcionalidad | operadores | 3 | fullstack | - |
+| 62-cuando-matas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 63-cuando-llega-la-apertura | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-3 `propuesto`, 0 `disenado`, 0 ramas: el proximo turno es del Arquitecto (regla 9). 62 y 63 tocan los dos `/api/trends/` y `Trends.jsx`: disenarlas en orden.
+0 `propuesto`, 3 `disenado`, 0 ramas: el proximo turno es del Dev (regla 8). 61 y 62 se pueden implementar en paralelo (otras funciones de los mismos archivos); 63 va despues de que 62 se mergee (mismo panel de `Trends.jsx`).
 
 ## Ultimo turno de cada rol
 
@@ -43,7 +43,7 @@ Ninguna rama abierta: sin pares que probar.
 | dev | 2026-10-23 20:40 | Implementa 59 (`disenado` -> `implementado`, rama `claude/equipo-dev/59-clutch-por-mapa-y-sitio`, c7b7964): `clutch_by_site` y `CLUTCH_SITIO_MIN = 5` en `/api/teammates/` (total por mapa + filas por sitio, "Sin sitio" ultima, `low_sample`); tabla "Clutch por mapa y sitio" en el panel Clutches de Compañeros con `*` de muestra chica y CSV; 6 tests y e2e sobre `seed_demo`; fila en `metricas.md`. Revision ciega: 1 hallazgo (fila total sin "Total" en el CSV), corregido. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). |
 | revisor | 2026-10-24 00:10 | Revisa 59 (funcionalidad, `implementado` -> `revisado`) sobre c7b7964, rama al dia con main 9554a30. Revision ciega sin hallazgos (el subagente recalculo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Sin pushes de codigo. |
 | qa | 2026-10-24 04:12 | Prueba 59 (funcionalidad, `revisado` -> `aprobado`) sobre c7b7964, rama al dia con main 9554a30. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Base vacia y base sembrada desde `factories.py` (sitio vacio, ronda sin ganador, clutch de un companero, dos mapas, Unranked con Ash; filtros `side`/`ranked_only`/`operator`/`since`, `until=foo`, `days=-3`, `session=foo`, `page=-1`): totales por mapa = intentos de `clutch_conversion`, cero 500. Mutaciones 4 de 4 caen; chunk inicial sin cambio (solo +1,1 kB en el chunk perezoso de Compañeros). Sin pushes de codigo. |
-| arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
+| arquitecto | 2026-10-24 16:09 | Disena 61 (`clutch_by_operator` + `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/`, tabla tercera del panel Clutches), 62 (`kills_by_time` desde `_duelos`, helper `_tramo_vacio` compartido con `deaths_by_time`, panel "Cuándo matas" antes de "Cuando mueres") y 63 (`opening_timing` con `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90`, primera baja tuya = `opening_kill` de tu equipo; despues de 62). Sin arena, sin migracion. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
 | po | 2026-10-24 12:12 | Papel vacio: propone 61 (O6: clutch por operador en el panel Clutches de Compañeros, sobre `clutch_vs`), 62 (B11: cuando matas, histograma de tus bajas por tramo de 30 s junto a "Cuando mueres") y 63 (B14: cuando llega la apertura, winrate segun el segundo de la primera baja). `ALCANCE.md` reconciliado (55-60 en main), A5 descartada por duplicar la señal `mapa-debil`, nuevas B15, D6, D7, F13 y H6: 63 libres (62 al empezar). Sin pushes de codigo. |
 
@@ -104,6 +104,7 @@ Ninguna rama abierta: sin pares que probar.
 - Tests dependientes del orden (Revisor 2026-10-15, preexistente en main 591a300, no bloquea): desde `backend/`, `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `test_ajustes.VigilanteTests`; la suite completa y cada modulo solo pasan. Candidato a ficha `tests` del PO.
 - Verificar en el PC (ficha 47, ya en main, PR #36, toca el parser): desde `backend/`, `..\.venv\Scripts\python.exe manage.py unknown_ids` y `... manage.py retag --dry-run` sobre tu base: sin error, y si hay modos o tipos `Unknown(...)` aparecen en Datos > Sin identificar.
 - Ficha 47 (ya en main, PR #36; aviso del Arquitecto, no bloquea): `Match` no guarda el id del modo ni del tipo de partida, asi que el retag lo lee del texto `Unknown(<id>)`; una etiqueta puesta mal no se corrige sobre lo ya importado. Corregirla pediria columnas `gamemode_id`/`match_type_id` con migracion y `recompute` (ficha aparte si la queres).
+- Ficha 63 (Arquitecto 2026-10-24, aviso, no bloquea): "Primera baja tuya" se lee de `RoundPlayer.opening_kill` de tu equipo (cuadra con Duelos de apertura); los umbrales 30/90 s no estan calibrados con la base real. Si preferis otra definicion o cortes, pedilo en `## Para el equipo`.
 - Preguntas abiertas:
   - **Ficha 39 (ya en main, PR #28; aviso, no bloquea):** el aviso de muestra chica de Tendencias (30 rondas por fila) se probo solo con datos sinteticos; calibrar con la base real.
   - ~~Boton de backup y `REPLAY_DIR` desde la UI~~: resuelto por el #12 (main eb2633c), que suma `POST /api/settings/` y `POST /api/backup/` a `CLAUDE.md`. El PO ya no las tiene que esperar.
