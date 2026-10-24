@@ -55,6 +55,8 @@ B8 -> ficha 58, K5 -> ficha 59, B13 -> ficha 60; H3 a descartadas; nuevas B14, C
 Reconciliado el 2026-10-24 (sesion 20261024T1204Z) contra `main` 5647aa1:
 K3 (55), E5 y E10 (56), C7 (57), B8 (58), K5 (59) y B13 (60) en main; O6 -> ficha 61,
 B11 -> ficha 62, B14 -> ficha 63; A5 a descartadas (duplica la señal `mapa-debil`); nuevas B15, D6, D7, F13 y H6.
+Investigador 2026-10-24 (sesion 20261024T2004Z): primera pasada de Replica (familia 8) contra r6-replay.com y Aurelix;
+epica nueva `paridad-referencia` con R1, R2, R3 y R4. Matriz en `replica/features.csv`.
 
 ## Epicas
 
@@ -225,6 +227,21 @@ replays.
 | P4 | Scoreboard con el formato Y10S4+ | Leer las bajas del scoreboard con los offsets nuevos desde Y10S4 y conciliarlas con el feed: menos rondas con bajas de mas o de menos en temporadas nuevas. [fuente](https://github.com/redraskal/r6-dissect/pull/126) (`scoreboard.go`, rama `CodeVersion >= Y10S4`) | `pydissect/events.py` `read_scoreboard_*`, que hoy usa los offsets viejos sin rama de version. `assists` y `score` siguen sin exponerse. Verificar con `.rec` reales en el PC | M | idea |
 | P5 | Jugadores y kill feed de Y11S2 | Desde code version 9734089 dos forks independientes buscan el DissectID con `8C 61 1A 75 23` y no `33 D8 3D 4F 23`, y el kill feed deja el salto fijo de 38 bytes por un payload tras `22 D9 13 3C BA` (headshot sin decodificar). Sintoma: jugadores duplicados o faltantes. `formato-rec.md` dice que Y11S3 anda: puede ser solo Y11S2. Verificar con `.rec` reales en el PC. [fuente](https://github.com/defiancer6s-hub/r6-dissect/commit/26213be8519e0b1601b011b469627d1f6b7a992c), [fuente](https://github.com/nicktstewart/r6-dissect/commit/dd6fbc12206fc06f25afb3a46c78e12a7e641ea4), [fuente](https://github.com/nicktstewart/r6-dissect/blob/main/codex-docs/Y11S2_format_overhaul.md) | `pydissect/events.py:42` (`ID_INDICATOR`), `:46` (`UI_ID_INDICATOR`), `:245` (`r.skip(38)`); `constants.py` (`CODE_VERSIONS`) | M | idea |
 | P6 | Picks de operador en la preparacion (replays antes de Y9S3) | lumina-r6 distingue el swap a mitad de ronda (`1A 5E F7 D9 9D`) del pick en preparacion (`22 B6 B7 1D D2` + 10 bytes) y descarta `op == 0`; los swaps por ronda pasan de 0-5 a 10-14 en sus 9 replays. Alimenta F3 y C3 en replays viejos. Verificar con `.rec` reales en el PC. [fuente](https://github.com/lumina-r6/siege-dissect/commit/bf3e6c5152cd1e6f4f2ead45b43bbc5f9c3eedc7) | `pydissect/events.py:149-166` (`read_atk_op_swap` hace `skip(5)` a ciegas) | S | idea |
+
+### paridad-referencia: lo que la referencia tiene y la app no
+
+Sale de la pasada de Replica (`replica/features.csv`, `replica/parity.md`):
+cada `must` o `should` de r6-replay.com o Aurelix con `clone` en `no` o
+`partial` que paso los filtros de dato, reglas duras y duplicado. Las filas
+que ya tenian idea en otra epica (A1, O1, O5, D2, D4, F1, F2, F13, G2, O2) se
+anotan en la matriz y no se repiten aca.
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
+| R1 | Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa | El Inicio hoy cuenta rondas (winrate de rondas, K/D, KPR, KST); agregar una fila de partida: partidas ganadas sobre jugadas, rondas promedio por partida y el mapa con mejor y peor winrate de partida (con la muestra minima de mapa de `metricas.md`), con los mismos filtros. Es lo primero que muestra el resumen de la referencia. [fuente](https://aurelix.app/) | `Match.won` (None = incompleta, fuera del denominador), `Match.rounds_count`, `Match.map_slug`; `views.overview` ya devuelve `total.matches` | S | idea |
+| R2 | Trades de los dos equipos en la partida | En el detalle de partida, por equipo: muertes tradeadas y sin trade y trade kills, lado a lado, para ver si la partida se perdio por regalar muertes sueltas aunque el K/D cuadre. Hoy solo estan tus numeros y los de cada jugador. [fuente](https://r6-replay.com/) ("Know which duels your team wins clean and where trades slip through.") | `RoundPlayer.was_traded`, `untraded_death`, `trade_kills` y `team_index` de los 10 jugadores, que `/api/matches/<id>/` ya trae | S | idea |
+| R3 | Fases de la ronda en el detalle de partida | En el detalle de partida, las bajas de cada equipo partidas en temprano (primeros 30 s jugados), medio (30 a 120 s) y tarde (120 s en adelante), con el winrate de las rondas segun que equipo abrio cada fase: si la partida se decide en el primer contacto o en el cierre. El agregado entre partidas ya existe para tus muertes ("Cuando mueres") y viene para tus bajas (ficha 62); esto es una sola partida y los dos equipos. [fuente](https://aurelix.app/blog/how-to-analyse-r6-siege-replays) | `Event.elapsed` de cada `Kill`, `RoundPlayer.team_index` del autor, `Round.my_team_won`; mismos tramos que `metricas.md` | S | idea |
+| R4 | Apertura marcada en la timeline de la ronda | En la timeline de `MatchDetail`, la primera baja de la ronda lleva un chip "apertura" (y "entry" la primera de tu equipo si no es la misma), junto a los chips HS y tradeada que ya existen: la referencia destaca el opening pick en el kill feed y aca solo lo dice el resumen en texto. [fuente](https://r6-replay.com/) ("See exactly who got the opening pick, who traded it, ...") | primer `Event` de tipo `Kill` por `order`; `RoundPlayer.opening_kill` y `entry_kill` para validarlo; sin columnas nuevas | S | idea |
 
 ### deuda-y-tests: no son funcionalidad
 

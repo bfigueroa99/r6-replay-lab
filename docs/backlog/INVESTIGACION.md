@@ -30,6 +30,7 @@ vivos y corrige lo que no. `ultima visita` y `senal` las actualiza cada turno
 | 5. Comunidad | Reddit bloqueado desde la nube (WebSearch rechaza reddit.com, WebFetch no abre old.reddit): no se usan mirrors. Rindieron Siege.GG (news), shattered.io y boostroom.com (guias). Aimlabs, Metafy y 1v9: genericos o venta de coaching | 2026-10-14 | alta |
 | 6. Ubisoft | Paginas de temporada en ubisoft.com/.../news-updates/seasons/<nombre> (tenfoldpursuit, silenthunt, systemoverride) y news.ubisoft.com; Liquipedia para fechas de parche. Ninguna fuente publica da IDs ni code versions: eso sale de r6-dissect o del PC | 2026-10-14 | alta |
 | 7. Analitica de esports y deporte | Siege.GG blog (rating rebalance 2026-08-11: normalizacion por operador, trade differential), FanGraphs (regresion a la media), Agresti y Coull (Wilson), nomiun.substack.com, HLTV Rating 3.0. Secos: Leetify glossary, ESPN consistency (vacio), Pythagorean para esports. No hay tabla publica XvY ni ventana de trade en segundos para Siege | 2026-10-14 (2211Z) | alta |
+| 8. Paridad con la referencia (Replica) | r6-replay.com (portada, /pricing sin precios, /roadmap, legales) y aurelix.app (portada, /features con FAQ, /pricing, blog, legales, /waitlist). Secos: aurelix /faq /changelog /docs /help (404), X de las dos (402), Discord (cuenta), Trustpilot y Overwolf sin ficha. Matriz en `replica/features.csv`; proximo recon completo desde 2026-11-21 | 2026-10-24 (2004Z) | alta |
 
 ## Trampas conocidas
 
@@ -55,6 +56,16 @@ La entrada mas nueva arriba. Formato:
 - Ideas agregadas a ALCANCE.md: <id> <titulo>, ...
 - Descartadas: <idea> porque <motivo>
 ```
+
+### 2026-10-24 (sesion 20261024T2004Z)
+
+- Familias: 8 (primera pasada de Replica: recon completo, paridad y resenas; por replica.md no se visitan otras).
+- Paridad: 76.1 / 100, must 12 de 17, skip 21, resenas 0 de 8 fuentes.
+- Dio senal: r6-replay.com portada (trades por equipo, apertura en el kill feed) y roadmap (casi todo es coordenadas, equipos o nube: skip); aurelix.app /features y blog (resumen del Clubhouse, win delta por mapa y sitio, tramos de 30 s, tags por ronda).
+- Seco: resenas de las dos (Trustpilot y Overwolf sin ficha, HN 0, Reddit 403, X 402, Discord con cuenta); aurelix /faq, /changelog, /docs y /help (404).
+- Ideas agregadas a ALCANCE.md: epica nueva `paridad-referencia` con R1 partidas en el Inicio, R2 trades de los dos equipos en la partida, R3 fases de la ronda en la partida, R4 apertura marcada en la timeline.
+- Descartadas (skip en la matriz): recorridos, heatmaps, visor 2D y setups (coordenadas); plants, post-plant y retakes (formato); Drive, API key, cuentas, equipos, planes y analytics (no-goals); OCR (dependencia); overlays de torneo; leaderboards y scouting fuera de tus replays (Ubisoft). Ya tenian idea: A1, O1, O5, D2, D4, F1, F2, F13, G2, O2.
+- Proxima: familias 3, 5 y 6 (las mas viejas, 2026-10-14); en la proxima pasada de Replica, reintentar resenas.
 
 ### 2026-10-14 (sesion 20261014T2211Z)
 

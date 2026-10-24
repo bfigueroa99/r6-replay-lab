@@ -1,0 +1,62 @@
+feature,area,priority,original,clone,notes,referencia,evidencia
+"Importar replays .rec de la carpeta de la partida",importar,must,yes,yes,"Importacion automatica desde MatchReplay (vigia de carpeta) y boton Importar; sin subir nada",ambas,https://aurelix.app/features
+"Reimportar no duplica: actualiza la partida",importar,must,yes,yes,"ingest.py: Match.objects.update_or_create",aurelix,https://aurelix.app/features
+"Estado y errores de parseo por archivo",importar,should,yes,yes,"Progreso de importacion, Match.warnings y Datos > Que tan completa esta la data",r6replay,https://r6-replay.com/privacy
+"Soporte de ranked, unranked y custom",importar,must,yes,partial,"Match.match_type se importa y la API filtra; falta el selector en Filters.jsx (idea A1)",aurelix,https://aurelix.app/features
+"Importar replays desde Google Drive",importar,could,yes,skip,"nube y cuentas: no-goal de CLAUDE.md",aurelix,https://aurelix.app/privacy-policy
+"Subida masiva por API key",importar,could,yes,skip,"cuentas y servicio remoto: no-goal; la importacion local ya es masiva",aurelix,https://aurelix.app/features
+"Cargar partida desde captura de pantalla (OCR)",importar,could,yes,skip,"necesita una dependencia de OCR (CLAUDE.md: sin dependencias nuevas)",aurelix,https://aurelix.app/privacy-policy
+"Carga manual de resultados de partida",importar,could,yes,no,"la app solo lee .rec; un POST nuevo seria decision del humano",aurelix,https://aurelix.app/features
+"Lista de partidas recientes con resultado y mapa",historial,must,yes,yes,"Inicio > Ultimas partidas y pagina Partidas",aurelix,https://aurelix.app/
+"Resumen: partidas jugadas, win rate de partida, rondas medias, partidas cerradas y mejor mapa",perfil,must,yes,partial,"Inicio muestra rondas, winrate de rondas, K/D, KPR, aperturas, KST; no winrate de partida, rondas por partida ni mejor mapa (idea R1)",aurelix,https://aurelix.app/
+"Marcador de partida con KDA y HS% por jugador",partida,must,yes,yes,"MatchDetail > Scoreboard de la partida; sin asistencias",aurelix,https://aurelix.app/features
+"Historial de rondas con condicion de victoria y sitio",partida,must,yes,yes,"MatchDetail > Rondas: sitio, lado, marcador, condicion (inferida si falta)",aurelix,https://aurelix.app/features
+"Desglose completo de la partida ronda por ronda",partida,must,yes,yes,"MatchDetail: pestana por ronda con timeline, resumen y jugadores",r6replay,https://r6-replay.com/
+"Linea de tiempo de la ronda desde la apertura hasta el cierre",ronda,must,yes,yes,"Timeline de MatchDetail con reloj de cada evento",r6replay,https://r6-replay.com/
+"Kill feed por ronda con la apertura destacada",ronda,must,yes,partial,"El feed esta y el resumen de la ronda nombra el primer duelo; la linea de la apertura no lleva marca propia en la timeline (idea R4)",r6replay,https://r6-replay.com/
+"Trades marcados con el tiempo del refrag",ronda,must,yes,yes,"chip tradeada en la timeline; el resumen da el margen en segundos",r6replay,https://r6-replay.com/
+"Kills, muertes, headshots y aperturas por ronda",ronda,must,yes,yes,"Jugadores de la ronda; DBNO no se lee (idea P3)",aurelix,https://aurelix.app/features
+"Plants y defuses con el jugador que los hizo",ronda,must,yes,skip,"plants y defuses de temporadas nuevas no vienen en el .rec (CLAUDE.md, formato-rec.md); solo plant probable inferido del reloj",r6replay,https://r6-replay.com/
+"Resultado de la ronda cruzado con el momento del plant",ronda,should,yes,skip,"mismo motivo: plants fuera del .rec en temporadas nuevas",r6replay,https://r6-replay.com/
+"Duelos limpios contra trades que se escapan, por equipo, en la partida",partida,should,yes,partial,"MatchDetail da tus muertes sin trade y trades por jugador; no compara los dos equipos (idea R2)",r6replay,https://r6-replay.com/
+"Como cambia la ventaja numerica dentro de la ronda",ronda,should,yes,partial,"el resumen de la ronda da segundos en inferioridad; la tira de vivos es la idea F13",r6replay,https://r6-replay.com/
+"Bajas y muertes en tramos de 30 s (early, mid, late)",ronda,should,yes,partial,"Cuando mueres por tramos de 30 s esta en main; cuando matas es la ficha 62; por partida no existe (idea R3)",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
+"Tiempo medio de victoria por lado",ronda,should,yes,yes,"Tendencias > Cuanto tardas en ganar y en perder (ficha 52); post-plant y retake son skip por plants",aurelix,https://aurelix.app/
+"Win rate por operador",operadores,must,yes,yes,"pagina Operadores",aurelix,https://aurelix.app/features
+"Delta de win rate de un operador contra la base, por mapa y sitio",operadores,must,yes,partial,"Coach compara operador contra tu promedio; el delta por mapa y sitio es la idea O1 y el global O5",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
+"Ranking de operadores por mapa",operadores,should,yes,partial,"cubierto por O1 (idea)",aurelix,https://aurelix.app/features
+"Win rate por sitio de defensa con W-L",mapas,must,yes,partial,"agregados por sitio en el Coach y en el CSV; la pagina de mapas y sitios se retiro a proposito (096fd52)",aurelix,https://aurelix.app/features
+"Win rate por mapa separado en ataque y defensa",mapas,must,yes,yes,"aggregates.by_map da attack_winrate y defense_winrate por mapa (Coach y CSV)",aurelix,https://aurelix.app/features
+"Deteccion de huecos en el map pool",mapas,could,yes,yes,"señal mapa-debil del Coach",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
+"Filtros por mapa, sitio, jugador, operador y rango de fechas",otros,must,yes,yes,"Filters.jsx: mapa, sitio, operador, lado, entre dos fechas; jugador via su perfil",aurelix,https://aurelix.app/features
+"Exportar estadisticas a CSV",otros,should,yes,yes,"/api/export/ y boton en cada tabla",aurelix,https://aurelix.app/features
+"HS% por jugador entre partidas y operadores",perfil,should,yes,yes,"Operadores y perfil de Jugador",aurelix,https://aurelix.app/features
+"Tendencias de rendimiento por semanas y meses",progreso,should,yes,yes,"Tendencias: evolucion por partida y por dia, comparacion de periodos",ambas,https://aurelix.app/features
+"Analisis agregado de muchas partidas",comparar,should,yes,yes,"todas las paginas agregan sobre las partidas filtradas",aurelix,https://aurelix.app/features
+"Historial contra un equipo rival concreto",comparar,should,yes,partial,"Rivales repetidos por persona en main; por stack es la idea D4",aurelix,https://aurelix.app/features
+"Operadores y sitios preferidos del rival",comparar,could,yes,partial,"Duelos por operador rival; meta rival por mapa y sitio es la idea D2",aurelix,https://aurelix.app/features
+"Reporte de preparacion contra un rival",comparar,could,yes,skip,"scouting de rivales fuera de tus replays vive en la API de Ubisoft (CLAUDE.md)",ambas,https://r6-replay.com/roadmap
+"Tags o notas por ronda y filtro por tag",ronda,should,yes,no,"idea F2, en decision del humano (POST nuevo)",ambas,https://aurelix.app/features
+"Playlists de rondas para revisar",ronda,could,yes,no,"buscador de rondas F1 (idea)",r6replay,https://r6-replay.com/roadmap
+"Deteccion del rol del jugador",perfil,could,yes,no,"idea O2",r6replay,https://r6-replay.com/roadmap
+"Dashboard de eficiencia de trade, aperturas y clutch",perfil,should,yes,yes,"Inicio, Coach y Compañeros; valor de utilidad es skip (no hay utilidad en el .rec)",r6replay,https://r6-replay.com/roadmap
+"Roster con jugadores conocidos",perfil,should,yes,yes,"pagina Compañeros y perfil de cada jugador",aurelix,https://aurelix.app/features
+"Vincular tu nick a la app",perfil,should,yes,yes,"automatico: ingest.py marca is_me por profileID o recordingPlayer del replay",aurelix,https://aurelix.app/privacy-policy
+"Borrar una partida importada",historial,should,yes,no,"idea G2 (excluir sin borrar), en decision del humano",aurelix,https://aurelix.app/privacy-policy
+"Analisis de ronda en fases early, mid y execute",ronda,could,yes,partial,"tramos de 30 s en Cuando mueres; ver R3",r6replay,https://r6-replay.com/roadmap
+"Recorridos de jugadores sobre el plano del mapa",mapas,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",ambas,https://aurelix.app/features
+"Heatmaps de posiciones",mapas,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",r6replay,https://r6-replay.com/roadmap
+"Visor 2D del replay",ronda,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",r6replay,https://r6-replay.com/roadmap
+"Visualizador de setups defensivos",mapas,could,yes,skip,"necesita posiciones y utilidad, que el .rec no entrega",r6replay,https://r6-replay.com/roadmap
+"Stats de post-plant y retakes",mapas,should,yes,skip,"plants fuera del .rec en temporadas nuevas",r6replay,https://r6-replay.com/roadmap
+"Sincronizar audio de Discord con el replay",otros,could,yes,skip,"captura de audio y servicio externo: fuera de alcance",r6replay,https://r6-replay.com/roadmap
+"Dashboard de torneo con overlays de broadcast",otros,could,yes,skip,"overlay: no-goal absoluto de CLAUDE.md",r6replay,https://r6-replay.com/roadmap
+"Hub publico de partidas oficiales",otros,could,yes,skip,"nube y datos fuera de tus replays: no-goal",r6replay,https://r6-replay.com/roadmap
+"Leaderboards globales o por rango",comparar,could,yes,skip,"rango y jugadores fuera de tus replays viven en la API de Ubisoft",r6replay,https://r6-replay.com/roadmap
+"Cuenta con login y recuperacion de password",cuenta,could,yes,skip,"cuentas de la propia app: no-goal",ambas,https://r6-replay.com/login?mode=signup
+"Espacio de equipo u organizacion con historial compartido",cuenta,could,yes,skip,"nube y cuentas: no-goal",ambas,https://aurelix.app/features
+"Planes pagos y almacenamiento extra",cuenta,could,yes,skip,"la app no se vende ni guarda nada fuera del PC",ambas,https://aurelix.app/pricing
+"Borrar la cuenta y sus datos",cuenta,could,yes,skip,"sin cuentas; los datos viven en el PC",ambas,https://aurelix.app/privacy-policy
+"Consentimiento de analytics",otros,could,yes,skip,"telemetria: no-goal",r6replay,https://r6-replay.com/privacy
+"Tema claro u oscuro y color de equipo",otros,could,yes,no,"la UI tiene un solo tema",ambas,https://r6-replay.com/
+"Revision comunitaria anti-cheat (SiegeWatch)",otros,could,yes,skip,"comunidad en la nube; no es analisis de tus replays",r6replay,https://r6-replay.com/siegewatch
