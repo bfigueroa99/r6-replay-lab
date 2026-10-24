@@ -1,29 +1,27 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-24 04:12 UTC por qa (sesion 20261024T0404Z; motivo: por estado: 1 revisado; reloj: po, franja 1)
+actualizado: 2026-10-24 08:35 UTC por release (sesion 20261024T0804Z; motivo: por estado: 1 aprobado; reloj: dev, franja 3)
 playbook: origin/main@9554a30
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z) | 15 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z) | 15 de 56 en 7 dias | sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas | compare | PR |
-|---|---|---|---|---|---|
-| `claude/equipo-dev/59-clutch-por-mapa-y-sitio` | 59 Clutch por mapa y sitio (funcionalidad) | aprobado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/59-clutch-por-mapa-y-sitio?expand=1) | no |
+Sin ramas de trabajo: la 59 entro a main (PR #51, 5647aa1) en este turno.
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=1 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=4 (contado a mano: el clasificador nego re-correr estado.sh despues del merge)
 
 ## Orden de merge sugerido
 
-Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
+Ninguna rama abierta: sin pares que probar.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (50 51 52 53 54 55 56 57 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (aprobado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar C7 `en main`, B13 y E5/E10, lo hace el PO).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (51 52 53 54 55 56 57 58 59 60) otros:0.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 (59, PR #51) en main; O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 62 ideas libres (falta marcar C7, B13, E5/E10 y K5 `en main`, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
@@ -32,13 +30,13 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 |---|---|---|---|---|---|---|
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-59 en su rama (`aprobado`): proximo turno por estado, Release (regla 1). Papel vacio (0 `propuesto`, 0 `disenado`): despues del Release, el PO tiene que llenarlo.
+Papel y cola vacios (0 `propuesto`, 0 `disenado`, 0 ramas): el proximo turno es del PO, que tiene que llenar el papel con funcionalidades.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-23 16:40 | Entrega y mergea la 57 (`aprobado` -> `entregado` -> PR #50 -> main 9554a30). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, rama al dia con main 93fe22c, `check.sh` en `Todo en verde.` sobre el head f3bb8bd (757 backend, 120 vitest, build, 46 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-24 08:35 | Entrega y mergea la 59 (`aprobado` -> `entregado` -> PR #51 -> main 5647aa1). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, main 9554a30 ya incluido, `check.sh` en `Todo en verde.` sobre el head 4d2db93 (763 backend, 120 vitest, build, 47 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-23 20:40 | Implementa 59 (`disenado` -> `implementado`, rama `claude/equipo-dev/59-clutch-por-mapa-y-sitio`, c7b7964): `clutch_by_site` y `CLUTCH_SITIO_MIN = 5` en `/api/teammates/` (total por mapa + filas por sitio, "Sin sitio" ultima, `low_sample`); tabla "Clutch por mapa y sitio" en el panel Clutches de Compañeros con `*` de muestra chica y CSV; 6 tests y e2e sobre `seed_demo`; fila en `metricas.md`. Revision ciega: 1 hallazgo (fila total sin "Total" en el CSV), corregido. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). |
 | revisor | 2026-10-24 00:10 | Revisa 59 (funcionalidad, `implementado` -> `revisado`) sobre c7b7964, rama al dia con main 9554a30. Revision ciega sin hallazgos (el subagente recalculo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Sin pushes de codigo. |
 | qa | 2026-10-24 04:12 | Prueba 59 (funcionalidad, `revisado` -> `aprobado`) sobre c7b7964, rama al dia con main 9554a30. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Base vacia y base sembrada desde `factories.py` (sitio vacio, ronda sin ganador, clutch de un companero, dos mapas, Unranked con Ash; filtros `side`/`ranked_only`/`operator`/`since`, `until=foo`, `days=-3`, `session=foo`, `page=-1`): totales por mapa = intentos de `clutch_conversion`, cero 500. Mutaciones 4 de 4 caen; chunk inicial sin cambio (solo +1,1 kB en el chunk perezoso de Compañeros). Sin pushes de codigo. |
@@ -78,6 +76,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
   - `git push origin --delete claude/equipo-dev/60-racha-de-rondas` (mergeada, PR #48)
   - `git push origin --delete claude/equipo-dev/56-mapas-y-operadores-que-mejoran` (mergeada, PR #49)
   - `git push origin --delete claude/equipo-dev/57-teamkills` (mergeada, PR #50)
+  - `git push origin --delete claude/equipo-dev/59-clutch-por-mapa-y-sitio` (mergeada, PR #51)
   - `git push origin --delete claude/equipo-dev/prueba-acceso` (si existe: prueba de acceso de un turno)
   - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
 - PR #48 (ficha 60, racha de rondas) y PR #49 (ficha 56, mapas y operadores que mejoran) ya en main (release 20261023T0004Z). Sin migracion ni parser.
@@ -113,7 +112,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 - Verificar en el PC (38, PR #26, parser): `manage.py backup` y despues `manage.py import_replays --force <carpeta>` (`recompute` no reparsea) para corregir rondas Y9S4+ ya importadas; confirmar con `.rec` reales que el ganador de cada ronda coincide con el marcador, y `$env:R6_TEST_REPLAY="<ruta a un .rec Y9S4+>"; python manage.py test tests.test_pydissect`.
 - Verificar en el PC: la 34 ya esta en main (PR #20). Desde `backend/`: `..\.venv\Scripts\python.exe manage.py recompute --dry-run`, `manage.py backup` y `manage.py recompute` para corregir las trade kills contadas doble en partidas ya importadas (detalle en `## Verificar en el PC` de la ficha 34).
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
-- Rutina: 5 disparos sin rastro en 48 h (10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Rutina: 4 disparos sin rastro en 48 h (10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`. PO 2026-10-17: queda como idea G7 de `ALCANCE.md` (marcar en Datos, sin cambiar `won`); cambiar `won` mueve todos los winrates y es P10, decision tuya.
 - Ficha 51 (ya en main, PR #39; aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
 - Ficha 51 (ya en main, PR #39; aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere. PO 2026-10-17: no entra; con `.rec` reales no pasa, solo con datos armados a mano.
@@ -124,6 +123,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 - Ficha 52 (Revisor 2026-10-18, aviso, no bloquea): la fila `Posible plant` de `/api/trends/` trae `rounds_won: 0` y no `null` aunque esas rondas se hayan ganado (lo pidio el diseno; la UI no muestra `rounds_won`). Si preferis `null`, es un cambio de una linea en `_celda`.
 - Fichas 52 y 54 (QA 2026-10-18, aviso, no bloquea): los tramos de 45 s (52) y el umbral de 5 partidas para habitual (54) se probaron solo con datos sinteticos; calibrar con la base real.
 - PR #43 (ficha 55) ya en main (afd72ae): lo mergeo el release 20261020T0804Z por MCP. Nada pendiente de merge. **Verificar en el PC (trae migracion 0003):** bajar main, `cd frontend; npm run build`, y desde `backend/` `..\.venv\Scripts\python.exe manage.py backup`, `... manage.py migrate`, `... manage.py recompute --dry-run` (esperado: sin cambios de `clutch_vs`).
+- Turno release 20261024T0804Z (aviso): el clasificador de permisos nego volver a correr `estado.sh` despues del merge; RESUMEN contado a mano.
 - Turno release 20261020T0804Z (aviso): el clasificador de permisos nego volver a correr `estado.sh` despues del merge; la linea RESUMEN de arriba se conto a mano.
 - Rutina: el disparo de las 21:01 corrio dos veces en paralelo con la misma sesion 20261018T2227Z (dos commits de `ESTADO.md` del mismo turno). Si se repite, revisar en la Routine `r6-replay-lab: equipo dev cada 3h` si hay dos disparos configurados.
 - Ficha 55 (ya en main, PR #43; PO 2026-10-19, aviso, no bloquea): `clutch_vs` cuenta las rondas en que quedaste ultimo gane o pierda; `one_vx`, el Rating y el record de clutch no cambian. Si el X de las dos columnas difiere en una ronda ganada, la tabla agrupa por `clutch_vs`. Reversible.
@@ -136,7 +136,8 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 - Ficha 55 (QA 2026-10-20, aviso, no bloquea, preexistente): el filtro `side` de la API distingue mayusculas (`?side=defense` da vacio); la UI manda `Attack`/`Defense`, asi que no se ve desde la app.
 - Ficha 58 (ya en main, PR #46; Revisor 2026-10-20, aviso, no bloquea): el e2e de "Primera ronda de cada lado" pasa aunque las tres filas tengan 0 rondas (solo mira las etiquetas); un assert sobre la celda Rondas cabe en una ficha `tests` o en la proxima correccion de la 58.
 - Ficha 58 (ya en main, PR #46; QA 2026-10-20, aviso, no bloquea): con `seed_demo` las tres filas tienen rondas (29/29/145), asi que el e2e no se apoya en 0; el hallazgo menor del Revisor queda como esta. QA agrego `test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra` (los tests solo contaban rondas y no distinguian la R4 de la R6). Sin migracion ni parser: nada que verificar en el PC.
-- Ficha 59 (QA 2026-10-24, aviso, no bloquea): `CLUTCH_SITIO_MIN = 5` (sitios con menos de 5 clutches marcados con `*`) se probo solo con datos sinteticos; calibrar con la base real en `/companeros`. Sin migracion ni parser.
+- Ficha 59 ya en main (PR #51, 5647aa1; release 20261024T0804Z). Sin migracion ni parser. **Despues de bajar main, `cd frontend; npm run build`.**
+- Ficha 59 (ya en main; QA 2026-10-24, aviso, no bloquea): `CLUTCH_SITIO_MIN = 5` (sitios con menos de 5 clutches marcados con `*`) se probo solo con datos sinteticos; calibrar con la base real en `/companeros`. Sin migracion ni parser.
 - Ficha 57 ya en main (PR #50, 9554a30; release 20261023T1606Z). Sin migracion ni parser. **Despues de bajar main, `cd frontend; npm run build`.**
 - Ficha 57 (ya en main, PR #50; Dev 2026-10-23, aviso, no bloquea): el winrate de las rondas con y sin teamkill usa el mismo `won` que el Winrate general, asi que una ronda sin ganador conocido cuenta como no ganada (documentado en `metricas.md`). Verificar en el PC cuando llegue a main: `/companeros` con la base real y cruzar un teamkill con el feed de esa partida. Sin migracion ni parser.
 - Entorno cloud (release 20261023T1606Z, aviso): el `@playwright/test` del repo pide `chromium_headless_shell-1194` y la imagen trae `-1243`; el e2e de `check.sh` falla con `Executable doesn't exist`. El turno lo corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a un directorio del scratchpad con enlaces a la 1243 (sin tocar el repo). Si queres que no haga falta, alinear la version de Playwright o el setup del entorno. (Revisor 20261024T0004Z: la 1243 trae `chrome-linux64` y `chrome-headless-shell-linux64`; los enlaces tienen que ser `<dir>/chromium_headless_shell-1194/chrome-linux` y `<dir>/chromium-1194/chrome-linux` apuntando a esas carpetas. QA 20261024T0404Z: el de `chromium_headless_shell-1194/chrome-linux` tiene que ser una carpeta con enlaces a cada archivo mas `headless_shell -> chrome-headless-shell`, porque el binario cambio de nombre.)
