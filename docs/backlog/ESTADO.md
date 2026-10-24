@@ -1,18 +1,18 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-23 20:40 UTC por dev (sesion 20261023T2003Z; motivo: por estado: 1 disenado, lugar en cola; reloj: revisor, franja 7)
+actualizado: 2026-10-24 00:10 UTC por revisor (sesion 20261024T0004Z; motivo: por estado: 1 implementado; reloj: release, franja 0)
 playbook: origin/main@9554a30
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z) | 15 de 56 en 7 dias
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z) | 15 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| `claude/equipo-dev/59-clutch-por-mapa-y-sitio` | 59 Clutch por mapa y sitio (funcionalidad) | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/59-clutch-por-mapa-y-sitio?expand=1) | no |
+| `claude/equipo-dev/59-clutch-por-mapa-y-sitio` | 59 Clutch por mapa y sitio (funcionalidad) | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/59-clutch-por-mapa-y-sitio?expand=1) | no |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=5
 
 ## Orden de merge sugerido
 
@@ -21,7 +21,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (50 51 52 53 54 55 56 57 58 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (implementado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 -> ficha 59 (revisado); O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
 - Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 62 ideas libres (sin cambios en este turno; falta marcar C7 `en main`, B13 y E5/E10, lo hace el PO).
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
@@ -32,7 +32,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 |---|---|---|---|---|---|---|
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-59 en su rama (`implementado`): proximo turno por estado, Revisor (regla 3). Papel vacio (0 `propuesto`, 0 `disenado`): despues del Revisor y la QA, el PO tiene que llenarlo.
+59 en su rama (`revisado`): proximo turno por estado, QA (regla 2). Papel vacio (0 `propuesto`, 0 `disenado`): despues del Revisor y la QA, el PO tiene que llenarlo.
 
 ## Ultimo turno de cada rol
 
@@ -40,7 +40,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 |---|---|---|
 | release | 2026-10-23 16:40 | Entrega y mergea la 57 (`aprobado` -> `entregado` -> PR #50 -> main 9554a30). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, rama al dia con main 93fe22c, `check.sh` en `Todo en verde.` sobre el head f3bb8bd (757 backend, 120 vitest, build, 46 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-23 20:40 | Implementa 59 (`disenado` -> `implementado`, rama `claude/equipo-dev/59-clutch-por-mapa-y-sitio`, c7b7964): `clutch_by_site` y `CLUTCH_SITIO_MIN = 5` en `/api/teammates/` (total por mapa + filas por sitio, "Sin sitio" ultima, `low_sample`); tabla "Clutch por mapa y sitio" en el panel Clutches de Compañeros con `*` de muestra chica y CSV; 6 tests y e2e sobre `seed_demo`; fila en `metricas.md`. Revision ciega: 1 hallazgo (fila total sin "Total" en el CSV), corregido. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). |
-| revisor | 2026-10-23 08:08 | Revisa 57 (funcionalidad, `implementado` -> `revisado`) sobre 6c563d1, rama al dia con main 93fe22c. Revision ciega sin hallazgos, confirmada por el lider (refactor de `_solo_rivales` equivalente, filtros por `base_queryset`, `me_ids` por ronda). Mutaciones: condicion de equipo del autor (3 tests caen) y exclusion de suicidios (1 cae). `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Sin pushes de codigo. |
+| revisor | 2026-10-24 00:10 | Revisa 59 (funcionalidad, `implementado` -> `revisado`) sobre c7b7964, rama al dia con main 9554a30. Revision ciega sin hallazgos (el subagente recalculo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Sin pushes de codigo. |
 | qa | 2026-10-23 12:20 | Prueba 57 (funcionalidad, `revisado` -> `aprobado`) sobre 8ee9f5b, rama al dia con main 93fe22c. `check.sh` en `Todo en verde.` (757 backend, 120 vitest, build, 46 e2e). Base vacia y base sembrada desde `factories.py` (teamkill hecho, sufrido, entre otros dos, el mismo jugador como rival, suicidio; filtros `side`/`map`/`since`, `until=foo`, `page=-1`, `side=foo`): valores a mano, cero 500; Duelos no cuenta el teamkill. Panel renderizado en Chromium con datos, con filtro de lado y vacio, consola limpia. Mutaciones 4 de 4 caen; chunk inicial sin cambio. Sin pushes de codigo. |
 | arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
@@ -113,7 +113,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 - Verificar en el PC (38, PR #26, parser): `manage.py backup` y despues `manage.py import_replays --force <carpeta>` (`recompute` no reparsea) para corregir rondas Y9S4+ ya importadas; confirmar con `.rec` reales que el ganador de cada ronda coincide con el marcador, y `$env:R6_TEST_REPLAY="<ruta a un .rec Y9S4+>"; python manage.py test tests.test_pydissect`.
 - Verificar en el PC: la 34 ya esta en main (PR #20). Desde `backend/`: `..\.venv\Scripts\python.exe manage.py recompute --dry-run`, `manage.py backup` y `manage.py recompute` para corregir las trade kills contadas doble en partidas ya importadas (detalle en `## Verificar en el PC` de la ficha 34).
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
-- Rutina: 5 disparos sin rastro en 48 h (10-21T09:01Z 10-21T21:01Z 10-22T03:01Z 10-22T09:01Z 10-22T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Rutina: 5 disparos sin rastro en 48 h (10-22T03:01Z 10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`. PO 2026-10-17: queda como idea G7 de `ALCANCE.md` (marcar en Datos, sin cambiar `won`); cambiar `won` mueve todos los winrates y es P10, decision tuya.
 - Ficha 51 (ya en main, PR #39; aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
 - Ficha 51 (ya en main, PR #39; aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere. PO 2026-10-17: no entra; con `.rec` reales no pasa, solo con datos armados a mano.
@@ -138,7 +138,7 @@ Una sola rama abierta (59), al dia con main 9554a30: sin pares que probar.
 - Ficha 58 (ya en main, PR #46; QA 2026-10-20, aviso, no bloquea): con `seed_demo` las tres filas tienen rondas (29/29/145), asi que el e2e no se apoya en 0; el hallazgo menor del Revisor queda como esta. QA agrego `test_la_fila_del_cambio_es_la_primera_ronda_del_otro_lado_y_no_otra` (los tests solo contaban rondas y no distinguian la R4 de la R6). Sin migracion ni parser: nada que verificar en el PC.
 - Ficha 57 ya en main (PR #50, 9554a30; release 20261023T1606Z). Sin migracion ni parser. **Despues de bajar main, `cd frontend; npm run build`.**
 - Ficha 57 (ya en main, PR #50; Dev 2026-10-23, aviso, no bloquea): el winrate de las rondas con y sin teamkill usa el mismo `won` que el Winrate general, asi que una ronda sin ganador conocido cuenta como no ganada (documentado en `metricas.md`). Verificar en el PC cuando llegue a main: `/companeros` con la base real y cruzar un teamkill con el feed de esa partida. Sin migracion ni parser.
-- Entorno cloud (release 20261023T1606Z, aviso): el `@playwright/test` del repo pide `chromium_headless_shell-1194` y la imagen trae `-1243`; el e2e de `check.sh` falla con `Executable doesn't exist`. El turno lo corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a un directorio del scratchpad con enlaces a la 1243 (sin tocar el repo). Si queres que no haga falta, alinear la version de Playwright o el setup del entorno.
+- Entorno cloud (release 20261023T1606Z, aviso): el `@playwright/test` del repo pide `chromium_headless_shell-1194` y la imagen trae `-1243`; el e2e de `check.sh` falla con `Executable doesn't exist`. El turno lo corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a un directorio del scratchpad con enlaces a la 1243 (sin tocar el repo). Si queres que no haga falta, alinear la version de Playwright o el setup del entorno. (Revisor 20261024T0004Z: la 1243 trae `chrome-linux64` y `chrome-headless-shell-linux64`; los enlaces tienen que ser `<dir>/chromium_headless_shell-1194/chrome-linux` y `<dir>/chromium-1194/chrome-linux` apuntando a esas carpetas.)
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
 
 ## Para el equipo
