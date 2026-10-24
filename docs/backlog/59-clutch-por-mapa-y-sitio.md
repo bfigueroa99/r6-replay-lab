@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
-estado: revisado
-candado: qa 2026-10-24T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md K5
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_clutch.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z, revisor 20261024T0004Z
+turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z, revisor 20261024T0004Z, qa 20261024T0404Z
 
 Implementar despues de #55: usa la columna `RoundPlayer.clutch_vs` que esa
 ficha agrega con su migracion.
@@ -197,3 +197,56 @@ Nota de entorno para QA: Playwright 1.56 pide Chromium 1194 y la nube trae
 con `PLAYWRIGHT_BROWSERS_PATH` apuntando ahi.
 
 Veredicto: aprobar -> revisado.
+
+## QA 2026-10-24 sobre c7b7964
+
+QA 20261024T0404Z. Codigo sin cambios desde la revision (91be785 = c7b7964
+mas docs); main no se movio (`git merge-tree` limpio). Datos sinteticos
+(`backend/tests/factories.py`), nunca base real.
+
+Entorno: Chromium de la nube con el alias de la nota del Revisor; ademas
+`chromium_headless_shell-1194/chrome-linux` tiene que ser una carpeta con
+enlaces a cada archivo de `chrome-headless-shell-linux64` y un
+`headless_shell -> chrome-headless-shell` (el binario se llama distinto).
+
+- **check.sh completo:** `PLAYWRIGHT_BROWSERS_PATH=<alias> ./scripts/check.sh`
+  -> `Todo en verde.` (ruff ok, 763 tests backend, 120 vitest, build ok,
+  47 e2e incluido `Compañeros muestra el clutch por mapa y sitio`).
+- **Base vacia** (`SQLITE_PATH=<scratch>/vacia.sqlite3`, `migrate`,
+  `runserver`): `/api/teammates/` con `""`, `?side=Attack`, `?until=foo`,
+  `?page=-1`, `?side=`, `?since=2030-01-01` -> 200 y `clutch_by_site: []`.
+- **Base sembrada** (script en el scratchpad con factories): Border con 4
+  clutches en B Armory (3 ganados, defensa), 1 en sitio `""` (perdido,
+  ataque), 1 en ronda sin ganador y 1 clutch de un companero; Bank Unranked
+  con 5 en B Lockers (3 ganados, Ash) y una ronda sin clutch.
+  - `/api/teammates/` -> Bank Total 5/3 60 % sin marca, B Lockers 5/3 sin
+    marca; Border Total 5/3 60 % sin marca, B Armory 4/3 75 % marcada,
+    "Sin sitio" 1/0 ultima y marcada. Mapas por nombre. La suma de totales
+    (10) coincide con los intentos de `clutch_conversion` (10). La ronda sin
+    ganador y el clutch del companero no aparecen.
+  - `?side=Attack` -> 6 = conversion 6; `?ranked_only=1` -> solo Border (5);
+    `?operator=Ash` -> solo Bank (5); `?since=2026-09-01T21:30` -> solo Bank;
+    `?until=foo` ignora el filtro (200, igual que sin filtro);
+    `?days=-3` y `?session=foo` -> 200 con `[]`. Ningun 500.
+  - `/api/export/?table=teammates` -> 200.
+- **Bundle:** `vite build` en la rama y con `frontend/src` de `origin/main`:
+  chunk inicial `index-*.js` 187,83 kB en los dos; solo crece el chunk
+  perezoso `Teammates-*.js` de 8,22 a 9,33 kB.
+- **Mutacion** (`python manage.py test tests.test_clutch.ClutchPorSitioTests`
+  con `aggregates.py` roto a mano y restaurado despues):
+  `CLUTCH_SITIO_MIN = 4` y `<` por `<=` -> cae
+  `test_cuatro_intentos_son_muestra_chica_y_cinco_no`; quitar
+  `round__my_team_won__isnull=False` -> cae
+  `test_una_ronda_sin_ganador_no_cuenta_como_intento_por_sitio`; devolver
+  el sitio `""` sin renombrar -> cae `test_una_ronda_sin_sitio_va_a_sin_sitio`.
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hace falta
+  `## Verificar en el PC`. El umbral de 5 intentos es del diseno, no se
+  calibro con datos: ver `## Para el humano`.
+
+Criterios: los cinco con evidencia arriba. Veredicto: aprobado.
+
+## Para el humano
+
+- Calibrar con la base real: `CLUTCH_SITIO_MIN = 5` marca como muestra
+  chica los sitios con menos de 5 clutches; con tu base, mirar en
+  `/companeros` si deja demasiadas filas marcadas.
