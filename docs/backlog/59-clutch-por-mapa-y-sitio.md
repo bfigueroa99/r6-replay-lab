@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
-estado: aprobado
-candado: release 2026-10-24T08:04Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
@@ -9,16 +9,68 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md K5
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_clutch.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z, revisor 20261024T0004Z, qa 20261024T0404Z
+turnos: po 20261019T0325Z, arquitecto 20261022T0804Z, dev 20261023T2003Z, revisor 20261024T0004Z, qa 20261024T0404Z, release 20261024T0804Z
 
 Implementar despues de #55: usa la columna `RoundPlayer.clutch_vs` que esa
 ficha agrega con su migracion.
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][fullstack] Clutch por mapa y sitio en Compañeros`
+
+### Que cambia
+
+El panel "Clutches" de Compañeros suma la tabla "Clutch por mapa y sitio":
+por cada mapa una fila total y una por sitio de bomba con intentos, ganados
+y conversion; los sitios con menos de 5 intentos llevan `*` de muestra
+chica, y las rondas sin sitio van a "Sin sitio". Respeta los filtros de la
+barra y exporta a CSV (`clutch-por-sitio`). `/api/teammates/` trae la clave
+nueva `clutch_by_site`.
+
+### Por que esto y no otra cosa
+
+Ficha 59, tramo de la epica `impacto` (ALCANCE.md K5), sobre la columna
+`RoundPlayer.clutch_vs` de la ficha 55: sin migracion. Clutch por operador
+(O6) y "cuantos se esperaban" (K3) quedan para otras fichas.
+
+### Como se probo
+
+- `./scripts/check.sh` sobre la rama con `main` (9554a30) ya incluido:
+  `Todo en verde.` (763 tests backend, 120 frontend, build ok, 47 e2e).
+- `backend/tests/test_clutch.py`, clase `ClutchPorSitioTests` (6): agrupa
+  por mapa y sitio con totales, sin sitio, borde 4/5 de muestra chica,
+  ronda sin ganador no cuenta, filtro de lado via API, base vacia 200 `[]`.
+- e2e `Compañeros muestra el clutch por mapa y sitio` sobre `seed_demo`.
+- QA: base vacia y sembrada con filtros borde (`side`, `ranked_only`,
+  `operator`, `since`, `until=foo`, `days=-3`), cero 500; la suma de totales
+  coincide con `clutch_conversion`; 3 mutaciones, todas caen.
+
+### Riesgos y lo que no entra
+
+Sin migracion, sin `recompute`, sin parser. Chunk inicial igual (187,83 kB);
+solo crece el perezoso de Compañeros (8,22 -> 9,33 kB).
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py seed_demo --force; python manage.py runserver
+```
+
+Abrir http://127.0.0.1:8000/companeros, panel "Clutches": debajo de la tabla
+de conversion, "Clutch por mapa y sitio" con `Border Total 5 1 20%` sin
+marca y `B Armory, B Archives 3 1 33%` con `*`. Con el filtro de lado en
+Ataque los numeros bajan y siguen sumando lo mismo que la tabla de arriba.
+
+### Para el humano
+
+Aviso, no bloquea: calibrar `CLUTCH_SITIO_MIN = 5` con la base real.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
+
 
 La ficha 55 da la conversion de clutch por X y lado; esta la parte por mapa
 y por sitio de bomba. Se ve en que sitio cierras las rondas que quedan en tus
@@ -52,196 +104,34 @@ revisar como se juega el final de ronda.
 - La parte "cuantos se esperaban" de K3, que necesita la tabla de K1.
 - Cambiar `one_vx`, el Rating o la tabla de la ficha 55.
 
-## Diseno
-
-La 55 ya esta en `main` (`clutch_vs`, migracion 0003, `clutch_conversion` en
-`/api/teammates/`, tabla en el Panel "Clutches" de Compañeros): la
-dependencia esta cumplida. Una sola forma obvia, sin migracion.
-
-**Backend, `backend/replays/analytics/aggregates.py`**, debajo de
-`clutch_conversion`:
-
-1. Constante `CLUTCH_SITIO_MIN = 5` con comentario (por debajo, el % de un
-   sitio es anecdota; la fila sale igual, marcada).
-2. `clutch_by_site(**filters) -> list[dict]`: mismo queryset que
-   `clutch_conversion` (`clutch_vs__gt=0`, `round__my_team_won__isnull=False`,
-   el comentario de por que ya esta ahi) agrupado por
-   `round__match__map_slug`, `round__match__map_name`, `round__site` con
-   `attempts=Count("id")` y `won=Count("id", filter=Q(round__my_team_won=True))`.
-   Por mapa, primero una fila total (`kind: "map"`, `site: None`) y despues
-   una por sitio (`kind: "site"`), con `slug`, `map`, `site` (`""` se
-   devuelve como `"Sin sitio"`, ultima del mapa), `attempts`, `won`,
-   `pct=_pct(won, attempts)` y `low_sample = attempts < CLUTCH_SITIO_MIN`
-   (tambien en la fila total). Mapas por nombre; sitios por intentos desc y
-   nombre. Base vacia: `[]`.
-3. `views.teammates`: clave `"clutch_by_site": agg.clutch_by_site(**filters)`.
-
-**Tests, `backend/tests/test_clutch.py`** (clase nueva al final, con las
-factories que ya usa el archivo):
-- `test_clutch_por_sitio_agrupa_por_mapa_y_sitio` (dos mapas, tres sitios,
-  totales por mapa que suman sus sitios)
-- `test_una_ronda_sin_sitio_va_a_sin_sitio`
-- `test_cuatro_intentos_son_muestra_chica_y_cinco_no`
-- `test_una_ronda_sin_ganador_no_cuenta_como_intento_por_sitio`
-- `test_clutch_por_sitio_respeta_el_filtro_de_lado` (via
-  `/api/teammates/?side=Attack`)
-- `test_clutch_por_sitio_con_base_vacia_es_lista_vacia`
-
-**Frontend, `frontend/src/pages/Teammates.jsx`**, dentro del Panel
-"Clutches", entre la tabla de conversion y la de clutches ganados: subtitulo
-`<h3>` "Clutch por mapa y sitio" y `DataTable` con Mapa / Sitio (la fila
-total en negrita con el nombre del mapa y sitio "Total"), Intentos,
-Ganados, % (con `Bar` como Sinergia), `csvName="clutch-por-sitio"`. Orden
-fijo del backend: aplanar con un indice `orden` y `initialSort` por el, como
-"Primero en caer". `low_sample`: clase `dim` en la fila o `*` junto al % con
-`help` "Menos de 5 intentos". Sin filas:
-`<p className="dim">Todavía no quedaste último en ninguna ronda.</p>`. Ojo
-con el e2e existente de conversion: afirma `panel.locator('table').first()`,
-asi que la tabla nueva tiene que ir **despues** de la de conversion.
-
-**e2e, `frontend/e2e/humo.spec.js`**: `test('Compañeros muestra el clutch
-por mapa y sitio')`. Medido sobre `seed_demo`: 10 intentos, Border 5 (B
-Armory 3, A Ventilation 2), Bank 3 (B Lockers 3), Club House 2 (uno en cada
-sitio de B Church y A Bedroom). Afirmar la fila total de Border con 5
-intentos sin marca de muestra chica y una fila de sitio marcada; consola
-limpia.
-
-**`docs/metricas.md`**, seccion `## Impacto`, debajo de "Clutch: intentos y
-conversión": fila "Clutch por mapa y sitio" (mismo intento y ganado que la
-fila de arriba, agrupado por mapa y sitio de bomba; rondas sin sitio en
-"Sin sitio"; menos de 5 intentos se marca como muestra chica).
-
-**Orden:** constante + funcion -> tests -> vista -> Teammates.jsx -> e2e ->
-metricas.md -> `check.sh`.
-
-**Que puede romperse:** el e2e de conversion si la tabla nueva queda
-primera (ver arriba). Nada de datos: es una clave nueva del JSON.
-
-**Verificacion manual:** `/companeros` con la base real; que la suma de los
-totales por mapa coincida con los intentos de la tabla de conversion.
-
-**Archivos ocupados:** `aggregates.py`, `views.py`, `metricas.md`,
-`humo.spec.js` tambien en la rama de la 60 (PR #48) y en las fichas 56 y
-57: zonas distintas, se implementa ya y se resuelve con `git merge
-origin/main` (P3). Con la 57 comparte `views.teammates` y `Teammates.jsx`:
-si las dos van en paralelo, la segunda en mergear resuelve.
-
 ## Implementacion
 
-Dev 20261023T2003Z sobre el diseno, sin desvios de alcance:
-
-- `aggregates.py`: `CLUTCH_SITIO_MIN = 5` y `clutch_by_site(**filters)` debajo
-  de `clutch_conversion`, mismo queryset (`clutch_vs__gt=0`, ganador conocido).
-  Por mapa (ordenados por nombre) una fila `kind: "map"` con `site: None` y
-  despues las de sitio por intentos desc y nombre; `""` sale como
-  `"Sin sitio"` y va ultima del mapa. `low_sample` en todas las filas.
-- `views.teammates`: clave `clutch_by_site`.
-- `tests/test_clutch.py`: clase `ClutchPorSitioTests` con los seis tests del
-  diseno (agrupa por mapa y sitio, sin sitio, borde 4/5, sin ganador, filtro de
-  lado via `/api/teammates/?side=Attack`, base vacia con 200).
-- `Teammates.jsx`: `<h3>Clutch por mapa y sitio</h3>` y `DataTable` entre la
-  tabla de conversion y la de ganados; Mapa / Sitio (fila total en negrita con
-  "Total"), Intentos, Ganados, Conversion con `Bar`; `*` con clase
-  `muestra-chica` y `title` "Menos de 5 intentos", explicado en el `help` de
-  la columna. Orden fijo con `orden`. CSV `clutch-por-sitio`, con "Total" en
-  la columna Sitio de las filas de mapa (hallazgo de la revision ciega: sin eso
-  quien suma la columna Intentos cuenta doble).
-- Desvio menor: el vacio usa `empty=` del `DataTable` (como la tabla de
-  conversion) en vez de un `<p className="dim">` aparte; mismo texto.
-- e2e `Compañeros muestra el clutch por mapa y sitio`: sobre `seed_demo` los
-  sitios salen con su nombre completo (`B Armory, B Archives`), asi que la
-  prueba afirma `Border Total 5 1 20%` sin marca, `Border B Armory, B Archives
-  3 1 33%` con marca y `Bank Total 3 1 33%`; consola limpia.
-- `docs/metricas.md`: fila "Clutch por mapa y sitio" en `## Impacto`.
-
-Entorno: el Chromium de la nube (`/opt/pw-browsers`, revision 1243) no es el
-que pide el Playwright fijado (1194). Se corrio el e2e con
-`PLAYWRIGHT_BROWSERS_PATH` apuntando a un alias en el scratchpad; nada del
-repo cambio por eso.
+Dev 20261023T2003Z, sin desvios de alcance: `CLUTCH_SITIO_MIN` y
+`clutch_by_site` en `aggregates.py`, clave en `views.teammates`, seis tests,
+tabla en `Teammates.jsx` despues de la de conversion (CSV con "Total" en las
+filas de mapa), e2e y fila en `docs/metricas.md`. Desvio menor: el vacio usa
+`empty=` del `DataTable`, mismo texto. Detalle en `git log`.
 
 ## Revision 2026-10-24 sobre c7b7964
 
-Revisor 20261024T0004Z. Revision a ciegas (subagente con `revision.md` sobre
-el diff sin `docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por
-el lider leyendo el diff y con `check.sh` en verde (ruff ok, 763 tests
-backend, 120 vitest, build ok, 47 e2e). Main no se movio desde la rama: sin
-merge.
-
-Criterios:
-
-- `clutch_by_site` con fila total por mapa y una por sitio, mismo queryset
-  que `clutch_conversion` (filtros de la barra via `base_queryset`), ""
-  como "Sin sitio" ultima: `test_clutch_por_sitio_agrupa_por_mapa_y_sitio`,
-  `test_una_ronda_sin_sitio_va_a_sin_sitio`,
-  `test_clutch_por_sitio_respeta_el_filtro_de_lado`. Cubierto.
-- `CLUTCH_SITIO_MIN = 5` y `low_sample` en todas las filas; borde 4/5 en
-  `test_cuatro_intentos_son_muestra_chica_y_cinco_no`. Cubierto.
-- Clave `clutch_by_site` en `/api/teammates/`; base vacia 200 con `[]`:
-  `test_clutch_por_sitio_con_base_vacia_es_lista_vacia`. Cubierto.
-- Tabla en el Panel Clutches despues de la de conversion (el e2e viejo con
-  `.first()` sigue verde), CSV `clutch-por-sitio` con "Total" en las filas
-  de mapa, `*` de muestra chica, texto vacio. e2e `Compañeros muestra el
-  clutch por mapa y sitio` afirma los numeros de `seed_demo` (el subagente
-  los recalculo aparte y coinciden). Cubierto.
-- Fila en `docs/metricas.md` que remite a la definicion de la ficha 55.
-  Cubierto.
-
-Archivos: el diff toca solo los de `archivos:`. Identificadores sin tildes,
-UI con tildes, sin `print` ni `console.log`.
-
-Nota de entorno para QA: Playwright 1.56 pide Chromium 1194 y la nube trae
-1243 con otra estructura de carpetas (`chrome-linux64`,
-`chrome-headless-shell-linux64`). El alias en el scratchpad tiene que ser
-`chromium_headless_shell-1194/chrome-linux -> .../chrome-headless-shell-linux64`
-(que ya trae `headless_shell`) y `chromium-1194/chrome-linux -> .../chrome-linux64`,
-con `PLAYWRIGHT_BROWSERS_PATH` apuntando ahi.
-
-Veredicto: aprobar -> revisado.
+Revisor 20261024T0004Z, a ciegas y confirmado: sin hallazgos, los cinco
+criterios cubiertos. Veredicto: aprobar -> revisado.
 
 ## QA 2026-10-24 sobre c7b7964
 
-QA 20261024T0404Z. Codigo sin cambios desde la revision (91be785 = c7b7964
-mas docs); main no se movio (`git merge-tree` limpio). Datos sinteticos
-(`backend/tests/factories.py`), nunca base real.
+QA 20261024T0404Z: `check.sh` en verde, base vacia y sembrada sin 500,
+totales = conversion, bundle inicial sin cambio, 3 mutaciones caen.
+Veredicto: aprobado.
 
-Entorno: Chromium de la nube con el alias de la nota del Revisor; ademas
-`chromium_headless_shell-1194/chrome-linux` tiene que ser una carpeta con
-enlaces a cada archivo de `chrome-headless-shell-linux64` y un
-`headless_shell -> chrome-headless-shell` (el binario se llama distinto).
+## Entrega 2026-10-24
 
-- **check.sh completo:** `PLAYWRIGHT_BROWSERS_PATH=<alias> ./scripts/check.sh`
-  -> `Todo en verde.` (ruff ok, 763 tests backend, 120 vitest, build ok,
-  47 e2e incluido `Compañeros muestra el clutch por mapa y sitio`).
-- **Base vacia** (`SQLITE_PATH=<scratch>/vacia.sqlite3`, `migrate`,
-  `runserver`): `/api/teammates/` con `""`, `?side=Attack`, `?until=foo`,
-  `?page=-1`, `?side=`, `?since=2030-01-01` -> 200 y `clutch_by_site: []`.
-- **Base sembrada** (script en el scratchpad con factories): Border con 4
-  clutches en B Armory (3 ganados, defensa), 1 en sitio `""` (perdido,
-  ataque), 1 en ronda sin ganador y 1 clutch de un companero; Bank Unranked
-  con 5 en B Lockers (3 ganados, Ash) y una ronda sin clutch.
-  - `/api/teammates/` -> Bank Total 5/3 60 % sin marca, B Lockers 5/3 sin
-    marca; Border Total 5/3 60 % sin marca, B Armory 4/3 75 % marcada,
-    "Sin sitio" 1/0 ultima y marcada. Mapas por nombre. La suma de totales
-    (10) coincide con los intentos de `clutch_conversion` (10). La ronda sin
-    ganador y el clutch del companero no aparecen.
-  - `?side=Attack` -> 6 = conversion 6; `?ranked_only=1` -> solo Border (5);
-    `?operator=Ash` -> solo Bank (5); `?since=2026-09-01T21:30` -> solo Bank;
-    `?until=foo` ignora el filtro (200, igual que sin filtro);
-    `?days=-3` y `?session=foo` -> 200 con `[]`. Ningun 500.
-  - `/api/export/?table=teammates` -> 200.
-- **Bundle:** `vite build` en la rama y con `frontend/src` de `origin/main`:
-  chunk inicial `index-*.js` 187,83 kB en los dos; solo crece el chunk
-  perezoso `Teammates-*.js` de 8,22 a 9,33 kB.
-- **Mutacion** (`python manage.py test tests.test_clutch.ClutchPorSitioTests`
-  con `aggregates.py` roto a mano y restaurado despues):
-  `CLUTCH_SITIO_MIN = 4` y `<` por `<=` -> cae
-  `test_cuatro_intentos_son_muestra_chica_y_cinco_no`; quitar
-  `round__my_team_won__isnull=False` -> cae
-  `test_una_ronda_sin_ganador_no_cuenta_como_intento_por_sitio`; devolver
-  el sitio `""` sin renombrar -> cae `test_una_ronda_sin_sitio_va_a_sin_sitio`.
-- Sin migracion, sin parser, sin Electron ni `.ps1`: no hace falta
-  `## Verificar en el PC`. El umbral de 5 intentos es del diseno, no se
-  calibro con datos: ver `## Para el humano`.
+Release 20261024T0804Z: `turnos:` con dev, revisor y qa de sesiones distintas;
+main (9554a30) ya incluido en la rama; `check.sh` en verde sobre el commit
+entregado. Entorno: Chromium de la nube con alias 1194 -> 1243 en el
+scratchpad (nota de la revision).
+
+## Para el humano
+`.
 
 Criterios: los cinco con evidencia arriba. Veredicto: aprobado.
 
