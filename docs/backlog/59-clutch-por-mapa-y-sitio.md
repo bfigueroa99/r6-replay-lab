@@ -1,7 +1,7 @@
 # 59. Clutch por mapa y sitio
 
 estado: revisado
-candado: -
+candado: qa 2026-10-24T04:04Z
 rama: claude/equipo-dev/59-clutch-por-mapa-y-sitio
 tipo: funcionalidad
 epica: impacto
