@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-24 16:09 UTC por arquitecto (sesion 20261024T1605Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: dev, franja 5)
+actualizado: 2026-10-24 20:12 UTC por investigador (sesion 20261024T2004Z; motivo: reloj: investigador; reloj: investigador, franja 7)
 playbook: origin/main@5647aa1
 rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-22T21:01Z 10-23T09:01Z 10-23T21:01Z 10-24T09:01Z) | 15 de 56 en 7 dias
 pausa: no
@@ -10,7 +10,7 @@ pausa: no
 Sin ramas de trabajo: la 59 entro a main (PR #51, 5647aa1).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=63 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=67 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -19,10 +19,10 @@ Ninguna rama abierta: sin pares que probar.
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (52 53 54 55 56 57 58 59 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 -> ficha 62, B14 -> ficha 63, B15 idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57) en main. impacto: K3 (55) y K5 (59) en main; K7 idea. operadores: O6 -> ficha 61 (clutch por operador, sobre `clutch_vs` de la 55). revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 -> ficha 62, B14 -> ficha 63, B15 idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57) en main. impacto: K3 (55) y K5 (59) en main; K7 idea. operadores: O6 -> ficha 61 (clutch por operador, sobre `clutch_vs` de la 55). revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main. paridad-referencia (nueva): R1-R4 idea.
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 63 ideas libres (62 al empezar este turno): reconciliado contra main 5647aa1; nuevas B15, D6, D7, F13 y H6; A5 a descartadas.
-- Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
+- `ALCANCE.md`: 67 ideas libres (63 al empezar este turno). Ideas nuevas de este turno: R1 partidas en el Inicio, R2 trades de los dos equipos en la partida, R3 fases de la ronda en la partida, R4 apertura marcada en la timeline (epica `paridad-referencia`).
+- Investigacion: ultima entrada 2026-10-24 (familia 8: primera pasada de Replica; paridad 76.1 / 100, must 12 de 17, 0 resenas). Proxima: 3, 5 y 6. Matriz en `docs/backlog/replica/`.
 
 ## Papel (rama backlog)
 
@@ -33,7 +33,7 @@ Ninguna rama abierta: sin pares que probar.
 | 63-cuando-llega-la-apertura | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 3 `disenado`, 0 ramas: el proximo turno es del Dev (regla 8). 61 y 62 se pueden implementar en paralelo (otras funciones de los mismos archivos); 63 va despues de que 62 se mergee (mismo panel de `Trends.jsx`).
+0 `propuesto`, 3 `disenado`, 0 ramas: el proximo turno sigue siendo del Dev (regla 8). 61 y 62 se pueden implementar en paralelo (otras funciones de los mismos archivos); 63 va despues de que 62 se mergee (mismo panel de `Trends.jsx`).
 
 ## Ultimo turno de cada rol
 
@@ -44,7 +44,7 @@ Ninguna rama abierta: sin pares que probar.
 | revisor | 2026-10-24 00:10 | Revisa 59 (funcionalidad, `implementado` -> `revisado`) sobre c7b7964, rama al dia con main 9554a30. Revision ciega sin hallazgos (el subagente recalculo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Sin pushes de codigo. |
 | qa | 2026-10-24 04:12 | Prueba 59 (funcionalidad, `revisado` -> `aprobado`) sobre c7b7964, rama al dia con main 9554a30. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Base vacia y base sembrada desde `factories.py` (sitio vacio, ronda sin ganador, clutch de un companero, dos mapas, Unranked con Ash; filtros `side`/`ranked_only`/`operator`/`since`, `until=foo`, `days=-3`, `session=foo`, `page=-1`): totales por mapa = intentos de `clutch_conversion`, cero 500. Mutaciones 4 de 4 caen; chunk inicial sin cambio (solo +1,1 kB en el chunk perezoso de Compañeros). Sin pushes de codigo. |
 | arquitecto | 2026-10-24 16:09 | Disena 61 (`clutch_by_operator` + `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/`, tabla tercera del panel Clutches), 62 (`kills_by_time` desde `_duelos`, helper `_tramo_vacio` compartido con `deaths_by_time`, panel "Cuándo matas" antes de "Cuando mueres") y 63 (`opening_timing` con `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90`, primera baja tuya = `opening_kill` de tu equipo; despues de 62). Sin arena, sin migracion. |
-| investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
+| investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
 | po | 2026-10-24 12:12 | Papel vacio: propone 61 (O6: clutch por operador en el panel Clutches de Compañeros, sobre `clutch_vs`), 62 (B11: cuando matas, histograma de tus bajas por tramo de 30 s junto a "Cuando mueres") y 63 (B14: cuando llega la apertura, winrate segun el segundo de la primera baja). `ALCANCE.md` reconciliado (55-60 en main), A5 descartada por duplicar la señal `mapa-debil`, nuevas B15, D6, D7, F13 y H6: 63 libres (62 al empezar). Sin pushes de codigo. |
 
 ## Para el humano
