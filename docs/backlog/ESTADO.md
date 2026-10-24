@@ -1,16 +1,16 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-24 08:35 UTC por release (sesion 20261024T0804Z; motivo: por estado: 1 aprobado; reloj: dev, franja 3)
-playbook: origin/main@9554a30
-rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z) | 15 de 56 en 7 dias | sin herramientas para comparar el prompt
+actualizado: 2026-10-24 12:12 UTC por po (sesion 20261024T1204Z; motivo: papel vacio; reloj: revisor, franja 4)
+playbook: origin/main@5647aa1
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-22T21:01Z 10-23T09:01Z 10-23T21:01Z 10-24T09:01Z) | 15 de 56 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Sin ramas de trabajo: la 59 entro a main (PR #51, 5647aa1) en este turno.
+Sin ramas de trabajo: la 59 entro a main (PR #51, 5647aa1).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=62 sin_merge=no pausa=no sin_rastro_48h=4 (contado a mano: el clasificador nego re-correr estado.sh despues del merge)
+RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=63 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -18,19 +18,22 @@ Ninguna rama abierta: sin pares que probar.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:10 (51 52 53 54 55 56 57 58 59 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 y B14 como idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57, PR #50) en main. impacto: K3 (55) en main; K5 (59, PR #51) en main; O6 y K7 como idea. revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 62 ideas libres (falta marcar C7, B13, E5/E10 y K5 `en main`, lo hace el PO).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (52 53 54 55 56 57 58 59 60) otros:0.
+- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 -> ficha 62, B14 -> ficha 63, B15 idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57) en main. impacto: K3 (55) y K5 (59) en main; K7 idea. operadores: O6 -> ficha 61 (clutch por operador, sobre `clutch_vs` de la 55). revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main.
+- Papel: PAPEL_TIPOS=funcionalidad:3 otros:0. Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 63 ideas libres (62 al empezar este turno): reconciliado contra main 5647aa1; nuevas B15, D6, D7, F13 y H6; A5 a descartadas.
 - Investigacion: ultima entrada 2026-10-14 (familias 1, 2, 4 y 7). Proxima: 3, 5 y 6.
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
+| 61-clutch-por-operador | propuesto | funcionalidad | operadores | 3 | fullstack | - |
+| 62-cuando-matas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 63-cuando-llega-la-apertura | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Papel y cola vacios (0 `propuesto`, 0 `disenado`, 0 ramas): el proximo turno es del PO, que tiene que llenar el papel con funcionalidades.
+3 `propuesto`, 0 `disenado`, 0 ramas: el proximo turno es del Arquitecto (regla 9). 62 y 63 tocan los dos `/api/trends/` y `Trends.jsx`: disenarlas en orden.
 
 ## Ultimo turno de cada rol
 
@@ -42,7 +45,7 @@ Papel y cola vacios (0 `propuesto`, 0 `disenado`, 0 ramas): el proximo turno es 
 | qa | 2026-10-24 04:12 | Prueba 59 (funcionalidad, `revisado` -> `aprobado`) sobre c7b7964, rama al dia con main 9554a30. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Base vacia y base sembrada desde `factories.py` (sitio vacio, ronda sin ganador, clutch de un companero, dos mapas, Unranked con Ash; filtros `side`/`ranked_only`/`operator`/`since`, `until=foo`, `days=-3`, `session=foo`, `page=-1`): totales por mapa = intentos de `clutch_conversion`, cero 500. Mutaciones 4 de 4 caen; chunk inicial sin cambio (solo +1,1 kB en el chunk perezoso de Compañeros). Sin pushes de codigo. |
 | arquitecto | 2026-10-22 08:09 | Disena 56 (`_corte_por_periodo` sobre `group_by` en `compare_periods`: `by_map` y `by_operator` con delta, banda y veredicto por fila; muestra minima por fila `COMPARE_MIN_ROUNDS_FILA = 10` y no 20, medido sobre `seed_demo`: Mapas vacio y 6 operadores; dos tablas en el panel Progreso reusando `Delta`), 57 (`teamkills` en `/api/teammates/`, espejo de `_solo_rivales`: hechos, sufridos, rondas con teamkill y su winrate, tabla por compañero; panel en Compañeros, e2e con el texto vacio porque el seed no tiene teamkills) y 59 (`clutch_by_site` en `/api/teammates/` con total por mapa, "Sin sitio" y `low_sample` < 5; tabla dentro del panel Clutches despues de la de conversion). Papel: 3 disenado, 0 propuesto. Sin pushes de codigo. |
 | investigador | 2026-10-14 22:18 | Familias 1 (forks nicktstewart, defiancer6s-hub y lumina-r6 de r6-dissect; api.github.com 403), 2 (r6tv.online, Aurelix, r6-replay.com/roadmap), 4 (Refrag nuevo, Leetify, vlr.gg, CS Demo Manager; Dotabuff 403) y 7 (Siege.GG rebalance, FanGraphs, Wilson). 13 ideas nuevas con fuente (45 -> 58 libres), F1 y F7 ampliadas, 4 descartadas con motivo. Sin pushes de codigo. |
-| po | 2026-10-19 03:31 | Pedido (modo caos): propone 58 (B8: primera ronda de cada lado contra el resto, en el panel de mitades de Tendencias), 59 (K5: clutch por mapa y sitio, despues de #55) y 60 (B13: racha de rondas ganadas y perdidas en el detalle de partida y en Records). Papel en 6 `propuesto`. `ALCANCE.md`: nuevas B14, C13, C14, F12 y K7; H3 descartada (ya cubierta por los botones CSV): 62 libres (61 al empezar). Sin pushes de codigo. |
+| po | 2026-10-24 12:12 | Papel vacio: propone 61 (O6: clutch por operador en el panel Clutches de Compañeros, sobre `clutch_vs`), 62 (B11: cuando matas, histograma de tus bajas por tramo de 30 s junto a "Cuando mueres") y 63 (B14: cuando llega la apertura, winrate segun el segundo de la primera baja). `ALCANCE.md` reconciliado (55-60 en main), A5 descartada por duplicar la señal `mapa-debil`, nuevas B15, D6, D7, F13 y H6: 63 libres (62 al empezar). Sin pushes de codigo. |
 
 ## Para el humano
 
@@ -112,7 +115,7 @@ Papel y cola vacios (0 `propuesto`, 0 `disenado`, 0 ramas): el proximo turno es 
 - Verificar en el PC (38, PR #26, parser): `manage.py backup` y despues `manage.py import_replays --force <carpeta>` (`recompute` no reparsea) para corregir rondas Y9S4+ ya importadas; confirmar con `.rec` reales que el ganador de cada ronda coincide con el marcador, y `$env:R6_TEST_REPLAY="<ruta a un .rec Y9S4+>"; python manage.py test tests.test_pydissect`.
 - Verificar en el PC: la 34 ya esta en main (PR #20). Desde `backend/`: `..\.venv\Scripts\python.exe manage.py recompute --dry-run`, `manage.py backup` y `manage.py recompute` para corregir las trade kills contadas doble en partidas ya importadas (detalle en `## Verificar en el PC` de la ficha 34).
 - Ficha 36 (aviso, no bloquea): si faltan los `.rec` del inicio de una partida, la segunda mitad se lee como primera (documentado). Se podria evitar tomando el lado inicial solo de una ronda con `score_before == [0, 0]`; queda como posible mejora.
-- Rutina: 4 disparos sin rastro en 48 h (10-22T09:01Z 10-22T21:01Z 10-23T09:01Z 10-23T21:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Rutina: 4 disparos sin rastro en 48 h (10-22T21:01Z 10-23T09:01Z 10-23T21:01Z 10-24T09:01Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - Ficha 50 (aviso del Revisor, no bloquea, preexistente): `ingest.py:146-169` saca el marcador final y `won` del ultimo `.rec` importado; si falta el de la ronda final (ranked 4-2 importada hasta 3-2), la partida queda ganada "por 1 ronda" en el panel nuevo y como victoria 3-2 en toda la app. Candidato a ficha `tipo: bug` del PO: `won=None` cuando el marcador final no cierra la partida segun `reglas_partida`. PO 2026-10-17: queda como idea G7 de `ALCANCE.md` (marcar en Datos, sin cambiar `won`); cambiar `won` mueve todos los winrates y es P10, decision tuya.
 - Ficha 51 (ya en main, PR #39; aviso del Revisor, no bloquea): el e2e de la matriz de duelos no distingue "Todas" de "Solo aperturas" (solo afirma que queda una celda con dato); un test mas fuerte cabe en una ficha `tests`.
 - Ficha 51 (ya en main, PR #39; aviso de QA, no bloquea, preexistente en main): el detalle de una partida **sin rondas** tira `TypeError ... reading 'label'` en `MatchDetail.jsx:93` (`rounds[sel]` indefinido). Con `.rec` reales una partida siempre trae rondas; solo pasa con datos armados a mano. Candidato a ficha `bug` chica si el PO la quiere. PO 2026-10-17: no entra; con `.rec` reales no pasa, solo con datos armados a mano.
