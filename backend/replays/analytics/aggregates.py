@@ -1438,6 +1438,66 @@ def clutch_conversion(**filters) -> list[dict]:
     ]
 
 
+# por debajo de esto el % de un sitio es anecdota: la fila sale igual, marcada
+CLUTCH_SITIO_MIN = 5
+
+
+def clutch_by_site(**filters) -> list[dict]:
+    """Intentos y ganados de clutch por mapa y sitio de bomba.
+
+    Por mapa, primero la fila total y despues sus sitios; mismo intento y
+    ganado que `clutch_conversion`.
+    """
+    # mismo motivo que en clutch_conversion: sin ganador conocido no es intento
+    filas = (
+        base_queryset(**filters)
+        .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
+        .values("round__match__map_slug", "round__match__map_name", "round__site")
+        .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+    mapas: dict[str, dict] = {}
+    for f in filas:
+        mapa = mapas.setdefault(
+            f["round__match__map_slug"],
+            {"map": f["round__match__map_name"], "sitios": {}},
+        )
+        sitio = mapa["sitios"].setdefault(f["round__site"], [0, 0])
+        sitio[0] += f["attempts"]
+        sitio[1] += f["won"]
+
+    def _fila(kind, slug, nombre, site, attempts, won):
+        return {
+            "kind": kind,
+            "slug": slug,
+            "map": nombre,
+            "site": site,
+            "attempts": attempts,
+            "won": won,
+            "pct": _pct(won, attempts),
+            "low_sample": attempts < CLUTCH_SITIO_MIN,
+        }
+
+    salida = []
+    for slug, mapa in sorted(mapas.items(), key=lambda par: (par[1]["map"], par[0])):
+        sitios = mapa["sitios"]
+        # "Sin sitio" va ultima: no es un lugar del mapa al que volver a mirar
+        orden = sorted(sitios.items(), key=lambda par: (par[0] == "", -par[1][0], par[0]))
+        salida.append(
+            _fila(
+                "map",
+                slug,
+                mapa["map"],
+                None,
+                sum(a for a, _ in sitios.values()),
+                sum(w for _, w in sitios.values()),
+            )
+        )
+        salida.extend(
+            _fila("site", slug, mapa["map"], site or "Sin sitio", a, w) for site, (a, w) in orden
+        )
+    return salida
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [

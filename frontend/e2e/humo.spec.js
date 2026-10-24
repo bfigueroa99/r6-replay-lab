@@ -390,6 +390,26 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra el clutch por mapa y sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutch por mapa y sitio' })).toBeVisible()
+  // seed_demo: Border junta 5 intentos (B Armory 3, A Ventilation 2); la segunda tabla es esta
+  const porSitio = panel.locator('table').nth(1)
+  const border = porSitio.getByRole('row', { name: 'Border Total 5 1 20%', exact: true })
+  await expect(border).toBeVisible()
+  await expect(border.locator('.muestra-chica')).toHaveCount(0)
+  const armory = porSitio.getByRole('row', { name: /^Border B Armory, B Archives 3 1 33%/ })
+  await expect(armory.locator('.muestra-chica')).toHaveCount(1)
+  await expect(porSitio.getByRole('row', { name: /^Bank Total 3 1 33%/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra el panel de teamkills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
