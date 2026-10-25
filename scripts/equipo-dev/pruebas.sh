@@ -238,7 +238,7 @@ else
     done
     nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
     [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
-    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION PARA_EL_HUMANO; do
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO; do
         printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
     done
     printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"

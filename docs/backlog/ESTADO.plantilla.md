@@ -27,6 +27,7 @@ RESUMEN <linea tal cual de estado.sh>
 - `ALCANCE.md`: <n> ideas libres. Ideas nuevas de este turno: <titulos> | ninguna
 - Investigacion: ultima entrada <fecha> (<familias visitadas>) | ninguna todavia
 - Rotacion: <linea ROTACION de estado.sh tal cual>
+- Ciclo: <linea CICLO de estado.sh tal cual>
 
 ## Papel (rama backlog)
 

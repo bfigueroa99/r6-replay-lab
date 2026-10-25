@@ -134,9 +134,9 @@ de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
 viejas sin ficha, las ramas borrables en un solo comando (`BORRAR`), el
 tamano de `## Para el humano` (`PARA_EL_HUMANO`), la cadencia real de la
 rutina y sus disparos sin rastro (`CADENCIA`, `TURNOS_SIN_RASTRO`), `COLA`,
-`TOTAL`, la rotacion del alcance (`ROTACION`), la linea `RESUMEN` que lee
-`turno.sh` y si el entorno esta completo. Con eso se
-sabe todo lo que hace falta para decidir. El playbook se lee siempre de
+`TOTAL`, la rotacion del alcance (`ROTACION`), el tiempo de reclamo a
+`main` (`CICLO`), la linea `RESUMEN` que lee `turno.sh` y si el entorno
+esta completo. Con eso se sabe todo lo que hace falta para decidir. El playbook se lee siempre de
 `$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
 
 Entorno incompleto: `python3 -m pip install -r requirements.txt
@@ -341,8 +341,8 @@ con `tipo`); `## Alcance` (epicas en curso con sus tramos, funcionalidades
 que llegaron a `main` en los ultimos 7 dias, ideas libres en `ALCANCE.md`:
 las lineas de `== alcance` de `estado.sh`); ultimo turno de
 cada rol; `## Para el humano` (preguntas acumuladas, la linea `BORRAR` de
-`estado.sh` tal cual, un solo comando con todas las ramas borrables, aviso unico
-de CI remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
+`estado.sh` tal cual, que borra todas las ramas borrables, aviso unico de CI
+remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
 que escribe el humano y el equipo preserva tal cual, agregando respuestas
 fechadas debajo.
 
@@ -432,9 +432,9 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   que el equipo borra; si el proxy lo corta con 403 no se reintenta: la rama
   sale sola en `BORRAR`) y, si el espejo de la ficha sigue en `backlog`,
   quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
-  las ramas que sigan abiertas. (7) `## Alcance`
-  de `ESTADO.md` con las lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`,
-  `ALCANCE` y `ROTACION` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
+  las ramas que sigan abiertas. (7) `## Alcance` de `ESTADO.md` con las
+  lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`, `ALCANCE`, `ROTACION` y
+  `CICLO` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
   `## Para el humano` con el cuello de botella exacto (papel sin
   funcionalidades, diseno trabado, cola llena, rojo, PR esperando). (8)
   Playbook: `git show $EQUIPO_REF:scripts/equipo-dev/pruebas.sh | bash -s -- $EQUIPO_REF`.
@@ -677,8 +677,16 @@ Cuando el estado lo pide (regla 2); por reloj, franja 6.
   comando exacto; umbral calibrado solo con datos sinteticos: "calibrar con
   la base real" en `## Para el humano`. Criterio que falla: `con hallazgos`
   con el repro exacto (no lo arregla). Todo bien: `aprobado`. `candado: -`.
+  Con la ficha en `aprobado`, sin `PAUSA` ni `SIN_MERGE` y con 20 minutos o
+  mas antes del cierre, el mismo turno sigue como Release sobre esa ficha
+  (pasos 3 a 5 de su especificacion, puerta de merge incluida) y anota
+  `release <sesion>` en `turnos:`. Probar y mergear no chocan con la
+  independencia (el principio 4 cuenta implementar, revisar y probar), y
+  el Release aparte costaba un disparo entero por entrega para repetir el
+  `check.sh` que la QA acaba de correr sobre el mismo commit.
 - **Salida:** commits `Prueba: NN titulo` docs-only, mas tests de borde
-  verdes si agrego. Nunca PR, nunca rama de trabajo.
+  verdes si agrego. Nunca rama de trabajo; PR y merge solo como Release en
+  el mismo turno, como dice arriba.
 - **Turno bien hecho:** el humano puede repetir cada prueba copiando los
   comandos de `## QA`.
 - **Sin trabajo:** sin `revisado`, revisa las `implementado` con la

@@ -328,7 +328,7 @@ fi
 # las ultimas funcionalidades que llegaron a main; el PO lo lee en ROTACION.
 ventana_rotacion=10 tope_rotacion=4
 declare -A por_epica=() por_pagina=()
-vistas=0; commit=""
+vistas=0; commit=""; ciclos=""
 while read -r linea; do
     case "$linea" in
         "C "*) commit=${linea#C }; continue ;;
@@ -342,11 +342,18 @@ while read -r linea; do
     for pg in $(git diff --name-only "$commit^1" "$commit" -- frontend/src/pages 2>/dev/null | xargs -r -n1 basename); do
         por_pagina[$pg]=$(( ${por_pagina[$pg]:-0} + 1 ))
     done
+    # Ciclo: del commit que agrego la ficha en su rama (el "Reclama:") al
+    # merge que la trajo a main. Es lo que tiene que bajar si el Release deja
+    # de esperar un disparo aparte.
+    reclamo=$(git log --diff-filter=A --format=%ct origin/main -- "$linea" 2>/dev/null | tail -1)
+    [ -n "$reclamo" ] && ciclos="$ciclos $(basename "$linea" | cut -d- -f1):$(( ($(git log -1 --format=%ct "$commit") - reclamo) / 3600 ))"
     [ "$vistas" -ge "$ventana_rotacion" ] && break
 done < <(git log --first-parent -m origin/main --diff-filter=A --name-only --format='C %H' -- docs/backlog 2>/dev/null)
 conteo() { local -n m=$1; local k; for k in "${!m[@]}"; do echo "$k:${m[$k]}"; done | sort -t: -k2,2nr -k1,1 | tr '\n' ' ' | sed 's/ $//'; }
 echo "ROTACION_EPICAS=$(conteo por_epica) (epica de las ultimas $vistas funcionalidades en main)"
 echo "ROTACION_PAGINAS=$(conteo por_pagina) (paginas de frontend/src/pages que tocaron)"
+mediana_ciclo=$(for c in $ciclos; do echo "${c#*:}"; done | sort -n | awk '{ v[NR] = $1 } END { if (NR) print (NR % 2) ? v[(NR + 1) / 2] : int((v[NR / 2] + v[NR / 2 + 1]) / 2); else print "?" }')
+echo "CICLO=${mediana_ciclo}h de reclamo a main, mediana de las ultimas $vistas funcionalidades (ficha:horas${ciclos})"
 saturadas=""
 for k in "${!por_epica[@]}"; do [ "$k" != - ] && [ "${por_epica[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas epica $k,"; done
 for k in "${!por_pagina[@]}"; do [ "${por_pagina[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas pagina $k,"; done
