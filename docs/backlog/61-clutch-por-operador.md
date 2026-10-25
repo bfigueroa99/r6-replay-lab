@@ -1,8 +1,8 @@
 # 61. Clutch por operador
 
-estado: disenado
+estado: en curso 2026-10-25 (espejo; manda la rama de trabajo: implementado)
 candado: -
-rama: -
+rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
 epica: operadores
 area: fullstack
