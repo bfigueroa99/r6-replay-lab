@@ -1,41 +1,43 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-25 00:35 UTC por dev (sesion 20261025T0004Z; motivo: por estado: 3 disenado, lugar en cola; reloj: release, franja 0)
-playbook: origin/main@5647aa1
-rutina: TURNOS_SIN_RASTRO=4 en 48 h (10-23T09:01Z 10-23T21:01Z 10-24T09:01Z 10-24T21:01Z) | 15 de 56 en 7 dias
+actualizado: 2026-10-25 04:40 UTC por revisor (sesion 20261025T0404Z; motivo: por estado: 1 implementado; reloj: po, franja 1)
+playbook: origin/main@19683ce
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 2 de 42 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/61-clutch-por-operador | docs/backlog/61-clutch-por-operador.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/61-clutch-por-operador?expand=1) |
+| claude/equipo-dev/61-clutch-por-operador | docs/backlog/61-clutch-por-operador.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/61-clutch-por-operador?expand=1) |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=67 sin_merge=no pausa=no sin_rastro_48h=4
+RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=67 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/61-clutch-por-operador`: una sola rama; `git merge-tree` contra main 5647aa1 sin conflicto. 62 y 63 tocan `aggregates.py`, `views.py`, `metricas.md` y `humo.spec.js` en otras funciones y filas: quien mergee segundo puede ver un conflicto de lineas vecinas.
+1. `claude/equipo-dev/61-clutch-por-operador`: una sola rama, ya fusionada con main 19683ce; `git merge-tree` sin conflicto. 62 y 63 tocan `aggregates.py`, `views.py`, `metricas.md` y `humo.spec.js` en otras funciones y filas: quien mergee segundo puede ver un conflicto de lineas vecinas.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:9 (52 53 54 55 56 57 58 59 60) otros:0.
-- Epicas en curso: lado-y-marcador: B1-B10, B12 y B13 (60) en main; B11 -> ficha 62, B14 -> ficha 63, B15 idea. progreso: E3 (40), E4 (44), E5+E10 (56) en main. escuadra: C4 (46), C5 (54), C7 (57) en main. impacto: K3 (55) y K5 (59) en main; K7 idea. operadores: O6 -> ficha 61 implementada (rama `claude/equipo-dev/61-clutch-por-operador`, espera Revisor). revision-de-rondas: F7 (51), F10 (53) en main. temporada-y-modo: A2 (47) en main; A1 lo toca PR #14. rivales: D1 (37) en main. paridad-referencia (nueva): R1-R4 idea.
+- Epicas en curso: operadores: O6 -> ficha 61 revisada (espera QA). lado-y-marcador: B11 -> ficha 62, B14 -> ficha 63 (disenadas), B15 idea. impacto: K3 (55) y K5 (59) en main; K7 idea. paridad-referencia: R1-R4 idea.
 - Papel: PAPEL_TIPOS=funcionalidad:2 otros:0. Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 67 ideas libres. Ideas nuevas de este turno: ninguna (turno de Dev).
-- Investigacion: ultima entrada 2026-10-24 (familia 8: primera pasada de Replica; paridad 76.1 / 100, must 12 de 17, 0 resenas). Proxima: 3, 5 y 6. Matriz en `docs/backlog/replica/`.
+- `ALCANCE.md`: 67 ideas libres. Ideas nuevas de este turno: ninguna (turno de Revisor).
+- Investigacion: ultima entrada 2026-10-24 (familia 8, Replica; paridad 76.1 / 100). Proxima: 3, 5 y 6.
+- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): pagina Teammates.jsx | sin entrega: operadores exportar datos-nuevos-del-parser paridad-referencia
+- Ciclo: CICLO=23h de reclamo a main, mediana de las ultimas 10 funcionalidades
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 61-clutch-por-operador | implementado (en su rama) | funcionalidad | operadores | 3 | fullstack | - |
+| 61-clutch-por-operador | revisado (en su rama) | funcionalidad | operadores | 3 | fullstack | - |
 | 62-cuando-matas | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 63-cuando-llega-la-apertura | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 2 `disenado`, 1 rama `implementado`: el proximo turno es del Revisor (regla 3) sobre la 61. Despues, la 62 es tomable por el Dev; la 63 va despues de que 62 se mergee (mismo panel de `Trends.jsx`).
+0 `propuesto`, 2 `disenado`, 1 rama `revisado`: el proximo turno es de QA (regla 2) sobre la 61, que puede seguir como Release en el mismo turno. Despues, la 62 es tomable por el Dev; la 63 va despues de que 62 se mergee.
 
 ## Ultimo turno de cada rol
 
@@ -43,7 +45,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 |---|---|---|
 | release | 2026-10-24 08:35 | Entrega y mergea la 59 (`aprobado` -> `entregado` -> PR #51 -> main 5647aa1). Puerta a-f cumplida: dev, revisor y qa de tres sesiones, main 9554a30 ya incluido, `check.sh` en `Todo en verde.` sobre el head 4d2db93 (763 backend, 120 vitest, build, 47 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (10). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-25 00:35 | Implementa 61 (`disenado` -> `implementado`, rama `claude/equipo-dev/61-clutch-por-operador`, ff92c7d + d785309): `clutch_by_operator` y `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/` (mismo intento que la conversion, sin operador ni lado afuera, `low_sample`); tabla "Clutch por operador" tercera en el panel Clutches con `*` y CSV; 6 tests y e2e sobre `seed_demo` (Rook Defensa 5 0 0%, Zofia Ataque 2 2 100%*); fila en `metricas.md`. Revision ciega: sin bloqueantes; corregida la doc (tambien quedan afuera las filas sin lado). `check.sh` en `Todo en verde.` (769 backend, 120 vitest, build, 48 e2e). |
-| revisor | 2026-10-24 00:10 | Revisa 59 (funcionalidad, `implementado` -> `revisado`) sobre c7b7964, rama al dia con main 9554a30. Revision ciega sin hallazgos (el subagente recalculo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Sin pushes de codigo. |
+| revisor | 2026-10-25 04:40 | Revisa 61 (funcionalidad, `implementado` -> `revisado`) sobre ac5ce50, rama fusionada con main 19683ce. Revision ciega sin hallazgos (el subagente reprodujo los numeros de `seed_demo` del e2e), confirmada por el lider criterio por criterio. `check.sh` en `Todo en verde.` (769 backend, 120 vitest, build, 48 e2e). Sin pushes de codigo. Poda `## Para el humano` de 98 a 19 vinetas. |
 | qa | 2026-10-24 04:12 | Prueba 59 (funcionalidad, `revisado` -> `aprobado`) sobre c7b7964, rama al dia con main 9554a30. `check.sh` en `Todo en verde.` (763 backend, 120 vitest, build, 47 e2e). Base vacia y base sembrada desde `factories.py` (sitio vacio, ronda sin ganador, clutch de un companero, dos mapas, Unranked con Ash; filtros `side`/`ranked_only`/`operator`/`since`, `until=foo`, `days=-3`, `session=foo`, `page=-1`): totales por mapa = intentos de `clutch_conversion`, cero 500. Mutaciones 4 de 4 caen; chunk inicial sin cambio (solo +1,1 kB en el chunk perezoso de Compañeros). Sin pushes de codigo. |
 | arquitecto | 2026-10-24 16:09 | Disena 61 (`clutch_by_operator` + `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/`, tabla tercera del panel Clutches), 62 (`kills_by_time` desde `_duelos`, helper `_tramo_vacio` compartido con `deaths_by_time`, panel "Cuándo matas" antes de "Cuando mueres") y 63 (`opening_timing` con `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90`, primera baja tuya = `opening_kill` de tu equipo; despues de 62). Sin arena, sin migracion. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
@@ -51,53 +53,28 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 ## Para el humano
 
-- Ramas borrables (ya mergeadas o sin codigo). El turno no pudo borrarlas: el proxy de la sesion corta `git push --delete` (`HTTP 403`, `fatal: the remote end hung up unexpectedly`). Pegar en tu PC:
-  - `git push origin --delete claude/equipo-dev/30-tests-ganador-de-ronda` (mergeada, PR #15)
-  - `git push origin --delete claude/equipo-dev/31-tests-stats-por-jugador` (mergeada, PR #16)
-  - `git push origin --delete claude/equipo-dev/32-days-enorme-da-500` (mergeada, PR #17)
-  - `git push origin --delete claude/equipo-dev/33-fecha-con-zona-da-500` (mergeada, PR #19)
-  - `git push origin --delete claude/equipo-dev/34-trade-kill-contado-doble` (mergeada, PR #20)
-  - `git push origin --delete claude/equipo-dev/35-tests-lado-de-los-equipos` (mergeada, PR #23)
-  - `git push origin --delete claude/equipo-dev/36-mitades-y-prorroga` (mergeada, PR #25)
-  - `git push origin --delete claude/equipo-dev/38-dos-ganadores-por-ronda` (mergeada, PR #26)
-  - `git push origin --delete claude/equipo-dev/37-rivales-repetidos` (mergeada, PR #27)
-  - `git push origin --delete claude/equipo-dev/39-inercia-entre-rondas` (mergeada, PR #28)
-  - `git push origin --delete claude/equipo-dev/41-ronda-segun-el-marcador` (mergeada, main a233a03)
-  - `git push origin --delete claude/equipo-dev/40-hora-y-dia-de-la-semana` (mergeada, main 3438ab2)
-  - `git push origin --delete claude/equipo-dev/42-como-se-cierran-tus-rondas` (mergeada, PR #31)
-  - `git push origin --delete claude/equipo-dev/44-records-personales` (mergeada, PR #32)
-  - `git push origin --delete claude/equipo-dev/43-match-point` (mergeada, PR #33)
-  - `git push origin --delete claude/equipo-dev/45-remontadas-y-derrumbes` (mergeada, PR #34)
-  - `git push origin --delete claude/equipo-dev/46-primero-de-tu-equipo-en-caer` (mergeada, PR #35)
-  - `git push origin --delete claude/equipo-dev/47-modos-desconocidos-en-datos` (mergeada, PR #36)
-  - `git push origin --delete claude/equipo-dev/48-posts-sin-json-desde-otra-pagina` (mergeada, PR #37)
-  - `git push origin --delete claude/equipo-dev/50-partidas-cerradas-y-holgadas` (mergeada, PR #38)
-  - `git push origin --delete claude/equipo-dev/51-matriz-de-duelos-de-la-partida` (mergeada, PR #39)
-  - `git push origin --delete claude/equipo-dev/52-rondas-cortas-y-largas` (mergeada, PR #40)
-  - `git push origin --delete claude/equipo-dev/54-solo-duo-o-stack` (mergeada, PR #41)
-  - `git push origin --delete claude/equipo-dev/53-multikills-por-tamano` (mergeada, PR #42)
-  - `git push origin --delete claude/equipo-dev/55-clutch-intentos-y-conversion` (mergeada, PR #43)
-  - `git push origin --delete claude/equipo-dev/58-primera-ronda-de-cada-mitad` (mergeada, PR #46)
-  - `git push origin --delete claude/equipo-dev/60-racha-de-rondas` (mergeada, PR #48)
-  - `git push origin --delete claude/equipo-dev/56-mapas-y-operadores-que-mejoran` (mergeada, PR #49)
-  - `git push origin --delete claude/equipo-dev/57-teamkills` (mergeada, PR #50)
-  - `git push origin --delete claude/equipo-dev/59-clutch-por-mapa-y-sitio` (mergeada, PR #51)
-  - `git push origin --delete claude/equipo-dev/prueba-acceso` (si existe: prueba de acceso de un turno)
-  - `git push origin --delete claude/confident-feynman-dc9apf` (playbook anterior, solo el commit de reclamo)
-- PR #48 (ficha 60, racha de rondas) y PR #49 (ficha 56, mapas y operadores que mejoran) ya en main (release 20261023T0004Z). Sin migracion ni parser.
-- Ficha 56 (ya en main, PR #49; aviso, no bloquea): las tablas Mapas y Operadores de Progreso (Tendencias) piden 10 rondas por fila y periodo; probado solo con datos sinteticos. En el PC: abrir `/tendencias` con ventana 10 y 30 partidas y contar filas; si casi ningun operador sale con 10, bajar `COMPARE_MIN_ROUNDS_FILA` a 8. **Despues de bajar main, `cd frontend; npm run build`.**
-- Playbook: ya esta en `main` (#21); la cadena lo lee de `origin/main`.
-- Playbook candidato: origin/claude/equipo-dev/playbook@e8d6798
-- PRs abiertos que no son del equipo y no se tocan: #14 (`claude/dazzling-einstein-w3qcyq`, filtros en la URL), #22 (`ccr-ec8265ab-4qn7k2`, spawn peeks por mapa), #24 (`ccr-0e92052b-murujj`, cambios al playbook), #11 (`claude/great-cray-7o9tvf`) y #1-#4 (loop y mercado). La rama `claude/bold-cori-6gcxh9` (armas y temporadas de stats.cc, sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque con las fichas siguientes lo resuelve el equipo (P3).
-- Ficha 40 (aviso, no bloquea): una partida cuyo `.rec` no trae `datetime` en el header cae en la franja y el dia en que se importo (fallback preexistente de `_parse_ts`). Con `.rec` reales el campo viene siempre; si ves una franja rara, avisa y va a ficha propia.
-- Ficha 40 (aviso de QA, no bloquea): con datos reales casi siempre habra una franja con menos de 30 rondas, asi que el hint del panel mostrara el aviso de muestra chica y casi nunca la explicacion de la hora. Si molesta, ficha chica.
-- Ficha 41 (aviso, no bloquea): con replays anteriores a Y9S4 la fila "Sin marcador" de Tendencias puede ser grande; es correcto, el `.rec` viejo no trae el marcador.
-- Ficha 43 (ya en main, PR #33; match point, aviso, no bloquea): solo Ranked tiene regla citable (gana a 4; con 3-3 prorroga y gana el primero a 5; fuente: guia de Dexerto actualizada en 2024, no hay pagina oficial de Ubisoft con el dato). Unranked, rapida y custom van a "Sin marcador o sin regla" hasta que alguien cite la suya; si la sabes, es una linea en `reglas_partida.py`. Conviene mirarlo en el PC con una ranked real cuando llegue. Revisor: el tipo `Standard` tambien cae en "sin regla" y la fila de `metricas.md` no lo nombra (menor).
-- Ficha 44 (ya en main, PR #32; aviso de QA, no bloquea): `/api/overview/` tarda ~0,29 s con 2.000 partidas sinteticas (los records suman ~0,16 s). Si con tu base se siente lento, los records pueden ir a su propia request.
-- Ficha 44 (ya en main, PR #32; aviso, no bloquea): los minimos de los records (6 rondas para la mejor partida, 20 para el mejor dia) son a ojo; calibrar con la base real.
-- Verificar en el PC (Investigador, 2026-10-14): r6-dissect issue #130 reporta replays Y11S3 con `won: true` en los dos equipos en 3 de 5 rondas. `replays/analytics/metrics.py:205` se queda con el ultimo equipo sin avisar, asi que `my_team_won` podria salir al reves en esas rondas. Si tienes un `.rec` Y11S3, mirar si alguna ronda tiene a los dos equipos ganadores (idea P2 de `ALCANCE.md`); si se confirma, es un bug para el PO con prioridad 1. Tambien falta el operador 444310693746 (sale `Unknown(...)`, se puede nombrar en Datos; idea P1).
-- Verificar en el PC (Investigador, 2026-10-14 22:11Z, idea P5): dos forks de r6-dissect (nicktstewart y defiancer6s-hub) cambian en Y11S2 (code version 9734089) el patron del DissectID a `8C 61 1A 75 23` y el layout del kill feed; sintoma: jugadores duplicados o faltantes y bajas de gente que no esta en la lista. `docs/formato-rec.md` dice que Y11S3 anda sin cambios, asi que puede afectar solo a Y11S2. Si tienes un `.rec` de Y11S2 (Calypso Casino, 2026-06 a 2026-09), importalo y mira si faltan jugadores o bajas.
-- Ficha 49 **descartada** (Arquitecto 2026-10-15): el bug no existe. `map_slug()` sale del nombre legible y colapsa las versiones de un mapa a proposito (`pydissect/header.py:227-232`, `tests/test_pydissect.py:178`): `Consulate`, `ConsulateY7` y `ConsulateY10` son todos `Consulate`/`consulate`, asi que Mapas da una sola fila y el winrate por lado no se mezcla entre filas. `FortressY10` todavia no esta en `MAPS` (idea P1). **Decision tuya (P10, cambia como se agrupa un numero que ya se muestra):** ¿queres ver cada version de un mapa en su propia fila ("Consulate (Y10)")? Si si, es una funcionalidad barata: agrupar por `Match.map_id` (ya guardado) con el sufijo del identificador interno de `MAPS`, sin migracion ni reimportar. Decilo en `## Para el equipo` y el PO abre la ficha.
+(Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Los avisos que no bloquean de fichas ya en `main` quedan en su ficha; la lista larga anterior esta en `git log` de este archivo, commit previo a 2026-10-25 04:40.)
+
+- Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas (y `claude/equipo-dev/prueba-acceso` si existe).
+- PRs que esperan tu merge: ninguno. La 61 (clutch por operador) va a QA y la mergea el equipo si pasa la puerta.
+- **Decision (ficha 49, P10):** ¿cada version de un mapa en su propia fila ("Consulate (Y10)")? Agrupar por `Match.map_id`, sin migracion. Decilo en `## Para el equipo`.
+- **Decision (ficha 53, P10):** `RoundPlayer.kills` incluye teamkills (K/D, KPR, rating, multikills y ACE los cuentan). ¿Excluirlos? Cambia numeros que ya se muestran.
+- **Decision (ficha 50 / G7, P10):** si falta el `.rec` de la ultima ronda, la partida queda con el resultado truncado en toda la app. ¿`won=None` cuando el marcador no cierra la partida? Mueve todos los winrates.
+- **Decision (ficha 31):** si un compañero se desconecta, el ultimo vivo que gana 1v1 queda con `1vX == 0`. ¿Debe contar?
+- **Decision (ficha 38):** desde Y9S4 manda la cabecera sobre el kill feed para el ganador de la ronda. ¿Preferis que mande el feed?
+- **Decision (ficha 48):** todos los POST exigen `application/json`; `CLAUDE.md` dice "los que cambian configuracion". Ajustar la frase o abrir `/api/import/`.
+- **Decision (ficha 63):** "primera baja tuya" = `opening_kill` de tu equipo, cortes 30/90 s sin calibrar. Pedilo distinto en `## Para el equipo` si queres.
+- Verificar en el PC (34, 38, 47, 55; traen migracion o tocan el parser): `manage.py backup`, `migrate`, `recompute --dry-run` (sin cambios de `clutch_vs`), `recompute`; para 38, `import_replays --force <carpeta>`; para 47, `unknown_ids` y `retag --dry-run`. Detalle en cada ficha. **Despues de bajar main, `cd frontend; npm run build`.**
+- Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa.
+- Calibrar con la base real (umbrales solo probados con datos sinteticos): 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno.
+- Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
+- Entorno cloud: el `@playwright/test` del repo pide `chromium_headless_shell-1194` y la imagen trae la 1243; los turnos corren el e2e con enlaces en el scratchpad. Alinear la version de Playwright o el setup del entorno lo evitaria.
+- Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
+- Playbook candidato: origin/claude/equipo-dev/playbook@e8d6798 (el playbook vigente ya esta en `main`).
+- PRs abiertos que no son del equipo y no se tocan: #14, #22, #24, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
+- CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
+
+## Para el equipo` y el PO abre la ficha.
 - Ficha 45 (ya en main, PR #34; aviso del Dev, no bloquea): una partida con un `.rec` de ronda faltante, en el medio o al principio, no entra a remontadas, derrumbes ni a la tabla del cambio de lado (evita numeros falsos). Si faltan las ultimas no se detecta: el resultado de la partida ya sale truncado del ultimo `.rec` para toda la app. Con la base real, abrir una remontada y confirmar en el detalle que el marcador estuvo 2 abajo.
 - Ficha 45 (ya en main, PR #34; aviso del Revisor, no bloquea): con `matches_known == 0` el panel dice "hace falta Y9S4 o posterior", pero tambien saca partidas Y9S4 con rondas faltantes o sin resultado; cambio de texto de una linea (Trends.jsx:546); el Release no implementa, queda para una ficha chica.
 - Ficha 46 (ya en main, PR #35; aviso del Dev, no bloquea): `seed_demo` gana todas las rondas de ataque y pierde todas las de defensa, asi que en la demo el panel "Primero en caer" muestra 100 % y 0 % por lado; con la base real, abrir una ronda contada como "caíste primero" y confirmar en el feed que fuiste la primera baja de tu equipo.

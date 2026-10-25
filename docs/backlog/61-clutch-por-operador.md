@@ -1,6 +1,6 @@
 # 61. Clutch por operador
 
-estado: en curso 2026-10-25 (espejo; manda la rama de trabajo: implementado)
+estado: en curso 2026-10-25 (espejo; manda la rama de trabajo: revisado)
 candado: -
 rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
