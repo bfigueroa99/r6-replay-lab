@@ -26,6 +26,8 @@ RESUMEN <linea tal cual de estado.sh>
 - Papel: <PAPEL_TIPOS de estado.sh>. Cola: <COLA_TIPOS de estado.sh>.
 - `ALCANCE.md`: <n> ideas libres. Ideas nuevas de este turno: <titulos> | ninguna
 - Investigacion: ultima entrada <fecha> (<familias visitadas>) | ninguna todavia
+- Rotacion: <linea ROTACION de estado.sh tal cual>
+- Ciclo: <linea CICLO de estado.sh tal cual>
 
 ## Papel (rama backlog)
 
@@ -39,9 +41,12 @@ RESUMEN <linea tal cual de estado.sh>
 
 ## Para el humano
 
-- Ramas borrables (ya mergeadas o sin codigo): `git push origin --delete <rama>`
+(Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Un aviso que no bloquea de una ficha ya en `main` queda en la ficha, no aca.)
+
+- Ramas borrables: <linea BORRAR de estado.sh tal cual>
 - Preguntas abiertas: ...
-- Verificar en el PC: ...
+- PRs que esperan tu merge: ...
+- Verificar en el PC: <NN> (<que correr, en pocas palabras>), una linea por ficha
 - Rutina: <n> disparos sin rastro en 48 h (<lista>); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h` (solo si n > 0)
 - Playbook candidato: <linea PLAYBOOK_CANDIDATO de estado.sh> (solo si aparece)
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11 (los jobs mueren en segundos). Lo que vale es `check.sh` local. (Aviso unico; no se repite por turno.)
