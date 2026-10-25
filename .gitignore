@@ -45,3 +45,7 @@ Thumbs.db
 
 # Replays: nunca al repo, pesan 5-9 MB cada uno
 *.rec
+
+# Arena (.claude/skills/arena): el estado del torneo y las soluciones de los
+# competidores quedan en .arena/ del directorio donde se corre. Nunca al repo.
+.arena/

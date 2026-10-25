@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Bar as RBar,
   BarChart,
@@ -14,7 +15,17 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, fmt } from '../components/ui.jsx'
+import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { filasDeCierre, hayCierres } from '../cierres.js'
+import { filasDeCambio, filasDePartidas } from '../remontadas.js'
+import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
+import {
+  celdasConPocaMuestra,
+  filasDeDuracion,
+  hayDuracion,
+  resumenDeDuracion,
+} from '../duracion.js'
 
 const AXIS = { stroke: '#8b98a9', fontSize: 11 }
 const TOOLTIP = {
@@ -40,6 +51,179 @@ function Delta({ metric }) {
   return <span className="chip">{texto}</span>
 }
 
+/** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
+function TablaDeCambio({ filas, columna, minRows, csvName }) {
+  if (!filas?.length) {
+    return <p className="dim">Sin muestra en los dos periodos ({minRows}+ rondas en cada uno).</p>
+  }
+  const rows = filas.map((row) => ({ ...row, key: row.slug ?? `${row.operator}-${row.side}` }))
+  return (
+    <DataTable
+      columns={[
+        columnaDeNombre(columna),
+        { key: 'previous_rounds', label: 'Rondas antes' },
+        { key: 'current_rounds', label: 'Rondas ahora' },
+        { key: 'previous_winrate', label: 'Ganadas antes', digits: 0, suffix: '%' },
+        { key: 'current_winrate', label: 'Ganadas ahora', digits: 0, suffix: '%' },
+        { key: 'delta', label: 'Cambio', render: (row) => <Delta metric={row} />, csv: (row) => row.delta },
+        {
+          key: 'noise',
+          label: 'Ruido',
+          help: 'La misma banda de la tabla de arriba, con las rondas de esta fila.',
+          render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
+          csv: (row) => row.noise,
+          dim: true,
+        },
+        { key: 'previous_rating', label: 'Rating antes', digits: 2 },
+        { key: 'current_rating', label: 'Rating ahora', digits: 2 },
+      ]}
+      rows={rows}
+      initialSort={{ key: 'delta', dir: 'desc' }}
+      rowKey={(row) => row.key}
+      csvName={csvName}
+    />
+  )
+}
+
+function columnaDeNombre(columna) {
+  if (columna === 'Mapa') return { key: 'map', label: 'Mapa', left: true }
+  return {
+    key: 'operator',
+    label: 'Operador',
+    left: true,
+    render: (row) => (
+      <>
+        {row.operator} <SideChip side={row.side} />
+      </>
+    ),
+    csv: (row) => `${row.operator} (${row.side})`,
+  }
+}
+
+const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
+// La tabla de mitades y la de primera ronda se leen una al lado de la otra.
+const COLUMNAS_POR_TRAMO = [
+  { key: 'tramo', label: 'Tramo', sortable: false, left: true },
+  { key: 'rounds', label: 'Rondas', sortable: false },
+  { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
+  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+  { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+]
+const APERTURAS = { match_start: 'Ronda 1', side_switch: 'Primera tras el cambio', rest: 'Resto' }
+const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
+const RONDA_ANTERIOR = {
+  after_win: 'Después de ganar',
+  after_loss: 'Después de perder',
+  no_previous: 'Sin ronda anterior',
+}
+const MARCADOR = { ahead: 'Adelante', tied: 'Empatado', behind: 'Atrás', unknown: 'Sin marcador' }
+const MATCH_POINT = {
+  mine: 'Tu match point',
+  theirs: 'Match point rival',
+  both: 'Los dos a una ronda',
+  normal: 'Sin match point',
+  unknown: 'Sin marcador o sin regla',
+}
+// las etiquetas se arman una vez: la clave del backend es la hora de inicio de la franja
+const FRANJAS = Object.fromEntries([0, 3, 6, 9, 12, 15, 18, 21].map((h) => [h, `${h}–${h + 3} h`]))
+const DIAS = Object.fromEntries(
+  ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((dia, i) => [i + 1, dia]),
+)
+
+const SIN_ELIMINACION =
+  'Objetivo o tiempo: el .rec de temporadas nuevas no separa plant, defuse ni tiempo agotado; se infiere del reloj.'
+
+/**
+ * Porcentaje con el conteo de rondas al lado, para que un 100 % de 2 rondas se
+ * vea como tal. En pantalla va el entero que suma 100 con su complemento; el
+ * CSV lleva el valor exacto y el conteo.
+ */
+function columnaCierre(key, label, conteo, help) {
+  return {
+    key,
+    label,
+    sortable: false,
+    help,
+    render: (row) => (row.vista[key] === null ? '—' : `${row.vista[key]}% (${row[conteo]})`),
+    csv: (row) =>
+      row[key] === null || row[key] === undefined
+        ? `(${row[conteo]})`
+        : `${String(row[key]).replace('.', ',')} (${row[conteo]})`,
+  }
+}
+
+/** Winrate y rondas de un lado del tramo; el CSV lleva el winrate exacto. */
+function columnaDuracion(lado, label) {
+  return {
+    key: lado,
+    label,
+    sortable: false,
+    render: (row) => row.vista[lado],
+    csv: (row) => {
+      const celda = row[lado] || {}
+      return celda.winrate === null || celda.winrate === undefined
+        ? `(${celda.rounds || 0})`
+        : `${String(celda.winrate).replace('.', ',')} (${celda.rounds})`
+    },
+  }
+}
+
+const segundos = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} s`)
+
+/** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
+function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
+  const rows = filasDePartidas(partidas, clave)
+  if (!rows.length) return <p className="note">{vacio}</p>
+  return (
+    <>
+      <DataTable
+        columns={[
+          {
+            key: 'fecha',
+            label: 'Cuándo',
+            sortable: false,
+            render: (row) => <Link to={`/partidas/${row.match_id}`}>{row.fecha}</Link>,
+          },
+          { key: 'map', label: 'Mapa', sortable: false, left: true },
+          { key: 'score', label: 'Final', sortable: false },
+          { key: 'diferencia', label: columna, sortable: false },
+        ]}
+        rows={rows}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        rowKey={(row) => row.match_id}
+        csvName={csvName}
+      />
+      {total > rows.length ? <p className="note">Se muestran {rows.length} de {total}.</p> : null}
+    </>
+  )
+}
+
+/** Tabla de un corte de Tendencias: una fila por tramo, en el orden del backend. */
+function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
+  const rows = (filas || []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: etiquetas[row[rowKey]] || row[rowKey],
+  }))
+  return (
+    <DataTable
+      columns={[
+        { key: 'tramo', label: columna, sortable: false, left: true },
+        { key: 'rounds', label: 'Rondas', sortable: false },
+        { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
+        { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+        { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+        { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+      ]}
+      rows={rows}
+      initialSort={{ key: 'orden', dir: 'asc' }}
+      rowKey={(row) => row[rowKey]}
+      csvName={csvName}
+    />
+  )
+}
+
 export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
   const sesiones = useApi('/sessions/', filters)
@@ -61,6 +245,36 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     ...row,
     ronda: `R${row.round_number + 1}`,
   }))
+  const porMitad = (data.by_half ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: MITADES[row.half] || row.half,
+  }))
+  const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    tramo: APERTURAS[row.opener] || row.opener,
+  }))
+  const porLadoInicial = (data.by_start_side ?? []).map((row, orden) => ({
+    ...row,
+    orden,
+    lado: LADOS[row.side] || row.side,
+  }))
+  const porAnterior = data.by_previous_round ?? []
+  // sin marcador es ruido de replays viejos: solo se muestra si tiene rondas
+  const porMarcador = (data.by_score_state ?? []).filter(
+    (row) => row.score_state !== 'unknown' || row.rounds > 0,
+  )
+  const porMatchPoint = (data.by_match_point ?? []).filter(
+    (row) => row.match_point !== 'unknown' || row.rounds > 0,
+  )
+  const cierres = filasDeCierre(data.round_endings)
+  const remontadas = data.comebacks
+  const margen = data.by_margin
+  const filasMargen = filasDeMargen(margen)
+  const duracion = data.by_round_length
+  const porHora = data.by_hour ?? []
+  const porDia = data.by_weekday ?? []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
   const porPosicion = sesiones.data?.by_position || []
@@ -134,6 +348,22 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'label', dir: 'asc' }}
             rowKey={(row) => row.key}
             csvName="progreso"
+          />
+
+          <h3>Mapas</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_map}
+            columna="Mapa"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-mapas"
+          />
+
+          <h3>Operadores</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_operator}
+            columna="Operador"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-operadores"
           />
         </Panel>
       ) : null}
@@ -317,6 +547,315 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'start', dir: 'asc' }}
             rowKey={(row) => row.start}
             csvName="cuando-mueres"
+          />
+        </Panel>
+      ) : null}
+
+      {porMitad.length ? (
+        <Panel
+          title="Por mitad de la partida"
+          hint={
+            'Primera mitad: las rondas en el lado con que arrancaste. ' +
+            'Si la segunda o la prórroga caen, el problema es cerrar, no empezar.'
+          }
+        >
+          <DataTable
+            columns={COLUMNAS_POR_TRAMO}
+            rows={porMitad}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.half}
+            csvName="por-mitad"
+          />
+          {porApertura.length ? (
+            <>
+              <h3 style={{ margin: '16px 0 8px' }}>Primera ronda de cada lado</h3>
+              <DataTable
+                columns={COLUMNAS_POR_TRAMO}
+                rows={porApertura}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.opener}
+                csvName="primera-ronda-de-cada-lado"
+              />
+              {filasConPocaMuestra(porApertura).length ? (
+                <p className="note">
+                  Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          <h3 style={{ margin: '16px 0 8px' }}>Según el lado con que arrancas</h3>
+          <DataTable
+            columns={[
+              { key: 'lado', label: 'Lado', sortable: false, left: true },
+              { key: 'matches', label: 'Partidas', sortable: false },
+              { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false, help: 'Partidas ganadas sobre las que tienen resultado.' },
+            ]}
+            rows={porLadoInicial}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.side}
+            csvName="por-lado-inicial"
+          />
+        </Panel>
+      ) : null}
+
+      {porAnterior.length ? (
+        <Panel
+          title="Después de ganar o perder la ronda anterior"
+          hint={
+            filasConPocaMuestra(porAnterior).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Si después de perder tu winrate o tu rating caen más que tu promedio, la ronda perdida te sigue pesando.'
+          }
+        >
+          <TablaDeCorte
+            filas={porAnterior}
+            columna="Ronda anterior"
+            etiquetas={RONDA_ANTERIOR}
+            rowKey="previous"
+            csvName="ronda-anterior"
+          />
+        </Panel>
+      ) : null}
+
+      {porMarcador.length ? (
+        <Panel
+          title="Según el marcador"
+          hint={
+            filasConPocaMuestra(porMarcador).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Cómo rindes según cómo iba la partida antes de la ronda.'
+          }
+        >
+          <TablaDeCorte
+            filas={porMarcador}
+            columna="Marcador"
+            etiquetas={MARCADOR}
+            rowKey="score_state"
+            csvName="segun-marcador"
+          />
+        </Panel>
+      ) : null}
+
+      {porMatchPoint.length ? (
+        <Panel
+          title="Match point"
+          hint={
+            filasConPocaMuestra(porMatchPoint).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Rondas que podían cerrar la partida. Por ahora solo ranked: los otros modos no tienen regla confirmada.'
+          }
+        >
+          <TablaDeCorte
+            filas={porMatchPoint}
+            columna="Match point"
+            etiquetas={MATCH_POINT}
+            rowKey="match_point"
+            csvName="match-point"
+          />
+        </Panel>
+      ) : null}
+
+      {remontadas ? (
+        <Panel
+          title="Remontadas y derrumbes"
+          hint="Partidas que ganaste yendo 2 o más rondas abajo, y las que perdiste yendo 2 o más arriba. Solo cuentan partidas desde Y9S4, que traen el marcador."
+        >
+          {remontadas.matches_known === 0 ? (
+            <p className="note">Sin partidas con marcador conocido (hace falta Y9S4 o posterior).</p>
+          ) : (
+            <>
+              <h3>Remontadas</h3>
+              <TablaDePartidas
+                partidas={remontadas.remontadas}
+                clave="max_deficit"
+                columna="Peor marcador"
+                total={remontadas.remontadas_total}
+                vacio="Ninguna remontada de 2 o más rondas todavía."
+                csvName="remontadas"
+              />
+              <h3>Derrumbes</h3>
+              <TablaDePartidas
+                partidas={remontadas.derrumbes}
+                clave="max_lead"
+                columna="Mejor marcador"
+                total={remontadas.derrumbes_total}
+                vacio="Ningún derrumbe de 2 o más rondas todavía."
+                csvName="derrumbes"
+              />
+              <h3>Por diferencia al cambio de lado</h3>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Diferencia', sortable: false, left: true,
+                    help: 'Tus rondas menos las del rival antes de la primera ronda de la segunda mitad.' },
+                  { key: 'matches', label: 'Partidas', sortable: false },
+                  { key: 'wins', label: 'Ganadas', sortable: false },
+                  { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%', sortable: false },
+                ]}
+                rows={filasDeCambio(remontadas.by_side_change_diff)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.diff}
+                csvName="cambio-de-lado"
+              />
+            </>
+          )}
+        </Panel>
+      ) : null}
+
+      {margen ? (
+        <Panel
+          title="Partidas cerradas y holgadas"
+          hint={
+            filasConPocaMuestra(filasMargen.map((f) => ({ rounds: f.matches })), MUESTRA_PARTIDAS).length
+              ? `Ojo: algún tramo tiene menos de ${MUESTRA_PARTIDAS} partidas; la diferencia puede ser varianza.`
+              : 'Margen final de la partida. Solo desde Y9S4.'
+          }
+        >
+          {hayMargen(margen) ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Margen', sortable: false, left: true,
+                    help: 'Diferencia de rondas del marcador final. Una partida que fue a prórroga cuenta como prórroga aunque termine 2 arriba.' },
+                  { key: 'matches', label: 'Partidas', sortable: false },
+                  { key: 'wins', label: 'Ganadas', sortable: false },
+                  { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%', sortable: false },
+                  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Sobre todas tus rondas de esas partidas.' },
+                  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+                ]}
+                rows={filasMargen}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.margin}
+                csvName="por-margen"
+              />
+              {margen.matches_excluded > 0 ? (
+                <p className="note">
+                  {margen.matches_excluded} {margen.matches_excluded === 1 ? 'partida quedó' : 'partidas quedaron'} fuera (anteriores a Y9S4, empates o sin resultado).
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Sin partidas con margen legible: hace falta Y9S4 o posterior, y que la partida tenga ganador.</p>
+          )}
+        </Panel>
+      ) : null}
+
+      {hayCierres(cierres) ? (
+        <Panel
+          title="Cómo se cierran tus rondas"
+          hint={
+            filasConPocaMuestra(cierres).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Si en defensa pierdes casi todo por eliminación, el problema son los duelos; si pierdes sin eliminación, es el tiempo o el objetivo.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'lado', label: 'Lado', sortable: false, left: true },
+              { key: 'rounds', label: 'Rondas', sortable: false },
+              columnaCierre('won_elimination_pct', 'Ganadas por eliminación', 'won_elimination',
+                'De tus ganadas con dato, cuántas terminaron con el otro equipo eliminado. Entre paréntesis, las rondas.'),
+              columnaCierre('won_other_pct', 'Ganadas sin eliminación', 'won_other', SIN_ELIMINACION),
+              columnaCierre('lost_elimination_pct', 'Perdidas por eliminación', 'lost_elimination',
+                'De tus perdidas con dato, cuántas terminaron con tu equipo eliminado. Entre paréntesis, las rondas.'),
+              columnaCierre('lost_other_pct', 'Perdidas sin eliminación', 'lost_other', SIN_ELIMINACION),
+              { key: 'unknown', label: 'Sin dato', sortable: false, help: 'Rondas sin ganador o sin condición de cierre.' },
+            ]}
+            rows={cierres}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.side}
+            csvName="como-se-cierran"
+          />
+        </Panel>
+      ) : null}
+
+      {duracion ? (
+        <Panel
+          title="Rondas cortas y largas"
+          hint={
+            celdasConPocaMuestra(duracion).length
+              ? `Ojo: alguna celda tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Winrate según cuánto duró la fase de acción. Llegar al final del reloj cae en 135 s o más: en ataque es derrota y en defensa victoria.'
+          }
+        >
+          {hayDuracion(duracion) ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Duración', sortable: false, left: true,
+                    help: 'Segundos de la fase de acción, del reloj de la ronda. Posible plant: el reloj se cortó arriba de 5 s sin barrida; esas rondas no entran en ningún tramo.' },
+                  columnaDuracion('Attack', 'Ataque'),
+                  columnaDuracion('Defense', 'Defensa'),
+                  columnaDuracion('total', 'Total'),
+                  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Sobre el total del tramo.' },
+                  { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
+                ]}
+                rows={filasDeDuracion(duracion)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.length}
+                csvName="por-duracion"
+              />
+              <h3>Cuánto tardas en ganar y en perder</h3>
+              <DataTable
+                columns={[
+                  { key: 'lado', label: 'Lado', sortable: false, left: true },
+                  { key: 'rounds', label: 'Rondas', sortable: false },
+                  { key: 'avg_duration_won', label: 'Ganadas en', sortable: false,
+                    render: (row) => segundos(row.avg_duration_won),
+                    help: 'Duración promedio de tus rondas ganadas, sin posible plant ni rondas sin ganador.' },
+                  { key: 'avg_duration_lost', label: 'Perdidas en', sortable: false,
+                    render: (row) => segundos(row.avg_duration_lost) },
+                ]}
+                rows={resumenDeDuracion(duracion)}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.clave}
+                csvName="duracion-promedio"
+              />
+            </>
+          ) : (
+            <p className="note">Sin rondas con reloj legible.</p>
+          )}
+          {duracion.rounds_unknown_clock > 0 ? (
+            <p className="note">
+              {duracion.rounds_unknown_clock} {duracion.rounds_unknown_clock === 1 ? 'ronda sin reloj quedó' : 'rondas sin reloj quedaron'} fuera.
+            </p>
+          ) : null}
+        </Panel>
+      ) : null}
+
+      {porHora.length ? (
+        <Panel
+          title="Por hora del día"
+          hint={
+            filasConPocaMuestra(porHora).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Hora de inicio de la partida, tal como la guardó tu PC.'
+          }
+        >
+          <TablaDeCorte
+            filas={porHora}
+            columna="Hora"
+            etiquetas={FRANJAS}
+            rowKey="hour_from"
+            csvName="por-hora"
+          />
+        </Panel>
+      ) : null}
+
+      {porDia.length ? (
+        <Panel
+          title="Por día de la semana"
+          hint={
+            filasConPocaMuestra(porDia).length
+              ? `Ojo: alguna fila tiene menos de ${MUESTRA_CORTE} rondas; la diferencia puede ser varianza.`
+              : 'Día en que empezó la partida.'
+          }
+        >
+          <TablaDeCorte
+            filas={porDia}
+            columna="Día"
+            etiquetas={DIAS}
+            rowKey="weekday"
+            csvName="por-dia"
           />
         </Panel>
       ) : null}

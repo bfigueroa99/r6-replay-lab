@@ -1,6 +1,6 @@
 ---
 name: equipo-dev
-description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun lo que el pipeline necesita (`turno.sh`); el reloj desempata. Usar cuando la rutina lo pida o con /equipo-dev [rol].
+description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada pocas horas (la cadencia la fija la Routine) en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun lo que el pipeline necesita (`turno.sh`); el reloj desempata. Usar cuando la rutina lo pida o con /equipo-dev [rol].
 ---
 
 # Equipo de desarrollo: una iteracion, un rol
@@ -142,10 +142,13 @@ pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
 argumento de `turno.sh`, en minuscula.
 `estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
 de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
-viejas sin ficha, los disparos de la rutina sin rastro (`TURNOS_SIN_RASTRO`),
-`COLA`, `TOTAL`, la linea `RESUMEN` que lee `turno.sh` y si el entorno esta
-completo. Con eso se
-sabe todo lo que hace falta para decidir. El playbook se lee siempre de
+viejas sin ficha, las ramas borrables en un solo comando (`BORRAR`), el
+tamano de `## Para el humano` (`PARA_EL_HUMANO`), la cadencia real de la
+rutina y sus disparos sin rastro (`CADENCIA`, `TURNOS_SIN_RASTRO`, y `PULSO`,
+que separa perdidos de muertos), `COLA`, `TOTAL`, la rotacion del alcance
+(`ROTACION`), el tiempo de reclamo a `main` (`CICLO`), la salud del loop
+(`SALUD_*`), la linea `RESUMEN` que lee `turno.sh` y si el entorno esta
+completo. Con eso se sabe todo lo que hace falta para decidir. El playbook se lee siempre de
 `$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
 
 Entorno incompleto: `python3 -m pip install -r requirements.txt
@@ -194,9 +197,11 @@ env y en `ESTADO.md`.
 
 Medido del 2026-10-08 al 2026-10-13: 33 turnos con rastro cerraron en
 promedio a los 5 minutos de arrancar (el mas largo, 14) sobre un presupuesto
-de 135, y ninguna funcionalidad llego a `main`. Por eso, **cuando el trabajo
-del rol termino y quedan 40 minutos o mas**, el turno no se cierra: pide el
-siguiente rol con
+de 135. Y con el rol por estado una entrega cruzaba cuatro disparos seguidos
+(dev, revisor, qa, release): 12 h de reclamo a `main` en el mejor caso a la
+cadencia de 4 h (`CICLO`). Por eso, **cuando el trabajo del rol termino y
+quedan 40 minutos o mas (20 si lo que sigue es Release)**, el turno no se
+cierra: pide el siguiente rol con
 
 ```bash
 git show "$EQUIPO_REF:scripts/equipo-dev/turno.sh" | bash -s -- --encadenar
@@ -207,7 +212,14 @@ contado **sin las fichas en las que esta sesion ya firmo una etapa que le
 impide la siguiente** (no revisa lo que implemento, no prueba lo que reviso
 o implemento, no implementa lo que reviso o probo, no mergea nada en lo que
 firmo, no disena lo que propuso). Asi la independencia (principio 4) sigue
-intacta: lo que encadena es otro trabajo, no otra etapa del mismo. Mantiene
+intacta: lo que encadena es otro trabajo, no otra etapa del mismo. Probar y
+mergear no chocan (el principio cuenta implementar, revisar y probar): **la
+QA que deja una ficha en `aprobado` encadena como Release sobre esa misma
+ficha** (es la regla 1 de la lista, con la ficha recien aprobada), con la
+misma puerta de merge y `release <sesion>` en `turnos:`; `puerta.sh` acepta el
+`check.sh` que la QA corrio si encima solo hay commits de `docs/backlog`, asi
+el Release no lo repite. Un Release nunca mergea lo que la misma sesion
+implemento o reviso. Mantiene
 sesion, inicio y hora de cierre; escribe el rol nuevo y `EQUIPO_ROLES` en el
 env; imprime `ENCADENAR=si rol=<rol>` y la linea `# leer:` con el archivo de
 rol a leer (`roles/<rol>.md`), o `ENCADENAR=no motivo=<...>` y el turno va al
@@ -220,7 +232,10 @@ sesion, y el cierre comun se hace una sola vez al final con todos los roles.
 ### Rol por reloj: desempate cuando nada espera, alternancia del Investigador y nemotecnia
 
 Franja de 3 horas mas cercana, `((minuto_del_dia + 90) / 180) % 8`, tolera
-arranques demorados hasta 88 minutos.
+arranques demorados hasta 88 minutos. La tabla supone disparos cada 3 h; si
+la Routine dispara con otra cadencia (`CADENCIA` de `estado.sh`; desde el
+2026-10-15, cada 4 h), el reloj cae en la franja mas cercana y solo
+desempata: los roles salen del estado.
 
 | franja | disparo UTC | Chile (UTC-3) | rol |
 |---|---|---|---|
@@ -386,11 +401,17 @@ estable (`H<n>`, desde que fecha), `### Maquinaria propuesta por el equipo` y
 byte por byte y `pulso.sh` no escribe un tablero que no lo conserve. La
 plantilla comentada esta en `docs/backlog/ESTADO.plantilla.md`.
 
-**Pedidos al humano.** Una decision que solo el humano puede tomar (P10,
+**Pedidos al humano.** `## Para el humano` lleva solo lo que el humano tiene
+que decidir o hacer: preguntas abiertas, PRs que esperan su merge, la linea
+`BORRAR`, "Verificar en el PC" (un pedido por ficha, con su numero; el
+detalle esta en la ficha) y los avisos de la rutina. Un aviso que no
+bloquea de una ficha que ya esta en `main` no va: queda en `## Para el
+humano` de la ficha. Una decision que solo el humano puede tomar (P10,
 calibrar con su base, verificar en el PC) se anota **una vez** con `pulso.sh
 cierre --humano "<pedido en una frase, con la ficha>"` y queda como `H<n>`
 hasta que alguien la cierra con `--cerrar H<n> "<como se resolvio>"` (el
-humano contesta en `## Para el equipo` citando el id). No se repite en cada
+humano contesta en `## Para el equipo` citando el id); con `PARA_EL_HUMANO`
+sobre su tope de 20, el turno cierra los que ya no piden nada. No se repite en cada
 turno con otras palabras ni se copia a la ficha mas que como `ver H<n>`: el
 historial mostro las mismas cinco preguntas reescritas en cada `ESTADO.md`
 durante dias. `estado.sh` marca `SALUD_PEDIDO_VIEJO` las que pasan 3 dias.
@@ -481,7 +502,8 @@ El equipo se mira a si mismo con `estado.sh` (seccion `== salud`, y
 `## Salud del loop` en el tablero), y cada turno la lee al arrancar:
 
 - `SALUD_RUTINA`: disparos perdidos (sin arranque en `PULSO.md`) o sesiones
-  que arrancaron y murieron sin cierre en 48 h. Lo que se puede hacer desde
+  que arrancaron y murieron sin cierre en 48 h, contados contra la cadencia
+  medida (`CADENCIA`), no contra un cron fijo. Lo que se puede hacer desde
   el repo es nada: va solo al tablero (la linea se actualiza sola, no se
   repite) y es del humano.
 - `SALUD_ATASCADA`: una ficha mas de 48 h quieta en una etapa del equipo. El
@@ -498,7 +520,10 @@ El equipo se mira a si mismo con `estado.sh` (seccion `== salud`, y
 - `SALUD_PLAYBOOK_TOCADO`: una rama del equipo cambia `.claude/` o
   `scripts/equipo-dev/`. El Revisor la devuelve a `con hallazgos`: el equipo
   no edita su maquinaria.
-- `SALUD_BORRABLES`: cinco o mas ramas esperando que el humano las borre.
+- `SALUD_BORRABLES`: cinco o mas ramas esperando que el humano las borre
+  (el comando unico esta en `BORRAR`).
+- `SALUD_PARA_EL_HUMANO`: `## Para el humano` paso su tope de 20 vinetas;
+  el cierre cierra con `--cerrar` los pedidos que ya no piden nada.
 
 El equipo **propone** maquinaria y **nunca la implementa**: lo que haria el
 loop mas autonomo o mas barato va con `pulso.sh cierre --maquinaria "<idea,

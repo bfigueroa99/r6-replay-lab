@@ -1,13 +1,15 @@
-"""Recalculo de los trades sobre lo ya importado, sin reparsear los replays.
+"""Recalculo de trades y clutch sobre lo ya importado, sin reparsear los replays.
 
 Los trades se guardan calculados al importar, asi que cambiar
-`TRADE_WINDOW_SECONDS` no mueve nada por si solo. Todo lo que hace falta para
+`TRADE_WINDOW_SECONDS` no mueve nada por si solo. `clutch_vs` tambien se
+rehace aca: las partidas importadas antes de que existiera la columna la
+tienen en 0. Todo lo que hace falta para
 rehacer el calculo esta en la base: los eventos con su reloj y los jugadores con
 su equipo. No hay que abrir un solo `.rec`.
 
-La regla de trade no se reimplementa aca: se llama a la misma
-`metrics.annotate_trades` que usa el import. Duplicarla significaria que cambiar
-la ventana da numeros distintos segun por donde pasaste.
+Las reglas no se reimplementan aca: se llama a las mismas
+`metrics.annotate_trades` y `metrics.clutch_vs` que usa el import. Duplicarlas
+significaria numeros distintos segun por donde pasaste.
 """
 
 from __future__ import annotations
@@ -16,11 +18,11 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from .analytics.metrics import KILL, annotate_trades, trade_window
+from .analytics.metrics import KILL, annotate_trades, clutch_vs, trade_window
 from .models import Event, Round, RoundPlayer
 
-#: Campos que dependen de la ventana de trade.
-CAMPOS = ("was_traded", "trade_kills", "untraded_death", "kst")
+#: Campos que se recalculan: los que dependen de la ventana de trade y el clutch.
+CAMPOS = ("was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs")
 
 
 @dataclass
@@ -58,6 +60,12 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
     ]
 
     annotate_trades(kill_events, team_of, metrics, window)
+    clutch = clutch_vs(
+        [{"kind": e.kind, "actor": e.actor_name, "target": e.target_name} for e in eventos],
+        team_of,
+    )
+    for nick, vs in clutch.items():
+        metrics[nick]["clutch_vs"] = vs
 
     cambiados = []
     for p in jugadores:
@@ -86,7 +94,7 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
 
 
 def recompute(*, window: float | None = None, dry_run: bool = False) -> RecomputeResult:
-    """Rehace los trades de todas las rondas importadas."""
+    """Rehace los trades y `clutch_vs` de todas las rondas importadas."""
     if window is None:
         window = trade_window()
 

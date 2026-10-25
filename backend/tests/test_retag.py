@@ -47,11 +47,20 @@ class OverridesTestCase(TestCase):
         else:
             os.environ[overrides.ENV_VAR] = previo
 
-    def escribir_overrides(self, maps: dict | None = None, operators: dict | None = None) -> None:
-        self.path.write_text(
-            json.dumps({"maps": maps or {}, "operators": operators or {}}),
-            encoding="utf-8",
-        )
+    def escribir_overrides(
+        self,
+        maps: dict | None = None,
+        operators: dict | None = None,
+        gamemodes: dict | None = None,
+        match_types: dict | None = None,
+    ) -> None:
+        contenido = {"maps": maps or {}, "operators": operators or {}}
+        # sin las claves nuevas si no hacen falta: asi se escribe un JSON viejo
+        if gamemodes is not None:
+            contenido["gamemodes"] = gamemodes
+        if match_types is not None:
+            contenido["match_types"] = match_types
+        self.path.write_text(json.dumps(contenido), encoding="utf-8")
 
 
 class RetagTests(OverridesTestCase):
@@ -120,6 +129,66 @@ class RetagTests(OverridesTestCase):
         self.assertEqual(Match.objects.get(map_id=0).map_name, "Club House")
 
 
+class RetagModoYTipoTests(OverridesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.match = make_match(gamemode="Unknown(999)", match_type="Unknown(77)", index=0)
+
+    def test_modo_unknown_999_pasa_a_la_etiqueta(self):
+        self.escribir_overrides(gamemodes={"999": "Arcade"})
+        result = retag()
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.gamemode, "Arcade")
+        self.assertEqual(self.match.match_type, "Unknown(77)")
+        self.assertEqual(result.matches, 1)
+        self.assertEqual(
+            [(c.kind, c.old, c.new) for c in result.changes], [("modo", "Unknown(999)", "Arcade")]
+        )
+
+    def test_tipo_unknown_pasa_a_la_etiqueta(self):
+        self.escribir_overrides(match_types={"77": "Evento"})
+        retag()
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.match_type, "Evento")
+
+    def test_no_toca_un_modo_que_ya_tenia_nombre(self):
+        otra = make_match(gamemode="Bomb", index=1)
+        self.escribir_overrides(gamemodes={"999": "Arcade"})
+        retag()
+        otra.refresh_from_db()
+        self.assertEqual(otra.gamemode, "Bomb")
+
+    def test_sin_etiqueta_el_modo_sigue_unknown(self):
+        self.escribir_overrides()
+        result = retag()
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.gamemode, "Unknown(999)")
+        self.assertFalse(result.changed)
+
+    def test_dry_run_no_escribe_el_modo(self):
+        self.escribir_overrides(gamemodes={"999": "Arcade"})
+        result = retag(dry_run=True)
+        self.match.refresh_from_db()
+        self.assertEqual(self.match.gamemode, "Unknown(999)")
+        self.assertEqual(result.matches, 1)
+
+    def test_modo_y_tipo_de_la_misma_partida_cuentan_una_partida(self):
+        self.escribir_overrides(gamemodes={"999": "Arcade"}, match_types={"77": "Evento"})
+        result = retag()
+        self.assertEqual(result.matches, 1)
+        self.assertEqual(len(result.changes), 2)
+
+    def test_el_texto_que_no_es_unknown_con_id_no_se_toca(self):
+        make_match(gamemode="Unknown(abc)", index=1)
+        make_match(gamemode="Unknown(0)", index=2)
+        self.escribir_overrides(gamemodes={"0": "Cero"})
+        retag()
+        self.assertEqual(
+            sorted(Match.objects.values_list("gamemode", flat=True)),
+            ["Unknown(0)", "Unknown(999)", "Unknown(abc)"],
+        )
+
+
 class RetagCommandTests(OverridesTestCase):
     def setUp(self):
         super().setUp()
@@ -163,6 +232,16 @@ class UnknownIdsCommandTests(OverridesTestCase):
         self.assertEqual(data["maps"][str(MAPA_NUEVO)], "")
         self.assertEqual(data["operators"][str(OPERADOR_NUEVO)], "")
         self.assertIn("manage.py retag", out.getvalue())
+
+    def test_lista_modos_y_tipos_y_los_escribe(self):
+        make_match(gamemode="Unknown(999)", match_type="Unknown(77)", index=1)
+        out = StringIO()
+        call_command("unknown_ids", "--write", stdout=out)
+        self.assertIn("Modos sin nombre:", out.getvalue())
+        self.assertIn("Tipos de partida sin nombre:", out.getvalue())
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(data["gamemodes"], {"999": ""})
+        self.assertEqual(data["match_types"], {"77": ""})
 
     def test_muestra_los_sitios_que_delatan_el_mapa(self):
         out = StringIO()

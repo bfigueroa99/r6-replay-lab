@@ -129,7 +129,7 @@ if toca b; then
                 revisor) otras="$D $Q" ;;
                 qa) otras="$D $Rv" ;;
                 dev) otras="$Rv $Q" ;;
-                release) otras="$D $Rv $Q" ;;
+                release) otras="$D $Rv" ;;
             esac
             for s in $otras; do [ "$s" = "$como_ses" ] && det="$det esta sesion ($como_ses) ya firmo otra etapa de la ficha;"; done
         else
@@ -142,8 +142,10 @@ if toca b; then
             ud=$(ult dev); ur=$(ult revisor); uq=$(ult qa)
             if [ "$ud" -gt 0 ] && [ "$ur" -gt 0 ] && [ "$ur" -lt "$ud" ]; then det="$det la ultima revision es anterior al ultimo dev;"; fi
             if [ "$ur" -gt 0 ] && [ "$uq" -gt 0 ] && [ "$uq" -lt "$ur" ]; then det="$det la ultima QA es anterior a la ultima revision;"; fi
+            # Probar y mergear no chocan (la QA que aprueba sigue como Release);
+            # implementar o revisar y despues mergear, si.
             if [ "$como_rol" = release ] && [ -n "$como_ses" ]; then
-                for s in $D $Rv $Q; do [ "$s" = "$como_ses" ] && det="$det el Release ($como_ses) firmo una etapa de la ficha: no la mergea;"; done
+                for s in $D $Rv; do [ "$s" = "$como_ses" ] && det="$det el Release ($como_ses) implemento o reviso la ficha: no la mergea;"; done
             fi
             git log -p --format= "origin/main..$R" -- "$ficha" | grep -q '^+estado: aprobado' \
                 || det="$det la ficha nunca estuvo en aprobado en esta rama;"
@@ -195,8 +197,17 @@ if toca f; then
     # exacto y en esta sesion (sin env: en las ultimas 3 horas).
     desde=${EQUIPO_INICIO:-0}
     [ "$desde" -gt 0 ] || desde=$(( $(date -u +%s) - 10800 ))
-    verde=$(awk -v s="$sha" -v d="$desde" '$1 == s && $2 >= d && $3 == "e2e"' "$gitdir/check-verde" 2>/dev/null | tail -1)
-    [ -n "$verde" ] || det="$det sin check.sh completo en verde sobre ${sha:0:7} en esta sesion;"
+    # Un verde sobre un commit anterior tambien vale si lo que vino despues
+    # solo toca docs/backlog (la seccion de QA, el `## PR`, el `Entrega:`): la
+    # QA que encadena como Release no repite el check.sh sobre la misma base.
+    verde=""
+    while read -r v_sha v_t v_e2e; do
+        [ "$v_t" -ge "$desde" ] && [ "$v_e2e" = e2e ] || continue
+        if [ "$v_sha" = "$sha" ]; then verde=$v_sha; break; fi
+        git merge-base --is-ancestor "$v_sha" "$sha" 2>/dev/null || continue
+        [ -z "$(git diff --name-only "$v_sha" "$sha" -- . ':(exclude)docs/backlog' 2>/dev/null)" ] && verde=$v_sha
+    done < <(tac "$gitdir/check-verde" 2>/dev/null)
+    [ -n "$verde" ] || det="$det sin check.sh completo en verde sobre ${sha:0:7} (o un ancestro con solo docs/backlog encima) en esta sesion;"
     if [ -n "$det" ]; then linea f FALLA "${det# }"; else linea f OK "main fusionado, empujado y check.sh en verde sobre ${sha:0:7}"; fi
 fi
 

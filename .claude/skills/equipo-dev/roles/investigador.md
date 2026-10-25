@@ -34,6 +34,16 @@ traer lo que ya existe.
 
 ## Metodo, en orden
 
+0. **Familia 8, paridad con la referencia (Replica).** No rota como las
+   demas: va primero en el primer turno en que su fila de la tabla de
+   Fuentes de `INVESTIGACION.md` lleve 7 dias o mas sin visita, o no exista;
+   asi corre una vez por semana. Es la pasada del pack Replica sobre la app
+   de referencia (recon, columna `clone` contra `main`, `parity.py`, resenas
+   reales), siguiendo `.claude/skills/equipo-dev/replica.md` (leerlo de
+   `$REF`), que dice cual es la referencia (hoy r6-replay.com y Aurelix) y
+   como cambiarla. Los `must` que faltan entran a `ALCANCE.md` en la epica
+   `paridad-referencia`; lo que el `.rec` no da queda como `skip` con su
+   motivo. Despues, si queda tiempo, las demas familias.
 1. **Elegir 3 o 4 familias** de la tabla de fuentes de `INVESTIGACION.md`:
    primero la familia 6 (Ubisoft) si empezo una temporada o salio un parche
    desde su ultima visita (cambian operadores, mapas e IDs que el parser
@@ -106,15 +116,16 @@ para que nadie lo vuelva a traer.
   de las fichas en main; las ideas van igual a `ALCANCE.md`. Se anota "sin
   red" en `INVESTIGACION.md` y, si no hay ya un pedido igual, `--humano
   "Investigador sin red: habilitar WebSearch y WebFetch en el entorno de la
-  Routine"` (el tablero no lo repite: es el mismo texto).
+  Routine"` (el tablero no lo repite: es el mismo texto). Si le toca la
+  familia 8, igual actualiza `clone` y corre `parity.py`, que no usan red.
 - **Prioridades:** P1, P2 y P3 como cualquier rol. P4 a P7 no le tocan:
   nunca implementa, revisa ni prueba.
 
 ## Salida y cierre
 
 - Commits `Investiga: <familias>` en `backlog`, solo
-  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md` (y el tablero
-  al cerrar). Nunca fichas: priorizar es del PO. Nunca PR, nunca rama de
+  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md`, mas
+  `docs/backlog/replica/*` con la familia 8 (y el tablero al cerrar). Nunca fichas: priorizar es del PO. Nunca PR, nunca rama de
   trabajo, nunca codigo. Sin candado; un push rechazado sigue la receta
   unica de `backlog` (en `ALCANCE.md` e `INVESTIGACION.md` se conservan las
   filas y entradas de los dos lados).

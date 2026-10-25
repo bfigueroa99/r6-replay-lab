@@ -32,7 +32,12 @@ Cuando el estado lo pide (reglas 4, 5 y 10); por reloj, franjas 3 y 5.
   migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
   repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
   explican por que). Dos subagentes para backend y frontend si son
-  independientes. Antes del ultimo push: subagente ciego con `revision.md`
+  independientes. Si el diseno deja abierto un punto con enfoques
+  genuinamente distintos (un algoritmo, la decodificacion de un campo) y no
+  lo decidio una arena del Arquitecto, ese punto se juega en una arena
+  (`.claude/skills/equipo-dev/arena.md`): una por turno, `--agents 4`, el
+  diff del ganador pasa por los mismos tests, `check.sh` y revision que
+  cualquier cambio. Antes del ultimo push: subagente ciego con `revision.md`
   sobre `git diff origin/main...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
   filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
   es el plan). `mutar.py` sobre cada archivo de codigo que cambio, con el

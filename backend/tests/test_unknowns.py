@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
+from pydissect import overrides
 from replays import unknowns
 from replays.models import Match, RoundPlayer
 
@@ -79,7 +81,10 @@ class ValidacionTests(OverridesTestCase):
 
     def test_archivo_roto_no_revienta(self):
         self.path.write_text("{no es json", encoding="utf-8")
-        self.assertEqual(unknowns.read_overrides(), {"maps": {}, "operators": {}})
+        self.assertEqual(
+            unknowns.read_overrides(),
+            {"maps": {}, "operators": {}, "gamemodes": {}, "match_types": {}},
+        )
 
 
 class EndpointTests(OverridesTestCase):
@@ -140,3 +145,95 @@ class EndpointTests(OverridesTestCase):
 
     def test_get_no_guarda(self):
         self.assertEqual(self.client.get("/api/overrides/").status_code, 405)
+
+    def test_un_formulario_de_otra_pagina_no_reetiqueta(self):
+        cuerpo = json.dumps({"maps": {str(MAPA_NUEVO): "Nighthaven Labs"}})
+        for tipo in ("text/plain", "application/x-www-form-urlencoded"):
+            respuesta = self.client.post("/api/overrides/", data=cuerpo, content_type=tipo)
+            self.assertEqual(respuesta.status_code, 415, tipo)
+        self.assertFalse(self.path.exists())
+        self.assertEqual(Match.objects.get().map_name, f"Unknown({MAPA_NUEVO})")
+
+
+class ModosYTiposTests(OverridesTestCase):
+    def _post(self, payload):
+        return self.client.post(
+            "/api/overrides/", data=json.dumps(payload), content_type="application/json"
+        )
+
+    def test_base_sin_desconocidos_da_listas_vacias(self):
+        make_match(index=0)
+        data = self.client.get("/api/unknown/").json()
+        self.assertEqual((data["gamemodes"], data["match_types"]), ([], []))
+
+    def test_modo_desconocido_lista_sus_partidas_y_fechas(self):
+        make_match(gamemode="Unknown(999)", index=0, played_at=datetime(2026, 9, 1, 20, 0))
+        make_match(gamemode="Unknown(999)", index=1, played_at=datetime(2026, 9, 5, 20, 0),
+                   match_type="Unranked")
+        make_match(gamemode="Bomb", index=2)
+        filas = unknowns.unknown_gamemodes()
+        self.assertEqual(len(filas), 1)
+        fila = filas[0]
+        self.assertEqual((fila["id"], fila["label"], fila["matches"]), ("999", "Unknown(999)", 2))
+        self.assertTrue(fila["first_seen"].startswith("2026-09-01"))
+        self.assertTrue(fila["last_seen"].startswith("2026-09-05"))
+        self.assertEqual(fila["match_types"], ["Ranked", "Unranked"])
+        self.assertEqual(fila["pending"], "")
+
+    def test_tipo_desconocido_trae_los_modos_como_pista(self):
+        make_match(match_type="Unknown(77)", gamemode="Hostage", index=0)
+        fila = unknowns.unknown_match_types()[0]
+        self.assertEqual((fila["id"], fila["gamemodes"]), ("77", ["Hostage"]))
+
+    def test_unknown_0_no_se_lista(self):
+        make_match(gamemode="Unknown(0)", match_type="Unknown(0)", index=0)
+        self.assertEqual(unknowns.unknown_gamemodes(), [])
+        self.assertEqual(unknowns.unknown_match_types(), [])
+
+    def test_etiqueta_pendiente_se_muestra(self):
+        make_match(gamemode="Unknown(999)", index=0)
+        self.path.write_text(json.dumps({"gamemodes": {"999": "Arcade"}}), encoding="utf-8")
+        overrides.load(force=True)
+        self.assertEqual(unknowns.unknown_gamemodes()[0]["pending"], "Arcade")
+
+    def test_guardar_etiqueta_de_modo_y_reetiqueta(self):
+        make_match(gamemode="Unknown(999)", index=0)
+        response = self._post({"gamemodes": {"999": "Arcade"}})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["saved"]["gamemodes"], {"999": "Arcade"})
+        self.assertEqual(Match.objects.get().gamemode, "Arcade")
+        self.assertEqual(self.client.get("/api/unknown/").json()["gamemodes"], [])
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(data["gamemodes"], {"999": "Arcade"})
+
+    def test_solo_etiquetas_de_tipo_alcanza_para_guardar(self):
+        make_match(match_type="Unknown(77)", index=0)
+        self.assertEqual(self._post({"match_types": {"77": "Evento"}}).status_code, 200)
+        self.assertEqual(Match.objects.get().match_type, "Evento")
+
+    def test_id_de_modo_no_numerico_da_400_y_no_escribe(self):
+        response = self._post({"gamemodes": {"abc": "Arcade"}})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(self.path.exists())
+        self.assertEqual(self._post({"match_types": "no"}).status_code, 400)
+
+    def test_guardar_mapa_no_borra_las_etiquetas_de_modo(self):
+        self.path.write_text(json.dumps({"gamemodes": {"999": "Arcade"}}), encoding="utf-8")
+        self._post({"maps": {"1": "Villa"}})
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(data["gamemodes"], {"999": "Arcade"})
+        self.assertEqual(data["maps"], {"1": "Villa"})
+
+    def test_overrides_viejo_sin_claves_nuevas_se_lee(self):
+        self.path.write_text(json.dumps({"maps": {"1": "Villa"}, "operators": {}}), encoding="utf-8")
+        data = unknowns.read_overrides()
+        self.assertEqual(data["gamemodes"], {})
+        self.assertEqual(data["match_types"], {})
+        self.assertEqual(data["maps"], {"1": "Villa"})
+
+    def test_id_de_unknown(self):
+        self.assertEqual(unknowns.id_de_unknown("Unknown(999)"), 999)
+        self.assertIsNone(unknowns.id_de_unknown("Unknown(0)"))
+        self.assertIsNone(unknowns.id_de_unknown("Unknown(abc)"))
+        self.assertIsNone(unknowns.id_de_unknown("Bomb"))
+        self.assertIsNone(unknowns.id_de_unknown(""))

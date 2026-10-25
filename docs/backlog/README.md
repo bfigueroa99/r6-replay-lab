@@ -87,7 +87,17 @@ reloj, la franja 7 de los dias pares) con lo que trae de afuera: parsers abierto
 r6-dissect), otras herramientas de replay, trackers, herramientas de otros
 juegos, la comunidad, las notas de parche de Ubisoft y la analitica de
 esports. Cada idea de afuera llega con su link, y su bitacora (que fuentes se
-miraron, que dieron, que salio seco) es `INVESTIGACION.md`. Las semillas de
+miraron, que dieron, que salio seco) es `INVESTIGACION.md`.
+
+Una vez por semana el investigador tambien mide la **paridad con la app de
+referencia** con el pack Replica (`.claude/skills/replica-*`): mapa de lo que
+la referencia hace, matriz de funciones con lo que la app ya tiene, puntaje de
+`parity.py` y resenas reales de sus usuarios. Lo que la referencia tiene y el
+`.rec` no puede dar queda como `skip`; los `must` que faltan entran a
+`ALCANCE.md` en la epica `paridad-referencia`. Los archivos quedan en
+`docs/backlog/replica/*` de la rama `backlog`. La referencia es **r6-replay.com y
+Aurelix**, y el procedimiento completo esta en
+`.claude/skills/equipo-dev/replica.md`. Las semillas de
 los dos archivos estan en `docs/backlog/` del playbook y se copian a
 `backlog` la primera vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
 `main` en la ultima semana y, si fueron cero, por que.
@@ -97,6 +107,10 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
 - **Dirigir el crecimiento**: editar `ALCANCE.md` en la rama `backlog` desde
   la web. Lo que subas en una tabla se propone antes; una idea con estado `no`
   o tachada no se propone nunca.
+- **Cambiar la referencia de Replica**: editar el bloque "Referencia" de
+  `.claude/skills/equipo-dev/replica.md` en un PR y mergearlo. La pasada
+  siguiente ve que no coincide con la de `recon.md` y rehace el recon con la
+  referencia nueva.
 - **Vetar el merge automatico**: crear `docs/backlog/SIN_MERGE` en la rama
   `backlog` desde la web. El equipo sigue trabajando pero deja todo en
   `entregado` para que lo mergees vos. Borrar el archivo lo reactiva.

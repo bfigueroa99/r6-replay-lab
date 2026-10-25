@@ -378,6 +378,7 @@ def read_scoreboard_score(r) -> None:
 def round_end(r) -> None:
     """Determina quien gano la ronda y por que condicion."""
     planter = -1
+    disabler = -1
     deaths: dict[int, int] = {}
     sizes: dict[int, int] = {}
     roles: dict[int, str] = {}
@@ -411,26 +412,33 @@ def round_end(r) -> None:
         elif kind == DEFUSER_DISABLE_COMPLETE:
             i = r.player_index_by_username(u.get("username", ""))
             if i > -1:
-                t = r.players[i].get("teamIndex", 0)
-                r.teams[t]["won"] = True
-                r.teams[t]["winCondition"] = DISABLED_DEFUSER
-                return
+                disabler = i
+                if r.code_version < Y9S4:
+                    t = r.players[i].get("teamIndex", 0)
+                    r.teams[t]["won"] = True
+                    r.teams[t]["winCondition"] = DISABLED_DEFUSER
+                    return
+
+    if r.code_version >= Y9S4:
+        # la cabecera es la misma fuente que el marcador de la partida: manda
+        # sobre el feed, que solo aporta la condicion si apunta al ganador
+        winner = 0 if r.teams[0]["won"] else 1
+        loser = winner ^ 1
+        if disabler > -1 and r.players[disabler].get("teamIndex", 0) == winner:
+            r.teams[winner]["winCondition"] = DISABLED_DEFUSER
+        elif planter > -1 and r.players[planter].get("teamIndex", 0) == winner:
+            r.teams[winner]["winCondition"] = DEFUSED_BOMB
+        elif r.header.get("gamemode") == BOMB:
+            if deaths.get(loser, 0) >= sizes.get(loser, 5):
+                r.teams[winner]["winCondition"] = KILLED_OPPONENTS
+            else:
+                r.teams[winner]["winCondition"] = TIME
+        return
 
     if planter > -1:
         t = r.players[planter].get("teamIndex", 0)
         r.teams[t]["won"] = True
         r.teams[t]["winCondition"] = DEFUSED_BOMB
-        return
-
-    if r.code_version >= Y9S4:
-        # desde Y9S4 la cabecera ya dice quien gano; la condicion queda abierta
-        if r.header.get("gamemode") == BOMB and not any(t["winCondition"] for t in r.teams):
-            winner = 0 if r.teams[0]["won"] else 1
-            loser = winner ^ 1
-            if deaths.get(loser, 0) >= sizes.get(loser, 5):
-                r.teams[winner]["winCondition"] = KILLED_OPPONENTS
-            else:
-                r.teams[winner]["winCondition"] = TIME
         return
 
     if deaths.get(0, 0) == sizes.get(0, 0):

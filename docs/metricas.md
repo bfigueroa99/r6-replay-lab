@@ -10,7 +10,7 @@ aca esta la definicion exacta.
 |---|---|
 | **Rondas** | Rondas tuyas importadas que pasan los filtros activos. |
 | **Rondas ganadas (winrate)** | Rondas donde tu equipo gano / rondas jugadas. Es winrate **de rondas**, no de partidas: mide mejor porque una partida son 6-9 muestras. |
-| **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. |
+| **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. Las bajas incluyen teamkills; Duelos y la Matriz de duelos los descartan. |
 | **K/D** | bajas / muertes. |
 | **KPR** | bajas / rondas. Mas honesto que el K/D porque no premia esconderse. Referencia razonable en ranked: 0.7-0.9. |
 | **HS%** | headshots / bajas. El replay marca el headshot en cada kill. |
@@ -67,6 +67,46 @@ apertura, trade y clutch, 5.8.
 - **Como numero suelto no dice nada**: el rating de todo tu historial es 1.00 por
   definicion. Sirve en las tablas, comparando cortes.
 
+## Mitades y prorroga
+
+En Tendencias, la partida se corta por mitades sin suponer cuantas rondas
+tiene cada modo: la mitad se deduce del lado de cada ronda.
+
+| Metrica | Definicion |
+|---|---|
+| **Primera / segunda mitad** | Rondas sin prorroga. Primera mitad: las jugadas en el lado inicial de la partida; segunda: las del otro lado. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. Rondas sin lado, o de una partida sin lado inicial, no entran en ninguna. Si faltan los `.rec` de la primera mitad, la segunda se lee como primera. |
+| **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
+| **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
+| **Primera ronda de cada lado** | Ronda 1: tu ronda sin prorroga de numero mas bajo de la partida. Primera tras el cambio: la ronda sin prorroga de numero mas bajo cuyo lado no es el inicial (una partida que nunca cambio de lado no tiene). Resto: tus demas rondas sin prorroga con lado. La prorroga no entra en ninguna fila. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia cual es la primera. Si faltan los `.rec` del arranque, la primera ronda que quedo se lee como "Ronda 1"; si falta el de la primera ronda del otro lado, la siguiente se lee como "Primera tras el cambio". |
+
+## Contexto de la ronda
+
+En Tendencias, cada ronda se corta tambien por lo que paso antes de ella en la
+misma partida.
+
+| Metrica | Definicion |
+|---|---|
+| **Despues de ganar / perder** | Rondas cuya ronda anterior (la de numero `N - 1` en la misma partida) tu equipo gano o perdio. La anterior se lee de la partida entera: el filtro de lado o de operador limita las rondas que se cuentan, no cambia cual fue la anterior. La primera ronda, la que no tiene importada la anterior (falta su `.rec`) y la que tiene la anterior sin resultado van a "Sin ronda anterior". Las tres filas suman todas tus rondas. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. |
+| **Segun el marcador** | Rondas en que tu equipo llegaba adelante, empatado o atras: el marcador al empezar la ronda (`startingScore` de cada equipo en el `.rec`, guardado en `Round.score_before`), tu equipo contra el otro. No depende de a cuanto se gana el modo, asi que vale igual en ranked, unranked o rapida. Una ronda de una partida anterior a Y9S4 (el `.rec` no trae el marcador y se guarda 0-0), sin marcador o con un marcador que no es de dos equipos va a "Sin marcador", que solo se muestra si tiene rondas. Las cuatro filas suman todas tus rondas. |
+| **Match point** | Rondas segun si alguien podia cerrar la partida ganandola, leido del marcador antes de la ronda (el mismo de "Segun el marcador"). *Tu match point*: tu equipo gana la partida si gana esa ronda; *match point rival*: al reves; *los dos a una ronda*: las dos cosas. Depende de a cuanto se gana cada tipo de partida, que sale de una tabla con fuente (`replays/analytics/reglas_partida.py`): hoy solo ranked (gana a 4; con 3-3 hay prorroga y gana el primero a 5, asi que 3-3 no es match point y 4-4 es de los dos). Unranked, rapida y custom no tienen regla confirmada y van a "Sin marcador o sin regla", junto con las rondas sin marcador o anteriores a Y9S4; esa fila solo se muestra si tiene rondas. Las cinco filas suman todas tus rondas. |
+| **Como se cierran tus rondas** | Tus rondas de cada lado (ataque, defensa) segun como terminaron, de `Round.win_condition` y `Round.my_team_won`. *Por eliminacion*: el equipo perdedor termino con todos muertos (`KilledOpponents`). *Sin eliminacion*: hubo ganador sin que nadie quedara eliminado del todo (`ObjectiveOrTime`); el `.rec` de temporadas nuevas no dice si fue plant, defuse o tiempo, asi que es inferido del reloj y nunca se separa. Un plant seguido de la eliminacion de los atacantes y un defuse cuenta como eliminacion. *Sin dato*: ronda sin ganador o sin condicion. Los porcentajes son sobre tus ganadas (o perdidas) con dato, y entre parentesis va el conteo de rondas. Las cinco columnas de conteo suman todas tus rondas de ese lado; las rondas sin lado no entran. |
+| **Duracion de la ronda** (panel "Rondas cortas y largas") | `Round.clock_start - Round.clock_end`: segundos absolutos de la fase de accion. Tramos fijos `0-45`, `45-90`, `90-135` y `135 o mas`, con el borde cerrado abajo (45 s exactos es `45-90`). Una ronda que llega al final del reloj termina con `clock_end = 1` y cae en el ultimo tramo: en ataque es derrota y en defensa victoria. *Posible plant* (`Round.possible_plant`) no entra en ningun tramo: va a su propia fila y solo se cuenta, sin winrate, rating ni promedios, porque no es una metrica de plant. Un plant que termina en barrida no se marca y entra a un tramo con la duracion hasta el plant; el `.rec` no deja separarlo. Reloj desconocido (`clock_start` o `clock_end` en 0) queda fuera de todas las filas y se cuenta aparte. Winrate (`RoundPlayer.won`), rating y KPR son los de siempre sobre las rondas del tramo. El lado es el de tu fila; *Total* incluye las rondas sin lado. **Cuanto tardas en ganar / perder**: promedio de la duracion de tus rondas ganadas / perdidas (`Round.my_team_won`) de los cuatro tramos, sin posible plant ni rondas sin ganador, con un decimal en la API y redondeado a segundos en la UI. Aviso de varianza con menos de 30 rondas en una celda. |
+
+## Remontadas y derrumbes
+
+Panel de Tendencias. Solo partidas desde Y9S4 (antes el `.rec` no trae el
+marcador), con resultado, con todas sus rondas importadas y con el marcador legible
+(dos equipos) en todas: una ronda que falta (tambien las primeras: la primera presente tiene que arrancar 0-0) o ilegible saca la partida entera. Si faltan las ultimas no se nota: el resultado de la partida sale del ultimo `.rec` importado, para este panel y para toda la app. Los filtros eligen
+partidas y cada partida se lee entera, como en "Lado inicial".
+
+| Metrica | Definicion |
+|---|---|
+| **Desventaja / ventaja maxima** | El peor (o mejor) `tus rondas - las del rival` del marcador antes de cada ronda (`Round.score_before`, leido con tu `team_index`). Cuenta el marcador antes de la ultima ronda, no el final: perder 3-4 desde 3-2 es ventaja maxima 1. |
+| **Remontada** | Partida ganada con desventaja maxima de 2 o mas rondas. El corte de 2 es fijo: con 1 entraria toda partida que perdiste la primera ronda. Se listan las 20 de mayor desventaja (a igual, la mas reciente) y se cuentan todas. |
+| **Derrumbe** | Partida perdida con ventaja maxima de 2 o mas rondas. Mismo tope y orden que las remontadas. |
+| **Winrate segun la diferencia al cambio de lado** | Partidas y winrate de partida segun `tus rondas - las del rival` antes de la primera ronda de la segunda mitad: la primera ronda sin prorroga cuyo lado es distinto del de la ronda mas baja sin prorroga (la misma frontera que "Mitades y prorroga"). Tramos `+2 o mas`, `+1`, `Empatado`, `-1`, `-2 o menos`; las cinco filas se muestran aunque esten en 0. Una partida sin ronda de segunda mitad importada no entra. |
+| **Margen final** (panel "Partidas cerradas y holgadas") | Partidas, ganadas y winrate de partida segun `abs(Match.my_score - Match.opponent_score)`, el marcador final. Tramos `Prorroga` (alguna ronda con `overtime_number > 0`; gana a cualquier margen), `1 ronda`, `2 rondas`, `3 o mas`; las cuatro filas se muestran aunque esten en 0. Corte propio, mas laxo que el de arriba: basta con que la partida sea Y9S4 o posterior y tenga resultado; no exige todas las rondas. Pre-Y9S4, empates y sin resultado quedan fuera y se cuentan aparte. `side` se ignora (no parte una partida). Rating y KPR del tramo sobre todas tus rondas de esas partidas, sin recortar por operador ni sitio. Aviso de varianza con menos de 10 partidas en un tramo. |
+
 ## Sesiones
 
 Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
@@ -83,6 +123,37 @@ esa partida sigue siendo la tercera de su noche.
 El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
 con el que mas conviene es la forma barata de encontrar patrones que no existen.
 
+## Records
+
+El panel **Tus récords** del Resumen. Se calculan con los filtros activos. En
+todos, a igual valor gana la partida (o el dia) mas reciente: igualar un record
+lo mueve a la partida nueva. Sin candidato el record no aparece; nunca se
+muestra un 0 inventado.
+
+| Metrica | Definicion |
+|---|---|
+| **Mejor partida** | El rating de partida mas alto (el de "Rating") entre las partidas con al menos 6 rondas tuyas (`RECORD_MIN_RONDAS_PARTIDA`). |
+| **Mas bajas en una partida** | La suma de tus bajas mas alta en una partida. Sin ninguna baja, no hay record. |
+| **Mas bajas en una ronda** | El maximo de bajas tuyas en una ronda, con la etiqueta de la ronda (`R1`, `R2`...). A igual valor y misma partida, la ronda mas tardia. |
+| **Clutch mas grande** | El 1vX ganado de X mas alto (`one_vx` de una ronda que tu equipo gano). Sin clutches ganados, no hay record. |
+| **Racha de rondas** | Las rondas ganadas seguidas mas largas de una partida, con la etiqueta de la ronda donde empieza. Se mide sobre todas las rondas de la partida, prorroga incluida: el filtro elige partidas, no rondas (con un filtro de lado no habria rachas, porque los lados alternan). La cortan una ronda perdida, una ronda sin resultado y un hueco en la numeracion (falta un `.rec`). En el encabezado del detalle de partida se muestran tambien las perdidas seguidas, con la misma regla; ahi, a igual largo, queda la primera racha de la partida. |
+| **Mejor dia** | El winrate de rondas mas alto en un dia con al menos 20 rondas tuyas (`RECORD_MIN_RONDAS_DIA`); empata a favor de mas rondas ganadas y despues del dia mas reciente. No enlaza a una partida. Los dos minimos son a ojo. |
+
+## Cuando juegas
+
+En Tendencias, tus rondas cortadas por el momento en que empezo la partida. La
+hora es la que guardo tu PC al grabar el replay, tal cual (sin zona horaria ni
+conversion). Una partida cuenta entera en la franja y el dia en que empezo,
+aunque termine pasada la medianoche. Las filas son fijas: una franja sin rondas
+sale en 0, y cada lista suma todas tus rondas. Las metricas (ganadas, rating,
+KPR, aperturas) son las de siempre sobre ese corte, con el aviso de muestra
+minima de abajo.
+
+| Metrica | Definicion |
+|---|---|
+| **Por hora del dia** | Ocho franjas de 3 horas (0–3, 3–6, ..., 21–24) segun la hora de inicio de la partida. El borde es la hora en punto: una partida de las 2:59 cae en 0–3 y una de las 3:00 en 3–6. |
+| **Por dia de la semana** | Lunes a domingo segun el dia de inicio de la partida. |
+
 ## Duelos de apertura
 
 La **primera baja de la ronda** define el duelo de apertura. Quien mata lo gana,
@@ -96,6 +167,8 @@ quien muere lo pierde. Si la primera muerte no tiene asesino registrado (evento
 | **Winrate tras ganar la apertura** | Rondas ganadas entre las rondas donde te llevaste la primera baja. En Siege esta arriba del 70% para casi cualquier jugador: por eso el primer duelo importa tanto. |
 | **Winrate tras perder la apertura** | Lo mismo del otro lado. |
 | **Entry kill** | La primera baja **de tu equipo** en la ronda (distinto de la primera de la ronda: si el rival abrio, tu entry sigue estando en juego). |
+| **Primero de tu equipo en caer** | En cada ronda tuya, quien de tu equipo tiene la menor hora de muerte (`death_elapsed`). Es la primera baja **de tu equipo**, no de la ronda: si antes cayó un rival, sigue contando (distinto de la apertura perdida de *Duelos de apertura*). Si nadie de tu equipo tiene hora de muerte (no perdió a nadie, o el feed no la registró), la ronda va a *Sin bajas*. Empate en el mismo segundo, o una hora en 0 (evento sin reloj): cae primero quien aparece antes en el feed; si falta el evento de alguno, la ronda cuenta para el compañero. Página Compañeros, panel *Primero en caer*, por lado y total. El % junto a *Caíste primero* y *Cayó un compañero* es sobre todas las rondas del lado, incluidas las *Sin bajas*. |
+| **Winrate cuando caes primero / cuando cae un compañero / sin bajas** | Rondas ganadas sobre rondas de cada grupo de la fila anterior. El lado es el de tu fila de la ronda. |
 
 ## Trades
 
@@ -132,6 +205,10 @@ de las dos direcciones. Sale del kill feed, no del scoreboard.
 | **Mueres (contra un operador)** | Rondas en que moriste / rondas contra ese operador. |
 | **Ganas la ronda (contra un operador)** | Rondas ganadas / rondas contra ese operador. |
 | **vs. promedio** | Puntos de diferencia entre la tasa contra ese operador y la misma tasa sobre **todas** tus rondas filtradas. En "Mueres" es mejor negativo; en "Ganas" es mejor positivo. No trae banda de ruido: con 10 a 30 rondas, 10 o 15 puntos todavia pueden ser azar. |
+| **Rival repetido** | Persona (por profileID, no por nick) que estuvo en el equipo contrario en al menos una de tus rondas filtradas de N partidas distintas. Desde 2 partidas. Un rival que solo aparece en rondas que los filtros por ronda (`side`, `site`, `operator`) dejan afuera no cuenta en esa partida. |
+| **Récord contra un rival** | Partidas ganadas-perdidas de esas N. El winrate se calcula sobre las que tienen resultado: una partida sin resultado cuenta en Partidas y no en el winrate. Es tu record contra esa persona, no su nivel. |
+| **Matriz de duelos (partida)** | En el detalle de una partida: bajas del feed entre jugadores de equipos distintos, por par autor -> victima, con cuantas fueron headshot. El equipo de cada nick se lee de los jugadores de esa misma ronda; teamkills, bajas sin autor o sin victima y nicks sin fila en la ronda no cuentan. El lado (tu equipo o el rival) se decide ronda por ronda con tu `team_index` de esa ronda. Con "Solo aperturas", solo la apertura de cada ronda, la misma de **Duelos de apertura** y de la columna Aperturas del scoreboard: la primera muerte de la ronda (`Kill` o `Death`). Si esa muerte no es una baja entre rivales (una muerte sin asesino, un teamkill), la ronda no suma nada a la matriz. Conteos crudos, sin rating. |
+| **Teamkills** | Baja del feed (`Kill`) con autor y victima en tu equipo esa ronda, leido ronda por ronda con el `team_index` de cada uno; un suicidio no cuenta. *Hechos*: tuyas sobre un compañero; *Sufridos*: de un compañero sobre ti. *Rondas con teamkill*: tus rondas filtradas con al menos un teamkill de tu equipo (tambien entre otros dos compañeros) y su winrate contra el de las demas, con el mismo `won` que **Winrate** (una ronda sin ganador conocido cuenta como no ganada). La tabla por compañero (profileID) solo suma los que te involucran. Siguen contando en Bajas, KPR, Rating y multikills, que no cambian. Página Compañeros, panel *Teamkills*. |
 
 En ranked solo los rivales casi no se repiten, asi que la tabla por persona es
 anecdota antes que patron: el coach solo opina desde 8 duelos contra la misma
@@ -146,7 +223,9 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 |---|---|
 | **KST** | Rondas donde mataste, sobreviviste o tu muerte se tradeo, sobre el total. Es el clasico KOST **sin la O** de objetivo, porque los eventos de plant/defuse no estan disponibles (ver `formato-rec.md`). Bajo 65% significa que hay muchas rondas donde tu equipo jugo con uno menos. |
 | **1vX (clutch)** | Rondas donde quedaste ultimo de tu equipo y ganaste. El `X` es la cantidad de rivales vivos cuando quedaste solo. Se calcula con la misma logica que r6-dissect. |
-| **Multikill** | Rondas con 2 o mas bajas. |
+| **Clutch: intentos y conversión** | Intento = ronda en la que quedaste como unico vivo de tu equipo con al menos un rival vivo, ganes o pierdas (`clutch_vs`, calculado al importar desde el feed; `Kill`, `Death` y `PlayerLeave` cuentan como muerte). `X` = rivales vivos en ese instante (si tu equipo arranca la ronda con uno solo, el intento empieza en el primer segundo); 5 o mas se agrupan en `1v5+`. Ganado = intento en una ronda que tu equipo gano; las rondas sin ganador conocido (`.rec` cortado) no cuentan como intento. Conversion = ganados / intentos, total y por lado. Difiere del `1vX` de arriba en que cuenta tambien los perdidos, y su `X` puede no coincidir con el de `one_vx`, que r6-dissect calcula desde el final de la ronda. Partidas importadas antes se llenan con la migracion o con `manage.py recompute`. |
+| **Clutch por mapa y sitio** | Mismo intento y ganado que la fila de arriba, agrupados por mapa (`Match.map_slug`) y sitio de bomba de la ronda (`Round.site`). Por mapa hay una fila Total (suma de sus sitios) y una por sitio, ordenadas por intentos; las rondas sin sitio van a "Sin sitio", ultima del mapa. Conversion = ganados / intentos. Un `*` marca una fila con menos de 5 intentos (`CLUTCH_SITIO_MIN`): sale igual, pero ese % es muestra chica. Respeta los filtros de la barra. |
+| **Multikill (2K, 3K, 4K, ace)** | Rondas con exactamente 2, 3 y 4 bajas, y ace = 5 o mas (un teamkill o un modo con respawn la pueden pasar de 5; con un teamkill entre las 5 sale ace sin haber matado a los 5 rivales). Las bajas son las de la columna Bajas: todo evento Kill del feed con tu nick como autor, **teamkills incluidos**. El scoreboard de la partida las muestra como `2×2K · 1×ACE` (rondas × tamaño, solo los tamaños con alguna ronda) y ordena por el total de rondas con 2 o mas; el Resumen y el perfil de un jugador muestran el mismo texto sobre las rondas filtradas. `multikill_pct` (rondas con 2 o mas / rondas) no cambia. |
 | **Cuando mueres** | La distribucion completa, en tramos de 30 segundos y separada por lado. El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir mitad a los 20 y mitad a los 170, y las dos cosas se arreglan distinto. |
 | **Sales muy temprano** | Muertes en los primeros 30 **segundos jugados**. La ronda todavia no se arma: mueres sin informacion. El coach opina desde 25 muertes del lado y un 25% concentrado ahi (el reparto uniforme daria 17%). |
 | **Te quedas sin tiempo** | Muertes con menos de 30 segundos **de reloj**. Es otro eje: no importa cuanto jugaste, importa que la ronda ya estaba decidida. En ataque significa que la ejecucion nunca llego a empezar. |
@@ -167,6 +246,7 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | **Rival** | Duelos contra una persona o contra un operador rival. Ver la seccion Duelos. |
 | **Con y sin** | Tus numeros en las rondas que compartiste con alguien, contra el resto de tu historial. Es la unica forma de ver si con esa persona rindes distinto, pero el lado "sin" suele tener poca muestra: la app lo avisa bajo 20 rondas. |
 | **Compañero** | Winrate de las rondas que esa persona jugo **en tu equipo**, no su winrate por separado. Se agrupa por jugador (profileID), asi que un cambio de nick no parte el historial. Con menos de 25 rondas compartidas es varianza. |
+| **Tamaño del grupo** (panel "Solo, en dúo o en stack") | Habitual = un jugador (por `profileID`, asi que un cambio de nick no lo parte) que jugo en tu equipo (`team_index` igual al tuyo en la misma ronda) en 5 o mas partidas distintas de **todo** tu historial. Se mide sin filtros a proposito: un filtro de mapa o de fecha no cambia con quien jugas. Cada partida cae en una sola fila por los habituales distintos que estuvieron en tu equipo en cualquiera de sus rondas: *Solo* 0, *Dúo* 1, *Trío* 2, *Stack* 3 o mas (3 o 4 en un stack completo; mas solo si alguien entro por abandono). Los filtros eligen que partidas y que rondas entran, pero no cambian quien es habitual ni la fila de una partida. *Winrate partida*: sobre el resultado entero de la partida, sin las que no tienen ganador (empates e incompletas, `Match.won` nulo). *Rondas*, *Winrate rondas* y *Rating*: los de siempre sobre tus rondas filtradas de esas partidas. Distinto del minimo de Sinergia, que cuenta rondas filtradas y se ajusta en la UI. Aviso de varianza con menos de 10 partidas en un grupo. |
 
 ## Resumen de la ronda
 
@@ -202,6 +282,7 @@ anteriores, que siempre tiene muestra de los dos lados si jugaste 2N) y por
 |---|---|
 | **Cambio** | La diferencia entre los dos periodos, en puntos o en la unidad de la metrica. |
 | **Banda de ruido** | Error estandar de la diferencia entre las dos proporciones: `sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)`. Es **cuanto se mueve sola** una metrica con esa cantidad de rondas. Si el cambio no pasa la banda, la app lo marca como ruido y no como mejora ni empeora. |
+| **Cambio por mapa y operador** | Los mismos dos periodos partidos por mapa y por operador + lado. Una fila aparece solo si tiene al menos **10 rondas en cada periodo** (`COMPARE_MIN_ROUNDS_FILA`, mas baja que las 20 del total porque un operador rara vez junta 20 rondas de un lado en 10 partidas). El cambio es de winrate de ronda; la banda es la misma formula con las rondas de esa fila, y el veredicto (mejor, peor o ruido) sale igual que en el total. El rating de cada periodo se muestra sin banda. Las filas van de la que mas subio a la que mas cayo. |
 
 Un ejemplo real de por que hace falta: 10 partidas contra las 10 anteriores dio
 un winrate 9.3 puntos mas bajo. Suena a bajon, pero con ~50 rondas por lado la
@@ -246,5 +327,6 @@ opinar:
 | Mapa | 15 rondas en ese mapa |
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
+| Cortes de Tendencias (ronda anterior, marcador, como se cierran, hora, dia) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.

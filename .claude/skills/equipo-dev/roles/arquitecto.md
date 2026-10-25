@@ -27,7 +27,11 @@ Cuando el estado lo pide (regla 11); por reloj, franja 2.
   partir en tramos de la misma epica: el diseno cubre el primer tramo que
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de
-  descarte; solo lo son los filtros duros. Spikes en el scratchpad, nunca
+  descarte; solo lo son los filtros duros. Si una ficha admite disenos
+  genuinamente distintos y la eleccion importa, el diseno sale de una arena
+  (`.claude/skills/equipo-dev/arena.md`, leerlo de `$REF`): una por turno,
+  `--agents 4`, en un worktree de `$EQUIPO_REF`; con una sola forma obvia,
+  no hay arena. Spikes en el scratchpad, nunca
   codigo commiteado. `fichas.sh` sobre la ficha en `FICHAS_OK`.
   `estado: disenado`, `candado: -`. Si quedan 40 minutos, encadenar: lo
   natural es que la misma sesion implemente lo que acaba de disenar.

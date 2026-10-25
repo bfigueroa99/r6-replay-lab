@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from pydissect.constants import Y9S4
 from replays.models import Event, Match, Player, Round, RoundPlayer
 
 ME = "BearF99"
@@ -26,8 +27,10 @@ def make_match(
     my_score: int = 4,
     opponent_score: int = 2,
     match_type: str = "Ranked",
+    gamemode: str = "Bomb",
     index: int = 0,
     map_id: int = 0,
+    code_version: int = Y9S4,
 ) -> Match:
     played_at = played_at or datetime(2026, 9, 1, 20, 0) + timedelta(hours=index)
     return Match.objects.create(
@@ -38,12 +41,13 @@ def make_match(
         map_name=map_name,
         map_slug=map_name.lower().replace(" ", "-"),
         match_type=match_type,
-        gamemode="Bomb",
+        gamemode=gamemode,
         rounds_count=my_score + opponent_score,
         my_team_index=0,
         my_score=my_score,
         opponent_score=opponent_score,
         won=my_score > opponent_score,
+        code_version=code_version,
     )
 
 
@@ -54,17 +58,25 @@ def make_round(
     side: str = "Attack",
     site: str = "B Church, B Arsenal Room",
     won: bool = True,
+    overtime_number: int = 0,
+    score_before: list | None = None,
+    clock_start: float = 180,
+    clock_end: float = 30,
+    possible_plant: bool = False,
 ) -> Round:
     return Round.objects.create(
         match=match,
         number=number,
+        overtime_number=overtime_number,
         site=site,
         my_side=side,
         my_team_won=won,
         win_condition="KilledOpponents",
-        clock_start=180,
-        clock_end=30,
+        clock_start=clock_start,
+        clock_end=clock_end,
+        possible_plant=possible_plant,
         teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
+        score_before=score_before or [],
     )
 
 
@@ -84,6 +96,7 @@ def make_round_player(
     was_traded: bool = False,
     trade_kills: int = 0,
     one_vx: int = 0,
+    clutch_vs: int = 0,
     death_elapsed: float | None = 60.0,
     spawn: str = "Warehouse",
     team_index: int = 0,
@@ -105,6 +118,7 @@ def make_round_player(
         died=died,
         headshots=headshots,
         one_vx=one_vx,
+        clutch_vs=clutch_vs,
         opening_kill=opening_kill,
         opening_death=opening_death,
         entry_kill=opening_kill,

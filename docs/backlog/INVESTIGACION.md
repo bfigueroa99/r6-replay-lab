@@ -20,7 +20,7 @@ estas fuentes; nada esquiva una proteccion (un 403 se anota y se sigue).
 Puntos de partida, no una lista cerrada. El primer turno verifica que siguen
 vivos y corrige lo que no. `ultima visita` y `senal` las actualiza cada turno
 (`senal`: `alta`, `baja`, `seca` o `-` si nunca se visito). Una familia sin
-visita en 10 dias va en el turno siguiente.
+visita en 10 dias va en el turno siguiente; la 8 va cada 7.
 
 | familia | donde mirar | ultima visita | senal |
 |---|---|---|---|
@@ -31,6 +31,7 @@ visita en 10 dias va en el turno siguiente.
 | 5. Comunidad | r/Rainbow6, r/R6ProLeague, r/SiegeAcademy, Siege.GG (noticias), contenido de coaching: que quieren ver los jugadores de sus partidas, que se quejan de las herramientas que usan | - | - |
 | 6. Ubisoft | Notas de parche y de temporada (ubisoft.com, seccion Rainbow Six Siege news-updates), designer's notes: operadores y mapas nuevos (IDs que el parser no conoce), modos, cambios del sistema de replays | - | - |
 | 7. Analitica de esports y deporte | Ratings compuestos (HLTV rating y sus explicaciones), probabilidad de ganar la ronda por ventaja numerica, redes de trade, rating de clutch, banda de ruido para muestras chicas | - | - |
+| 8. Paridad con la referencia (Replica) | La pasada semanal del pack Replica sobre r6-replay.com y Aurelix (`.claude/skills/equipo-dev/replica.md`): recon, matriz contra `main`, `parity.py` y resenas. No rota: va primero cuando esta fila lleva 7 dias sin visita | - | - |
 
 ## Trampas conocidas
 

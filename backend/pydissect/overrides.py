@@ -9,8 +9,12 @@ Ruta del JSON: variable de entorno ``PYDISSECT_OVERRIDES`` (Django la apunta a
 
     {
       "maps": {"436375283234": "Coastline"},
-      "operators": {"123456789": "NombreOperador"}
+      "operators": {"123456789": "NombreOperador"},
+      "gamemodes": {"999": "NombreModo"},
+      "match_types": {"999": "NombreTipo"}
     }
+
+Las claves que falten (un JSON viejo con solo mapas y operadores) quedan vacias.
 """
 
 from __future__ import annotations
@@ -24,8 +28,10 @@ log = logging.getLogger(__name__)
 
 ENV_VAR = "PYDISSECT_OVERRIDES"
 
+CLAVES = ("maps", "operators", "gamemodes", "match_types")
+
 _cache: dict | None = None
-_unknown: dict[str, set[int]] = {"maps": set(), "operators": set()}
+_unknown: dict[str, set[int]] = {clave: set() for clave in CLAVES}
 
 
 def _path() -> Path | None:
@@ -37,12 +43,12 @@ def load(force: bool = False) -> dict:
     global _cache
     if _cache is not None and not force:
         return _cache
-    _cache = {"maps": {}, "operators": {}}
+    _cache = {clave: {} for clave in CLAVES}
     path = _path()
     if path and path.exists():
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-            for key in ("maps", "operators"):
+            for key in CLAVES:
                 for k, v in (raw.get(key) or {}).items():
                     try:
                         _cache[key][int(k)] = str(v)
@@ -59,6 +65,14 @@ def extra_map(map_id: int) -> str | None:
 
 def extra_operator(op_id: int) -> str | None:
     return load()["operators"].get(op_id)
+
+
+def extra_gamemode(gamemode_id: int) -> str | None:
+    return load()["gamemodes"].get(gamemode_id)
+
+
+def extra_match_type(match_type_id: int) -> str | None:
+    return load()["match_types"].get(match_type_id)
 
 
 def record_unknown(kind: str, value: int) -> None:

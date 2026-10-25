@@ -42,6 +42,13 @@ def con_1vx(filas: list[dict]) -> dict[str, int]:
 
 
 class PlayerRoundStatsTests(SimpleTestCase):
+    def test_un_teamkill_suma_a_las_bajas_del_autor(self):
+        # Fija el comportamiento actual: `kills` cuenta teamkills, asi que esta
+        # ronda es un 2K. Si se decide excluirlos, este test cambia a proposito.
+        r = LectorFalso(ganador=0)
+        r.match_feedback = [kill("A0", "A1"), kill("A0", "B0")]
+        self.assertEqual(de(stats.player_round_stats(r), "A0")["kills"], 2)
+
     def test_sin_bajas_en_el_ganador_no_hay_1vx(self):
         r = LectorFalso(ganador=0)
         r.match_feedback = [kill("A0", f"B{n}") for n in range(5)]

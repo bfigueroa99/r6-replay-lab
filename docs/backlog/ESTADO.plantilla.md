@@ -9,7 +9,7 @@ byte.)
 
 actualizado: <fecha-hora UTC> por <roles encadenados> (sesion <EQUIPO_SESION>; motivo: <EQUIPO_MOTIVO>; reloj: <EQUIPO_RELOJ>, franja <n>)
 playbook: <ref>@<sha corto>[ (candidato: <PLAYBOOK_CANDIDATO>)]
-rutina: <TURNOS_SIN_RASTRO de estado.sh> | <PULSO de estado.sh>[; <estado del prompt que agrega el Release>]
+rutina: <CADENCIA de estado.sh> | <TURNOS_SIN_RASTRO de estado.sh> | <PULSO de estado.sh>[; <estado del prompt que agrega el Release>]
 pausa: no | si
 sin_merge: no | si
 
@@ -33,6 +33,8 @@ RESUMEN <linea tal cual de estado.sh>
 - PAPEL_TIPOS=... COLA_TIPOS=...
 - ALCANCE=... (ideas libres)
 - INVESTIGACION=... (ultima entrada)
+- ROTACION=saturadas (...): ... | sin entrega: ... (la lee el PO)
+- CICLO=<n>h de reclamo a main, mediana de las ultimas funcionalidades (ficha:horas ...)
 - RELEASE_PENDIENTE=... (fichas en main desde el ultimo tag v*)
 
 ## Papel (rama backlog)
@@ -53,7 +55,9 @@ RESUMEN <linea tal cual de estado.sh>
 
 ## Para el humano
 
-- Ramas borrables, un solo comando: `git push origin --delete <rama> <rama> ...`
+(Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO` (20). Un aviso que no bloquea de una ficha ya en `main` queda en la ficha, no aca.)
+
+- Ramas borrables, un solo comando: la linea `BORRAR` de `estado.sh`
 - Espera tu merge: `<rama>` (<estado con el motivo>)
 - Rutina: <n> disparos perdidos y <m> sesiones que murieron en 48 h (solo si hay)
 - Funcionalidad: ninguna llego a `main` en 7 dias. Cuello de botella: <...> (solo si es asi)
@@ -61,7 +65,7 @@ RESUMEN <linea tal cual de estado.sh>
 
 ### Pedidos abiertos
 
-- H<n> (desde AAAA-MM-DD): <una decision o una accion en el PC, en una frase, con la ficha>
+- H<n> (desde AAAA-MM-DD): <una decision o una accion en el PC, en una frase, con la ficha; "Verificar en el PC: NN (que correr)" va uno por ficha>
 
 ### Maquinaria propuesta por el equipo
 

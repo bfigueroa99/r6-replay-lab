@@ -47,6 +47,9 @@ roles=(release po arquitecto dev revisor dev qa revisor)
 minutos_turno=135
 max_roles_por_turno=3
 minimo_para_encadenar=40
+# El Release que sigue a la QA que aprobo no repite su check.sh (puerta.sh f
+# acepta el verde con solo docs encima): le alcanzan 20 minutos.
+minimo_release=20
 
 rol_pedido=""; simular=no; sim=""; encadenar=no
 while [ $# -gt 0 ]; do
@@ -175,7 +178,8 @@ if [ "$encadenar" = si ]; then
     n_ya=$(echo "$ya" | tr ',' '\n' | grep -c .)
     if [ "$max_roles_por_turno" -le 1 ]; then no_encadena="encadenado apagado (max_roles_por_turno=1)"
     elif [ "$n_ya" -ge "$max_roles_por_turno" ]; then no_encadena="ya hizo $n_ya roles (tope $max_roles_por_turno)"
-    elif [ "$queda" -lt "$minimo_para_encadenar" ]; then no_encadena="quedan $queda minutos (minimo $minimo_para_encadenar)"
+    elif [ "$rol" = release ] && [ "$queda" -lt "$minimo_release" ]; then no_encadena="quedan $queda minutos (minimo $minimo_release para release)"
+    elif [ "$rol" != release ] && [ "$queda" -lt "$minimo_para_encadenar" ]; then no_encadena="quedan $queda minutos (minimo $minimo_para_encadenar)"
     elif [ -n "$rol_pedido" ]; then no_encadena="un rol pedido no encadena"
     elif [ "$con_resumen" = no ]; then no_encadena="sin resumen"
     elif [ "$motivo" = "nada tomable: reloj" ]; then no_encadena="nada tomable"

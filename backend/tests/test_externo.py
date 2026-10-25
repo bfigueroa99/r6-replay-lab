@@ -278,10 +278,28 @@ class _ConUbisoft(TestCase):
 
     def consultar(self, player=None):
         player = player or self.amigo
-        return self.client.post(f"/api/players/{player.id}/ubisoft/")
+        return self.client.post(
+            f"/api/players/{player.id}/ubisoft/", data="{}", content_type="application/json"
+        )
 
 
 class PerfilJugadorTests(_ConUbisoft):
+    def test_un_formulario_de_otra_pagina_no_consulta_a_ubisoft(self):
+        def prohibido(request):
+            raise AssertionError("un formulario ajeno no puede consultar a Ubisoft")
+
+        url = f"/api/players/{self.amigo.id}/ubisoft/"
+        with self.con(prohibido):
+            for tipo in ("text/plain", "application/x-www-form-urlencoded"):
+                respuesta = self.client.post(url, data="{}", content_type=tipo)
+                self.assertEqual(respuesta.status_code, 415, tipo)
+            # tampoco deja sondear que ids existen
+            ajeno = self.client.post(
+                "/api/players/999999/ubisoft/", data="{}", content_type="text/plain"
+            )
+            self.assertEqual(ajeno.status_code, 415)
+        self.assertFalse(PerfilUbisoft.objects.filter(player=self.amigo).exists())
+
     def test_abrir_el_perfil_trae_los_enlaces_y_no_sale_a_la_red(self):
         def prohibido(request):
             raise AssertionError("abrir un perfil no puede consultar a Ubisoft")

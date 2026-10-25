@@ -263,9 +263,9 @@ npm run dev     # http://localhost:5173
 | `manage.py import_replays [ruta]` | Importa una carpeta de replays o una partida puntual. `--force` reimporta, `--limit N` corta. |
 | `manage.py watch_replays` | Vigila `REPLAY_DIR` e importa cada partida al terminar. `--once` hace una pasada. |
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
-| `manage.py unknown_ids` | Lista IDs de mapa/operador que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
+| `manage.py unknown_ids` | Lista IDs de mapa, operador, modo y tipo de partida que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
+| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada, y los intentos de clutch de partidas importadas antes. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
 | `manage.py test tests` | Corre la suite (419 tests). |
 | `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |
@@ -358,6 +358,12 @@ parser esta hecho para degradar bien en vez de reventar:
   `manage.py unknown_ids --write` deja las entradas en `data/overrides.json` y
   `manage.py retag` las aplica. En los dos casos no se vuelve a leer un solo
   `.rec`: los IDs ya estan en la base.
+- **Modo o tipo de partida nuevo**: tambien sale como `Unknown(<id>)` (en
+  Partidas y en los filtros) y aparece en **Datos** con los tipos o modos con
+  que se vio. Se etiqueta igual, y en `overrides.json` va bajo `gamemodes` o
+  `match_types`. Como la base guarda solo el texto, el ID se lee del propio
+  `Unknown(<id>)`: una etiqueta mal puesta se corrige para lo que se importe
+  despues, no sobre lo ya etiquetado.
 - **Cambio de formato binario**: ahi si hay que trabajar. `docs/formato-rec.md`
   documenta la estructura del `.rec`, los patrones de bytes y como diagnosticar
   cual dejo de funcionar.

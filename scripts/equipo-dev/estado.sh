@@ -12,7 +12,79 @@
 #             imprime ESTADO.md entero (M4); lo usa pulso.sh cierre
 #       git show <ref>:scripts/equipo-dev/estado.sh | bash [-s -- --resumen]
 #       EQUIPO_AHORA=<epoch> ... (fija "ahora"; gancho de pruebas)   --sin-fetch (no actualiza origin)
+#       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh --rastros "<epochs>"
+#           (solo CADENCIA y TURNOS_SIN_RASTRO sobre esos commits; sin git; lo usa pruebas.sh)
 set -u
+# Disparos de la rutina sin rastro, medidos contra la cadencia real. La
+# cadencia la fija la Routine, que vive fuera del repo y paso de 3 h a 1 h y a
+# 4 h sin que el playbook se enterara: contar contra un cron fijo de 3 h daba
+# por perdidos 2 disparos por dia que nunca existieron (15 de 56 en 7 dias, con
+# 2 reales). Por eso sale de los rastros: commits de ESTADO.md a menos de 30
+# min son una misma sesion; la cadencia de cada intervalo es la mediana de los
+# 9 que lo rodean (la de hoy, la de los ultimos 9; 3 h si hay menos de 3), y un
+# intervalo de k cadencias (redondeado) esconde k - 1 disparos. El tramo
+# abierto (ultimo rastro hasta ahora) redondea con +1/4 y no con +1/2: el turno
+# en curso commitea al cerrar, hasta 135 min despues de su disparo, y no puede
+# contarse como perdido.
+# Entrada: epochs (uno por linea, cualquier orden) y el "ahora". Salida, una
+# linea: cadencia_s disparos_48h sin_48h disparos_7d sin_7d [epochs de los sin rastro en 48 h].
+rastros_calc() {
+    sort -n | awk -v ahora="$1" '
+        $1 > ahora { next }
+        { if (m == 0 || $1 - prev >= 1800) s[++m] = $1; prev = $1 }
+        # Mediana de los intervalos d[a..b].
+        function mediana(a, b,    k, i, j, x, t) {
+            k = 0
+            for (i = a; i <= b; i++) t[++k] = d[i]
+            for (i = 1; i <= k; i++) for (j = i + 1; j <= k; j++) if (t[j] < t[i]) { x = t[i]; t[i] = t[j]; t[j] = x }
+            x = (k % 2) ? t[(k + 1) / 2] : int((t[k / 2] + t[k / 2 + 1]) / 2)
+            return (x < 600) ? 600 : x
+        }
+        END {
+            for (i = 1; i < m; i++) d[i] = s[i + 1] - s[i]
+            g = m - 1
+            # Cadencia de hoy: los ultimos 9 intervalos. La de cada intervalo
+            # viejo, los 9 centrados en el: un cambio de cadencia de la Routine
+            # no convierte en perdidos los intervalos de la cadencia anterior.
+            P = (g >= 3) ? mediana((g - 8 > 1) ? g - 8 : 1, g) : 10800
+            t48 = 0; f48 = 0; t7 = 0; f7 = 0; lista = ""
+            for (i = 1; i <= m; i++) {
+                if (i < m) {
+                    Pi = (g >= 3) ? mediana((i - 4 > 1) ? i - 4 : 1, (i + 4 < g) ? i + 4 : g) : P
+                    n = int(d[i] / Pi + 0.5)
+                } else {
+                    Pi = P
+                    n = int((ahora - s[i]) / Pi + 0.25)
+                }
+                for (q = 1; q <= n; q++) {
+                    f = s[i] + q * Pi
+                    # El ultimo disparo de cada tramo no se perdio: es el que dejo
+                    # el rastro siguiente o, en el tramo abierto, el turno en curso.
+                    perdido = (q == n) ? 0 : 1
+                    if (f > ahora) continue
+                    if (f >= ahora - 604800) { t7++; if (perdido) f7++ }
+                    if (f >= ahora - 172800) { t48++; if (perdido) { f48++; lista = lista " " f } }
+                }
+            }
+            printf "%d %d %d %d %d%s\n", P, t48, f48, t7, f7, lista
+        }'
+}
+# Imprime CADENCIA y TURNOS_SIN_RASTRO a partir de la salida de rastros_calc.
+rastros_lineas() {
+    local p t48 f48 t7 f7 lista="" e
+    read -r p t48 f48 t7 f7 resto <<< "$1"
+    for e in ${resto:-}; do lista="$lista ~$(date -u -d "@$e" +%m-%dT%H:%MZ)"; done
+    echo "CADENCIA=$((p / 3600))h$(printf '%02d' $(( (p % 3600) / 60 ))) (mediana de los ultimos intervalos entre turnos con rastro)"
+    if [ "$f48" -gt 0 ]; then
+        echo "TURNOS_SIN_RASTRO=$f48 en 48 h (${lista# }) | $f7 de $t7 en 7 dias"
+    else
+        echo "TURNOS_SIN_RASTRO=0 en 48 h | $f7 de $t7 en 7 dias"
+    fi
+}
+if [ "${1:-}" = --rastros ]; then
+    rastros_lineas "$(printf '%s\n' ${2:-} | rastros_calc "${EQUIPO_AHORA:-$(date -u +%s)}")"
+    exit 0
+fi
 modo=normal; excluir=""; sin_fetch=no
 turno_txt=""; rutina_txt=""; humanos=(); cerrar=(); maquinas=()
 while [ $# -gt 0 ]; do
@@ -53,6 +125,8 @@ arbol_main=$(git rev-parse 'origin/main^{tree}')
 # Topes de la cola y del papel. SKILL.md y ESTADO.plantilla.md repiten los
 # numeros en prosa; pruebas.sh verifica que coincidan con estos.
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
+tope_para_el_humano=20
+n_humano=0
 # Lo que mergea el humano (condicion d de la puerta). Copia de
 # RUTAS_DEL_HUMANO de puerta.sh; pruebas.sh verifica que sean iguales.
 RUTAS_DEL_HUMANO="CLAUDE.md .claude/ scripts/equipo-dev/ docs/backlog/README.md docs/backlog/PLANTILLA.md docs/backlog/ESTADO.plantilla.md docs/backlog/ALCANCE.md docs/backlog/INVESTIGACION.md docs/backlog/MAQUINARIA.md frontend/electron/ frontend/electron-builder.json packaging/ scripts/*.ps1 .github/"
@@ -99,7 +173,9 @@ sesiones() { # contenido-turnos rol...
 }
 # Con --excluir-sesion, una ficha no cuenta para la etapa que sigue si esa
 # sesion ya firmo una etapa incompatible (principio 4). Asi un turno encadenado
-# nunca elige un rol cuyo unico trabajo seria violar la independencia.
+# nunca elige un rol cuyo unico trabajo seria violar la independencia. Probar
+# y mergear no chocan (el principio cuenta implementar, revisar y probar): la
+# QA que aprueba encadena como Release sobre esa misma ficha.
 excluida() { # turnos rol-que-sigue
     [ -n "$excluir" ] || return 1
     local roles
@@ -107,7 +183,7 @@ excluida() { # turnos rol-que-sigue
         revisor) roles="dev qa" ;;
         qa) roles="dev revisor" ;;
         dev) roles="revisor qa" ;;
-        release) roles="dev revisor qa" ;;
+        release) roles="dev revisor" ;;
         arquitecto) roles="po" ;;
         *) return 1 ;;
     esac
@@ -201,15 +277,15 @@ fi
 echo "== ramas de trabajo (origin/claude/* no mergeadas con ficha)"
 cola=0; total=0; cola_func=0; cola_espera=0
 en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0
-cola_filas=""; borrables=""; atascadas=""; espera_lista=""
+cola_filas=""; borrables=(); atascadas=""; espera_lista=""
 for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
     f=$(ficha_de "$r"); [ -z "$f" ] && continue
-    if mergeada "$r"; then echo "$r | mergeada efectivamente: borrable"; borrables="$borrables ${r#origin/}"; continue; fi
+    if mergeada "$r"; then echo "$r | mergeada efectivamente: borrable"; borrables+=("${r#origin/}"); continue; fi
     estado=$(campo "$r" "$f" estado)
     edad=$(edad_h "$r")
-    if [[ "$estado" == descartado* ]]; then echo "$r | $f | $estado | no cuenta: borrable"; borrables="$borrables ${r#origin/}"; continue; fi
+    if [[ "$estado" == descartado* ]]; then echo "$r | $f | $estado | no cuenta: borrable"; borrables+=("${r#origin/}"); continue; fi
     total=$((total + 1))
     reciente=no
     if [[ "$estado" == "entregado ("* ]]; then
@@ -256,12 +332,6 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
     cola_filas="$cola_filas${r#origin/}|$(basename "$f" .md)|$estado|$tipo|$edad|$candado|${humano:-ninguno}"$'\n'
 done
 
-# Las ramas del equipo ya mergeadas con merge commit no salen en --no-merged
-# pero siguen siendo borrables (el proxy de la nube corta el push --delete).
-for r in $(git branch -r --list 'origin/claude/equipo-dev/[0-9]*' --merged origin/main --format='%(refname:short)'); do
-    echo "$r | mergeada: borrable"; borrables="$borrables ${r#origin/}"
-done
-
 echo "== ramas del playbook anterior (sin ficha; reclamo en el roadmap)"
 # El playbook anterior reclamaba en docs/roadmap.md con un commit "Reclama:" y
 # la sesion podia imponer el nombre de la rama, asi que no alcanza con el glob.
@@ -272,12 +342,12 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
     case "$r" in origin/claude/equipo-dev/*) vieja=si ;; *) vieja=no ;; esac
     git log "origin/main..$r" --format=%s | grep -q '^Reclama:' && vieja=si
     [ "$vieja" = si ] || continue
-    mergeada "$r" && { echo "$r | mergeada efectivamente: borrable"; borrables="$borrables ${r#origin/}"; continue; }
+    mergeada "$r" && { echo "$r | mergeada efectivamente: borrable"; borrables+=("${r#origin/}"); continue; }
     n=$(git rev-list --count "origin/main..$r")
     edad=$(edad_h "$r")
     if [ "$n" -le 1 ]; then
         echo "$r | ${edad}h | solo el commit de reclamo, sin codigo: borrable, no cuenta, no se le crea ficha"
-        borrables="$borrables ${r#origin/}"
+        borrables+=("${r#origin/}")
     else
         total=$((total + 1))
         # Con codigo es trabajo que espera al humano, igual que una rama con ficha.
@@ -295,84 +365,87 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
     echo "$r | $(edad_h "$r")h | $(git log -1 --format=%s "$r")"
 done
 
+echo "== ramas borrables (las borra el humano: el proxy de la nube corta git push --delete)"
+# Las del equipo ya mergeadas con merge commit no salen arriba (--no-merged) y
+# se acumulaban en ESTADO.md copiadas a mano, una vineta por rama, turno tras
+# turno (31 al 2026-10-25). Aca salen de git, en un solo comando para pegar.
+for r in $(git branch -r --list 'origin/claude/equipo-dev/*' --merged origin/main --format='%(refname:short)'); do
+    es_playbook "$r" && continue
+    [ "$r" = "$B" ] && continue
+    borrables+=("${r#origin/}")
+done
+echo "BORRABLES=${#borrables[@]}"
+if [ "${#borrables[@]}" -gt 0 ]; then
+    echo "BORRAR: git push origin --delete $(printf '%s\n' "${borrables[@]}" | sort -u -V | tr '\n' ' ' | sed 's/ $//')"
+fi
+
 echo "== pedidos del humano en backlog (commits suyos y seccion Para el equipo)"
 estado_previo=""
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
     git log --no-merges -5 "$B" --format='%an %ci | %s' -- docs/backlog | grep -v '^Claude' || echo "sin commits humanos recientes"
     estado_previo=$(git show "$B:docs/backlog/ESTADO.md" 2>/dev/null)
     printf '%s\n' "$estado_previo" | sed -n '/^## Para el equipo/,$p' | head -30
+    # El humano no lee un tablero que solo crece: `## Para el humano` paso de
+    # 14 a 98 vinetas en 15 dias (5,8 a 29,9 KB de ESTADO.md, reescrito entero
+    # por cada turno) y nunca respondio en `## Para el equipo`. El tablero
+    # deja ahi lo que el humano decide o hace; los pedidos se cierran con
+    # `pulso.sh cierre --cerrar H<n>` cuando pasa el tope.
+    n_humano=$(printf '%s\n' "$estado_previo" | sed -n '/^## Para el humano/,/^## Para el equipo/p' | grep -cE '^[[:space:]]*- ')
+    echo "PARA_EL_HUMANO=$n_humano vinetas (tope $tope_para_el_humano)$([ "$n_humano" -gt "$tope_para_el_humano" ] && echo ': podar en el cierre')"
 else
     echo "sin rama backlog"
 fi
 
-echo "== rutina (disparos \`1 */3 * * *\` sin commit de ESTADO.md ni cierre en PULSO.md en las 3 h siguientes)"
-# Cada turno que termina deja un commit de ESTADO.md (y desde M3 una linea de
-# cierre en PULSO.md); un disparo sin ninguno en sus 3 horas es una sesion que
-# no corrio o murio antes de cerrar. PULSO.md separa las dos: una linea de
-# arranque sin cierre es una sesion que murio; sin arranque, el disparo se perdio.
-sin_rastro_48h=0; rutina_linea="TURNOS_SIN_RASTRO=?"; pulso_linea=""; perdidos=0; murieron=0
+echo "== rutina (disparos sin commit de ESTADO.md en backlog, a la cadencia medida)"
+# Cada turno que termina deja un commit de ESTADO.md; un disparo sin ninguno
+# es una sesion que no corrio o murio antes de cerrar. Es lo unico que mide la
+# capa de la rutina desde el repo. El calculo esta en rastros_calc, arriba.
+# PULSO.md separa los dos casos: un disparo sin rastro con una linea de
+# arranque cerca es una sesion que murio; sin arranque, la Routine no la abrio.
+sin_rastro_48h=0; rutina_linea="TURNOS_SIN_RASTRO=?"; cadencia_linea=""; pulso_linea=""; perdidos=0; murieron=0
 pulso=$(git show "$B:docs/backlog/PULSO.md" 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}Z [0-9]{8}T[0-9]{4}Z (arranque|cierre) ')
 ses_epoch() { date -u -d "${1:0:4}-${1:4:2}-${1:6:2} ${1:9:2}:${1:11:2}" +%s 2>/dev/null; }
-# epoch de sesion, tipo: "1760000000 arranque" por linea
-pulso_ev=""
-while IFS= read -r l; do
-    [ -n "$l" ] || continue
-    s=$(echo "$l" | awk '{print $2}'); ti=$(echo "$l" | awk '{print $3}')
-    e=$(ses_epoch "$s") && pulso_ev="$pulso_ev$e $ti"$'\n'
-done <<< "$pulso"
 rastros=$(git log --format='%ct %s' "$B" -- docs/backlog/ESTADO.md 2>/dev/null)
-cierres=$(printf '%s' "$pulso_ev" | awk '$2 == "cierre" {print $1}')
-cts=$( { echo "$rastros" | cut -d' ' -f1; echo "$cierres"; } | grep -E '^[0-9]+$' | sort -n)
-if [ -z "$cts" ]; then
+if [ -z "$rastros" ]; then
     echo "$rutina_linea (sin ESTADO.md en backlog)"
 else
-    primero=$(echo "$cts" | head -1)
     ultimo=$(echo "$rastros" | awk -v a="$ahora" '$1 <= a { print; exit }')
     if [ -n "$ultimo" ]; then
         echo "ULTIMO_RASTRO=$(date -u -d "@${ultimo%% *}" +%FT%H:%MZ) (${ultimo#* })"
     else
         echo "ULTIMO_RASTRO=ninguno"
     fi
-    # Un disparo tiene rastro si algun commit de ESTADO.md o cierre cae en [d, d + 3 h).
-    en_ventana() { local t; for t in $2; do [ "$t" -ge "$1" ] && [ "$t" -lt $(( $1 + 10800 )) ] && return 0; done; return 1; }
-    # Cuenta los disparos de la ventana ($1 segundos) cuya ventana de 3 h ya
-    # cerro: el turno en curso commitea ESTADO.md al cerrar, hasta 135 min
-    # despues del disparo, y no puede contarse como perdido a si mismo.
-    # Arranca en el disparo de la franja que contiene el limite, asi el turno
-    # del primer rastro cuenta entero. Imprime "sin total lista".
-    contar() {
-        local desde d sin=0 tot=0 lista=""
-        desde=$(( ahora - $1 )); [ "$desde" -lt "$primero" ] && desde=$primero
-        d=$(( desde / 10800 * 10800 + 60 ))
-        while [ "$d" -le $(( ahora - 10800 )) ]; do
-            tot=$((tot + 1))
-            en_ventana "$d" "$cts" || { sin=$((sin + 1)); lista="$lista $(date -u -d "@$d" +%m-%dT%H:%MZ)"; }
-            d=$(( d + 10800 ))
-        done
-        echo "$sin $tot$lista"
-    }
-    read -r sin_rastro_48h _ lista48 <<< "$(contar 172800)"
-    read -r sin7 tot7 _ <<< "$(contar 604800)"
-    if [ "$sin_rastro_48h" -gt 0 ]; then
-        rutina_linea="TURNOS_SIN_RASTRO=$sin_rastro_48h en 48 h ($lista48) | $sin7 de $tot7 en 7 dias"
-    else
-        rutina_linea="TURNOS_SIN_RASTRO=0 en 48 h | $sin7 de $tot7 en 7 dias"
-    fi
-    echo "$rutina_linea"
-    # Con PULSO.md, cada disparo sin cierre se separa en perdido o murio.
-    if [ -n "$pulso_ev" ]; then
-        arranques=$(printf '%s' "$pulso_ev" | awk '$2 == "arranque" {print $1}')
-        p0=$(printf '%s' "$pulso_ev" | awk '{print $1}' | sort -n | head -1)
-        desde=$(( ahora - 172800 )); [ "$desde" -lt "$p0" ] && desde=$p0
-        d=$(( desde / 10800 * 10800 + 60 )); cerr=0; lper=""; lmur=""
-        while [ "$d" -le $(( ahora - 10800 )) ]; do
-            if en_ventana "$d" "$cts"; then cerr=$((cerr + 1))
-            elif en_ventana "$d" "$arranques"; then murieron=$((murieron + 1)); lmur="$lmur $(date -u -d "@$d" +%m-%dT%H:%MZ)"
-            else perdidos=$((perdidos + 1)); lper="$lper $(date -u -d "@$d" +%m-%dT%H:%MZ)"
+    calculo=$(echo "$rastros" | cut -d' ' -f1 | rastros_calc "$ahora")
+    read -r cadencia _ sin_rastro_48h _ _ sin_lista <<< "$calculo"
+    lineas=$(rastros_lineas "$calculo")
+    printf '%s\n' "$lineas"
+    cadencia_linea=$(printf '%s\n' "$lineas" | grep -m1 '^CADENCIA=')
+    rutina_linea=$(printf '%s\n' "$lineas" | grep -m1 '^TURNOS_SIN_RASTRO=')
+    if [ -n "$pulso" ]; then
+        arranques=""; cierres48=0; p0=""
+        while IFS= read -r l; do
+            [ -n "$l" ] || continue
+            e=$(ses_epoch "$(echo "$l" | awk '{print $2}')") || continue
+            if [ -z "$p0" ] || [ "$e" -lt "$p0" ]; then p0=$e; fi
+            case "$l" in
+                *" arranque "*) arranques="$arranques $e" ;;
+                *" cierre "*) [ "$e" -ge $(( ahora - 172800 )) ] && cierres48=$((cierres48 + 1)) ;;
+            esac
+        done <<< "$pulso"
+        # Cada disparo sin rastro (estimado a la cadencia) desde el primer pulso:
+        # murio si hay un arranque a menos de media cadencia; si no, se perdio.
+        lmur=""; lper=""; antes=0
+        for f in ${sin_lista:-}; do
+            if [ "$f" -lt $(( p0 - cadencia / 2 )) ]; then antes=$((antes + 1)); continue; fi
+            vio=no
+            for e in $arranques; do
+                [ "$e" -ge $(( f - cadencia / 2 )) ] && [ "$e" -lt $(( f + cadencia / 2 )) ] && { vio=si; break; }
+            done
+            if [ "$vio" = si ]; then murieron=$((murieron + 1)); lmur="$lmur ~$(date -u -d "@$f" +%m-%dT%H:%MZ)"
+            else perdidos=$((perdidos + 1)); lper="$lper ~$(date -u -d "@$f" +%m-%dT%H:%MZ)"
             fi
-            d=$(( d + 10800 ))
         done
-        pulso_linea="PULSO=48 h: $cerr con cierre, $murieron murieron${lmur:+ (${lmur# })}, $perdidos perdidos${lper:+ (${lper# })}"
+        pulso_linea="PULSO=48 h: $cierres48 cierres, $murieron murieron${lmur:+ (${lmur# })}, $perdidos perdidos${lper:+ (${lper# })}$([ "$antes" -gt 0 ] && echo ", $antes sin rastro de antes del primer pulso")"
         echo "$pulso_linea"
     else
         echo "PULSO=sin PULSO.md en backlog todavia (lo escribe pulso.sh)"
@@ -392,26 +465,6 @@ for f in $(git log --since="@$(( ahora - 604800 ))" --first-parent -m origin/mai
     if [ "$(tipo_de origin/main "$f")" = funcionalidad ]; then main_func="$main_func $(basename "$f" .md)"; else main_otro=$((main_otro + 1)); fi
 done
 main_func_n=$(echo $main_func | wc -w)
-# Tiempo de ciclo: de la primera firma de `turnos:` al merge en main, por
-# ficha llegada en 7 dias. Es el numero con el que se decide la cadencia (M1)
-# y se mide si el encadenado sirvio.
-ciclos=""
-while IFS=' ' read -r ct f; do
-    [ -n "${f:-}" ] || continue
-    s=$(campo origin/main "$f" turnos | grep -oE '[0-9]{8}T[0-9]{4}Z' | head -1)
-    [ -n "$s" ] || continue
-    e=$(date -u -d "${s:0:4}-${s:4:2}-${s:6:2} ${s:9:2}:${s:11:2}" +%s 2>/dev/null) || continue
-    [ "$ct" -gt "$e" ] && ciclos="$ciclos $(( (ct - e) / 3600 ))"
-done <<< "$(git log --since="@$(( ahora - 604800 ))" --first-parent -m origin/main --diff-filter=A --name-only --format='C %ct' -- docs/backlog \
-    | awk '/^C [0-9]+$/ {c=$2; next} /\/[0-9]+-[^\/]*\.md$/ {print c, $0}' | sort -k2,2 -u)"
-if [ -n "$ciclos" ]; then
-    n_c=$(echo $ciclos | wc -w)
-    mediana=$(printf '%s\n' $ciclos | sort -n | awk '{a[NR]=$1} END {print a[int((NR+1)/2)]}')
-    ciclo_linea="CICLO_7D=mediana ${mediana} h, de la primera firma al merge ($n_c fichas: ${ciclos# } h)"
-else
-    ciclo_linea="CICLO_7D=sin fichas llegadas a main en 7 dias"
-fi
-echo "$ciclo_linea"
 main7_linea="MAIN_7D=funcionalidad:$main_func_n${main_func:+ (${main_func# })} otros:$main_otro (fichas que llegaron a main en 7 dias)"
 echo "$main7_linea"
 libres=0
@@ -430,6 +483,51 @@ else
     invest_linea="INVESTIGACION=falta en backlog: copiar docs/backlog/INVESTIGACION.md desde el playbook"
 fi
 echo "$invest_linea"
+# Rotacion. El PO tomaba siempre la idea mas barata de la epica "en curso", y
+# las ideas sueltas de un tema la dejaban en curso para siempre: de las fichas
+# 36 a 63, 13 son de lado-y-marcador, y 10 de las 20 entregas de la 40 a la 60
+# sumaron una tarjeta a Tendencias (17 tarjetas), mientras exportar,
+# datos-nuevos-del-parser y paridad-referencia no entregaron nada. Se mide sobre
+# las ultimas funcionalidades que llegaron a main; el PO lo lee en ROTACION.
+ventana_rotacion=10 tope_rotacion=4
+declare -A por_epica=() por_pagina=()
+vistas=0; commit=""; ciclos=""
+while read -r linea; do
+    case "$linea" in
+        "C "*) commit=${linea#C }; continue ;;
+        docs/backlog/[0-9]*-*.md) ;;
+        *) continue ;;
+    esac
+    [ "$(tipo_de origin/main "$linea")" = funcionalidad ] || continue
+    vistas=$((vistas + 1))
+    e=$(campo origin/main "$linea" epica); e=${e:--}
+    por_epica[$e]=$(( ${por_epica[$e]:-0} + 1 ))
+    for pg in $(git diff --name-only "$commit^1" "$commit" -- frontend/src/pages 2>/dev/null | xargs -r -n1 basename); do
+        por_pagina[$pg]=$(( ${por_pagina[$pg]:-0} + 1 ))
+    done
+    # Ciclo: del commit que agrego la ficha en su rama (el "Reclama:") al
+    # merge que la trajo a main. Es lo que tiene que bajar si el Release deja
+    # de esperar un disparo aparte.
+    reclamo=$(git log --diff-filter=A --format=%ct origin/main -- "$linea" 2>/dev/null | tail -1)
+    [ -n "$reclamo" ] && ciclos="$ciclos $(basename "$linea" | cut -d- -f1):$(( ($(git log -1 --format=%ct "$commit") - reclamo) / 3600 ))"
+    [ "$vistas" -ge "$ventana_rotacion" ] && break
+done < <(git log --first-parent -m origin/main --diff-filter=A --name-only --format='C %H' -- docs/backlog 2>/dev/null)
+conteo() { local -n m=$1; local k; for k in "${!m[@]}"; do echo "$k:${m[$k]}"; done | sort -t: -k2,2nr -k1,1 | tr '\n' ' ' | sed 's/ $//'; }
+rot_epicas="ROTACION_EPICAS=$(conteo por_epica) (epica de las ultimas $vistas funcionalidades en main)"; echo "$rot_epicas"
+rot_paginas="ROTACION_PAGINAS=$(conteo por_pagina) (paginas de frontend/src/pages que tocaron)"; echo "$rot_paginas"
+mediana_ciclo=$(for c in $ciclos; do echo "${c#*:}"; done | sort -n | awk '{ v[NR] = $1 } END { if (NR) print (NR % 2) ? v[(NR + 1) / 2] : int((v[NR / 2] + v[NR / 2 + 1]) / 2); else print "?" }')
+ciclo_linea="CICLO=${mediana_ciclo}h de reclamo a main, mediana de las ultimas $vistas funcionalidades (ficha:horas${ciclos})"; echo "$ciclo_linea"
+saturadas=""
+for k in "${!por_epica[@]}"; do [ "$k" != - ] && [ "${por_epica[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas epica $k,"; done
+for k in "${!por_pagina[@]}"; do [ "${por_pagina[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas pagina $k,"; done
+saturadas=${saturadas%,}
+# Epicas con ideas libres y nada en main (deuda-y-tests no es funcionalidad).
+sin_entrega=$(git show "$B:docs/backlog/ALCANCE.md" 2>/dev/null | awk -F'|' '
+    /^### / { ep = $0; sub(/^### /, "", ep); sub(/:.*/, "", ep); orden[++n] = ep; next }
+    ep != "" && /^\|/ { st = $(NF - 1); gsub(/^[ \t]+|[ \t]+$/, "", st); if (st == "idea") libre[ep] = 1; if (st ~ /^en main/) hecha[ep] = 1 }
+    END { for (i = 1; i <= n; i++) { e = orden[i]; if (libre[e] && !hecha[e] && e != "deuda-y-tests") printf "%s%s", (c++ ? " " : ""), e } }')
+rotacion_linea="ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotacion}):${saturadas:- ninguna} | sin entrega: ${sin_entrega:-ninguna}"; echo "$rotacion_linea"
+
 # M7: lo que llego a main desde la ultima version publicada (tag v*), para
 # que el humano sepa cuando vale la pena correr release.ps1. notas.sh arma
 # las notas de version con esas mismas fichas.
@@ -466,10 +564,11 @@ while IFS= read -r l; do
     [ "$dias" -ge 3 ] && viejos="$viejos $id(${dias}d)"
 done <<< "$pedidos"
 [ -n "$viejos" ] && salud+=("SALUD_PEDIDO_VIEJO=${viejos# } (abiertos hace 3 dias o mas en Para el humano)")
+[ "$n_humano" -gt "$tope_para_el_humano" ] && salud+=("SALUD_PARA_EL_HUMANO=$n_humano vinetas (tope $tope_para_el_humano): cerrar con --cerrar los pedidos que ya no piden nada")
 [ -n "$tocado" ] && salud+=("SALUD_PLAYBOOK_TOCADO=${tocado# } (el equipo no edita el playbook: lo frena el Revisor)")
 fichas_mal=$(hermano fichas.sh --resumen 2>/dev/null | grep -m1 '^FICHAS_' || true)
 case "$fichas_mal" in FICHAS_MAL*) salud+=("SALUD_$fichas_mal (correr fichas.sh para el detalle)") ;; esac
-nb=$(echo $borrables | wc -w)
+nb=${#borrables[@]}
 [ "$nb" -ge 5 ] && salud+=("SALUD_BORRABLES=$nb ramas mergeadas o sin codigo esperando que el humano las borre")
 if [ "${#salud[@]}" -eq 0 ]; then echo "SALUD_OK"; else printf '%s\n' "${salud[@]}"; fi
 
@@ -516,7 +615,7 @@ echo "# Estado del equipo de desarrollo autonomo"
 echo
 echo "actualizado: $ahora_txt UTC por ${roles_txt:-?} (sesion ${EQUIPO_SESION:-?}; motivo: ${EQUIPO_MOTIVO:-?}; reloj: ${EQUIPO_RELOJ:-?}, franja ${EQUIPO_FRANJA:-?})"
 echo "playbook: $playbook_linea${candidato:+ (candidato: $candidato)}"
-echo "rutina: $rutina_linea${pulso_linea:+ | $pulso_linea}${rutina_txt:+; $rutina_txt}"
+echo "rutina: ${cadencia_linea:+$cadencia_linea | }$rutina_linea${pulso_linea:+ | $pulso_linea}${rutina_txt:+; $rutina_txt}"
 echo "pausa: $pausa"
 echo "sin_merge: $sin_merge"
 echo
@@ -562,9 +661,10 @@ echo "## Alcance"
 echo
 echo "- $main7_linea"
 echo "- PAPEL_TIPOS=funcionalidad:$papel_func otros:$papel_otro. COLA_TIPOS=funcionalidad:$cola_func de $total."
-echo "- $ciclo_linea"
 echo "- $alcance_linea"
 echo "- $invest_linea"
+echo "- $rotacion_linea"
+echo "- $ciclo_linea"
 echo "- $release_linea"
 echo
 echo "## Papel (rama backlog)"
@@ -596,17 +696,16 @@ done
 echo
 echo "## Para el humano"
 echo
-nb=$(echo $borrables | wc -w)
-[ "$nb" -gt 0 ] && echo "- Ramas borrables (mergeadas, descartadas o sin codigo), un solo comando: \`git push origin --delete$borrables\`"
+[ "${#borrables[@]}" -gt 0 ] && echo "- Ramas borrables (mergeadas, descartadas o sin codigo), un solo comando: \`git push origin --delete $(printf '%s\n' "${borrables[@]}" | sort -u -V | tr '\n' ' ' | sed 's/ $//')\`"
 if [ -n "$espera_lista" ]; then
     printf '%s' "$espera_lista" | while IFS='|' read -r ra es; do echo "- Espera tu merge: \`$ra\` ($es)"; done
 fi
 [ -n "$del_humano" ] && echo "- Tocan lo que mergeas vos:$(for x in $del_humano; do printf ' `%s`' "$x"; done)"
 [ -n "$tocado" ] && echo "- Ramas del equipo que tocan el playbook (no se mergean solas):$(for x in $tocado; do printf ' `%s`' "$x"; done)"
 if [ -n "$pulso_linea" ] && { [ "$perdidos" -ge 2 ] || [ "$murieron" -ge 1 ]; }; then
-    echo "- Rutina: $perdidos disparos perdidos y $murieron sesiones que arrancaron y murieron en 48 h; revisar el historial de la Routine \`r6-replay-lab: equipo dev cada 3h\`."
+    echo "- Rutina: $perdidos disparos perdidos y $murieron sesiones que arrancaron y murieron en 48 h; revisar el historial de la Routine del equipo."
 elif [ -z "$pulso_linea" ] && [ "$sin_rastro_48h" -gt 0 ]; then
-    echo "- Rutina: $sin_rastro_48h disparos sin rastro en 48 h; revisar el historial de la Routine \`r6-replay-lab: equipo dev cada 3h\`."
+    echo "- Rutina: $sin_rastro_48h disparos sin rastro en 48 h; revisar el historial de la Routine del equipo."
 fi
 [ -n "$candidato" ] && echo "- Playbook candidato: $candidato (la rama del playbook trae algo que main no tiene)."
 if [ "$main_func_n" -eq 0 ]; then
@@ -633,10 +732,16 @@ if ! printf '%s\n' "$estado_previo" | grep -q '^### Pedidos abiertos'; then
         [ -n "$l" ] || continue
         n=$((n + 1)); abiertos="$abiertos- H$n (desde $fe): $l"$'\n'
     done <<< "$(seccion "## Para el humano" | awk '
+        # Un aviso que no bloquea de una ficha ya en main queda en la ficha, no
+        # aca; si pide una decision o una verificacion en el PC, se queda.
+        function informativo(s) {
+            if (s ~ /Verificar en el PC|Decision tuya|P10|¿/) return 0
+            return (s ~ /no bloquea|ya en main|ya esta en .main.|\(aviso\)/)
+        }
         /^- (Ramas borrables|Rutina|Playbook|CI remota|Funcionalidad|PRs abiertos|Espera tu merge|Tocan lo que)/ {skip=1; nested=0; next}
         /^- Preguntas abiertas/ {skip=0; nested=1; next}
-        /^- / {skip=0; nested=0; sub(/^- /, ""); print; next}
-        /^  +- / && nested { if ($0 ~ /~~/) next; sub(/^ +- /, ""); print; next }
+        /^- / {skip=0; nested=0; if (informativo($0)) next; sub(/^- /, ""); print; next}
+        /^  +- / && nested { if ($0 ~ /~~/ || informativo($0)) next; sub(/^ +- /, ""); print; next }
         /^  +- / && skip { next }
     ')"
 fi

@@ -69,6 +69,10 @@ Claves utiles: `version`, `code`, `datetime`, `matchtype`, `worldid` (mapa),
 `teamname0/1`, `teamscore0/1`, `startingteamscore0/1` (desde Y9S4), `id`
 (match id, igual en todas las rondas de la partida).
 
+Desde Y9S4 el ganador de la ronda sale de comparar `teamscore` con
+`startingteamscore`, y manda sobre el kill feed: un defuse o un plant solo
+aporta la condicion de victoria si apunta al mismo equipo.
+
 `teamname1` suele venir como `"YOUR TEAM"`: es el equipo del que grabo.
 
 ### La telemetria
@@ -134,7 +138,8 @@ cuando el modo es Bomb, el perdedor no fue barrido y el reloj se corto sobre los
 5 segundos: la razon es que al plantar, el juego reemplaza el reloj principal por
 el del defuser y deja de emitir el paquete de tiempo, asi que un corte muy
 arriba con datos despues es señal de plant. Es una inferencia y se muestra como
-tal; no entra en ninguna metrica.
+tal; no entra en ninguna metrica, salvo para sacar la ronda de los tramos de
+duracion de Tendencias, donde se cuenta aparte sin metricas.
 
 **Por donde seguir**: comparar dos rondas del mismo mapa, una con plant y otra
 sin, y diffear los patrones de 5-6 bytes que aparecen solo en la primera. Lo
@@ -166,6 +171,9 @@ mecanismos:
   ese mapa, que alcanzan para identificarlo (por ejemplo `2F Hookah Lounge, 2F
   Billiards Room` + `1F Kitchen, 1F Service Entrance` es Coastline). Se etiqueta
   en `data/overrides.json` y se reimporta con `--force`.
+- **Modos y tipos de partida**: `gamemode_name()` y `match_type_name()` usan
+  las claves `gamemodes` y `match_types` de `overrides.json` y anotan el ID con
+  `record_unknown` si no hay etiqueta, igual que los mapas.
 
 `MAPS_EXTRA` en `constants.py` ya trae los IDs identificados por este metodo.
 

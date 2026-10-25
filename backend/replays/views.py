@@ -109,7 +109,9 @@ def _ok(payload: dict, status: int = 200) -> JsonResponse:
 
 
 def _es_json(request: HttpRequest) -> bool:
-    """Los POST que cambian la configuracion exigen JSON de verdad.
+    """Todos los POST de la API exigen JSON de verdad: `/api/import/`,
+    `/api/overrides/`, `/api/players/<id>/ubisoft/`, `/api/settings/` y
+    `/api/backup/`.
 
     Son `csrf_exempt` porque la app es local y sin sesiones, pero un formulario
     de cualquier pagina abierta en el navegador puede postear a 127.0.0.1. Lo
@@ -173,6 +175,8 @@ def overview(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     payload = agg.overview(**filters)
     payload["data_health"] = agg.data_health(**filters)
+    # va en la vista y no en agg.overview: el coach la llama y no usa records
+    payload["records"] = agg.personal_records(**filters)
     payload["filters"] = {k: str(v) for k, v in filters.items()}
     return _ok(payload)
 
@@ -222,6 +226,18 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_day": agg.trend_by_day(**filters),
             "by_match": agg.trend_by_match(limit=limit, **filters),
             "by_round_number": agg.by_round_number(**filters),
+            "by_half": agg.by_half(**filters),
+            "by_half_opener": agg.by_half_opener(**filters),
+            "by_previous_round": agg.by_previous_round(**filters),
+            "by_score_state": agg.by_score_state(**filters),
+            "by_match_point": agg.by_match_point(**filters),
+            "comebacks": agg.comebacks(**filters),
+            "by_margin": agg.by_margin(**filters),
+            "round_endings": agg.round_endings(**filters),
+            "by_round_length": agg.by_round_length(**filters),
+            "by_start_side": agg.by_start_side(**filters),
+            "by_hour": agg.by_hour(**filters),
+            "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
         }
@@ -235,6 +251,11 @@ def teammates(request: HttpRequest) -> JsonResponse:
         {
             "synergy": agg.teammate_synergy(min_rounds=_min_rounds(request, 10), **filters),
             "clutches": agg.clutch_detail(**filters),
+            "clutch_conversion": agg.clutch_conversion(**filters),
+            "clutch_by_site": agg.clutch_by_site(**filters),
+            "first_down": agg.first_teammate_death(**filters),
+            "by_stack": agg.by_stack(**filters),
+            "teamkills": agg.teamkills(**filters),
         }
     )
 
@@ -255,8 +276,12 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
     """Trae rango y temporada desde la API de Ubisoft y los deja guardados.
 
     Es POST porque sale a internet y escribe la base: un GET que hace eso lo
-    dispara cualquier prefetch del navegador.
+    dispara cualquier prefetch del navegador. El chequeo de JSON va antes del
+    404 y de `configurado()`: una pagina ajena no puede sondear que ids
+    existen ni si hay cuenta configurada.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     player = Player.objects.filter(pk=pk).first()
     if player is None:
         raise Http404("jugador no encontrado")
@@ -284,7 +309,14 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rounds = _int_param(
         request, "min_rounds", agg.COMPARE_MIN_ROUNDS, minimum=1, maximum=10_000
     )
-    return _ok(agg.compare_periods(by=by, n=n, min_rounds=min_rounds, **_filters(request)))
+    min_rows = _int_param(
+        request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
+    )
+    return _ok(
+        agg.compare_periods(
+            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+        )
+    )
 
 
 @require_GET
@@ -312,6 +344,10 @@ def duels(request: HttpRequest) -> JsonResponse:
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
+                **filters,
+            ),
+            "rivals": agg.repeated_rivals(
+                min_matches=_int_param(request, "min_matches", 2, minimum=1, maximum=1000),
                 **filters,
             ),
         }
@@ -460,6 +496,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         datos["summary"] = describe_round(datos)
         rounds.append(datos)
 
+    rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
 
@@ -483,16 +520,27 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "warnings": match.warnings,
             },
             "rounds": rounds,
+            "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
             "my_totals": my_totals,
         }
     )
 
 
+def _racha_con_etiqueta(racha: dict | None) -> dict | None:
+    if racha is None:
+        return None
+    return {"length": racha["length"], "from_round_label": f"R{racha['from_number'] + 1}"}
+
+
 def _match_scoreboard(match: Match) -> list[dict]:
     rows = (
         RoundPlayer.objects.filter(round__match=match)
         .values("player_id", "username", "team_index", "is_me")
+        # Antes del annotate de abajo: su alias `kills=Sum("kills")` pisa el
+        # campo en los `Q(kills=...)` que vengan despues y SQLite revienta con
+        # "misuse of aggregate function".
+        .annotate(**agg.MULTIKILLS)
         .annotate(
             rounds=Count("id"),
             kills=Sum("kills"),
@@ -562,6 +610,8 @@ def unknown(request: HttpRequest) -> JsonResponse:
         {
             "maps": unknowns.unknown_maps(),
             "operators": unknowns.unknown_operators(),
+            "gamemodes": unknowns.unknown_gamemodes(),
+            "match_types": unknowns.unknown_match_types(),
             "overrides_path": str(unknowns.overrides_path()),
         }
     )
@@ -575,6 +625,8 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     Escribe un archivo del disco, asi que valida antes de tocar nada: la app es
     local, pero eso no es excusa para dejar entrar cualquier cosa.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     try:
         payload = json.loads(request.body or b"{}")
     except json.JSONDecodeError:
@@ -585,18 +637,25 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     try:
         maps = unknowns.clean_labels(payload.get("maps"))
         operators = unknowns.clean_labels(payload.get("operators"))
+        gamemodes = unknowns.clean_labels(payload.get("gamemodes"))
+        match_types = unknowns.clean_labels(payload.get("match_types"))
     except unknowns.LabelError as exc:
         return _ok({"error": str(exc)}, status=400)
 
-    if not maps and not operators:
+    if not (maps or operators or gamemodes or match_types):
         return _ok({"error": "no mandaste ninguna etiqueta"}, status=400)
 
-    unknowns.write_overrides(maps, operators)
+    unknowns.write_overrides(maps, operators, gamemodes, match_types)
     # retag recarga el cache de overrides, que si no queda viejo hasta reiniciar
     result = retag()
     return _ok(
         {
-            "saved": {"maps": maps, "operators": operators},
+            "saved": {
+                "maps": maps,
+                "operators": operators,
+                "gamemodes": gamemodes,
+                "match_types": match_types,
+            },
             "matches": result.matches,
             "round_players": result.round_players,
             "changes": [
@@ -665,7 +724,11 @@ def run_import(request: HttpRequest) -> JsonResponse:
 
     Antes bloqueaba hasta terminar: con 30 carpetas el boton quedaba minutos
     colgado sin decir nada. El avance se consulta en `/api/import/progress/`.
+    Los parametros van en la query; el cuerpo JSON solo cierra la puerta a
+    formularios ajenos que fuercen una reimportacion entera.
     """
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
     force = request.GET.get("force", "").lower() in ("1", "true", "si", "yes")
     limit = _int_param(request, "limit", 0, minimum=0, maximum=1000) or None
 

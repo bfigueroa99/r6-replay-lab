@@ -3,7 +3,8 @@
 Los IDs salen de lo **ya importado**, no de los `.rec`: cuando el parser no
 reconoce un mapa guarda `map_name = "Unknown(<id>)"` y deja el ID crudo en
 `map_id`. Con eso basta para listarlos, etiquetarlos y reetiquetar (`retag.py`)
-sin volver a tocar un replay.
+sin volver a tocar un replay. Modos y tipos de partida no tienen columna de ID:
+el ID se lee del propio texto `Unknown(<id>)`.
 
 Lo consumen `manage.py unknown_ids` y la pagina Datos.
 """
@@ -11,6 +12,7 @@ Lo consumen `manage.py unknown_ids` y la pagina Datos.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from django.conf import settings
@@ -21,6 +23,8 @@ from pydissect import overrides
 from .models import Match, Round, RoundPlayer
 
 UNKNOWN_PREFIX = "Unknown("
+
+CLAVES = overrides.CLAVES
 
 #: El mas corto de los dos campos que reciben la etiqueta: `RoundPlayer.operator`
 #: es de 32 y `Match.map_name` de 64, asi que 32 sirve para ambos.
@@ -98,6 +102,56 @@ def unknown_operators() -> list[dict]:
     return rows
 
 
+def id_de_unknown(texto: str) -> int | None:
+    """El ID dentro de `Unknown(<id>)`, o None si no tiene esa forma o es 0."""
+    hallado = re.fullmatch(r"Unknown\((\d+)\)", texto or "")
+    if not hallado:
+        return None
+    return int(hallado.group(1)) or None
+
+
+def _desconocidos_de_partida(campo: str, extra, pista: str) -> list[dict]:
+    """Valores `Unknown(<id>)` de un campo de texto de `Match`, agrupados por ID.
+
+    `pista` es el otro campo (modo para el tipo, tipo para el modo): lo que si
+    se sabe de esas partidas ayuda a adivinar lo que no.
+    """
+    por_id: dict[int, list[dict]] = {}
+    filas = Match.objects.filter(**{f"{campo}__startswith": UNKNOWN_PREFIX}).values(
+        campo, pista, "played_at"
+    )
+    for fila in filas:
+        ident = id_de_unknown(fila[campo])
+        if ident is not None:
+            por_id.setdefault(ident, []).append(fila)
+    rows = []
+    for ident in sorted(por_id):
+        partidas = por_id[ident]
+        fechas = [p["played_at"] for p in partidas if p["played_at"]]
+        rows.append(
+            {
+                "id": str(ident),
+                "label": f"{UNKNOWN_PREFIX}{ident})",
+                "matches": len(partidas),
+                pista + "s": sorted({p[pista] for p in partidas if p[pista]}),
+                "first_seen": _iso(min(fechas) if fechas else None),
+                "last_seen": _iso(max(fechas) if fechas else None),
+                "pending": extra(ident) or "",
+            }
+        )
+    return rows
+
+
+def unknown_gamemodes() -> list[dict]:
+    """Modos de juego sin nombre; la pista son los tipos de partida vistos."""
+    return _desconocidos_de_partida("gamemode", overrides.extra_gamemode, "match_type")
+
+
+def unknown_match_types() -> list[dict]:
+    """Tipos de partida sin nombre; la pista son los modos vistos."""
+    return _desconocidos_de_partida("match_type", overrides.extra_match_type, "gamemode")
+
+
 # ------------------------------------------------------------------- etiquetas
 
 
@@ -106,16 +160,18 @@ def overrides_path() -> Path:
 
 
 def read_overrides() -> dict:
-    """El JSON en disco, siempre con las dos claves y sin reventar si esta roto."""
+    """El JSON en disco, siempre con todas las claves y sin reventar si esta roto."""
     path = overrides_path()
-    data = {"maps": {}, "operators": {}}
+    data = {clave: {} for clave in CLAVES}
     if not path.exists():
         return data
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return data
-    for key in ("maps", "operators"):
+    if not isinstance(raw, dict):
+        return data
+    for key in CLAVES:
         valores = raw.get(key)
         if isinstance(valores, dict):
             data[key] = {str(k): str(v) for k, v in valores.items()}
@@ -158,10 +214,21 @@ def _save(data: dict) -> dict:
     return data
 
 
-def write_overrides(maps: dict[str, str], operators: dict[str, str]) -> dict:
+def write_overrides(
+    maps: dict[str, str],
+    operators: dict[str, str],
+    gamemodes: dict[str, str] | None = None,
+    match_types: dict[str, str] | None = None,
+) -> dict:
     """Mezcla las etiquetas nuevas con el archivo y lo deja escrito."""
     data = read_overrides()
-    for key, nuevos in (("maps", maps), ("operators", operators)):
+    pares = (
+        ("maps", maps),
+        ("operators", operators),
+        ("gamemodes", gamemodes or {}),
+        ("match_types", match_types or {}),
+    )
+    for key, nuevos in pares:
         for ident, nombre in nuevos.items():
             if nombre:
                 data[key][ident] = nombre
@@ -170,14 +237,20 @@ def write_overrides(maps: dict[str, str], operators: dict[str, str]) -> dict:
     return _save(data)
 
 
-def add_placeholders(map_ids, operator_ids) -> dict:
+def add_placeholders(map_ids, operator_ids, gamemode_ids=(), match_type_ids=()) -> dict:
     """Deja entradas vacias en el archivo para rellenarlas a mano.
 
     Es `setdefault`: nunca pisa una etiqueta que ya este puesta. Lo usa
     `unknown_ids --write`, que quiere el hueco, no borrar lo que haya.
     """
     data = read_overrides()
-    for key, ids in (("maps", map_ids), ("operators", operator_ids)):
+    pares = (
+        ("maps", map_ids),
+        ("operators", operator_ids),
+        ("gamemodes", gamemode_ids),
+        ("match_types", match_type_ids),
+    )
+    for key, ids in pares:
         for ident in ids:
             data[key].setdefault(str(ident), "")
     return _save(data)

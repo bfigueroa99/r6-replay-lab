@@ -425,7 +425,7 @@ class OrigenDelTrabajoTests(TestCase):
 
     def test_el_boton_queda_como_manual(self):
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):
-            data = self.client.post("/api/import/").json()
+            data = self.client.post("/api/import/", data="{}", content_type="application/json").json()
         self.assertEqual(data["origin"], "manual")
         for _ in range(50):
             if not ingest.import_job().running:

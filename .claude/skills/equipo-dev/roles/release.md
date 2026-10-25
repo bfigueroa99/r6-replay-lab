@@ -34,8 +34,12 @@ Cuando el estado lo pide (reglas 1 y 6 de Turnos); por reloj, franja 0.
     "Como probarlo en 2 minutos" con comandos exactos, "Verificar en el PC"
     si existe); recortar la ficha a unas 80 lineas (Revision condensada al
     veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
-    ultimo commit con el titulo del PR como mensaje; `estado: entregado`;
-    push.
+    ultimo commit `Entrega: NN titulo` (el titulo del PR lo lleva solo el
+    commit de merge; repetirlo en la rama dejaba en `main` dos commits
+    seguidos con el mismo titulo por cada entrega); `estado: entregado`;
+    push. Si esta misma sesion fue la QA que la aprobo (encadenado), el
+    `check.sh` de la QA vale para la puerta mientras encima solo haya commits
+    de `docs/backlog` (la condicion f lo verifica).
   - (4) Con herramientas: abrir el PR con `## PR` tal cual a toda ficha
     `entregado` que no lo tenga (incluidas las `entregado (PR pendiente de
     abrir)` que dejo un turno sin herramientas); sin herramientas:
@@ -67,13 +71,14 @@ Cuando el estado lo pide (reglas 1 y 6 de Turnos); por reloj, franja 0.
     con metodo `merge`, titulo del commit = titulo del PR, cuerpo = `## Que
     cambia` del PR. Despues `git fetch origin main`, confirmar que la ficha
     existe en `origin/main`, borrar la rama recien mergeada (`git push origin
-    --delete <rama>`, la unica rama que el equipo borra; si el proxy corta el
-    push de borrado no se reintenta: el tablero la lista sola en el comando
-    unico de borrables) y, si el espejo de la ficha sigue en `backlog`,
-    quitarlo. Maximo 2 merges por turno.
-  - (6) El orden de merge por pares, las borrables, `## Alcance` y el cuello
-    de botella si `MAIN_7D` dice `funcionalidad:0` los escribe el tablero
-    (`pulso.sh cierre`): el Release no los copia a mano.
+    --delete <rama>`, la unica rama que el equipo borra; si el proxy lo corta
+    con 403 no se reintenta: la rama sale sola en `BORRAR` de `estado.sh`) y,
+    si el espejo de la ficha sigue en `backlog`, quitarlo. Maximo 2 merges
+    por turno.
+  - (6) El orden de merge por pares, las borrables (`BORRAR`), `## Alcance`
+    (`MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`, `ALCANCE`, `ROTACION` y `CICLO`)
+    y el cuello de botella si `MAIN_7D` dice `funcionalidad:0` los escribe el
+    tablero (`pulso.sh cierre`): el Release no los copia a mano.
   - (7) Notas de version: si `RELEASE_PENDIENTE` de `estado.sh` tiene alguna
     funcionalidad o bug, `notas.sh` arma las notas desde las fichas que
     llegaron a `main` desde el ultimo tag; van al informe y, si el humano no
@@ -105,6 +110,7 @@ Cuando el estado lo pide (reglas 1 y 6 de Turnos); por reloj, franja 0.
   `aprobado` que encontro esta mergeada, o `entregado` con el motivo exacto
   por el que no; el tablero dice que le queda al humano y que borrar.
 - **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6);
-  mergear una ficha en la que esta sesion firmo dev, revisor o qa.
+  mergear una ficha que esta sesion implemento o reviso (la que probo, si:
+  es la QA que encadena).
 - **Sin trabajo:** mantenimiento, (7), (8), (9), cierre e informe; despues,
   si quedan 40 minutos, encadenar (SKILL.md, Turnos).

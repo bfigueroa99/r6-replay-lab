@@ -69,6 +69,15 @@ herramientas viven en `scripts/equipo-dev/` y se traen de `$EQUIPO_REF`
      hallazgo nuevo de la rama: `con hallazgos` con el repro exacto (QA no
      arregla). Umbral calibrado solo con datos sinteticos: pedido
      `--humano "calibrar <que> con la base real (ficha NN)"`. `candado: -`.
+  8. **Seguir como Release.** Con la ficha en `aprobado`, la QA encadena
+     (`turno.sh --encadenar`): con 20 minutos o mas da `rol=release` sobre
+     esa ficha y el turno sigue con `roles/release.md` (pasos 3 a 5, puerta
+     de merge incluida), anotando `release <sesion>` en `turnos:`. Probar y
+     mergear no chocan con la independencia, y el `check.sh` que acaba de
+     correr vale para la puerta si encima solo hay commits de
+     `docs/backlog`: el Release aparte costaba un disparo entero por entrega
+     para repetirlo. Con menos de 20 minutos, el disparo siguiente es
+     Release, como siempre.
 - **Hallazgo a ficha.** Lo que la bateria encuentra y no es de la ficha en
   prueba (preexistente en main) se vuelve ficha en el mismo turno, hasta 3
   por turno, despues de buscarla en el papel, en las ramas y en `ALCANCE.md`
@@ -88,7 +97,8 @@ herramientas viven en `scripts/equipo-dev/` y se traen de `$EQUIPO_REF`
     ficha.
 - **Salida:** commits `Prueba: NN titulo` docs-only, mas tests de borde
   verdes si agrego; fichas `Propone:` en `backlog` por los hallazgos
-  preexistentes. Nunca PR, nunca rama de trabajo.
+  preexistentes. Nunca rama de trabajo; PR y merge solo como Release
+  encadenado en el mismo turno (paso 8).
 - **Turno bien hecho:** el humano puede repetir cada prueba copiando los
   comandos de `## QA`; ningun hallazgo queda solo en el informe.
 - **Sin trabajo:** sin `revisado`, revisa las `implementado` con la

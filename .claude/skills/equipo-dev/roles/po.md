@@ -51,8 +51,17 @@ Cuando el estado lo pide (reglas 8, 9 y 12); por reloj, franja 1.
      link). Antes de empujar, `fichas.sh` sobre cada ficha y `fichas.sh
      --alcance` en `FICHAS_OK` y `ALCANCE_OK`. Orden de eleccion:
      (a) bug real (Severidad en `SKILL.md`: S1 prioridad 1, S2 prioridad
-     2), incluidos los que QA dejo como hallazgo o idea con repro; (b) el tramo siguiente de una epica en curso;
-     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros;
+     2), incluidos los que QA dejo como hallazgo o idea con repro; (b) el
+     tramo siguiente de una epica en curso, solo si una ficha ya lo dejo
+     escrito ("Implementar despues de #NN"): otra idea suelta del mismo tema
+     no es un tramo; (c) la funcionalidad de mas valor de `ALCANCE.md` que
+     pase los filtros (a igual tamano, primero un `must` de la epica
+     `paridad-referencia`, que la referencia tiene y la app no), con la
+     linea `ROTACION` de `estado.sh`: ninguna ficha nueva sale de una epica
+     de `saturadas` ni suma una tarjeta a una pagina de `saturadas` (salvo
+     que junte o reemplace tarjetas que ya estan), y si `sin entrega` no
+     esta vacia, al menos una funcionalidad del turno sale de una de esas
+     epicas;
      (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
      funcionalidades esperando. Al menos una de las fichas del turno es
      funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`

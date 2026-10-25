@@ -153,7 +153,7 @@ cierra roles "$det"
 # 8. podridos: hechos que ya no son ciertos y que el playbook no puede nombrar.
 det=""
 for f in "$sk" "$rl"/*.md; do
-    for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray"; do grep -qF -- "$t" "$f" 2>/dev/null && det="$det ${f#$base/}:'$t'"; done
+    for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray" 'titulo del PR como mensaje' 'Corre cada 3 horas'; do grep -qF -- "$t" "$f" 2>/dev/null && det="$det ${f#$base/}:'$t'"; done
 done
 cierra podridos "$det"
 
@@ -220,6 +220,9 @@ casos_enc=(
 '|roles=revisor queda=90 implementado=1 hora=1205|encadenar=no motivo=el rol que sigue (revisor) ya lo hizo esta sesion'
 '|roles=dev queda=90 propuesto=6 disenado=3 cola=4 total=4 ideas_libres=23 papel_func=2 hora=1205|encadenar=no motivo=nada tomable'
 'qa|roles=dev queda=90 revisado=1 hora=1505|encadenar=no motivo=un rol pedido no encadena'
+'|roles=qa queda=25 aprobado=1 hora=1805|encadenar=si rol=release motivo=por estado: 1 aprobado'
+'|roles=qa queda=15 aprobado=1 hora=1805|encadenar=no motivo=quedan 15 minutos (minimo 20 para release)'
+'|roles=po queda=30 disenado=1 cola=1 total=1 papel_func=1 hora=0305|encadenar=no motivo=quedan 30 minutos (minimo 40)'
 )
 for c in "${casos_enc[@]}"; do
     r=${c%%|*}; resto=${c#*|}; a=${resto%%|*}; e=${resto#*|}
@@ -229,7 +232,39 @@ done
 det=""; [ "$malos" -eq 0 ] || det=" $malos de $(( ${#casos[@]} + ${#casos_enc[@]} + 1 )) casos"
 cierra simular "$det"
 
-# 10. resumen: contra el remoto real, la linea existe y trae los 22 pares en
+# 10. rastros: los disparos sin rastro se cuentan a la cadencia que la Routine
+# tiene de verdad, no a un cron fijo. Series sinteticas (un commit de ESTADO.md
+# entre 5 y 17 min despues de cada disparo) y la linea entera de estado.sh
+# --rastros. Con el cron fijo de 3 h el caso de 4 h daba 2 perdidos por dia.
+serie() {
+    local desde=$1 paso=$2 n=$3 i; shift 3
+    for ((i = 0; i < n; i++)); do
+        case " $* " in *" $i "*) continue ;; esac
+        echo $(( desde + i * paso + 300 + (i * 7 % 4) * 240 ))
+    done
+}
+b0=1790812800; h=3600   # 2026-10-01T00:00Z
+rcasos=(
+"4 h, 8 dias|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+"4 h con un hueco hace 32 h|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48 40)|CADENCIA=3h56 TURNOS_SIN_RASTRO=1 en 48 h (~10-07T16:09Z) | 1 de 42 en 7 dias"
+"3 h|$((b0 + 60 + 64 * 3 * h + 60))|$(serie $((b0 + 60)) $((3 * h)) 64)|CADENCIA=2h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 56 en 7 dias"
+"1 h|$((b0 + 660 + 96 * h + 60))|$(serie $((b0 + 660)) $h 96)|CADENCIA=0h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 95 en 7 dias"
+"3 h y despues 4 h|$((b0 + 60 + 32 * 3 * h + 24 * 4 * h + 60))|$(serie $((b0 + 60)) $((3 * h)) 32) $(serie $((b0 + 60 + 32 * 3 * h)) $((4 * h)) 24)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 48 en 7 dias"
+"tramo abierto con un perdido|$((b0 + 240 + 47 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 46)|CADENCIA=3h56 TURNOS_SIN_RASTRO=1 en 48 h (~10-08T16:17Z) | 1 de 42 en 7 dias"
+"turno en curso a los 130 min|$((b0 + 240 + 48 * 4 * h + 130 * 60))|$(serie $((b0 + 240)) $((4 * h)) 48)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+"4 h y hace 30 h pasa a 1 h|$((b0 + 240 + 24 * 4 * h + 30 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 24) $(serie $((b0 + 240 + 24 * 4 * h)) $h 30)|CADENCIA=0h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 53 en 7 dias"
+"cada sesion commitea dos veces|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48) $(for x in $(serie $((b0 + 240)) $((4 * h)) 48); do echo $((x + 600)); done)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+)
+malos=0
+for c in "${rcasos[@]}"; do
+    nombre=${c%%|*}; resto=${c#*|}; ahora=${resto%%|*}; resto=${resto#*|}; eps=${resto%%|*}; e=${resto#*|}
+    r=$(EQUIPO_AHORA=$ahora bash "$es" --rastros "$eps" 2>&1 | sed 's/ (mediana[^)]*)//' | tr '\n' ' ' | sed 's/ $//')
+    [ "$r" = "$e" ] || { malos=$((malos + 1)); echo "FALLA rastros: $nombre -> $r (esperado $e)"; }
+done
+det=""; [ "$malos" -eq 0 ] || det=" $malos de ${#rcasos[@]} casos"
+cierra rastros "$det"
+
+# 10b. resumen: contra el remoto real, la linea existe y trae los 22 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
 # estable: la rama del playbook no aparece como rama de trabajo.
 if [ "${PRUEBAS_SIN_RED:-}" = 1 ]; then
@@ -245,6 +280,28 @@ else
     filas=$(bash "$es" 2>/dev/null | grep -c 'equipo-dev/playbook |')
     [ "$filas" -eq 0 ] || det="$det la rama del playbook aparece $filas veces como rama de trabajo"
     cierra resumen "$det"
+
+    # 12. tablero: lo que estado.sh le da al cierre para el humano y al PO,
+    # contra el remoto real. Una rama del playbook ya contenida en main no es
+    # candidata; toda rama del equipo ya mergeada esta en el comando BORRAR;
+    # salen la rotacion y el tamano de `## Para el humano`.
+    det=""
+    completa=$(bash "$es" 2>/dev/null)
+    pb=origin/claude/equipo-dev/playbook
+    if git rev-parse -q --verify "$pb" >/dev/null && git merge-base --is-ancestor "$pb" origin/main; then
+        printf '%s\n' "$completa" | grep -q '^PLAYBOOK_CANDIDATO=' && det="$det PLAYBOOK_CANDIDATO con $pb ya en main;"
+    fi
+    borrar=$(printf '%s\n' "$completa" | grep -m1 '^BORRAR: git push origin --delete ')
+    for r in $(git branch -r --list 'origin/claude/equipo-dev/[0-9]*' --merged origin/main --format='%(refname:short)'); do
+        case " ${borrar#BORRAR: } " in *" ${r#origin/} "*) ;; *) det="$det ${r#origin/} falta en BORRAR;" ;; esac
+    done
+    nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
+    [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO; do
+        printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
+    done
+    printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"
+    cierra tablero "$det"
 fi
 
 # 11-13: de punta a punta contra un remoto sintetico (sintetico.sh, M5): el
@@ -261,14 +318,14 @@ else
     # lugar), M10, borrables por squash y la exclusion por sesion.
     det=""
     sal=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" 2>&1)
-    esperado='RESUMEN propuesto=2 disenado=1 en_curso=1 huerfanas=1 implementado=2 revisado=0 con_hallazgos=0 aprobado=3 entregado=0 espera_humano=2 cola=7 total=8 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=2 sin_merge=no pausa=no sin_rastro_48h=7 papel_func=1 bug_p1=1'
+    esperado='RESUMEN propuesto=2 disenado=1 en_curso=1 huerfanas=1 implementado=2 revisado=0 con_hallazgos=0 aprobado=3 entregado=0 espera_humano=2 cola=7 total=8 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=2 sin_merge=no pausa=no sin_rastro_48h=6 papel_func=1 bug_p1=1'
     r=$(printf '%s\n' "$sal" | grep -m1 '^RESUMEN ')
     [ "$r" = "$esperado" ] || det="$det RESUMEN: '$r';"
     printf '%s\n' "$sal" | grep -qx 'PLAYBOOK_TOCADO_POR_EL_EQUIPO=claude/equipo-dev/47-toca-playbook: scripts/equipo-dev/turno.sh' || det="$det sin PLAYBOOK_TOCADO de 47;"
     printf '%s\n' "$sal" | grep -q '51-squash | mergeada efectivamente: borrable' || det="$det 51 no sale borrable;"
     printf '%s\n' "$sal" | grep -q 'ESPERA_HUMANO=2 (ocupan 1 lugar de COLA)' || det="$det sin ESPERA_HUMANO;"
-    # 51 se firmo por primera vez el 11 a las 09:02 y entro a main el 12 a las 16:00
-    printf '%s\n' "$sal" | grep -q '^CICLO_7D=mediana 30 h, de la primera firma al merge (1 fichas: 30 h)$' || det="$det CICLO_7D: '$(printf '%s\n' "$sal" | grep '^CICLO_7D')';"
+    for k in CADENCIA CICLO ROTACION BORRABLES PARA_EL_HUMANO; do printf '%s\n' "$sal" | grep -q "^$k=" || det="$det falta $k=;"; done
+    printf '%s\n' "$sal" | grep -q '^BORRAR: git push origin --delete claude/equipo-dev/51-squash$' || det="$det BORRAR: '$(printf '%s\n' "$sal" | grep '^BORRAR')';"
     printf '%s\n' "$sal" | grep -q '^MAIN_7D=funcionalidad:0 otros:1 ' || det="$det MAIN_7D: '$(printf '%s\n' "$sal" | grep '^MAIN_7D')';"
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" --resumen --sin-fetch --excluir-sesion 20261011T1202Z 2>/dev/null)
     case "$r" in *" aprobado=1 "*) ;; *) det="$det --excluir-sesion del revisor de 44 y 50 no deja aprobado=1: '$r';" ;; esac
@@ -298,7 +355,8 @@ else
     pu claude/equipo-dev/47-toca-playbook --solo d | grep -q '^PUERTA d FALLA: toca lo que mergea el humano: .*scripts/equipo-dev/turno.sh' || det="$det 47 pasa d tocando scripts/equipo-dev/;"
     pu claude/equipo-dev/44-aprobada --solo b --como qa 20261011T0902Z | grep -q 'ya firmo otra etapa' || det="$det el dev de 44 puede firmar su QA;"
     pu claude/equipo-dev/44-aprobada --solo b --como revisor 20261013T0902Z | grep -q '^PUERTA b OK' || det="$det una sesion nueva no puede revisar 44;"
-    pu claude/equipo-dev/44-aprobada --solo b --como release 20261011T1802Z | grep -q 'ya firmo otra etapa' || det="$det el QA de 44 puede mergearla;"
+    pu claude/equipo-dev/44-aprobada --solo b --como release 20261011T1202Z | grep -q 'ya firmo otra etapa' || det="$det el revisor de 44 puede mergearla;"
+    pu claude/equipo-dev/44-aprobada --solo b --como release 20261011T1802Z | grep -q '^PUERTA b OK' || det="$det la QA de 44 no puede seguir como Release;"
     r=$(bash "$es_s/puerta.sh" --turnos "turnos: po 20261010T0301Z, dev 20261010T1501Z (relevo de qa, 48 h), revisor 2026101, Qa 20261013T0302Z nota")
     [ "$r" = "$(printf 'po 20261010T0301Z\ndev 20261010T1501Z\nILEGIBLE revisor 2026101\nqa 20261013T0302Z')" ] || det="$det parseo de turnos: '$(echo "$r" | tr '\n' ';')';"
     (cd "$clon" && git checkout -q claude/equipo-dev/backlog 2>/dev/null || git checkout -q -b claude/equipo-dev/backlog origin/claude/equipo-dev/backlog) \
@@ -324,7 +382,10 @@ else
     git -C "$sint/remoto.git" show claude/equipo-dev/backlog:docs/backlog/PULSO.md 2>/dev/null | grep -q '^2026-10-13T03:02Z 20261013T0302Z arranque dev | por estado: prueba' || det="$det sin linea de arranque en PULSO.md;"
     git -C "$sint/remoto.git" show claude/equipo-dev/backlog:docs/backlog/.gitattributes 2>/dev/null | grep -qx 'PULSO.md merge=union' || det="$det sin merge=union;"
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" 2>/dev/null | grep '^PULSO=')
-    [ "$r" = "PULSO=48 h: 0 con cierre, 1 murieron (10-13T03:01Z), 1 perdidos (10-13T06:01Z)" ] || det="$det clasificacion de disparos: '$r';"
+    # A la cadencia medida (3 h con tan pocos rastros) faltan 6 disparos en 48 h:
+    # 4 son de antes del primer pulso; el de las ~03:05 tiene arranque (murio)
+    # y el de las ~06:05 no (se perdio).
+    [ "$r" = "PULSO=48 h: 0 cierres, 1 murieron (~10-13T03:05Z), 1 perdidos (~10-13T06:05Z), 4 sin rastro de antes del primer pulso" ] || det="$det clasificacion de disparos: '$r';"
     # Un push rechazado una vez (hook del remoto) se reintenta desde origin.
     printf '#!/bin/sh\n[ -f "%s/rechazado" ] && exit 0\ntouch "%s/rechazado"; echo rechazado; exit 1\n' "$sint" "$sint" > "$sint/remoto.git/hooks/pre-receive"
     chmod +x "$sint/remoto.git/hooks/pre-receive"
@@ -338,7 +399,8 @@ else
     printf '%s\n' "$e" | grep -qE '^\| dev \| 2026-10-13 03:40 \| Prueba el cierre \|$' || det="$det el tablero no anota el turno;"
     printf '%s\n' "$e" | grep -q '^RESUMEN propuesto=2 ' || det="$det el tablero no trae RESUMEN;"
     r=$(cd "$clon" && EQUIPO_AHORA=$AHORA_S bash "$es_s/estado.sh" 2>/dev/null | grep '^PULSO=')
-    [ "$r" = "PULSO=48 h: 1 con cierre, 0 murieron, 1 perdidos (10-13T06:01Z)" ] || det="$det clasificacion tras el cierre: '$r';"
+    # Con el cierre de las 03:40 el disparo de las 03 queda con rastro.
+    [ "$r" = "PULSO=48 h: 1 cierres, 0 murieron, 0 perdidos, 1 sin rastro de antes del primer pulso" ] || det="$det clasificacion tras el cierre: '$r';"
     # Un tablero que pierde `## Para el equipo` no se escribe.
     mal=$(mktemp -d); cp "$es_s"/*.sh "$mal/"
     printf '#!/bin/sh\necho "# Estado del equipo de desarrollo autonomo"\necho "## Para el equipo"\necho otra cosa\n' > "$mal/estado.sh"

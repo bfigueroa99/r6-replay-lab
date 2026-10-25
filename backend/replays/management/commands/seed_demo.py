@@ -20,6 +20,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from externo import ubisoft
+from pydissect.constants import Y9S4
 from replays.models import Event, Match, PerfilUbisoft, Player, Round, RoundPlayer
 
 ME = "BearF99"
@@ -191,6 +192,8 @@ class Command(BaseCommand):
                     my_score=ganadas,
                     opponent_score=len(tanda) - ganadas,
                     won=ganadas > len(tanda) - ganadas,
+                    # una version con marcador por ronda: antes de Y9S4 no hay
+                    code_version=Y9S4,
                 )
                 for n, datos in enumerate(tanda):
                     self._ronda(match, n, datos, mapa, indice, yo, companeros, rivales)
@@ -212,6 +215,8 @@ class Command(BaseCommand):
             clock_start=180,
             clock_end=20,
             teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
+            # ganas las pares desde la 0: es el marcador que dejan las rondas previas
+            score_before=[(n + 1) // 2, n // 2],
         )
 
         # quedar fuera de posicion es morir, sin bajas y sin que nadie te vengue
@@ -226,6 +231,11 @@ class Command(BaseCommand):
             spawn=SPAWNS[mapa][indice % 2] if lado == "Attack" else "",
             kills=bajas, died=murio, headshots=1 if bajas and indice % 3 == 0 else 0,
             one_vx=1 if (gane and not murio and indice % 17 == 0) else 0,
+            # los ganados son los mismos de one_vx; la segunda rama suma intentos perdidos
+            clutch_vs=(
+                1 if (gane and not murio and indice % 17 == 0)
+                else (2 if (not gane and murio and not fuera and indice % 7 == 3) else 0)
+            ),
             opening_kill=bajas > 0 and indice % 6 == 0,
             opening_death=fuera and indice % 5 == 0,
             entry_kill=bajas > 0 and indice % 6 == 0,
