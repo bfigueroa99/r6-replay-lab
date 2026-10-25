@@ -28,6 +28,24 @@ fi
 
 fallos=()
 
+# El e2e pide el Chromium de la version exacta de @playwright/test. Si falta y
+# hay otro instalado (la imagen de la nube trae uno mas nuevo y cada turno del
+# equipo perdia tiempo armando enlaces a mano), imprime la ruta de ese otro para
+# E2E_CHROMIUM, que playwright.config.js usa como executablePath. Si esta el
+# suyo, como en el PC, no imprime nada y Playwright elige como siempre.
+chromium_alternativo() {
+    local raiz rev d n mejor=0 exe
+    raiz="${PLAYWRIGHT_BROWSERS_PATH:-${HOME:-}/.cache/ms-playwright}"
+    rev=$(cd "$repo/frontend" && node -p "JSON.parse(require('fs').readFileSync('node_modules/playwright-core/browsers.json', 'utf8')).browsers.find(b => b.name === 'chromium-headless-shell').revision" 2>/dev/null) || return 0
+    [ -n "$rev" ] && [ ! -d "$raiz/chromium_headless_shell-$rev" ] || return 0
+    for d in "$raiz"/chromium_headless_shell-*/; do
+        n=${d%/}; n=${n##*-}
+        [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -gt "$mejor" ] || continue
+        exe=$(find "$d" -maxdepth 2 -type f \( -name headless_shell -o -name chrome-headless-shell \) 2>/dev/null | head -1)
+        [ -n "$exe" ] && [ -x "$exe" ] && { mejor=$n; echo "$exe"; }
+    done | tail -1
+}
+
 echo
 echo "[1/5] ruff"
 if [ -n "$ruff" ]; then
@@ -58,6 +76,13 @@ if [ -d "$repo/frontend/node_modules" ]; then
     else
         # Levanta Django con una base sembrada aparte y maneja la app en
         # Chromium: es el unico paso que ve la pagina de verdad.
+        if [ -z "${E2E_CHROMIUM:-}" ]; then
+            alternativo=$(chromium_alternativo)
+            if [ -n "$alternativo" ]; then
+                export E2E_CHROMIUM="$alternativo"
+                echo "  falta el Chromium de esta version de Playwright: el e2e usa $alternativo"
+            fi
+        fi
         (cd "$repo/frontend" && npm run e2e) || {
             fallos+=(e2e)
             echo "  Si falta el navegador: cd frontend && npm run e2e:browser"
