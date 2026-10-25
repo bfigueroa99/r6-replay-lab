@@ -143,8 +143,8 @@ de lineas vecinas, si aparece.
   doc y el docstring ahora dicen que tambien quedan afuera las filas sin lado.
   El `nth(2)` del e2e sigue el patron de las otras dos tablas del panel.
 
-**Verificacion:** ruff ok, 769 tests backend (4 skip), 120 frontend, build ok,
-e2e 48/48. En esta sesion cloud `check.sh` cae en el paso e2e por entorno, no
-por codigo: `@playwright/test` 1.56.0 busca `chromium_headless_shell-1194` y
-la imagen trae la build 1243. El e2e se corrio con una config temporal sin
-commitear que solo agrega `launchOptions.executablePath: '/opt/pw-browsers/chromium'`.
+**Verificacion:** `check.sh` en `Todo en verde.` sobre ff92c7d (ruff ok, 769
+tests backend con 4 skip, 120 vitest, build, e2e 48/48). Como en los turnos
+anteriores, el e2e pide `chromium_headless_shell-1194` y la imagen trae la
+1243: se corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a enlaces en el
+scratchpad, sin tocar el repo.
