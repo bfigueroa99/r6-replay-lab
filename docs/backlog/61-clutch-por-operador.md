@@ -1,7 +1,7 @@
 # 61. Clutch por operador
 
-estado: implementado
-candado: revisor 2026-10-25 04:10 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O6 (siguiente tramo tras las fichas 55 y 59, ya en main)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_clutch.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261025T0004Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261025T0004Z, revisor 20261025T0404Z
 
 ## Que gana quien usa la app
 
@@ -148,3 +148,29 @@ tests backend con 4 skip, 120 vitest, build, e2e 48/48). Como en los turnos
 anteriores, el e2e pide `chromium_headless_shell-1194` y la imagen trae la
 1243: se corrio con `PLAYWRIGHT_BROWSERS_PATH` apuntando a enlaces en el
 scratchpad, sin tocar el repo.
+
+## Revision 2026-10-25 sobre ac5ce50
+
+(revisor 20261025T0404Z) Rama fusionada con `origin/main` (19683ce) antes de
+revisar. Revision ciega con `revision.md` sobre el diff sin `docs/backlog`:
+sin hallazgos. Confirmado por el lider:
+
+- `clutch_by_operator` parte de `base_queryset` (solo filas `is_me`, filtros
+  de la barra) con el mismo intento y ganado que `clutch_conversion`;
+  `operator` es `CharField` sin `null`, asi que `exclude(operator="")`
+  alcanza.
+- Criterios: los seis tests de `ClutchPorOperadorTests` cubren filas, suma
+  contra la conversion menos sin operador, borde `MIN-1`/`MIN` con la
+  constante, ronda sin ganador, filtro de lado por la API y base vacia. Cada
+  uno cae si se quita la regla que nombra (leido contra el codigo).
+- UI: tabla tercera del panel Clutches, CSV `clutch-por-operador` con el
+  lado en texto, `*` en muestra chica; el e2e afirma 3 filas y los numeros
+  de `seed_demo` (el subagente los reprodujo: Rook D 5-0, Jager D 3-0 `*`,
+  Zofia A 2-2 `*`).
+- Fila en `docs/metricas.md`; diff dentro de `archivos:`; sin tildes en
+  identificadores, UI con tildes, sin `print` ni `console.log`.
+
+**Verificacion:** `check.sh` en `Todo en verde.` sobre ac5ce50 (ruff ok, 769
+tests backend con 4 skip, 120 vitest, build, e2e 48/48).
+
+Veredicto: aprobar.
