@@ -29,8 +29,21 @@ la ficha esta en `main`.
 
 `ESTADO.md` en la rama `backlog` tiene URL estable:
 `https://github.com/bfigueroa99/r6-replay-lab/blob/claude/equipo-dev/backlog/docs/backlog/ESTADO.md`.
-Cada turno lo regenera: cola con estados y links de compare, orden de merge
-sugerido, ramas borrables con el comando listo, preguntas para el humano.
+Lo genera `scripts/equipo-dev/estado.sh --tablero` al cerrar cada turno:
+cola con estados y links de compare, orden de merge sugerido, salud del loop,
+ramas borrables en un solo comando y lo que te toca.
+
+Lo que te toca esta en `## Para el humano`, en dos partes. Arriba, avisos
+que se recalculan solos (no se acumulan). Abajo, **`### Pedidos abiertos`**:
+una linea por decision, con id estable (`H1`, `H2`...) y la fecha desde la
+que espera. Para contestar, escribe en `## Para el equipo` citando el id
+(`H3: que cuente al que se fue`); el turno siguiente lo hace o lo convierte
+en ficha y lo pasa a `### Resueltos`. El equipo no repite un pedido con
+otras palabras: si sigue abierto, sigue con el mismo id.
+
+`PULSO.md`, al lado, tiene una linea por arranque y por cierre de cada
+turno: si un disparo no aparece, la Routine no arranco la sesion; si aparece
+el arranque sin cierre, la sesion murio a mitad de camino.
 
 ## Quien mergea
 
@@ -48,7 +61,13 @@ equipo detecta los tres. Borra la rama al mergear.
 Las reglas del equipo (playbook) viven en `main` cuando las mergeas; mientras
 tanto, en la rama `claude/equipo-dev/playbook`, que es la que lee la rutina.
 Nadie del equipo empuja ahi: la mueven tu merge o una sesion que vos inicies.
-Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
+Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`; lo que el
+equipo propone para su propia maquinaria aparece en `ESTADO.md`, bajo
+`### Maquinaria propuesta por el equipo`, y una sesion tuya lo pasa ahi.
+
+Los PRs que esperan tu merge ocupan entre todos un solo lugar de la cola:
+dejarlos esperando no frena al equipo, pero si se acumulan el tablero lo
+dice.
 
 ## Alcance
 
