@@ -30,7 +30,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // E2E_CHROMIUM lo pone scripts/check.sh solo cuando falta el Chromium de
+        // esta version de Playwright y hay otro instalado (la imagen de la nube
+        // trae uno mas nuevo). Sin la variable, Playwright elige el suyo, como en el PC.
+        launchOptions: process.env.E2E_CHROMIUM ? { executablePath: process.env.E2E_CHROMIUM } : {},
+      },
+    },
+  ],
 
   // el script prepara la base y recien despues levanta Django; ver e2e/servidor.js
   webServer: {

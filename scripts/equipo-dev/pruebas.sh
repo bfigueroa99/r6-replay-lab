@@ -123,7 +123,7 @@ cierra roles "$det"
 
 # 8. podridos: hechos que ya no son ciertos y que el playbook no puede nombrar.
 det=""
-for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray"; do grep -qF -- "$t" "$sk" 2>/dev/null && det="$det '$t'"; done
+for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray" 'titulo del PR como mensaje' 'Corre cada 3 horas'; do grep -qF -- "$t" "$sk" 2>/dev/null && det="$det '$t'"; done
 cierra podridos "$det"
 
 # 9. simular: la regla del rol, caso por caso, comparando la linea entera.
@@ -173,7 +173,39 @@ GIT_DIR="$base/.nogit" bash "$tu" foo --simular "hora=0905" >/dev/null 2>&1; cod
 det=""; [ "$malos" -eq 0 ] || det=" $malos de $(( ${#casos[@]} + 1 )) casos"
 cierra simular "$det"
 
-# 10. resumen: contra el remoto real, la linea existe y trae los 20 pares en
+# 10. rastros: los disparos sin rastro se cuentan a la cadencia que la Routine
+# tiene de verdad, no a un cron fijo. Series sinteticas (un commit de ESTADO.md
+# entre 5 y 17 min despues de cada disparo) y la linea entera de estado.sh
+# --rastros. Con el cron fijo de 3 h el caso de 4 h daba 2 perdidos por dia.
+serie() {
+    local desde=$1 paso=$2 n=$3 i; shift 3
+    for ((i = 0; i < n; i++)); do
+        case " $* " in *" $i "*) continue ;; esac
+        echo $(( desde + i * paso + 300 + (i * 7 % 4) * 240 ))
+    done
+}
+b0=1790812800; h=3600   # 2026-10-01T00:00Z
+rcasos=(
+"4 h, 8 dias|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+"4 h con un hueco hace 32 h|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48 40)|CADENCIA=3h56 TURNOS_SIN_RASTRO=1 en 48 h (~10-07T16:09Z) | 1 de 42 en 7 dias"
+"3 h|$((b0 + 60 + 64 * 3 * h + 60))|$(serie $((b0 + 60)) $((3 * h)) 64)|CADENCIA=2h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 56 en 7 dias"
+"1 h|$((b0 + 660 + 96 * h + 60))|$(serie $((b0 + 660)) $h 96)|CADENCIA=0h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 95 en 7 dias"
+"3 h y despues 4 h|$((b0 + 60 + 32 * 3 * h + 24 * 4 * h + 60))|$(serie $((b0 + 60)) $((3 * h)) 32) $(serie $((b0 + 60 + 32 * 3 * h)) $((4 * h)) 24)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 48 en 7 dias"
+"tramo abierto con un perdido|$((b0 + 240 + 47 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 46)|CADENCIA=3h56 TURNOS_SIN_RASTRO=1 en 48 h (~10-08T16:17Z) | 1 de 42 en 7 dias"
+"turno en curso a los 130 min|$((b0 + 240 + 48 * 4 * h + 130 * 60))|$(serie $((b0 + 240)) $((4 * h)) 48)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+"4 h y hace 30 h pasa a 1 h|$((b0 + 240 + 24 * 4 * h + 30 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 24) $(serie $((b0 + 240 + 24 * 4 * h)) $h 30)|CADENCIA=0h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 53 en 7 dias"
+"cada sesion commitea dos veces|$((b0 + 240 + 48 * 4 * h + 60))|$(serie $((b0 + 240)) $((4 * h)) 48) $(for x in $(serie $((b0 + 240)) $((4 * h)) 48); do echo $((x + 600)); done)|CADENCIA=3h56 TURNOS_SIN_RASTRO=0 en 48 h | 0 de 42 en 7 dias"
+)
+malos=0
+for c in "${rcasos[@]}"; do
+    nombre=${c%%|*}; resto=${c#*|}; ahora=${resto%%|*}; resto=${resto#*|}; eps=${resto%%|*}; e=${resto#*|}
+    r=$(EQUIPO_AHORA=$ahora bash "$es" --rastros "$eps" 2>&1 | sed 's/ (mediana[^)]*)//' | tr '\n' ' ' | sed 's/ $//')
+    [ "$r" = "$e" ] || { malos=$((malos + 1)); echo "FALLA rastros: $nombre -> $r (esperado $e)"; }
+done
+det=""; [ "$malos" -eq 0 ] || det=" $malos de ${#rcasos[@]} casos"
+cierra rastros "$det"
+
+# 11. resumen: contra el remoto real, la linea existe y trae los 20 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
 # estable: la rama del playbook no aparece como rama de trabajo.
 if [ "${PRUEBAS_SIN_RED:-}" = 1 ]; then
@@ -189,6 +221,28 @@ else
     filas=$(bash "$es" 2>/dev/null | grep -c 'equipo-dev/playbook |')
     [ "$filas" -eq 0 ] || det="$det la rama del playbook aparece $filas veces como rama de trabajo"
     cierra resumen "$det"
+
+    # 12. tablero: lo que estado.sh le da al cierre para el humano y al PO,
+    # contra el remoto real. Una rama del playbook ya contenida en main no es
+    # candidata; toda rama del equipo ya mergeada esta en el comando BORRAR;
+    # salen la rotacion y el tamano de `## Para el humano`.
+    det=""
+    completa=$(bash "$es" 2>/dev/null)
+    pb=origin/claude/equipo-dev/playbook
+    if git rev-parse -q --verify "$pb" >/dev/null && git merge-base --is-ancestor "$pb" origin/main; then
+        printf '%s\n' "$completa" | grep -q '^PLAYBOOK_CANDIDATO=' && det="$det PLAYBOOK_CANDIDATO con $pb ya en main;"
+    fi
+    borrar=$(printf '%s\n' "$completa" | grep -m1 '^BORRAR: git push origin --delete ')
+    for r in $(git branch -r --list 'origin/claude/equipo-dev/[0-9]*' --merged origin/main --format='%(refname:short)'); do
+        case " ${borrar#BORRAR: } " in *" ${r#origin/} "*) ;; *) det="$det ${r#origin/} falta en BORRAR;" ;; esac
+    done
+    nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
+    [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO; do
+        printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
+    done
+    printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"
+    cierra tablero "$det"
 fi
 
 if [ "$fallos" -gt 0 ]; then echo "PRUEBAS_FALLAN: $fallos"; exit 1; fi
