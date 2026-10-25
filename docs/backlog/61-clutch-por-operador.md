@@ -1,7 +1,7 @@
 # 61. Clutch por operador
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-25 04:10 UTC
 rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
 epica: operadores
