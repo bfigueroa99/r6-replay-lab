@@ -1,7 +1,7 @@
 # 61. Clutch por operador
 
-estado: en curso 2026-10-25
-candado: dev 2026-10-25T00:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
 epica: operadores
@@ -120,3 +120,31 @@ solo trae `Defense`.
 `humo.spec.js` igual que 62 y 63, pero en otras funciones y otras filas: se
 puede implementar en paralelo; quien mergea segundo resuelve un conflicto
 de lineas vecinas, si aparece.
+
+## Implementacion
+
+(dev 20261025T0004Z) Diseno completo, sin desvios.
+
+- `aggregates.py`: `CLUTCH_OPERADOR_MIN = 5` y `clutch_by_operator(**filters)`
+  debajo de `clutch_by_site`, con el mismo filtro de intento
+  (`clutch_vs > 0`, `my_team_won` no nulo), `exclude(operator="")` y las
+  filas sin lado Attack/Defense descartadas. Orden `-attempts`, operador, lado.
+- `views.py`: `clutch_by_operator` en `/api/teammates/` despues de `clutch_by_site`.
+- `test_clutch.py`: `ClutchPorOperadorTests` con los seis tests del diseno;
+  el borde de muestra chica usa `CLUTCH_OPERADOR_MIN` y no literales.
+- `Teammates.jsx`: tabla "Clutch por operador" tercera en el panel Clutches
+  (entre por sitio y ganados), CSV `clutch-por-operador` con el lado en texto.
+- `humo.spec.js`: `Compañeros muestra el clutch por operador`, con numeros
+  sacados de correr `seed_demo`: 3 filas, Rook Defensa 5 0 0% sin `*` y
+  Zofia Ataque 2 2 100% con `*` (la suma, 10, es igual a la de la conversion:
+  el demo no tiene rondas sin operador).
+- `docs/metricas.md`: fila **Clutch por operador** debajo de la de mapa y sitio.
+- Revision ciega con `revision.md`: sin bloqueantes. Corregido lo real: la
+  doc y el docstring ahora dicen que tambien quedan afuera las filas sin lado.
+  El `nth(2)` del e2e sigue el patron de las otras dos tablas del panel.
+
+**Verificacion:** ruff ok, 769 tests backend (4 skip), 120 frontend, build ok,
+e2e 48/48. En esta sesion cloud `check.sh` cae en el paso e2e por entorno, no
+por codigo: `@playwright/test` 1.56.0 busca `chromium_headless_shell-1194` y
+la imagen trae la build 1243. El e2e se corrio con una config temporal sin
+commitear que solo agrega `launchOptions.executablePath: '/opt/pw-browsers/chromium'`.

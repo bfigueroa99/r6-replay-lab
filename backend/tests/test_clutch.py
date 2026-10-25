@@ -237,3 +237,65 @@ class ClutchPorSitioTests(TestCase):
         respuesta = self.client.get("/api/teammates/")
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.json()["clutch_by_site"], [])
+
+
+class ClutchPorOperadorTests(TestCase):
+    def _ronda(self, indice: int, *, operator: str, won: bool, side: str = "Attack"):
+        rnd = make_round(make_match(index=indice), 0, side=side, won=won)
+        make_round_player(rnd, clutch_vs=2, won=won, side=side, operator=operator)
+
+    def test_una_fila_por_operador_y_lado_con_intentos_y_ganados(self):
+        self._ronda(0, operator="Ash", won=True)
+        self._ronda(1, operator="Ash", won=False)
+        self._ronda(2, operator="Ash", won=True)
+        self._ronda(3, operator="Mute", won=True, side="Defense")
+        self._ronda(4, operator="Thermite", won=False)
+        filas = agg.clutch_by_operator()
+        self.assertEqual(
+            [(f["operator"], f["side"], f["attempts"], f["won"]) for f in filas],
+            [("Ash", "Attack", 3, 2), ("Mute", "Defense", 1, 1), ("Thermite", "Attack", 1, 0)],
+        )
+        self.assertEqual(filas[0]["pct"], 66.7)
+        self.assertEqual(filas[2]["pct"], 0.0)
+
+    def test_los_intentos_suman_lo_mismo_que_la_conversion_menos_sin_operador(self):
+        self._ronda(0, operator="Ash", won=True)
+        self._ronda(1, operator="Mute", won=False, side="Defense")
+        self._ronda(2, operator="", won=True)
+        por_operador = sum(f["attempts"] for f in agg.clutch_by_operator())
+        conversion = sum(f["attempts"] for f in agg.clutch_conversion())
+        self.assertEqual(conversion, 3)
+        self.assertEqual(por_operador, conversion - 1)
+        self.assertNotIn("", [f["operator"] for f in agg.clutch_by_operator()])
+
+    def test_cuatro_intentos_son_muestra_chica_y_cinco_no(self):
+        minimo = agg.CLUTCH_OPERADOR_MIN
+        for i in range(minimo):
+            self._ronda(i, operator="Ash", won=i % 2 == 0)
+        for i in range(minimo, 2 * minimo - 1):
+            self._ronda(i, operator="Thermite", won=True)
+        ash, thermite = agg.clutch_by_operator()
+        self.assertEqual((ash["operator"], ash["attempts"], ash["low_sample"]), ("Ash", minimo, False))
+        self.assertEqual((thermite["operator"], thermite["attempts"], thermite["low_sample"]), ("Thermite", minimo - 1, True))
+
+    def test_una_ronda_sin_ganador_no_cuenta_como_intento_por_operador(self):
+        self._ronda(0, operator="Ash", won=True)
+        rnd = make_round(make_match(index=1), 0, side="Attack")
+        rnd.my_team_won = None
+        rnd.save(update_fields=["my_team_won"])
+        make_round_player(rnd, clutch_vs=2, won=False, side="Attack", operator="Ash")
+        (fila,) = agg.clutch_by_operator()
+        self.assertEqual((fila["attempts"], fila["won"]), (1, 1))
+
+    def test_clutch_por_operador_respeta_el_filtro_de_lado(self):
+        self._ronda(0, operator="Ash", won=True, side="Attack")
+        self._ronda(1, operator="Mute", won=False, side="Defense")
+        self._ronda(2, operator="Jager", won=True, side="Defense")
+        filas = self.client.get("/api/teammates/?side=Attack").json()["clutch_by_operator"]
+        self.assertEqual([(f["operator"], f["side"], f["attempts"]) for f in filas], [("Ash", "Attack", 1)])
+
+    def test_la_api_de_companeros_trae_clutch_por_operador_vacio_sin_datos(self):
+        self.assertEqual(agg.clutch_by_operator(), [])
+        respuesta = self.client.get("/api/teammates/")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()["clutch_by_operator"], [])

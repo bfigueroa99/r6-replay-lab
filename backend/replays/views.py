@@ -253,6 +253,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "clutches": agg.clutch_detail(**filters),
             "clutch_conversion": agg.clutch_conversion(**filters),
             "clutch_by_site": agg.clutch_by_site(**filters),
+            "clutch_by_operator": agg.clutch_by_operator(**filters),
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),

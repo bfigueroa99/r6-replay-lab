@@ -51,6 +51,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   }))
   // El backend ya pone cada total de mapa arriba de sus sitios; `orden` lo conserva al ordenar
   const porSitio = (data?.clutch_by_site || []).map((row, orden) => ({ ...row, orden }))
+  const porOperador = data?.clutch_by_operator || []
   // El orden del backend (Ataque, Defensa, Total) se fija con `orden` para que la tabla no lo cambie al ordenar.
   const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
   const firstDownTotal = firstDown.find((row) => row.side === 'total')
@@ -303,6 +304,43 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           initialSort={{ key: 'orden', dir: 'asc' }}
           rowKey={(row) => `${row.slug}-${row.kind}-${row.site}`}
           csvName="clutch-por-sitio"
+          empty="Todavía no quedaste último en ninguna ronda."
+        />
+        <h3>Clutch por operador</h3>
+        <DataTable
+          columns={[
+            { key: 'operator', label: 'Operador', left: true },
+            {
+              key: 'side',
+              label: 'Lado',
+              render: (row) => <SideChip side={row.side} />,
+              csv: (row) => (row.side === 'Attack' ? 'Ataque' : 'Defensa'),
+            },
+            { key: 'attempts', label: 'Intentos', render: (row) => fmt(row.attempts) },
+            { key: 'won', label: 'Ganados', render: (row) => fmt(row.won) },
+            {
+              key: 'pct',
+              label: 'Conversión',
+              help: 'Un * marca menos de 5 intentos: con tan poca muestra el % todavía no dice mucho.',
+              render: (row) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                  <Bar value={row.pct} />
+                  <span style={{ minWidth: 46 }}>
+                    {pct(row.pct)}
+                    {row.low_sample ? (
+                      <span className="dim muestra-chica" title="Menos de 5 intentos">
+                        *
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+              ),
+            },
+          ]}
+          rows={porOperador}
+          initialSort={{ key: 'attempts', dir: 'desc' }}
+          rowKey={(row) => `${row.operator}-${row.side}`}
+          csvName="clutch-por-operador"
           empty="Todavía no quedaste último en ninguna ronda."
         />
         <h3>Clutches ganados</h3>
