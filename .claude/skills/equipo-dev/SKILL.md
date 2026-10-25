@@ -1,6 +1,6 @@
 ---
 name: equipo-dev
-description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada 3 horas en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun lo que el pipeline necesita (`turno.sh`); el reloj desempata. Usar cuando la rutina lo pida o con /equipo-dev [rol].
+description: Una iteracion del equipo de desarrollo autonomo de r6-replay-lab. Corre cada pocas horas (la cadencia la fija la Routine) en una sesion cloud nueva y cada iteracion la lidera un rol distinto (release, po, arquitecto, dev, revisor, qa, investigador) segun lo que el pipeline necesita (`turno.sh`); el reloj desempata. Usar cuando la rutina lo pida o con /equipo-dev [rol].
 ---
 
 # Equipo de desarrollo: una iteracion, un rol
@@ -131,9 +131,11 @@ pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
 argumento de `turno.sh`, en minuscula.
 `estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
 de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
-viejas sin ficha, los disparos de la rutina sin rastro (`TURNOS_SIN_RASTRO`),
-`COLA`, `TOTAL`, la linea `RESUMEN` que lee `turno.sh` y si el entorno esta
-completo. Con eso se
+viejas sin ficha, las ramas borrables en un solo comando (`BORRAR`), el
+tamano de `## Para el humano` (`PARA_EL_HUMANO`), la cadencia real de la
+rutina y sus disparos sin rastro (`CADENCIA`, `TURNOS_SIN_RASTRO`), `COLA`,
+`TOTAL`, la rotacion del alcance (`ROTACION`), la linea `RESUMEN` que lee
+`turno.sh` y si el entorno esta completo. Con eso se
 sabe todo lo que hace falta para decidir. El playbook se lee siempre de
 `$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
 
@@ -176,7 +178,9 @@ recalcula; `EQUIPO_MOTIVO` y `EQUIPO_RELOJ` quedan en el env y en `ESTADO.md`.
 ### Rol por reloj: desempate cuando nada espera, alternancia del Investigador y nemotecnia
 
 Franja de 3 horas mas cercana, `((minuto_del_dia + 90) / 180) % 8`, tolera
-arranques demorados hasta 88 minutos.
+arranques demorados hasta 88 minutos. La tabla supone disparos cada 3 h; si
+la Routine dispara con otra cadencia (`CADENCIA` de `estado.sh`), el reloj
+cae en la franja mas cercana y solo desempata: los roles salen del estado.
 
 | franja | disparo UTC | Chile (UTC-3) | rol |
 |---|---|---|---|
@@ -336,8 +340,8 @@ merge); papel (`propuesto`, `disenado`, `descartado` de los ultimos 30 dias,
 con `tipo`); `## Alcance` (epicas en curso con sus tramos, funcionalidades
 que llegaron a `main` en los ultimos 7 dias, ideas libres en `ALCANCE.md`:
 las lineas de `== alcance` de `estado.sh`); ultimo turno de
-cada rol; `## Para el humano` (preguntas acumuladas, ramas
-borrables con `git push origin --delete <rama>` listo para pegar, aviso unico
+cada rol; `## Para el humano` (preguntas acumuladas, la linea `BORRAR` de
+`estado.sh` tal cual, un solo comando con todas las ramas borrables, aviso unico
 de CI remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
 que escribe el humano y el equipo preserva tal cual, agregando respuestas
 fechadas debajo.
@@ -391,7 +395,9 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   "Como probarlo en 2 minutos" con comandos exactos, "Verificar en el PC" si
   existe); recortar la ficha a unas 80 lineas (Revision condensada al
   veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
-  ultimo commit con el titulo del PR como mensaje; `estado: entregado`;
+  ultimo commit `Entrega: NN titulo` (el titulo del PR lo lleva solo el
+  commit de merge; repetirlo en la rama dejaba en `main` dos commits
+  seguidos con el mismo titulo por cada entrega); `estado: entregado`;
   push. (4) Con herramientas: abrir el PR con `## PR` tal cual a toda ficha
   `entregado` que no lo tenga (incluidas las `entregado (PR pendiente de
   abrir)` que dejo un turno sin herramientas); sin herramientas: `entregado
@@ -423,11 +429,12 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   commit = titulo del PR, cuerpo = `## Que cambia` del PR. Despues `git
   fetch origin main`, confirmar que la ficha existe en `origin/main`, borrar
   la rama recien mergeada (`git push origin --delete <rama>`, la unica rama
-  que el equipo borra) y, si el espejo de la ficha sigue en `backlog`,
+  que el equipo borra; si el proxy lo corta con 403 no se reintenta: la rama
+  sale sola en `BORRAR`) y, si el espejo de la ficha sigue en `backlog`,
   quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
-  las ramas que sigan abiertas y lista de ramas borrables. (7) `## Alcance`
-  de `ESTADO.md` con las lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS` y
-  `ALCANCE` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
+  las ramas que sigan abiertas. (7) `## Alcance`
+  de `ESTADO.md` con las lineas `MAIN_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`,
+  `ALCANCE` y `ROTACION` de `estado.sh`. Si `MAIN_7D` dice `funcionalidad:0`, una linea en
   `## Para el humano` con el cuello de botella exacto (papel sin
   funcionalidades, diseno trabado, cola llena, rojo, PR esperando). (8)
   Playbook: `git show $EQUIPO_REF:scripts/equipo-dev/pruebas.sh | bash -s -- $EQUIPO_REF`.
@@ -496,10 +503,16 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      criterios de aceptacion convertibles en test o `curl`, "Fuera de
      alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
      (a) bug real con numeros mal, 500 con datos legitimos o importacion que
-     se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso;
+     se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso,
+     solo si una ficha ya lo dejo escrito ("Implementar despues de #NN"):
+     otra idea suelta del mismo tema no es un tramo;
      (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros
      (a igual tamano, primero un `must` de la epica `paridad-referencia`,
-     que la referencia tiene y la app no);
+     que la referencia tiene y la app no), con la linea `ROTACION` de
+     `estado.sh`: ninguna ficha nueva sale de una epica de `saturadas` ni
+     suma una tarjeta a una pagina de `saturadas` (salvo que junte o
+     reemplace tarjetas que ya estan), y si `sin entrega` no esta vacia, al
+     menos una funcionalidad del turno sale de una de esas epicas;
      (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
      funcionalidades esperando. Al menos una de las fichas del turno es
      funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`
@@ -782,7 +795,13 @@ pozo del que el PO saca.
    `COLA=...`; a `## Para el humano`, si corresponde, `Rutina: <n> disparos
    sin rastro en 48 h (<lista>); revisar el historial de la Routine
    \`r6-replay-lab: equipo dev cada 3h\`` y `Playbook candidato: <linea
-   PLAYBOOK_CANDIDATO>`.
+   PLAYBOOK_CANDIDATO>`. `## Para el humano` lleva solo lo que el humano
+   tiene que decidir o hacer: preguntas abiertas, PRs que esperan su merge,
+   la linea `BORRAR`, "Verificar en el PC" (una linea por ficha, con su
+   numero; el detalle esta en la ficha) y los avisos de la rutina. Un aviso
+   que no bloquea de una ficha que ya esta en `main` no va: queda en
+   `## Para el humano` de la ficha. Si `PARA_EL_HUMANO` dice `podar`, el turno
+   lo deja bajo el tope antes de empujar.
 3. Informe final, que tiene que entenderse solo:
 
 ```
