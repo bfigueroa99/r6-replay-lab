@@ -1,51 +1,48 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-26 16:09 UTC por revisor (sesion 20261026T1605Z; motivo: por estado: 1 implementado; reloj: dev, franja 5)
+actualizado: 2026-10-26 21:15 UTC por qa + release (sesion 20261026T2004Z; motivo: por estado: 1 revisado; reloj: investigador, franja 7)
 playbook: origin/main@b3412cb
-rutina: TURNOS_SIN_RASTRO=6 en 48 h (~10-25T08:09Z ~10-25T12:12Z ~10-25T16:14Z ~10-25T20:16Z ~10-26T00:19Z ~10-26T04:21Z) | 7 de 42 en 7 dias
+rutina: TURNOS_SIN_RASTRO=6 en 48 h (~10-25T08:09Z ~10-25T12:10Z ~10-25T16:12Z ~10-25T20:14Z ~10-26T00:15Z ~10-26T04:17Z) | 7 de 42 en 7 dias; sin herramientas para comparar el prompt
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-| rama | ficha | estado | horas sin commits | PR / compare |
-|---|---|---|---|---|
-| claude/equipo-dev/62-cuando-matas | 62-cuando-matas | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/62-cuando-matas?expand=1), sin PR |
+Vacia: la 62 entro a main (PR #54, 30cc407).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=67 sin_merge=no pausa=no sin_rastro_48h=6
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=67 sin_merge=no pausa=no sin_rastro_48h=6
 
 ## Orden de merge sugerido
 
-Una sola rama abierta (62), sin conflicto con main. 62 y 63 tocan `aggregates.py`, `views.py`, `metricas.md` y `humo.spec.js` en otras funciones y filas; la 63 va despues de la 62.
+Sin ramas abiertas. La 63 (disenada) ya puede implementarse: la 62, que tocaba el mismo panel, esta en main.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:7 (55-clutch-intentos-y-conversion 56-mapas-y-operadores-que-mejoran 57-teamkills 58-primera-ronda-de-cada-mitad 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador) otros:0 (fichas que llegaron a main en 7 dias).
-- Epicas en curso: operadores: O6 -> ficha 61 en main (PR #53). lado-y-marcador: B11 -> ficha 62 (implementado), B14 -> ficha 63 (disenada, despues de 62), B15 idea. impacto: K3 (55) y K5 (59) en main; K7 idea. paridad-referencia: R1-R4 idea.
-- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 67 ideas libres. Ideas nuevas de este turno: ninguna (turno de Dev).
+- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): funcionalidad:8 (55-clutch-intentos-y-conversion 56-mapas-y-operadores-que-mejoran 57-teamkills 58-primera-ronda-de-cada-mitad 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas) otros:0.
+- Epicas en curso: operadores: O6 -> ficha 61 en main (PR #53). lado-y-marcador: B11 -> ficha 62 en main (PR #54), B14 -> ficha 63 (disenada, lista para Dev), B15 idea. impacto: K3 (55) y K5 (59) en main; K7 idea. paridad-referencia: R1-R4 idea.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 67 ideas libres. Ideas nuevas de este turno: ninguna (turno de QA + Release).
 - Investigacion: ultima entrada 2026-10-24 (familia 8, Replica; paridad 76.1 / 100). Proxima: 3, 5 y 6.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): pagina Teammates.jsx | sin entrega: operadores exportar datos-nuevos-del-parser paridad-referencia
-- Ciclo: CICLO=23h de reclamo a main, mediana de las ultimas 10 funcionalidades (ficha:horas 61:32 59:12 57:12 56:12 60:44 58:12 55:24 53:26 54:23 52:24)
+- Ciclo: CICLO=17h de reclamo a main, mediana de las ultimas 10 funcionalidades (ficha:horas 62:8 61:32 59:12 57:12 56:12 60:44 58:12 55:24 53:26 54:23)
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 62-cuando-matas | en curso (revisado en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 63-cuando-llega-la-apertura | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 1 `disenado`, 62 `revisado`: el proximo turno es de QA (regla 2) sobre la 62, que puede seguir como Release en el mismo turno; la 63 va despues de que 62 se mergee.
+0 `propuesto`, 1 `disenado` (63). Cola vacia: el proximo turno es de Dev (regla 8) sobre la 63.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-26 08:50 | (mismo turno que la QA) Entrega y mergea la 61: `aprobado` -> `entregado` -> PR #53 -> main b3412cb. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, main 19683ce ya incluido, `check.sh` en `Todo en verde.` sobre el head 4f7d192 (770 backend, 120 vitest, build, 48 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy lo corta. pruebas.sh: PRUEBAS_OK (12). Rutina: sin herramientas para comparar el prompt. |
+| release | 2026-10-26 21:10 | (mismo turno que la QA) Entrega y mergea la 62: `aprobado` -> `entregado` -> PR #54 -> main 30cc407. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, main b3412cb ya incluido, `check.sh` en `Todo en verde.` sobre el head e7cfb67 (780 backend, 120 vitest, build, 49 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el clasificador de permisos nego `git push --delete`. pruebas.sh: PRUEBAS_OK (12). Rutina: sin herramientas para comparar el prompt. |
 | dev | 2026-10-26 12:40 | Implementa 62 (`disenado` -> `implementado`, rama `claude/equipo-dev/62-cuando-matas`, 9926b27): `kills_by_time` en `/api/trends/` desde `_duelos` (teamkills afuera, lado de tu fila), helper `_tramo_vacio` compartido con `deaths_by_time`; panel "Cuándo matas" antes de "Cuando mueres"; 8 tests y e2e sobre `seed_demo` (4 tramos, 99 bajas = Bajas de Duelos); fila en `metricas.md`. Revision ciega sin hallazgos. `check.sh` en `Todo en verde.` (778 backend, 120 vitest, build, 49 e2e). |
 | revisor | 2026-10-26 16:09 | Revisa 62 (funcionalidad, `implementado` -> `revisado`) sobre 9926b27, main b3412cb ya incluido. Revision ciega sin hallazgos (el subagente recalculo los numeros del e2e sobre `seed_demo`), confirmada por el lider criterio por criterio; mutaciones en el tope y en el lado hacen caer `CuandoMatasTests`. `check.sh` en `Todo en verde.` (778 backend, 120 vitest, build, 49 e2e). Sin pushes de codigo. |
-| qa | 2026-10-26 08:35 | Prueba 61 (funcionalidad, `revisado` -> `aprobado`) sobre f0a1bd3. `check.sh` en verde; base vacia (8 combinaciones borde: 200 y `[]`) y sembrada (suma por operador = conversion menos sin operador y sin lado; `side`, `map`, `operator`, `since`, `until=foo`, `page=-1` sin 500); tabla y CSV en Chromium con consola limpia; chunk inicial sin cambio. Mutacion: el descarte de filas sin lado no tenia test; agregado `test_una_fila_sin_lado_no_sale_por_operador` (770 tests). |
+| qa | 2026-10-26 20:50 | Prueba 62 (funcionalidad, `revisado` -> `aprobado`) sobre b6a5cbb. `check.sh` en verde; base vacia (200 y `[]`) y base borde (bajas a 10/45/200 s, teamkill, ronda sin bajas, nick repetido): tramos y lados esperados, sumas = `/api/duels/` con `map`, `side`, `match_type`; `until=foo`, `page=-1`, `side=Bogus`, `since` futuro sin 500; chunk inicial sin cambio. Mutacion: `_pct` sobre total 1 y el lado leido de una fila ajena sobrevivian; agregados 2 tests de borde que caen con ellas (780 tests). |
 | arquitecto | 2026-10-24 16:09 | Disena 61 (`clutch_by_operator` + `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/`, tabla tercera del panel Clutches), 62 (`kills_by_time` desde `_duelos`, helper `_tramo_vacio` compartido con `deaths_by_time`, panel "Cuándo matas" antes de "Cuando mueres") y 63 (`opening_timing` con `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90`, primera baja tuya = `opening_kill` de tu equipo; despues de 62). Sin arena, sin migracion. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
 | po | 2026-10-24 12:12 | Papel vacio: propone 61 (O6: clutch por operador en el panel Clutches de Compañeros, sobre `clutch_vs`), 62 (B11: cuando matas, histograma de tus bajas por tramo de 30 s junto a "Cuando mueres") y 63 (B14: cuando llega la apertura, winrate segun el segundo de la primera baja). `ALCANCE.md` reconciliado (55-60 en main), A5 descartada por duplicar la señal `mapa-debil`, nuevas B15, D6, D7, F13 y H6: 63 libres (62 al empezar). Sin pushes de codigo. |
@@ -54,8 +51,8 @@ Una sola rama abierta (62), sin conflicto con main. 62 y 63 tocan `aggregates.py
 
 (Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Los avisos que no bloquean de fichas ya en `main` quedan en su ficha; la lista larga anterior esta en `git log` de este archivo, commit previo a 2026-10-25 04:40.)
 
-- Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador.
-- PRs que esperan tu merge: ninguno. La 61 (clutch por operador) ya esta en main (PR #53, b3412cb).
+- Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador claude/equipo-dev/62-cuando-matas.
+- PRs que esperan tu merge: ninguno. La 62 (cuando matas) ya esta en main (PR #54, 30cc407). Sin migracion ni parser. **Despues de bajar main, `cd frontend; npm run build`.**
 - Rutina: 6 disparos sin rastro en 48 h (~10-25T08:09Z ~10-25T12:12Z ~10-25T16:14Z ~10-25T20:16Z ~10-26T00:19Z ~10-26T04:21Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - **Decision (ficha 49, P10):** ¿cada version de un mapa en su propia fila ("Consulate (Y10)")? Agrupar por `Match.map_id`, sin migracion. Decilo en `## Para el equipo`.
 - **Decision (ficha 53, P10):** `RoundPlayer.kills` incluye teamkills (K/D, KPR, rating, multikills y ACE los cuentan). ¿Excluirlos? Cambia numeros que ya se muestran.
@@ -63,6 +60,7 @@ Una sola rama abierta (62), sin conflicto con main. 62 y 63 tocan `aggregates.py
 - **Decision (ficha 31):** si un compañero se desconecta, el ultimo vivo que gana 1v1 queda con `1vX == 0`. ¿Debe contar?
 - **Decision (ficha 38):** desde Y9S4 manda la cabecera sobre el kill feed para el ganador de la ronda. ¿Preferis que mande el feed?
 - **Decision (ficha 48):** todos los POST exigen `application/json`; `CLAUDE.md` dice "los que cambian configuracion". Ajustar la frase o abrir `/api/import/`.
+- Entorno cloud (qa 20261026T2004Z): `check.sh` ya elige solo el Chromium de la imagen (`E2E_CHROMIUM`); correr `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 - **Decision (ficha 63):** "primera baja tuya" = `opening_kill` de tu equipo, cortes 30/90 s sin calibrar. Pedilo distinto en `## Para el equipo` si queres.
 - Verificar en el PC (34, 38, 47, 55; traen migracion o tocan el parser): `manage.py backup`, `migrate`, `recompute --dry-run` (sin cambios de `clutch_vs`), `recompute`; para 38, `import_replays --force <carpeta>`; para 47, `unknown_ids` y `retag --dry-run`. Detalle en cada ficha. **Despues de bajar main, `cd frontend; npm run build`.**
 - Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa.
