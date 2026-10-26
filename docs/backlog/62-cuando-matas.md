@@ -1,8 +1,8 @@
 # 62. Cuando matas
 
-estado: disenado
+estado: en curso 2026-10-26
 candado: -
-rama: -
+rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
