@@ -1,7 +1,7 @@
 # 62. Cuando matas
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-26T16:05Z
 rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
