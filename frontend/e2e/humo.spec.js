@@ -179,6 +179,23 @@ test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra cuando matas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Cuándo matas', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo: 99 bajas a rivales (las mismas que Bajas de Duelos), ninguna antes de 30 s
+  const tramos = panel.locator('tbody tr')
+  await expect(tramos).toHaveCount(4)
+  const pico = tramos.filter({ has: page.getByRole('cell', { name: '90-120s', exact: true }) })
+  await expect(pico.locator('td')).toHaveText(['90-120s', '53', '54%', '34', '19'])
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra rondas cortas y largas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

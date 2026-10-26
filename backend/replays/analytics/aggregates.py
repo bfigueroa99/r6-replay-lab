@@ -2319,6 +2319,15 @@ DEATH_BUCKET = 30
 DEATH_CAP = 150
 
 
+def _tramo_vacio(inicio: int, bucket: int, cap: int) -> dict:
+    """Limites y etiqueta de un tramo del histograma; el ultimo queda abierto."""
+    return {
+        "start": inicio,
+        "end": None if inicio >= cap else inicio + bucket,
+        "label": f"{inicio}s+" if inicio >= cap else f"{inicio}-{inicio + bucket}s",
+    }
+
+
 def deaths_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) -> list[dict]:
     """En que momento de la ronda mueres, en tramos de `bucket` segundos.
 
@@ -2345,15 +2354,7 @@ def deaths_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) 
         inicio = min(int(cruda["tramo"] or 0), cap)
         fila = tramos.setdefault(
             inicio,
-            {
-                "start": inicio,
-                "end": None if inicio >= cap else inicio + bucket,
-                "label": f"{inicio}s+" if inicio >= cap else f"{inicio}-{inicio + bucket}s",
-                "deaths": 0,
-                "untraded": 0,
-                "attack": 0,
-                "defense": 0,
-            },
+            {**_tramo_vacio(inicio, bucket, cap), "deaths": 0, "untraded": 0, "attack": 0, "defense": 0},
         )
         fila["deaths"] += cruda["deaths"]
         fila["untraded"] += cruda["untraded"]
@@ -2368,6 +2369,55 @@ def deaths_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) 
         fila = tramos[inicio]
         fila["pct"] = _pct(fila["deaths"], total)
         fila["untraded_pct"] = _pct(fila["untraded"], fila["deaths"])
+        salida.append(fila)
+    return salida
+
+
+def kills_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) -> list[dict]:
+    """En que momento de la ronda sacas tus bajas a rivales, el espejo de
+    `deaths_by_time`.
+
+    El promedio de cuando matas esconde si tu impacto esta en la apertura o en
+    el cierre. Sale del feed como Duelos: `RoundPlayer` no guarda el segundo de
+    cada baja, y los teamkills quedan afuera por `_duelos`.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    _, a_favor = _duelos(base_queryset(**filters), me_ids)
+    crudas = (
+        a_favor.annotate(
+            mi_lado=Subquery(
+                RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values(
+                    "side"
+                )[:1]
+            ),
+            tramo=ExpressionWrapper(
+                Floor(F("elapsed") / bucket) * bucket, output_field=IntegerField()
+            ),
+        )
+        .values("tramo", "mi_lado")
+        .annotate(kills=Count("id"))
+        .order_by("tramo")
+    )
+
+    tramos: dict[int, dict] = {}
+    for cruda in crudas:
+        inicio = min(int(cruda["tramo"] or 0), cap)
+        fila = tramos.setdefault(
+            inicio, {**_tramo_vacio(inicio, bucket, cap), "kills": 0, "attack": 0, "defense": 0}
+        )
+        fila["kills"] += cruda["kills"]
+        if cruda["mi_lado"] == "Attack":
+            fila["attack"] += cruda["kills"]
+        elif cruda["mi_lado"] == "Defense":
+            fila["defense"] += cruda["kills"]
+
+    total = sum(f["kills"] for f in tramos.values())
+    salida = []
+    for inicio in sorted(tramos):
+        fila = tramos[inicio]
+        fila["pct"] = _pct(fila["kills"], total)
         salida.append(fila)
     return salida
 
