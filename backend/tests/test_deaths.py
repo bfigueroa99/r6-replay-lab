@@ -131,6 +131,21 @@ class CuandoMatasTests(TestCase):
         fila = agg.kills_by_time()[0]
         self.assertEqual((fila["kills"], fila["attack"], fila["defense"]), (2, 1, 1))
 
+    def test_el_lado_sale_de_tu_fila_aunque_el_rival_este_primero(self):
+        # qa: con el companero cargado antes que el rival, leer el lado de
+        # cualquier fila ajena daba lo mismo y el test anterior no lo veia
+        rnd = make_round(self.match, 0, side="Attack")
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, side="Defense")
+        make_round_player(rnd, side="Attack")
+        make_event(rnd, 0, ME, "rival", clock=rnd.clock_start - 10)
+        fila = agg.kills_by_time()[0]
+        self.assertEqual((fila["attack"], fila["defense"]), (1, 0))
+
+    def test_el_porcentaje_es_sobre_el_total_de_tramos(self):
+        for elapsed in (10, 15, 100):
+            self._baja(elapsed)
+        self.assertEqual([f["pct"] for f in agg.kills_by_time()], [66.7, 33.3])
+
     def test_con_side_defense_el_ataque_queda_en_cero(self):
         self._baja(10, side="Attack")
         self._baja(50, side="Defense")

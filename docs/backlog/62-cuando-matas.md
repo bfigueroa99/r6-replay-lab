@@ -1,7 +1,7 @@
 # 62. Cuando matas
 
-estado: revisado
-candado: qa 2026-10-26T20:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B11 ([tracker.gg](https://tracker.gg/r6siege/articles/r6-ow-v3-0), "number of kills in the first 30 seconds")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_deaths.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261026T1206Z, revisor 20261026T1605Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261026T1206Z, revisor 20261026T1605Z, qa 20261026T2004Z
 
 ## Que gana quien usa la app
 
@@ -177,3 +177,46 @@ Revision ciega (subagente con `revision.md` sobre el diff sin
   sin `print` ni `console.log`; `deaths_by_time` sin cambios de salida.
 
 Veredicto: **aprobar**. Sin hallazgos.
+
+## QA 2026-10-26 sobre b6a5cbb
+
+(qa 20261026T2004Z) Rama al dia con main (`git merge origin/main`: already up
+to date). Base borde: `$S/sembrar_qa62.py` en el scratchpad (no va al repo),
+corrido con `SQLITE_PATH=<scratch>/qa62.sqlite3 python manage.py migrate` y
+`python manage.py shell < sembrar_qa62.py`: una partida Border con bajas tuyas
+a 10, 45 y 200 s en ataque (clock_start 240), un teamkill a los 210 s, una
+baja a los 20 s en defensa, una ronda sin bajas y una partida Unranked con un
+rival que repite nick con otro perfil (baja a los 80 s).
+
+- **Tramos y lado:** `curl -s localhost:8765/api/trends/` da
+  `0-30s 2 (1 at, 1 def) 40%`, `30-60s 1 at 20%`, `60-90s 1 def 20%`,
+  `150s+ 1 at 20%`; el teamkill no aparece. Esperado a mano: igual.
+- **Suma = Duelos:** `?map=border` 4 = 4, `?side=Defense` 2 = 2,
+  `?match_type=Unranked` 1 = 1 (`kills_by_time` contra `totals.kills` de
+  `/api/duels/`).
+- **side=Defense:** `attack` en 0 en los dos tramos que quedan.
+- **Bordes:** `until=foo`, `page=-1`, `side=`, `map=`, `days=999999999999`,
+  `player=Rival1` (nick repetido): 200 y lo mismo que sin filtro;
+  `since=2099-01-01` y `side=Bogus`: 200 con `[]`. Cero 500 en el log del
+  runserver.
+- **Base vacia:** `/api/trends/`, `?side=Defense` y `?until=foo`: 200 con
+  `kills_by_time: []`.
+- **Chunk inicial:** `index-*.js` 187.83 kB en main y en la rama (sin
+  cambio); `Trends-*.js` 25.84 -> 26.94 kB (lazy, +4 %).
+- **Mutaciones** (`python manage.py test tests.test_deaths.CuandoMatasTests`):
+  tramo sin `Floor` (5 fallos), defensa sumada a ataque (2), la vista sin
+  `kills_by_time` (1 error): caen. Dos sobrevivian a los unit tests:
+  `_pct(kills, 1)` (solo lo atrapaba el e2e, `54%` -> `+1`) y el lado leido de
+  `is_me=False` en vez de tu fila (sobrevivia tambien al e2e: los fixtures y
+  `seed_demo` cargan al compañero antes que al rival, asi que cualquier fila
+  ajena del mismo equipo daba el mismo lado). QA agrego dos tests de borde en
+  `CuandoMatasTests`: `test_el_lado_sale_de_tu_fila_aunque_el_rival_este_primero`
+  y `test_el_porcentaje_es_sobre_el_total_de_tramos`; con ellos los dos
+  mutantes caen (1 fallo cada uno).
+- **check.sh** con los tests nuevos: `Todo en verde.` (780 tests backend,
+  120 frontend, build ok, 49 e2e).
+
+Sin migracion, sin parser, sin `recompute`: no hay nada para verificar en el
+PC. Los tramos de 30 s son los de "Cuando mueres" (no son un umbral nuevo).
+
+Veredicto: **aprobado**.
