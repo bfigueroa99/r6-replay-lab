@@ -410,6 +410,26 @@ test('Compañeros muestra el clutch por mapa y sitio', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra el clutch por operador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutch por operador' })).toBeVisible()
+  // seed_demo: Rook en defensa junta 5 intentos y ninguno ganado; Jager 3, Zofia 2. La tercera tabla es esta
+  const porOperador = panel.locator('table').nth(2)
+  await expect(porOperador.locator('tbody tr')).toHaveCount(3)
+  const rook = porOperador.getByRole('row', { name: 'Rook Defensa 5 0 0%', exact: true })
+  await expect(rook).toBeVisible()
+  await expect(rook.locator('.muestra-chica')).toHaveCount(0)
+  const zofia = porOperador.getByRole('row', { name: /^Zofia Ataque 2 2 100%/ })
+  await expect(zofia.locator('.muestra-chica')).toHaveCount(1)
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra el panel de teamkills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')

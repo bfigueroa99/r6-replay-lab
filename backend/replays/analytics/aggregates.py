@@ -1498,6 +1498,43 @@ def clutch_by_site(**filters) -> list[dict]:
     return salida
 
 
+# propio y no CLUTCH_SITIO_MIN: son cortes distintos que se calibran por separado;
+# por debajo de esto el % de un operador es anecdota y la fila sale marcada
+CLUTCH_OPERADOR_MIN = 5
+
+
+def clutch_by_operator(**filters) -> list[dict]:
+    """Intentos y ganados de clutch por operador y lado.
+
+    Mismo intento y ganado que `clutch_conversion`; las rondas sin operador o
+    sin lado no salen, asi que la suma puede quedar por debajo de la de la
+    conversion.
+    """
+    # mismo motivo que en clutch_conversion: sin ganador conocido no es intento
+    filas = (
+        base_queryset(**filters)
+        .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
+        .exclude(operator="")
+        .values("operator", "side")
+        .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+    salida = [
+        {
+            "operator": f["operator"],
+            "side": f["side"],
+            "attempts": f["attempts"],
+            "won": f["won"],
+            "pct": _pct(f["won"], f["attempts"]),
+            "low_sample": f["attempts"] < CLUTCH_OPERADOR_MIN,
+        }
+        # el lado es parte de la clave: una fila sin lado no dice nada aca
+        for f in filas
+        if f["side"] in ("Attack", "Defense")
+    ]
+    salida.sort(key=lambda f: (-f["attempts"], f["operator"], f["side"]))
+    return salida
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [
