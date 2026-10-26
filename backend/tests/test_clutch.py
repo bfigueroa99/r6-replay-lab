@@ -287,6 +287,13 @@ class ClutchPorOperadorTests(TestCase):
         (fila,) = agg.clutch_by_operator()
         self.assertEqual((fila["attempts"], fila["won"]), (1, 1))
 
+    def test_una_fila_sin_lado_no_sale_por_operador(self):
+        # sin el descarte saldria una fila con lado vacio que el CSV escribe como Defensa
+        self._ronda(0, operator="Ash", won=True)
+        self._ronda(1, operator="Thermite", won=True)
+        RoundPlayer.objects.filter(operator="Thermite").update(side="")
+        self.assertEqual([f["operator"] for f in agg.clutch_by_operator()], ["Ash"])
+
     def test_clutch_por_operador_respeta_el_filtro_de_lado(self):
         self._ronda(0, operator="Ash", won=True, side="Attack")
         self._ronda(1, operator="Mute", won=False, side="Defense")

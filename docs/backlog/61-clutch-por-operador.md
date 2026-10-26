@@ -1,7 +1,7 @@
 # 61. Clutch por operador
 
-estado: revisado
-candado: qa 2026-10-26T08:10Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/61-clutch-por-operador
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O6 (siguiente tramo tras las fichas 55 y 59, ya en main)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_clutch.py, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261025T0004Z, revisor 20261025T0404Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261025T0004Z, revisor 20261025T0404Z, qa 20261026T0809Z
 
 ## Que gana quien usa la app
 
@@ -174,3 +174,48 @@ sin hallazgos. Confirmado por el lider:
 tests backend con 4 skip, 120 vitest, build, e2e 48/48).
 
 Veredicto: aprobar.
+
+## QA 2026-10-26 sobre f0a1bd3
+
+(qa 20261026T0809Z) Rama al dia con `origin/main` (19683ce, `merge-tree` sin
+conflicto). Base temporal en el scratchpad con `SQLITE_PATH` y
+`R6_ENV_FILE`; nada de `.sqlite3` ni `.rec` al repo.
+
+- **check.sh:** `Todo en verde.` sobre f0a1bd3 (769 tests backend, 4 skip;
+  120 vitest; build; e2e 48/48, incluido `Compañeros muestra el clutch por
+  operador`). Tras el test agregado abajo, otra vez `Todo en verde.` (770).
+- **Base vacia** (`migrate` y `runserver 8011`): `/api/teammates/` con `""`,
+  `?side=Attack`, `?until=foo`, `?page=-1`, `?map=`, `?since=2099-01-01`,
+  `?ranked_only=1`, `?side=Nada`: 200 y `clutch_by_operator: []` en todos.
+- **Base sembrada** (`build_dataset(matches=4)` mas rondas de clutch: Ash A
+  5 con 3 ganadas, Mute D 4/4, Ash D 1/1, una sin operador, una sin
+  ganador, una sin lado, y un `is_me=False` con clutch): sin filtros 3 filas
+  `Ash Attack 5 3 60.0 low=False`, `Mute Defense 4 4 100.0 low=True`,
+  `Ash Defense 1 1 100.0 low=True`; suma 10 = conversion 12 menos la sin
+  operador y la sin lado; la sin ganador y la del otro jugador no entran.
+  `?side=Attack` solo Ash A; `?side=Defense` Mute y Ash D; `?map=border`
+  solo Mute; `?operator=Ash` las dos de Ash; `?since=2099-01-01` `[]`;
+  `?until=foo` y `?page=-1` igual que sin filtro.
+- **UI en Chromium** (`runserver 8012` con la base sembrada, script de
+  playwright en el scratchpad): tercera tabla del panel Clutches con
+  `Ash Ataque 5 3 60%`, `Mute Defensa 4 4 100%*`, `Ash Defensa 1 1 100%*`;
+  el boton CSV baja `clutch-por-operador-2026-10-26.csv` con
+  `Operador;Lado;Intentos;Ganados;Conversión` y el lado en texto; consola
+  sin errores.
+- **Chunk inicial:** `index-*.js` 187.83 kB en la rama y en `main` (sin
+  cambio); `Teammates-*.js` 9.33 -> 10.28 kB, carga diferida.
+- **Mutacion** sobre `ClutchPorOperadorTests`: sin `exclude(operator="")`
+  cae 1; sin `round__my_team_won__isnull=False` cae 1; `<` por `<=` en
+  `low_sample` cae 1; sin el descarte de lados fuera de Attack/Defense **no
+  caia ninguno**. Agregado `test_una_fila_sin_lado_no_sale_por_operador`
+  (sin el descarte la fila sin lado saldria y el CSV la escribiria como
+  Defensa): con la mutacion cae, sin ella pasa.
+- Sin migracion, sin parser, sin `recompute`: no hay `## Verificar en el PC`.
+  El corte `CLUTCH_OPERADOR_MIN = 5` solo se probo con datos sinteticos.
+
+## Para el humano
+
+- Calibrar con la base real el corte de muestra chica de "Clutch por
+  operador" (`CLUTCH_OPERADOR_MIN = 5`).
+
+Veredicto: aprobado.
