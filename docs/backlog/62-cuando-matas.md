@@ -1,7 +1,7 @@
 # 62. Cuando matas
 
 estado: aprobado
-candado: -
+candado: release 2026-10-26T20:12Z
 rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
