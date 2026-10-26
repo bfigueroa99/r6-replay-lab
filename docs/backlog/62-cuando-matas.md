@@ -1,7 +1,7 @@
 # 62. Cuando matas
 
-estado: implementado
-candado: revisor 2026-10-26T16:05Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B11 ([tracker.gg](https://tracker.gg/r6siege/articles/r6-ow-v3-0), "number of kills in the first 30 seconds")
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_deaths.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261026T1206Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261026T1206Z, revisor 20261026T1605Z
 
 ## Que gana quien usa la app
 
@@ -154,3 +154,26 @@ bloquea). Con 61 no se pisan funciones.
 Revision ciega previa (subagente con `revision.md`): sin hallazgos.
 `check.sh`: `Todo en verde.` (778 tests backend, 120 frontend, build ok,
 49 e2e).
+
+## Revision 2026-10-26 sobre 9926b27
+
+(revisor 20261026T1605Z) Rama al dia con main (main ya incluido, sin merge).
+`check.sh`: `Todo en verde.` (778 tests backend, 120 frontend, build ok,
+49 e2e).
+
+Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por el lider:
+
+- Criterios: tramos 0-30/30-60/150s+ (`test_bajas_a_los_10_45_y_200_caen_en_tres_tramos`),
+  teamkills afuera (`test_un_teamkill_no_cuenta_en_ningun_tramo`), suma =
+  `duel_totals` sin filtro y con `side=Defense`, ataque en 0 con
+  `side=Defense`, base vacia 200 con `[]`, panel "Cuándo matas" con e2e
+  (`Tendencias muestra cuando matas`), fila en `metricas.md`. Los numeros
+  del e2e (90-120s: 53 · 54% · 34 · 19, total 99) se recalcularon sobre una
+  base `seed_demo` y coinciden.
+- Mutaciones: correr el colapso al tope (`cap + 30`) y invertir el lado
+  (`!= "Attack"`) hacen caer `CuandoMatasTests` (1 y 2 fallos).
+- Diff dentro de `archivos:`; identificadores sin tildes, UI con tildes;
+  sin `print` ni `console.log`; `deaths_by_time` sin cambios de salida.
+
+Veredicto: **aprobar**. Sin hallazgos.
