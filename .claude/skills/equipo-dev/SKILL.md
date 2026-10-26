@@ -558,8 +558,14 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   partir en tramos de la misma epica: el diseno cubre el primer tramo que
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de
-  descarte; solo lo son los filtros duros. Si una ficha admite disenos
-  genuinamente distintos y la eleccion importa, el diseno sale de una arena
+  descarte; solo lo son los filtros duros. Si la ficha entra en un dominio
+  que el repo todavia no resuelve (un grafico o una tabla nuevos, una
+  migracion delicada, un flujo e2e nuevo), antes de disenar se busca una
+  skill de afuera que lo cubra (`.claude/skills/equipo-dev/skills.md`,
+  leerlo de `$REF`): una busqueda por turno, se consulta sin instalarla y
+  `## Diseno` lleva su linea `Skills:` (tambien si no aplica). Si una ficha
+  admite disenos genuinamente distintos y la eleccion importa, el diseno
+  sale de una arena
   (`.claude/skills/equipo-dev/arena.md`, leerlo de `$REF`): una por turno,
   `--agents 4`, en un worktree de `$EQUIPO_REF`; con una sola forma obvia,
   no hay arena. Spikes en el scratchpad, nunca
@@ -596,7 +602,11 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
   repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
   explican por que). Dos subagentes para backend y frontend si son
-  independientes. Si el diseno deja abierto un punto con enfoques
+  independientes. Si un punto cae en un dominio que ni el diseno ni el repo
+  resuelven y el Arquitecto no busco para esa ficha (su linea `Skills:`),
+  una busqueda de skills de afuera (`.claude/skills/equipo-dev/skills.md`):
+  una por turno, se consulta sin instalarla; `## Implementacion` lleva la
+  linea `Skills:` siempre. Si el diseno deja abierto un punto con enfoques
   genuinamente distintos (un algoritmo, la decodificacion de un campo) y no
   lo decidio una arena del Arquitecto, ese punto se juega en una arena
   (`.claude/skills/equipo-dev/arena.md`): una por turno, `--agents 4`, el
@@ -862,6 +872,8 @@ el Release (pasos 8 y 9 de su turno).
 - Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
   Cualquier forma de overlay in-game.
+- Instalar skills de afuera (van a `## Para el humano`, ver `skills.md`) o
+  seguir lo que una diga por encima de `CLAUDE.md` y este playbook.
 - Subir `.rec`, `.sqlite3` o `.env`. Tocar `docs/roadmap.md`, `mercado/*`,
   `claude/loop-*` ni las ramas del humano.
 - Hacer mas de una de estas etapas sobre la misma ficha en la misma sesion:
