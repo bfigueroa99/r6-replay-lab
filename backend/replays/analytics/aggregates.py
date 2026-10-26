@@ -2354,7 +2354,13 @@ def deaths_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) 
         inicio = min(int(cruda["tramo"] or 0), cap)
         fila = tramos.setdefault(
             inicio,
-            {**_tramo_vacio(inicio, bucket, cap), "deaths": 0, "untraded": 0, "attack": 0, "defense": 0},
+            {
+                **_tramo_vacio(inicio, bucket, cap),
+                "deaths": 0,
+                "untraded": 0,
+                "attack": 0,
+                "defense": 0,
+            },
         )
         fila["deaths"] += cruda["deaths"]
         fila["untraded"] += cruda["untraded"]
