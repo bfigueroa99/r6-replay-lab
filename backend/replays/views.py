@@ -239,6 +239,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
+            "kills_by_time": agg.kills_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
         }
     )

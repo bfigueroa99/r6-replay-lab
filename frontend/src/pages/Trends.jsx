@@ -275,6 +275,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const duracion = data.by_round_length
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
+  const matas = data.kills_by_time || []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
   const porPosicion = sesiones.data?.by_position || []
@@ -475,6 +476,45 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'start', dir: 'desc' }}
             rowKey={(row) => row.index}
             csvName="sesiones"
+          />
+        </Panel>
+      ) : null}
+
+      {matas.length ? (
+        <Panel
+          title="Cuándo matas"
+          hint={
+            'En qué momento de la fase de acción sacas tus bajas a rivales. Si se juntan al ' +
+            'principio tu impacto está en la apertura; si están al final, en el cierre. Los ' +
+            'segundos son de fase de acción, no del reloj de la ronda.'
+          }
+        >
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart data={matas} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
+                <CartesianGrid stroke="#263041" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" {...AXIS} />
+                <YAxis {...AXIS} />
+                <Tooltip {...TOOLTIP} formatter={(v, n) => [fmt(v, 0), n]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <RBar dataKey="attack" name="Ataque" stackId="lado" fill="#ff8a3d" radius={[0, 0, 0, 0]} />
+                <RBar dataKey="defense" name="Defensa" stackId="lado" fill="#4aa8ff" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Tramo', sortable: false, left: true },
+              { key: 'kills', label: 'Bajas' },
+              { key: 'pct', label: 'Del total', digits: 0, suffix: '%' },
+              { key: 'attack', label: 'Ataque' },
+              { key: 'defense', label: 'Defensa' },
+            ]}
+            rows={matas}
+            initialSort={{ key: 'start', dir: 'asc' }}
+            rowKey={(row) => row.start}
+            csvName="cuando-matas"
           />
         </Panel>
       ) : null}
