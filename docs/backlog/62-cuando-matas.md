@@ -1,7 +1,7 @@
 # 62. Cuando matas
 
-estado: en curso 2026-10-26
-candado: dev 2026-10-26T12:06Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/62-cuando-matas
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -129,3 +129,28 @@ cada tramo de `kills_by_time`.
 **Paralelo:** 63 toca el mismo panel de `Trends.jsx` y la misma seccion de
 `aggregates.py`: 63 se implementa despues de que 62 se mergee (prioriza, no
 bloquea). Con 61 no se pisan funciones.
+
+## Implementacion
+
+(dev 20261026T1206Z) Diseno completo, sin desvios.
+
+- `aggregates.py`: `_tramo_vacio` (start/end/label) compartido por
+  `deaths_by_time` (salida igual; la suite de `test_deaths` lo cubre) y
+  `kills_by_time` nueva, sobre `a_favor` de `_duelos` con el lado de tu
+  `RoundPlayer` como subquery inline.
+- `views.py`: `kills_by_time` en `/api/trends/`.
+- `test_deaths.py`, `CuandoMatasTests` (8 tests): los 5 del diseno mas
+  `test_las_muertes_tuyas_no_cuentan_como_bajas`,
+  `test_separa_por_tu_lado_en_la_ronda` y `test_la_api_de_tendencias_lo_expone`.
+  El de suma compara con `duel_totals` sin filtro y con `side=Defense`.
+  El primero afirma `start`/`end`, asi que el test extra de
+  `deaths_by_time` no hizo falta.
+- `Trends.jsx`: panel "Cuándo matas" justo antes de "Cuando mueres".
+- e2e `Tendencias muestra cuando matas`: `seed_demo` da 4 tramos (30-60s a
+  120-150s, 99 bajas = Bajas de Duelos); afirma la fila 90-120s
+  `53 · 54% · 34 · 19` (sacada corriendo el seed).
+- `metricas.md`: fila **Cuando matas** arriba de Cuando mueres.
+
+Revision ciega previa (subagente con `revision.md`): sin hallazgos.
+`check.sh`: `Todo en verde.` (778 tests backend, 120 frontend, build ok,
+49 e2e).
