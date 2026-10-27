@@ -10,6 +10,9 @@ aca esta la definicion exacta.
 |---|---|
 | **Rondas** | Rondas tuyas importadas que pasan los filtros activos. |
 | **Rondas ganadas (winrate)** | Rondas donde tu equipo gano / rondas jugadas. Es winrate **de rondas**, no de partidas: mide mejor porque una partida son 6-9 muestras. |
+| **Partidas ganadas** | Partidas ganadas / partidas con ganador (`won` conocido). Empates e incompletas quedan fuera del denominador y se cuentan aparte ("sin resultado"). Las partidas las eligen los filtros menos el lado: un lado no parte una partida. |
+| **Rondas por partida** | Todas tus rondas importadas de esas partidas / partidas, con un decimal. La partida se lee entera: el operador o el sitio filtrado no recortan sus rondas. |
+| **Mejor y peor mapa** | Winrate de partida por mapa (las variantes de temporada de un mapa cuentan juntas), entre los mapas con 3 o mas partidas con ganador. Desempata por mas partidas y despues por nombre. El peor solo aparece si esta por debajo del mejor: con un solo mapa o todos empatados queda vacio. |
 | **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. Las bajas incluyen teamkills; Duelos y la Matriz de duelos los descartan. |
 | **K/D** | bajas / muertes. |
 | **KPR** | bajas / rondas. Mas honesto que el K/D porque no premia esconderse. Referencia razonable en ranked: 0.7-0.9. |

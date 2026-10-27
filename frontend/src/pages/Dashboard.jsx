@@ -83,6 +83,8 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         />
       </div>
 
+      {overview.data.matches_summary ? <ResumenPartidas s={overview.data.matches_summary} /> : null}
+
       <div className="grid cols-2">
         <Panel title="Ataque vs defensa">
           <DataTable
@@ -222,6 +224,33 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         </Panel>
       ) : null}
     </>
+  )
+}
+
+/** Fila de partidas: ganadas, rondas por partida y mejor y peor mapa. */
+function ResumenPartidas({ s }) {
+  const sinResultado = s.matches_undecided > 0 ? ` · ${s.matches_undecided} sin resultado` : ''
+  const subMapa = (m) => {
+    if (m) return `${pct(m.winrate)} en ${m.matches} partidas`
+    return s.best_map ? 'Ningún mapa por debajo' : `Ningún mapa con ${s.min_matches_map}+ partidas`
+  }
+  return (
+    <div className="kpis" style={{ marginBottom: 18 }}>
+      <Stat3
+        label="Partidas ganadas"
+        value={pct(s.match_winrate)}
+        sub={`${s.matches_won} de ${s.matches_decided}${sinResultado}`}
+        value_={s.match_winrate}
+      />
+      <Stat3
+        label="Rondas por partida"
+        value={fmt(s.rounds_per_match, 1)}
+        sub={`${s.rounds} rondas en ${s.matches} partidas`}
+        value_={null}
+      />
+      <Stat3 label="Mejor mapa" value={s.best_map?.map ?? '—'} sub={subMapa(s.best_map)} value_={null} />
+      <Stat3 label="Peor mapa" value={s.worst_map?.map ?? '—'} sub={subMapa(s.worst_map)} value_={null} />
+    </div>
   )
 }
 
