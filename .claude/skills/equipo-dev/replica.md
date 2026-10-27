@@ -40,7 +40,7 @@ Las skills escriben en `replica/`. En el equipo esa carpeta es
 `docs/backlog/replica/` de la rama `claude/equipo-dev/backlog`: el
 Investigador solo empuja ahi, esa rama solo admite `docs/backlog/`, y asi
 queda versionado sin PR y a la vista desde la web. Nada va a `replica/` de la
-raiz ni a `main`.
+raiz ni a `dev`.
 
 | archivo en `docs/backlog/replica/` | paso | que es |
 |---|---|---|
@@ -85,7 +85,7 @@ otro rol antes (`turno.sh`): en la practica, una pasada por semana.
 
 Dentro de cada pasada:
 
-- **Siempre:** la columna `clone` contra `origin/main` y `parity.py`. No usan
+- **Siempre:** la columna `clone` contra `origin/dev` y `parity.py`. No usan
   red: sin red se hacen igual.
 - **Recon completo:** la primera vez (no hay `features.csv`), si cambio la
   referencia, o si `Ultimo recon:` tiene 28 dias o mas. Entre medio, solo el
@@ -98,7 +98,7 @@ familias.
 ## La pasada, paso a paso
 
 Las herramientas del pack pueden no estar en el arbol de la rama `backlog`
-(sale de un `main` viejo), asi que se sacan de `$EQUIPO_REF` a una carpeta
+(sale de un `dev` viejo), asi que se sacan de `$EQUIPO_REF` a una carpeta
 dentro de `.git`, que nunca se commitea:
 
 ```bash
@@ -130,7 +130,7 @@ vuelve a definir. Las skills se leen enteras antes de empezar:
      que el turno abrio. Sin URL abierta, la fila no entra. `priority` dice
      cuanto pesa la funcion en la referencia (`must`: por lo que la gente la
      usa), no cuanto le costaria a la app.
-   - `clone` es el estado de r6-replay-lab en `origin/main`: `yes`,
+   - `clone` es el estado de r6-replay-lab en `origin/dev`: `yes`,
      `partial` (en `notes`, lo que falta), `no` o `skip`.
    - El paso 8 es `skip` con el motivo y la regla que lo manda, nunca `no`:
      lo que el `.rec` no entrega (`docs/formato-rec.md` y "Lo que el formato
@@ -145,7 +145,7 @@ vuelve a definir. Las skills se leen enteras antes de empezar:
    - El paso 9 (tamano) y el siguiente paso que propone (`/replica-architect`)
      no aplican.
 2. **Paridad** (`replica-diff`, paso 1, en cada pasada). Recorrer las filas
-   que no son `skip` contra `origin/main` (pantallas, rutas `/api/`,
+   que no son `skip` contra `origin/dev` (pantallas, rutas `/api/`,
    `docs/metricas.md`) y actualizar `clone`. Despues:
 
    ```bash
