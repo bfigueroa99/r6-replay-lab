@@ -1,7 +1,7 @@
 # 66. Copiar el resumen de una partida como texto
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-27T16:06Z
 rama: -
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H4
 archivos: -
-turnos: po 20261027T1205Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z
 
 ## PR
 

@@ -1,7 +1,7 @@
 # 65. Presencia y delta de winrate por operador
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-27T16:06Z
 rama: -
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O5 (replica/features.csv fila 26, must, clone partial; [r6tv](https://r6tv.online/how-it-works), [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays))
 archivos: -
-turnos: po 20261027T1205Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z
 
 ## PR
 

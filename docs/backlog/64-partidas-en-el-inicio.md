@@ -1,7 +1,7 @@
 # 64. Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-27T16:06Z
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md R1 (replica/features.csv fila 11, must, clone partial; [aurelix](https://aurelix.app/))
 archivos: -
-turnos: po 20261027T1205Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z
 
 ## PR
 
