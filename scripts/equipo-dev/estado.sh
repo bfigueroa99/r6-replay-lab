@@ -89,28 +89,28 @@ cd "$repo"
 # El + fuerza la actualizacion aunque el humano haya reescrito una rama
 # (por ejemplo "Update with rebase" en un PR).
 fetch_fallo=no
-if ! git fetch -q origin main '+refs/heads/claude/*:refs/remotes/origin/claude/*' 2>/dev/null; then
+if ! git fetch -q origin dev main '+refs/heads/claude/*:refs/remotes/origin/claude/*' 2>/dev/null; then
     echo "FETCH_FALLO: no se pudo actualizar origin; lo que sigue puede estar viejo" >&2
     echo "== fetch"; echo "FETCH_FALLO"; fetch_fallo=si
 fi
-git rev-parse -q --verify 'origin/main^{commit}' >/dev/null || { echo "sin origin/main: no se puede decidir nada" >&2; exit 1; }
+git rev-parse -q --verify 'origin/dev^{commit}' >/dev/null || { echo "sin origin/dev: no se puede decidir nada" >&2; exit 1; }
 B=origin/claude/equipo-dev/backlog
 ahora=${EQUIPO_AHORA:-$(date -u +%s)}
-arbol_main=$(git rev-parse 'origin/main^{tree}')
+arbol_dev=$(git rev-parse 'origin/dev^{tree}')
 # Topes de la cola y del papel. SKILL.md y ESTADO.plantilla.md repiten los
 # numeros en prosa; pruebas.sh verifica que coincidan con estos.
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
 
 # La ficha que la rama AGREGA (no la primera que toca): una rama puede ademas
-# editar una ficha que ya esta en main.
+# editar una ficha que ya esta en dev.
 # core.quotePath=false: una ficha con nombre no ASCII saldria citada e invisible.
-ficha_de() { git -c core.quotePath=false diff --name-only --diff-filter=A "origin/main...$1" -- docs/backlog 2>/dev/null | grep -E 'docs/backlog/[0-9]+-' | head -1; }
+ficha_de() { git -c core.quotePath=false diff --name-only --diff-filter=A "origin/dev...$1" -- docs/backlog 2>/dev/null | grep -E 'docs/backlog/[0-9]+-' | head -1; }
 # Las tres formas en que el humano integra: merge commit, squash o rebase.
 mergeada() {
-    git merge-base --is-ancestor "$1" origin/main 2>/dev/null && return 0
-    [ "$(git merge-tree --write-tree origin/main "$1" 2>/dev/null | head -1)" = "$arbol_main" ] && return 0
+    git merge-base --is-ancestor "$1" origin/dev 2>/dev/null && return 0
+    [ "$(git merge-tree --write-tree origin/dev "$1" 2>/dev/null | head -1)" = "$arbol_dev" ] && return 0
     local f; f=$(ficha_de "$1")
-    [ -n "$f" ] && git cat-file -e "origin/main:$f" 2>/dev/null
+    [ -n "$f" ] && git cat-file -e "origin/dev:$f" 2>/dev/null
 }
 edad_h() { echo $(( (ahora - $(git log -1 --format=%ct "$1")) / 3600 )); }
 campo() { git show "$1:$2" 2>/dev/null | grep -m1 "^$3:" | sed "s/^$3:[[:space:]]*//"; }
@@ -120,19 +120,20 @@ es_playbook() { case "$1" in origin/claude/equipo-dev/playbook|origin/claude/equ
 
 echo "== playbook"
 # Se prueba rutina.md y no SKILL.md: solo el playbook nuevo lo tiene, asi que
-# un main con un playbook viejo mergeado no gana la cadena.
-for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
+# una ref con un playbook viejo no gana la cadena. dev va primero: ahi integra
+# el equipo; main (release) y la rama del playbook son respaldo.
+for ref in origin/dev origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
 if git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null; then
     echo "$ref@$(git rev-parse --short "$ref")"
-    # Si main gano la cadena con un playbook viejo (por ejemplo, mergeado un PR
+    # Si dev gano la cadena con un playbook viejo (por ejemplo, mergeado un PR
     # anterior) y la rama del playbook trae otro, hay que decirlo. Solo si la
-    # rama trae commits que main no tiene: una rama del playbook ya mergeada y
-    # quieta tiene un SKILL.md distinto porque main siguio, no porque sea nueva
-    # (asi se anunciaba como candidato desde 2026-10-21 un e8d6798 ya en main).
+    # rama trae commits que dev no tiene: una rama del playbook ya mergeada y
+    # quieta tiene un SKILL.md distinto porque dev siguio, no porque sea nueva
+    # (asi se anunciaba como candidato desde 2026-10-21 un e8d6798 ya mergeado).
     pb=origin/claude/equipo-dev/playbook
-    if [ "$ref" = origin/main ] && git cat-file -e "$pb:.claude/skills/equipo-dev/rutina.md" 2>/dev/null \
-        && ! git merge-base --is-ancestor "$pb" origin/main 2>/dev/null \
-        && [ "$(git rev-parse "origin/main:.claude/skills/equipo-dev/SKILL.md")" != "$(git rev-parse "$pb:.claude/skills/equipo-dev/SKILL.md")" ]; then
+    if [ "$ref" = origin/dev ] && git cat-file -e "$pb:.claude/skills/equipo-dev/rutina.md" 2>/dev/null \
+        && ! git merge-base --is-ancestor "$pb" origin/dev 2>/dev/null \
+        && [ "$(git rev-parse "origin/dev:.claude/skills/equipo-dev/SKILL.md")" != "$(git rev-parse "$pb:.claude/skills/equipo-dev/SKILL.md")" ]; then
         echo "PLAYBOOK_CANDIDATO=$pb@$(git rev-parse --short "$pb")"
     fi
 else
@@ -174,7 +175,7 @@ echo "== ramas de trabajo (origin/claude/* no mergeadas con ficha)"
 borrables=()
 cola=0; total=0; cola_func=0
 en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0
-for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --format='%(refname:short)'); do
+for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
     f=$(ficha_de "$r"); [ -z "$f" ] && continue
@@ -206,7 +207,7 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
             if [ "$candado" = "-" ] || [ $(( ahora - ult )) -ge 10800 ]; then huerfanas=$((huerfanas + 1)); fi ;;
     esac
     # Sin merges: un "Update branch" del humano desde GitHub no es un pedido.
-    humano=$(git log --no-merges "origin/main..$r" --format=%an | grep -v '^Claude' | sort -u | tr '\n' ' ')
+    humano=$(git log --no-merges "origin/dev..$r" --format=%an | grep -v '^Claude' | sort -u | tr '\n' ' ')
     printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s | candado muerto: %s\n' \
         "$r" "$f" "$estado" "$tipo" "$candado" "$edad" "$reciente" "${humano:-ninguno}" "$muerto"
 done
@@ -214,15 +215,15 @@ done
 echo "== ramas del playbook anterior (sin ficha; reclamo en el roadmap)"
 # El playbook anterior reclamaba en docs/roadmap.md con un commit "Reclama:" y
 # la sesion podia imponer el nombre de la rama, asi que no alcanza con el glob.
-for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --format='%(refname:short)'); do
+for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
     [ -n "$(ficha_de "$r")" ] && continue
     case "$r" in origin/claude/equipo-dev/*) vieja=si ;; *) vieja=no ;; esac
-    git log "origin/main..$r" --format=%s | grep -q '^Reclama:' && vieja=si
+    git log "origin/dev..$r" --format=%s | grep -q '^Reclama:' && vieja=si
     [ "$vieja" = si ] || continue
     mergeada "$r" && { echo "$r | mergeada efectivamente: borrable"; borrables+=("${r#origin/}"); continue; }
-    n=$(git rev-list --count "origin/main..$r")
+    n=$(git rev-list --count "origin/dev..$r")
     edad=$(edad_h "$r")
     if [ "$n" -le 1 ]; then
         echo "$r | ${edad}h | solo el commit de reclamo, sin codigo: borrable, no cuenta, no se le crea ficha"
@@ -236,11 +237,11 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --form
 done
 
 echo "== otras ramas claude/* sin ficha ni reclamo (del humano u otras sesiones; no se tocan)"
-for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/main --format='%(refname:short)'); do
+for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
     [ "$r" = "$B" ] && continue
     [ -n "$(ficha_de "$r")" ] && continue
     case "$r" in origin/claude/equipo-dev/*) continue ;; esac
-    git log "origin/main..$r" --format=%s | grep -q '^Reclama:' && continue
+    git log "origin/dev..$r" --format=%s | grep -q '^Reclama:' && continue
     echo "$r | $(edad_h "$r")h | $(git log -1 --format=%s "$r")"
 done
 
@@ -248,7 +249,7 @@ echo "== ramas borrables (las borra el humano: el proxy de la nube corta git pus
 # Las del equipo ya mergeadas con merge commit no salen arriba (--no-merged) y
 # se acumulaban en ESTADO.md copiadas a mano, una vineta por rama, turno tras
 # turno (31 al 2026-10-25). Aca salen de git, en un solo comando para pegar.
-for r in $(git branch -r --list 'origin/claude/equipo-dev/*' --merged origin/main --format='%(refname:short)'); do
+for r in $(git branch -r --list 'origin/claude/equipo-dev/*' --merged origin/dev --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
     borrables+=("${r#origin/}")
@@ -257,6 +258,10 @@ echo "BORRABLES=${#borrables[@]}"
 if [ "${#borrables[@]}" -gt 0 ]; then
     echo "BORRAR: git push origin --delete $(printf '%s\n' "${borrables[@]}" | sort -u -V | tr '\n' ' ' | sed 's/ $//')"
 fi
+
+echo "== release (main lo promueve el humano con un PR dev -> main; ningun rol lo toca)"
+# El equipo integra en dev: lo que no llega a main no lo publica release.ps1.
+echo "RELEASE=dev lleva $(git rev-list --count origin/main..origin/dev 2>/dev/null || echo '?') commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)"
 
 echo "== pedidos del humano en backlog (commits suyos y seccion Para el equipo)"
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
@@ -299,13 +304,13 @@ echo "COLA=$cola (tope $tope_cola)  TOTAL=$total (tope $tope_total)"
 echo "== alcance"
 echo "PAPEL_TIPOS=funcionalidad:$papel_func otros:$papel_otro (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos)"
 echo "COLA_TIPOS=funcionalidad:$cola_func de $total ramas de trabajo"
-# --first-parent -m fecha cada ficha por el merge que la trajo a main, no por
+# --first-parent -m fecha cada ficha por el merge que la trajo a dev, no por
 # el commit "Reclama:" de su rama, que puede tener mas de una semana.
-main_func=""; main_otro=0
-for f in $(git log --since=7.days --first-parent -m origin/main --diff-filter=A --name-only --format= -- docs/backlog | grep -E '/[0-9]+-' | sort -u); do
-    if [ "$(tipo_de origin/main "$f")" = funcionalidad ]; then main_func="$main_func $(basename "$f" .md)"; else main_otro=$((main_otro + 1)); fi
+dev_func=""; dev_otro=0
+for f in $(git log --since=7.days --first-parent -m origin/dev --diff-filter=A --name-only --format= -- docs/backlog | grep -E '/[0-9]+-' | sort -u); do
+    if [ "$(tipo_de origin/dev "$f")" = funcionalidad ]; then dev_func="$dev_func $(basename "$f" .md)"; else dev_otro=$((dev_otro + 1)); fi
 done
-echo "MAIN_7D=funcionalidad:$(echo $main_func | wc -w)${main_func:+ (${main_func# })} otros:$main_otro (fichas que llegaron a main en 7 dias)"
+echo "DEV_7D=funcionalidad:$(echo $dev_func | wc -w)${dev_func:+ (${dev_func# })} otros:$dev_otro (fichas que llegaron a dev en 7 dias)"
 libres=0
 if git cat-file -e "$B:docs/backlog/ALCANCE.md" 2>/dev/null; then
     # Una idea libre es una fila de tabla cuya ultima columna dice "idea".
@@ -325,7 +330,7 @@ fi
 # 36 a 63, 13 son de lado-y-marcador, y 10 de las 20 entregas de la 40 a la 60
 # sumaron una tarjeta a Tendencias (17 tarjetas), mientras exportar,
 # datos-nuevos-del-parser y paridad-referencia no entregaron nada. Se mide sobre
-# las ultimas funcionalidades que llegaron a main; el PO lo lee en ROTACION.
+# las ultimas funcionalidades que llegaron a dev; el PO lo lee en ROTACION.
 ventana_rotacion=10 tope_rotacion=4
 declare -A por_epica=() por_pagina=()
 vistas=0; commit=""; ciclos=""
@@ -335,33 +340,34 @@ while read -r linea; do
         docs/backlog/[0-9]*-*.md) ;;
         *) continue ;;
     esac
-    [ "$(tipo_de origin/main "$linea")" = funcionalidad ] || continue
+    [ "$(tipo_de origin/dev "$linea")" = funcionalidad ] || continue
     vistas=$((vistas + 1))
-    e=$(campo origin/main "$linea" epica); e=${e:--}
+    e=$(campo origin/dev "$linea" epica); e=${e:--}
     por_epica[$e]=$(( ${por_epica[$e]:-0} + 1 ))
     for pg in $(git diff --name-only "$commit^1" "$commit" -- frontend/src/pages 2>/dev/null | xargs -r -n1 basename); do
         por_pagina[$pg]=$(( ${por_pagina[$pg]:-0} + 1 ))
     done
     # Ciclo: del commit que agrego la ficha en su rama (el "Reclama:") al
-    # merge que la trajo a main. Es lo que tiene que bajar si el Release deja
+    # merge que la trajo a dev. Es lo que tiene que bajar si el Release deja
     # de esperar un disparo aparte.
-    reclamo=$(git log --diff-filter=A --format=%ct origin/main -- "$linea" 2>/dev/null | tail -1)
+    reclamo=$(git log --diff-filter=A --format=%ct origin/dev -- "$linea" 2>/dev/null | tail -1)
     [ -n "$reclamo" ] && ciclos="$ciclos $(basename "$linea" | cut -d- -f1):$(( ($(git log -1 --format=%ct "$commit") - reclamo) / 3600 ))"
     [ "$vistas" -ge "$ventana_rotacion" ] && break
-done < <(git log --first-parent -m origin/main --diff-filter=A --name-only --format='C %H' -- docs/backlog 2>/dev/null)
+done < <(git log --first-parent -m origin/dev --diff-filter=A --name-only --format='C %H' -- docs/backlog 2>/dev/null)
 conteo() { local -n m=$1; local k; for k in "${!m[@]}"; do echo "$k:${m[$k]}"; done | sort -t: -k2,2nr -k1,1 | tr '\n' ' ' | sed 's/ $//'; }
-echo "ROTACION_EPICAS=$(conteo por_epica) (epica de las ultimas $vistas funcionalidades en main)"
+echo "ROTACION_EPICAS=$(conteo por_epica) (epica de las ultimas $vistas funcionalidades en dev)"
 echo "ROTACION_PAGINAS=$(conteo por_pagina) (paginas de frontend/src/pages que tocaron)"
 mediana_ciclo=$(for c in $ciclos; do echo "${c#*:}"; done | sort -n | awk '{ v[NR] = $1 } END { if (NR) print (NR % 2) ? v[(NR + 1) / 2] : int((v[NR / 2] + v[NR / 2 + 1]) / 2); else print "?" }')
-echo "CICLO=${mediana_ciclo}h de reclamo a main, mediana de las ultimas $vistas funcionalidades (ficha:horas${ciclos})"
+echo "CICLO=${mediana_ciclo}h de reclamo a dev, mediana de las ultimas $vistas funcionalidades (ficha:horas${ciclos})"
 saturadas=""
 for k in "${!por_epica[@]}"; do [ "$k" != - ] && [ "${por_epica[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas epica $k,"; done
 for k in "${!por_pagina[@]}"; do [ "${por_pagina[$k]}" -ge "$tope_rotacion" ] && saturadas="$saturadas pagina $k,"; done
 saturadas=${saturadas%,}
-# Epicas con ideas libres y nada en main (deuda-y-tests no es funcionalidad).
+# Epicas con ideas libres y nada en dev (deuda-y-tests no es funcionalidad;
+# las marcas viejas `en main` cuentan igual).
 sin_entrega=$(git show "$B:docs/backlog/ALCANCE.md" 2>/dev/null | awk -F'|' '
     /^### / { ep = $0; sub(/^### /, "", ep); sub(/:.*/, "", ep); orden[++n] = ep; next }
-    ep != "" && /^\|/ { st = $(NF - 1); gsub(/^[ \t]+|[ \t]+$/, "", st); if (st == "idea") libre[ep] = 1; if (st ~ /^en main/) hecha[ep] = 1 }
+    ep != "" && /^\|/ { st = $(NF - 1); gsub(/^[ \t]+|[ \t]+$/, "", st); if (st == "idea") libre[ep] = 1; if (st ~ /^en (dev|main)/) hecha[ep] = 1 }
     END { for (i = 1; i <= n; i++) { e = orden[i]; if (libre[e] && !hecha[e] && e != "deuda-y-tests") printf "%s%s", (c++ ? " " : ""), e } }')
 echo "ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotacion}):${saturadas:- ninguna} | sin entrega: ${sin_entrega:-ninguna}"
 

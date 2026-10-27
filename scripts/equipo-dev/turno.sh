@@ -76,12 +76,12 @@ if [ "$simular" = si ]; then
     cargar "$sim"
 else
     gitdir="$(git rev-parse --git-dir 2>/dev/null)" || { echo "no es un repo git" >&2; exit 1; }
-    # El playbook se lee de main si ya esta ahi; si no, de la rama donde vive.
-    # Se prueba rutina.md y no SKILL.md: solo el playbook nuevo lo tiene, asi
-    # que un main con un playbook viejo mergeado no gana la cadena.
-    for ref in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
+    # El playbook se lee de dev, donde el equipo integra; main (release) y la
+    # rama del playbook quedan de respaldo. Se prueba rutina.md y no SKILL.md:
+    # solo el playbook nuevo lo tiene, asi que una ref con uno viejo no gana.
+    for ref in origin/dev origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
     git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null || {
-        echo "SIN_PLAYBOOK: ni origin/main ni origin/claude/equipo-dev/playbook tienen .claude/skills/equipo-dev/rutina.md" >&2
+        echo "SIN_PLAYBOOK: ninguna ref de la cadena (dev, main, rama del playbook) tiene .claude/skills/equipo-dev/rutina.md" >&2
         exit 2
     }
     linea=$(git show "$ref:scripts/equipo-dev/estado.sh" | bash -s -- --resumen 2>/dev/null | grep -m1 '^RESUMEN ')

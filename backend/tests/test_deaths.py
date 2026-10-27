@@ -165,6 +165,102 @@ class CuandoMatasTests(TestCase):
         self.assertEqual(datos["kills_by_time"][0]["label"], "0-30s")
 
 
+
+class AperturaPorTiempoTests(TestCase):
+    """Segundo en que cae la primera baja de la ronda y tu winrate por tramo."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+        self.n = 0
+
+    def _ronda(self, side="Attack", *, won=True, apertura_mia=False):
+        rnd = make_round(self.match, self.n, side=side, won=won)
+        self.n += 1
+        make_round_player(rnd, side=side, opening_kill=apertura_mia)
+        rival = "Defense" if side == "Attack" else "Attack"
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, side=rival)
+        return rnd
+
+    def _apertura(self, elapsed, **kwargs):
+        rnd = self._ronda(**kwargs)
+        make_event(rnd, 0, ME, "rival", clock=rnd.clock_start - elapsed)
+        return rnd
+
+    def _filas(self, lado="attack", **filtros):
+        return {f["key"]: f for f in agg.opening_timing(**filtros)[lado]}
+
+    def test_aperturas_a_los_10_60_y_120_caen_en_temprano_medio_y_tarde(self):
+        self._apertura(10, apertura_mia=True)
+        self._apertura(60, won=False)
+        self._apertura(120)
+        filas = self._filas()
+        self.assertEqual(list(filas), ["temprano", "medio", "tarde", "sin_bajas"])
+        self.assertEqual([f["rounds"] for f in filas.values()], [1, 1, 1, 0])
+        self.assertEqual(filas["temprano"]["winrate"], 100.0)
+        self.assertEqual(filas["temprano"]["opening_won_pct"], 100.0)
+        self.assertEqual(filas["medio"]["winrate"], 0.0)
+        self.assertEqual(filas["tarde"]["opening_won"], 0)
+        self.assertIsNone(filas["sin_bajas"]["winrate"])
+
+    def test_29_9_es_temprano_30_es_medio_y_90_es_tarde(self):
+        for elapsed in (29.9, 30, 90):
+            self._apertura(elapsed)
+        filas = self._filas()
+        self.assertEqual(
+            [filas[k]["rounds"] for k in ("temprano", "medio", "tarde")], [1, 1, 1]
+        )
+
+    def test_la_primera_baja_es_la_de_menor_order_no_la_de_menor_elapsed(self):
+        rnd = self._ronda()
+        make_event(rnd, 0, "rival", ME, clock=rnd.clock_start - 100)
+        make_event(rnd, 1, ME, "rival", clock=rnd.clock_start - 5)
+        filas = self._filas()
+        self.assertEqual(filas["tarde"]["rounds"], 1)
+        self.assertEqual(filas["temprano"]["rounds"], 0)
+
+    def test_una_ronda_sin_ganador_no_entra(self):
+        rnd = self._apertura(10)
+        rnd.my_team_won = None
+        rnd.save()
+        self._apertura(10)
+        self.assertEqual(self._filas()["temprano"]["rounds"], 1)
+
+    def test_una_ronda_sin_eventos_de_baja_va_a_sin_bajas(self):
+        # opening_kill marcado sin evento de baja no pasa con .rec reales; se fuerza
+        # para ver que "Sin bajas" nunca suma primeras bajas
+        rnd = self._ronda(won=False, apertura_mia=True)
+        make_event(rnd, 0, ME, kind="Other", clock=rnd.clock_start - 10)
+        fila = self._filas()["sin_bajas"]
+        self.assertEqual((fila["rounds"], fila["won"], fila["opening_won"]), (1, 0, 0))
+        self.assertIsNone(fila["opening_won_pct"])
+
+    def test_la_apertura_de_un_companero_cuenta_como_tuya(self):
+        rnd = self._apertura(20)
+        make_round_player(rnd, username="companero", is_me=False, opening_kill=True)
+        rival = self._apertura(20)
+        make_round_player(
+            rival, username="otro", is_me=False, team_index=1, side="Defense", opening_kill=True
+        )
+        fila = self._filas()["temprano"]
+        self.assertEqual((fila["rounds"], fila["opening_won"]), (2, 1))
+        self.assertEqual(fila["opening_won_pct"], 50.0)
+
+    def test_con_side_attack_la_defensa_queda_en_cero(self):
+        self._apertura(10, side="Attack")
+        self._apertura(10, side="Defense")
+        datos = agg.opening_timing(side="Attack")
+        self.assertEqual(sum(f["rounds"] for f in datos["attack"]), 1)
+        self.assertEqual([f["rounds"] for f in datos["defense"]], [0, 0, 0, 0])
+
+    def test_base_vacia_trae_los_tramos_en_cero_en_la_api(self):
+        resp = self.client.get("/api/trends/")
+        self.assertEqual(resp.status_code, 200)
+        datos = resp.json()["opening_timing"]
+        for lado in ("attack", "defense"):
+            self.assertEqual(len(datos[lado]), 4)
+            self.assertTrue(all(f["rounds"] == 0 and f["winrate"] is None for f in datos[lado]))
+
+
 class ExtremosTests(TestCase):
     """Los dos ejes que usa el coach: segundos jugados y reloj restante."""
 

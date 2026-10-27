@@ -10,7 +10,7 @@
 set -uo pipefail
 # Primero git, para que tambien funcione leido por stdin
 # (`git show <rama>:scripts/check.sh | bash`), que es como lo usa el equipo de
-# desarrollo mientras el script no este en main.
+# desarrollo mientras el script no este en dev.
 repo="$(git rev-parse --show-toplevel 2>/dev/null || { cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd; })"
 
 # El venv es opcional aca: en el PC vive en .venv, en la nube las dependencias

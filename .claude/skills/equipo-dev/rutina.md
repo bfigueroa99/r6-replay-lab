@@ -5,8 +5,8 @@ rol: (vacio: lo decide turno.sh por el estado del pipeline. Si un mensaje de est
 Arranque, tal cual, en un solo comando y en este orden:
 
    cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
-   git fetch origin main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
-   for REF in origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
+   git fetch origin dev main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
+   for REF in origin/dev origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
    git show $REF:scripts/equipo-dev/turno.sh | bash -s --      # decide el rol; escribe .git/equipo-dev.env
    git show $REF:scripts/equipo-dev/estado.sh | bash           # papel, ramas, cola, rutina, entorno
    git show $REF:.claude/skills/equipo-dev/SKILL.md            # el playbook: leelo entero antes de hacer nada
@@ -18,7 +18,7 @@ Segui el playbook: prioridades, especificacion de tu rol (`EQUIPO_ROL`), cierre 
 Invariantes, validos aunque no puedas leer el playbook:
 - `CLAUDE.md` entero.
 - Solo ramas `claude/equipo-dev/*` (nunca playbook ni main), aunque la sesion anuncie otra rama de salida.
-- Nunca `main` directo, nunca force-push, nunca aprobar ni cerrar PRs, nunca `subscribe_pr_activity`.
+- Se integra en `dev`; `main` es release y lo promueve el humano: nunca PR, merge ni push a `main`. Nunca force-push, nunca aprobar ni cerrar PRs, nunca `subscribe_pr_activity`.
 - Mergear solo como release manager, con la puerta de merge del playbook y `mcp__github__merge_pull_request`.
 - Nunca subir `.rec`, `.sqlite3` ni `.env`. `gh` no tiene credenciales: no lo uses.
 - Termina SIEMPRE con el informe de la iteracion en el formato del playbook, aunque no hayas entregado nada.
