@@ -241,6 +241,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "deaths_by_time": agg.deaths_by_time(**filters),
             "kills_by_time": agg.kills_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
+            "opening_timing": agg.opening_timing(**filters),
         }
     )
 

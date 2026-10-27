@@ -278,6 +278,13 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const matas = data.kills_by_time || []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
+  // Ataque y despues defensa, cada uno en el orden de tramos del backend: `orden` lo fija al ordenar
+  const apertura = data.opening_timing
+    ? [
+        ...data.opening_timing.attack.map((f) => ({ ...f, side: 'Attack' })),
+        ...data.opening_timing.defense.map((f) => ({ ...f, side: 'Defense' })),
+      ].map((f, orden) => ({ ...f, orden }))
+    : []
   const porPosicion = sesiones.data?.by_position || []
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
@@ -587,6 +594,37 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'start', dir: 'asc' }}
             rowKey={(row) => row.start}
             csvName="cuando-mueres"
+          />
+        </Panel>
+      ) : null}
+
+      {apertura.some((f) => f.rounds > 0) ? (
+        <Panel
+          title="Cuándo llega la apertura"
+          hint={
+            'Segundo de la fase de acción en que cae la primera baja de la ronda, sea de quien sea. ' +
+            'Si en defensa pierdes las que llegan temprano, te abren de entrada; si en ataque las ' +
+            'tardías te cuestan, tardas en forzar el primer duelo.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'side', label: 'Lado', left: true, sortable: false, render: (row) => <SideChip side={row.side} /> },
+              { key: 'label', label: 'Tramo', left: true, sortable: false },
+              { key: 'rounds', label: 'Rondas' },
+              { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%' },
+              {
+                key: 'opening_won_pct',
+                label: 'Primera baja tuya',
+                digits: 0,
+                suffix: '%',
+                help: 'De esas rondas, en cuántas la primera baja la hizo tu equipo.',
+              },
+            ]}
+            rows={apertura}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => `${row.side}-${row.key}`}
+            csvName="apertura-por-tiempo"
           />
         </Panel>
       ) : null}
