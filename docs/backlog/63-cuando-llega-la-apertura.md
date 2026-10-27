@@ -1,8 +1,8 @@
 # 63. Cuando llega la apertura
 
-estado: disenado
+estado: en curso 2026-10-27
 candado: -
-rama: -
+rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
