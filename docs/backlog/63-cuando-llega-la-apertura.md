@@ -1,7 +1,7 @@
 # 63. Cuando llega la apertura
 
 estado: revisado
-candado: -
+candado: qa 2026-10-27T08:11Z
 rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
 epica: lado-y-marcador
