@@ -1,7 +1,7 @@
 # 63. Cuando llega la apertura
 
-estado: revisado
-candado: qa 2026-10-27T08:11Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B14
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_deaths.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261027T0004Z, revisor 20261027T0404Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261027T0004Z, revisor 20261027T0404Z, qa 20261027T0810Z
 
 ## Que gana quien usa la app
 
@@ -131,35 +131,7 @@ build, e2e, metricas, `check.sh`.
 "temprano" (mismo criterio que 62 y que "Cuando mueres"); si al revisar la
 base real del humano aparecen muchas aperturas en 0.0 exacto, es una ficha
 aparte para tratarlas como "sin reloj". Los umbrales 30/90 no se calibraron
-contra la base real: anotar en `## Revision 2026-10-27 sobre 093fffc
-
-(revisor 20261027T0404Z) Revision ciega (subagente con `revision.md` sobre el diff sin
-`docs/backlog`) y confirmacion del lider. `check.sh`: Todo en verde (788 tests
-backend, 120 frontend, build, 50 e2e). `origin/main` ya estaba fusionado.
-
-Criterios: cada uno cubierto por un test de `AperturaPorTiempoTests` (tramos
-10/60/120, bordes 29.9/30/90, primera por `order`, sin ganador afuera, sin
-bajas, companero, `side=Attack`, base vacia en la API) y el e2e
-`Tendencias muestra cuando llega la apertura` (numeros confirmados corriendo
-`seed_demo`: Ataque tarde 66 / 100 % / 13.6 %; Defensa medio 37 / 0 % / 0 %).
-Fila en `metricas.md`; el diff no sale de `archivos:`; sin `print` ni
-`console.log`; UI con tildes, identificadores sin. Sin doble conteo:
-`base_queryset` deja una fila `is_me` por ronda.
-
-Hallazgos (menores, no bloquean; van a `## Para el humano`):
-
-- [bug menor] `aggregates.py` (`apertura_mia`): si la primera baja de la ronda
-  es un teamkill de tu equipo, cuenta como "Primera baja tuya" (`metrics.py:216-220`
-  marca `opening_kill` al autor aunque la victima sea aliada). Es el mismo
-  criterio que ya usa *Duelos de apertura*, que el diseno pidio cuadrar.
-  Arreglo posible: exigir ademas `~Exists(opening_death)` en tu equipo; mejor
-  en `metrics.py` para que lo herede Duelos tambien (ficha aparte).
-- [bug menor] `_tramo_apertura`: un primer evento sin reloj (`elapsed` 0.0)
-  cae en *Temprano*; documentado en `metricas.md` y anotado por el diseno.
-
-Veredicto: aprobar.
-
-## Para el humano` del PR que se pueden
+contra la base real: anotar en `## Para el humano` del PR que se pueden
 mover cambiando las dos constantes.
 
 **Verificacion manual:** `/tendencias`, la tabla aparece debajo de "Cuando
@@ -194,9 +166,84 @@ por mapa, si la muestra da.
   rondas sin bajas.
 - `check.sh`: Todo en verde (788 tests backend, 120 frontend, build, 50 e2e).
 
+## Revision 2026-10-27 sobre 093fffc
+
+(revisor 20261027T0404Z) Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`) y confirmacion del lider. `check.sh`: Todo en verde (788 tests
+backend, 120 frontend, build, 50 e2e). `origin/main` ya estaba fusionado.
+
+Criterios: cada uno cubierto por un test de `AperturaPorTiempoTests` (tramos
+10/60/120, bordes 29.9/30/90, primera por `order`, sin ganador afuera, sin
+bajas, companero, `side=Attack`, base vacia en la API) y el e2e
+`Tendencias muestra cuando llega la apertura` (numeros confirmados corriendo
+`seed_demo`: Ataque tarde 66 / 100 % / 13.6 %; Defensa medio 37 / 0 % / 0 %).
+Fila en `metricas.md`; el diff no sale de `archivos:`; sin `print` ni
+`console.log`; UI con tildes, identificadores sin. Sin doble conteo:
+`base_queryset` deja una fila `is_me` por ronda.
+
+Hallazgos (menores, no bloquean; van a `## Para el humano`):
+
+- [bug menor] `aggregates.py` (`apertura_mia`): si la primera baja de la ronda
+  es un teamkill de tu equipo, cuenta como "Primera baja tuya" (`metrics.py:216-220`
+  marca `opening_kill` al autor aunque la victima sea aliada). Es el mismo
+  criterio que ya usa *Duelos de apertura*, que el diseno pidio cuadrar.
+  Arreglo posible: exigir ademas `~Exists(opening_death)` en tu equipo; mejor
+  en `metrics.py` para que lo herede Duelos tambien (ficha aparte).
+- [bug menor] `_tramo_apertura`: un primer evento sin reloj (`elapsed` 0.0)
+  cae en *Temprano*; documentado en `metricas.md` y anotado por el diseno.
+
+Veredicto: aprobar.
+
+## QA 2026-10-27 sobre c484b7a
+
+(qa 20261027T0810Z) Sin migracion, sin parser, sin Electron ni `.ps1`.
+
+- `./scripts/check.sh`: `Todo en verde.` (788 tests backend, 120 frontend,
+  build, 50 e2e, incluido `Tendencias muestra cuando llega la apertura`).
+- Base vacia (`SQLITE_PATH` y `R6_ENV_FILE` en el scratchpad, `migrate`,
+  `runserver`): `curl -s 'localhost:8765/api/trends/<q>'` con `q` en `""`,
+  `?side=Attack`, `?side=Defense`, `?until=foo`, `?page=-1`, `?map=`,
+  `?days=99999999999`: 200, `opening_timing` con 4 filas por lado en cero y
+  `winrate`/`opening_won_pct` `null` (criterio 4).
+- Base sembrada con `factories.py` (script temporal): Club House Ranked con
+  ataque ganada apertura tuya a 5 s; ataque perdida con un `DefuserPlantStart`
+  de `order` 0 a 3 s y tu muerte a 100 s; defensa ganada sin eventos; defensa
+  con `my_team_won` nulo; defensa perdida por teamkill de un companero a 45 s;
+  ataque ganada con un evento sin reloj (0.0 s); Border Unranked de un solo
+  jugador con nick repetido (otro `Player` con tu nombre) y defensa con tu
+  apertura a 30 s; una ronda de lado `Unknown`. Esperado a mano y obtenido:
+  ataque temprano 2 / 100 % / 50 %, tarde 1 / 0 % / 0 %; defensa medio 2 /
+  50 % / 100 %, sin bajas 1 / 100 % / `null`. El plant no cuenta como primera
+  baja (va a tarde), el nulo y el `Unknown` quedan afuera, el 0.0 cae en
+  temprano (criterios 1 a 3). Filtros: `side=Attack` deja defensa en cero y
+  `side=Defense` al reves; `map=border` solo defensa medio 1 / 100 %;
+  `match_type=Ranked` defensa medio 1 / 0 % / 100 %; `operator=Nadie` y
+  `days=0` todo en cero; `side=`, `until=foo` y `page=-1` igual que sin
+  filtro. Ningun 500 en el log.
+- UI en Chromium (Playwright sobre `/tendencias` de la base sembrada): heading
+  "Cuándo llega la apertura", 8 filas en orden ataque/defensa y
+  temprano/medio/tarde/sin bajas con los mismos numeros, `—` donde no hay
+  dato, CSV `apertura-por-tiempo-2026-10-27.csv` con las 8 filas (lado en
+  crudo `Attack`/`Defense`, como los otros CSV de Tendencias), consola sin
+  errores (criterio 5).
+- `vite build` de `origin/main` contra la rama: chunk inicial `index` 187.83 kB
+  en los dos; `Trends` (lazy) 26.94 -> 27.90 kB.
+- Mutacion sobre `aggregates.py`, cada una cae en su test:
+  `order_by("order")` -> `order_by("elapsed")` tumba
+  `test_la_primera_baja_es_la_de_menor_order_no_la_de_menor_elapsed`; sacar
+  `.filter(round__my_team_won__isnull=False)` tumba
+  `test_una_ronda_sin_ganador_no_entra`; `<` -> `<=` en el corte temprano
+  tumba `test_29_9_es_temprano_30_es_medio_y_90_es_tarde`; sacar
+  `team_index=OuterRef(...)` del `Exists` tumba
+  `test_la_apertura_de_un_companero_cuenta_como_tuya`.
+- Criterio 6: fila en `docs/metricas.md` (confirmada por el Revisor).
+
+Veredicto: aprobado. Ademas: la seccion de Revision habia quedado insertada
+en medio del Diseno; se movio debajo de Implementacion sin cambiar texto.
+
 ## Para el humano
 
-- Los cortes 30/90 s no se calibraron con la base real; se mueven cambiando
+- Calibrar con la base real: los cortes 30/90 s solo se probaron con datos sinteticos; se mueven cambiando
   `APERTURA_TEMPRANA` y `APERTURA_TARDIA` en `aggregates.py`.
 - Un evento sin reloj (`elapsed` 0.0) cae en "Temprano", igual que en
   "Cuando mueres" y "Cuándo matas".
