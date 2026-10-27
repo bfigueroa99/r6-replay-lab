@@ -1,7 +1,7 @@
 # 63. Cuando llega la apertura
 
-estado: implementado
-candado: revisor 2026-10-27T04:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B14
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_deaths.py, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261027T0004Z
+turnos: po 20261024T1204Z, arquitecto 20261024T1605Z, dev 20261027T0004Z, revisor 20261027T0404Z
 
 ## Que gana quien usa la app
 
@@ -131,7 +131,35 @@ build, e2e, metricas, `check.sh`.
 "temprano" (mismo criterio que 62 y que "Cuando mueres"); si al revisar la
 base real del humano aparecen muchas aperturas en 0.0 exacto, es una ficha
 aparte para tratarlas como "sin reloj". Los umbrales 30/90 no se calibraron
-contra la base real: anotar en `## Para el humano` del PR que se pueden
+contra la base real: anotar en `## Revision 2026-10-27 sobre 093fffc
+
+(revisor 20261027T0404Z) Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`) y confirmacion del lider. `check.sh`: Todo en verde (788 tests
+backend, 120 frontend, build, 50 e2e). `origin/main` ya estaba fusionado.
+
+Criterios: cada uno cubierto por un test de `AperturaPorTiempoTests` (tramos
+10/60/120, bordes 29.9/30/90, primera por `order`, sin ganador afuera, sin
+bajas, companero, `side=Attack`, base vacia en la API) y el e2e
+`Tendencias muestra cuando llega la apertura` (numeros confirmados corriendo
+`seed_demo`: Ataque tarde 66 / 100 % / 13.6 %; Defensa medio 37 / 0 % / 0 %).
+Fila en `metricas.md`; el diff no sale de `archivos:`; sin `print` ni
+`console.log`; UI con tildes, identificadores sin. Sin doble conteo:
+`base_queryset` deja una fila `is_me` por ronda.
+
+Hallazgos (menores, no bloquean; van a `## Para el humano`):
+
+- [bug menor] `aggregates.py` (`apertura_mia`): si la primera baja de la ronda
+  es un teamkill de tu equipo, cuenta como "Primera baja tuya" (`metrics.py:216-220`
+  marca `opening_kill` al autor aunque la victima sea aliada). Es el mismo
+  criterio que ya usa *Duelos de apertura*, que el diseno pidio cuadrar.
+  Arreglo posible: exigir ademas `~Exists(opening_death)` en tu equipo; mejor
+  en `metrics.py` para que lo herede Duelos tambien (ficha aparte).
+- [bug menor] `_tramo_apertura`: un primer evento sin reloj (`elapsed` 0.0)
+  cae en *Temprano*; documentado en `metricas.md` y anotado por el diseno.
+
+Veredicto: aprobar.
+
+## Para el humano` del PR que se pueden
 mover cambiando las dos constantes.
 
 **Verificacion manual:** `/tendencias`, la tabla aparece debajo de "Cuando
@@ -172,3 +200,7 @@ por mapa, si la muestra da.
   `APERTURA_TEMPRANA` y `APERTURA_TARDIA` en `aggregates.py`.
 - Un evento sin reloj (`elapsed` 0.0) cae en "Temprano", igual que en
   "Cuando mueres" y "Cuándo matas".
+- Revisor 2026-10-27 (aviso, no bloquea): una apertura que es teamkill de tu
+  equipo cuenta como "Primera baja tuya" (igual que en *Duelos de apertura*,
+  donde ya pasaba). Corregirlo en `metrics.py` cambia un numero que ya se
+  muestra: decilo en `## Para el equipo` si lo queres.
