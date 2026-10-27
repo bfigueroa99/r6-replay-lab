@@ -1,16 +1,16 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-27 12:40 UTC por po (sesion 20261027T1205Z; motivo: papel vacio; reloj: revisor, franja 4)
-playbook: origin/main@af8c6b0
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (~10-25T12:10Z ~10-25T16:12Z ~10-25T20:14Z ~10-26T00:15Z ~10-26T04:17Z) | 7 de 42 en 7 dias
+actualizado: 2026-10-27 16:11 UTC por arquitecto (sesion 20261027T1605Z; motivo: por estado: 3 propuesto, 0 disenado de 3; reloj: dev, franja 5)
+playbook: origin/dev@2532ed1
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (~10-25T16:12Z ~10-25T20:14Z ~10-26T00:15Z ~10-26T04:17Z) | 7 de 43 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia: la 63 entro a main (PR #56).
+Vacia: la 63 esta integrada (PR #56). Desde este playbook se integra en `dev`; `main` lo promueve el humano. RELEASE=dev lleva 0 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=5
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=4
 
 ## Orden de merge sugerido
 
@@ -18,24 +18,24 @@ Sin ramas abiertas: no hay pares que probar.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): MAIN_7D=funcionalidad:8 (56-mapas-y-operadores-que-mejoran 57-teamkills 58-primera-ronda-de-cada-mitad 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura) otros:0 (fichas que llegaron a main en 7 dias)
-- Epicas en curso: paridad-referencia: R1 -> ficha 64 (propuesto), R2-R5 idea. operadores: O6 (61) en main, O5 -> ficha 65 (propuesto), O1 tramo siguiente. exportar: H4 -> ficha 66 (propuesto), H7 la reusa. lado-y-marcador: B11 (62) y B14 (63) en main (saturada).
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (56-mapas-y-operadores-que-mejoran 57-teamkills 58-primera-ronda-de-cada-mitad 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura) otros:0 (fichas que llegaron a dev en 7 dias)
+- Epicas en curso: paridad-referencia: R1 -> ficha 64 (disenado), R2-R5 idea. operadores: O6 (61) integrada, O5 -> ficha 65 (disenado), O1 tramo siguiente. exportar: H4 -> ficha 66 (disenado), H7 la reusa. lado-y-marcador: B11 (62) y B14 (63) integradas (saturada).
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 68 ideas libres (67 al empezar). Ideas nuevas de este turno: E12 (tu semana contra la anterior), O7 (pool de operadores por lado), H7 (copiar el resumen de una sesion), R5 (tema claro y oscuro). Reconciliado contra main af8c6b0: 61, 62 y 63 en main.
 - Investigacion: ultima entrada 2026-10-24 (familia 8, Replica; paridad 76.1 / 100). Proxima: 3, 5 y 6.
-- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): epica lado-y-marcador, pagina Teammates.jsx, pagina Trends.jsx | sin entrega: operadores exportar datos-nuevos-del-parser paridad-referencia
-- Ciclo: CICLO=12h de reclamo a main, mediana de las ultimas 10 funcionalidades (ficha:horas 63:8 62:8 61:32 59:12 57:12 56:12 60:44 58:12 55:24 53:26)
+- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): epica lado-y-marcador, pagina Teammates.jsx, pagina Trends.jsx | sin entrega: exportar datos-nuevos-del-parser paridad-referencia
+- Ciclo: CICLO=12h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 63:12 62:8 61:32 59:12 57:12 56:12 60:44 58:12 55:24 53:26)
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
-| 64-partidas-en-el-inicio | propuesto | funcionalidad | paridad-referencia | 3 | fullstack | - |
-| 65-presencia-y-delta-por-operador | propuesto | funcionalidad | operadores | 3 | fullstack | - |
-| 66-copiar-resumen-de-partida | propuesto | funcionalidad | exportar | 3 | frontend | - |
+| 64-partidas-en-el-inicio | disenado | funcionalidad | paridad-referencia | 3 | fullstack | - |
+| 65-presencia-y-delta-por-operador | disenado | funcionalidad | operadores | 3 | fullstack | - |
+| 66-copiar-resumen-de-partida | disenado | funcionalidad | exportar | 3 | frontend | - |
 
-3 `propuesto`, 0 `disenado`. Proximo turno: arquitecto (regla 9). Las tres salen de epicas `sin entrega` y tocan paginas no saturadas (`Dashboard.jsx`, `Operators.jsx`, `MatchDetail.jsx`); la 66 no pisa las flechas de ronda del PR #14 (boton en la cabecera).
+0 `propuesto`, 3 `disenado`. Proximo turno: dev (regla 8), despues po (regla 10: papel con menos de 6 `propuesto`). Orden sugerido para el Dev: 64, 65, 66 (misma prioridad, la mas vieja primero). 64 y 65 tocan `aggregates.py` en funciones distintas y las tres agregan un test a `humo.spec.js`: si van en paralelo, el merge es de bloques distintos (P3 si choca). La 65 corrige el ejemplo de su criterio (con 3 ganadas del otro operador la base es 60 % y Ash da +15; el test usa 2 ganadas para que cierre el +25).
 
 ## Ultimo turno de cada rol
 
@@ -45,7 +45,7 @@ Sin ramas abiertas: no hay pares que probar.
 | dev | 2026-10-27 00:35 | Implementa 63 (`disenado` -> `implementado`, rama `claude/equipo-dev/63-cuando-llega-la-apertura`, 093fffc): `opening_timing` en `/api/trends/` (primer `Kill`/`Death` por `order`, tramos `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90` + Sin bajas, por lado, winrate y primera baja de tu equipo); tabla "Cuándo llega la apertura" debajo de "Cuando mueres" con CSV; 8 tests y e2e sobre `seed_demo`; fila en `metricas.md`. Revision ciega: 2 menores corregidos (`opening_won_pct` nulo en Sin bajas, test del guard). `check.sh` en `Todo en verde.` (788 backend, 120 vitest, build, 50 e2e). |
 | revisor | 2026-10-27 04:40 | Revisa 63 (funcionalidad, `implementado` -> `revisado`) sobre 04266ef (codigo 093fffc), main 30cc407 ya incluido. `check.sh` en `Todo en verde.` (788 backend, 120 vitest, build, 50 e2e). Revision ciega: sin doble conteo, bordes y filtros bien, numeros del e2e recalculados sobre `seed_demo`; 2 hallazgos menores confirmados y anotados (apertura por teamkill cuenta como tuya, como ya pasa en Duelos de apertura; `elapsed` 0 cae en Temprano, documentado). Sin pushes de codigo. |
 | qa | 2026-10-27 08:30 | Prueba 63 (funcionalidad, `revisado` -> `aprobado`) sobre fbbc073. `check.sh` en verde; base vacia 200 con tramos en cero en 7 filtros borde; base sembrada (plant como primer evento, ronda sin ganador, sin bajas, teamkill, 0.0 s, partida de un jugador, nick repetido, lado `Unknown`): numeros iguales a los calculados a mano, filtros `side`/`map`/`match_type`/`operator`/`days` coherentes; UI y CSV en Chromium sin errores; chunk inicial igual que main; 4 mutaciones caen. Reacomodo la seccion de Revision que habia quedado dentro del Diseno. |
-| arquitecto | 2026-10-24 16:09 | Disena 61 (`clutch_by_operator` + `CLUTCH_OPERADOR_MIN = 5` en `/api/teammates/`, tabla tercera del panel Clutches), 62 (`kills_by_time` desde `_duelos`, helper `_tramo_vacio` compartido con `deaths_by_time`, panel "Cuándo matas" antes de "Cuando mueres") y 63 (`opening_timing` con `APERTURA_TEMPRANA = 30` / `APERTURA_TARDIA = 90`, primera baja tuya = `opening_kill` de tu equipo; despues de 62). Sin arena, sin migracion. |
+| arquitecto | 2026-10-27 16:11 | Disena 64 (`matches_summary` en la vista de `/api/overview/`: partidas elegidas sin `side` como `by_margin`, `match_winrate` sobre `won` no nulo, `rounds_per_match`, mejor y peor mapa por `map_slug` con `MIN_PARTIDAS_MAPA = 3`, peor solo si esta por debajo del mejor; fila de cuatro `Stat3` en el Inicio), 65 (`presence_pct` y `winrate_delta` en `by_operator`, base del lado antes de `min_rounds`, delta nulo sin rondas con `my_team_won`, sin banda de ruido; columnas "Presencia" y "vs. tu lado") y 66 (`resumenPartida.js` puro con el texto exacto de cinco lineas, boton "Copiar resumen" con `navigator.clipboard`, e2e con `grantPermissions`). Numeros del e2e calculados sobre `seed_demo`. Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
 | po | 2026-10-27 12:40 | Papel vacio: propone 64 (R1: partidas ganadas, rondas por partida y mejor y peor mapa en el Inicio), 65 (O5: presencia y delta de winrate contra tu lado en Operadores) y 66 (H4: copiar el resumen de una partida al portapapeles). `ALCANCE.md` reconciliado (61-63 en main), nuevas E12, O7, H7 y R5: 68 libres (67 al empezar). Sin pushes de codigo. |
 
