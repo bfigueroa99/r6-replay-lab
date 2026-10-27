@@ -38,6 +38,12 @@ verificacion es `check.ps1` en la maquina, y el e2e es la parte que ve la app.
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
 
+Ramas: `dev` es la base de integracion. Todo cambio sale de `origin/dev` y
+entra a `dev` por PR (el equipo autonomo, `.claude/skills/equipo-dev/`, lo
+mismo). `main` es la release: solo recibe `dev` cuando lo promueve el humano,
+con un PR `dev` -> `main` y commit de merge, y `release.ps1` publica desde ahi.
+Nadie abre PR contra `main`, ni mergea ni empuja a `main` por su cuenta.
+
 ## Reglas de arquitectura
 
 - **`pydissect/` no importa Django.** Es un parser independiente; recibe rutas y

@@ -9,7 +9,7 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/NN-slug | docs/backlog/NN-slug.md | entregado | 5 | [PR #n](url) o [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/main...claude/equipo-dev/NN-slug?expand=1) |
+| claude/equipo-dev/NN-slug | docs/backlog/NN-slug.md | entregado | 5 | [PR #n](url) o [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/NN-slug?expand=1) |
 
 COLA=<n>/4  TOTAL=<n>/6
 RESUMEN <linea tal cual de estado.sh>
@@ -21,8 +21,8 @@ RESUMEN <linea tal cual de estado.sh>
 
 ## Alcance
 
-- Funcionalidades que llegaron a `main` en los ultimos 7 dias (`MAIN_7D`): <n> (<fichas NN>) | ninguna: <cuello de botella>
-- Epicas en curso: <slug>: tramos <NN en main>, <NN en cola>, <NN en papel> | ninguna
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): <n> (<fichas NN>) | ninguna: <cuello de botella>
+- Epicas en curso: <slug>: tramos <NN en dev>, <NN en cola>, <NN en papel> | ninguna
 - Papel: <PAPEL_TIPOS de estado.sh>. Cola: <COLA_TIPOS de estado.sh>.
 - `ALCANCE.md`: <n> ideas libres. Ideas nuevas de este turno: <titulos> | ninguna
 - Investigacion: ultima entrada <fecha> (<familias visitadas>) | ninguna todavia
@@ -41,9 +41,10 @@ RESUMEN <linea tal cual de estado.sh>
 
 ## Para el humano
 
-(Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Un aviso que no bloquea de una ficha ya en `main` queda en la ficha, no aca.)
+(Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Un aviso que no bloquea de una ficha ya en `dev` queda en la ficha, no aca.)
 
 - Ramas borrables: <linea BORRAR de estado.sh tal cual>
+- Release: <linea RELEASE de estado.sh tal cual> (solo si dev lleva commits que main no tiene)
 - Preguntas abiertas: ...
 - PRs que esperan tu merge: ...
 - Verificar en el PC: <NN> (<que correr, en pocas palabras>), una linea por ficha

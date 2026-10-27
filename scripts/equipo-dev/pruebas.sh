@@ -47,12 +47,12 @@ for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo
 done
 cierra sintaxis "$det"
 
-# 2. cadena: la misma secuencia de refs en los cuatro lugares, probando
-# rutina.md (solo el playbook nuevo lo tiene), y ninguna ref vieja en ningun
-# lado. El patron de las viejas se arma partido para que este archivo no lo
+# 2. cadena: la misma secuencia de refs en los cuatro lugares, dev primero,
+# probando rutina.md (solo el playbook nuevo lo tiene), y ninguna ref vieja en
+# ningun lado. El patron de las viejas se arma partido para que este archivo no lo
 # contenga.
 det=""
-cadena='origin/main origin/claude/equipo-dev/playbook'
+cadena='origin/dev origin/main origin/claude/equipo-dev/playbook'
 for f in "$tu" "$es" "$sk" "$ru"; do
     c=$(grep -o "$cadena" "$f" 2>/dev/null | wc -l)
     [ "$c" -eq 1 ] || det="$det ${f#$base/} tiene la cadena $c veces;"
@@ -223,27 +223,42 @@ else
     cierra resumen "$det"
 
     # 12. tablero: lo que estado.sh le da al cierre para el humano y al PO,
-    # contra el remoto real. Una rama del playbook ya contenida en main no es
+    # contra el remoto real. Una rama del playbook ya contenida en dev no es
     # candidata; toda rama del equipo ya mergeada esta en el comando BORRAR;
     # salen la rotacion y el tamano de `## Para el humano`.
     det=""
     completa=$(bash "$es" 2>/dev/null)
     pb=origin/claude/equipo-dev/playbook
-    if git rev-parse -q --verify "$pb" >/dev/null && git merge-base --is-ancestor "$pb" origin/main; then
-        printf '%s\n' "$completa" | grep -q '^PLAYBOOK_CANDIDATO=' && det="$det PLAYBOOK_CANDIDATO con $pb ya en main;"
+    if git rev-parse -q --verify "$pb" >/dev/null && git merge-base --is-ancestor "$pb" origin/dev; then
+        printf '%s\n' "$completa" | grep -q '^PLAYBOOK_CANDIDATO=' && det="$det PLAYBOOK_CANDIDATO con $pb ya en dev;"
     fi
     borrar=$(printf '%s\n' "$completa" | grep -m1 '^BORRAR: git push origin --delete ')
-    for r in $(git branch -r --list 'origin/claude/equipo-dev/[0-9]*' --merged origin/main --format='%(refname:short)'); do
+    for r in $(git branch -r --list 'origin/claude/equipo-dev/[0-9]*' --merged origin/dev --format='%(refname:short)'); do
         case " ${borrar#BORRAR: } " in *" ${r#origin/} "*) ;; *) det="$det ${r#origin/} falta en BORRAR;" ;; esac
     done
     nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
     [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
-    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO; do
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO RELEASE DEV_7D; do
         printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
     done
     printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"
     cierra tablero "$det"
 fi
+
+# 13. base: el equipo integra en dev y main es release (lo promueve el humano).
+# origin/main solo puede aparecer en la cadena (respaldo) y en la linea RELEASE;
+# un compare/main... solo en RELEASE; todo git fetch trae dev. Una rama de
+# trabajo creada desde main, un merge de main o un PR contra main caen aca.
+det=""
+for f in "$sk" "$ru" "$tu" "$es" $base/.claude/skills/equipo-dev/revision.md $base/.claude/skills/equipo-dev/plantilla-pr.md $base/.claude/skills/equipo-dev/arena.md $base/.claude/skills/equipo-dev/replica.md $base/.claude/skills/equipo-dev/skills.md "$bl/ESTADO.plantilla.md" "$bl/README.md"; do
+    [ -f "$f" ] || continue
+    m=$(grep -nE 'origin/main|compare/main\.\.\.' "$f" | grep -vF -- "$cadena" | grep -v 'RELEASE' | cut -d: -f1 | tr '\n' ',')
+    [ -z "$m" ] || det="$det ${f#$base/} nombra main fuera de la cadena y de RELEASE (lineas ${m%,});"
+    m=$(grep -nE 'git fetch( -q)? origin ' "$f" | grep -v 'origin dev' | cut -d: -f1 | tr '\n' ',')
+    [ -z "$m" ] || det="$det ${f#$base/} hace git fetch sin dev (lineas ${m%,});"
+done
+grep -qE 'abierto contra `dev`' "$sk" 2>/dev/null || det="$det SKILL.md: la puerta de merge no pide el PR contra dev;"
+cierra base "$det"
 
 if [ "$fallos" -gt 0 ]; then echo "PRUEBAS_FALLAN: $fallos"; exit 1; fi
 echo "PRUEBAS_OK ($n)"
