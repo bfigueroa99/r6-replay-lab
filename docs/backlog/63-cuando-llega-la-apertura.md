@@ -1,6 +1,6 @@
 # 63. Cuando llega la apertura
 
-estado: en curso 2026-10-27
+estado: implementado
 candado: -
 rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
