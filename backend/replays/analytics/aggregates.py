@@ -2455,6 +2455,94 @@ def death_timing(**filters) -> dict:
     return salida
 
 
+#: Cortes de cuando llega la primera baja de la ronda. 30 es el mismo tramo de
+#: "sales muy temprano" de `death_timing`; 90 es la mitad de los 180 s de accion.
+APERTURA_TEMPRANA = 30
+APERTURA_TARDIA = 90
+
+_TRAMOS_APERTURA = (
+    ("temprano", "Temprano (<30 s)"),
+    ("medio", "Medio (30–90 s)"),
+    ("tarde", "Tarde (90 s o más)"),
+    ("sin_bajas", "Sin bajas"),
+)
+
+
+def _tramo_apertura(elapsed: float | None) -> str:
+    if elapsed is None:
+        return "sin_bajas"
+    if elapsed < APERTURA_TEMPRANA:
+        return "temprano"
+    if elapsed < APERTURA_TARDIA:
+        return "medio"
+    return "tarde"
+
+
+def opening_timing(**filters) -> dict:
+    """En que segundo llega la primera baja de la ronda y como te va segun eso.
+
+    Las aperturas de hoy dicen quien gana el primer duelo; esto dice cuando
+    llega. La primera baja es la de menor `order`, la misma que marca
+    `opening_kill` en `metrics.py`, y "tuya" es de cualquiera de tu equipo para
+    que cuadre con Duelos de apertura.
+    """
+    filas = (
+        base_queryset(**filters)
+        .filter(round__my_team_won__isnull=False)
+        .annotate(
+            t_apertura=Subquery(
+                Event.objects.filter(
+                    kind__in=(Event.KILL, Event.DEATH), round_id=OuterRef("round_id")
+                )
+                .order_by("order")
+                .values("elapsed")[:1]
+            ),
+            apertura_mia=Exists(
+                RoundPlayer.objects.filter(
+                    round_id=OuterRef("round_id"),
+                    team_index=OuterRef("team_index"),
+                    opening_kill=True,
+                )
+            ),
+        )
+        .values("side", "t_apertura", "apertura_mia", "round__my_team_won")
+    )
+
+    cuentas = {
+        lado: {clave: Counter() for clave, _ in _TRAMOS_APERTURA}
+        for lado in ("Attack", "Defense")
+    }
+    for fila in filas:
+        if fila["side"] not in cuentas:
+            continue
+        tramo = _tramo_apertura(fila["t_apertura"])
+        cuenta = cuentas[fila["side"]][tramo]
+        cuenta["rounds"] += 1
+        cuenta["won"] += bool(fila["round__my_team_won"])
+        # sin bajas no hay primera baja que ganar, aunque alguien quede marcado
+        if tramo != "sin_bajas":
+            cuenta["opening_won"] += bool(fila["apertura_mia"])
+
+    salida = {}
+    for lado, clave_lado in (("Attack", "attack"), ("Defense", "defense")):
+        salida[clave_lado] = [
+            {
+                "key": clave,
+                "label": etiqueta,
+                "rounds": cuentas[lado][clave]["rounds"],
+                "won": cuentas[lado][clave]["won"],
+                "winrate": _pct(cuentas[lado][clave]["won"], cuentas[lado][clave]["rounds"]),
+                "opening_won": cuentas[lado][clave]["opening_won"],
+                # sin bajas no hay primera baja: un 0 % ahi se leeria como aperturas perdidas
+                "opening_won_pct": None
+                if clave == "sin_bajas"
+                else _pct(cuentas[lado][clave]["opening_won"], cuentas[lado][clave]["rounds"]),
+            }
+            for clave, etiqueta in _TRAMOS_APERTURA
+        ]
+    return salida
+
+
 # --------------------------------------------------------------------- jugador
 
 

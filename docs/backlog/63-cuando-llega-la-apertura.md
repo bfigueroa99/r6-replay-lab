@@ -1,7 +1,7 @@
 # 63. Cuando llega la apertura
 
-estado: en curso 2026-10-27
-candado: dev 2026-10-27T00:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/63-cuando-llega-la-apertura
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -140,3 +140,35 @@ trae `defense` con `rounds: 0` en las 4 filas.
 
 **Tramo siguiente (para ALCANCE.md, no se propone aca):** el mismo corte
 por mapa, si la muestra da.
+
+## Implementacion
+
+(dev 20261027T0004Z) Diseno completo, sin migracion y sin desvios de alcance.
+
+- `aggregates.py`: `APERTURA_TEMPRANA`/`APERTURA_TARDIA`, `_tramo_apertura` y
+  `opening_timing` debajo de `death_timing`, con la consulta del diseno
+  (Subquery del `elapsed` del primer `Kill`/`Death` por `order` + Exists de
+  `opening_kill` en tu `team_index`), plegada en Python. `views.trends` la
+  expone como `opening_timing`.
+- Desvio menor (de la revision ciega): en "Sin bajas" `opening_won` es 0 como
+  pide el diseno, pero `opening_won_pct` es `None` (la UI muestra `—`): un
+  `0 %` ahi se leia como aperturas perdidas. Documentado en `metricas.md`.
+- `test_deaths.py`: `AperturaPorTiempoTests`, los 8 tests del diseno con sus
+  nombres. El de "sin bajas" fuerza `opening_kill` sin evento para cubrir el
+  guard. La ronda sin ganador se arma poniendo `my_team_won = None` despues
+  del factory (como en `test_clutch.py`): el factory no acepta `won=None`.
+- `Trends.jsx`: panel "Cuándo llega la apertura" debajo de "Cuando mueres",
+  8 filas aplanadas con `orden`, CSV `apertura-por-tiempo`; se muestra si
+  alguna fila tiene rondas.
+- e2e `Tendencias muestra cuando llega la apertura`: 8 filas y dos filas
+  afirmadas con los numeros de `seed_demo` (Ataque tarde 66 / 100 % / 14 %;
+  Defensa medio 37 / 0 % / 0 %). En la demo no hay aperturas antes de 30 s ni
+  rondas sin bajas.
+- `check.sh`: Todo en verde (788 tests backend, 120 frontend, build, 50 e2e).
+
+## Para el humano
+
+- Los cortes 30/90 s no se calibraron con la base real; se mueven cambiando
+  `APERTURA_TEMPRANA` y `APERTURA_TARDIA` en `aggregates.py`.
+- Un evento sin reloj (`elapsed` 0.0) cae en "Temprano", igual que en
+  "Cuando mueres" y "Cuándo matas".
