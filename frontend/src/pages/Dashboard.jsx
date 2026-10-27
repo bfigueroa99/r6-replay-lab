@@ -245,7 +245,7 @@ function ResumenPartidas({ s }) {
       <Stat3
         label="Rondas por partida"
         value={fmt(s.rounds_per_match, 1)}
-        sub={`${s.rounds} rondas en ${s.matches} partidas`}
+        sub={`${s.rounds} rondas en ${s.matches} ${s.matches === 1 ? 'partida' : 'partidas'}`}
         value_={null}
       />
       <Stat3 label="Mejor mapa" value={s.best_map?.map ?? '—'} sub={subMapa(s.best_map)} value_={null} />

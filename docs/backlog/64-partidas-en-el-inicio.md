@@ -1,7 +1,7 @@
 # 64. Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa
 
-estado: en curso 2026-10-27
-candado: dev 2026-10-27T20:05Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/64-partidas-en-el-inicio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -162,6 +162,45 @@ nulos.
 
 **Calibrar con la base real:** `MIN_PARTIDAS_MAPA = 3` es bajo a proposito
 (un mapa por semana alcanza); con la base real puede convenir 5.
+
+## Implementacion
+
+(Dev 20261027T2005Z, sobre origin/dev 2532ed1.)
+
+Skills: no aplica (el Arquitecto ya lo descarto; nada fuera del repo).
+
+Quedo todo el diseno, sin desvios de alcance:
+
+- `aggregates.py`: `MIN_PARTIDAS_MAPA = 3` y `matches_summary(**filters)`
+  despues de `by_margin`. Una query de partidas ordenada por fecha (asi el
+  nombre del mapa queda el de la mas reciente) y un `count()` de rondas.
+- `views.py` (`overview`): clave `matches_summary`, puesta en la vista.
+- `Dashboard.jsx`: componente `ResumenPartidas`, una segunda fila `.kpis`
+  bajo la primera con "Partidas ganadas", "Rondas por partida", "Mejor mapa"
+  y "Peor mapa". Si el backend no trae la clave, no se pinta.
+- `test_resumen_partidas.py`: 12 tests (los 10 del diseno mas
+  `test_las_sin_resultado_no_llegan_a_la_muestra_del_mapa` y
+  `test_los_filtros_eligen_las_partidas`).
+- e2e `el Resumen muestra tus partidas` con los numeros de `seed_demo`
+  (29 de 29, 7.0, 203 rondas en 29 partidas, Bank 100 % en 10, peor "—").
+- `docs/metricas.md`: tres filas en `## Base` despues de "Rondas ganadas".
+
+Desvios menores:
+
+- El payload suma `min_matches_map` para que el texto "Ningún mapa con 3+
+  partidas" no repita la constante en el frontend.
+- "Rondas por partida" dice "1 partida" en singular (hallazgo de la revision
+  ciega).
+
+Revision ciega (subagente con `revision.md`): aprobar. Confirmo los numeros
+del e2e contra `seed_demo` y que `won` sirve antes de Y9S4 (sale de
+`teamscore`). Aviso no corregido: con `seed_demo` (todo ganado) el e2e no
+ejercita un peor mapa con valor ni "· N sin resultado"; los dos casos los
+cubren los tests de backend. Cambiar `seed_demo` moveria los numeros de
+otros e2e.
+
+Verificacion: `./scripts/check.sh` en `Todo en verde.` (800 tests backend,
+120 frontend, build, 51 e2e).
 
 ## Para el humano
 
