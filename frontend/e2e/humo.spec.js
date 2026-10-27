@@ -196,6 +196,23 @@ test('Tendencias muestra cuando matas', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra cuando llega la apertura', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Cuándo llega la apertura', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // 4 tramos x 2 lados, siempre todos; seed_demo gana todo el ataque y pierde toda la defensa
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(8)
+  await expect(filas.nth(2).locator('td')).toHaveText(['Ataque', 'Tarde (90 s o más)', '66', '100%', '14%'])
+  await expect(filas.nth(5).locator('td')).toHaveText(['Defensa', 'Medio (30–90 s)', '37', '0%', '0%'])
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra rondas cortas y largas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
