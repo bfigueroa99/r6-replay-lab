@@ -1,27 +1,29 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-28 04:30 UTC por qa (sesion 20261028T0404Z; motivo: por estado: 1 revisado; reloj: po, franja 1; siguio como release sobre la 64)
-playbook: origin/dev@2532ed1
-rutina: TURNOS_SIN_RASTRO=1 en 48 h (~10-26T04:17Z) | 7 de 41 en 7 dias
+actualizado: 2026-10-28 08:50 UTC por dev (sesion 20261028T0804Z; motivo: por estado: 2 disenado, lugar en cola; reloj: dev, franja 3)
+playbook: origin/dev@a0c6301
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 7 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia. La 64 entro a `dev` por el PR #59 (a0c6301).
+| rama | ficha | estado | horas | compare | PR |
+|---|---|---|---|---|---|
+| claude/equipo-dev/65-presencia-y-delta-por-operador | 65 | implementado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/65-presencia-y-delta-por-operador?expand=1 | no |
 
 RELEASE=dev lleva 10 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=1
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-Sin ramas abiertas. La 65 (`aggregates.py`) y la 66 (`humo.spec.js`) ya parten de un dev con la 64.
+Una sola rama: la 65, sobre dev a0c6301, merge limpio. La 66 cuando se reclame toca `humo.spec.js` como la 65 (bloques distintos).
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (56-mapas-y-operadores-que-mejoran 57-teamkills 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio) otros:0 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) en dev, O5 -> ficha 65 (disenado), O1 tramo siguiente. exportar: H4 -> ficha 66 (disenado), H7 la reusa. lado-y-marcador: saturada.
+- Epicas en curso: paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) en dev, O5 -> ficha 65 (implementado), O1 tramo siguiente. exportar: H4 -> ficha 66 (disenado), H7 la reusa. lado-y-marcador: saturada.
 - Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
 - `ALCANCE.md`: 68 ideas libres (R1 pasa a `en dev` en el proximo turno del PO). Ideas nuevas de este turno: ninguna.
 - Investigacion: ultima entrada 2026-10-24 (familia 8, Replica; paridad 76.1 / 100). Proxima: 3, 5 y 6.
@@ -33,17 +35,17 @@ Sin ramas abiertas. La 65 (`aggregates.py`) y la 66 (`humo.spec.js`) ya parten d
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
-| 65-presencia-y-delta-por-operador | disenado | funcionalidad | operadores | 3 | fullstack | - |
+| 65-presencia-y-delta-por-operador | en curso (rama manda: implementado) | funcionalidad | operadores | 3 | fullstack | - |
 | 66-copiar-resumen-de-partida | disenado | funcionalidad | exportar | 3 | frontend | - |
 
-0 `propuesto`, 2 `disenado` (65 y 66), cola vacia. Proximo turno: dev (regla 8).
+0 `propuesto`, 1 `disenado` (66), 65 `implementado`. Proximo turno: revisor (regla 3).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-28 04:28 | (mismo turno que la QA) Entrega y mergea la 64: `aprobado` -> `entregado` -> PR #59 -> dev a0c6301. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, dev 2532ed1 incluido, `check.sh` en `Todo en verde.` sobre el head 4cd808a (802 backend, 120 vitest, build, 51 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el clasificador de permisos nego `git push --delete`. |
-| dev | 2026-10-27 20:40 | Implementa 64 (`disenado` -> `implementado`, rama `claude/equipo-dev/64-partidas-en-el-inicio`, eb6ba9d): `matches_summary` en `/api/overview/` (partidas ganadas sobre decididas, rondas por partida, mejor y peor mapa con `MIN_PARTIDAS_MAPA = 3`), fila de cuatro KPI en el Inicio, 12 tests, e2e sobre `seed_demo`, tres filas en `metricas.md`. Revision ciega: aprobar; corregido el plural "1 partida". `check.sh` en `Todo en verde.` (800 backend, 120 vitest, build, 51 e2e). |
+| dev | 2026-10-28 08:50 | Implementa 65 (`disenado` -> `implementado`, rama `claude/equipo-dev/65-presencia-y-delta-por-operador`, 5356084): `presence_pct` y `winrate_delta` en `by_operator` (base del lado antes de `min_rounds`, delta nulo sin rondas con ganador), columnas "Presencia" y "vs. tu lado" en Operadores, 9 tests, e2e, dos filas en `metricas.md`. Revision ciega: aprobar; quitada una rama inalcanzable y su test duplicado. `check.sh` en `Todo en verde.` (811 backend, 120 vitest, build, 52 e2e). |
 | revisor | 2026-10-28 00:17 | Revisa 64 (funcionalidad, `implementado` -> `revisado`) sobre eb6ba9d, dev 2532ed1 sin moverse. `check.sh` en `Todo en verde.` (800 backend, 120 vitest, build, 51 e2e). Revision ciega: un hallazgo [test] confirmado por mutacion (`test_el_lado_no_parte_la_partida` sobrevivia a quitar el descarte de `side`); agregado `test_una_partida_sin_rondas_del_lado_filtrado_igual_cuenta` (801 backend en verde). Veredicto: aprobar. |
 | qa | 2026-10-28 04:15 | Prueba 64 (funcionalidad, `revisado` -> `aprobado`) sobre 1a24d91. `check.sh` en verde; `curl` a `/api/overview/` con base sembrada (12 partidas: sin resultado, empate, partida solo de ataque) y vacia, 15 filtros borde, todo 200 y numeros iguales a los calculados a mano; Chromium por mapa y a 390 px, consola limpia; bundle +0.5 %. Mutacion: sobrevivia `rounds_per_match` sobre decididas; agregado `test_las_sin_resultado_cuentan_en_rondas_por_partida` (802). |
 | arquitecto | 2026-10-27 16:11 | Disena 64 (`matches_summary` en la vista de `/api/overview/`: partidas elegidas sin `side` como `by_margin`, `match_winrate` sobre `won` no nulo, `rounds_per_match`, mejor y peor mapa por `map_slug` con `MIN_PARTIDAS_MAPA = 3`, peor solo si esta por debajo del mejor; fila de cuatro `Stat3` en el Inicio), 65 (`presence_pct` y `winrate_delta` en `by_operator`, base del lado antes de `min_rounds`, delta nulo sin rondas con `my_team_won`, sin banda de ruido; columnas "Presencia" y "vs. tu lado") y 66 (`resumenPartida.js` puro con el texto exacto de cinco lineas, boton "Copiar resumen" con `navigator.clipboard`, e2e con `grantPermissions`). Numeros del e2e calculados sobre `seed_demo`. Sin arena, sin migracion, sin pushes de codigo. |
