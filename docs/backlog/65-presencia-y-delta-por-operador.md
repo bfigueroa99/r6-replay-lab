@@ -1,7 +1,7 @@
 # 65. Presencia y delta de winrate por operador
 
-estado: implementado
-candado: revisor 2026-10-28T12:10Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/65-presencia-y-delta-por-operador
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O5 (replica/features.csv fila 26, must, clone partial; [r6tv](https://r6tv.online/how-it-works), [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays))
 archivos: backend/replays/analytics/aggregates.py, frontend/src/pages/Operators.jsx, backend/tests/test_operadores_presencia.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T0804Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T0804Z, revisor 20261028T1209Z
 
 ## PR
 
@@ -181,6 +181,52 @@ decididas; esa rama era inalcanzable (la fila es parte del lado) y se quito
 tras la revision ciega. El e2e no ejercita signo ni color del delta (en el
 seed todos dan 0); esa logica es de render y no tiene test propio. `test_export` no compara la cabecera de operadores entera,
 asi que no hubo que tocarlo.
+
+## Revision 2026-10-28 sobre 5356084
+
+(Revisor 20261028T1209Z.) Revision a ciegas por subagente con `revision.md`; cada
+hallazgo lo confirme reproduciendolo. `check.sh` en verde sobre la rama (dev
+ya incluido): 811 tests backend, 120 frontend, build ok, 52 e2e.
+
+Criterios: los cinco cubiertos. 1 y 2 por `test_presencia_y_delta_contra_el_lado`
+y `test_min_rounds_no_mueve_la_base` (con la correccion del Arquitecto: Thermite
+2 ganadas); 3 por `test_filtro_de_lado_recorta_la_base`,
+`test_fila_sin_rondas_decididas_no_tiene_delta` (sin el chequeo daria -41.7 y
+falla) y `test_base_vacia_devuelve_lista_vacia`; 4 por el e2e (columnas, Ash
+34 % y 0) y `test_el_export_de_operadores_trae_las_columnas` (el CSV del
+`DataTable` toma `row[col.key]` crudo); 5 por las dos filas de `metricas.md`.
+El diff no sale de `archivos:`. Sin tildes en identificadores, UI con tildes,
+sin `print` ni `console.log`, sin dependencias. El backend nunca manda `-0.0`
+(los dos operandos de `_delta` vienen redondeados a un decimal).
+
+Hallazgos (menores, no bloquean):
+
+- [bug] `frontend/src/pages/Operators.jsx:112` (`DeltaLado`)
+  Que pasa: el redondeo no es simetrico: `Math.round` sube los .5 hacia +inf.
+  Como reproducirlo: `winrate_delta = 0.5` se ve `+1` en verde; `-0.5` da
+  `Math.round(-0.5) || 0 = 0` neutro (confirmado con node).
+  Arreglo sugerido: `Math.sign(valor) * Math.round(Math.abs(valor)) || 0`.
+- [bug] `backend/replays/analytics/aggregates.py:520-522`
+  Que pasa: el delta resta dos porcentajes ya redondeados y puede quedar 0.1
+  corrido en la API y el CSV.
+  Como reproducirlo: fila 1 de 6 (16.7) contra base 1 de 3 (33.3) da -16.6; el
+  exacto es -16.67 -> -16.7 (confirmado). Mismo patron que el `_delta` que ya
+  usa el resto de `aggregates.py`, por eso no bloquea.
+  Arreglo sugerido: `round((won_fila / rondas_fila - won_lado / rondas_lado) * 100, 1)`
+  con los conteos crudos.
+- [formato] `docs/metricas.md:249-250`
+  Que pasa: dice "todas tus rondas de ese lado", pero la base sale de
+  `qs.exclude(operator="")`: una ronda sin operador parseado no entra, y
+  "vs. tu lado" puede no coincidir con el winrate del lado en el Resumen.
+  Arreglo sugerido: "tus rondas de ese lado con operador conocido".
+- [test] `frontend/e2e/humo.spec.js:89-93`
+  Que pasa: con `seed_demo` todos los deltas dan 0, asi que nada ejercita el
+  `+`, `chip win`/`chip loss` ni el guion de `null` (el Dev ya lo anoto).
+  Arreglo sugerido: test de vitest sobre la logica de `DeltaLado` con 0.5,
+  -0.5, -0.4 y null (sin tocar `seed_demo`).
+
+Veredicto: aprobar -> `revisado`. Los cuatro caben en un solo commit chico si
+QA o el Release quieren pedirlo; si no, quedan anotados.
 
 ## Para el humano
 
