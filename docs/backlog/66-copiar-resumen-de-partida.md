@@ -1,7 +1,7 @@
 # 66. Copiar el resumen de una partida como texto
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-28 16:46 UTC
 rama: claude/equipo-dev/66-copiar-resumen-de-partida
 tipo: funcionalidad
 epica: exportar
