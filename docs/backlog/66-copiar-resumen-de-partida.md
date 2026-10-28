@@ -1,14 +1,14 @@
 # 66. Copiar el resumen de una partida como texto
 
-estado: en curso 2026-10-28
-candado: dev 2026-10-28 16:10Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/66-copiar-resumen-de-partida
 tipo: funcionalidad
 epica: exportar
 area: frontend
 prioridad: 3
 fuente: ALCANCE.md H4
-archivos: frontend/src/resumenPartida.js, frontend/src/resumenPartida.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js
+archivos: frontend/src/resumenPartida.js, frontend/src/resumenPartida.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
 turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T1607Z
 
 ## PR
@@ -144,6 +144,45 @@ localhost); no se verifica en la nube.
 **Verificacion manual:** abrir una partida, apretar el boton, pegar en un
 editor: cinco lineas, sin `<` ni `*` agregados. En Firefox con permisos
 bloqueados: aparece el aviso, no hay error en la consola.
+
+## Implementacion
+
+(Dev 20261028T1607Z.) Skills: no aplica (lo resolvio el diseno; funcion pura
+como `rachas.js`). Sin arena.
+
+Que quedo, por criterio:
+
+- Funcion pura `textoResumenPartida(data)` en `frontend/src/resumenPartida.js`
+  con el texto exacto del diseno. Tests en `resumenPartida.test.js`: `arma las
+  cinco lineas con mapa, marcador y resultado primero`.
+- Casos borde: `una partida sin bajas tuyas no tiene mejor ronda`, `un lado
+  sin rondas no aparece en la linea de rondas ganadas`, `una partida
+  incompleta lo dice en la primera linea`, `el nick sale tal cual, sin escapar
+  ni formatear`, `sin rondas ni fila tuya no rompe`, `un K/D nulo se escribe
+  con raya`, `el empate de bajas elige la primera ronda`, mas `una ronda de una
+  sola baja usa el singular` y `una ronda sin ganador conocido no cuenta en
+  las rondas ganadas`.
+- Boton "Copiar resumen" en la cabecera de `MatchDetail.jsx`, al lado de
+  "Volver"; avisa `Copiado` o `No se pudo copiar: el navegador no dio acceso
+  al portapapeles.`; sin `console.*`.
+- e2e `el detalle de partida copia el resumen` (`humo.spec.js`):
+  `grantPermissions` alcanzo en el Chromium headless, no hizo falta el
+  `addInitScript` alternativo.
+- Ninguna request nueva: sale del payload de `/api/matches/<id>/`.
+
+Desvios del diseno (de la revision ciega previa):
+
+- Las rondas con `my_team_won` nulo (ganador desconocido) no cuentan en
+  `n de m`; el diseno decia `m` = todas las rondas del lado, lo que en una
+  partida con `.rec` cortado contaba esa ronda como perdida y contradecia el
+  marcador. Coincide con como `metricas.md` trata esas rondas en los lados.
+- Fila nueva `## Copiar resumen de la partida` en `docs/metricas.md` (el
+  diseno decia que no hacia falta): "Rondas ganadas por lado" y "Mejor ronda"
+  son numeros propios del texto, y la regla de `CLAUDE.md` pide su definicion.
+- El aviso va a la izquierda del boton (el diseno decia "al lado"), para que
+  "Volver" quede siempre en el borde.
+
+Verificacion: `./scripts/check.sh` en `Todo en verde.`.
 
 ## Para el humano
 

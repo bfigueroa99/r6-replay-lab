@@ -35,7 +35,8 @@ function lineaRondasGanadas(rondas) {
     ['Attack', 'ataque'],
     ['Defense', 'defensa'],
   ]) {
-    const delLado = rondas.filter((r) => r.my_side === lado)
+    // Una ronda sin ganador conocido (.rec cortado) no es ni ganada ni perdida
+    const delLado = rondas.filter((r) => r.my_side === lado && r.my_team_won !== null && r.my_team_won !== undefined)
     if (!delLado.length) continue
     const ganadas = delLado.filter((r) => r.my_team_won === true).length
     partes.push(`${nombre} ${ganadas} de ${delLado.length}`)

@@ -82,6 +82,13 @@ describe('textoResumenPartida', () => {
     expect(texto).not.toContain('defensa')
   })
 
+  it('una ronda sin ganador conocido no cuenta en las rondas ganadas', () => {
+    const datos = payload({
+      rounds: [ronda(0, 'Attack', true, 1), ronda(1, 'Attack', false, 0), ronda(2, 'Attack', null, 0)],
+    })
+    expect(textoResumenPartida(datos)).toContain('Rondas ganadas: ataque 1 de 2')
+  })
+
   it('una partida incompleta lo dice en la primera linea', () => {
     const datos = payload()
     datos.match.result = 'incompleta'
