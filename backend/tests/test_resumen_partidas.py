@@ -104,6 +104,12 @@ class ResumenPartidasTests(TestCase):
         _partida(index=1, ganada=False, rondas=9)
         self.assertEqual(agg.matches_summary(side="Defense"), agg.matches_summary())
 
+    def test_una_partida_sin_rondas_del_lado_filtrado_igual_cuenta(self):
+        _partida(index=0, rondas=7)
+        _partida(index=1, rondas=1)  # solo una ronda de ataque
+        datos = agg.matches_summary(side="Defense")
+        self.assertEqual((datos["matches"], datos["rounds"]), (2, 8))
+
     def test_los_filtros_eligen_las_partidas(self):
         for i in range(3):
             _partida(index=i, map_name="Bank")

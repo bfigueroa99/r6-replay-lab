@@ -1,7 +1,7 @@
 # 64. Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa
 
-estado: implementado
-candado: revisor 2026-10-28T00:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/64-partidas-en-el-inicio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md R1 (replica/features.csv fila 11, must, clone partial; [aurelix](https://aurelix.app/))
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Dashboard.jsx, backend/tests/test_resumen_partidas.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261027T2005Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261027T2005Z, revisor 20261028T0004Z
 
 ## PR
 
@@ -201,6 +201,39 @@ otros e2e.
 
 Verificacion: `./scripts/check.sh` en `Todo en verde.` (800 tests backend,
 120 frontend, build, 51 e2e).
+
+## Revision 2026-10-28 sobre 19b6759
+
+(Revisor 20261028T0004Z, sobre origin/dev 2532ed1; dev no se movio.)
+
+Revision ciega (subagente con `revision.md`): un hallazgo, confirmado por
+mutacion y corregido con un test (el Revisor puede empujar tests que pasan):
+
+- [test] `test_el_lado_no_parte_la_partida` pasaba igual sin la linea que saca
+  `side` de los filtros en `matches_summary` (`aggregates.py:924`): las dos
+  partidas del fixture tienen rondas de defensa. Agregado
+  `test_una_partida_sin_rondas_del_lado_filtrado_igual_cuenta` (una partida
+  de una sola ronda de ataque; con `side="Defense"` sigue en `matches` y en
+  `rounds`). Con la mutacion `filtros = dict(filters)` cae solo el test nuevo.
+
+Criterios: los seis cubiertos. Ganadas/decididas 75 % con `won=None` aparte
+(`test_partidas_ganadas_sobre_decididas`); 8.0 rondas por partida
+(`test_rondas_por_partida`); mejor y peor mapa, muestra minima, un solo mapa,
+empate (`test_mejor_y_peor_mapa`, `test_mapa_bajo_la_muestra_no_cuenta`,
+`test_un_solo_mapa_no_es_mejor_y_peor`, `test_mapas_empatados_no_tienen_peor`);
+base vacia y filtro sin partidas por la API (`test_base_vacia_y_filtro_sin_partidas`);
+fila en el Inicio y e2e `el Resumen muestra tus partidas`; tres filas en
+`docs/metricas.md` con la muestra de 3.
+
+Reglas: el diff no sale de `archivos:`; sin dependencias ni escrituras
+nuevas; identificadores sin tildes, UI con tildes; sin `print` ni
+`console.log`. Mapas desconocidos no se mezclan (slug `unknown-<id>`).
+
+Verificacion: `./scripts/check.sh` en `Todo en verde.` sobre 19b6759 (800 tests
+backend, 120 frontend, build, 51 e2e) y suite backend con el test nuevo en
+verde (801).
+
+Veredicto: aprobar.
 
 ## Para el humano
 
