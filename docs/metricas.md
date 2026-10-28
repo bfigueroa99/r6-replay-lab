@@ -272,6 +272,20 @@ si no existe simplemente no aparece. Lo que puede decir:
 
 No se guarda en la base: es texto derivado y cambia si cambian las metricas.
 
+## Copiar resumen de la partida
+
+El boton **Copiar resumen** del detalle de partida copia al portapapeles un
+texto plano armado con los numeros que la pagina ya muestra (marcador,
+resultado y tu linea de Bajas, Muertes, K/D, HS%, Duelos de apertura y KST de
+la partida). Suma dos numeros propios; una linea sin datos no sale:
+
+| Linea | Definicion |
+|---|---|
+| **Rondas ganadas: ataque n de m · defensa n de m** | Por lado, `m` = rondas de la partida en que jugaste ese lado con ganador conocido y `n` = las que gano tu equipo. Una ronda sin ganador (`.rec` cortado) no cuenta en ninguno de los dos. Un lado sin rondas no aparece. |
+| **Mejor ronda** | La ronda con mas bajas tuyas (las de la columna Bajas, teamkills incluidos); en empate, la primera. No sale si no hiciste ninguna baja. El nick es el de tu fila en la ultima ronda de la partida. |
+
+No se guarda ni sale a la red: es el portapapeles del navegador.
+
 ## Sobre la granularidad espacial
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de

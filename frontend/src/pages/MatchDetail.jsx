@@ -15,11 +15,13 @@ import {
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
 import { textoDeRachas } from '../rachas.js'
+import { textoResumenPartida } from '../resumenPartida.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
   const { data, error, loading } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
+  const [copia, setCopia] = useState(null)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -28,6 +30,20 @@ export default function MatchDetail() {
   const { match, rounds, scoreboard, my_totals: mine } = data
   const rachas = textoDeRachas(data.round_streaks)
   const round = rounds[Math.min(selected, rounds.length - 1)]
+
+  async function copiarResumen() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia('error')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(textoResumenPartida(data))
+      setCopia('ok')
+    } catch {
+      setCopia('error')
+    }
+  }
 
   return (
     <>
@@ -43,9 +59,19 @@ export default function MatchDetail() {
           </p>
           {rachas && <p className="note">{rachas}</p>}
         </div>
-        <Link className="btn small" to="/partidas">
-          Volver
-        </Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {copia && (
+            <span className="note">
+              {copia === 'ok' ? 'Copiado' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+            </span>
+          )}
+          <button type="button" className="btn small" onClick={copiarResumen}>
+            Copiar resumen
+          </button>
+          <Link className="btn small" to="/partidas">
+            Volver
+          </Link>
+        </div>
       </div>
 
       {match.warnings?.length ? (

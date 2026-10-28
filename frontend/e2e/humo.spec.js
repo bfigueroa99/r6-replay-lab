@@ -387,6 +387,22 @@ test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el detalle de partida copia el resumen', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const respuesta = await page.request.get('/api/matches/?limit=200')
+  const { matches } = await respuesta.json()
+  const partida = matches[0]
+  await page.goto(`/partidas/${partida.id}`)
+
+  await page.getByRole('button', { name: 'Copiar resumen' }).click()
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
+  const texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith(`${partida.map} · ${partida.score} · `)).toBe(true)
+
+  expect(errores).toEqual([])
+})
+
 test('el Resumen muestra tus multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/')
