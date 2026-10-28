@@ -3,8 +3,8 @@
 Desde el item 30, el backlog vive aca y no en `docs/roadmap.md` (que queda
 como historia de los items 1 a 19). Cada item es **una ficha**,
 `docs/backlog/NN-slug.md`, copiada de `PLANTILLA.md`. La ficha viaja en la
-misma rama que su codigo y se mergea con el: en `main` solo hay fichas de
-items terminados.
+misma rama que su codigo y se mergea con el: en `dev` (y en `main`, cuando
+lo promovés) solo hay fichas de items terminados.
 
 ## Dos lugares
 
@@ -23,7 +23,7 @@ items terminados.
 `propuesto` -> `disenado` -> `en curso <fecha>` -> `implementado` ->
 `revisado` | `con hallazgos` -> `aprobado` | `con hallazgos` -> `entregado`.
 Lateral: `descartado (<motivo>)`. "Hecho" no lo escribe nadie: hecho es que
-la ficha esta en `main`.
+la ficha esta en `dev`.
 
 ## El tablero
 
@@ -34,9 +34,16 @@ sugerido, ramas borrables con el comando listo, preguntas para el humano.
 
 ## Quien mergea
 
-El **release manager** mergea por PR lo que paso dev, revision y QA en tres
-sesiones distintas, con `check.sh` en verde sobre la rama ya fusionada con
-`main`, sin pedidos tuyos sin responder y sin veto. Despues borra esa rama.
+El **release manager** mergea en `dev`, por PR, lo que paso dev, revision y
+QA en tres sesiones distintas, con `check.sh` en verde sobre la rama ya
+fusionada con `dev`, sin pedidos tuyos sin responder y sin veto. Despues borra
+esa rama.
+
+`main` es la release: solo recibe `dev` cuando vos lo promovés (un PR `dev` ->
+`main` con commit de merge; `scripts/release.ps1` publica desde `main`). El
+equipo nunca abre PR contra `main`, ni mergea ni empuja ahi; `ESTADO.md` te
+deja en `## Para el humano` la linea `RELEASE` de `estado.sh`: cuantos commits
+lleva `dev` sin promover y el link para hacerlo.
 
 Lo mergeas vos cuando el cambio toca lo que la nube no puede verificar o las
 reglas del propio equipo: `frontend/electron/`, `packaging/`, `scripts/*.ps1`,
@@ -45,8 +52,9 @@ plantillas de esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge
 aparecen en `ESTADO.md` con el motivo. Da igual merge, squash o rebase: el
 equipo detecta los tres. Borra la rama al mergear.
 
-Las reglas del equipo (playbook) viven en `main` cuando las mergeas; mientras
-tanto, en la rama `claude/equipo-dev/playbook`, que es la que lee la rutina.
+Las reglas del equipo (playbook) viven en `dev` cuando las mergeas, que es de
+donde las lee la rutina; `main` y la rama `claude/equipo-dev/playbook` quedan
+de respaldo.
 Nadie del equipo empuja ahi: la mueven tu merge o una sesion que vos inicies.
 Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
 
@@ -61,7 +69,7 @@ turno; tests y deuda sueltos solo entran con 3 funcionalidades esperando; los
 bugs reales entran siempre.
 
 `ALCANCE.md` es el mapa: epicas por tema, cada idea con que gana el usuario,
-que datos del `.rec` usa, tamano y estado (`idea`, `ficha NN`, `en main`,
+que datos del `.rec` usa, tamano y estado (`idea`, `ficha NN`, `en dev`,
 `PR #n`, `no`). Lo hace crecer el product owner en cada turno con lo que ve
 adentro del repo, y el **investigador** (cuando el estado lo pide; por
 reloj, la franja 7 de los dias pares) con lo que trae de afuera: parsers abiertos del `.rec` (primero
@@ -81,7 +89,7 @@ Aurelix**, y el procedimiento completo esta en
 `.claude/skills/equipo-dev/replica.md`. Las semillas de
 los dos archivos estan en `docs/backlog/` del playbook y se copian a
 `backlog` la primera vez. `ESTADO.md` muestra en `## Alcance` cuantas funcionalidades llegaron a
-`main` en la ultima semana y, si fueron cero, por que.
+`dev` en la ultima semana y, si fueron cero, por que.
 
 ## Lo que hace el humano
 
@@ -111,7 +119,7 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
   worktree al lado del repo (`../r6-replay-lab-equipo`, o
   `EQUIPO_OPENCODE_DIR`), le pone el entorno que pide `estado.sh` (venv,
   `frontend/node_modules`, Chromium) y corre
-  `opencode run --command equipo-dev --auto` con la rutina de `origin/main`.
+  `opencode run --command equipo-dev --auto` con la rutina de `origin/dev`.
   Hace falta OpenCode 1.19 o mas nuevo (`npm i -g opencode-ai`), OmniRoute
   (`npm i -g omniroute` y `omniroute`, con un proveedor conectado en
   http://localhost:20128) y `gh auth login`: ahi `gh` es la herramienta de

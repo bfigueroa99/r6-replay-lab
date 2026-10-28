@@ -15,7 +15,7 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
@@ -49,6 +49,55 @@ function Delta({ metric }) {
   if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
   if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
   return <span className="chip">{texto}</span>
+}
+
+/** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
+function TablaDeCambio({ filas, columna, minRows, csvName }) {
+  if (!filas?.length) {
+    return <p className="dim">Sin muestra en los dos periodos ({minRows}+ rondas en cada uno).</p>
+  }
+  const rows = filas.map((row) => ({ ...row, key: row.slug ?? `${row.operator}-${row.side}` }))
+  return (
+    <DataTable
+      columns={[
+        columnaDeNombre(columna),
+        { key: 'previous_rounds', label: 'Rondas antes' },
+        { key: 'current_rounds', label: 'Rondas ahora' },
+        { key: 'previous_winrate', label: 'Ganadas antes', digits: 0, suffix: '%' },
+        { key: 'current_winrate', label: 'Ganadas ahora', digits: 0, suffix: '%' },
+        { key: 'delta', label: 'Cambio', render: (row) => <Delta metric={row} />, csv: (row) => row.delta },
+        {
+          key: 'noise',
+          label: 'Ruido',
+          help: 'La misma banda de la tabla de arriba, con las rondas de esta fila.',
+          render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
+          csv: (row) => row.noise,
+          dim: true,
+        },
+        { key: 'previous_rating', label: 'Rating antes', digits: 2 },
+        { key: 'current_rating', label: 'Rating ahora', digits: 2 },
+      ]}
+      rows={rows}
+      initialSort={{ key: 'delta', dir: 'desc' }}
+      rowKey={(row) => row.key}
+      csvName={csvName}
+    />
+  )
+}
+
+function columnaDeNombre(columna) {
+  if (columna === 'Mapa') return { key: 'map', label: 'Mapa', left: true }
+  return {
+    key: 'operator',
+    label: 'Operador',
+    left: true,
+    render: (row) => (
+      <>
+        {row.operator} <SideChip side={row.side} />
+      </>
+    ),
+    csv: (row) => `${row.operator} (${row.side})`,
+  }
 }
 
 const MITADES = { first: 'Primera mitad', second: 'Segunda mitad', overtime: 'Prórroga' }
@@ -226,8 +275,16 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const duracion = data.by_round_length
   const porHora = data.by_hour ?? []
   const porDia = data.by_weekday ?? []
+  const matas = data.kills_by_time || []
   const muertes = data.deaths_by_time || []
   const timing = data.death_timing
+  // Ataque y despues defensa, cada uno en el orden de tramos del backend: `orden` lo fija al ordenar
+  const apertura = data.opening_timing
+    ? [
+        ...data.opening_timing.attack.map((f) => ({ ...f, side: 'Attack' })),
+        ...data.opening_timing.defense.map((f) => ({ ...f, side: 'Defense' })),
+      ].map((f, orden) => ({ ...f, orden }))
+    : []
   const porPosicion = sesiones.data?.by_position || []
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
@@ -299,6 +356,22 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'label', dir: 'asc' }}
             rowKey={(row) => row.key}
             csvName="progreso"
+          />
+
+          <h3>Mapas</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_map}
+            columna="Mapa"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-mapas"
+          />
+
+          <h3>Operadores</h3>
+          <TablaDeCambio
+            filas={progreso.data.by_operator}
+            columna="Operador"
+            minRows={progreso.data.min_rows}
+            csvName="progreso-operadores"
           />
         </Panel>
       ) : null}
@@ -414,6 +487,45 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </Panel>
       ) : null}
 
+      {matas.length ? (
+        <Panel
+          title="Cuándo matas"
+          hint={
+            'En qué momento de la fase de acción sacas tus bajas a rivales. Si se juntan al ' +
+            'principio tu impacto está en la apertura; si están al final, en el cierre. Los ' +
+            'segundos son de fase de acción, no del reloj de la ronda.'
+          }
+        >
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart data={matas} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
+                <CartesianGrid stroke="#263041" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" {...AXIS} />
+                <YAxis {...AXIS} />
+                <Tooltip {...TOOLTIP} formatter={(v, n) => [fmt(v, 0), n]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <RBar dataKey="attack" name="Ataque" stackId="lado" fill="#ff8a3d" radius={[0, 0, 0, 0]} />
+                <RBar dataKey="defense" name="Defensa" stackId="lado" fill="#4aa8ff" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Tramo', sortable: false, left: true },
+              { key: 'kills', label: 'Bajas' },
+              { key: 'pct', label: 'Del total', digits: 0, suffix: '%' },
+              { key: 'attack', label: 'Ataque' },
+              { key: 'defense', label: 'Defensa' },
+            ]}
+            rows={matas}
+            initialSort={{ key: 'start', dir: 'asc' }}
+            rowKey={(row) => row.start}
+            csvName="cuando-matas"
+          />
+        </Panel>
+      ) : null}
+
       {muertes.length ? (
         <Panel
           title="Cuando mueres"
@@ -482,6 +594,37 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             initialSort={{ key: 'start', dir: 'asc' }}
             rowKey={(row) => row.start}
             csvName="cuando-mueres"
+          />
+        </Panel>
+      ) : null}
+
+      {apertura.some((f) => f.rounds > 0) ? (
+        <Panel
+          title="Cuándo llega la apertura"
+          hint={
+            'Segundo de la fase de acción en que cae la primera baja de la ronda, sea de quien sea. ' +
+            'Si en defensa pierdes las que llegan temprano, te abren de entrada; si en ataque las ' +
+            'tardías te cuestan, tardas en forzar el primer duelo.'
+          }
+        >
+          <DataTable
+            columns={[
+              { key: 'side', label: 'Lado', left: true, sortable: false, render: (row) => <SideChip side={row.side} /> },
+              { key: 'label', label: 'Tramo', left: true, sortable: false },
+              { key: 'rounds', label: 'Rondas' },
+              { key: 'winrate', label: 'Winrate', digits: 0, suffix: '%' },
+              {
+                key: 'opening_won_pct',
+                label: 'Primera baja tuya',
+                digits: 0,
+                suffix: '%',
+                help: 'De esas rondas, en cuántas la primera baja la hizo tu equipo.',
+              },
+            ]}
+            rows={apertura}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => `${row.side}-${row.key}`}
+            csvName="apertura-por-tiempo"
           />
         </Panel>
       ) : null}

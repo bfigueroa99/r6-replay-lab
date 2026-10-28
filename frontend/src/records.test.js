@@ -15,6 +15,7 @@ const partida = (extra) => ({
 const RECORDS = {
   best_day: { day: '2026-09-02', value: 75, rounds: 20, rounds_won: 15 },
   biggest_clutch: { ...partida({ value: 3, round_label: 'R4' }), rounds: undefined },
+  longest_round_streak: { ...partida({ value: 5, round_label: 'R3' }), rounds: undefined },
   most_kills_round: { ...partida({ value: 4, round_label: 'R2' }), rounds: undefined },
   most_kills_match: partida({ value: 1 }),
   best_match_rating: partida({ value: 1.625 }),
@@ -27,6 +28,7 @@ describe('filasDeRecords', () => {
       'most_kills_match',
       'most_kills_round',
       'biggest_clutch',
+      'longest_round_streak',
       'best_day',
     ])
   })
@@ -34,7 +36,7 @@ describe('filasDeRecords', () => {
   it('deja afuera los records nulos y aguanta una respuesta sin records', () => {
     const filas = filasDeRecords({ ...RECORDS, biggest_clutch: null, best_day: null })
     expect(filas.map((f) => f.clave)).not.toContain('biggest_clutch')
-    expect(filas).toHaveLength(3)
+    expect(filas).toHaveLength(4)
     expect(filasDeRecords(undefined)).toEqual([])
   })
 
@@ -51,13 +53,20 @@ describe('filasDeRecords', () => {
       most_kills_match: '1 baja',
       most_kills_round: '4 bajas',
       biggest_clutch: '1v3',
+      longest_round_streak: '5 rondas ganadas seguidas',
       best_day: '75 % de rondas ganadas',
     })
+  })
+
+  it('una racha de una sola ronda va en singular', () => {
+    const filas = filasDeRecords({ longest_round_streak: partida({ value: 1, round_label: 'R1' }) })
+    expect(filas[0].valor).toBe('1 ronda ganada')
   })
 
   it('el detalle dice la ronda, el mapa y la fecha', () => {
     const filas = Object.fromEntries(filasDeRecords(RECORDS).map((f) => [f.clave, f.detalle]))
     expect(filas.most_kills_round).toBe('ronda R2 · Oregon · 2026-09-02')
+    expect(filas.longest_round_streak).toBe('desde R3 · Oregon · 2026-09-02')
     expect(filas.most_kills_match).toBe('Oregon · 2026-09-02 · 9 rondas')
     expect(filas.best_day).toBe('2026-09-02 · 15 de 20 rondas')
   })

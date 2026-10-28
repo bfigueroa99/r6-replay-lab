@@ -177,6 +177,8 @@ def overview(request: HttpRequest) -> JsonResponse:
     payload["data_health"] = agg.data_health(**filters)
     # va en la vista y no en agg.overview: el coach la llama y no usa records
     payload["records"] = agg.personal_records(**filters)
+    # tambien en la vista: el coach llama a agg.overview y no usa el resumen
+    payload["matches_summary"] = agg.matches_summary(**filters)
     payload["filters"] = {k: str(v) for k, v in filters.items()}
     return _ok(payload)
 
@@ -239,7 +241,9 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
+            "kills_by_time": agg.kills_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
+            "opening_timing": agg.opening_timing(**filters),
         }
     )
 
@@ -252,8 +256,11 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "synergy": agg.teammate_synergy(min_rounds=_min_rounds(request, 10), **filters),
             "clutches": agg.clutch_detail(**filters),
             "clutch_conversion": agg.clutch_conversion(**filters),
+            "clutch_by_site": agg.clutch_by_site(**filters),
+            "clutch_by_operator": agg.clutch_by_operator(**filters),
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
+            "teamkills": agg.teamkills(**filters),
         }
     )
 
@@ -307,7 +314,14 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rounds = _int_param(
         request, "min_rounds", agg.COMPARE_MIN_ROUNDS, minimum=1, maximum=10_000
     )
-    return _ok(agg.compare_periods(by=by, n=n, min_rounds=min_rounds, **_filters(request)))
+    min_rows = _int_param(
+        request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
+    )
+    return _ok(
+        agg.compare_periods(
+            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+        )
+    )
 
 
 @require_GET
@@ -487,6 +501,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         datos["summary"] = describe_round(datos)
         rounds.append(datos)
 
+    rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
 
@@ -510,10 +525,17 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "warnings": match.warnings,
             },
             "rounds": rounds,
+            "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
             "my_totals": my_totals,
         }
     )
+
+
+def _racha_con_etiqueta(racha: dict | None) -> dict | None:
+    if racha is None:
+        return None
+    return {"length": racha["length"], "from_round_label": f"R{racha['from_number'] + 1}"}
 
 
 def _match_scoreboard(match: Match) -> list[dict]:

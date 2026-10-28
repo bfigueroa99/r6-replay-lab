@@ -1,9 +1,9 @@
 ---
 description: Un turno del equipo de desarrollo autonomo, como la rutina de Claude Code pero en OpenCode (lo lanza scripts/equipo-dev/opencode.sh)
 ---
-La rutina del equipo, tal cual esta en `origin/main` (la misma que dispara Claude Code):
+La rutina del equipo, tal cual esta en `origin/dev` (la misma que dispara Claude Code; `main` y la rama playbook son su respaldo, en el mismo orden que la rutina):
 
-!`git show origin/main:.claude/skills/equipo-dev/rutina.md 2>/dev/null || git show origin/claude/equipo-dev/playbook:.claude/skills/equipo-dev/rutina.md`
+!`git show origin/dev:.claude/skills/equipo-dev/rutina.md 2>/dev/null || git show origin/main:.claude/skills/equipo-dev/rutina.md 2>/dev/null || git show origin/claude/equipo-dev/playbook:.claude/skills/equipo-dev/rutina.md`
 
 Mensaje de este disparo: $ARGUMENTS
 
@@ -11,7 +11,7 @@ Corres en OpenCode (lo lanza `scripts/equipo-dev/opencode.sh`, normalmente con u
 
 - **Arranque**: ya estas en el worktree del equipo (`git rev-parse --show-toplevel`). Si en esta maquina existe `/home/user/r6-replay-lab` y no es este worktree, salta ese `cd` del arranque y quedate aca.
 - **GitHub**: aca `gh` si tiene credenciales (las del humano; `gh auth status`) y es la herramienta de GitHub. Donde el playbook dice "con herramientas" o nombra `mcp__github__*`:
-  - abrir el PR: `gh pr create --base main --head <rama> --title "<titulo>" --body-file <archivo>`
+  - abrir el PR: `gh pr create --base dev --head <rama> --title "<titulo>" --body-file <archivo>`
   - merge del Release (solo con la puerta de merge): `gh pr merge <n> --merge --subject "<titulo del PR>" --body-file <archivo con ## Que cambia>`; nunca `--squash`, `--rebase`, `--admin` ni `--auto`
   - review del Revisor: `gh pr review <n> --comment --body-file <archivo>`; nunca `--approve` ni `--request-changes`
   - comentarios: `gh pr view <n> --comments` y `gh api repos/bfigueroa99/r6-replay-lab/pulls/<n>/comments`

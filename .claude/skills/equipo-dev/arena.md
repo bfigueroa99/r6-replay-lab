@@ -56,7 +56,7 @@ y en el nombre de la carpeta del run.
 ## Donde corre
 
 - **Dev**: en su propio checkout, la rama de trabajo, que sale de
-  `origin/main` y trae la skill y el `.gitignore` con `.arena/`. Si la rama es
+  `origin/dev` y trae la skill y el `.gitignore` con `.arena/`. Si la rama es
   anterior a la skill (no existe `.claude/skills/arena/`), no hay arena.
 - **Arquitecto**: en un worktree de `$EQUIPO_REF`, el codigo contra el que
   disena, nunca en el checkout de `backlog`, que no trae la skill ni ignora

@@ -10,7 +10,8 @@
 # de trabajo del humano eso pisaria lo suyo. Es persistente (EQUIPO_OPENCODE_DIR, por
 # defecto al lado del repo con -equipo) para no rearmar el entorno en cada turno: .venv
 # y frontend/node_modules quedan, y se reinstalan solo si cambian sus requirements o su
-# package-lock. Todo lo demas vuelve a origin/main antes del turno, como en una sesion nueva.
+# package-lock. Todo lo demas vuelve a origin/dev (la base de integracion del equipo) antes
+# del turno, como en una sesion nueva.
 #
 # El modelo es EQUIPO_OPENCODE_MODEL, por defecto omniroute/${OMNIROUTE_MODEL:-auto} (el
 # combo automatico de OmniRoute); opencode_proveedor.py le da a OpenCode ese proveedor
@@ -46,7 +47,7 @@ if ! command -v "$opencode" >/dev/null 2>&1; then
     exit 1
 fi
 if [ "$plan" = si ]; then
-    echo "Correria, en el worktree $dir (origin/main):"
+    echo "Correria, en el worktree $dir (origin/dev):"
     echo "  $opencode run --command equipo-dev -m $modelo --auto${rol:+ rol: $rol}"
     echo "autor OpenCode | techo $(( techo / 60 )) min"
     exit 0
@@ -65,14 +66,14 @@ fi
 echo $$ > "$candado/pid"
 trap 'rm -rf "$candado"' EXIT
 
-if ! git -C "$repo" fetch -q origin main '+refs/heads/claude/*:refs/remotes/origin/claude/*'; then
+if ! git -C "$repo" fetch -q origin dev main '+refs/heads/claude/*:refs/remotes/origin/claude/*'; then
     echo "FALLA: sin acceso a origin" >&2
     exit 1
 fi
 if [ ! -d "$dir" ]; then
     git -C "$repo" worktree prune
     echo "=> worktree nuevo en $dir"
-    git -C "$repo" worktree add -q --detach "$dir" origin/main || exit 1
+    git -C "$repo" worktree add -q --detach "$dir" origin/dev || exit 1
 else
     suyo="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
     if [ "$suyo" != "$comun" ]; then
@@ -80,7 +81,7 @@ else
         exit 1
     fi
     git -C "$dir" merge --abort >/dev/null 2>&1
-    git -C "$dir" checkout -q -f --detach origin/main || exit 1
+    git -C "$dir" checkout -q -f --detach origin/dev || exit 1
     git -C "$dir" clean -q -fdx -e .venv -e node_modules || exit 1
 fi
 cd "$dir" || exit 1

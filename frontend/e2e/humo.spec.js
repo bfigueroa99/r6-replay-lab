@@ -64,6 +64,37 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Progreso' }).first()
+  await expect(panel.getByRole('heading', { name: 'Mapas', exact: true })).toBeVisible()
+  // con la ventana de 10 partidas el seed juega Bank en una y Border y Club House en la otra
+  await expect(panel.getByText('Sin muestra en los dos periodos (10+ rondas en cada uno).')).toBeVisible()
+  // cada operador del seed junta 10 a 14 rondas por periodo
+  await expect(panel.locator('h3:text-is("Operadores") + .table-wrap tbody tr')).toHaveCount(6)
+  await expect(panel.getByRole('cell', { name: /^Ash Ataque$/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra presencia y delta', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Ataque', exact: true }) })
+  await expect(panel.locator('th', { hasText: 'Presencia' })).toBeVisible()
+  await expect(panel.locator('th', { hasText: 'vs. tu lado' })).toBeVisible()
+  // seed: 39 de 116 rondas de ataque con Ash; todo el ataque se gana, asi que
+  // el delta es 0 (y no -0). Columnas: operador, lado, rondas, presencia, ganadas, delta
+  const ash = panel.locator('tr', { has: page.getByRole('cell', { name: 'Ash', exact: true }) })
+  await expect(ash.locator('td').nth(3)).toHaveText('34%')
+  await expect(ash.locator('td').nth(5)).toHaveText('0')
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -164,6 +195,40 @@ test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra cuando matas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Cuándo matas', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo: 99 bajas a rivales (las mismas que Bajas de Duelos), ninguna antes de 30 s
+  const tramos = panel.locator('tbody tr')
+  await expect(tramos).toHaveCount(4)
+  const pico = tramos.filter({ has: page.getByRole('cell', { name: '90-120s', exact: true }) })
+  await expect(pico.locator('td')).toHaveText(['90-120s', '53', '54%', '34', '19'])
+
+  expect(errores).toEqual([])
+})
+
+test('Tendencias muestra cuando llega la apertura', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Cuándo llega la apertura', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // 4 tramos x 2 lados, siempre todos; seed_demo gana todo el ataque y pierde toda la defensa
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(8)
+  await expect(filas.nth(2).locator('td')).toHaveText(['Ataque', 'Tarde (90 s o más)', '66', '100%', '14%'])
+  await expect(filas.nth(5).locator('td')).toHaveText(['Defensa', 'Medio (30–90 s)', '37', '0%', '0%'])
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra rondas cortas y largas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -252,6 +317,9 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   await expect(panel).toBeVisible()
   const fila = panel.locator('tr', { hasText: 'Más bajas en una partida' })
   await expect(fila).toBeVisible()
+  // seed_demo alterna el resultado ronda a ronda: toda racha es de una. Se
+  // afirma antes del clic: recargar el Resumen corta sus requests en vuelo
+  await expect(panel.locator('tr', { hasText: 'Racha de rondas' })).toContainText('1 ronda ganada')
   // el enlace tiene que abrir la partida del record, no una cualquiera
   const respuesta = await page.request.get('/api/overview/')
   const { match_id: matchId, map } = (await respuesta.json()).records.most_kills_match
@@ -269,6 +337,7 @@ test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   await page.locator('table tbody tr').first().getByRole('link').first().click()
   await expect(page).toHaveURL(/\/partidas\/\d+$/)
   await expect(page.locator('h1')).toContainText(/Club House|Border|Bank/)
+  await expect(page.getByText('Racha: 1 ganada desde R1 · 1 perdida desde R2')).toBeVisible()
 
   expect(errores).toEqual([])
 })
@@ -329,6 +398,24 @@ test('el Resumen muestra tus multikills', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Resumen muestra tus partidas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  // seed_demo: 29 partidas, todas ganadas, 203 rondas; Bank y Club House con 10, todos los mapas al 100 %
+  const stat = (nombre) => page.locator('.stat', { has: page.locator('.label', { hasText: nombre }) })
+  await expect(stat(/^Partidas ganadas$/).locator('.value')).toHaveText('100%')
+  await expect(stat(/^Partidas ganadas$/).locator('.sub')).toHaveText('29 de 29')
+  await expect(stat(/^Rondas por partida$/).locator('.value')).toHaveText('7.0')
+  await expect(stat(/^Rondas por partida$/).locator('.sub')).toHaveText('203 rondas en 29 partidas')
+  await expect(stat(/^Mejor mapa$/).locator('.value')).toHaveText('Bank')
+  await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
+  await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
+  await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
+
+  expect(errores).toEqual([])
+})
+
 test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
@@ -367,6 +454,60 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   const conversion = panel.locator('table').first()
   await expect(conversion.getByRole('row', { name: /^1v1 2 2 100%/ })).toBeVisible()
   await expect(conversion.getByRole('row', { name: /^1v2 8 0 0%/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('Compañeros muestra el clutch por mapa y sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutch por mapa y sitio' })).toBeVisible()
+  // seed_demo: Border junta 5 intentos (B Armory 3, A Ventilation 2); la segunda tabla es esta
+  const porSitio = panel.locator('table').nth(1)
+  const border = porSitio.getByRole('row', { name: 'Border Total 5 1 20%', exact: true })
+  await expect(border).toBeVisible()
+  await expect(border.locator('.muestra-chica')).toHaveCount(0)
+  const armory = porSitio.getByRole('row', { name: /^Border B Armory, B Archives 3 1 33%/ })
+  await expect(armory.locator('.muestra-chica')).toHaveCount(1)
+  await expect(porSitio.getByRole('row', { name: /^Bank Total 3 1 33%/ })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('Compañeros muestra el clutch por operador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutch por operador' })).toBeVisible()
+  // seed_demo: Rook en defensa junta 5 intentos y ninguno ganado; Jager 3, Zofia 2. La tercera tabla es esta
+  const porOperador = panel.locator('table').nth(2)
+  await expect(porOperador.locator('tbody tr')).toHaveCount(3)
+  const rook = porOperador.getByRole('row', { name: 'Rook Defensa 5 0 0%', exact: true })
+  await expect(rook).toBeVisible()
+  await expect(rook.locator('.muestra-chica')).toHaveCount(0)
+  const zofia = porOperador.getByRole('row', { name: /^Zofia Ataque 2 2 100%/ })
+  await expect(zofia.locator('.muestra-chica')).toHaveCount(1)
+
+  expect(errores).toEqual([])
+})
+
+test('Compañeros muestra el panel de teamkills', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Teamkills', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo no tiene teamkills: el verdugo siempre es rival y tus bajas siempre sobre rivales
+  await expect(panel).toContainText('Ningún teamkill en las rondas filtradas.')
 
   expect(errores).toEqual([])
 })

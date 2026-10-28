@@ -29,7 +29,10 @@ export default function Operators({ filters, setFilters, runImport, importing })
       <div className="page-head">
         <div>
           <h1>Operadores</h1>
-          <p>Tu pool real, ordenado por rondas jugadas. Ordena por cualquier columna.</p>
+          <p>
+            Tu pool real, ordenado por rondas jugadas. Ordena por cualquier columna. «vs. tu lado»
+            compara cada operador con tu winrate en ese lado.
+          </p>
         </div>
       </div>
 
@@ -63,6 +66,13 @@ function Table({ rows, nombre }) {
         { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
         { key: 'rounds', label: 'Rondas' },
         {
+          key: 'presence_pct',
+          label: 'Presencia',
+          digits: 0,
+          suffix: '%',
+          help: 'Rondas con este operador / todas tus rondas de ese lado, con los filtros activos.',
+        },
+        {
           key: 'winrate',
           label: 'Ganadas',
           render: (row) => (
@@ -71,6 +81,12 @@ function Table({ rows, nombre }) {
               <span style={{ minWidth: 38 }}>{pct(row.winrate)}</span>
             </div>
           ),
+        },
+        {
+          key: 'winrate_delta',
+          label: 'vs. tu lado',
+          help: 'Winrate con este operador menos tu winrate de todas las rondas de ese lado, en puntos. Un +10 con poca presencia puede ser varianza.',
+          render: (row) => <DeltaLado valor={row.winrate_delta} />,
         },
         { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica. Ver docs/metricas.md para la formula y los pesos.' },
         { key: 'kills', label: 'Bajas' },
@@ -86,5 +102,18 @@ function Table({ rows, nombre }) {
       rowKey={(row) => `${row.operator}-${row.side}`}
       csvName={nombre}
     />
+  )
+}
+
+function DeltaLado({ valor }) {
+  if (valor === null || valor === undefined) return <span className="dim">—</span>
+  // Redondear antes de elegir signo y color: un -0.4 se ve 0, no -0.
+  const puntos = Math.round(valor) || 0
+  const clase = puntos > 0 ? 'chip win' : puntos < 0 ? 'chip loss' : 'chip'
+  return (
+    <span className={clase}>
+      {puntos > 0 ? '+' : ''}
+      {puntos}
+    </span>
   )
 }

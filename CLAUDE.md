@@ -44,6 +44,12 @@ andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
 
+Ramas: `dev` es la base de integracion. Todo cambio sale de `origin/dev` y
+entra a `dev` por PR (el equipo autonomo, `.claude/skills/equipo-dev/`, lo
+mismo). `main` es la release: solo recibe `dev` cuando lo promueve el humano,
+con un PR `dev` -> `main` y commit de merge, y `release.ps1` publica desde ahi.
+Nadie abre PR contra `main`, ni mergea ni empuja a `main` por su cuenta.
+
 ## Reglas de arquitectura
 
 - **`pydissect/` no importa Django.** Es un parser independiente; recibe rutas y
@@ -63,9 +69,9 @@ El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
   escritorio: la UI web tiene que seguir funcionando sin ella.
 - **La API es de lectura.** Vistas planas con `JsonResponse`. Los POST son
   pocos y locales: `/api/import/`, `/api/overrides/`,
-  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; los que
-  cambian configuracion exigen `application/json`. No agregues serializers ni
-  viewsets.
+  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; todos
+  exigen `application/json`, asi otra pagina abierta en el navegador no puede
+  dispararlos. No agregues serializers ni viewsets.
 - **La configuracion vive en el `.env`.** La pagina Ajustes lo reescribe con
   `config/envfile.py` (solo la linea tocada) y aplica en caliente; no abras un
   segundo archivo de configuracion.

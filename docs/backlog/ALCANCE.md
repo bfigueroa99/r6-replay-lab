@@ -19,7 +19,7 @@ Como se lee:
   hay dato, no hay idea), tamano (S cabe en un tramo, M en uno o dos, L es
   epica de varios) y estado.
 - Estados, siempre en la ultima columna: `idea` (libre), `ficha NN`,
-  `en main`, `PR #n` (cubierta por un PR abierto que no es del equipo: no se
+  `en dev` (las marcas viejas `en main` valen igual), `PR #n` (cubierta por un PR abierto que no es del equipo: no se
   propone mientras siga abierto), `decision (<que>)` (espera la respuesta
   del humano en `## Para el equipo` de `ESTADO.md`; no se propone), `no` (la
   tacho el humano).
@@ -126,7 +126,7 @@ esperando en el papel) o como bug si lo son. Su estado es `idea (tests)` o
 ## Cubierto por PRs abiertos que no son del equipo
 
 No se proponen mientras el PR siga abierto. Si el humano lo cierra sin
-mergear, sus ideas pasan a `idea`; si lo mergea, a `en main`.
+mergear, sus ideas pasan a `idea`; si lo mergea, a `en dev`.
 
 - **PR #1** (`claude/loop-lwjbgs`): pagina Posicionamiento, con veredicto por
   sitio y spawn.
