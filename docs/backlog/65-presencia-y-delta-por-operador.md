@@ -154,6 +154,34 @@ columnas al final, que es donde `_columnas` las pone).
 "vs. tu lado" no deja nulos arriba (`ordenarFilas` ya los manda al final);
 bajar el CSV de Ataque y ver las dos columnas.
 
+## Implementacion
+
+(Dev 20261028T0804Z.)
+
+Skills: no aplica (lo resuelve el diseno; sin arena).
+
+Quedo todo el diseno:
+
+- `aggregates.by_operator`: `presence_pct` y `winrate_delta` por fila, con la
+  base del lado contada sobre el queryset entero antes de `min_rounds` y una
+  query aparte para las rondas con ganador. El delta es `None` si la fila no
+  tiene ninguna ronda decidida (si el lado no tiene ninguna, sus filas
+  tampoco: no hace falta mirar el lado aparte).
+- `Operators.jsx`: columnas "Presencia" (despues de Rondas) y "vs. tu lado"
+  (despues de Ganadas), con ayuda; el delta redondea antes de elegir signo y
+  color (`-0.4` se ve `0`, chip neutro). Subtitulo actualizado.
+- Tests (`backend/tests/test_operadores_presencia.py`): los ocho del diseno,
+  mas `test_la_api_trae_las_columnas`. El primer criterio usa la correccion del
+  Arquitecto (Thermite con 2 ganadas: 40 % y +25).
+- e2e `Operadores muestra presencia y delta`: Ash en Ataque con `34%` y `0`.
+- `docs/metricas.md`, `## Cortes`: filas Presencia y vs. tu lado.
+
+Desvios: el diseno pedia `None` tambien si el lado no tiene rondas
+decididas; esa rama era inalcanzable (la fila es parte del lado) y se quito
+tras la revision ciega. El e2e no ejercita signo ni color del delta (en el
+seed todos dan 0); esa logica es de render y no tiene test propio. `test_export` no compara la cabecera de operadores entera,
+asi que no hubo que tocarlo.
+
 ## Para el humano
 
 (Nada por ahora.)

@@ -492,8 +492,35 @@ def by_site(min_rounds: int = 1, **filters) -> list[dict]:
 
 
 def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
+    """Filas por operador y lado, con presencia y delta contra tu lado.
+
+    La base del lado sale del queryset entero, antes de `min_rounds`: asi las
+    presencias de un lado suman 100 % y ocultar una fila no mueve las demas.
+    """
     qs = base_queryset(**filters).exclude(operator="")
-    return group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    rows = group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    decidida = Q(round__my_team_won__isnull=False)
+    lados = {
+        r["side"]: r
+        for r in qs.values("side").annotate(
+            rounds=Count("id"),
+            rounds_won=Count("id", filter=Q(won=True)),
+        )
+    }
+    # Una ronda sin ganador cuenta como perdida en `won`; sin ninguna decidida
+    # el delta no dice nada. Basta mirarlo en la fila: si el lado no tiene
+    # ninguna, ninguna de sus filas la tiene.
+    decididas = {
+        (r["operator"], r["side"]): r["n"]
+        for r in qs.filter(decidida).values("operator", "side").annotate(n=Count("id"))
+    }
+    for row in rows:
+        lado = lados.get(row["side"]) or {}
+        row["presence_pct"] = _pct(row["rounds"], lado.get("rounds"))
+        base = _pct(lado.get("rounds_won") or 0, lado.get("rounds"))
+        con_ganador = decididas.get((row["operator"], row["side"]))
+        row["winrate_delta"] = _delta(row["winrate"], base) if con_ganador else None
+    return rows
 
 
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
