@@ -70,7 +70,8 @@ describe('textoResumenPartida', () => {
 
   it('una ronda de una sola baja usa el singular', () => {
     const datos = payload({ rounds: [ronda(0, 'Attack', true, 1)] })
-    expect(textoResumenPartida(datos)).toContain('Mejor ronda: R1, 1 baja')
+    // La linea entera: contra el texto completo, "1 baja" tambien aparece dentro de "1 bajas"
+    expect(textoResumenPartida(datos).split('\n')).toContain('Mejor ronda: R1, 1 baja')
   })
 
   it('un lado sin rondas no aparece en la linea de rondas ganadas', () => {

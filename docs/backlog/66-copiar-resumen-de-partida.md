@@ -1,7 +1,7 @@
 # 66. Copiar el resumen de una partida como texto
 
-estado: implementado
-candado: revisor 2026-10-28 16:46 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/66-copiar-resumen-de-partida
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H4
 archivos: frontend/src/resumenPartida.js, frontend/src/resumenPartida.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T1607Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T1607Z, revisor 20261028T1644Z
 
 ## PR
 
@@ -184,6 +184,81 @@ Desvios del diseno (de la revision ciega previa):
 
 Verificacion: `./scripts/check.sh` en `Todo en verde.`.
 
+## Revision 2026-10-28 sobre f3a6e0e
+
+(Revisor 20261028T1644Z.) Revision a ciegas hecha por el lider: esta sesion no
+tiene herramienta de subagentes, asi que lei `revision.md` y el diff (`git diff
+origin/dev...HEAD -- . ':(exclude)docs/backlog'`) antes que la ficha, y confirme
+cada hallazgo reproduciendolo. Dev 2857aa6 ya estaba en la rama (no se movio).
+`check.sh` en verde antes de tocar nada: 811 tests backend, 130 frontend, build
+ok, 53 e2e.
+
+Contra la API real: base nueva con `seed_demo` (scratchpad), el JSON de
+`/api/matches/<id>/` de las 29 partidas por el cliente de Django y
+`textoResumenPartida` sobre cada uno con node: ningun `undefined`, `NaN` ni
+`null` en el texto; las ganadas por lado suman las rondas con `my_team_won ===
+true`; `m` suma las rondas con lado y ganador conocido; la mejor ronda es la de
+mas `kills` de la fila `is_me` (29 de 29, 16 con linea "Mejor ronda"). Los
+campos del payload armado a mano en vitest son los de `match_detail`.
+
+Criterios: 1 por `arma las cinco lineas con mapa, marcador y resultado primero`
+(texto exacto) y la pasada sobre `seed_demo`; 2 por `una partida sin bajas tuyas
+no tiene mejor ronda`, `un lado sin rondas no aparece en la linea de rondas
+ganadas`, `una partida incompleta lo dice en la primera linea` y `el nick sale
+tal cual, sin escapar ni formatear`; 3 por el codigo (`copiarResumen` sin
+`console.*`, aviso en la pagina) y el e2e con la consola vigilada; el camino de
+portapapeles negado no tiene test automatico (queda para QA en el navegador); 4
+por `el detalle de partida copia el resumen`; 5: el boton usa el `data` del
+`useApi` que ya estaba, sin fetch nuevo. El diff no sale de `archivos:`. Sin
+tildes en identificadores ni comentarios, UI con tildes (`Tú`), sin `print` ni
+`console.log`, sin dependencias, nada sale a la red. Fecha y formato de numeros
+iguales a los de la cabecera y a `fmt`/`pct` de `ui.jsx`.
+
+Mutacion sobre `resumenPartida.js` (restaurado despues): sin el filtro de
+ganador desconocido, empate que se queda con la ultima, primer nick en vez del
+ultimo y lineas vacias que salen: las cuatro caen. Quitar el singular de "Mejor
+ronda" sobrevivia: hallazgo 1.
+
+Hallazgos:
+
+- [test] `frontend/src/resumenPartida.test.js:71` (corregido por el Revisor)
+  Que pasa: `una ronda de una sola baja usa el singular` pasaba con el bug presente.
+  Como reproducirlo: cambiar `maximo === 1 ? 'baja' : 'bajas'` por `'bajas'`
+  (`resumenPartida.js:59`): el texto dice "Mejor ronda: R1, 1 bajas", que
+  contiene "Mejor ronda: R1, 1 baja", y los 10 tests pasaban.
+  Arreglo: el assert compara la linea entera (`split('\n')` + `toContain`).
+  Con el codigo actual pasa; con la mutacion cae. Es el unico cambio del
+  Revisor en la rama.
+- [estilo, menor] `frontend/src/resumenPartida.js:24` (`lineaStats`)
+  Que pasa: la linea de stats no tiene singular: "1 bajas / 1 muertes".
+  Como reproducirlo: con `seed_demo`, la partida del 2026-08-02 08:00 copia
+  `BearF99: 1 bajas / 7 muertes · ...`; con `my_totals: { kills: 1, deaths: 1 }`
+  sale `Tú: 1 bajas / 1 muertes`. Test que hoy falla (no se empuja) y cubre el
+  arreglo:
+  ```js
+  it('la linea de stats usa el singular con una baja o una muerte', () => {
+    const datos = payload()
+    datos.my_totals.kills = 1
+    datos.my_totals.deaths = 1
+    expect(textoResumenPartida(datos).split('\n')[2]).toMatch(/^BearF99: 1 baja \/ 1 muerte · /)
+  })
+  ```
+  Arreglo sugerido: el mismo criterio que `lineaMejorRonda` (`=== 1 ? 'baja' :
+  'bajas'`, igual con `muerte`). El diseno no lo pedia; es texto, no un numero,
+  por eso no bloquea.
+
+Avisos (no bloquean):
+
+- `docs/metricas.md`, fila **Mejor ronda**: dice "teamkills incluidos", que es
+  lo que hace hoy `RoundPlayer.kills`. El humano decidio el 2026-10-28 sacar
+  los teamkills de `kills` (ficha nueva del PO): esa ficha tiene que corregir
+  tambien esta fila.
+- Electron: `navigator.clipboard.writeText` en la ventana de escritorio no se
+  verifica en la nube (para `## Verificar en el PC` de QA).
+
+Veredicto: aprobar -> `revisado`. El hallazgo 2 cabe en un commit de 5 lineas
+si QA o el Release quieren pedirlo; si no, queda anotado en `## Para el humano`.
+
 ## Para el humano
 
-(Nada por ahora.)
+- Revisor 2026-10-28 (aviso, no bloquea): la linea de stats del resumen copiado dice "1 bajas / 1 muertes" cuando hay una sola baja o muerte (hallazgo 2 de la Revision, con el test exacto). Arreglo de una linea; queda para la proxima ficha que toque `resumenPartida.js` o para una ficha chica.
