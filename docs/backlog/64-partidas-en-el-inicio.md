@@ -1,7 +1,7 @@
 # 64. Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-28T00:04Z
 rama: claude/equipo-dev/64-partidas-en-el-inicio
 tipo: funcionalidad
 epica: paridad-referencia
