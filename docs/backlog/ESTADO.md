@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-28 12:35 UTC por revisor (sesion 20261028T1209Z; motivo: por estado: 1 implementado; reloj: revisor, franja 4)
-playbook: origin/dev@a0c6301
+actualizado: 2026-10-28 14:58 UTC por qa (sesion 20261028T1432Z; motivo: por estado: 1 revisado; reloj: dev, franja 5; siguio como release sobre la 65)
+playbook: origin/dev@cdf9980
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 7 de 42 en 7 dias
 pausa: no
 
@@ -9,45 +9,44 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/65-presencia-y-delta-por-operador | 65 | revisado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/65-presencia-y-delta-por-operador?expand=1 | no |
+| (vacia) | | | | | |
 
-RELEASE=dev lleva 10 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
+RELEASE=dev lleva 20 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=0
+COLA=0/4  TOTAL=0/6
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
-Una sola rama: la 65, sobre dev a0c6301, merge limpio. La 66 cuando se reclame toca `humo.spec.js` como la 65 (bloques distintos).
+Nada abierto: la 65 entro a dev (cdf9980). La 66, cuando se reclame, sale de dev cdf9980; toca `humo.spec.js` como la 65 (ya en dev, sin choque).
 
 ## Alcance
 
-- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (56-mapas-y-operadores-que-mejoran 57-teamkills 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio) otros:0 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) en dev, O5 -> ficha 65 (revisado), O1 tramo siguiente. exportar: H4 -> ficha 66 (disenado), H7 la reusa. lado-y-marcador: saturada.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 68 ideas libres (R1 pasa a `en dev` en el proximo turno del PO). Ideas nuevas de este turno: ninguna.
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:9 (56-mapas-y-operadores-que-mejoran 57-teamkills 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio 65-presencia-y-delta-por-operador) otros:0 (fichas que llegaron a dev en 7 dias)
+- Epicas en curso: paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente. exportar: H4 -> ficha 66 (disenado), H7 la reusa. lado-y-marcador: saturada.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 68 ideas libres (R1 y O5 pasan a `en dev` en el proximo turno del PO). Ideas nuevas de este turno: ninguna.
 - Investigacion: ultima entrada 2026-10-24 (familia 8, Replica; paridad 76.1 / 100). Proxima: 3, 5 y 6.
-- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): epica lado-y-marcador, pagina Teammates.jsx, pagina Trends.jsx | sin entrega: exportar datos-nuevos-del-parser paridad-referencia
-- Ciclo: CICLO=12h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 64:8 63:12 62:8 61:32 59:12 57:12 56:12 60:44 58:12 55:24)
+- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): epica lado-y-marcador, pagina Trends.jsx | sin entrega: exportar datos-nuevos-del-parser paridad-referencia
+- Ciclo: CICLO=12h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 65:6 64:8 63:12 62:8 61:32 59:12 57:12 56:12 60:44 58:12)
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
-| 65-presencia-y-delta-por-operador | en curso (rama manda: revisado) | funcionalidad | operadores | 3 | fullstack | - |
 | 66-copiar-resumen-de-partida | disenado | funcionalidad | exportar | 3 | frontend | - |
 
-0 `propuesto`, 1 `disenado` (66), 65 `revisado`. Proximo turno: qa (regla 2).
+0 `propuesto`, 1 `disenado` (66), cola vacia. Proximo turno: dev (regla 8: `disenado` con lugar en la cola).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-10-28 04:28 | (mismo turno que la QA) Entrega y mergea la 64: `aprobado` -> `entregado` -> PR #59 -> dev a0c6301. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, dev 2532ed1 incluido, `check.sh` en `Todo en verde.` sobre el head 4cd808a (802 backend, 120 vitest, build, 51 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el clasificador de permisos nego `git push --delete`. |
+| release | 2026-10-28 14:55 | (mismo turno que la QA) Entrega y mergea la 65: `aprobado` -> `entregado` -> [PR #60](https://github.com/bfigueroa99/r6-replay-lab/pull/60) -> dev cdf9980. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, dev a0c6301 incluido, `check.sh` en `Todo en verde.` sobre el head 0cd84cb (811 backend, 120 vitest, build, 52 e2e). Ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el proxy corto `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-10-28 08:50 | Implementa 65 (`disenado` -> `implementado`, rama `claude/equipo-dev/65-presencia-y-delta-por-operador`, 5356084): `presence_pct` y `winrate_delta` en `by_operator` (base del lado antes de `min_rounds`, delta nulo sin rondas con ganador), columnas "Presencia" y "vs. tu lado" en Operadores, 9 tests, e2e, dos filas en `metricas.md`. Revision ciega: aprobar; quitada una rama inalcanzable y su test duplicado. `check.sh` en `Todo en verde.` (811 backend, 120 vitest, build, 52 e2e). |
 | revisor | 2026-10-28 12:35 | Revisa 65 (funcionalidad, `implementado` -> `revisado`) sobre 5356084, dev a0c6301 sin moverse. `check.sh` en `Todo en verde.` (811 backend, 120 vitest, build, 52 e2e). Revision ciega: aprobar, con cuatro menores confirmados (redondeo asimetrico de +-0.5 en `DeltaLado`, delta de dos porcentajes ya redondeados 0.1 corrido, `metricas.md` dice "todas tus rondas" pero excluye operador vacio, e2e sin delta distinto de 0); anotados en la ficha, no bloquean. |
-| qa | 2026-10-28 04:15 | Prueba 64 (funcionalidad, `revisado` -> `aprobado`) sobre 1a24d91. `check.sh` en verde; `curl` a `/api/overview/` con base sembrada (12 partidas: sin resultado, empate, partida solo de ataque) y vacia, 15 filtros borde, todo 200 y numeros iguales a los calculados a mano; Chromium por mapa y a 390 px, consola limpia; bundle +0.5 %. Mutacion: sobrevivia `rounds_per_match` sobre decididas; agregado `test_las_sin_resultado_cuentan_en_rondas_por_partida` (802). |
+| qa | 2026-10-28 14:45 | Prueba 65 (funcionalidad, `revisado` -> `aprobado`) sobre bfff25a. `check.sh` en verde; `curl` a `/api/operators/` con base vacia y sembrada desde `factories.py` (ronda sin operador, sin ganador, sin bajas, compañero), 13 parametros borde, todo 200 y numeros iguales a los calculados a mano; Chromium en `/operadores` (signo y color, orden con nulos al final, CSV, filtro de lado, 390 px, consola limpia); chunk inicial igual. Mutacion: tres, las tres caen. Los cuatro menores del Revisor confirmados, quedan en la ficha. |
 | arquitecto | 2026-10-27 16:11 | Disena 64 (`matches_summary` en la vista de `/api/overview/`: partidas elegidas sin `side` como `by_margin`, `match_winrate` sobre `won` no nulo, `rounds_per_match`, mejor y peor mapa por `map_slug` con `MIN_PARTIDAS_MAPA = 3`, peor solo si esta por debajo del mejor; fila de cuatro `Stat3` en el Inicio), 65 (`presence_pct` y `winrate_delta` en `by_operator`, base del lado antes de `min_rounds`, delta nulo sin rondas con `my_team_won`, sin banda de ruido; columnas "Presencia" y "vs. tu lado") y 66 (`resumenPartida.js` puro con el texto exacto de cinco lineas, boton "Copiar resumen" con `navigator.clipboard`, e2e con `grantPermissions`). Numeros del e2e calculados sobre `seed_demo`. Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
 | po | 2026-10-27 12:40 | Papel vacio: propone 64 (R1: partidas ganadas, rondas por partida y mejor y peor mapa en el Inicio), 65 (O5: presencia y delta de winrate contra tu lado en Operadores) y 66 (H4: copiar el resumen de una partida al portapapeles). `ALCANCE.md` reconciliado (61-63 en main), nuevas E12, O7, H7 y R5: 68 libres (67 al empezar). Sin pushes de codigo. |
@@ -56,8 +55,8 @@ Una sola rama: la 65, sobre dev a0c6301, merge limpio. La 66 cuando se reclame t
 
 (Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Los avisos que no bloquean de fichas ya en `main` quedan en su ficha; la lista larga anterior esta en `git log` de este archivo, commit previo a 2026-10-25 04:40.)
 
-- Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador claude/equipo-dev/62-cuando-matas claude/equipo-dev/63-cuando-llega-la-apertura claude/equipo-dev/64-partidas-en-el-inicio.
-- Release: RELEASE=dev lleva 10 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1). Incluye la 64 (partidas en el Inicio, PR #59 a dev, a0c6301); sin migracion ni parser. **Despues de bajar, `cd frontend; npm run build`.**
+- Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador claude/equipo-dev/62-cuando-matas claude/equipo-dev/63-cuando-llega-la-apertura claude/equipo-dev/64-partidas-en-el-inicio claude/equipo-dev/65-presencia-y-delta-por-operador.
+- Release: RELEASE=dev lleva 20 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1). Incluye la 64 (partidas en el Inicio, PR #59) y la 65 (presencia y "vs. tu lado" en Operadores, PR #60, dev cdf9980); sin migracion ni parser. **Despues de bajar, `cd frontend; npm run build`.**
 - PRs que esperan tu merge contra dev: ninguno.
 - Rutina: 1 disparo sin rastro en 48 h (~10-26T04:17Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - **Decision (ficha 49, P10):** ¿cada version de un mapa en su propia fila ("Consulate (Y10)")? Agrupar por `Match.map_id`, sin migracion. Decilo en `## Para el equipo`.
