@@ -1,7 +1,7 @@
 # 65. Presencia y delta de winrate por operador
 
-estado: revisado
-candado: qa 2026-10-28T14:37Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/65-presencia-y-delta-por-operador
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O5 (replica/features.csv fila 26, must, clone partial; [r6tv](https://r6tv.online/how-it-works), [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays))
 archivos: backend/replays/analytics/aggregates.py, frontend/src/pages/Operators.jsx, backend/tests/test_operadores_presencia.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T0804Z, revisor 20261028T1209Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T0804Z, revisor 20261028T1209Z, qa 20261028T1432Z
 
 ## PR
 
@@ -25,22 +25,22 @@ y cual te baja, y si el numero se apoya en muchas rondas o en pocas.
 
 ## Criterios de aceptacion
 
-- [ ] Cada fila de `GET /api/operators/` trae `presence_pct` = rondas con ese
+- [x] Cada fila de `GET /api/operators/` trae `presence_pct` = rondas con ese
       operador en ese lado / tus rondas de ese lado (con los mismos filtros), y
       `winrate_delta` = winrate del operador - winrate base del lado, en puntos.
       Test: 10 rondas de ataque, 4 con Ash (3 ganadas) y 6 con otro (3 ganadas):
       Ash con 40 % de presencia y +25 puntos (75 - 50).
-- [ ] El winrate base del lado sale de todas tus rondas de ese lado con los
+- [x] El winrate base del lado sale de todas tus rondas de ese lado con los
       filtros activos, aunque `min_rounds` oculte filas: ocultar un operador no
       mueve el delta de los demas. Test con `min_rounds`.
-- [ ] Con filtro de operador o de lado (`side=Defense`), presencia y delta
+- [x] Con filtro de operador o de lado (`side=Defense`), presencia y delta
       siguen definidos sobre las rondas que el filtro deja; una fila sin rondas
       ganadas ni perdidas (todas sin ganador) da `winrate_delta: null`. Base
       vacia: lista vacia, 200.
-- [ ] La tabla de `Operators.jsx` muestra las columnas "Presencia" y "vs. tu
+- [x] La tabla de `Operators.jsx` muestra las columnas "Presencia" y "vs. tu
       lado" (con signo, +/-), ordenables, con ayuda que dice como se calculan,
       y el CSV de la tabla las incluye. El e2e afirma que la columna aparece.
-- [ ] Filas en `docs/metricas.md` para las dos columnas; si el delta va con
+- [x] Filas en `docs/metricas.md` para las dos columnas; si el delta va con
       banda de ruido (`_ruido` de `aggregates.py`), la fila lo dice.
 
 ## Fuera de alcance
@@ -228,6 +228,62 @@ Hallazgos (menores, no bloquean):
 Veredicto: aprobar -> `revisado`. Los cuatro caben en un solo commit chico si
 QA o el Release quieren pedirlo; si no, quedan anotados.
 
+## QA 2026-10-28 sobre bfff25a
+
+(QA 20261028T1432Z.) Aprobado: los cinco criterios se cumplen ejercitando la
+app, no releyendo el diff. Base sintetica de `factories.py` (script en el
+scratchpad, sin `.rec` ni `.sqlite3` al repo): ataque Ash 4 (3 ganadas),
+Thermite 6 (2), Zofia 2 (1); defensa Mute 5 (3), Iana 2 sin ganador, Jager 2
+sin bajas (0); una ronda de ataque sin operador y un compañero con Sledge en
+cada ronda (no tienen que entrar a la base).
+
+- `./scripts/check.sh` sobre bfff25a (dev a0c6301 ya incluido): `Todo en
+  verde.`, 811 tests backend (4 skipped, los de `.rec` real), 120 frontend,
+  build ok, 52 e2e (`Operadores muestra presencia y delta` incluido).
+- Criterio 1, `curl /api/operators/`: Ash 33.3 % y +25.0 (75 - 50), Thermite
+  50.0 y -16.7, Zofia 16.7 y 0.0, Mute 55.6 y +26.7 (60 - 33.3), Jager 22.2 y
+  -33.3. Las presencias de cada lado suman 100. El compañero no aparece.
+- Criterio 2, `?min_rounds=5`: quedan Thermite y Mute con los mismos 50.0/-16.7
+  y 55.6/+26.7.
+- Criterio 3: `?side=Defense` solo defensa con la misma base; `?operator=Ash`
+  -> 100.0 y 0.0 (documentado); `?map=border` recalcula (Mute 71.4 y +17.1);
+  Iana (todas sin ganador) -> `winrate_delta: null` con presencia 22.2. Base
+  vacia: `[]` y 200. Borde, todo 200 sin traza: `side=foo`, `min_rounds=-1`,
+  `min_rounds=foo`, `until=foo`, `since=foo`, `page=-1`, `operator=`,
+  `session=99`, `since=2030-01-01`. Vecinos 200: `/api/coach/` (usa
+  `by_operator`), `/api/trends/`, `/api/summary/`, `/api/compare/?by=operators`;
+  `/api/export/?table=operators` trae `presence_pct` y `winrate_delta` al
+  final (Iana con celda vacia).
+- Criterio 4, Chromium en `/operadores`: columnas "Presencia" despues de
+  Rondas y "vs. tu lado" despues de Ganadas, con su ayuda en el `title`;
+  Ash `33%` y `+25` en `chip win`, Thermite `-17` en `chip loss`, Zofia `0`
+  neutro, Iana `—`. Ordenar por "vs. tu lado" deja a Iana al final en las dos
+  direcciones. "Descargar CSV" de Ataque y Defensa trae las dos columnas
+  (`Presencia;...;vs. tu lado`, `55,6` y `26,7`; Iana vacia). Filtro Lado =
+  Defensa desde la barra: un solo panel con los mismos numeros. A 390 px la
+  pagina no desborda. Consola limpia.
+- Criterio 5: filas Presencia y vs. tu lado en `docs/metricas.md`, con la
+  base antes del minimo, el vacio sin ganador y por que no hay banda de ruido.
+- Bundle: chunk inicial 188.72 kB en dev y en la rama (gzip 62.07 -> 62.08);
+  `Operators` es lazy y pasa de 2.07 a 2.72 kB.
+- Mutacion, las tres caen: base sumada sobre las filas ya filtradas por
+  `min_rounds` -> falla `test_min_rounds_no_mueve_la_base`; sin el chequeo de
+  rondas decididas -> falla `test_fila_sin_rondas_decididas_no_tiene_delta`;
+  una sola base para los dos lados -> falla `test_cada_lado_tiene_su_base`.
+
+Los cuatro hallazgos menores del Revisor siguen (confirmados, no rompen
+ningun criterio): `DeltaLado` redondea asimetrico (`node`: 1.5 -> `+2`,
+-1.5 -> `-1`, 0.5 -> `+1`, -0.5 -> `0`); el delta resta porcentajes ya
+redondeados (0.1 de desvio posible); `metricas.md` dice "todas tus rondas
+de ese lado" y la base excluye las rondas sin operador (con la base de
+arriba y `?map=border`, ataque real 2 de 3 y base usada 1 de 2); el e2e no
+ejercita signo ni color. Van a `## Para el humano` como candidatos a una
+ficha chica.
+
 ## Para el humano
 
-(Nada por ahora.)
+- Aviso, no bloquea (Revisor y QA): cuatro detalles menores confirmados que
+  caben en una ficha chica: redondeo simetrico en `DeltaLado`
+  (`Operators.jsx`), delta calculado con los conteos crudos
+  (`aggregates.py`), "con operador conocido" en las dos filas de
+  `metricas.md`, y un vitest de `DeltaLado` con 0.5, -0.5, -0.4 y null.
