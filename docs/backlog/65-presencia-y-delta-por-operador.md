@@ -1,8 +1,8 @@
 # 65. Presencia y delta de winrate por operador
 
-estado: disenado
+estado: en curso 2026-10-28T08:05Z
 candado: -
-rama: -
+rama: claude/equipo-dev/65-presencia-y-delta-por-operador
 tipo: funcionalidad
 epica: operadores
 area: fullstack
