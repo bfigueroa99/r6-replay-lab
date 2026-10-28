@@ -20,7 +20,7 @@ if [ -n "$REF" ]; then
     git rev-parse -q --verify "$REF^{commit}" >/dev/null 2>&1 || { echo "FALLA ref: $REF no existe"; echo "PRUEBAS_FALLAN: 1"; exit 1; }
     base=$(mktemp -d)
     trap 'rm -rf "$base"' EXIT
-    for p in $(git ls-tree -r --name-only "$REF" -- .claude scripts docs/backlog 2>/dev/null); do
+    for p in $(git ls-tree -r --name-only "$REF" -- .claude .opencode scripts docs/backlog 2>/dev/null); do
         mkdir -p "$base/$(dirname "$p")"
         git show "$REF:$p" > "$base/$p"
     done
@@ -40,7 +40,7 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 
 # 1. sintaxis
 det=""
-for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/check.sh .claude/hooks/session-start.sh; do
+for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/check.sh .claude/hooks/session-start.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
@@ -125,6 +125,24 @@ cierra roles "$det"
 det=""
 for t in 'ci.yml' 'hoy:' '90 minutos' '#11' 'great-'"cray" 'titulo del PR como mensaje' 'Corre cada 3 horas'; do grep -qF -- "$t" "$sk" 2>/dev/null && det="$det '$t'"; done
 cierra podridos "$det"
+
+# 8b. opencode: el comando de OpenCode pasa la rutina de origin/dev (no una copia que
+# se aleje) y el autor que fija opencode.sh es uno que estado.sh cuenta como del equipo:
+# con otro, cada commit del turno seria un pedido del humano.
+det=""
+oc=$base/.opencode/commands/equipo-dev.md
+if [ ! -f "$oc" ]; then det=" falta .opencode/commands/equipo-dev.md"
+else
+    grep -qF 'git show origin/dev:.claude/skills/equipo-dev/rutina.md' "$oc" || det="$det el comando no pasa la rutina de origin/dev;"
+    grep -qF '$ARGUMENTS' "$oc" || det="$det el comando no pasa el mensaje del disparo (rol:);"
+fi
+autor=$(grep -oE 'GIT_AUTHOR_NAME=[A-Za-z]+' "$base/scripts/equipo-dev/opencode.sh" 2>/dev/null | head -1 | cut -d= -f2)
+if [ -z "$autor" ]; then det="$det opencode.sh no fija el autor;"
+else
+    c=$(grep -cF "grep -vE '^(Claude|$autor)'" "$es")
+    [ "$c" -eq 2 ] || det="$det estado.sh cuenta a '$autor' como del equipo en $c de 2 lugares;"
+fi
+cierra opencode "$det"
 
 # 9. simular: la regla del rol, caso por caso, comparando la linea entera.
 # Un caso es "rol|argumentos|salida esperada"; el rol va vacio salvo que se pida.

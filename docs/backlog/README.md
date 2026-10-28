@@ -47,8 +47,8 @@ lleva `dev` sin promover y el link para hacerlo.
 
 Lo mergeas vos cuando el cambio toca lo que la nube no puede verificar o las
 reglas del propio equipo: `frontend/electron/`, `packaging/`, `scripts/*.ps1`,
-`.github/`, `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/` y las plantillas de
-esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge: ...)` y
+`.github/`, `CLAUDE.md`, `.claude/`, `.opencode/`, `scripts/equipo-dev/` y las
+plantillas de esta carpeta. Esas fichas quedan `entregado (PR pendiente de merge: ...)` y
 aparecen en `ESTADO.md` con el motivo. Da igual merge, squash o rebase: el
 equipo detecta los tres. Borra la rama al mergear.
 
@@ -113,3 +113,20 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
 - **Pausar**: crear el archivo `docs/backlog/PAUSA` en la rama `backlog`
   desde la web de GitHub. Ningun turno nuevo hace nada mientras exista, y uno
   que ya arranco lo ve antes de su proximo push y cierra.
+- **Correr turnos en OpenCode** (ademas de la rutina de la nube, o en su
+  lugar), con un modelo detras de OmniRoute:
+  `bash scripts/equipo-dev/opencode.sh [rol]` en Linux, macOS o WSL. Arma un
+  worktree al lado del repo (`../r6-replay-lab-equipo`, o
+  `EQUIPO_OPENCODE_DIR`), le pone el entorno que pide `estado.sh` (venv,
+  `frontend/node_modules`, Chromium) y corre
+  `opencode run --command equipo-dev --auto` con la rutina de `origin/dev`.
+  Hace falta OpenCode 1.19 o mas nuevo (`npm i -g opencode-ai`), OmniRoute
+  (`npm i -g omniroute` y `omniroute`, con un proveedor conectado en
+  http://localhost:20128) y `gh auth login`: ahi `gh` es la herramienta de
+  GitHub del equipo. El proveedor lo deja `omniroute setup-opencode` en la
+  configuracion de OpenCode; si no, `scripts/equipo-dev/opencode_proveedor.py`
+  lo arma en cada turno con `OMNIROUTE_URL` y `OMNIROUTE_API_KEY` (la clave
+  nunca queda escrita). El modelo es `omniroute/auto`; `OMNIROUTE_MODEL` o
+  `EQUIPO_OPENCODE_MODEL` lo cambian. Sus commits firman `OpenCode`, que el
+  equipo reconoce como propio. En un cron, cada 3 horas como la rutina:
+  `1 */3 * * * bash /ruta/a/r6-replay-lab/scripts/equipo-dev/opencode.sh >> ~/equipo-dev.log 2>&1`.
