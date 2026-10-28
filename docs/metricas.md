@@ -246,6 +246,8 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | **Sitio** | El sitio de bomba, tal como lo nombra el juego (`2F Gym, 2F Bedroom`). En defensa es tu setup; en ataque es lo que estas atacando. |
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
+| **Presencia** | Rondas con ese operador en ese lado / todas tus rondas de ese lado, con los filtros activos. La base se cuenta antes del minimo de rondas: ocultar una fila no mueve las demas y las presencias de un lado suman 100 %. Con filtro de operador, ese operador queda en 100 %. |
+| **vs. tu lado** | Winrate con ese operador menos tu winrate de todas las rondas de ese lado (la misma base que Presencia), en puntos. Vacio si la fila o el lado no tienen ninguna ronda con ganador conocido. Con filtro de operador da 0. No lleva banda de ruido: la fila es parte de la base y no una muestra independiente, asi que el error estandar de dos proporciones no aplica; lo que dice cuanto pesa el numero es la Presencia. |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
 | **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
 | **Rating** | Aporte por ronda contra tu propio promedio. Aparece en casi todas las tablas. Ver la seccion Rating. |
