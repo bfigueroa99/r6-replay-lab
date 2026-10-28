@@ -206,8 +206,9 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
             # Huerfana: nadie la tiene (candado suelto) o quien la tenia murio.
             if [ "$candado" = "-" ] || [ $(( ahora - ult )) -ge 10800 ]; then huerfanas=$((huerfanas + 1)); fi ;;
     esac
-    # Sin merges: un "Update branch" del humano desde GitHub no es un pedido.
-    humano=$(git log --no-merges "origin/dev..$r" --format=%an | grep -v '^Claude' | sort -u | tr '\n' ' ')
+    # Sin merges: un "Update branch" del humano desde GitHub no es un pedido. El equipo
+    # firma `Claude` (la nube) u `OpenCode` (opencode.sh); cualquier otro autor es el humano.
+    humano=$(git log --no-merges "origin/dev..$r" --format=%an | grep -vE '^(Claude|OpenCode)' | sort -u | tr '\n' ' ')
     printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s | candado muerto: %s\n' \
         "$r" "$f" "$estado" "$tipo" "$candado" "$edad" "$reciente" "${humano:-ninguno}" "$muerto"
 done
@@ -265,7 +266,7 @@ echo "RELEASE=dev lleva $(git rev-list --count origin/main..origin/dev 2>/dev/nu
 
 echo "== pedidos del humano en backlog (commits suyos y seccion Para el equipo)"
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
-    git log --no-merges -5 "$B" --format='%an %ci | %s' -- docs/backlog | grep -v '^Claude' || echo "sin commits humanos recientes"
+    git log --no-merges -5 "$B" --format='%an %ci | %s' -- docs/backlog | grep -vE '^(Claude|OpenCode)' || echo "sin commits humanos recientes"
     git show "$B:docs/backlog/ESTADO.md" 2>/dev/null | sed -n '/^## Para el equipo/,$p' | head -30
     # El humano no lee un tablero que solo crece: `## Para el humano` paso de
     # 14 a 98 vinetas en 15 dias (5,8 a 29,9 KB de ESTADO.md, reescrito entero

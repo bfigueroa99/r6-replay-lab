@@ -35,6 +35,12 @@ GitHub Actions **no funciona en esta cuenta**: los jobs mueren sin runner, en
 `main` tambien. Un CI rojo no dice nada y uno verde no va a pasar. La
 verificacion es `check.ps1` en la maquina, y el e2e es la parte que ve la app.
 
+El equipo de desarrollo autonomo (`.claude/skills/equipo-dev/`) corre en la
+nube cada 3 horas y tambien en OpenCode con un modelo detras de OmniRoute:
+`bash scripts/equipo-dev/opencode.sh [rol]` (Linux, macOS o WSL; como dejarlo
+andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
+`.claude/skills/`.
+
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
 

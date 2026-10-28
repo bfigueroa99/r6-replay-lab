@@ -49,3 +49,7 @@ Thumbs.db
 # Arena (.claude/skills/arena): el estado del torneo y las soluciones de los
 # competidores quedan en .arena/ del directorio donde se corre. Nunca al repo.
 .arena/
+
+# OpenCode: lo que deja en .opencode/ es estado local; solo sus comandos se versionan.
+.opencode/*
+!.opencode/commands/
