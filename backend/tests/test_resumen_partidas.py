@@ -51,6 +51,14 @@ class ResumenPartidasTests(TestCase):
         self.assertEqual(datos["rounds"], 16)
         self.assertEqual(datos["rounds_per_match"], 8.0)
 
+    def test_las_sin_resultado_cuentan_en_rondas_por_partida(self):
+        # El winrate deja fuera las `won` nulas; las rondas por partida no.
+        _partida(index=0, rondas=6)
+        _partida(index=1, rondas=9, ganada=None)
+        datos = agg.matches_summary()
+        self.assertEqual(datos["rounds"], 15)
+        self.assertEqual(datos["rounds_per_match"], 7.5)
+
     def test_mejor_y_peor_mapa(self):
         for i in range(3):
             _partida(index=i, map_name="Bank")

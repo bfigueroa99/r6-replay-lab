@@ -1,7 +1,7 @@
 # 64. Partidas en el Inicio: ganadas, rondas por partida y mejor y peor mapa
 
-estado: revisado
-candado: qa 2026-10-28T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/64-partidas-en-el-inicio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md R1 (replica/features.csv fila 11, must, clone partial; [aurelix](https://aurelix.app/))
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/pages/Dashboard.jsx, backend/tests/test_resumen_partidas.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261027T2005Z, revisor 20261028T0004Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261027T2005Z, revisor 20261028T0004Z, qa 20261028T0404Z
 
 ## PR
 
@@ -235,6 +235,64 @@ verde (801).
 
 Veredicto: aprobar.
 
+## QA 2026-10-28 sobre 1a24d91
+
+(QA 20261028T0404Z, sobre origin/dev 2532ed1; dev no se movio.)
+
+`./scripts/check.sh` en `Todo en verde.` antes (801 tests backend, 120
+frontend, build, 51 e2e) y despues del test agregado (802).
+
+Base sembrada con `factories` (script en el scratchpad, `SQLITE_PATH` y
+`R6_ENV_FILE` aparte; nada al repo): Bank 3 ganadas + 1 perdida + 1 sin
+resultado, Border 1 de 3, Club House 2 de 2, Oregon 4-4 (`won` nulo), Kafe
+4-1 solo con rondas de ataque; 12 partidas, 70 rondas.
+`python manage.py runserver 127.0.0.1:8077 --noreload`:
+
+- Criterio 1: `curl localhost:8077/api/overview/` -> `matches 12, won 7,
+  lost 3, decided 10, undecided 2, match_winrate 70.0`. 200.
+- Criterio 2: `rounds 70, rounds_per_match 5.8` (70/12, sin resultado
+  incluidas). `?map=border` -> 19 rondas en 3, 6.3.
+- Criterio 3: mejor Bank 75 % en 4 (la sin resultado no entra a la
+  muestra), peor Border 33.3 % en 3; Club House (2) y Kafe (1) fuera.
+  `?map=bank` -> peor `null`; `?map=oregon` -> los dos `null`,
+  `match_winrate null`, `rounds_per_match 8.0`.
+- Criterio 4: base vacia (`migrate` sobre un `.sqlite3` nuevo, puerto
+  8078): 200 y todo `null`/0 con y sin `?side=Attack`. Filtros sin
+  partidas (`?map=nada`, `?since=2030-01-01`, `?operator=Ash`,
+  `?session=foo`, `?site=nada`, `?match_type=Casual`): 200, nulos.
+  `?side=Defense` y `?side=Attack` dan lo mismo que sin filtro (Kafe sigue
+  en `matches`). `?until=foo`, `?since=foo`, `?page=-1`, `?session=0`: 200,
+  se ignoran como en el resto de la API.
+- Criterio 5: Chromium (playwright) sobre el build: la fila aparece bajo los
+  KPI con "Partidas ganadas 70 % · 7 de 10 · 2 sin resultado", "Rondas por
+  partida 5.8 · 70 rondas en 12 partidas", "Mejor mapa Bank · 75% en 4
+  partidas", "Peor mapa Border · 33% en 3 partidas". Selector Mapa = Bank ->
+  peor "— · Ningún mapa por debajo"; Club House -> "Ningún mapa con 3+
+  partidas" en los dos; Oregon -> "— · 0 de 0 · 1 sin resultado" y "8 rondas
+  en 1 partida" (singular). A 390 px sin scroll horizontal. Consola limpia.
+  Base vacia: pantalla de bienvenida, sin errores. El e2e `el Resumen
+  muestra tus partidas` pasa dentro de `check.sh`.
+- Criterio 6: tres filas en `docs/metricas.md` `## Base` con la muestra de 3.
+- Bundle: chunk inicial `index-*.js` 187.83 kB en dev -> 188.72 kB (+0.5 %).
+
+Mutacion sobre `matches_summary`: sacar el `continue` de las sin resultado
+(cae `test_las_sin_resultado_no_llegan_a_la_muestra_del_mapa`); `>=` por `>`
+en el peor (caen 3); muestra `>` en vez de `>=` (caen 3); winrate sobre
+todas las partidas (cae `test_partidas_ganadas_sobre_decididas`).
+**Sobrevivia** `rounds_per_match` dividido por las decididas: ningun test
+mezclaba partidas sin resultado con rondas por partida. Agregado
+`test_las_sin_resultado_cuentan_en_rondas_por_partida` (6 + 9 rondas, una
+sin resultado -> 7.5); con la mutacion cae solo ese.
+
+Fuera de la ficha (preexistente en dev, no bloquea): el Inicio no lee los
+filtros de la URL (`/?map=bank` muestra todo); el filtro se aplica con el
+selector.
+
+Sin migracion, sin `recompute`, sin parser: no hay `## Verificar en el PC`.
+
+Veredicto: aprobado.
+
 ## Para el humano
 
-(Nada por ahora.)
+- Calibrar con la base real: `MIN_PARTIDAS_MAPA = 3` (aviso del
+  Arquitecto); probado solo con datos sinteticos.
