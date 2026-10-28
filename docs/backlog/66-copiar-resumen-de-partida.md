@@ -1,7 +1,7 @@
 # 66. Copiar el resumen de una partida como texto
 
-estado: revisado
-candado: qa 2026-10-28T20:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/66-copiar-resumen-de-partida
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H4
 archivos: frontend/src/resumenPartida.js, frontend/src/resumenPartida.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T1607Z, revisor 20261028T1644Z
+turnos: po 20261027T1205Z, arquitecto 20261027T1605Z, dev 20261028T1607Z, revisor 20261028T1644Z, qa 20261028T2004Z
 
 ## PR
 
@@ -258,6 +258,58 @@ Avisos (no bloquean):
 
 Veredicto: aprobar -> `revisado`. El hallazgo 2 cabe en un commit de 5 lineas
 si QA o el Release quieren pedirlo; si no, queda anotado en `## Para el humano`.
+
+## QA 2026-10-28 sobre 52e46d0
+
+(QA 20261028T2004Z.) Rama con `origin/dev` 8802635 integrado (52e46d0, merge limpio).
+
+- `./scripts/check.sh`: `Todo en verde.` 811 tests backend (4 skipped), 130
+  frontend, build ok, 53 e2e (incluido `el detalle de partida copia el
+  resumen`).
+- Chunk inicial: `index-*.js` 188.72 kB igual que en `origin/dev`
+  (worktree + `vite build`); `MatchDetail-*.js` pasa de 9.75 kB a 11.51 kB
+  (chunk lazy de la pagina).
+- Base vacia (`SQLITE_PATH` y `R6_ENV_FILE` en el scratchpad, `migrate`,
+  `runserver 127.0.0.1:8771`): `/api/matches/1/` 404, `/api/matches/?limit=200`
+  200, `/partidas/1` 200.
+- Base sembrada (`seed_demo`: 29 partidas, 203 rondas, `runserver
+  127.0.0.1:8772`): `/api/matches/99999/` 404; `/api/matches/1/?until=foo` y
+  `?page=-1` 200.
+- Criterio 1 y 2, contra la API real: Chromium con
+  `grantPermissions(['clipboard-read','clipboard-write'])`, boton "Copiar
+  resumen" en las partidas 29, 1 y 15 y `navigator.clipboard.readText()`.
+  Partida 29: `Bank · 4-3 · victoria` / `2026-08-05 08:00 · Ranked` /
+  `BearF99: 5 bajas / 5 muertes · K/D 1.00 · HS 40% · aperturas 1-1 · KST 71%`
+  / `Rondas ganadas: ataque 4 de 4 · defensa 0 de 3` / `Mejor ronda: R1, 1
+  baja`. Cruzado con `/api/matches/29/` en python: `my_totals` (5, 5, 1.0,
+  40.0, 71.4, 1-1), ganadas por lado (Attack 4/4, Defense 0/3) y kills por
+  ronda de la fila `is_me` (maximo 1, primera R1): coincide. Partida 15 igual
+  (mejor ronda R3, 2 bajas). Partida 1 (0 bajas tuyas): sin linea "Mejor
+  ronda" y `HS —`. Sin HTML ni markdown en ningun texto.
+- Criterio 3, camino negado, con la consola vigilada (`console` error/warning
+  y `pageerror`): `writeText` que rechaza con `NotAllowedError`
+  (`addInitScript`), `navigator.clipboard` indefinido y contexto sin permiso:
+  en los tres la pagina muestra `No se pudo copiar: el navegador no dio acceso
+  al portapapeles.` y la consola queda vacia. Con permiso: `Copiado`.
+- Criterio 4: e2e en verde dentro de `check.sh`.
+- Criterio 5: el handler usa el `data` del `useApi` existente; en el log del
+  runserver el click no genera ninguna request.
+- Mutacion sobre `resumenPartida.js` (restaurado): mapa y marcador invertidos
+  en la linea 1 (caen 3 tests), sin el `continue` del lado sin rondas (caen
+  2), `numero` sin el chequeo de null (caen 2: `un K/D nulo se escribe con
+  raya`, `sin rondas ni fila tuya no rompe`).
+
+Friccion (no bloquea): el aviso `Copiado` queda puesto hasta salir de la
+pagina; y el hallazgo 2 del Revisor ("1 bajas / 1 muertes") se ve con
+`seed_demo` en la partida del 2026-08-02 08:00. Los dos quedan en `## Para el
+humano`.
+
+Veredicto: aprobado.
+
+## Verificar en el PC
+
+- Electron (`npm run desktop`): abrir una partida, "Copiar resumen", pegar en
+  un editor. No se verifica en la nube.
 
 ## Para el humano
 
