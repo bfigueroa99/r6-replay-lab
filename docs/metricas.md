@@ -10,6 +10,9 @@ aca esta la definicion exacta.
 |---|---|
 | **Rondas** | Rondas tuyas importadas que pasan los filtros activos. |
 | **Rondas ganadas (winrate)** | Rondas donde tu equipo gano / rondas jugadas. Es winrate **de rondas**, no de partidas: mide mejor porque una partida son 6-9 muestras. |
+| **Partidas ganadas** | Partidas ganadas / partidas con ganador (`won` conocido). Empates e incompletas quedan fuera del denominador y se cuentan aparte ("sin resultado"). Las partidas las eligen los filtros menos el lado: un lado no parte una partida. |
+| **Rondas por partida** | Todas tus rondas importadas de esas partidas / partidas, con un decimal. La partida se lee entera: el operador o el sitio filtrado no recortan sus rondas. |
+| **Mejor y peor mapa** | Winrate de partida por mapa (las variantes de temporada de un mapa cuentan juntas), entre los mapas con 3 o mas partidas con ganador. Desempata por mas partidas y despues por nombre. El peor solo aparece si esta por debajo del mejor: con un solo mapa o todos empatados queda vacio. |
 | **Bajas / muertes** | Del kill feed. Una muerte es "moriste en esa ronda", no cuenta dos veces. Las bajas incluyen teamkills; Duelos y la Matriz de duelos los descartan. |
 | **K/D** | bajas / muertes. |
 | **KPR** | bajas / rondas. Mas honesto que el K/D porque no premia esconderse. Referencia razonable en ranked: 0.7-0.9. |
@@ -243,6 +246,8 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | **Sitio** | El sitio de bomba, tal como lo nombra el juego (`2F Gym, 2F Bedroom`). En defensa es tu setup; en ataque es lo que estas atacando. |
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |
+| **Presencia** | Rondas con ese operador en ese lado / todas tus rondas de ese lado, con los filtros activos. La base se cuenta antes del minimo de rondas: ocultar una fila no mueve las demas y las presencias de un lado suman 100 %. Con filtro de operador, ese operador queda en 100 %. |
+| **vs. tu lado** | Winrate con ese operador menos tu winrate de todas las rondas de ese lado (la misma base que Presencia), en puntos. Vacio si la fila o el lado no tienen ninguna ronda con ganador conocido. Con filtro de operador da 0. No lleva banda de ruido: la fila es parte de la base y no una muestra independiente, asi que el error estandar de dos proporciones no aplica; lo que dice cuanto pesa el numero es la Presencia. |
 | **Numero de ronda** | Para ver si te caes en las rondas finales. |
 | **Sesion** | Bloque de juego seguido, y posicion de la partida dentro de el. Ver la seccion Sesiones. |
 | **Rating** | Aporte por ronda contra tu propio promedio. Aparece en casi todas las tablas. Ver la seccion Rating. |

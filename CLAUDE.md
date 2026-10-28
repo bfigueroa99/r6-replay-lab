@@ -63,9 +63,9 @@ Nadie abre PR contra `main`, ni mergea ni empuja a `main` por su cuenta.
   escritorio: la UI web tiene que seguir funcionando sin ella.
 - **La API es de lectura.** Vistas planas con `JsonResponse`. Los POST son
   pocos y locales: `/api/import/`, `/api/overrides/`,
-  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; los que
-  cambian configuracion exigen `application/json`. No agregues serializers ni
-  viewsets.
+  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; todos
+  exigen `application/json`, asi otra pagina abierta en el navegador no puede
+  dispararlos. No agregues serializers ni viewsets.
 - **La configuracion vive en el `.env`.** La pagina Ajustes lo reescribe con
   `config/envfile.py` (solo la linea tocada) y aplica en caliente; no abras un
   segundo archivo de configuracion.

@@ -492,8 +492,35 @@ def by_site(min_rounds: int = 1, **filters) -> list[dict]:
 
 
 def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
+    """Filas por operador y lado, con presencia y delta contra tu lado.
+
+    La base del lado sale del queryset entero, antes de `min_rounds`: asi las
+    presencias de un lado suman 100 % y ocultar una fila no mueve las demas.
+    """
     qs = base_queryset(**filters).exclude(operator="")
-    return group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    rows = group_by(qs, "operator", "side", labels=("operator", "side"), min_rounds=min_rounds)
+    decidida = Q(round__my_team_won__isnull=False)
+    lados = {
+        r["side"]: r
+        for r in qs.values("side").annotate(
+            rounds=Count("id"),
+            rounds_won=Count("id", filter=Q(won=True)),
+        )
+    }
+    # Una ronda sin ganador cuenta como perdida en `won`; sin ninguna decidida
+    # el delta no dice nada. Basta mirarlo en la fila: si el lado no tiene
+    # ninguna, ninguna de sus filas la tiene.
+    decididas = {
+        (r["operator"], r["side"]): r["n"]
+        for r in qs.filter(decidida).values("operator", "side").annotate(n=Count("id"))
+    }
+    for row in rows:
+        lado = lados.get(row["side"]) or {}
+        row["presence_pct"] = _pct(row["rounds"], lado.get("rounds"))
+        base = _pct(lado.get("rounds_won") or 0, lado.get("rounds"))
+        con_ganador = decididas.get((row["operator"], row["side"]))
+        row["winrate_delta"] = _delta(row["winrate"], base) if con_ganador else None
+    return rows
 
 
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
@@ -907,6 +934,65 @@ def by_margin(**filters) -> dict:
         "rows": filas,
         "matches_known": medidas,
         "matches_excluded": partidas.count() - medidas,
+    }
+
+
+#: Partidas decididas en un mapa para que cuente como mejor o peor. Bajo a
+#: proposito (un mapa por semana alcanza); calibrar con la base real.
+MIN_PARTIDAS_MAPA = 3
+
+
+def matches_summary(**filters) -> dict:
+    """Tus partidas en una linea: ganadas, rondas por partida y mejor y peor mapa.
+
+    Las partidas se eligen como en `by_margin`: el lado no parte una partida.
+    Lo que `won` deja en nulo (empate o incompleta) no entra al winrate.
+    """
+    filtros = {k: v for k, v in filters.items() if k != "side"}
+    ids = list(base_queryset(**filtros).values_list("round__match_id", flat=True).distinct())
+    partidas = list(
+        Match.objects.filter(id__in=ids)
+        .values("id", "map_slug", "map_name", "played_at", "won")
+        .order_by("played_at", "id")
+    )
+    ganadas = sum(1 for p in partidas if p["won"] is True)
+    perdidas = sum(1 for p in partidas if p["won"] is False)
+    decididas = ganadas + perdidas
+    rondas = RoundPlayer.objects.filter(is_me=True, round__match_id__in=ids).count()
+
+    # Por slug: las variantes de temporada de un mapa son el mismo mapa. Las
+    # partidas vienen en orden de fecha, asi el nombre queda el mas reciente.
+    por_mapa: dict[str, dict] = {}
+    for p in partidas:
+        if p["won"] is None:
+            continue
+        m = por_mapa.setdefault(p["map_slug"], {"slug": p["map_slug"], "matches": 0, "wins": 0})
+        m["map"] = p["map_name"]
+        m["matches"] += 1
+        m["wins"] += 1 if p["won"] else 0
+    candidatos = [
+        {**m, "winrate": _pct(m["wins"], m["matches"])}
+        for m in por_mapa.values() if m["matches"] >= MIN_PARTIDAS_MAPA
+    ]
+    mejor = min(candidatos, key=lambda m: (-m["winrate"], -m["matches"], m["map"]), default=None)
+    peor = min(candidatos, key=lambda m: (m["winrate"], -m["matches"], m["map"]), default=None)
+    # Con un solo mapa o todos empatados, el peor seria el mismo numero que el
+    # mejor: no hay un mapa por debajo que mostrar.
+    if peor is not None and peor["winrate"] >= mejor["winrate"]:
+        peor = None
+
+    return {
+        "matches": len(partidas),
+        "matches_won": ganadas,
+        "matches_lost": perdidas,
+        "matches_decided": decididas,
+        "matches_undecided": len(partidas) - decididas,
+        "match_winrate": _pct(ganadas, decididas),
+        "rounds": rondas,
+        "rounds_per_match": _ratio(rondas, len(partidas), 1),
+        "min_matches_map": MIN_PARTIDAS_MAPA,
+        "best_map": mejor,
+        "worst_map": peor,
     }
 
 

@@ -79,6 +79,22 @@ test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra presencia y delta', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Ataque', exact: true }) })
+  await expect(panel.locator('th', { hasText: 'Presencia' })).toBeVisible()
+  await expect(panel.locator('th', { hasText: 'vs. tu lado' })).toBeVisible()
+  // seed: 39 de 116 rondas de ataque con Ash; todo el ataque se gana, asi que
+  // el delta es 0 (y no -0). Columnas: operador, lado, rondas, presencia, ganadas, delta
+  const ash = panel.locator('tr', { has: page.getByRole('cell', { name: 'Ash', exact: true }) })
+  await expect(ash.locator('td').nth(3)).toHaveText('34%')
+  await expect(ash.locator('td').nth(5)).toHaveText('0')
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -378,6 +394,24 @@ test('el Resumen muestra tus multikills', async ({ page }) => {
   const stat = page.locator('.stat', { has: page.locator('.label', { hasText: /^Multikills$/ }) })
   await expect(stat.locator('.value')).toHaveText('14')
   await expect(stat.locator('.sub')).toHaveText('14×2K · 7% de tus rondas')
+
+  expect(errores).toEqual([])
+})
+
+test('el Resumen muestra tus partidas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  // seed_demo: 29 partidas, todas ganadas, 203 rondas; Bank y Club House con 10, todos los mapas al 100 %
+  const stat = (nombre) => page.locator('.stat', { has: page.locator('.label', { hasText: nombre }) })
+  await expect(stat(/^Partidas ganadas$/).locator('.value')).toHaveText('100%')
+  await expect(stat(/^Partidas ganadas$/).locator('.sub')).toHaveText('29 de 29')
+  await expect(stat(/^Rondas por partida$/).locator('.value')).toHaveText('7.0')
+  await expect(stat(/^Rondas por partida$/).locator('.sub')).toHaveText('203 rondas en 29 partidas')
+  await expect(stat(/^Mejor mapa$/).locator('.value')).toHaveText('Bank')
+  await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
+  await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
+  await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
 
   expect(errores).toEqual([])
 })
