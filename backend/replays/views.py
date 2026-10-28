@@ -177,6 +177,8 @@ def overview(request: HttpRequest) -> JsonResponse:
     payload["data_health"] = agg.data_health(**filters)
     # va en la vista y no en agg.overview: el coach la llama y no usa records
     payload["records"] = agg.personal_records(**filters)
+    # tambien en la vista: el coach llama a agg.overview y no usa el resumen
+    payload["matches_summary"] = agg.matches_summary(**filters)
     payload["filters"] = {k: str(v) for k, v in filters.items()}
     return _ok(payload)
 

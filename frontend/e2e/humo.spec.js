@@ -382,6 +382,24 @@ test('el Resumen muestra tus multikills', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Resumen muestra tus partidas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  // seed_demo: 29 partidas, todas ganadas, 203 rondas; Bank y Club House con 10, todos los mapas al 100 %
+  const stat = (nombre) => page.locator('.stat', { has: page.locator('.label', { hasText: nombre }) })
+  await expect(stat(/^Partidas ganadas$/).locator('.value')).toHaveText('100%')
+  await expect(stat(/^Partidas ganadas$/).locator('.sub')).toHaveText('29 de 29')
+  await expect(stat(/^Rondas por partida$/).locator('.value')).toHaveText('7.0')
+  await expect(stat(/^Rondas por partida$/).locator('.sub')).toHaveText('203 rondas en 29 partidas')
+  await expect(stat(/^Mejor mapa$/).locator('.value')).toHaveText('Bank')
+  await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
+  await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
+  await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
+
+  expect(errores).toEqual([])
+})
+
 test('el perfil de un jugador se abre desde Compañeros', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
