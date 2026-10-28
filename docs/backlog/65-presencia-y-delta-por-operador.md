@@ -1,7 +1,7 @@
 # 65. Presencia y delta de winrate por operador
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-28T12:10Z
 rama: claude/equipo-dev/65-presencia-y-delta-por-operador
 tipo: funcionalidad
 epica: operadores
