@@ -1,20 +1,20 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-29 12:55 UTC por revisor (sesion 20261029T1223Z; motivo: por estado: 1 implementado; reloj: revisor, franja 4)
+actualizado: 2026-10-29 16:10 UTC por dev (sesion 20261029T1607Z; motivo: por estado: 1 con_hallazgos, 0 huerfanas; reloj: dev, franja 5)
 playbook: origin/dev@c3597f4
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 42 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 43 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/67-teamkills-fuera-de-las-bajas | 67 | con hallazgos | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/67-teamkills-fuera-de-las-bajas?expand=1 | no |
+| claude/equipo-dev/67-teamkills-fuera-de-las-bajas | 67 | implementado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/67-teamkills-fuera-de-las-bajas?expand=1 | no |
 
 RELEASE=dev lleva 13 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -34,7 +34,7 @@ Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 67-teamkills-fuera-de-las-bajas | en curso (con hallazgos en su rama) | bug | - | 1 | backend | - |
+| 67-teamkills-fuera-de-las-bajas | en curso (implementado en su rama) | bug | - | 1 | backend | - |
 | 70-mapas-por-version | disenado | funcionalidad | temporada-y-modo | 2 | fullstack | - |
 | 68-partidas-sin-cerrar-sin-resultado | disenado (implementar despues de #67) | bug | - | 2 | backend | - |
 | 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | - |
@@ -47,7 +47,7 @@ Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-10-28 20:40 | (mismo turno que la QA) Entrega y mergea la 66: `aprobado` -> `entregado` -> [PR #63](https://github.com/bfigueroa99/r6-replay-lab/pull/63) -> dev c3597f4. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, `check.sh` en verde sobre el head 5e506c5. Ficha recortada con `## PR`; espejo quitado de `backlog`, H4 `en dev`. `pruebas.sh`: PRUEBAS_OK (14). Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
-| dev | 2026-10-29 08:15 | Implementa 67 (bug p1, `disenado` -> `implementado`, rama `claude/equipo-dev/67-teamkills-fuera-de-las-bajas`, 0543d28): `metrics.bajas_a_rivales` saca teamkills y suicidios de `kills`/`headshots` en el import y en `recompute` (antes de los trades, asi `kst` sigue); 10 tests nuevos (paridad con el parser incluida); seis filas de `metricas.md`. Revision ciega: 3 hallazgos, 2 corregidos, la migracion de datos que proponia queda como aviso (el diseno dice sin migracion). `check.sh` en `Todo en verde.` (822 backend, 130 vitest, build, 53 e2e). |
+| dev | 2026-10-29 16:10 | Corrige 67 (bug p1,  -> , 815b932): H1, la fila Teamkills de  ya no dice que no cuentan en el Rating; un teamkill que abre la ronda sigue siendo apertura y entry (tambien en Duelos de apertura) hasta otra ficha, y  lo fija.  en  (823 backend, 130 vitest, build, 53 e2e). |
 | revisor | 2026-10-29 12:55 | Revisa 67 (bug p1, `implementado` -> `con hallazgos`) sobre 0543d28, dev sin moverse. `check.sh` en `Todo en verde.` (822 backend, 130 vitest, build, 53 e2e). Revision ciega (subagente) con 4 hallazgos, 1 confirmado: H1, la fila Teamkills de `metricas.md` dice que no cuentan en Rating, pero un teamkill que abre la ronda sigue dando `opening_kill`/`entry_kill` (+0.5 de Rating); arreglo de docs + test que fije la apertura. Descartados: migracion de datos (fuera de alcance, ya en `## Para el humano` de la ficha), `recompute` sobre `seed_demo` (preexistente, anotado por el Dev), `ñ` en comentarios (precedente en dev). |
 | qa | 2026-10-28 20:30 | Prueba 66 (funcionalidad, `revisado` -> `aprobado`) sobre 52e46d0 (dev 8802635 integrado). `check.sh` en `Todo en verde.` (811 backend, 130 vitest, build, 53 e2e); chunk inicial igual que dev. Base vacia y `seed_demo` con `runserver` y `curl`; Chromium copiando el resumen de las partidas 29, 1 y 15, cruzado con `/api/matches/<id>/`; portapapeles que rechaza, ausente y sin permiso: aviso en la pagina, consola limpia; el click no hace requests. Mutacion: tres, las tres caen. Friccion menor anotada en la ficha. |
 | arquitecto | 2026-10-29 04:30 | Disena 67 (regla en `metrics.bajas_a_rivales` sobre `Event`, usada por `analyse_round` antes de `annotate_trades` y por `recompute`, que suma `kills`/`headshots` a `CAMPOS`; el test del parser queda y la inversion es un test nuevo de la app; cinco filas de `metricas.md`), 70 (clave `(map_slug, map_id)` porque seed y factories usan `map_id=0`; etiqueta estatica "Consulate (Y10)" del sufijo de `MAPS` en `pydissect/header.py`; `?map=<digitos>` filtra una version sin clave nueva; selector con `mapas.js` puro) y 68 (`reglas_partida.resultado` con `cierra(max-1, min)`, ingest y `recompute` de `Match.won`; implementar despues de #67). Sin arena, sin migracion, sin pushes de codigo. |
