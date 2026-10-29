@@ -280,6 +280,12 @@ class BajasARivalesTests(SimpleTestCase):
         atk1 = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]["atk1"]
         self.assertEqual((atk1["kills"], atk1["headshots"]), (0, 0))
 
+    def test_un_teamkill_de_apertura_sigue_siendo_apertura(self):
+        """Fuera de alcance de la ficha 67; lo fija para que `metricas.md` no se separe del codigo."""
+        eventos = [_kill(0, "atk1", "atk2", 150.0)]
+        atk1 = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]["atk1"]
+        self.assertEqual((atk1["kills"], atk1["opening_kill"], atk1["entry_kill"]), (0, True, True))
+
     def test_sin_teamkills_las_bajas_son_las_del_parser(self):
         """Paridad con `pydissect.stats` sobre el mismo feed: solo los teamkills difieren."""
         lector = LectorFalso(ganador=0)

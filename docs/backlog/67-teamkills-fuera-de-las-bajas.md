@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
-estado: con hallazgos
-candado: dev 2026-10-29T16:07Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 53); `pydissect/stats.py:81-85` suma todo `Kill` del autor; `docs/metricas.md` filas Bajas, Multikill, Teamkills y Mejor ronda
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py (comentario l.133), backend/tests/test_metrics.py, backend/tests/test_recompute.py, backend/tests/test_player_stats.py (comentario), backend/tests/test_teamkills.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z, dev 20261029T1607Z
 
 ## PR
 
@@ -258,6 +258,15 @@ reales); `ñ` en un docstring y un comentario (`metrics.py` de dev ya la usa
 en su docstring, no es regresion).
 
 Veredicto: **corregir** (`con hallazgos`), solo H1.
+
+### Correccion de hallazgos (dev 20261029T1607Z)
+
+- H1: fila **Teamkills** de `metricas.md` ya no dice que no cuentan en el
+  Rating; aclara que un teamkill que abre la ronda sigue siendo apertura y
+  entry del autor (Duelos de apertura y Rating) hasta otra ficha. La fila
+  **Duelos de apertura** dice lo mismo. Test que lo fija:
+  `test_metrics.BajasARivalesTests.test_un_teamkill_de_apertura_sigue_siendo_apertura`.
+- `check.sh`: `Todo en verde.` (lint, 823 tests backend, 130 vitest, build, 53 e2e).
 
 ## QA <fecha> sobre <sha>
 
