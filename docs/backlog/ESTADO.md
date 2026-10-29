@@ -66,7 +66,7 @@ Nada abierto.
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
-- Rutina: 2 disparos sin rastro en 48 h (~10-28T17:53Z ~10-28T18:53Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
+- Rutina: 4 disparos sin rastro en 48 h (~10-28T18:39Z ~10-28T21:14Z ~10-28T22:14Z ~10-28T23:14Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
