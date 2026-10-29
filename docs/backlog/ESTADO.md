@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-29 16:10 UTC por dev (sesion 20261029T1607Z; motivo: por estado: 1 con_hallazgos, 0 huerfanas; reloj: dev, franja 5)
+actualizado: 2026-10-29 20:30 UTC por revisor (sesion 20261029T2004Z; motivo: por estado: 1 implementado; reloj: revisor, franja 7)
 playbook: origin/dev@c3597f4
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 43 en 7 dias
 pausa: no
@@ -9,12 +9,12 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/67-teamkills-fuera-de-las-bajas | 67 | implementado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/67-teamkills-fuera-de-las-bajas?expand=1 | no |
+| claude/equipo-dev/67-teamkills-fuera-de-las-bajas | 67 | revisado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/67-teamkills-fuera-de-las-bajas?expand=1 | no |
 
 RELEASE=dev lleva 13 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -34,13 +34,13 @@ Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 67-teamkills-fuera-de-las-bajas | en curso (implementado en su rama) | bug | - | 1 | backend | - |
+| 67-teamkills-fuera-de-las-bajas | en curso (revisado en su rama) | bug | - | 1 | backend | - |
 | 70-mapas-por-version | disenado | funcionalidad | temporada-y-modo | 2 | fullstack | - |
 | 68-partidas-sin-cerrar-sin-resultado | disenado (implementar despues de #67) | bug | - | 2 | backend | - |
 | 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto`, 2 `disenado`. La 67 esta `implementado` (H1 corregido): proximo turno Revisor (regla 3). La 70 es independiente y la puede tomar el proximo Dev; la 68 espera a que la 67 llegue a dev (las dos tocan `recompute.py`). La 69 queda para el proximo Arquitecto y tambien toca `recompute.py` (va despues de #67). Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
+1 `propuesto`, 2 `disenado`. La 67 esta `revisado` (segunda pasada, aprobada): proximo turno QA (regla 2); el Release agrega a la fila `recompute` del README que tambien saca teamkills. La 70 es independiente y la puede tomar el proximo Dev; la 68 espera a que la 67 llegue a dev (las dos tocan `recompute.py`). La 69 queda para el proximo Arquitecto y tambien toca `recompute.py` (va despues de #67). Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
 
 ## Ultimo turno de cada rol
 
@@ -48,7 +48,7 @@ Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para
 |---|---|---|
 | release | 2026-10-28 20:40 | (mismo turno que la QA) Entrega y mergea la 66: `aprobado` -> `entregado` -> [PR #63](https://github.com/bfigueroa99/r6-replay-lab/pull/63) -> dev c3597f4. Puerta a-f cumplida: dev, revisor y qa de tres sesiones, `check.sh` en verde sobre el head 5e506c5. Ficha recortada con `## PR`; espejo quitado de `backlog`, H4 `en dev`. `pruebas.sh`: PRUEBAS_OK (14). Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-10-29 16:11 | Corrige 67 (bug p1, `con hallazgos` -> `implementado`, 815b932): H1, la fila Teamkills de `metricas.md` ya no dice que no cuentan en el Rating; un teamkill que abre la ronda sigue siendo apertura y entry (tambien en Duelos de apertura) hasta otra ficha, y `test_un_teamkill_de_apertura_sigue_siendo_apertura` lo fija. `check.sh` en `Todo en verde.` (823 backend, 130 vitest, build, 53 e2e). |
-| revisor | 2026-10-29 12:55 | Revisa 67 (bug p1, `implementado` -> `con hallazgos`) sobre 0543d28, dev sin moverse. `check.sh` en `Todo en verde.` (822 backend, 130 vitest, build, 53 e2e). Revision ciega (subagente) con 4 hallazgos, 1 confirmado: H1, la fila Teamkills de `metricas.md` dice que no cuentan en Rating, pero un teamkill que abre la ronda sigue dando `opening_kill`/`entry_kill` (+0.5 de Rating); arreglo de docs + test que fije la apertura. Descartados: migracion de datos (fuera de alcance, ya en `## Para el humano` de la ficha), `recompute` sobre `seed_demo` (preexistente, anotado por el Dev), `ñ` en comentarios (precedente en dev). |
+| revisor | 2026-10-29 20:30 | Revisa 67 (bug p1, `implementado` -> `revisado`) sobre 815b932, segunda pasada, dev sin moverse. `check.sh` en `Todo en verde.` (823 backend, 130 vitest, build, 53 e2e). H1 de la primera pasada corregido. Ciega con 2 hallazgos, ambos descartados: migracion de datos (decision del humano: `recompute`; aviso reforzado en la ficha: el `.exe` no tiene como correr `recompute`) y fila `recompute` del README (la agrega el Release al entregar). |
 | qa | 2026-10-28 20:30 | Prueba 66 (funcionalidad, `revisado` -> `aprobado`) sobre 52e46d0 (dev 8802635 integrado). `check.sh` en `Todo en verde.` (811 backend, 130 vitest, build, 53 e2e); chunk inicial igual que dev. Base vacia y `seed_demo` con `runserver` y `curl`; Chromium copiando el resumen de las partidas 29, 1 y 15, cruzado con `/api/matches/<id>/`; portapapeles que rechaza, ausente y sin permiso: aviso en la pagina, consola limpia; el click no hace requests. Mutacion: tres, las tres caen. Friccion menor anotada en la ficha. |
 | arquitecto | 2026-10-29 04:30 | Disena 67 (regla en `metrics.bajas_a_rivales` sobre `Event`, usada por `analyse_round` antes de `annotate_trades` y por `recompute`, que suma `kills`/`headshots` a `CAMPOS`; el test del parser queda y la inversion es un test nuevo de la app; cinco filas de `metricas.md`), 70 (clave `(map_slug, map_id)` porque seed y factories usan `map_id=0`; etiqueta estatica "Consulate (Y10)" del sufijo de `MAPS` en `pydissect/header.py`; `?map=<digitos>` filtra una version sin clave nueva; selector con `mapas.js` puro) y 68 (`reglas_partida.resultado` con `cierra(max-1, min)`, ingest y `recompute` de `Match.won`; implementar despues de #67). Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
@@ -59,6 +59,7 @@ Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para
 (Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Un aviso que no bloquea de una ficha ya en `dev` queda en la ficha, no aca. La lista larga anterior, con las preguntas que respondiste el 2026-10-28, esta en `git log` de este archivo: commit 440e6a1.)
 
 - Ramas borrables (el proxy y el clasificador de la nube cortan `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador claude/equipo-dev/62-cuando-matas claude/equipo-dev/63-cuando-llega-la-apertura claude/equipo-dev/64-partidas-en-el-inicio claude/equipo-dev/65-presencia-y-delta-por-operador claude/equipo-dev/66-copiar-resumen-de-partida
+- Ficha 67 (aviso, no bloquea): el `.exe` (`serve.py`) solo corre `migrate`; sin `recompute` el historial queda con teamkills en Bajas. Si lo queres automatico, una migracion de datos como la 0003 va en otra ficha.
 - PRs que esperan tu merge contra dev: ninguno. Promover a main cuando quieras: RELEASE=dev lleva 13 commits que main no tiene (https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1).
 - Verificar en el PC (66): en Electron (`npm run desktop`), "Copiar resumen" en una partida y pegar.
 - Entorno cloud (qa 20261026T2004Z): `check.sh` ya elige solo el Chromium de la imagen (`E2E_CHROMIUM`); correr `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
