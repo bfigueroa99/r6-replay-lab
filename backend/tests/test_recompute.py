@@ -208,6 +208,53 @@ class RecomputeClutchTests(TestCase):
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 0)
 
 
+class RecomputeBajasTests(TestCase):
+    """Lo importado antes de la ficha 67 cuenta los teamkills como bajas."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+        rnd = make_round(self.match, 0)
+        make_round_player(rnd, username=ME, kills=3, headshots=1, died=False)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=0, died=True)
+        for nick in ("r1", "r2"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=1, kills=0, died=True)
+        make_event(rnd, 0, ME, "r1", clock=150.0)
+        make_event(rnd, 1, ME, "amigo", clock=140.0, headshot=True)
+        make_event(rnd, 2, ME, "r2", clock=130.0)
+
+    def _yo(self) -> RoundPlayer:
+        return RoundPlayer.objects.get(username=ME)
+
+    def test_recompute_saca_los_teamkills_de_las_bajas(self):
+        result = recompute(window=3.0)
+        self.assertGreaterEqual(result.players_changed, 1)
+        yo = self._yo()
+        self.assertEqual((yo.kills, yo.headshots), (2, 0))
+
+    def test_recompute_dry_run_cuenta_las_bajas_sin_escribir(self):
+        result = recompute(window=3.0, dry_run=True)
+        self.assertGreaterEqual(result.players_changed, 1)
+        self.assertEqual(self._yo().kills, 3)
+
+    def test_recompute_de_bajas_es_idempotente(self):
+        recompute(window=3.0)
+        self.assertEqual(recompute(window=3.0).players_changed, 0)
+
+    def test_overview_y_scoreboard_cuentan_dos_bajas_con_un_teamkill(self):
+        recompute(window=3.0)
+        overall = self.client.get("/api/overview/").json()["overall"]
+        self.assertEqual(overall["kills"], 2)
+        self.assertEqual((overall["k2"], overall["k3"]), (1, 0))
+
+        # tus numeros jugando con el compañero al que mataste
+        amigo = RoundPlayer.objects.get(username="amigo").player_id
+        self.assertEqual(self.client.get(f"/api/players/{amigo}/").json()["with"]["kills"], 2)
+
+        fila = next(f for f in self.client.get(f"/api/matches/{self.match.id}/").json()["scoreboard"]
+                    if f["username"] == ME)
+        self.assertEqual((fila["kills"], fila["k2"], fila["k3"]), (2, 1, 0))
+
+
 class ApiTests(TestCase):
     def test_la_ventana_se_ve_en_la_api(self):
         self.assertEqual(self.client.get("/api/health/").json()["trade_window"], 3.0)

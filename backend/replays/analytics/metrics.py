@@ -6,6 +6,7 @@ trade, momento de la muerte, KST y la condicion de victoria.
 
 Definiciones (documentadas a proposito, para que los numeros se puedan auditar)
 -------------------------------------------------------------------------------
+kills          bajas a rivales; los teamkills no cuentan
 opening_kill   la primera baja de la ronda la hizo este jugador
 opening_death  este jugador fue la primera baja de la ronda
 entry_kill     la primera baja de su equipo la hizo este jugador
@@ -93,6 +94,29 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
     for m in metrics.values():
         m["untraded_death"] = bool(m.get("died")) and not m["was_traded"]
         m["kst"] = bool(m.get("kills") or m.get("survived") or m["was_traded"])
+
+
+def bajas_a_rivales(eventos: list[dict], team_of: dict[str, int]) -> dict[str, dict]:
+    """Bajas y headshots de cada jugador contando solo rivales.
+
+    Unica implementacion: la usan el import y `recompute`. El parser sigue a
+    r6-dissect y suma todo `Kill` del autor; que un teamkill no sea una baja lo
+    decide la app (decision del humano, ficha 67).
+
+    Una victima que no figura en `team_of` cuenta: no hay como saber que es un
+    compañero. Un suicidio registrado como `Kill` cae solo: es del mismo equipo.
+    """
+    valor = {nick: {"kills": 0, "headshots": 0} for nick in team_of}
+    for e in eventos:
+        if e.get("kind") != KILL:
+            continue
+        autor = e.get("actor")
+        if autor not in team_of or team_of.get(e.get("target")) == team_of[autor]:
+            continue
+        valor[autor]["kills"] += 1
+        if e.get("headshot"):
+            valor[autor]["headshots"] += 1
+    return valor
 
 
 def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
@@ -246,6 +270,11 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
     for nick, vs in clutch_vs(events, team_of).items():
         if nick in metrics:
             metrics[nick]["clutch_vs"] = vs
+
+    # antes de los trades: `kst` sale de `kills`
+    for nick, bajas in bajas_a_rivales(events, team_of).items():
+        if nick in metrics:
+            metrics[nick].update(bajas)
 
     # ---------------------------------------------------------------- trades
     annotate_trades(kill_events, team_of, metrics, trade_window() if window is None else window)
