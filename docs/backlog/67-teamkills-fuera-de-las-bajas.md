@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-29T12:23Z
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
