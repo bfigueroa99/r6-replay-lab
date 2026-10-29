@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
-estado: implementado
-candado: revisor 2026-10-29T12:23Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 53); `pydissect/stats.py:81-85` suma todo `Kill` del autor; `docs/metricas.md` filas Bajas, Multikill, Teamkills y Mejor ronda
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py (comentario l.133), backend/tests/test_metrics.py, backend/tests/test_recompute.py, backend/tests/test_player_stats.py (comentario), backend/tests/test_teamkills.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z
 
 ## PR
 
@@ -222,7 +222,42 @@ Dev 20261029T0805Z, sobre `origin/dev@c3597f4`. Diseno completo, sin desvios de 
 
 Skills: no aplica (backend puro, misma forma que `clutch_vs`). Sin arena.
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-29 sobre 0543d28
+
+Revisor 20261029T1223Z. `check.sh` en `Todo en verde.` sobre la rama (dev no se movio
+desde el reclamo): lint, 822 tests backend, 130 vitest, build, 53 e2e.
+Revision ciega con `revision.md` + confirmacion de cada hallazgo.
+
+Criterios: 1, 2 y 3 cubiertos por los tests que lista Implementacion (los
+corri: verdes). Paridad sin teamkills con `pydissect.stats` probada. 5: los
+numeros de `seed_demo` no se mueven (e2e verde). 4: falla por H1.
+
+**H1 (corregir, docs).** `docs/metricas.md`, fila **Teamkills**: "No cuentan
+en Bajas, HS%, KPR, Rating ni multikills" no es cierto para un teamkill que
+abre la ronda. `analyse_round` sigue marcando `opening_kill` y `entry_kill`
+al autor (`metrics.py`, bloque de aperturas, fuera de alcance de esta ficha),
+y `opening_kill` pesa +0.5 en el Rating (`aggregates.py:112`) y suma en
+Duelos de apertura, Aperturas ganadas % y la columna Aperturas.
+Repro: `analyse_round` con un solo evento `_kill(0, "atk1", "atk2", 150.0)`
+(compañero) y `_stats_del_guion` de `test_metrics.py` ->
+`atk1 = {kills: 0, opening_kill: True, entry_kill: True}`.
+Arreglo sugerido (sin tocar codigo, la apertura queda como dice Fuera de
+alcance): en la fila Teamkills, "No cuentan en Bajas, HS%, KPR ni
+multikills. Un teamkill que abre la ronda sigue contando como apertura y
+entry (y su peso en el Rating) hasta otra ficha"; y en la fila Bajas o en
+Duelos de apertura la misma salvedad si hace falta. Agregar en
+`test_metrics.BajasARivalesTests` un test que fije ese comportamiento
+(`test_un_teamkill_de_apertura_sigue_siendo_apertura`) para que el doc y el
+codigo no vuelvan a separarse sin que se note.
+
+Descartados tras confirmarlos: migracion de datos para lo ya importado
+(el Diseno y la ficha la dejan fuera; ya esta en `## Para el humano`);
+`recompute` sobre `seed_demo` baja `kills` de filas sin `Kill` en el feed
+(ya anotado por el Dev, ya pasaba con trades en dev; no afecta a `.rec`
+reales); `ñ` en un docstring y un comentario (`metrics.py` de dev ya la usa
+en su docstring, no es regresion).
+
+Veredicto: **corregir** (`con hallazgos`), solo H1.
 
 ## QA <fecha> sobre <sha>
 
