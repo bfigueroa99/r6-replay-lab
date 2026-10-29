@@ -1,8 +1,8 @@
 # 67. Teamkills fuera de las bajas
 
-estado: disenado
+estado: en curso
 candado: -
-rama: -
+rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
 area: backend
