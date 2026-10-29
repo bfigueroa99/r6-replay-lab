@@ -1,7 +1,7 @@
 # 68. Partidas con marcador que no cierra quedan sin resultado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-29 04:04 UTC
 rama: -
 tipo: bug
 epica: -

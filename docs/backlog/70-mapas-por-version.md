@@ -1,7 +1,7 @@
 # 70. Cada version de un mapa en su propia fila
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-29 04:04 UTC
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
