@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-29T20:04Z
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 53); `pydissect/stats.py:81-85` suma todo `Kill` del autor; `docs/metricas.md` filas Bajas, Multikill, Teamkills y Mejor ronda
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py (comentario l.133), backend/tests/test_metrics.py, backend/tests/test_recompute.py, backend/tests/test_player_stats.py (comentario), backend/tests/test_teamkills.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z, dev 20261029T1607Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z, dev 20261029T1607Z, revisor 20261029T2004Z
 
 ## PR
 
