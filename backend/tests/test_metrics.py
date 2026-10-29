@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from django.test import SimpleTestCase
 
+from pydissect import stats
 from replays.analytics.metrics import analyse_round, bajas_a_rivales
+
+from .test_player_stats import NOMBRES, LectorFalso, kill
 
 
 def _kill(order: int, actor: str, target: str, clock: float, headshot: bool = False) -> dict:
@@ -179,7 +182,7 @@ def _atacante(username: str) -> dict:
 
 
 def _stats_del_guion(extra_players: list[dict], events: list[dict]) -> list[dict]:
-    """Stats coherentes con el kill feed, como las arma el parser."""
+    """Stats coherentes con el kill feed (sin headshots: no los mira ningun test de KST)."""
     nombres = ["atk1", "atk2", "def1", "def2", *(p["username"] for p in extra_players)]
     equipo = {"atk1": 0, "atk2": 0, "def1": 1, "def2": 1, **{p["username"]: 0 for p in extra_players}}
     return [
@@ -278,8 +281,15 @@ class BajasARivalesTests(SimpleTestCase):
         self.assertEqual((atk1["kills"], atk1["headshots"]), (0, 0))
 
     def test_sin_teamkills_las_bajas_son_las_del_parser(self):
-        eventos = [_kill(0, "atk1", "def1", 150.0, headshot=True), _kill(1, "def2", "atk2", 140.0)]
-        result = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]
-        self.assertEqual({n: m["kills"] for n, m in result.items()},
-                         {"atk1": 1, "atk2": 0, "def1": 0, "def2": 1})
-        self.assertEqual(result["atk1"]["headshots"], 1)
+        """Paridad con `pydissect.stats` sobre el mismo feed: solo los teamkills difieren."""
+        lector = LectorFalso(ganador=0)
+        lector.match_feedback = [
+            kill("A0", "B0", headshot=True), kill("A0", "B1"), kill("B2", "A1", headshot=True),
+            kill("A3", "B2"), kill("B3", "A3"),
+        ]
+        del_parser = {f["username"]: {"kills": f["kills"], "headshots": f["headshots"]}
+                      for f in stats.player_round_stats(lector)}
+        team_of = {nombre: i // 5 for i, nombre in enumerate(NOMBRES)}
+        eventos = [{"kind": "Kill", "actor": u["username"], "target": u["target"],
+                    "headshot": u["headshot"]} for u in lector.match_feedback]
+        self.assertEqual(bajas_a_rivales(eventos, team_of), del_parser)

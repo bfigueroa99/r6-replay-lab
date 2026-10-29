@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
-estado: en curso 2026-10-29
-candado: dev 2026-10-29T08:06Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -178,6 +178,50 @@ Implementar antes que #68 y #69: las tres tocan `recompute.py`.
 
 ## Implementacion
 
+Dev 20261029T0805Z, sobre `origin/dev@c3597f4`. Diseno completo, sin desvios de alcance.
+
+- `metrics.bajas_a_rivales(eventos, team_of)`: unica regla, la usan
+  `analyse_round` y `recompute`, en los dos casos antes de `annotate_trades`
+  (`kst` sale de `kills`). `recompute.CAMPOS` suma `kills` y `headshots`;
+  `help`, docstrings y la salida del comando lo dicen.
+- Tests (criterio -> test):
+  1. `test_metrics.BajasARivalesTests`: `test_un_teamkill_no_suma_a_las_bajas_del_autor`,
+     `test_un_teamkill_con_headshot_no_suma_headshots`,
+     `test_una_ronda_con_solo_un_teamkill_no_da_kst_por_matar`,
+     `test_una_baja_a_un_nick_desconocido_sigue_contando`,
+     `test_un_suicidio_como_kill_no_es_baja` y
+     `test_sin_teamkills_las_bajas_son_las_del_parser` (paridad con
+     `pydissect.stats.player_round_stats` sobre el mismo feed, kills y headshots).
+  2. `test_recompute.RecomputeBajasTests`: `test_recompute_saca_los_teamkills_de_las_bajas`,
+     `test_recompute_dry_run_cuenta_las_bajas_sin_escribir`, `test_recompute_de_bajas_es_idempotente`.
+  3. `test_recompute.RecomputeBajasTests.test_overview_y_scoreboard_cuentan_dos_bajas_con_un_teamkill`
+     (`/api/overview/` kills/k2/k3, perfil del compañero `with.kills`, fila del
+     scoreboard de `/api/matches/<id>/`) y
+     `test_teamkills.test_el_panel_de_teamkills_no_cambia_al_sacarlos_de_las_bajas`.
+     `test_un_teamkill_suma_a_las_bajas_del_autor` (parser) queda con el
+     comentario nuevo, como dijo el Diseno.
+  4. `metricas.md`: Bajas, HS%, Teamkills, Multikill, Cuando matas y Mejor
+     ronda; comentario del ace en `aggregates.py`.
+  5. `check.sh`: `Todo en verde.` (lint, 822 tests backend, 130 vitest,
+     build, 53 e2e). Los numeros de `seed_demo` no cambian: no corre `recompute`.
+- Desvio: la verificacion manual del Diseno ("`seed_demo` + `recompute
+  --dry-run` -> Nada que recalcular") no se cumple ni en `origin/dev`:
+  `seed_demo` siembra trades y bajas de compañeros y rivales sin sus eventos,
+  y ya en dev el dry-run dice 678 filas; con este cambio, 981 (las bajas de
+  compañeros y rivales sin `Kill` en el feed). No afecta a datos importados
+  de `.rec`, donde `kills` sale del mismo feed. Para la QA: verificar con
+  una base de `factories`, no con `seed_demo`.
+- Revision ciega (subagente con `revision.md`): 3 hallazgos. Corregidos:
+  la fila Cuando matas decia que la suma de tramos es la columna Bajas, falso
+  con una baja sobre un nick sin fila en la ronda (frase corregida); el test
+  de paridad comparaba contra un fixture y no contra el parser (ahora usa
+  `LectorFalso` y `player_round_stats`). No corregido: proponia una
+  migracion de datos (como 0003 de `clutch_vs`) para corregir lo ya
+  importado sin `recompute`; el Diseno y la ficha dicen sin migracion y
+  `recompute` en el PC. Va a `## Para el humano`.
+
+Skills: no aplica (backend puro, misma forma que `clutch_vs`). Sin arena.
+
 ## Revision <fecha> sobre <sha>
 
 ## QA <fecha> sobre <sha>
@@ -187,6 +231,12 @@ Implementar antes que #68 y #69: las tres tocan `recompute.py`.
 ## Pendiente
 
 ## Para el humano
+
+Aviso del Dev (no bloquea): hasta correr `manage.py recompute` la base mezcla
+rondas viejas (teamkills en Bajas) y nuevas (sin). La revision ciega propuso
+una migracion de datos que lo haga sola al primer `runserver`, como la 0003
+de `clutch_vs`; quedo fuera porque el diseno dice sin migracion. Si la
+preferis, va en otra ficha.
 
 Aviso del Arquitecto (no bloquea): `trade_kills` sigue contando el caso de un
 compañero que mata al que hizo el teamkill dentro de la ventana de trade. Es
