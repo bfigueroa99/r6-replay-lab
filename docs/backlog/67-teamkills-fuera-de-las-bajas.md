@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
-estado: implementado
-candado: revisor 2026-10-29T20:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -268,6 +268,32 @@ Veredicto: **corregir** (`con hallazgos`), solo H1.
   `test_metrics.BajasARivalesTests.test_un_teamkill_de_apertura_sigue_siendo_apertura`.
 - `check.sh`: `Todo en verde.` (lint, 823 tests backend, 130 vitest, build, 53 e2e).
 
+## Revision 2026-10-29 sobre 815b932 (segunda pasada)
+
+Revisor 20261029T2004Z. Dev no se movio (`origin/dev@c3597f4` ya en la rama).
+`check.sh` en `Todo en verde.`: lint, 823 tests backend, 130 vitest, build,
+53 e2e. Revision ciega con `revision.md` + confirmacion.
+
+Criterios: 1, 2 y 3 cubiertos por los tests de Implementacion (verdes); 4:
+H1 de la primera pasada corregido (fila Teamkills y Duelos de apertura, test
+`test_un_teamkill_de_apertura_sigue_siendo_apertura`); 5: e2e verde con los
+numeros de `seed_demo`. Confirmado aparte: `ingest.py` guarda todo evento
+del analisis como `Event` desde la 0001, asi que `recompute` sobre una base
+importada de `.rec` tiene todos los `Kill` y no baja bajas por falta de feed.
+Import y `recompute` usan `bajas_a_rivales` antes de `annotate_trades`.
+
+Hallazgos de la ciega, descartados tras confirmarlos:
+- Migracion de datos para lo ya importado (como la 0003 de `clutch_vs`):
+  segunda vez que aparece. Es cierto que `serve.py` solo corre `migrate` y
+  que quien usa el `.exe` no tiene como correr `recompute`; pero la decision
+  del humano fue "con `recompute`" y el Diseno dice sin migracion. Queda en
+  `## Para el humano` reforzado con lo del `.exe`.
+- README, fila `manage.py recompute`: no dice que tambien saca los teamkills
+  de bajas y headshots. Docs fuera de `archivos:`; el Release lo agrega al
+  entregar (paso 3: README cuando cambia algo que el usuario hace).
+
+Veredicto: **aprobar** (`revisado`).
+
 ## QA <fecha> sobre <sha>
 
 ## Verificar en el PC
@@ -285,6 +311,12 @@ preferis, va en otra ficha.
 Aviso del Arquitecto (no bloquea): `trade_kills` sigue contando el caso de un
 compañero que mata al que hizo el teamkill dentro de la ventana de trade. Es
 raro y queda fuera de esta ficha; si molesta, otra ficha.
+
+Aviso del Revisor (no bloquea): la app de escritorio (`serve.py`) solo
+corre `migrate` al arrancar, asi que quien usa el `.exe` no tiene como
+correr `recompute` y su historial queda con las dos definiciones de Bajas.
+Si eso importa, la 0004 de datos (como la 0003 de `clutch_vs`) es otra
+ficha.
 
 Sin decision pendiente (la tomaste el 2026-10-28). Al bajar este cambio:
 `manage.py backup` y `manage.py recompute` en el PC para corregir el
