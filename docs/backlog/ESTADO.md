@@ -18,7 +18,7 @@ RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 ## Orden de merge sugerido
 
-Una sola rama abierta (67): sin conflicto contra dev. Libera  para la 68 y la 69.
+Una sola rama abierta (67): sin conflicto contra dev. Libera `recompute.py` para la 68 y la 69.
 
 ## Alcance
 
