@@ -1,18 +1,18 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-28 20:40 UTC por qa + release (sesion 20261028T2004Z; motivo: por estado: 1 revisado; reloj: investigador, franja 7)
-playbook: origin/dev@8802635 (pruebas: ok)
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 7 de 43 en 7 dias; sin herramientas para comparar el prompt
+actualizado: 2026-10-29 00:40 UTC por po (sesion 20261029T0004Z; motivo: papel vacio; reloj: release, franja 0)
+playbook: origin/dev@c3597f4
+rutina: TURNOS_SIN_RASTRO=2 en 48 h (~10-28T17:53Z ~10-28T18:53Z) | 9 de 45 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia. La 66 se mergeo a dev en este turno ([PR #63](https://github.com/bfigueroa99/r6-replay-lab/pull/63), c3597f4).
+Vacia.
 
 RELEASE=dev lleva 13 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=68 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=2
 
 ## Orden de merge sugerido
 
@@ -21,20 +21,24 @@ Nada abierto.
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:10 (56-mapas-y-operadores-que-mejoran 57-teamkills 59-clutch-por-mapa-y-sitio 60-racha-de-rondas 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida) otros:0 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: exportar: H4 (66) en dev, H7 la reusa. paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:0 (propuesto y disenado). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 68 ideas libres (H4 marcada `en dev (PR #63)`).
+- Epicas en curso: temporada-y-modo: A4 -> ficha 70, A6 la sigue (implementar despues de #70). paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:3 (propuesto y disenado). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- `ALCANCE.md`: 69 ideas libres (68 al empezar): A4 -> 70, G7 (parte `won`) -> 68, R1/O5 en dev; nuevas A6 y F14.
 - Investigacion: ultima entrada 2026-10-24. Proxima: 3, 5 y 6.
-- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: exportar datos-nuevos-del-parser paridad-referencia
+- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: datos-nuevos-del-parser paridad-referencia. Este turno no saco funcionalidad de esas epicas: las cuatro fichas son las decisiones del humano (P2). El proximo PO arranca por R2-R5 o P1.
 - Ciclo: CICLO=12h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 66:4 65:6 64:8 63:12 62:8 61:32 59:12 57:12 56:12 60:44)
 
 ## Papel (rama backlog)
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
+| 67-teamkills-fuera-de-las-bajas | propuesto | bug | - | 1 | backend | - |
+| 68-partidas-sin-cerrar-sin-resultado | propuesto | bug | - | 2 | backend | - |
+| 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | - |
+| 70-mapas-por-version | propuesto | funcionalidad | temporada-y-modo | 2 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 0 `disenado`. Proximo turno: PO (regla 7, papel vacio): abre las fichas de las decisiones del humano del 2026-10-28 (bloque de abajo: teamkills fuera de `kills`, `won=None` con marcador que no cierra, 1vX con `PLAYER_LEAVE`, mapas por version); la de teamkills corrige tambien la fila "Mejor ronda" de `metricas.md` que trajo la 66. Candidato a ficha chica: singular "1 baja / 1 muerte" en la linea de stats del resumen y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
+4 `propuesto`, 0 `disenado`. Proximo turno: Arquitecto (regla 9): 67 primero (prioridad 1; corrige tambien la fila "Mejor ronda" que trajo la 66), despues 70 (funcionalidad) y 68/69. 67, 68 y 69 tocan `recompute.py` y `metrics.py`: el diseno los ordena ("implementar despues de #NN") para que no choquen. Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
 
 ## Ultimo turno de cada rol
 
@@ -46,7 +50,7 @@ Nada abierto.
 | qa | 2026-10-28 20:30 | Prueba 66 (funcionalidad, `revisado` -> `aprobado`) sobre 52e46d0 (dev 8802635 integrado). `check.sh` en `Todo en verde.` (811 backend, 130 vitest, build, 53 e2e); chunk inicial igual que dev. Base vacia y `seed_demo` con `runserver` y `curl`; Chromium copiando el resumen de las partidas 29, 1 y 15, cruzado con `/api/matches/<id>/`; portapapeles que rechaza, ausente y sin permiso: aviso en la pagina, consola limpia; el click no hace requests. Mutacion: tres, las tres caen. Friccion menor anotada en la ficha. |
 | arquitecto | 2026-10-27 16:11 | Disena 64 (`matches_summary` en la vista de `/api/overview/`: partidas elegidas sin `side` como `by_margin`, `match_winrate` sobre `won` no nulo, `rounds_per_match`, mejor y peor mapa por `map_slug` con `MIN_PARTIDAS_MAPA = 3`, peor solo si esta por debajo del mejor; fila de cuatro `Stat3` en el Inicio), 65 (`presence_pct` y `winrate_delta` en `by_operator`, base del lado antes de `min_rounds`, delta nulo sin rondas con `my_team_won`, sin banda de ruido; columnas "Presencia" y "vs. tu lado") y 66 (`resumenPartida.js` puro con el texto exacto de cinco lineas, boton "Copiar resumen" con `navigator.clipboard`, e2e con `grantPermissions`). Numeros del e2e calculados sobre `seed_demo`. Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
-| po | 2026-10-27 12:40 | Papel vacio: propone 64 (R1: partidas ganadas, rondas por partida y mejor y peor mapa en el Inicio), 65 (O5: presencia y delta de winrate contra tu lado en Operadores) y 66 (H4: copiar el resumen de una partida al portapapeles). `ALCANCE.md` reconciliado (61-63 en main), nuevas E12, O7, H7 y R5: 68 libres (67 al empezar). Sin pushes de codigo. |
+| po | 2026-10-29 00:40 | Papel vacio, responde las decisiones del humano del 2026-10-28 (P2): propone 67 (teamkills fuera de las bajas, bug p1, con `recompute` y `metricas.md`), 68 (`won=None` con marcador que no cierra segun `reglas_partida`, bug p2), 69 (1vX con `PlayerLeave`, bug p2) y 70 (cada version de un mapa en su fila por `map_id`, funcionalidad, A4). `ALCANCE.md` reconciliado (R1, O5 en dev), nuevas A6 y F14: 69 libres (68 al empezar). Sin pushes de codigo. |
 
 ## Para el humano
 
@@ -62,6 +66,7 @@ Nada abierto.
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
+- Rutina: 2 disparos sin rastro en 48 h (~10-28T17:53Z ~10-28T18:53Z); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h`.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
@@ -78,3 +83,4 @@ Nada abierto.
   - Release: dev promovido a main (PR #62, c9a2d6c). El `npm run build` y `release.ps1` los corre el humano en el PC.
 - 2026-10-28 16:20 (dev 20261028T1607Z): leido. Son decisiones para fichas nuevas; las abre el PO en su proximo turno (el Dev no escribe fichas de funcionalidad). Nada de esto toca la 66.
 - 2026-10-28 16:53 (revisor 20261028T1644Z): leido. La 66 (ahora `revisado`) no cambia por estas decisiones, salvo la fila "Mejor ronda" de `metricas.md`, que dice "teamkills incluidos": la ficha de teamkills tiene que corregirla (anotado en la 66 y en el Papel). Saque de `ESTADO.md` un bloque viejo duplicado que estaba desde 2026-10-15 entre `## Para el humano` y este bloque, con las preguntas que respondiste: `estado.sh` lo tomaba por `## Para el equipo` y no mostraba este. Las fichas nuevas las abre el PO en su proximo turno (regla 7).
+- 2026-10-29 00:40 (po 20261029T0004Z): abiertas las fichas de tus decisiones: 67 (teamkills fuera de `kills`, prioridad 1), 68 (`won=None` con marcador que no cierra), 69 (1vX con `PLAYER_LEAVE`) y 70 (mapas por version, `map_id`, etiqueta "(Y10)"). Fichas 38 y 48: nada que abrir. La 49 queda descartada como bug (historia); la 70 la reemplaza como funcionalidad.
