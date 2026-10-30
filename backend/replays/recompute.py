@@ -1,4 +1,4 @@
-"""Recalculo de trades y clutch sobre lo ya importado, sin reparsear los replays.
+"""Recalculo de bajas, trades y clutch sobre lo ya importado, sin reparsear los replays.
 
 Los trades se guardan calculados al importar, asi que cambiar
 `TRADE_WINDOW_SECONDS` no mueve nada por si solo. `clutch_vs` tambien se
@@ -8,7 +8,8 @@ rehacer el calculo esta en la base: los eventos con su reloj y los jugadores con
 su equipo. No hay que abrir un solo `.rec`.
 
 Las reglas no se reimplementan aca: se llama a las mismas
-`metrics.annotate_trades` y `metrics.clutch_vs` que usa el import. Duplicarlas
+`metrics.bajas_a_rivales`, `metrics.annotate_trades` y `metrics.clutch_vs` que
+usa el import. Duplicarlas
 significaria numeros distintos segun por donde pasaste.
 """
 
@@ -18,11 +19,11 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from .analytics.metrics import KILL, annotate_trades, clutch_vs, trade_window
+from .analytics.metrics import KILL, annotate_trades, bajas_a_rivales, clutch_vs, trade_window
 from .models import Event, Round, RoundPlayer
 
-#: Campos que se recalculan: los que dependen de la ventana de trade y el clutch.
-CAMPOS = ("was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs")
+#: Campos que se recalculan: bajas, los que dependen de la ventana de trade y el clutch.
+CAMPOS = ("kills", "headshots", "was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs")
 
 
 @dataclass
@@ -59,11 +60,16 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
         if e.kind == KILL
     ]
 
+    planos = [
+        {"kind": e.kind, "actor": e.actor_name, "target": e.target_name, "headshot": e.headshot}
+        for e in eventos
+    ]
+    # antes de los trades: `kst` sale de `kills`
+    for nick, bajas in bajas_a_rivales(planos, team_of).items():
+        metrics[nick].update(bajas)
+
     annotate_trades(kill_events, team_of, metrics, window)
-    clutch = clutch_vs(
-        [{"kind": e.kind, "actor": e.actor_name, "target": e.target_name} for e in eventos],
-        team_of,
-    )
+    clutch = clutch_vs(planos, team_of)
     for nick, vs in clutch.items():
         metrics[nick]["clutch_vs"] = vs
 
@@ -94,7 +100,10 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
 
 
 def recompute(*, window: float | None = None, dry_run: bool = False) -> RecomputeResult:
-    """Rehace los trades y `clutch_vs` de todas las rondas importadas."""
+    """Rehace las bajas, los trades y `clutch_vs` de todas las rondas importadas.
+
+    Tambien saca los teamkills de `kills` y `headshots`.
+    """
     if window is None:
         window = trade_window()
 

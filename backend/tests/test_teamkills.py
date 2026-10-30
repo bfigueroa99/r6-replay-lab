@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
+from replays.recompute import recompute
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -139,6 +140,16 @@ class TeamkillsTests(TestCase):
         self.assertEqual(tk["rounds_without"], 1)
         self.assertIsNone(tk["winrate_with"])
         self.assertEqual(tk["by_teammate"], [])
+
+    def test_el_panel_de_teamkills_no_cambia_al_sacarlos_de_las_bajas(self):
+        """El panel lee `Event`, no `kills`: recalcular las bajas no lo mueve."""
+        rnd = self._ronda(0)
+        make_event(rnd, 0, ME, "amigo")
+        make_event(rnd, 1, "amigo", ME, clock=100.0)
+        make_event(rnd, 2, ME, "rival", clock=90.0)
+        antes = agg.teamkills()
+        recompute(window=3.0)
+        self.assertEqual(agg.teamkills(), antes)
 
     def test_con_base_vacia_no_falla(self):
         tk = self.client.get("/api/teammates/").json()["teamkills"]
