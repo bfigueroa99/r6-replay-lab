@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-30 17:24 UTC por arquitecto (sesion 20261030T1652Z; motivo: rol siguiente que pide el pipeline (P8): el turno salia revisor por estado (1 implementado) y la 68 ya la tenia candada otra sesion simultanea; regla 9, 69 en propuesto y 0 disenado; reloj: qa, franja 6)
+actualizado: 2026-10-30 17:25 UTC por revisor (sesion 20261030T1653Z; motivo: por estado: 1 implementado; reloj: qa, franja 6; tanda de 3 turnos simultaneos pedida por el dueño, este fue el primero en reclamar)
 playbook: origin/dev@0fedc7b
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 42 en 7 dias
 pausa: no
@@ -9,10 +9,10 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado | 68 (bug p2) | implementado (candado revisor 16:54, sesion simultanea) | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado?expand=1 | no |
+| claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado | 68 (bug p2) | revisado (espera QA de otra sesion) | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado?expand=1 | no |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=1 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -32,14 +32,14 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 68-partidas-sin-cerrar-sin-resultado | implementado (en su rama) | bug | - | 2 | backend | revisor (en su rama) |
+| 68-partidas-sin-cerrar-sin-resultado | revisado (en su rama) | bug | - | 2 | backend | - |
 | 69-clutch-cuenta-con-abandonos | disenado (despues de #68) | bug | - | 2 | backend | - |
 | 71-version-del-mapa-en-la-partida | disenado | funcionalidad | temporada-y-modo | 2 | backend | - |
 | 72-apertura-marcada-en-la-timeline | disenado | funcionalidad | paridad-referencia | 2 | frontend | - |
 | 73-catalogo-y10s4-a-y11s1 | propuesto | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto` (73), 3 `disenado` (69, 71 y 72; tope del Arquitecto alcanzado). La 68 la tiene el Revisor. Para el Dev, en orden: 71 y 72 (funcionalidad, no pisan ninguna rama abierta); la 69 espera a que la 68 se mergee. 73 (Solid Snake, Fortress Y10 y las versiones Y10S4/Y11S1, IDs releidos en el fork `1f0cc42`) espera diseno. Candidatos a ficha chica `deuda`: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66), los cuatro detalles de `DeltaLado` (ficha 65), y que `seed_demo` escriba `opening_kill`/`opening_death` coherentes con sus eventos (hoy 0 de 203 rondas lo son; mueve numeros del e2e; visto al disenar la 72).
+1 `propuesto` (73), 3 `disenado` (69, 71 y 72; tope del Arquitecto alcanzado). La 68 esta `revisado` y espera QA. Para el Dev, en orden: 71 y 72 (funcionalidad, no pisan ninguna rama abierta); la 69 espera a que la 68 se mergee. 73 (Solid Snake, Fortress Y10 y las versiones Y10S4/Y11S1, IDs releidos en el fork `1f0cc42`) espera diseno. Candidatos a ficha chica `deuda`: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66), los cuatro detalles de `DeltaLado` (ficha 65), y que `seed_demo` escriba `opening_kill`/`opening_death` coherentes con sus eventos (hoy 0 de 203 rondas lo son; mueve numeros del e2e; visto al disenar la 72). Candidato a ficha `bug` (Revisor 68): `seed_demo` siembra sus 29 partidas como Ranked Y9S4 4-3 con `won=True`, un marcador que la regla no cierra (con 7 rondas por partida ninguna Ranked cierra); despues de `recompute` las 29 quedan `incompleta`. El e2e no corre `recompute` y sigue verde; cerrar los marcadores cambia los numeros del e2e.
 
 ## Ultimo turno de cada rol
 
@@ -47,7 +47,7 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 |---|---|---|
 | release | 2026-10-30 12:40 | (mismo turno que la QA) Entrega y mergea la 70: `aprobado` -> `entregado` -> [PR #65](https://github.com/bfigueroa99/r6-replay-lab/pull/65) -> dev 0fedc7b. Puerta a-f cumplida: dev, revisor y qa de sesiones distintas, dev 1c92273 ya en la rama, `check.sh` en verde sobre f16a36a (despues solo cambio la ficha). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-10-30 16:17 | Implementa 68 (bug p2, `disenado` -> `implementado`, 00b8f94): `reglas_partida.resultado` deja `won=None` cuando el marcador final no cierra segun la regla (Ranked 3-2, 4-3); ingest y `recompute` (con `--dry-run` y conteo "N partidas (resultado)") usan la misma funcion; fila Partidas ganadas de `metricas.md`. Revision ciega sin bloqueantes, dos menores tomados. `check.sh` en `Todo en verde.` (851 backend, 133 vitest, build, 53 e2e). Aviso para QA: `seed_demo` siembra Ranked 4-3/3-2 como victorias (no se toco). |
-| revisor | 2026-10-30 08:35 | Revisa 70 (funcionalidad p2, `implementado` -> `revisado`) sobre c7548d8, dev sin moverse. `check.sh` en `Todo en verde.` (838 backend, 133 vitest, build, 53 e2e). Ciega sin hallazgos; confirmado a mano: todo `?map=` pasa por `filtro_mapa`, lados de `by_map` por `(slug, map_id)` consistentes porque `retag` renombra por `map_id` entero, etiquetas de `MAPS` sin repetir dentro de un slug. Cada criterio con test. |
+| revisor | 2026-10-30 17:25 | (sesion simultanea con po y arquitecto; reparto P8) Revisa 68 (bug p2, `implementado` -> `revisado`) sobre f0b3782, dev sin moverse. `check.sh` en `Todo en verde.` (851 backend, 133 vitest, build, 53 e2e); con el test de borde agregado (`test_recompute_no_toca_una_ranked_anterior_a_y9s4`, e561bcb) otra vez verde (852). Revision no ciega: la sesion no tenia subagentes; la hizo el lider con `revision.md`. Sin bloqueantes; mutacion 6 de 6 caen; base demo con todas las partidas incompletas: 200 en todas las GET de `/api/`, `match_winrate` nulo. Menor fuera de `archivos:`: `seed_demo` (ver Papel). |
 | qa | 2026-10-30 12:30 | Prueba 70 (funcionalidad p2, `revisado` -> `aprobado`) sobre f16a36a. `check.sh` en `Todo en verde.` (838 backend, 133 vitest, build, 53 e2e). Base sembrada con `factories` (ConsulateY7 3/4 ataques, ConsulateY10 0/4, Kanal, Club House `map_id=0`, ronda sin bajas) y base vacia: `/api/filters/` con versiones, CSV maps/sites/spawns una fila por version (75 y 0), `?map=<id>` y `?map=<slug>` en matches y export; 16 rutas GET x 10 `?map=` borde, todas 200. Chunk +0.1 %. Mutacion: 5 de 5 caen. |
 | arquitecto | 2026-10-30 17:24 | (sesion simultanea con revisor y po; reparto P8) Disena 69 (`metrics.one_vx` con `PlayerLeave` fuera de la ronda, usada por `analyse_round` y `recompute`, que suma `one_vx` a `CAMPOS`; el parser sigue a r6-dissect; paridad sin abandonos probada en un spike con 3000 rondas; implementar despues de #68; el `.rec` solo trae `PlayerLeave` antes de Y9S1), 71 (`aggregates.etiquetas_de_mapas` sobre todas las partidas del slug, usada por `match_list` y `match_detail`; tests en archivo nuevo para no esperar a la 68) y 72 (`aperturas.js` puro + `casosApertura.json` compartido por vitest y Django contra `analyse_round`, porque `seed_demo` no tiene banderas de apertura coherentes con sus eventos; e2e de la regla visible). Sin arena (no: 18 iteraciones simultaneas en un contenedor de 4 CPU, pedido del dueño; ademas, una forma obvia en cada ficha), sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
@@ -68,6 +68,7 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
+- Turnos simultaneos (tanda de 3 por proyecto, 2026-10-30): `turno.sh` arma `EQUIPO_SESION` con el minuto de arranque, y el po y el revisor de esta tanda firmaron los dos `20261030T1653Z`. Esta vez ninguna ficha recibio dos etapas de esas sesiones, pero si dos sesiones del mismo minuto implementan, revisan o prueban la misma ficha, la puerta (b) del Release no las distingue. Lo arregla una sesion tuya en `scripts/equipo-dev/` (p. ej. sufijo aleatorio en el id).
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
