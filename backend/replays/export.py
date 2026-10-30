@@ -48,7 +48,7 @@ def table_names() -> list[str]:
 #: este orden: sin esto el CSV abre con los alias internos del agregado y el
 #: nombre del mapa queda perdido en la columna 16.
 _PRIMERAS = (
-    "map", "slug", "site", "spawn", "operator", "side", "username", "player_id",
+    "map", "slug", "map_id", "site", "spawn", "operator", "side", "username", "player_id",
     "label", "position", "round_number", "day", "start", "end", "hours",
     "match_id", "played_at", "matches", "rounds", "rounds_won", "winrate",
     "rating", "kills", "deaths", "kd", "kpr",

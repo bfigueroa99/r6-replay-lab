@@ -101,3 +101,14 @@ class EndpointTests(TestCase):
         for nombre in export.table_names():
             with self.subTest(tabla=nombre):
                 self.assertEqual(self.client.get(f"/api/export/?table={nombre}").status_code, 200)
+
+
+class VersionesDeMapaCsvTests(TestCase):
+    def test_el_csv_de_mapas_trae_una_fila_por_version(self):
+        for i, map_id in enumerate((2609221242, 418126004176)):
+            match = make_match(map_name="Consulate", map_id=map_id, index=i)
+            make_round_player(make_round(match, 0))
+        response = self.client.get("/api/export/?table=maps")
+        filas = leer(response.content.decode("utf-8"))
+        self.assertEqual(sorted(f["map"] for f in filas), ["Consulate (Y10)", "Consulate (Y7)"])
+        self.assertEqual(sorted(f["map_id"] for f in filas), ["2609221242", "418126004176"])

@@ -23,6 +23,7 @@ from pydissect.constants import ATTACK, DEFENSE, RECRUIT
 from pydissect.errors import InvalidFile
 from pydissect.header import (
     derive_team_roles,
+    etiqueta_de_version,
     gamemode_name,
     map_name,
     map_slug,
@@ -193,6 +194,21 @@ class NameTests(SimpleTestCase):
 
     def test_operador_conocido_ignora_la_cabecera(self):
         self.assertEqual(operator_label({"operator": 92270642318, "roleName": "OTRO"}), "Mute")
+
+
+class EtiquetaDeVersionTests(SimpleTestCase):
+    def test_la_etiqueta_lleva_el_sufijo_de_la_version(self):
+        self.assertEqual(etiqueta_de_version(418126004176), "Consulate (Y10)")
+        self.assertEqual(etiqueta_de_version(2609221242, "Consulate"), "Consulate (Y7)")
+        self.assertEqual(etiqueta_de_version(436375283234), "Coastline (Y11)")
+
+    def test_la_version_sin_sufijo_queda_con_el_nombre(self):
+        self.assertEqual(etiqueta_de_version(379218689149), "Consulate")
+        self.assertEqual(etiqueta_de_version(1460220617, "Kanal"), "Kanal")
+
+    def test_un_id_fuera_de_la_tabla_usa_el_nombre_guardado(self):
+        self.assertEqual(etiqueta_de_version(0, "Club House"), "Club House")
+        self.assertEqual(etiqueta_de_version(123, "Mapa del usuario"), "Mapa del usuario")
 
 
 ASH = 92270642656  # ataque

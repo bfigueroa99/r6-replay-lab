@@ -242,7 +242,7 @@ condiciona ese operador aunque nunca lo enfrentes de frente.
 | Dimension | Nota |
 |---|---|
 | **Lado** | Ataque o defensa. Se deduce de los operadores de cada equipo, no de un campo del replay. |
-| **Mapa** | Las variantes por temporada del mismo mapa (Border, BorderY10, ...) colapsan al mismo `slug`, asi que el historial no se parte cuando Ubisoft revampea un mapa. |
+| **Mapa** | Cada version de un mapa (`Match.map_id` dentro del mismo `map_slug`) es su propia fila en las tablas de mapas, sitios y spawns (CSV de `/api/export/`) y en las señales del Coach de mapa, sitio y spawn. La etiqueta sale del sufijo `Y<n>` del identificador interno en `MAPS` ("Consulate (Y7)", "Consulate (Y10)"); la version sin sufijo y los mapas de una sola version llevan el nombre a secas. El filtro de mapa por slug junta todas las versiones, y elegir una version en el selector filtra por `map_id`. **Mejor y peor mapa**, **Clutch por mapa y sitio** y el progreso por mapa de Tendencias siguen juntando las versiones por slug. |
 | **Sitio** | El sitio de bomba, tal como lo nombra el juego (`2F Gym, 2F Bedroom`). En defensa es tu setup; en ataque es lo que estas atacando. |
 | **Spawn** | Solo tiene sentido en ataque: es la posicion exterior desde donde arrancaste. En defensa el replay pone el sitio en ese campo. |
 | **Operador** | El operador con el que terminaste la ronda (si hiciste swap en preparacion, queda el ultimo). |

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import { useApi } from '../api.js'
+import { opcionesDeMapa } from '../mapas.js'
 
 const RANGO_EXACTO = 'rango'
 
@@ -65,9 +66,9 @@ export default function Filters({
         Mapa
         <select value={value.map || ''} onChange={set('map')}>
           <option value="">Todos</option>
-          {(data?.maps || []).map((m) => (
-            <option key={m.map_slug} value={m.map_slug}>
-              {m.map_name}
+          {opcionesDeMapa(data?.maps).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>

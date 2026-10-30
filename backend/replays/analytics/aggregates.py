@@ -29,7 +29,8 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTransform
 from django.db.models.functions import Cast, Floor
 
-from pydissect.constants import Y9S4
+from pydissect.constants import MAPS, Y9S4
+from pydissect.header import etiqueta_de_version
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
@@ -42,6 +43,20 @@ FILTER_KEYS = (
 )
 
 
+def filtro_mapa(valor: str, prefijo: str = "round__match__") -> dict:
+    """`?map=` con digitos es una version (`map_id`); si no, el slug con todas.
+
+    Ningun slug es solo digitos (salen del nombre, y los desconocidos son
+    `unknown-<id>`), asi que un solo parametro alcanza para los dos.
+    """
+    valor = str(valor)
+    # isascii: "²" pasa isdigit pero int() lo rechaza; el tope evita el overflow
+    # de SQLite. Lo que no es un id cae al slug y no coincide con nada.
+    if valor.isascii() and valor.isdigit() and int(valor) < 2**63:
+        return {f"{prefijo}map_id": int(valor)}
+    return {f"{prefijo}map_slug": valor}
+
+
 def base_queryset(**filters) -> QuerySet[RoundPlayer]:
     """Rondas del jugador principal, con los filtros de la request aplicados."""
     qs = RoundPlayer.objects.filter(is_me=True).select_related("round", "round__match")
@@ -49,7 +64,7 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
     if filters.get("side"):
         qs = qs.filter(side=filters["side"])
     if filters.get("map"):
-        qs = qs.filter(round__match__map_slug=filters["map"])
+        qs = qs.filter(**filtro_mapa(filters["map"]))
     if filters.get("operator"):
         qs = qs.filter(operator=filters["operator"])
     if filters.get("site"):
@@ -458,23 +473,54 @@ def personal_records(**filters) -> dict:
     }
 
 
+#: Clave de un mapa en las tablas por mapa, sitio y spawn.
+_MAPA = ("round__match__map_slug", "round__match__map_id", "round__match__map_name")
+_MAPA_LABELS = ("slug", "map_id", "map_name")
+
+
+def etiquetas_de_version(filas) -> dict[tuple[str, int], str]:
+    """Etiqueta de cada `(slug, map_id)` de `filas` (dicts con map_slug/slug, map_id, map_name).
+
+    Un id que `MAPS` no conoce y que el usuario nombro en Datos igual que la
+    version conocida comparte slug y etiqueta con ella; ahi se le suma el id
+    para que las dos filas se distingan.
+    """
+    etiquetas: dict[tuple[str, int], str] = {}
+    for fila in filas:
+        clave = (fila.get("slug", fila.get("map_slug")), fila["map_id"])
+        etiquetas.setdefault(clave, etiqueta_de_version(fila["map_id"], fila["map_name"]))
+    usos = Counter((slug, etiqueta) for (slug, _), etiqueta in etiquetas.items())
+    for (slug, map_id), etiqueta in etiquetas.items():
+        if usos[(slug, etiqueta)] > 1 and map_id not in MAPS:
+            etiquetas[(slug, map_id)] = f"{etiqueta} (id {map_id})"
+    return etiquetas
+
+
+def _etiquetar(rows: list[dict]) -> list[dict]:
+    etiquetas = etiquetas_de_version(rows)
+    for row in rows:
+        row.pop("map_name")
+        row["map"] = etiquetas[(row["slug"], row["map_id"])]
+    return rows
+
+
 def by_map(min_rounds: int = 1, **filters) -> list[dict]:
+    """Una fila por version de mapa.
+
+    La clave es `(slug, map_id)` y no `map_id` solo: `seed_demo` y los tests
+    dejan `map_id = 0` en todos los mapas, y el slug es lo que los separa.
+    Dentro de un slug, el `map_id` separa el rework de la version vieja.
+    """
     qs = base_queryset(**filters)
-    rows = group_by(
-        qs,
-        "round__match__map_name",
-        "round__match__map_slug",
-        labels=("map", "slug"),
-        min_rounds=min_rounds,
-    )
+    rows = _etiquetar(group_by(qs, *_MAPA, labels=_MAPA_LABELS, min_rounds=min_rounds))
     # winrate por lado dentro de cada mapa
     sides = {
-        (r["map"], r["side"]): r
-        for r in group_by(qs, "round__match__map_name", "side", labels=("map", "side"))
+        (r["slug"], r["map_id"], r["side"]): r
+        for r in group_by(qs, *_MAPA, "side", labels=(*_MAPA_LABELS, "side"))
     }
     for row in rows:
         for side in ("Attack", "Defense"):
-            s = sides.get((row["map"], side))
+            s = sides.get((row["slug"], row["map_id"], side))
             row[f"{side.lower()}_winrate"] = s["winrate"] if s else None
             row[f"{side.lower()}_rounds"] = s["rounds"] if s else 0
     return rows
@@ -482,13 +528,13 @@ def by_map(min_rounds: int = 1, **filters) -> list[dict]:
 
 def by_site(min_rounds: int = 1, **filters) -> list[dict]:
     qs = base_queryset(**filters).exclude(round__site="")
-    return group_by(
+    return _etiquetar(group_by(
         qs,
-        "round__match__map_name",
+        *_MAPA,
         "round__site",
-        labels=("map", "site"),
+        labels=(*_MAPA_LABELS, "site"),
         min_rounds=min_rounds,
-    )
+    ))
 
 
 def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
@@ -526,13 +572,13 @@ def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     """Solo tiene sentido en ataque: el spawn es la posicion de inicio."""
     qs = base_queryset(**filters).filter(side="Attack").exclude(spawn="")
-    return group_by(
+    return _etiquetar(group_by(
         qs,
-        "round__match__map_name",
+        *_MAPA,
         "spawn",
-        labels=("map", "spawn"),
+        labels=(*_MAPA_LABELS, "spawn"),
         min_rounds=min_rounds,
-    )
+    ))
 
 
 def by_round_number(**filters) -> list[dict]:
