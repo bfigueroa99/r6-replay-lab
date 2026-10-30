@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-30 04:40 UTC por dev (sesion 20261030T0404Z; motivo: por estado: 2 disenado, lugar en cola; reloj: po, franja 1)
+actualizado: 2026-10-30 08:35 UTC por revisor (sesion 20261030T0804Z; motivo: por estado: 1 implementado; reloj: dev, franja 3)
 playbook: origin/dev@1c92273
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 42 en 7 dias
 pausa: no
@@ -9,12 +9,12 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/70-mapas-por-version | docs/backlog/70-mapas-por-version.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/70-mapas-por-version?expand=1) | no |
+| claude/equipo-dev/70-mapas-por-version | docs/backlog/70-mapas-por-version.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/70-mapas-por-version?expand=1) | no |
 
 RELEASE=dev lleva 26 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1)
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -23,7 +23,7 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (57-teamkills 59-clutch-por-mapa-y-sitio 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida) otros:1 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: temporada-y-modo: A4 -> ficha 70 (implementado), A6 la sigue (implementar despues de #70). paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
+- Epicas en curso: temporada-y-modo: A4 -> ficha 70 (revisado), A6 la sigue (implementar despues de #70). paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
 - Papel: PAPEL_TIPOS=funcionalidad:0 otros:2 (propuesto y disenado). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 69 ideas libres. Ideas nuevas de este turno: ninguna (turno de Dev).
 - Investigacion: ultima entrada 2026-10-24. Proxima: 3, 5 y 6.
@@ -34,12 +34,12 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 70-mapas-por-version | en curso (en rama: implementado) | funcionalidad | temporada-y-modo | 2 | fullstack | - |
+| 70-mapas-por-version | en curso (en rama: revisado) | funcionalidad | temporada-y-modo | 2 | fullstack | - |
 | 68-partidas-sin-cerrar-sin-resultado | disenado (la 67 ya esta en dev: tomable) | bug | - | 2 | backend | - |
 | 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto`, 1 `disenado` (68, tomable por el proximo Dev). La 70 esta `implementado` en su rama: el proximo turno es Revisor (regla 3). La 69 queda para el proximo Arquitecto. Papel sin funcionalidades: el PO tiene que proponer (R2-R5, P1, A6 despues de #70). Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
+1 `propuesto`, 1 `disenado` (68, tomable por el proximo Dev). La 70 esta `revisado` en su rama: el proximo turno es QA (regla 2). La 69 queda para el proximo Arquitecto. Papel sin funcionalidades: el PO tiene que proponer (R2-R5, P1, A6 despues de #70). Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
 
 ## Ultimo turno de cada rol
 
@@ -47,7 +47,7 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 |---|---|---|
 | release | 2026-10-30 00:40 | (mismo turno que la QA) Entrega y mergea la 67: `aprobado` -> `entregado` -> [PR #64](https://github.com/bfigueroa99/r6-replay-lab/pull/64) -> dev 1c92273. Puerta a-f cumplida: dev, revisor y qa de sesiones distintas, `check.sh` en verde sobre el head 1668256. Fila `recompute` del README al dia; ficha recortada con `## PR`; espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-10-30 04:40 | Implementa 70 (funcionalidad p2, `disenado` -> `implementado`, c7548d8): una fila por version de mapa en mapas, sitios, spawns (CSV) y señales del Coach, clave `(slug, map_id)`, etiqueta "Consulate (Y10)" desde `MAPS`; `?map=<id>` elige una version y el selector las ofrece. Revision ciega: 3 hallazgos corregidos (500 con `?map=²`, override con la misma etiqueta -> "(id N)", orden Y7 antes que Y10). `check.sh` en `Todo en verde.` (838 backend, 133 vitest, build, 53 e2e). |
-| revisor | 2026-10-29 20:30 | Revisa 67 (bug p1, `implementado` -> `revisado`) sobre 815b932, segunda pasada, dev sin moverse. `check.sh` en `Todo en verde.` (823 backend, 130 vitest, build, 53 e2e). H1 de la primera pasada corregido. Ciega con 2 hallazgos, ambos descartados: migracion de datos (decision del humano: `recompute`; aviso reforzado en la ficha: el `.exe` no tiene como correr `recompute`) y fila `recompute` del README (la agrega el Release al entregar). |
+| revisor | 2026-10-30 08:35 | Revisa 70 (funcionalidad p2, `implementado` -> `revisado`) sobre c7548d8, dev sin moverse. `check.sh` en `Todo en verde.` (838 backend, 133 vitest, build, 53 e2e). Ciega sin hallazgos; confirmado a mano: todo `?map=` pasa por `filtro_mapa`, lados de `by_map` por `(slug, map_id)` consistentes porque `retag` renombra por `map_id` entero, etiquetas de `MAPS` sin repetir dentro de un slug. Cada criterio con test. |
 | qa | 2026-10-30 00:30 | Prueba 67 (bug p1, `revisado` -> `aprobado`) sobre 9070d2e. `check.sh` en `Todo en verde.` (823 backend, 130 vitest, build, 53 e2e). Base sembrada con `factories` como el import viejo (teamkill con HS, ronda de solo teamkill, suicidio, nick desconocido): `recompute --dry-run` 7 filas sin escribir, `recompute` corrige, segunda corrida "Nada que recalcular"; `curl` a overview, partida, perfil y compañeros con 4 bajas y no 7, bordes y base vacia en 200/404. Mutacion: 4 de 4 caen. |
 | arquitecto | 2026-10-29 04:30 | Disena 67 (regla en `metrics.bajas_a_rivales` sobre `Event`, usada por `analyse_round` antes de `annotate_trades` y por `recompute`, que suma `kills`/`headshots` a `CAMPOS`; el test del parser queda y la inversion es un test nuevo de la app; cinco filas de `metricas.md`), 70 (clave `(map_slug, map_id)` porque seed y factories usan `map_id=0`; etiqueta estatica "Consulate (Y10)" del sufijo de `MAPS` en `pydissect/header.py`; `?map=<digitos>` filtra una version sin clave nueva; selector con `mapas.js` puro) y 68 (`reglas_partida.resultado` con `cierra(max-1, min)`, ingest y `recompute` de `Match.won`; implementar despues de #67). Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
