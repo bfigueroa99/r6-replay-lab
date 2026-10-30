@@ -16,7 +16,6 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 import pydissect
 from externo import ubisoft
 from pydissect.constants import OPERATOR_SIDES
-from pydissect.header import etiqueta_de_version
 
 from . import ajustes, perfil_externo, unknowns
 from . import export as exportador
@@ -153,8 +152,13 @@ def _opciones_de_mapa() -> list[dict]:
     duplicaria cada fila del selector.
     """
     mapas: dict[str, dict] = {}
-    filas = Match.objects.values("map_slug", "map_name", "map_id").distinct()
-    for fila in filas.order_by("map_name", "map_id"):
+    filas = list(
+        Match.objects.values("map_slug", "map_name", "map_id")
+        .distinct()
+        .order_by("map_name", "map_id")
+    )
+    etiquetas = agg.etiquetas_de_version(filas)
+    for fila in filas:
         mapa = mapas.setdefault(
             fila["map_slug"],
             {"map_slug": fila["map_slug"], "map_name": fila["map_name"], "ids": set()},
@@ -163,11 +167,9 @@ def _opciones_de_mapa() -> list[dict]:
     salida = []
     for mapa in sorted(mapas.values(), key=lambda m: (m["map_name"], m["map_slug"])):
         ids = mapa.pop("ids")
+        # por id y no por etiqueta: "Y10" quedaria antes que "Y7"
         mapa["versions"] = (
-            sorted(
-                ({"map_id": i, "label": etiqueta_de_version(i, mapa["map_name"])} for i in ids),
-                key=lambda v: v["label"],
-            )
+            [{"map_id": i, "label": etiquetas[(mapa["map_slug"], i)]} for i in sorted(ids)]
             if len(ids) > 1
             else []
         )

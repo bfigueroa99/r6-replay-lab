@@ -238,3 +238,14 @@ class VersionesDeMapaTests(TestCase):
         filas = agg.by_map(map=str(CONSULATE_Y10))
         self.assertEqual([r["map"] for r in filas], ["Consulate (Y10)"])
         self.assertEqual(agg.overview(map=str(CONSULATE_Y7))["overall"]["rounds"], 4)
+
+    def test_un_id_nombrado_igual_que_una_version_lleva_el_id(self):
+        # un rework que MAPS no conoce y que el usuario llamo "Consulate" en Datos
+        conocido = make_match(map_name="Consulate", map_id=379218689149, index=2)
+        _rondas(conocido, 1, 1)
+        nuevo = make_match(map_name="Consulate", map_id=999, index=3)
+        _rondas(nuevo, 1, 1)
+        nombres = sorted(r["map"] for r in agg.by_map())
+        self.assertEqual(
+            nombres, ["Consulate", "Consulate (Y10)", "Consulate (Y7)", "Consulate (id 999)"]
+        )

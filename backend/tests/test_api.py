@@ -336,8 +336,8 @@ class VersionesDeMapaApiTests(TestCase):
         self.assertEqual(
             mapas["consulate"]["versions"],
             [
-                {"map_id": 418126004176, "label": "Consulate (Y10)"},
                 {"map_id": 2609221242, "label": "Consulate (Y7)"},
+                {"map_id": 418126004176, "label": "Consulate (Y10)"},
             ],
         )
         self.assertEqual(mapas["consulate"]["map_name"], "Consulate")
@@ -347,3 +347,9 @@ class VersionesDeMapaApiTests(TestCase):
         data = self.client.get("/api/matches/?map=418126004176").json()
         self.assertEqual(data["total"], 1)
         self.assertEqual(data["matches"][0]["played_at"][:13], "2026-09-01T21")
+
+    def test_un_map_raro_no_da_500(self):
+        for valor in ("²", "99999999999999999999999", "-1"):
+            with self.subTest(valor=valor):
+                self.assertEqual(self.client.get(f"/api/matches/?map={valor}").status_code, 200)
+                self.assertEqual(self.client.get(f"/api/overview/?map={valor}").status_code, 200)

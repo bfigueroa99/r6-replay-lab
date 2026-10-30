@@ -1,7 +1,7 @@
 # 70. Cada version de un mapa en su propia fila
 
-estado: en curso 2026-10-30
-candado: dev 2026-10-30T04:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/70-mapas-por-version
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -204,6 +204,49 @@ agrupado y un `<select>`). Sin arena: la forma del filtro tenia dos opciones
 no toca `FILTER_KEYS` ni la URL.
 
 ## Implementacion
+
+Dev 20261030T0404Z, sobre `origin/dev@1c92273`. Diseno completo, sin migracion.
+
+- `pydissect/header.py`: `etiqueta_de_version(map_id, nombre="")`, pura y sin
+  Django; lee solo `MAPS`.
+- `aggregates.py`: `filtro_mapa` (lo usa `base_queryset` y `match_list`);
+  `by_map`, `by_site` y `by_spawn` agrupan por `(map_slug, map_id, map_name)`
+  y las filas traen `slug`, `map_id` y `map` con la etiqueta. Los lados de
+  `by_map` se indexan por `(slug, map_id, side)`.
+- `views.py`: `/api/filters/` trae `maps[].versions` (`[{map_id, label}]`),
+  vacia si el slug tiene una sola version. `export.py`: `map_id` entre las
+  primeras columnas.
+- Frontend: `mapas.js` (`opcionesDeMapa`) + `Filters.jsx`. Las versiones van
+  con sangria de espacios de no separacion.
+- `docs/metricas.md`: fila **Mapa** reescrita.
+
+Desvios del diseno, por la revision ciega del Dev:
+
+- `filtro_mapa` exige `isascii()` y `< 2**63`: `?map=²` daba 500 (`int()`
+  lo rechaza) y un numero gigante desbordaba SQLite. Lo raro cae al slug y
+  devuelve vacio. Test `test_un_map_raro_no_da_500`.
+- `etiquetas_de_version` (en `aggregates.py`, usada por las tablas y por
+  `/api/filters/`): un id que `MAPS` no conoce y que el usuario nombro en
+  Datos igual que la version conocida compartia etiqueta con ella; ahora
+  lleva "(id N)". Test `test_un_id_nombrado_igual_que_una_version_lleva_el_id`.
+- Las versiones del selector van por `map_id` y no por etiqueta (por texto,
+  "Y10" quedaba antes que "Y7"). En `MAPS` el id crece con la version.
+- `test_match_list_filtra_por_map_id` comprueba la partida por `played_at`:
+  `/api/matches/` no expone `map_id` y no hacia falta agregarlo.
+- Tests extra: `sin datos no revienta` (vitest) y Coastline (Y11) en la
+  etiqueta.
+
+Criterios: 1 -> `VersionesDeMapaTests.test_by_map_*`; 2 ->
+`EtiquetaDeVersionTests`; 3 -> `test_by_site_*`, `test_by_spawn_*`,
+`test_el_filtro_por_*`, `test_filters_ofrece_las_versiones_solo_si_hay_dos`,
+`mapas.test.js`; 4 -> `test_el_csv_de_mapas_trae_una_fila_por_version`,
+`test_la_senal_de_peor_mapa_nombra_la_version` (`seed_demo` no cambia: e2e
+igual); 5 -> sin migracion, fila **Mapa**.
+
+Limite: `seed_demo` deja `map_id=0`, asi que el e2e no ve el selector con
+versiones; lo cubren vitest y `test_api`.
+
+Skills: no aplica (el diseno ya lo dijo; no hubo dominio nuevo).
 
 ## Revision <fecha> sobre <sha>
 

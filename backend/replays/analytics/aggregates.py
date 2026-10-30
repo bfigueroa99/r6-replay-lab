@@ -29,7 +29,7 @@ from django.db.models import (
 from django.db.models.fields.json import KeyTransform
 from django.db.models.functions import Cast, Floor
 
-from pydissect.constants import Y9S4
+from pydissect.constants import MAPS, Y9S4
 from pydissect.header import etiqueta_de_version
 
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
@@ -50,7 +50,9 @@ def filtro_mapa(valor: str, prefijo: str = "round__match__") -> dict:
     `unknown-<id>`), asi que un solo parametro alcanza para los dos.
     """
     valor = str(valor)
-    if valor.isdigit():
+    # isascii: "²" pasa isdigit pero int() lo rechaza; el tope evita el overflow
+    # de SQLite. Lo que no es un id cae al slug y no coincide con nada.
+    if valor.isascii() and valor.isdigit() and int(valor) < 2**63:
         return {f"{prefijo}map_id": int(valor)}
     return {f"{prefijo}map_slug": valor}
 
@@ -476,9 +478,29 @@ _MAPA = ("round__match__map_slug", "round__match__map_id", "round__match__map_na
 _MAPA_LABELS = ("slug", "map_id", "map_name")
 
 
+def etiquetas_de_version(filas) -> dict[tuple[str, int], str]:
+    """Etiqueta de cada `(slug, map_id)` de `filas` (dicts con map_slug/slug, map_id, map_name).
+
+    Un id que `MAPS` no conoce y que el usuario nombro en Datos igual que la
+    version conocida comparte slug y etiqueta con ella; ahi se le suma el id
+    para que las dos filas se distingan.
+    """
+    etiquetas: dict[tuple[str, int], str] = {}
+    for fila in filas:
+        clave = (fila.get("slug", fila.get("map_slug")), fila["map_id"])
+        etiquetas.setdefault(clave, etiqueta_de_version(fila["map_id"], fila["map_name"]))
+    usos = Counter((slug, etiqueta) for (slug, _), etiqueta in etiquetas.items())
+    for (slug, map_id), etiqueta in etiquetas.items():
+        if usos[(slug, etiqueta)] > 1 and map_id not in MAPS:
+            etiquetas[(slug, map_id)] = f"{etiqueta} (id {map_id})"
+    return etiquetas
+
+
 def _etiquetar(rows: list[dict]) -> list[dict]:
+    etiquetas = etiquetas_de_version(rows)
     for row in rows:
-        row["map"] = etiqueta_de_version(row["map_id"], row.pop("map_name"))
+        row.pop("map_name")
+        row["map"] = etiquetas[(row["slug"], row["map_id"])]
     return rows
 
 
