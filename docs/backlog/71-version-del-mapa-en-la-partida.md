@@ -1,7 +1,7 @@
 # 71. La partida dice que version del mapa se jugo
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-30 17:12 UTC
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
