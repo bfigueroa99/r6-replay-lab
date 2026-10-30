@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
+from pydissect.constants import Y9S4
 from replays.ingest import (
     find_match_folders,
     folder_is_settled,
@@ -123,3 +126,43 @@ class RealImportTests(TestCase):
         self.assertGreaterEqual(imported, 1)
         again = scan_and_import(self.root, quiet_seconds=0, limit=1)
         self.assertEqual(Match.objects.count(), imported + len([r for r in again if r.created]))
+
+
+def _ronda(numero: int, mio: int, suyo: int) -> dict:
+    """Una ronda sin jugadores ni eventos: alcanza para el marcador final."""
+    return {
+        "matchID": "sintetica",
+        "roundNumber": numero,
+        "recordingPlayer": "yo",
+        "matchType": {"name": "Ranked"},
+        "codeVersion": Y9S4,
+        "teams": [{"score": mio, "role": "Attack"}, {"score": suyo, "role": "Defense"}],
+        "players": [],
+        "matchFeedback": [],
+    }
+
+
+class ResultadoAlImportarTests(TestCase):
+    """El resultado sale de la regla del tipo, no de quien tiene mas rondas."""
+
+    def _importar(self, mio: int, suyo: int) -> Match:
+        rondas = [_ronda(n, min(mio, n + 1), 0) for n in range(mio + suyo - 1)]
+        rondas.append(_ronda(mio + suyo - 1, mio, suyo))
+        lector = mock.Mock()
+        lector.read.return_value.to_dict.return_value = {"rounds": rondas}
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        carpeta = Path(tmp.name) / "Match-sintetica"
+        carpeta.mkdir()
+        with mock.patch("replays.ingest.MatchReader", return_value=lector):
+            resultado = import_match_folder(carpeta)
+        self.assertTrue(resultado.ok, resultado.message)
+        return Match.objects.get(match_id="sintetica")
+
+    def test_una_ranked_tres_a_dos_se_importa_sin_resultado(self):
+        partida = self._importar(3, 2)
+        self.assertIsNone(partida.won)
+        self.assertEqual(partida.result, "incompleta")
+
+    def test_una_ranked_cuatro_a_dos_se_importa_como_victoria(self):
+        self.assertIs(self._importar(4, 2).won, True)

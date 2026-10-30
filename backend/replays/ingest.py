@@ -17,6 +17,7 @@ import pydissect
 from pydissect import MatchReader
 
 from .analytics.metrics import analyse_round
+from .analytics.reglas_partida import regla_para, resultado
 from .models import Event, ImportLog, Match, Player, Round, RoundPlayer
 
 log = logging.getLogger(__name__)
@@ -148,6 +149,9 @@ def _import(folder: Path, *, force: bool) -> ImportResult:
     my_score = final_scores[my_team_index] if len(final_scores) > my_team_index else 0
     opp_score = final_scores[my_team_index ^ 1] if len(final_scores) > 1 else 0
 
+    match_type = (first.get("matchType") or {}).get("name", "")
+    code_version = first.get("codeVersion", 0)
+
     with transaction.atomic():
         match, created = Match.objects.update_or_create(
             match_id=match_id,
@@ -158,15 +162,15 @@ def _import(folder: Path, *, force: bool) -> ImportResult:
                 "map_id": (first.get("map") or {}).get("id", 0),
                 "map_name": (first.get("map") or {}).get("name", ""),
                 "map_slug": (first.get("map") or {}).get("slug", ""),
-                "match_type": (first.get("matchType") or {}).get("name", ""),
+                "match_type": match_type,
                 "gamemode": (first.get("gamemode") or {}).get("name", ""),
                 "game_version": first.get("gameVersion", ""),
-                "code_version": first.get("codeVersion", 0),
+                "code_version": code_version,
                 "rounds_count": len(rounds),
                 "my_team_index": my_team_index,
                 "my_score": my_score,
                 "opponent_score": opp_score,
-                "won": None if my_score == opp_score else my_score > opp_score,
+                "won": resultado(my_score, opp_score, regla_para(match_type, code_version)),
                 "parser_version": pydissect.__version__,
                 "warnings": warnings,
             },

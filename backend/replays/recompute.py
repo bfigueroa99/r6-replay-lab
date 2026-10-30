@@ -7,9 +7,13 @@ tienen en 0. Todo lo que hace falta para
 rehacer el calculo esta en la base: los eventos con su reloj y los jugadores con
 su equipo. No hay que abrir un solo `.rec`.
 
+Tambien rehace `Match.won` con la regla del tipo de partida: una partida
+importada con un `.rec` faltante pudo quedar como victoria o derrota con un
+marcador que la regla no cierra. Marcador, tipo y version estan en `Match`.
+
 Las reglas no se reimplementan aca: se llama a las mismas
-`metrics.bajas_a_rivales`, `metrics.annotate_trades` y `metrics.clutch_vs` que
-usa el import. Duplicarlas
+`metrics.bajas_a_rivales`, `metrics.annotate_trades`, `metrics.clutch_vs` y
+`reglas_partida.resultado` que usa el import. Duplicarlas
 significaria numeros distintos segun por donde pasaste.
 """
 
@@ -20,7 +24,8 @@ from dataclasses import dataclass
 from django.db import transaction
 
 from .analytics.metrics import KILL, annotate_trades, bajas_a_rivales, clutch_vs, trade_window
-from .models import Event, Round, RoundPlayer
+from .analytics.reglas_partida import regla_para, resultado
+from .models import Event, Match, Round, RoundPlayer
 
 #: Campos que se recalculan: bajas, los que dependen de la ventana de trade y el clutch.
 CAMPOS = ("kills", "headshots", "was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs")
@@ -31,10 +36,11 @@ class RecomputeResult:
     rounds: int = 0
     players_changed: int = 0
     events_changed: int = 0
+    matches_changed: int = 0
 
     @property
     def changed(self) -> bool:
-        return bool(self.players_changed or self.events_changed)
+        return bool(self.players_changed or self.events_changed or self.matches_changed)
 
 
 def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int]:
@@ -99,10 +105,25 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
     return len(cambiados), len(eventos_cambiados)
 
 
+def _recompute_resultados(dry_run: bool) -> int:
+    partidas = Match.objects.only(
+        "id", "match_type", "code_version", "my_score", "opponent_score", "won"
+    )
+    cambiadas = []
+    for m in partidas.iterator(chunk_size=500):
+        won = resultado(m.my_score, m.opponent_score, regla_para(m.match_type, m.code_version))
+        if won != m.won:
+            m.won = won
+            cambiadas.append(m)
+    if cambiadas and not dry_run:
+        Match.objects.bulk_update(cambiadas, ["won"])
+    return len(cambiadas)
+
+
 def recompute(*, window: float | None = None, dry_run: bool = False) -> RecomputeResult:
     """Rehace las bajas, los trades y `clutch_vs` de todas las rondas importadas.
 
-    Tambien saca los teamkills de `kills` y `headshots`.
+    Tambien saca los teamkills de `kills` y `headshots` y rehace `Match.won`.
     """
     if window is None:
         window = trade_window()
@@ -115,4 +136,5 @@ def recompute(*, window: float | None = None, dry_run: bool = False) -> Recomput
             result.rounds += 1
             result.players_changed += jugadores
             result.events_changed += eventos
+        result.matches_changed = _recompute_resultados(dry_run)
     return result

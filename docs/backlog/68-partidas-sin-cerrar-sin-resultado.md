@@ -1,7 +1,7 @@
 # 68. Partidas con marcador que no cierra quedan sin resultado
 
-estado: en curso 2026-10-30
-candado: dev 2026-10-30 16:10 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado
 tipo: bug
 epica: -
@@ -151,6 +151,51 @@ Sin migracion, sin umbral, sin fila nueva de `metricas.md`.
 Skills: no aplica (backend puro, mismo patron que `recompute`). Sin arena.
 
 ## Implementacion
+
+Dev 20261030T1604Z, sobre `origin/dev@0fedc7b`.
+
+Implementado segun el diseno, sin desvios de fondo:
+
+- `reglas_partida.resultado(mio, suyo, regla)`, sin Django; docstring del
+  modulo menciona que tambien decide el resultado.
+- `ingest.py`: `match_type` y `code_version` a variables locales; `won` sale
+  de `resultado(..., regla_para(match_type, code_version))`.
+- `recompute.py`: `_recompute_resultados(dry_run)` con `bulk_update` de las
+  que cambian, dentro de la misma transaccion; `RecomputeResult.matches_changed`
+  entra en `changed`. El comando suma "y N partidas (resultado)" al resumen,
+  y `help`/docstring lo dicen.
+- `docs/metricas.md`, fila **Partidas ganadas**: cuando una partida queda
+  incompleta, que se corrige con `recompute` y el limite de la rendicion.
+
+Tests (todos con el nombre del diseno, mas algunos):
+
+- `ReglasTests`: los 5 del diseno + `test_ranked_empatada_queda_sin_resultado`.
+- `test_ingest.py`, clase `ResultadoAlImportarTests`: el ingest se prueba de
+  punta a punta con `MatchReader` simulado (rondas sin jugadores ni eventos):
+  `test_una_ranked_tres_a_dos_se_importa_sin_resultado` y
+  `test_una_ranked_cuatro_a_dos_se_importa_como_victoria`.
+- `test_recompute.py`, clase `ResultadoDePartidaTests`: los 3 del diseno +
+  `test_el_comando_cuenta_las_partidas_que_cambian` (dry-run "1 partidas
+  (resultado)", segunda corrida "Nada que recalcular").
+- `test_api.py`: `test_la_ranked_incompleta_sale_del_winrate_de_partidas`; la
+  3-2 nace `won=True` (factory) y la deja en `None` el `recompute()`, asi el
+  test pasa por el codigo nuevo y no por un `update` a mano.
+
+Revision ciega previa (subagente con `revision.md`): sin bloqueantes. Se
+tomaron dos menores (test de API via `recompute`, docstring del modulo).
+Quedan anotados para QA:
+
+- `seed_demo` siembra Ranked Y9S4 con marcadores 4-3 y 3-2 como victorias
+  (`won=True`). El e2e no corre `recompute`, asi que no cambia; pero si
+  alguien corre `recompute` sobre la base demo, esas partidas pasan a
+  incompletas. No se toco `seed_demo` (cambiaria los numeros del e2e); si
+  se quiere coherencia, ficha aparte.
+- La rendicion antes de 4 queda incompleta (limite ya en `metricas.md` y en
+  `## Para el humano`).
+
+`check.sh`: Todo en verde (851 tests backend, 133 frontend, build, 53 e2e).
+
+Skills: no aplica. Sin arena.
 
 ## Revision <fecha> sobre <sha>
 

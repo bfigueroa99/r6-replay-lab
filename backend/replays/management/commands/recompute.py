@@ -3,7 +3,9 @@
 Los trades se guardan calculados al importar, asi que cambiar
 `TRADE_WINDOW_SECONDS` en el `.env` no mueve nada hasta correr esto. Tambien
 llena `clutch_vs` en partidas importadas antes de que existiera y saca los
-teamkills de las bajas y los headshots:
+teamkills de las bajas y los headshots. Rehace tambien el resultado de cada
+partida: la que tiene un marcador que la regla de su tipo no cierra queda
+incompleta:
 
     manage.py recompute --dry-run    # cuanto cambiaria
     manage.py recompute
@@ -22,7 +24,7 @@ from replays.recompute import recompute
 class Command(BaseCommand):
     help = (
         "Recalcula bajas y headshots (sin teamkills), trades, muertes sin trade, "
-        "KST (con la ventana configurada) y clutch_vs."
+        "KST (con la ventana configurada), clutch_vs y el resultado de cada partida."
     )
 
     def add_arguments(self, parser) -> None:
@@ -47,7 +49,8 @@ class Command(BaseCommand):
         result = recompute(window=window, dry_run=options["dry_run"])
         resumen = (
             f"{result.players_changed} filas de jugador (bajas, trades o clutch) y "
-            f"{result.events_changed} eventos sobre {result.rounds} rondas"
+            f"{result.events_changed} eventos sobre {result.rounds} rondas, "
+            f"y {result.matches_changed} partidas (resultado)"
         )
 
         if not result.changed:
