@@ -1,8 +1,8 @@
 # 68. Partidas con marcador que no cierra quedan sin resultado
 
-estado: disenado
+estado: en curso 2026-10-30
 candado: -
-rama: -
+rama: claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado
 tipo: bug
 epica: -
 area: backend
