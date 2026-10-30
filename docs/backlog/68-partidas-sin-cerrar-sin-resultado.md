@@ -1,7 +1,7 @@
 # 68. Partidas con marcador que no cierra quedan sin resultado
 
-estado: implementado
-candado: revisor 2026-10-30T16:54Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (aviso de la ficha 50, idea G7 de `ALCANCE.md`); `ingest.py:169` decide `won` solo por quien tiene mas rondas
 archivos: backend/replays/analytics/reglas_partida.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/tests/test_match_point.py, backend/tests/test_ingest.py, backend/tests/test_recompute.py, backend/tests/test_api.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T1604Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T1604Z, revisor 20261030T1653Z
 
 ## PR
 
@@ -197,7 +197,75 @@ Quedan anotados para QA:
 
 Skills: no aplica. Sin arena.
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-30 sobre f0b3782
+
+Revisor 20261030T1653Z. Rama al dia con `origin/dev@0fedc7b` (sin merge).
+`check.sh` en `Todo en verde.` sobre `f0b3782` (codigo de `00b8f94`): ruff
+ok, 851 tests backend (4 omitidos, ninguno del diff), 133 vitest, build ok,
+53 e2e.
+
+Revision: no fue a ciegas. Esta sesion no tenia herramienta de subagentes,
+y la ficha se leyo al reclamar; la pasada con `revision.md` sobre el diff
+sin `docs/backlog` la hizo el lider. Sin hallazgos bloqueantes. Confirmado:
+
+- `resultado()` contra la regla Ranked (4, prorroga 5): 4-0, 4-2, 5-3 y 5-4
+  cierran; 3-2 y 4-3 no; 4-4 `None`; 6-2 (marcador imposible) cierra, sin
+  tercer estado. Es simetrica: 2-4 y 3-5 son derrota.
+- El marcador de la ultima ronda es el de despues de jugarla desde Y9S4
+  (`events.py:392`, `teamscore` contra `startingteamscore`), y la regla solo
+  existe desde Y9S4: no hay corrimiento de una ronda. Antes de Y9S4
+  `regla_para` da `None` y el resultado sigue siendo el de hoy.
+- Nada mas escribe `Match.won` (no hay override de resultado), asi que
+  `recompute` no pisa una decision del usuario. Frontend y agregados leen
+  `won`/`result` del backend; ninguno recalcula el ganador desde el marcador.
+- `_recompute_resultados` corre dentro de la transaccion de `recompute()`;
+  `dry_run` solo muta objetos en memoria.
+- Mutacion (worktree aparte, `test_match_point`, `test_ingest`,
+  `test_recompute`, `test_api`): ingest con la regla vieja -> cae
+  `test_una_ranked_tres_a_dos_se_importa_sin_resultado`; `recompute()` sin
+  llamar a `_recompute_resultados` -> caen 4; `resultado` sin regla -> 7;
+  dry-run que escribe -> 1; `cierra(max, ...)` en vez de `max - 1` -> 7;
+  `changed` sin `matches_changed` -> 2.
+- Base demo (`seed_demo` + `recompute`): 200 en todas las rutas GET de
+  `/api/` con las 29 partidas incompletas; `/api/overview/` da
+  `match_winrate: None`, `matches_undecided: 29`, sin division por cero.
+
+Test de borde agregado (verde, y cae si `recompute` ignora la version):
+`test_recompute_no_toca_una_ranked_anterior_a_y9s4` (`e561bcb`). Con el,
+`check.sh` otra vez en `Todo en verde.`: ruff ok, 852 tests backend (4
+omitidos), 133 vitest, build ok, 53 e2e.
+
+Hallazgo menor, no bloquea (fuera de `archivos:`):
+
+- [test] `backend/replays/management/commands/seed_demo.py:181` (y `:56`)
+  Que pasa: las 29 partidas demo son Ranked Y9S4 4-3 con `won=True`, un
+  estado que el import ya no produce; con 7 rondas por partida ninguna
+  Ranked cierra (las cerradas tienen 4, 5, 6, 8 o 9 rondas).
+  Como reproducirlo: base vacia, `seed_demo --force`, `recompute --dry-run`
+  -> "... y 29 partidas (resultado)"; despues de `recompute`, las 29 son
+  `incompleta`. El e2e no corre `recompute` y sigue verde.
+  Arreglo sugerido: ficha aparte que cierre los marcadores del seed (cambia
+  los numeros del e2e); no entra en esta.
+
+Ficha:
+
+- Criterio 1 -> `ReglasTests` (`test_ranked_tres_a_dos_no_cierra_la_partida`,
+  `..._cuatro_a_dos_...`, `..._cinco_a_cuatro_...`,
+  `..._cuatro_a_tres_...`, `..._empatada_...`) y `ResultadoAlImportarTests`
+  (ingest real con `MatchReader` simulado, 3-2 -> `incompleta`, 4-2 ->
+  victoria).
+- Criterio 2 -> `test_sin_regla_gana_el_que_tiene_mas_rondas`; la Unranked
+  3-2 sigue `True` en `test_recompute_deja_sin_resultado_la_ranked_que_no_cierra`.
+- Criterio 3 -> `ResultadoDePartidaTests` (dry-run, idempotencia, comando);
+  sin migracion.
+- Criterio 4 -> `test_la_ranked_incompleta_sale_del_winrate_de_partidas`.
+- Criterio 5 -> fila **Partidas ganadas** de `metricas.md`; las filas que
+  ya hablaban de partidas sin resultado (Margen final, Lado inicial,
+  Tamano del grupo) siguen siendo ciertas.
+- El diff toca exactamente `archivos:`. Identificadores sin tildes, sin
+  `print` ni `console.log`; no hay texto nuevo de UI.
+
+Veredicto: aprobar -> `revisado`.
 
 ## QA <fecha> sobre <sha>
 
