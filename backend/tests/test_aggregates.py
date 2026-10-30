@@ -184,3 +184,57 @@ class SynergyTests(TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["username"], "amigo-nuevo")
         self.assertEqual(rows[0]["rounds"], 4)
+
+
+CONSULATE_Y7 = 2609221242
+CONSULATE_Y10 = 418126004176
+
+
+def _rondas(match, ganadas: int, total: int, *, side: str = "Attack", site: str = "1F Lobby",
+            spawn: str = "Garage"):
+    for n in range(total):
+        rnd = make_round(match, n, side=side, won=n < ganadas, site=site)
+        make_round_player(rnd, side=side, spawn=spawn)
+
+
+class VersionesDeMapaTests(TestCase):
+    def setUp(self):
+        y7 = make_match(map_name="Consulate", map_id=CONSULATE_Y7, index=0)
+        _rondas(y7, 3, 4)
+        y10 = make_match(map_name="Consulate", map_id=CONSULATE_Y10, index=1)
+        _rondas(y10, 0, 4)
+
+    def test_by_map_separa_las_versiones_de_un_mapa(self):
+        filas = {r["map"]: r for r in agg.by_map()}
+        self.assertEqual(set(filas), {"Consulate (Y7)", "Consulate (Y10)"})
+        self.assertEqual(filas["Consulate (Y7)"]["attack_winrate"], 75.0)
+        self.assertEqual(filas["Consulate (Y10)"]["attack_winrate"], 0.0)
+        self.assertEqual(filas["Consulate (Y10)"]["map_id"], CONSULATE_Y10)
+        self.assertEqual({r["slug"] for r in filas.values()}, {"consulate"})
+
+    def test_by_map_con_map_id_cero_no_junta_mapas_distintos(self):
+        _rondas(make_match(map_name="Club House", index=2), 1, 2)
+        _rondas(make_match(map_name="Border", index=3), 1, 2)
+        nombres = sorted(r["map"] for r in agg.by_map())
+        self.assertEqual(nombres, ["Border", "Club House", "Consulate (Y10)", "Consulate (Y7)"])
+
+    def test_by_site_separa_el_mismo_sitio_en_dos_versiones(self):
+        filas = {(r["map"], r["site"]): r["rounds"] for r in agg.by_site()}
+        self.assertEqual(
+            filas, {("Consulate (Y7)", "1F Lobby"): 4, ("Consulate (Y10)", "1F Lobby"): 4}
+        )
+
+    def test_by_spawn_separa_por_version(self):
+        filas = {(r["map"], r["spawn"]): r["winrate"] for r in agg.by_spawn()}
+        self.assertEqual(
+            filas, {("Consulate (Y7)", "Garage"): 75.0, ("Consulate (Y10)", "Garage"): 0.0}
+        )
+
+    def test_el_filtro_por_slug_junta_las_versiones(self):
+        self.assertEqual(agg.overview(map="consulate")["overall"]["rounds"], 8)
+        self.assertEqual(len(agg.by_map(map="consulate")), 2)
+
+    def test_el_filtro_por_map_id_elige_una_version(self):
+        filas = agg.by_map(map=str(CONSULATE_Y10))
+        self.assertEqual([r["map"] for r in filas], ["Consulate (Y10)"])
+        self.assertEqual(agg.overview(map=str(CONSULATE_Y7))["overall"]["rounds"], 4)

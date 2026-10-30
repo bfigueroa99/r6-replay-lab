@@ -16,6 +16,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 import pydissect
 from externo import ubisoft
 from pydissect.constants import OPERATOR_SIDES
+from pydissect.header import etiqueta_de_version
 
 from . import ajustes, perfil_externo, unknowns
 from . import export as exportador
@@ -145,16 +146,41 @@ def health(request: HttpRequest) -> JsonResponse:
     )
 
 
+def _opciones_de_mapa() -> list[dict]:
+    """Mapas del selector, con sus versiones solo si el slug tiene dos o mas.
+
+    Con una sola version, la opcion del mapa ya la elige: listarla aparte
+    duplicaria cada fila del selector.
+    """
+    mapas: dict[str, dict] = {}
+    filas = Match.objects.values("map_slug", "map_name", "map_id").distinct()
+    for fila in filas.order_by("map_name", "map_id"):
+        mapa = mapas.setdefault(
+            fila["map_slug"],
+            {"map_slug": fila["map_slug"], "map_name": fila["map_name"], "ids": set()},
+        )
+        mapa["ids"].add(fila["map_id"])
+    salida = []
+    for mapa in sorted(mapas.values(), key=lambda m: (m["map_name"], m["map_slug"])):
+        ids = mapa.pop("ids")
+        mapa["versions"] = (
+            sorted(
+                ({"map_id": i, "label": etiqueta_de_version(i, mapa["map_name"])} for i in ids),
+                key=lambda v: v["label"],
+            )
+            if len(ids) > 1
+            else []
+        )
+        salida.append(mapa)
+    return salida
+
+
 @require_GET
 def filter_options(request: HttpRequest) -> JsonResponse:
     qs = agg.base_queryset()
     return _ok(
         {
-            "maps": list(
-                Match.objects.values("map_slug", "map_name")
-                .distinct()
-                .order_by("map_name")
-            ),
+            "maps": _opciones_de_mapa(),
             "operators": sorted(
                 {o for o in qs.values_list("operator", flat=True).distinct() if o}
             ),
@@ -369,7 +395,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
 
     qs = Match.objects.all()
     if request.GET.get("map"):
-        qs = qs.filter(map_slug=request.GET["map"])
+        qs = qs.filter(**agg.filtro_mapa(request.GET["map"], prefijo=""))
     if request.GET.get("match_type"):
         qs = qs.filter(match_type=request.GET["match_type"])
     total = qs.count()

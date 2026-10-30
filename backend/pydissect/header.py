@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime
 
 from .constants import (
@@ -230,6 +231,25 @@ def map_slug(map_id: int) -> str:
     if not entry:
         return f"unknown-{map_id}"
     return entry[1].lower().replace(" ", "-").replace(".", "")
+
+
+_SUFIJO_VERSION = re.compile(r"Y(\d+)$")
+
+
+def etiqueta_de_version(map_id: int, nombre: str = "") -> str:
+    """Nombre del mapa con la version, para separar los mapas rehechos.
+
+    Un rework (Consulate, Club House, Bank) trae un id nuevo y el mismo nombre;
+    el sufijo `Y<n>` del identificador interno es lo unico que dice cual es.
+    Lee solo `MAPS`: se llama al consultar y no tiene que anotar desconocidos.
+    Un id fuera de la tabla deja el nombre guardado tal cual.
+    """
+    entry = MAPS.get(map_id)
+    base = nombre or (entry[1] if entry else "")
+    if not entry:
+        return base
+    sufijo = _SUFIJO_VERSION.search(entry[0])
+    return f"{base} (Y{sufijo.group(1)})" if sufijo else base
 
 
 def match_type_name(match_type_id: int) -> str:
