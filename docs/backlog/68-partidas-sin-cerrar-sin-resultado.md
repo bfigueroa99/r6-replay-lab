@@ -1,7 +1,7 @@
 # 68. Partidas con marcador que no cierra quedan sin resultado
 
-estado: revisado
-candado: qa 2026-10-30T20:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (aviso de la ficha 50, idea G7 de `ALCANCE.md`); `ingest.py:169` decide `won` solo por quien tiene mas rondas
 archivos: backend/replays/analytics/reglas_partida.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/tests/test_match_point.py, backend/tests/test_ingest.py, backend/tests/test_recompute.py, backend/tests/test_api.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T1604Z, revisor 20261030T1653Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T1604Z, revisor 20261030T1653Z, qa 20261030T2004Z
 
 ## PR
 
@@ -267,9 +267,78 @@ Ficha:
 
 Veredicto: aprobar -> `revisado`.
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-30 sobre 2512e59
+
+QA 20261030T2004Z. Rama al dia con `origin/dev@0fedc7b` (`git merge-tree`
+limpio, sin merge que hacer). Sin migracion, sin cambios en `frontend/src`
+ni en el parser: no aplican esquema viejo, tamano de chunk ni fixture de
+`pydissect`.
+
+- `./scripts/check.sh` -> `Todo en verde.`: ruff ok, 852 tests backend
+  (4 omitidos), 133 vitest, build ok, 53 e2e.
+- Base sembrada desde `factories.py` (script en el scratchpad, base en el
+  scratchpad con `SQLITE_PATH` y `R6_ENV_FILE`): 12 partidas con `won` por
+  mas rondas, como las dejaba el import viejo. Ranked Y9S4 3-2, 4-1, 4-3,
+  5-4, 2-4, 4-4, 6-2, 0-0 (sin rondas) y 3-5; Unranked 3-2; Ranked Y9S3 3-2;
+  Quick Match 1-0.
+  - `manage.py recompute --dry-run` -> `... y 2 partidas (resultado).`
+    sin escribir (la base sigue con las dos `True`).
+  - `manage.py recompute` -> `... y 2 partidas (resultado).`: Ranked Y9S4
+    3-2 y 4-3 pasan a `None`; 4-1, 5-4, 6-2 `True`; 2-4, 3-5 `False`; 4-4 y
+    0-0 `None`; Unranked 3-2, Ranked Y9S3 3-2 y Quick Match 1-0 siguen `True`
+    (criterio 2).
+  - Segunda corrida -> `Nada que recalcular ... las 67 rondas ya estan al
+    dia.` (idempotente; criterio 3).
+  - Base vacia: `recompute --dry-run` y `recompute` -> `Nada que recalcular`.
+- `runserver` sobre la base sembrada:
+  - `/api/matches/`: las cuatro sin resultado salen `incompleta`; la Ranked
+    Y9S3 3-2 sigue `victoria` (criterio 4).
+  - `/api/overview/` `matches_summary`: 11 partidas (la 0-0 sin rondas no
+    cuenta), 6 ganadas, 2 perdidas, 8 decididas, 3 sin resultado,
+    `match_winrate` 75.0. Con `?match_type=Ranked`: 9, 4, 2, 3 sin resultado,
+    66.7. Las cuentas cuadran a mano.
+  - `/api/matches/1/` (la 3-2) -> `score 3-2`, `won None`, `incompleta`.
+  - Borde: `overview/?until=foo`, `?since=2099-01-01`, `matches/?page=-1`,
+    `?offset=-5&limit=0`, `?result=incompleta`, `?won=`, `coach/`,
+    `trends/`, `teammates/`, `duels/`, `sessions/`, `compare/`,
+    `players/1/`, `export/`, `unknown/`: 200 con JSON, sin `Traceback` en el
+    log del servidor.
+  - Base vacia: `overview/` da `match_winrate: None`, `matches_undecided: 0`,
+    sin division por cero; `matches/?result=incompleta`, `trends/`,
+    `sessions/` 200.
+- Mutacion (`python manage.py test tests.test_match_point tests.test_ingest
+  tests.test_recompute tests.test_api`, cada una revertida con `git
+  checkout -- replays/`):
+  - `resultado` con `cierra(max(...), ...)` sin el `- 1` -> caen 7, entre
+    ellos `test_ranked_tres_a_dos_no_cierra_la_partida` y
+    `test_ranked_cuatro_a_tres_no_cierra_por_la_prorroga`.
+  - `ingest.py` con la regla vieja (`my_score > opp_score`) -> cae
+    `test_una_ranked_tres_a_dos_se_importa_sin_resultado`.
+  - `_recompute_resultados` con `regla_para(m.match_type, 10**9)` (ignora la
+    version) -> cae `test_recompute_no_toca_una_ranked_anterior_a_y9s4`.
+- Criterio 5: fila **Partidas ganadas** de `docs/metricas.md` dice cuando
+  queda incompleta, que `recompute` lo corrige y el limite de la rendicion.
+
+Observacion, no bloquea (ya anotada por el Revisor): `seed_demo` siembra
+Ranked Y9S4 4-3 como victorias; tras `recompute` la base demo queda con
+todas sus partidas incompletas. El e2e no corre `recompute`. Ficha aparte si
+se quiere coherencia.
+
+Veredicto: `aprobado`.
 
 ## Verificar en el PC
+
+Toca `recompute`. Sobre tu base real, desde `backend/`:
+
+```powershell
+..\.venv\Scripts\python.exe manage.py recompute --dry-run
+..\.venv\Scripts\python.exe manage.py recompute
+```
+
+El dry-run dice cuantas partidas cambian de resultado (`y N partidas
+(resultado)`); deberian ser pocas, las que tienen un `.rec` faltante. Despues,
+en Partidas, esas salen como incompletas y el winrate de partidas del
+Dashboard deja de contarlas.
 
 ## Pendiente
 
