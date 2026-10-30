@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-10-30 16:17 UTC por dev (sesion 20261030T1604Z; motivo: por estado: 1 disenado, lugar en cola; reloj: dev, franja 5)
+actualizado: 2026-10-30 17:10 UTC por po (sesion 20261030T1653Z; motivo: rol siguiente que pide el pipeline (P8): el turno salia revisor por estado (1 implementado), la 68 ya la tenia candada otra sesion simultanea y la 69 el arquitecto; regla 10, menos de 6 propuesto; reloj: qa, franja 6)
 playbook: origin/dev@0fedc7b
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 6 de 42 en 7 dias
 pausa: no
@@ -9,10 +9,10 @@ pausa: no
 
 | rama | ficha | estado | horas | compare | PR |
 |---|---|---|---|---|---|
-| claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado | 68 (bug p2) | implementado | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado?expand=1 | no |
+| claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado | 68 (bug p2) | implementado (candado revisor 16:54, sesion simultanea) | 0 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado?expand=1 | no |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=69 sin_merge=no pausa=no sin_rastro_48h=0
+RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=0
 
 ## Orden de merge sugerido
 
@@ -21,9 +21,9 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (59-clutch-por-mapa-y-sitio 61-clutch-por-operador 62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida 70-mapas-por-version) otros:1 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: temporada-y-modo: A4 (70) en dev; A6 era "implementar despues de #70", ya libre. paridad-referencia: R1 (64) en dev, R2-R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
-- Papel: PAPEL_TIPOS=funcionalidad:0 otros:1 (propuesto y disenado). Cola: COLA_TIPOS=funcionalidad:0 de 1 ramas de trabajo.
-- `ALCANCE.md`: 69 ideas libres (A4 pasa a `en dev`: lo marca el proximo PO). Ideas nuevas de este turno: ninguna (turno de Dev).
+- Epicas en curso: temporada-y-modo: A4 (70) en dev, A6 en papel (71). datos-nuevos-del-parser: P1 en papel (73), la primera funcionalidad de la epica `sin entrega`. paridad-referencia: R1 (64) en dev, R4 en papel (72), R2, R3 y R5 idea. operadores: O6 (61) y O5 (65) en dev, O1 tramo siguiente.
+- Papel: PAPEL_TIPOS=funcionalidad:3 otros:1 (propuesto y disenado). Cola: COLA_TIPOS=funcionalidad:0 de 1 ramas de trabajo.
+- `ALCANCE.md`: 71 ideas libres (69 al empezar el turno del PO). A4 marcada `en dev`; A6, R4 y P1 pasan a fichas 71, 72 y 73. Ideas nuevas de este turno: A7 modo de juego como dimension, A8 version del mapa en el resto de las pantallas por mapa, B16 el Coach mira la presion, K8 en que estado de vivos matas, K9 señal del Coach sobre los clutches.
 - Investigacion: ultima entrada 2026-10-24.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: datos-nuevos-del-parser
 - Ciclo: CICLO=10h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 70:8 66:4 65:6 64:8 63:12 62:8 61:32 59:12 57:12 56:12)
@@ -32,11 +32,14 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 68-partidas-sin-cerrar-sin-resultado | implementado (en su rama) | bug | - | 2 | backend | - |
-| 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | - |
+| 68-partidas-sin-cerrar-sin-resultado | implementado (en su rama) | bug | - | 2 | backend | revisor (en su rama) |
+| 69-clutch-cuenta-con-abandonos | propuesto | bug | - | 2 | backend | arquitecto 2026-10-30 16:56 UTC |
+| 71-version-del-mapa-en-la-partida | propuesto | funcionalidad | temporada-y-modo | 2 | backend | - |
+| 72-apertura-marcada-en-la-timeline | propuesto | funcionalidad | paridad-referencia | 2 | frontend | - |
+| 73-catalogo-y10s4-a-y11s1 | propuesto | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto`, 0 `disenado`. La 68 pasa al Revisor (regla 3). Papel sin funcionalidades: el PO tiene que proponer (A6, R2-R5, P1); la 69 espera al Arquitecto. Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66, `## Para el humano`).
+4 `propuesto` (3 funcionalidades), 0 `disenado`. La 68 la tiene el Revisor; la 69, el Arquitecto. 71 (tramo A6 tras la 70), 72 (`must` de la referencia) y 73 (Solid Snake, Fortress Y10 y las versiones Y10S4/Y11S1, IDs releidos en el fork `1f0cc42`) esperan diseno. Candidato a ficha chica pendiente: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66), y los cuatro detalles de `DeltaLado` (ficha 65); con 3 funcionalidades en papel ya pueden entrar como `deuda`.
 
 ## Ultimo turno de cada rol
 
@@ -48,7 +51,7 @@ Una sola rama: la 68 sale de `origin/dev@0fedc7b`, sin conflicto. Libera `ingest
 | qa | 2026-10-30 12:30 | Prueba 70 (funcionalidad p2, `revisado` -> `aprobado`) sobre f16a36a. `check.sh` en `Todo en verde.` (838 backend, 133 vitest, build, 53 e2e). Base sembrada con `factories` (ConsulateY7 3/4 ataques, ConsulateY10 0/4, Kanal, Club House `map_id=0`, ronda sin bajas) y base vacia: `/api/filters/` con versiones, CSV maps/sites/spawns una fila por version (75 y 0), `?map=<id>` y `?map=<slug>` en matches y export; 16 rutas GET x 10 `?map=` borde, todas 200. Chunk +0.1 %. Mutacion: 5 de 5 caen. |
 | arquitecto | 2026-10-29 04:30 | Disena 67 (regla en `metrics.bajas_a_rivales` sobre `Event`, usada por `analyse_round` antes de `annotate_trades` y por `recompute`, que suma `kills`/`headshots` a `CAMPOS`; el test del parser queda y la inversion es un test nuevo de la app; cinco filas de `metricas.md`), 70 (clave `(map_slug, map_id)` porque seed y factories usan `map_id=0`; etiqueta estatica "Consulate (Y10)" del sufijo de `MAPS` en `pydissect/header.py`; `?map=<digitos>` filtra una version sin clave nueva; selector con `mapas.js` puro) y 68 (`reglas_partida.resultado` con `cierra(max-1, min)`, ingest y `recompute` de `Match.won`; implementar despues de #67). Sin arena, sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
-| po | 2026-10-29 00:40 | Papel vacio, responde las decisiones del humano del 2026-10-28 (P2): propone 67 (teamkills fuera de las bajas, bug p1, con `recompute` y `metricas.md`), 68 (`won=None` con marcador que no cierra segun `reglas_partida`, bug p2), 69 (1vX con `PlayerLeave`, bug p2) y 70 (cada version de un mapa en su fila por `map_id`, funcionalidad, A4). `ALCANCE.md` reconciliado (R1, O5 en dev), nuevas A6 y F14: 69 libres (68 al empezar). Sin pushes de codigo. |
+| po | 2026-10-30 17:10 | (sesion simultanea con revisor y arquitecto; reparto P8) Propone 71 (A6: la partida dice la version del mapa en listado, detalle y resumen copiado), 72 (R4: chips "apertura" y "entry" en la timeline, `must` de la referencia) y 73 (P1: Solid Snake, FortressY10 y code versions Y10S4/Y11S1, releidos en el fork MIT `1f0cc42`; sale de la epica `sin entrega`). `ALCANCE.md`: A4 `en dev`, nuevas A7, A8, B16, K8 y K9: 71 libres (69 al empezar). Sin pushes de codigo. |
 
 ## Para el humano
 
