@@ -1,8 +1,8 @@
 # 70. Cada version de un mapa en su propia fila
 
-estado: disenado
+estado: en curso 2026-10-30
 candado: -
-rama: -
+rama: claude/equipo-dev/70-mapas-por-version
 tipo: funcionalidad
 epica: temporada-y-modo
 area: fullstack
