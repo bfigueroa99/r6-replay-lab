@@ -1,7 +1,7 @@
 # 70. Cada version de un mapa en su propia fila
 
-estado: implementado
-candado: revisor 2026-10-30T08:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/70-mapas-por-version
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (ficha 49, descartada como bug; idea A4 de `ALCANCE.md`). Camino que dejo el Arquitecto en la 49: agrupar por `Match.map_id` (`ingest.py:160`) con la etiqueta del identificador de `MAPS`
 archivos: backend/pydissect/header.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/export.py, frontend/src/mapas.js (nuevo), frontend/src/mapas.test.js (nuevo), frontend/src/components/Filters.jsx, backend/tests/test_pydissect.py, backend/tests/test_aggregates.py, backend/tests/test_api.py, backend/tests/test_export.py, backend/tests/test_coach.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T0404Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261030T0404Z, revisor 20261030T0804Z
 
 ## PR
 
@@ -248,7 +248,47 @@ versiones; lo cubren vitest y `test_api`.
 
 Skills: no aplica (el diseno ya lo dijo; no hubo dominio nuevo).
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-10-30 sobre c7548d8
+
+Revisor 20261030T0804Z. Rama ya al dia con `origin/dev@1c92273` (sin merge).
+`check.sh` en `Todo en verde.`: 838 tests backend (4 omitidos, ninguno del
+diff), 133 vitest, build ok, 53 e2e.
+
+Revision ciega (subagente con `revision.md` sobre el diff sin
+`docs/backlog`): sin hallazgos, veredicto aprobar. Confirmado por el lider:
+
+- Todo filtro por `?map=` pasa por `filtro_mapa` (`base_queryset` y
+  `match_list`); no queda ningun `map_slug=` con `filters["map"]` suelto.
+  `matches_summary`, `clutch_by_site` y Tendencias parten de
+  `base_queryset`, asi que elegir una version tambien los restringe (la
+  agregacion por slug de esas tablas sigue como dice Fuera de alcance).
+- `by_map` indexa los lados por `(slug, map_id, side)` pero agrupa las filas
+  tambien por `map_name`: dos nombres para el mismo `(slug, map_id)` darian
+  lados combinados. No pasa: `retag.py:81` reescribe nombre y slug de todas
+  las partidas de un `map_id` juntas. No es hallazgo.
+- Las etiquetas de `MAPS` no se repiten dentro de un slug (9 slugs con
+  varias versiones); el id mas grande queda lejos de 2^53, `String(map_id)`
+  en el frontend no pierde precision.
+- `map_id = 0` (seed, factories): la clave `(slug, map_id)` separa por slug
+  como antes; `versions` vacia.
+
+Ficha:
+
+- Criterio 1 -> `test_by_map_separa_las_versiones_de_un_mapa`,
+  `test_by_map_con_map_id_cero_no_junta_mapas_distintos`.
+- Criterio 2 -> `EtiquetaDeVersionTests` en `test_pydissect.py` (Y7, Y10,
+  Y11, sin sufijo, id fuera de la tabla).
+- Criterio 3 -> `test_by_site_*`, `test_by_spawn_*`, `test_el_filtro_por_*`,
+  `test_filters_ofrece_las_versiones_solo_si_hay_dos`,
+  `test_match_list_filtra_por_map_id`, `mapas.test.js`.
+- Criterio 4 -> `test_el_csv_de_mapas_trae_una_fila_por_version`,
+  `test_la_senal_de_peor_mapa_nombra_la_version`; `seed_demo` no cambia, el
+  e2e sigue igual (limite anotado por el Dev: el e2e no ve versiones).
+- Criterio 5 -> sin migracion; fila **Mapa** de `metricas.md` reescrita.
+- El diff toca exactamente `archivos:`. Identificadores sin tildes, UI con
+  tildes, sin `print` ni `console.log`.
+
+Veredicto: aprobar -> `revisado`.
 
 ## QA <fecha> sobre <sha>
 
