@@ -1,7 +1,7 @@
 # 72. La apertura marcada en la timeline de la ronda
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-30 17:16 UTC
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia
