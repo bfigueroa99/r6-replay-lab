@@ -7,6 +7,7 @@ from io import StringIO
 from django.core.management import call_command
 from django.test import TestCase
 
+from pydissect.constants import Y9S4
 from replays.analytics.metrics import analyse_round, trade_window
 from replays.models import Event, Match, RoundPlayer
 from replays.recompute import recompute
@@ -284,6 +285,12 @@ class ResultadoDePartidaTests(TestCase):
         self.assertEqual(result.matches_changed, 1)
         self.assertTrue(result.changed)
         self.assertIs(Match.objects.get(pk=self.ranked.pk).won, True)
+
+    def test_recompute_no_toca_una_ranked_anterior_a_y9s4(self):
+        # sin marcador por ronda no hay regla: sigue ganando el que tiene mas rondas
+        vieja = make_match(index=3, my_score=3, opponent_score=2, code_version=Y9S4 - 1)
+        recompute()
+        self.assertIs(Match.objects.get(pk=vieja.pk).won, True)
 
     def test_recompute_de_resultados_es_idempotente(self):
         recompute()
