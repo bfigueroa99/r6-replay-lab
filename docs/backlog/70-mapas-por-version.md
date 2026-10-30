@@ -1,6 +1,6 @@
 # 70. Cada version de un mapa en su propia fila
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/70-mapas-por-version
 tipo: funcionalidad
