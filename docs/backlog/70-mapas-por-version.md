@@ -1,7 +1,7 @@
 # 70. Cada version de un mapa en su propia fila
 
 estado: implementado
-candado: -
+candado: revisor 2026-10-30T08:04Z
 rama: claude/equipo-dev/70-mapas-por-version
 tipo: funcionalidad
 epica: temporada-y-modo
