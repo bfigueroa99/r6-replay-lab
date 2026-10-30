@@ -7,8 +7,9 @@ from io import StringIO
 from django.core.management import call_command
 from django.test import TestCase
 
+from pydissect.constants import Y9S4
 from replays.analytics.metrics import analyse_round, trade_window
-from replays.models import Event, RoundPlayer
+from replays.models import Event, Match, RoundPlayer
 from replays.recompute import recompute
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
@@ -261,3 +262,47 @@ class ApiTests(TestCase):
         self.assertEqual(
             self.client.get("/api/overview/").json()["data_health"]["trade_window"], 3.0
         )
+
+
+class ResultadoDePartidaTests(TestCase):
+    """`recompute` rehace `Match.won` con la regla del tipo de partida."""
+
+    def setUp(self):
+        # importadas antes del arreglo: gano el que tenia mas rondas
+        self.ranked = make_match(index=0, my_score=3, opponent_score=2)
+        self.unranked = make_match(index=1, my_score=3, opponent_score=2, match_type="Unranked")
+        self.cerrada = make_match(index=2, my_score=4, opponent_score=2)
+
+    def test_recompute_deja_sin_resultado_la_ranked_que_no_cierra(self):
+        result = recompute()
+        self.assertEqual(result.matches_changed, 1)
+        self.assertIsNone(Match.objects.get(pk=self.ranked.pk).won)
+        self.assertIs(Match.objects.get(pk=self.unranked.pk).won, True)
+        self.assertIs(Match.objects.get(pk=self.cerrada.pk).won, True)
+
+    def test_recompute_dry_run_cuenta_las_partidas_sin_escribir(self):
+        result = recompute(dry_run=True)
+        self.assertEqual(result.matches_changed, 1)
+        self.assertTrue(result.changed)
+        self.assertIs(Match.objects.get(pk=self.ranked.pk).won, True)
+
+    def test_recompute_no_toca_una_ranked_anterior_a_y9s4(self):
+        # sin marcador por ronda no hay regla: sigue ganando el que tiene mas rondas
+        vieja = make_match(index=3, my_score=3, opponent_score=2, code_version=Y9S4 - 1)
+        recompute()
+        self.assertIs(Match.objects.get(pk=vieja.pk).won, True)
+
+    def test_recompute_de_resultados_es_idempotente(self):
+        recompute()
+        result = recompute()
+        self.assertEqual(result.matches_changed, 0)
+        self.assertFalse(result.changed)
+
+    def test_el_comando_cuenta_las_partidas_que_cambian(self):
+        salida = StringIO()
+        call_command("recompute", "--dry-run", stdout=salida)
+        self.assertIn("1 partidas (resultado)", salida.getvalue())
+        salida = StringIO()
+        call_command("recompute", stdout=salida)
+        call_command("recompute", stdout=salida)
+        self.assertIn("Nada que recalcular", salida.getvalue())

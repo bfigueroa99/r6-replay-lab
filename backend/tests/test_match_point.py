@@ -60,6 +60,29 @@ class ReglasTests(SimpleTestCase):
         self.assertIn((4, 3), pares)
         self.assertIn((4, 4), pares)
 
+    def test_ranked_tres_a_dos_no_cierra_la_partida(self):
+        self.assertIsNone(rp.resultado(3, 2, RANKED))
+        self.assertIsNone(rp.resultado(2, 3, RANKED))
+
+    def test_ranked_cuatro_a_dos_es_victoria_y_dos_a_cuatro_derrota(self):
+        self.assertIs(rp.resultado(4, 2, RANKED), True)
+        self.assertIs(rp.resultado(2, 4, RANKED), False)
+
+    def test_ranked_cinco_a_cuatro_en_prorroga_es_victoria(self):
+        self.assertIs(rp.resultado(5, 4, RANKED), True)
+        self.assertIs(rp.resultado(3, 5, RANKED), False)
+
+    def test_ranked_cuatro_a_tres_no_cierra_por_la_prorroga(self):
+        self.assertIsNone(rp.resultado(4, 3, RANKED))
+
+    def test_ranked_empatada_queda_sin_resultado(self):
+        self.assertIsNone(rp.resultado(4, 4, RANKED))
+
+    def test_sin_regla_gana_el_que_tiene_mas_rondas(self):
+        self.assertIs(rp.resultado(3, 2, None), True)
+        self.assertIs(rp.resultado(1, 2, None), False)
+        self.assertIsNone(rp.resultado(2, 2, None))
+
     def test_regla_para_toma_la_de_mayor_desde_que_aplica(self):
         reglas = {"Raro": ({"desde": 10, "para_ganar": 4, "prorroga_hasta": 5},
                            {"desde": 20, "para_ganar": 3, "prorroga_hasta": 3})}
