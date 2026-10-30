@@ -1,7 +1,7 @@
 # 67. Teamkills fuera de las bajas
 
-estado: revisado
-candado: qa 2026-10-30T00:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/67-teamkills-fuera-de-las-bajas
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 53); `pydissect/stats.py:81-85` suma todo `Kill` del autor; `docs/metricas.md` filas Bajas, Multikill, Teamkills y Mejor ronda
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py (comentario l.133), backend/tests/test_metrics.py, backend/tests/test_recompute.py, backend/tests/test_player_stats.py (comentario), backend/tests/test_teamkills.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z, dev 20261029T1607Z, revisor 20261029T2004Z
+turnos: po 20261029T0004Z, arquitecto 20261029T0404Z, dev 20261029T0805Z, revisor 20261029T1223Z, dev 20261029T1607Z, revisor 20261029T2004Z, qa 20261030T0004Z
 
 ## PR
 
@@ -294,9 +294,48 @@ Hallazgos de la ciega, descartados tras confirmarlos:
 
 Veredicto: **aprobar** (`revisado`).
 
-## QA <fecha> sobre <sha>
+## QA 2026-10-30 sobre 9070d2e
+
+QA 20261030T0004Z. Dev no se movio (`origin/dev@c3597f4` ya en la rama).
+`./scripts/check.sh`: `Todo en verde.` (lint, 823 tests backend, 130 vitest,
+build, 53 e2e). No toca `frontend/src`, parser ni migraciones.
+
+Base sembrada con `tests/factories.py` (script en el scratchpad, `SQLITE_PATH`
+y `R6_ENV_FILE` temporales; nada al repo), como lo dejaba el import viejo:
+R0 2 rivales + teamkill HS (`kills=3, headshots=1`), R1 solo un teamkill y
+despues muero sin trade, R2 suicidio como `Kill`, R3 baja a un nick sin fila,
+R4 limpia, y otra partida de un solo jugador sin eventos.
+
+- Criterio 1 y 2: `manage.py recompute --dry-run` -> "cambiarian 7 filas
+  de jugador (bajas, trades o clutch)", la base sigue con `kills=3`;
+  `recompute` -> 7 filas; segunda corrida -> "Nada que recalcular ... 6
+  rondas ya estan al dia". Mis filas por ronda (kills, headshots, kst):
+  R0 `3,1,T -> 2,0,T`; R1 `1,0,T -> 0,0,F`; R2 `1,0,T -> 0,0,F`; R3 y R4
+  `1,0,T` sin cambio (el nick desconocido sigue contando).
+- Criterio 3 (`runserver` + `curl`): `/api/overview/` `overall` kills 4,
+  k2 1, k3 0, kd 2.0, hs_pct 0.0; `/api/matches/1/` mi fila kills 4, k2 1,
+  headshots 0; `/api/players/2/` (`amigo`) `with.kills` 4 en 5 rondas;
+  `/api/teammates/` `teamkills.mine` 2 y `by_teammate` amigo `made` 2 (el
+  panel sigue contandolos). Bordes: `?until=foo`, `?page=-1`, `?map=` 200;
+  `/api/matches/2/` (un jugador) 200; `/api/players/99999/` 404. Base vacia:
+  overview 200 con ceros y `kd/kpr/rating` null, teammates/trends/operators
+  200, matches 404. Sin trazas en el log del servidor.
+- Criterio 4: filas de `metricas.md` revisadas por el Revisor; nada nuevo.
+- Criterio 5: e2e verde con los numeros de `seed_demo`.
+- Mutacion (cada una sola, revertida): sin filtro de equipo en
+  `bajas_a_rivales` -> 7 tests caen; headshot contado antes del filtro ->
+  3 caen (`..._con_headshot_no_suma_headshots`, suicidio, recompute); el
+  `update` de bajas sacado de `recompute.py` -> 5 caen; victima desconocida
+  tratada como compañero -> cae `test_una_baja_a_un_nick_desconocido_sigue_contando`.
+
+Veredicto: **aprobado**.
 
 ## Verificar en el PC
+
+`cd backend; python manage.py backup; python manage.py recompute --dry-run;
+python manage.py recompute; python manage.py recompute` (la ultima debe
+decir "Nada que recalcular"). K/D, KPR y rating bajan solo donde hubo
+teamkills.
 
 ## Pendiente
 
