@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-10-30 16:56 UTC
 rama: -
 tipo: bug
 epica: -
