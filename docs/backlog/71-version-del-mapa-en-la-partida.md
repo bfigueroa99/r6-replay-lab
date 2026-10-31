@@ -1,7 +1,7 @@
 # 71. La partida dice que version del mapa se jugo
 
-estado: en curso 2026-10-31
-candado: dev 2026-10-31 21:36 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/71-version-del-mapa-en-la-partida
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -148,6 +148,51 @@ puede perder el "(id N)" de la otra (calcula sobre las filas filtradas) y el
 listado lo conserva; unificarlo es la A8.
 
 ## Implementacion
+
+Dev 20261031T2135Z sobre `origin/dev@9de28fa`. Quedo todo el diseno, sin
+tocar frontend. `check.sh` en `Todo en verde.` (858 backend, 133 vitest,
+build, 53 e2e):
+
+- `aggregates.etiquetas_de_mapas(slugs=None)`: `Match.objects.values(map_slug,
+  map_name, map_id).distinct()` ordenado como `_opciones_de_mapa`, acotado
+  por `map_slug__in` si vienen slugs, y `etiquetas_de_version` encima.
+- `views.match_list`: una consulta por pagina con los slugs de la pagina;
+  `map` = etiqueta, con `match.map_name` de respaldo. `map_slug` igual.
+  Pagina vacia: `map_slug__in=[]` no llega a la base.
+- `views.match_detail`: la misma expresion sobre el slug de la partida.
+- `docs/metricas.md`, fila **Mapa** de `## Cortes`: la frase del diseno.
+
+Tests (`backend/tests/test_mapa_de_la_partida.py`, 6): criterio 1
+`test_el_listado_dice_la_version_del_mapa`; criterio 2
+`test_el_detalle_dice_la_version_del_mapa`; criterio 3
+`test_listado_y_detalle_dicen_lo_mismo_que_mapas` y
+`test_la_etiqueta_no_cambia_con_la_pagina`; criterio 5
+`test_el_filtro_del_listado_sigue_igual` y
+`test_el_listado_no_hace_una_consulta_por_partida`. Criterio 4 (resumen
+copiado): sin test, como decia el diseno; `resumenPartida.js:69` toma
+`match.map` del detalle. Los 6 fallaban antes del cambio.
+
+Desvios del diseno:
+- Test extra `test_la_etiqueta_no_cambia_con_la_pagina`: recorre el listado
+  con `limit=1` y exige el "(id 999)" aunque la otra "Consulate" este en
+  otra pagina. Es el caso que justifica mirar todas las partidas del slug.
+- `test_el_listado_no_hace_una_consulta_por_partida` compara el numero de
+  consultas con la base del setUp y con el doble de partidas, en vez de
+  fijar 5 con `assertNumQueries`: otra consulta por pagina no es el bug que
+  vigila, y un numero fijo se rompia con cualquier cambio ajeno a la vista.
+
+Mutaciones (codigo roto a proposito, restaurado): etiquetar solo con las
+filas de la pagina (`etiquetas_de_version` sobre `page`) hace caer
+`test_la_etiqueta_no_cambia_con_la_pagina`; etiquetar dentro del bucle hace
+caer el test de consultas (13 contra 9).
+
+Revision previa: `OMC: no disponible (la sesion no tiene herramienta Agent
+para el subagente ciego)`. La pasada de `revision.md` la hice yo sobre el
+diff sin `docs/backlog`; unico hallazgo, corregido: el `assertNumQueries(5)`
+de arriba. La revision independiente queda para el Revisor.
+
+Skills: no aplica (el patron ya esta en `etiquetas_de_version` y
+`_opciones_de_mapa`). Arena: no, una sola forma.
 
 ## Revision <fecha> sobre <sha>
 
