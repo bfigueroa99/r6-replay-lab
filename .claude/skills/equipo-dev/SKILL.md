@@ -22,6 +22,19 @@ que herramienta reemplaza a cada una de Claude Code (`gh` en vez de las de
 GitHub, `task` en vez de `Agent`). Sus commits firman `OpenCode`: tambien es
 el equipo.
 
+Los roles se apoyan en los agentes de oh-my-claudecode (OMC), vendorizados en
+`.claude/agents/omc-*.md`, con las recetas de `.claude/skills/omc/SKILL.md`
+(leerla de `$REF`, como el resto del playbook): plan por consenso (receta 1),
+revision en dos ejes (2), verificacion con evidencia (3) y diagnostico (4).
+Cada rol dice abajo en que paso usa cual. Los modos persistentes de OMC
+(`autopilot`, `ralph`, `team` y los demas que la skill lista) no se usan: el
+turno ya es el loop. La sesion carga los agentes del checkout, que puede ser
+`main` o una rama sin ellos: si `subagent_type: "omc-<x>"` no existe, el
+fallback de la skill (`general-purpose`, o `task` en OpenCode, con el cuerpo
+de `git show $EQUIPO_REF:.claude/agents/omc-<x>.md` desde `<Adaptacion_Loop>`).
+OMC nunca frena un turno: si un agente falla o el reloj no alcanza (P9), se
+sigue como sin el y se anota en `**OMC:**` del informe.
+
 ## Principios
 
 1. **Terminar antes que empezar.** Lo que ya tiene codigo se revisa, se
@@ -252,8 +265,11 @@ estado.
   `0002_*`: la mas nueva renumera despues de mergear dev.
 - **P4. check.sh rojo reproducido localmente** en una rama del equipo: si el
   turno es Dev lo arregla primero; si no, `con hallazgos` con el error
-  exacto. Un rojo de GitHub Actions con verde local **no cuenta**: se anota
-  una vez en `ESTADO.md` y nadie toca el workflow. Main rojo reproducido en
+  exacto. Sin causa obvia tras un intento: receta 4 de OMC (`omc-tracer`, u
+  `omc-debugger` si hay traza) con el sintoma, la salida y lo ya descartado,
+  y su causa probable va junto al error. Un rojo de GitHub Actions con verde
+  local **no cuenta**: se anota una vez en `ESTADO.md` y nadie toca el
+  workflow. Main rojo reproducido en
   checkout completo: unica excepcion a la cola llena, rama
   `claude/equipo-dev/NN-hotfix-<slug>` con ficha si el arreglo cabe en ~50
   lineas; si no, ficha `propuesto` con prioridad 1 y aviso en `ESTADO.md`.
@@ -583,7 +599,19 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   sale de una arena
   (`.claude/skills/equipo-dev/arena.md`, leerlo de `$REF`): una por turno,
   `--agents 4`, en un worktree de `$EQUIPO_REF`; con una sola forma obvia,
-  no hay arena. Spikes en el scratchpad, nunca
+  no hay arena. Si la ficha es grande o dificil de deshacer (no cabe en un
+  turno de Dev y se parte en tramos, o toca lo que QA manda a `## Verificar
+  en el PC`: migraciones, `recompute`, parser, Electron, `.ps1`), el
+  `## Diseno` sale de un plan por consenso (receta 1 de OMC): uno por turno,
+  con 45 minutos o mas antes de `EQUIPO_CIERRE`, la de mas riesgo primero, y
+  el brief del planner pide lo que lleva `## Diseno`. Modo deliberado si
+  reescribe o borra datos ya importados, o toca `backend/externo/`,
+  `perfil_externo.py`, `config/envfile.py` o un POST. Si la ficha tambien va
+  a arena, el ganador es el borrador y pasa directo por architect y critic.
+  Sin APPROVE tras 2 rondas, el diseno cubre solo la parte aprobada y el
+  resto queda como tramo `propuesto`; un filtro duro es `descartado`, y una
+  ficha con un CRITICAL abierto no llega a `disenado`. Fichas chicas y de una
+  forma obvia: sin consenso. Spikes en el scratchpad, nunca
   codigo commiteado. `estado: disenado`, `candado: -`.
 - **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
 - **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
@@ -614,10 +642,13 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   curso`, `rama:`); si ese push falla, no importa.
 - **Trabajo:** implementar el diseno completo: backend + frontend + tests +
   fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
-  migracion + `metrics.py` + `recompute` si hay columna nueva; estilo del
-  repo (espanol sin tildes en codigo, con tildes en la UI, comentarios que
-  explican por que). Dos subagentes para backend y frontend si son
-  independientes. Si un punto cae en un dominio que ni el diseno ni el repo
+  con `tipo: bug`, el test que falla primero (receta 4 de OMC):
+  `omc-test-engineer` lo propone antes de tocar el codigo, el Dev lo escribe
+  y lo ve fallar (comando y falla en `## Implementacion`) y recien entonces
+  arregla; migracion + `metrics.py` + `recompute` si hay columna nueva;
+  estilo del repo (espanol sin tildes en codigo, con tildes en la UI,
+  comentarios que explican por que). Dos subagentes para backend y frontend
+  si son independientes. Si un punto cae en un dominio que ni el diseno ni el repo
   resuelven y el Arquitecto no busco para esa ficha (su linea `Skills:`),
   una busqueda de skills de afuera (`.claude/skills/equipo-dev/skills.md`):
   una por turno, se consulta sin instalarla; `## Implementacion` lleva la
@@ -626,10 +657,13 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   lo decidio una arena del Arquitecto, ese punto se juega en una arena
   (`.claude/skills/equipo-dev/arena.md`): una por turno, `--agents 4`, el
   diff del ganador pasa por los mismos tests, `check.sh` y revision que
-  cualquier cambio. Antes del ultimo push: subagente ciego con `revision.md`
+  cualquier cambio. Antes del ultimo push: subagente ciego
+  `omc-code-reviewer` con `revision.md` (receta 2 de OMC, eje de estandares)
   sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
   filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
-  es el plan). `check.sh` en `Todo en verde.`. `## Implementacion`:
+  es el plan); un CRITICAL o HIGH confirmado que no alcanza a corregirse
+  deja la ficha `en curso` con `## Pendiente`, nunca `implementado`.
+  `check.sh` en `Todo en verde.`. `## Implementacion`:
   que quedo, que no, desvios del diseno. `estado: implementado`,
   `candado: -`, push.
 - **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
@@ -654,7 +688,9 @@ Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impar
   2 por turno; `revision.md`; `CLAUDE.md`.
 - **Trabajo:** candado `revisor`, push. `git merge origin/dev` si dev se
   movio y `check.sh` para partir de verde. Revision a ciegas primero:
-  subagente con el prompt de `revision.md` sobre `git diff
+  subagente `omc-code-reviewer` con el prompt de `revision.md` (receta 2 de
+  OMC; `revision.md` dice cuando se suman el eje de intencion y
+  `omc-security-reviewer`) sobre `git diff
   origin/dev...origin/<rama> -- . ':(exclude)docs/backlog'`; despues el
   lider confirma cada hallazgo reproduciendolo (el subagente propone, el
   Revisor confirma). Recien entonces la ficha: cada criterio de aceptacion
@@ -665,8 +701,10 @@ Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impar
   borde que pasan; un test que falla nunca se empuja: va como hallazgo con
   el test exacto a agregar. `## Revision <fecha> sobre <sha corto>` con el
   formato de `revision.md` y el veredicto: `aprobar` -> `revisado`;
-  `corregir` -> `con hallazgos`. Tercera pasada sobre la misma ficha con solo
-  hallazgos menores: `revisado`, y los hallazgos a `## Para el humano`.
+  `corregir` -> `con hallazgos`. Un CRITICAL o HIGH confirmado, de cualquier
+  eje, es `corregir`: lo arregla el Dev en su turno, no el Revisor. Tercera
+  pasada sobre la misma ficha con solo hallazgos menores (MEDIUM o LOW):
+  `revisado`, y los hallazgos a `## Para el humano`.
   Gustos y cambios de alcance no se reportan. Con herramientas y PR
   existente, los hallazgos van ademas como review de tipo comentario (nunca
   aprobar ni pedir cambios formalmente).
@@ -700,7 +738,11 @@ Cuando el estado lo pide (regla 2); por reloj, franja 6.
   resultado) en `## QA <fecha> sobre <sha>`. Si toca migraciones,
   `recompute`, parser, Electron o `.ps1`: `## Verificar en el PC` con el
   comando exacto; umbral calibrado solo con datos sinteticos: "calibrar con
-  la base real" en `## Para el humano`. Criterio que falla: `con hallazgos`
+  la base real" en `## Para el humano`. Antes de `aprobado`, receta 3 de
+  OMC: `omc-verifier` con los criterios, los comandos con su salida resumida
+  y codigo de salida, y el diff; con INCOMPLETE se completa la evidencia
+  que marco PARTIAL o MISSING, y con FAIL el criterio cae como hallazgo.
+  Criterio que falla: `con hallazgos`
   con el repro exacto (no lo arregla). Todo bien: `aprobado`. `candado: -`.
   Con la ficha en `aprobado`, sin `PAUSA` ni `SIN_MERGE` y con 20 minutos o
   mas antes del cierre, el mismo turno sigue como Release sobre esa ficha
@@ -851,10 +893,15 @@ pozo del que el PO saca.
 **Descartado esta vez:** <ficha o idea> porque <filtro> | nada
 **Para el humano:** <decision, pregunta o rama para mergear/borrar> | nada
 **Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok) | sin pushes de codigo
+**OMC:** plan=<APPROVE|ITERATE|REJECT|—> · revisión=<N hallazgos (M arreglados)|—> · verificación=<PASS|FAIL|INCOMPLETE|—> | no disponible (<motivo>)
 ```
 
 Lo que va entre corchetes en `**Playbook:**` y `**Rutina:**` lo escribe solo
-el Release (pasos 8 y 9 de su turno).
+el Release (pasos 8 y 9 de su turno). `**OMC:**` es la linea de registro de
+`.claude/skills/omc/SKILL.md`, con `—` en lo que el turno no uso (PO e
+Investigador, las tres); la misma linea, como `OMC: ...`, cierra la seccion
+de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
+`## Revision`, `## QA`), igual que `Skills:`.
 
 ## Transicion
 
