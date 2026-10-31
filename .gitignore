@@ -53,3 +53,7 @@ Thumbs.db
 # OpenCode: lo que deja en .opencode/ es estado local; solo sus comandos se versionan.
 .opencode/*
 !.opencode/commands/
+
+# OMC (.claude/skills/omc): el estado local del plugin oh-my-claudecode, si
+# alguien lo corre a mano en su PC. El loop no lo usa. Nunca al repo.
+.omc/
