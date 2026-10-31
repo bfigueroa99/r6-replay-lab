@@ -20,6 +20,8 @@ el item #N del roadmap) y que alternativas se descartaron en una linea cada una.
 - `./scripts/check.sh`: <n> tests backend, <n> tests frontend, build ok.
 - Tests nuevos: lista con nombre y que caso cubre cada uno.
 - Verificacion manual: que comando o URL, que se vio.
+- OMC: las lineas `OMC:` de `## Diseno`, `## Implementacion`, `## Revision`
+  y `## QA` de la ficha, tal cual, una por etapa.
 
 ## Riesgos y lo que no entra
 

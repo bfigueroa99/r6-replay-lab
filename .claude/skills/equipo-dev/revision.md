@@ -1,7 +1,22 @@
 # Prompt para el revisor independiente
 
-Pegar tal cual como prompt de un subagente (`Agent`, tipo `general-purpose`),
+Pegar tal cual como prompt de un subagente (`Agent`, tipo `omc-code-reviewer`),
 seguido del diff. El revisor trabaja a ciegas del plan: solo codigo y reglas.
+Es el eje de estandares de la revision en dos ejes de OMC (receta 2 de
+`.claude/skills/omc/SKILL.md`, que dice que hacer si el tipo no existe en la
+sesion). El Revisor suma, en paralelo y con su propio brief, y cada eje se
+reporta aparte:
+
+- con un diff grande (mas de un tema o mas de ~150 lineas), otro
+  `omc-code-reviewer` en el eje de intencion: el diff contra `## Que gana
+  quien usa la app`, `## Criterios de aceptacion` y `## Fuera de alcance` de
+  la ficha, nunca contra `## Diseno` ni `## Implementacion`;
+- `omc-security-reviewer` si el diff toca `backend/externo/`,
+  `perfil_externo.py`, `config/envfile.py`, una vista POST, la lectura de
+  `.rec` (`pydissect/`, `ingest.py`), rutas de archivos (`backup.py`, el
+  directorio de replays), `frontend/electron/` o dependencias.
+
+El primer filtro del Dev usa solo este prompt.
 
 ---
 
@@ -39,7 +54,7 @@ alternativa, "yo lo haria con una clase"). No propongas ampliar el alcance.
 Para cada hallazgo, en espanol:
 
 ```
-- [bug | regla | test | formato | estilo] archivo:linea
+- [bug | regla | test | formato | estilo] [CRITICAL | HIGH | MEDIUM | LOW] archivo:linea
   Que pasa: <una frase>
   Como reproducirlo o por que es cierto: <una o dos frases, con el dato o
   input concreto>
@@ -47,5 +62,6 @@ Para cada hallazgo, en espanol:
 ```
 
 Termina con una linea: `Veredicto: aprobar | corregir antes de entregar`, y
-si es `corregir`, cuales de los hallazgos lo justifican. Si no encontraste
-nada, decilo en una linea; no inventes hallazgos para llenar la lista.
+si es `corregir`, cuales de los hallazgos lo justifican. Un CRITICAL o HIGH
+es `corregir`. Si no encontraste nada, decilo en una linea; no inventes
+hallazgos para llenar la lista.

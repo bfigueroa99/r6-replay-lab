@@ -39,7 +39,10 @@ El equipo de desarrollo autonomo (`.claude/skills/equipo-dev/`) corre en la
 nube cada 3 horas y tambien en OpenCode con un modelo detras de OmniRoute:
 `bash scripts/equipo-dev/opencode.sh [rol]` (Linux, macOS o WSL; como dejarlo
 andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
-`.claude/skills/`.
+`.claude/skills/`. Sus roles planifican, revisan, verifican y diagnostican con
+los agentes de oh-my-claudecode vendorizados en `.claude/agents/omc-*.md` y las
+recetas de `.claude/skills/omc/`; el plugin no se instala y sus modos
+persistentes (`autopilot`, `ralph`, `team`) no se usan: el turno ya es el loop.
 
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
