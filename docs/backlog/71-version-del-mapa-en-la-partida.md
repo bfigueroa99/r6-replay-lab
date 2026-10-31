@@ -1,8 +1,8 @@
 # 71. La partida dice que version del mapa se jugo
 
-estado: disenado
+estado: en curso 2026-10-31
 candado: -
-rama: -
+rama: claude/equipo-dev/71-version-del-mapa-en-la-partida
 tipo: funcionalidad
 epica: temporada-y-modo
 area: backend
