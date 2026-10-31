@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from collections.abc import Iterable
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -494,6 +495,21 @@ def etiquetas_de_version(filas) -> dict[tuple[str, int], str]:
         if usos[(slug, etiqueta)] > 1 and map_id not in MAPS:
             etiquetas[(slug, map_id)] = f"{etiqueta} (id {map_id})"
     return etiquetas
+
+
+def etiquetas_de_mapas(slugs: Iterable[str] | None = None) -> dict[tuple[str, int], str]:
+    """Etiqueta de cada `(map_slug, map_id)` guardado, la misma que usa Mapas.
+
+    Mira todas las partidas del slug y no solo la fila pedida: el "(id N)" de
+    `etiquetas_de_version` depende de que otra version del mismo slug lleve el
+    mismo nombre, y una pagina del listado puede tener una sin la otra.
+    Acotar por slug no cambia ninguna etiqueta, porque se desambigua dentro
+    del slug; solo evita leer los mapas que la pagina no muestra.
+    """
+    qs = Match.objects.values("map_slug", "map_name", "map_id")
+    if slugs is not None:
+        qs = qs.filter(map_slug__in=list(slugs))
+    return etiquetas_de_version(qs.distinct().order_by("map_name", "map_id"))
 
 
 def _etiquetar(rows: list[dict]) -> list[dict]:
