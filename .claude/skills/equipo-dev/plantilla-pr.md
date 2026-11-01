@@ -17,7 +17,7 @@ el item #N del roadmap) y que alternativas se descartaron en una linea cada una.
 
 ## Como se probo
 
-- `./scripts/check.sh`: <n> tests backend, <n> tests frontend, build ok.
+- `check.sh` (con `verificar.sh`): VERDE <sha>, <n> tests backend, <n> vitest, <n> e2e.
 - Tests nuevos: lista con nombre y que caso cubre cada uno.
 - Verificacion manual: que comando o URL, que se vio.
 - OMC: las lineas `OMC:` de `## Diseno`, `## Implementacion`, `## Revision`

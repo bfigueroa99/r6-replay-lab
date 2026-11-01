@@ -37,6 +37,11 @@
 # contexto y no cuenta como tomable una ficha cuya etapa siguiente este turno
 # no puede firmar (`bloqueadas=` en RESUMEN): asi el rol no recae en un turno
 # que no tiene nada que hacer.
+#
+# Al final imprime las lineas `# leer:`, cada una para su propia llamada a
+# Bash: estado.sh, SKILL.md y el archivo del rol juntos pasan de 30 KB, y la
+# herramienta guarda en un archivo la salida que pasa de ese tamano y muestra
+# solo los primeros 2 KB.
 set -u
 roles=(release po arquitecto dev revisor dev qa revisor)
 # Largo del turno; SKILL.md (P9) repite el numero y pruebas.sh lo verifica.
@@ -173,3 +178,9 @@ env_file="$gitdir/equipo-dev.env"
 } > "$env_file"
 cat "$env_file"
 echo "# turno: $rol | motivo: $motivo | reloj: $reloj (franja $franja) | sesion $(date -u -d "@$inicio" +%Y%m%dT%H%MZ)-$contexto | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$cierre" +%H:%M) UTC ($minutos min) | playbook $ref | variables en $env_file"
+# Lo que sigue, cada linea en su propia llamada a Bash (ver arriba). po,
+# arquitecto e investigador leen ademas la Directiva de alcance.
+echo "# leer: git show $ref:scripts/equipo-dev/estado.sh | EQUIPO_CONTEXTO=$contexto bash"
+echo "# leer: git show $ref:.claude/skills/equipo-dev/SKILL.md"
+case "$rol" in po|arquitecto|investigador) echo "# leer: git show $ref:.claude/skills/equipo-dev/alcance.md" ;; esac
+echo "# leer: git show $ref:.claude/skills/equipo-dev/roles/$rol.md"
