@@ -6,6 +6,7 @@
 # Uso:  scripts/equipo-dev/turno.sh                  # el rol lo da el estado
 #       scripts/equipo-dev/turno.sh revisor          # fuerza un rol (disparo manual)
 #       scripts/equipo-dev/turno.sh --simular "aprobado=1 hora=0905"   # prueba la regla, sin git
+#       scripts/equipo-dev/turno.sh --contexto <id>  # contexto propio (ver independencia.sh)
 #       git show <ref>:scripts/equipo-dev/turno.sh | bash -s -- [rol] [--simular "k=v ..."]
 #
 # Las variables de shell no sobreviven entre comandos de Claude Code ni llegan
@@ -29,15 +30,23 @@
 # --simular "k=v ...": toma los contadores dados en vez de leer git (hora=HHMM
 # reemplaza al reloj, fecha=AAAA-MM-DD al dia), imprime solo la decision y no
 # escribe nada. Es lo que pruebas.sh usa para fijar la regla.
+#
+# EQUIPO_SESION es `AAAAMMDDTHHMMZ-<contexto>`: el minuto solo no distinguia
+# dos sesiones lanzadas juntas ni una misma conversacion retomada por la
+# Routine (independencia.sh explica el contexto). estado.sh recibe el
+# contexto y no cuenta como tomable una ficha cuya etapa siguiente este turno
+# no puede firmar (`bloqueadas=` en RESUMEN): asi el rol no recae en un turno
+# que no tiene nada que hacer.
 set -u
 roles=(release po arquitecto dev revisor dev qa revisor)
 # Largo del turno; SKILL.md (P9) repite el numero y pruebas.sh lo verifica.
 minutos_turno=135
 
-rol_pedido=""; simular=no; sim=""
+rol_pedido=""; simular=no; sim=""; contexto=${EQUIPO_CONTEXTO:-}
 while [ $# -gt 0 ]; do
     case "$1" in
         --simular) simular=si; sim="${2:-}"; shift; [ $# -gt 0 ] && shift ;;
+        --contexto) contexto="${2:-}"; shift; [ $# -gt 0 ] && shift ;;
         *) rol_pedido="$1"; shift ;;
     esac
 done
@@ -47,11 +56,20 @@ if [ -n "$rol_pedido" ]; then
         *) echo "rol desconocido: '$rol_pedido' (release|po|arquitecto|dev|revisor|qa|investigador, en minuscula)" >&2; exit 1 ;;
     esac
 fi
+if [ -n "$contexto" ] && ! [[ "$contexto" =~ ^[A-Za-z0-9]{4,16}$ ]]; then
+    echo "contexto invalido: '$contexto' (4 a 16 letras o digitos)" >&2; exit 1
+fi
+if [ -z "$contexto" ]; then
+    sid=${CLAUDE_CODE_REMOTE_SESSION_ID:-}; sid=$(printf '%s' "${sid##*_}" | tr -cd 'A-Za-z0-9')
+    if [ "${#sid}" -ge 6 ]; then contexto="c${sid: -6}"
+    else contexto="r$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom 2>/dev/null | head -c 6)"
+    fi
+fi
 
 # Contadores del pipeline. Lo que RESUMEN no traiga vale 0; los topes, lo que
 # dice el playbook. Son siempre enteros validados: por eso se comparan sin comillas.
 propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0
-aprobado=0 entregado=0 espera_humano=0 cola=0 total=0
+aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 bloqueadas=0
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
 ideas_libres=0 sin_merge=no pausa=no sin_rastro_48h=0
 hora=""; fecha=""
@@ -62,7 +80,7 @@ cargar() {
     for kv in $1; do
         k=${kv%%=*}; v=${kv#*=}
         case "$k" in
-            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h)
+            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h|bloqueadas)
                 [[ "$v" =~ ^[0-9]+$ ]] && printf -v "$k" '%s' "$v" ;;
             sin_merge|pausa) printf -v "$k" '%s' "$v" ;;
             hora) [[ "$v" =~ ^[0-9]{4}$ ]] && hora=$v ;;
@@ -84,7 +102,7 @@ else
         echo "SIN_PLAYBOOK: ninguna ref de la cadena (dev, main, rama del playbook) tiene .claude/skills/equipo-dev/rutina.md" >&2
         exit 2
     }
-    linea=$(git show "$ref:scripts/equipo-dev/estado.sh" | bash -s -- --resumen 2>/dev/null | grep -m1 '^RESUMEN ')
+    linea=$(git show "$ref:scripts/equipo-dev/estado.sh" | EQUIPO_CONTEXTO=$contexto bash -s -- --resumen 2>/dev/null | grep -m1 '^RESUMEN ')
     if [ -n "$linea" ]; then cargar "${linea#RESUMEN }"; else con_resumen=no; fi
 fi
 
@@ -126,6 +144,9 @@ elegir_rol() {
     fi
 }
 elegir_rol
+# Lo que este contexto no puede firmar no conto arriba; se dice para que el
+# informe explique por que no le toco revisar o probar.
+[ "$bloqueadas" -gt 0 ] && [ "$motivo" != pedido ] && motivo="$motivo; $bloqueadas bloqueadas por independencia"
 
 if [ "$simular" = si ]; then
     echo "rol=$rol motivo=$motivo reloj=$reloj franja=$franja"
@@ -144,10 +165,11 @@ env_file="$gitdir/equipo-dev.env"
     echo "export EQUIPO_MOTIVO=\"$motivo\""
     echo "export EQUIPO_RELOJ=$reloj"
     echo "export EQUIPO_INICIO=$inicio"
-    echo "export EQUIPO_SESION=$(date -u -d "@$inicio" +%Y%m%dT%H%MZ)"
+    echo "export EQUIPO_SESION=$(date -u -d "@$inicio" +%Y%m%dT%H%MZ)-$contexto"
+    echo "export EQUIPO_CONTEXTO=$contexto"
     echo "export EQUIPO_CIERRE=$(date -u -d "@$cierre" +%H:%M)"
     echo "export EQUIPO_MINUTOS=$minutos"
     echo "export EQUIPO_REF=$ref"
 } > "$env_file"
 cat "$env_file"
-echo "# turno: $rol | motivo: $motivo | reloj: $reloj (franja $franja) | sesion $(date -u -d "@$inicio" +%Y%m%dT%H%MZ) | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$cierre" +%H:%M) UTC ($minutos min) | playbook $ref | variables en $env_file"
+echo "# turno: $rol | motivo: $motivo | reloj: $reloj (franja $franja) | sesion $(date -u -d "@$inicio" +%Y%m%dT%H%MZ)-$contexto | inicio $(date -u -d "@$inicio" +%H:%M) UTC | cerrar a las $(date -u -d "@$cierre" +%H:%M) UTC ($minutos min) | playbook $ref | variables en $env_file"

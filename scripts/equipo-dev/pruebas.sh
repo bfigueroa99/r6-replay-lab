@@ -32,6 +32,7 @@ ru=$base/.claude/skills/equipo-dev/rutina.md
 tu=$base/scripts/equipo-dev/turno.sh
 es=$base/scripts/equipo-dev/estado.sh
 ve=$base/scripts/equipo-dev/verificar.sh
+in=$base/scripts/equipo-dev/independencia.sh
 bl=$base/docs/backlog
 
 n=0; fallos=0
@@ -41,7 +42,7 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 
 # 1. sintaxis
 det=""
-for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/equipo-dev/verificar.sh scripts/check.sh .claude/hooks/session-start.sh; do
+for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/equipo-dev/verificar.sh scripts/equipo-dev/independencia.sh scripts/check.sh .claude/hooks/session-start.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
@@ -180,6 +181,8 @@ casos=(
 '|espera_humano=1 propuesto=2 hora=0301|rol=arquitecto motivo=por estado: 2 propuesto, 0 disenado de 3 reloj=po franja=1'
 '|aprobado=1 espera_humano=1 hora=0001|rol=release motivo=por estado: 1 aprobado reloj=release franja=0'
 '|con_hallazgos=1 espera_humano=1 hora=0001|rol=dev motivo=por estado: 1 con_hallazgos, 0 huerfanas reloj=release franja=0'
+'|disenado=2 propuesto=1 cola=1 total=1 bloqueadas=1 hora=0331|rol=dev motivo=por estado: 2 disenado, lugar en cola; 1 bloqueadas por independencia reloj=po franja=1'
+'revisor|bloqueadas=1 hora=0331|rol=revisor motivo=pedido reloj=po franja=1'
 )
 malos=0
 for c in "${casos[@]}"; do
@@ -272,7 +275,58 @@ FALSO
 rm -rf "$tv"
 cierra verificar "$det"
 
-# 11. resumen: contra el remoto real, la linea existe y trae los 20 pares en
+# 10e. independencia: la condicion b y lo que estado.sh no cuenta. Los pares
+# de `turnos:` (notas entre parentesis, entradas viejas sin contexto) y quien
+# puede firmar que; despues, estado.sh entero sobre un remoto sintetico.
+det=""
+casos_i=(
+'turnos: po 20261030T1653Z, dev 20261031T2135Z-cr3J9k (relevo de qa, P7), foo|po 20261030T1653Z 20261030T1653Z;dev 20261031T2135Z-cr3J9k cr3J9k;ILEGIBLE foo;'
+'turnos: dev 20261009T0905Z, revisor 20261009T1205Z, qa 20261009T1805Z|dev 20261009T0905Z 20261009T0905Z;revisor 20261009T1205Z 20261009T1205Z;qa 20261009T1805Z 20261009T1805Z;'
+)
+for c in "${casos_i[@]}"; do
+    r=$(bash "$in" --turnos "${c%%|*}" | tr '\n' ';')
+    [ "$r" = "${c#*|}" ] || det="$det --turnos '${c%%|*}' -> '$r';"
+done
+firmas=(
+'dev 20261031T2135Z-cr3J9k|revisor|cr3J9k|1'
+'dev 20261031T2135Z-cr3J9k|revisor|cZZ999|0'
+'dev 20261031T2135Z-cr3J9k, revisor 20261101T0331Z-ab12cd|qa|ab12cd|1'
+'dev 20261031T2135Z-cr3J9k, revisor 20261101T0331Z-ab12cd|qa|cr3J9k|1'
+'dev 20261031T2135Z-cr3J9k, revisor 20261101T0331Z-ab12cd|release|cr3J9k|0'
+'dev 20261031T2135Z-cr3J9k, qa 20261101T0331Z-ab12cd|revisor|ab12cd|1'
+'dev 20261030T1653Z|revisor|20261030T1653Z|1'
+)
+for c in "${firmas[@]}"; do
+    IFS='|' read -r t rol ctx esperado <<< "$c"
+    bash "$in" --firmable "turnos: $t" "$rol" "$ctx" >/dev/null 2>&1; r=$?
+    [ "$r" = "$esperado" ] || det="$det --firmable '$t' $rol $ctx -> $r (esperado $esperado);"
+done
+# estado.sh sobre un remoto sintetico: una implementado y una revisado.
+ts=$(mktemp -d)
+(
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+    export GIT_AUTHOR_NAME=Claude GIT_COMMITTER_NAME=Claude GIT_AUTHOR_EMAIL=c@c GIT_COMMITTER_EMAIL=c@c
+    cd "$ts" && git init -q --bare origen.git && git clone -q origen.git w 2>/dev/null && cd w || exit 9
+    mkdir -p .claude/skills/equipo-dev docs/backlog && echo x > .claude/skills/equipo-dev/rutina.md
+    git add -A && git commit -qm base && git push -q origin HEAD:dev HEAD:main || exit 9
+    ficha() { # rama ficha estado turnos
+        git checkout -q -B "$1" origin/dev && mkdir -p docs/backlog
+        printf 'estado: %s\ncandado: -\ntipo: funcionalidad\nturnos: %s\n' "$3" "$4" > "docs/backlog/$2.md"
+        git add -A && git commit -qm "Reclama: $2" && git push -q origin "HEAD:refs/heads/claude/equipo-dev/$2"
+    }
+    git fetch -q origin
+    ficha a 80-implementada implementado 'po 20261101T0000Z, dev 20261101T0100Z-cAAAAA'
+    ficha b 81-revisada revisado 'dev 20261101T0100Z-cBBBBB, revisor 20261101T0400Z-cCCCCC'
+    r() { EQUIPO_AHORA=$(date -u +%s) EQUIPO_INDEPENDENCIA="$in" EQUIPO_CONTEXTO="$1" bash "$es" --resumen 2>/dev/null | grep -oE 'implementado=[0-9]+|revisado=[0-9]+|bloqueadas=[0-9]+' | tr '\n' ' '; }
+    for c in 'cAAAAA|implementado=0 revisado=1 bloqueadas=1 ' 'cCCCCC|implementado=1 revisado=0 bloqueadas=1 ' 'cBBBBB|implementado=1 revisado=0 bloqueadas=1 ' 'cOTRO1|implementado=1 revisado=1 bloqueadas=0 ' '|implementado=1 revisado=1 bloqueadas=0 '; do
+        s=$(r "${c%%|*}"); [ "$s" = "${c#*|}" ] || echo "estado.sh con contexto '${c%%|*}': '$s' (esperado '${c#*|}')"
+    done
+) > "$ts/fallos" 2>&1
+[ -s "$ts/fallos" ] && det="$det $(tr '\n' ';' < "$ts/fallos")"
+rm -rf "$ts"
+cierra independencia "$det"
+
+# 11. resumen: contra el remoto real, la linea existe y trae los 21 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
 # estable: la rama del playbook no aparece como rama de trabajo.
 if [ "${PRUEBAS_SIN_RED:-}" = 1 ]; then
@@ -282,7 +336,7 @@ else
     salida=$(bash "$es" --resumen 2>/dev/null)
     lineas=$(printf '%s\n' "$salida" | grep -c .)
     claves=$(printf '%s\n' "$salida" | grep -m1 '^RESUMEN ' | sed 's/^RESUMEN //' | tr ' ' '\n' | grep -E '^[a-z_0-9]+=[^ ]+$' | cut -d= -f1 | tr '\n' ' ')
-    esperadas='propuesto disenado en_curso huerfanas implementado revisado con_hallazgos aprobado entregado espera_humano cola total tope_cola tope_total tope_propuesto tope_disenado ideas_libres sin_merge pausa sin_rastro_48h '
+    esperadas='propuesto disenado en_curso huerfanas implementado revisado con_hallazgos aprobado entregado espera_humano cola total tope_cola tope_total tope_propuesto tope_disenado ideas_libres sin_merge pausa sin_rastro_48h bloqueadas '
     [ "$lineas" -eq 1 ] || det="$det $lineas lineas en vez de 1;"
     [ "$claves" = "$esperadas" ] || det="$det pares: '${claves:-ninguno}';"
     filas=$(bash "$es" 2>/dev/null | grep -c 'equipo-dev/playbook |')
