@@ -31,6 +31,7 @@ sk=$base/.claude/skills/equipo-dev/SKILL.md
 ru=$base/.claude/skills/equipo-dev/rutina.md
 tu=$base/scripts/equipo-dev/turno.sh
 es=$base/scripts/equipo-dev/estado.sh
+ve=$base/scripts/equipo-dev/verificar.sh
 bl=$base/docs/backlog
 
 n=0; fallos=0
@@ -40,7 +41,7 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 
 # 1. sintaxis
 det=""
-for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/check.sh .claude/hooks/session-start.sh; do
+for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/equipo-dev/verificar.sh scripts/check.sh .claude/hooks/session-start.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
@@ -222,6 +223,54 @@ for c in "${rcasos[@]}"; do
 done
 det=""; [ "$malos" -eq 0 ] || det=" $malos de ${#rcasos[@]} casos"
 cierra rastros "$det"
+
+# 10d. verificar: la espera en tramos contra un check.sh falso, en un repo
+# temporal. Una llamada con --max corto sale 124 y la siguiente retoma la
+# misma corrida (no la relanza); un resultado guardado se informa sin volver a
+# correr; --estado solo cree en un verde completo sobre HEAD con el arbol
+# limpio; una corrida que murio se relanza; el rojo sale 1 con su Fallo.
+det=""
+tv=$(mktemp -d)
+falso="$tv/falso.sh"
+cat > "$falso" <<'FALSO'
+#!/usr/bin/env bash
+echo x >> "$FALSO_DIR/corridas"
+sleep "$(cat "$FALSO_DIR/dormir")"
+echo "Ran 7 tests in 0.1s"; echo "      Tests  3 passed (3)"; echo "  2 passed (1.0s)"
+[ "$(cat "$FALSO_DIR/codigo")" = 0 ] && { echo "Todo en verde."; exit 0; }
+echo "Fallo: tests"; exit 1
+FALSO
+(
+    set -u
+    export FALSO_DIR="$tv/f" EQUIPO_CHECK_CMD="bash $falso"
+    # Sin la configuracion global: la de la nube firma commits y negocia pushes.
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_AUTHOR_NAME=t GIT_COMMITTER_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_EMAIL=t@t
+    mkdir -p "$FALSO_DIR" "$tv/r"; echo 2 > "$FALSO_DIR/dormir"; echo 0 > "$FALSO_DIR/codigo"
+    cd "$tv/r" && git init -q && echo a > a && git add a && git commit -qm uno || exit 9
+    v() { bash "$ve" "$@" > "$tv/salida" 2>&1; echo $?; }
+    c=$(v --max 0); [ "$c" = 124 ] || echo "primera llamada con --max 0: salida $c (esperada 124)"
+    c=$(v --estado); [ "$c" = 1 ] || echo "--estado con la corrida en curso: salida $c (esperada 1)"
+    c=$(v --max 30); [ "$c" = 0 ] && grep -q '^VERDE .*7 tests backend, 3 vitest, 2 e2e' "$tv/salida" || echo "segunda llamada: salida $c, $(head -1 "$tv/salida")"
+    c=$(v --max 30); [ "$c" = 0 ] || echo "resultado guardado: salida $c"
+    [ "$(wc -l < "$FALSO_DIR/corridas")" -eq 1 ] || echo "check.sh corrio $(wc -l < "$FALSO_DIR/corridas") veces para un mismo commit (esperada 1)"
+    c=$(v --estado); [ "$c" = 0 ] || echo "--estado tras el verde: salida $c (esperada 0)"
+    echo b > a
+    c=$(v --estado); [ "$c" = 1 ] || echo "--estado con el arbol sucio: salida $c (esperada 1)"
+    git checkout -q -- a
+    echo 30 > "$FALSO_DIR/dormir"; git commit -qm dos --allow-empty
+    c=$(v --max 1); [ "$c" = 124 ] || echo "corrida larga: salida $c (esperada 124)"
+    # Muere con el contenedor: se mata su grupo entero (setsid) sin dejar .fin.
+    pid=$(cat "$(git rev-parse --absolute-git-dir)/equipo-dev-verificar/$(git rev-parse HEAD).pid")
+    kill -9 -- "-$pid" 2>/dev/null || { pkill -9 -P "$pid"; kill -9 "$pid"; } 2>/dev/null
+    for _ in 1 2 3 4 5; do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+    echo 0 > "$FALSO_DIR/dormir"; echo 1 > "$FALSO_DIR/codigo"
+    c=$(v --max 30); [ "$c" = 1 ] && grep -q 'murio' "$tv/salida" && grep -q '^ROJO .*Fallo: tests' "$tv/salida" || echo "corrida muerta y relanzada en rojo: salida $c, $(tr '\n' ' ' < "$tv/salida" | cut -c1-200)"
+    c=$(v --max 0 --de-nuevo); [ "$c" = 124 ] || [ "$c" = 1 ] || echo "--de-nuevo: salida $c"
+    c=$(v --max 1 --foo); [ "$c" = 2 ] || echo "opcion invalida: salida $c (esperada 2)"
+) > "$tv/fallos" 2>&1
+[ -s "$tv/fallos" ] && det=" $(tr '\n' ';' < "$tv/fallos")"
+rm -rf "$tv"
+cierra verificar "$det"
 
 # 11. resumen: contra el remoto real, la linea existe y trae los 20 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
