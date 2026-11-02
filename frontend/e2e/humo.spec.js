@@ -371,8 +371,8 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
     has: page.getByRole('heading', { name: 'Rondas', exact: true }),
   })
   const pestanas = panel.locator('.round-tab')
+  await expect(pestanas.first()).toBeVisible()
   const total = await pestanas.count()
-  expect(total).toBeGreaterThan(0)
   let entries = 0
   for (let i = 0; i < total; i++) {
     await pestanas.nth(i).click()
