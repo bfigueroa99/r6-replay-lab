@@ -1,7 +1,7 @@
 # 72. La apertura marcada en la timeline de la ronda
 
-estado: implementado
-candado: revisor 2026-11-02T20:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/72-apertura-marcada-en-la-timeline
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: idea R4 de `ALCANCE.md`; fila "Kill feed por ronda con la apertura destacada" de `replica/features.csv` (`must`, `clone: partial`), [r6-replay.com](https://r6-replay.com/) ("See exactly who got the opening pick, who traded it"). Hoy la timeline de `frontend/src/pages/MatchDetail.jsx:271-274` solo marca HS y tradeada; la apertura la dicen la tabla de jugadores ("1a baja", "1a muerte") y el resumen en texto
 archivos: frontend/src/aperturas.js, frontend/src/aperturas.test.js, frontend/src/casosApertura.json, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, backend/tests/test_casos_apertura.py
-turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261102T1626Z-cDEQrsE
+turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261102T1626Z-cDEQrsE, revisor 20261102T2004Z-cS7svm1
 
 ## PR
 
@@ -190,7 +190,57 @@ verificar.sh: VERDE ffbec2b00 (859 tests backend, 153 vitest, 54 e2e).
 Skills: no aplica (patron de `matrizDuelos.js` y `humo.spec.js`).
 OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-11-02 sobre baa00f8
+
+Revisor 20261102T2004Z-cS7svm1. Revision ciega (`omc-code-reviewer` via general-purpose con
+`revision.md`, solo eje de estandares: diff de ~310 lineas y un solo tema;
+sin `omc-security-reviewer`, no toca rutas sensibles). Confirmado por el
+lider contra el codigo.
+
+Verificado:
+- `marcasDeApertura` replica el bloque "aperturas" de
+  `metrics.analyse_round`: `order` es el indice del `matchFeedback` en los
+  dos lados (`metrics.py:180`, `ingest.py:278`, `views.py:500`), apertura =
+  primer `Kill`/`Death`, entry = primer `Kill` con autor del equipo (por
+  `team_index` de la ronda; teamkill cuenta, nick sin equipo no).
+- `recompute` no toca `team_index` ni las aperturas: con datos importados,
+  chip y columnas guardadas no se separan.
+- Criterios 1-3: vitest por caso (al derecho, al reves, sin equipo, sin
+  eventos). Criterio 4: casos compartidos `casosApertura.json` contra
+  `analyse_round` en Django + e2e de la regla visible, como fijo el diseno.
+  Criterio 5: sin backend de produccion ni numero nuevo; `metricas.md` sin
+  cambios, correcto.
+- Archivos dentro de `archivos:`; sin dependencias, sin `console.log`,
+  identificadores sin tildes, textos de UI ("apertura", "entry") sin
+  caracteres que pidan tilde.
+
+Hallazgos (ninguno bloquea):
+- [regla] MEDIUM frontend/src/aperturas.js:17
+  Que pasa: con `seed_demo` el chip contradice las banderas guardadas del
+  scoreboard (ej.: partida 29, R6, el unico evento `Kill BearF99` lleva
+  "apertura" y BearF99 tiene `opening_kill=False`; en R1/R7 hay "entry" y
+  nadie de tu equipo tiene `entry_kill`).
+  Por que es cierto: `seed_demo.py:239-241` escribe las banderas con formulas
+  propias, no con `analyse_round`; el diseno ya lo midio y lo dejo fuera.
+  Con replays importados no pasa (misma regla, mismo `order`).
+  Arreglo sugerido: la ficha `deuda` que anoto el Arquitecto (que
+  `seed_demo` pase sus eventos por `analyse_round`, moviendo los numeros del
+  e2e). No es de esta ficha.
+- [test] LOW frontend/e2e/humo.spec.js:394
+  Que pasa: el e2e compara los chips con el DOM que genera la misma regla JS,
+  no con `opening_kill`/`entry_kill` de la API.
+  Por que es cierto: con el seed actual no se puede (hallazgo anterior); la
+  paridad la vigila `test_casos_apertura.py`.
+  Arreglo sugerido: cuando exista la ficha del seed, sumar al e2e que el
+  autor del chip "entry" sea el jugador con `entry_kill` en
+  `/api/matches/<id>/`.
+
+verificar.sh: VERDE baa00f8 (859 tests backend, 153 vitest, 54 e2e).
+
+Veredicto: aprobar.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos (0 arreglados, ninguno bloquea) · verificación=—
 
 ## QA <fecha> sobre <sha>
 
