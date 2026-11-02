@@ -1,26 +1,30 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-02 12:15 UTC por qa (sesion 20261102T1206Z-cLhn4iG; motivo: por estado: 1 revisado; reloj: revisor, franja 4), siguio como release
-playbook: origin/dev@e146e74
-rutina: TURNOS_SIN_RASTRO=6 en 48 h (~10-31T12:40Z ~10-31T16:47Z ~11-01T09:25Z ~11-01T15:16Z ~11-01T21:07Z ~11-02T02:58Z) | 9 de 40 en 7 dias; sin herramientas para comparar
+actualizado: 2026-11-02 16:45 UTC por dev (sesion 20261102T1626Z-cDEQrsE; motivo: por estado: 2 disenado, lugar en cola; reloj: dev, franja 5)
+playbook: origin/dev@1ccf4cb
+rutina: TURNOS_SIN_RASTRO=6 en 48 h (~10-31T16:47Z ~11-01T08:33Z ~11-01T13:32Z ~11-01T18:31Z ~11-01T23:30Z ~11-02T04:29Z) | 10 de 40 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
-Vacia: la 71 entro a `dev` por [PR #69](https://github.com/bfigueroa99/r6-replay-lab/pull/69) (merge 1ccf4cb).
+| rama | ficha | estado | horas sin commits | PR / compare |
+|---|---|---|---|---|
+| claude/equipo-dev/72-apertura-marcada-en-la-timeline | docs/backlog/72-apertura-marcada-en-la-timeline.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/72-apertura-marcada-en-la-timeline?expand=1) |
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=6 bloqueadas=0
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=6 bloqueadas=1
+
+(`implementado=0 ... bloqueadas=1`: la 72 no la puede revisar este contexto; el proximo Revisor de otra sesion la toma.)
 
 ## Orden de merge sugerido
 
-Sin ramas abiertas. La 72 (frontend) y la 69 (`metrics.py`, `recompute`) no comparten archivos.
+1. `claude/equipo-dev/72-apertura-marcada-en-la-timeline`: unica rama, no choca con nada (frontend + un test de Django nuevo). La 69 (`metrics.py`, `recompute`), cuando se reclame, no comparte archivos con ella.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:7 (62-cuando-matas 63-cuando-llega-la-apertura 64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida 70-mapas-por-version 71-version-del-mapa-en-la-partida) otros:2 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev; A8 (resto de pantallas por mapa, ahora con la tabla `matches` de Exportar) es el tramo siguiente. datos-nuevos-del-parser: P1 en papel (73), `sin entrega`. paridad-referencia: R1 (64) en dev, R4 disenada (72). operadores: O6 (61) y O5 (65) en dev.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:1 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev; A8 (resto de pantallas por mapa, ahora con la tabla `matches` de Exportar) es el tramo siguiente. datos-nuevos-del-parser: P1 en papel (73), `sin entrega`. paridad-referencia: R1 (64) en dev, R4 (72) implementada, en cola. operadores: O6 (61) y O5 (65) en dev.
+- Papel: PAPEL_TIPOS=funcionalidad:1 otros:1 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 71 ideas libres. Ideas nuevas de este turno: ninguna nueva; A8 suma la tabla `matches` de Exportar (visto en la QA de la 71).
 - Investigacion: ultima entrada 2026-10-24.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: datos-nuevos-del-parser
@@ -31,18 +35,18 @@ Sin ramas abiertas. La 72 (frontend) y la 69 (`metrics.py`, `recompute`) no comp
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 69-clutch-cuenta-con-abandonos | disenado | bug | - | 2 | backend | - |
-| 72-apertura-marcada-en-la-timeline | disenado | funcionalidad | paridad-referencia | 2 | frontend | - |
+| 72-apertura-marcada-en-la-timeline | implementado (en su rama; espejo en curso) | funcionalidad | paridad-referencia | 2 | frontend | - |
 | 73-catalogo-y10s4-a-y11s1 | propuesto | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto` (73), 2 `disenado` (69 y 72). Cola vacia: el proximo Dev reclama. Para el proximo Dev: la 72 (funcionalidad) y despues la 69 (bug p2). 73 (Solid Snake, Fortress Y10 y las versiones Y10S4/Y11S1, IDs releidos en el fork `1f0cc42`) espera diseno. Candidatos a ficha chica `deuda`: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66), los cuatro detalles de `DeltaLado` (ficha 65), y que `seed_demo` escriba `opening_kill`/`opening_death` coherentes con sus eventos (hoy 0 de 203 rondas lo son; mueve numeros del e2e; visto al disenar la 72). Candidato a ficha `bug` (Revisor 68, confirmado por la QA 68): `seed_demo` siembra sus 29 partidas como Ranked Y9S4 4-3 con `won=True`, un marcador que la regla no cierra (con 7 rondas por partida ninguna Ranked cierra); despues de `recompute` las 29 quedan `incompleta`. El e2e no corre `recompute` y sigue verde; cerrar los marcadores cambia los numeros del e2e.
+1 `propuesto` (73), 1 `disenado` (69). La 72 esta `implementada` en su rama y espera Revisor. Para el proximo Dev: la 69 (bug p2; su diseno pide ir despues de #68, que ya esta en dev). 73 (Solid Snake, Fortress Y10 y las versiones Y10S4/Y11S1, IDs releidos en el fork `1f0cc42`) espera diseno. Candidatos a ficha chica `deuda`: singular "1 baja / 1 muerte" y aviso "Copiado" que no se borra (ficha 66), los cuatro detalles de `DeltaLado` (ficha 65), y que `seed_demo` escriba `opening_kill`/`opening_death` coherentes con sus eventos (hoy 0 de 203 rondas lo son; mueve numeros del e2e; visto al disenar la 72). Candidato a ficha `bug` (Revisor 68, confirmado por la QA 68): `seed_demo` siembra sus 29 partidas como Ranked Y9S4 4-3 con `won=True`, un marcador que la regla no cierra (con 7 rondas por partida ninguna Ranked cierra); despues de `recompute` las 29 quedan `incompleta`. El e2e no corre `recompute` y sigue verde; cerrar los marcadores cambia los numeros del e2e.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-02 12:15 | (mismo turno que la QA) Entrega y mergea la 71: `aprobado` -> `entregado` -> [PR #69](https://github.com/bfigueroa99/r6-replay-lab/pull/69) -> dev 1ccf4cb. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev e146e74 ya en la rama, `verificar.sh` VERDE 44a1a85 (858 backend, 133 vitest, 53 e2e). Espejo quitado de `backlog`. `pruebas.sh`: PRUEBAS_OK (18). Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
-| dev | 2026-10-31 22:05 | Implementa 71 (funcionalidad p2, `disenado` -> `implementado`, a5ac0b8 + 94a1a80): `aggregates.etiquetas_de_mapas` y `map` con version ("Consulate (Y10)") en `/api/matches/` y `/api/matches/<id>/`, la misma etiqueta que Mapas, una consulta por pagina; fila Mapa de `metricas.md`. 6 tests nuevos, rojos antes del cambio; 2 mutaciones caen. Sin subagentes en la sesion: la pasada de `revision.md` la hizo el lider (un hallazgo propio corregido). `check.sh` en `Todo en verde.` (858 backend, 133 vitest, build, 53 e2e). |
+| dev | 2026-11-02 16:45 | Implementa 72 (funcionalidad p2, `disenado` -> `implementado`, 2e80a1c): `aperturas.js` (marcas "apertura" y "entry" con la regla de `metrics.py`), `casosApertura.json` compartido por vitest y `test_casos_apertura.py` contra `analyse_round`, chips en la timeline de `MatchDetail.jsx`, e2e `el timeline marca la apertura de cada ronda`. Revision ciega: 3 LOW, arreglados. `verificar.sh` VERDE ffbec2b00 (859 backend, 153 vitest, 54 e2e). |
 | revisor | 2026-11-02 08:25 | Revisa 71 (funcionalidad p2, `implementado` -> `revisado`, b85fc9f). Rama fusionada con dev e146e74; `verificar.sh` VERDE 0e9ae7b (858 backend, 133 vitest, 53 e2e). Revision a ciegas con subagente (eje de estandares): 2 LOW confirmados (docstring dice "la misma que Mapas" pero coincide con el selector, que no filtra; `_opciones_de_mapa` repite la consulta de `etiquetas_de_mapas`), ninguno bloquea. Criterios 1, 2, 3 y 5 con tests; el 4 (resumen copiado) queda para QA. Sesion distinta de la del Dev (`Claude-Session` 01UeqiYf contra la de este turno). |
 | qa | 2026-11-02 12:11 | Prueba 71 (funcionalidad p2, `revisado` -> `aprobado`) sobre 0c7be44. `verificar.sh` VERDE (858 backend, 133 vitest, 53 e2e). Base vacia y base de `factories` (Consulate Y7, Y10 x2, sin sufijo, id 999; Kanal; Club House 0): listado, detalle, filtros `?map=`, paginacion y bordes sin 500; etiquetas iguales a `by_map`; resumen copiado arranca con "Consulate (Y10) · ". 3 mutaciones caen. OMC verifier: PASS 5/5. |
 | arquitecto | 2026-10-30 17:24 | (sesion simultanea con revisor y po; reparto P8) Disena 69 (`metrics.one_vx` con `PlayerLeave` fuera de la ronda, usada por `analyse_round` y `recompute`, que suma `one_vx` a `CAMPOS`; el parser sigue a r6-dissect; paridad sin abandonos probada en un spike con 3000 rondas; implementar despues de #68; el `.rec` solo trae `PlayerLeave` antes de Y9S1), 71 (`aggregates.etiquetas_de_mapas` sobre todas las partidas del slug, usada por `match_list` y `match_detail`; tests en archivo nuevo para no esperar a la 68) y 72 (`aperturas.js` puro + `casosApertura.json` compartido por vitest y Django contra `analyse_round`, porque `seed_demo` no tiene banderas de apertura coherentes con sus eventos; e2e de la regla visible). Sin arena (no: 18 iteraciones simultaneas en un contenedor de 4 CPU, pedido del dueño; ademas, una forma obvia en cada ficha), sin migracion, sin pushes de codigo. |
@@ -65,7 +69,7 @@ Sin ramas abiertas. La 72 (frontend) y la 69 (`metrics.py`, `recompute`) no comp
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
-- Rutina: 6 disparos sin rastro en 48 h (~10-31T12:40Z ~10-31T16:47Z ~11-01T09:25Z ~11-01T15:16Z ~11-01T21:07Z ~11-02T02:58Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
+- Rutina: 6 disparos sin rastro en 48 h (~10-31T16:47Z ~11-01T08:33Z ~11-01T13:32Z ~11-01T18:31Z ~11-01T23:30Z ~11-02T04:29Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
