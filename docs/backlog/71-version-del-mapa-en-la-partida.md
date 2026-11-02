@@ -1,7 +1,7 @@
 # 71. La partida dice que version del mapa se jugo
 
 estado: revisado
-candado: -
+candado: qa 2026-11-02T12:07Z
 rama: claude/equipo-dev/71-version-del-mapa-en-la-partida
 tipo: funcionalidad
 epica: temporada-y-modo
