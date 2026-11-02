@@ -421,6 +421,9 @@ def match_list(request: HttpRequest) -> JsonResponse:
         )
     }
     baseline = agg.rating_baseline()
+    # una consulta por pagina y no por fila; el get cubre una partida borrada
+    # despues de leer la pagina
+    etiquetas = agg.etiquetas_de_mapas({m.map_slug for m in page})
 
     rows = []
     for match in page:
@@ -431,7 +434,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
                 "match_id": match.match_id,
                 "folder": match.folder,
                 "played_at": match.played_at.isoformat(),
-                "map": match.map_name,
+                "map": etiquetas.get((match.map_slug, match.map_id), match.map_name),
                 "map_slug": match.map_slug,
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
@@ -532,6 +535,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
     rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
+    etiquetas = agg.etiquetas_de_mapas({match.map_slug})
 
     return _ok(
         {
@@ -540,7 +544,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "match_id": match.match_id,
                 "folder": match.folder,
                 "played_at": match.played_at.isoformat(),
-                "map": match.map_name,
+                "map": etiquetas.get((match.map_slug, match.map_id), match.map_name),
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,
