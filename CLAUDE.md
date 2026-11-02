@@ -36,7 +36,8 @@ GitHub Actions **no funciona en esta cuenta**: los jobs mueren sin runner, en
 verificacion es `check.ps1` en la maquina, y el e2e es la parte que ve la app.
 
 El equipo de desarrollo autonomo (`.claude/skills/equipo-dev/`) corre en la
-nube cada 3 horas y tambien en OpenCode con un modelo detras de OmniRoute:
+nube con una Routine (como crearla o reanudarla, en `docs/backlog/README.md`)
+y tambien en OpenCode con un modelo detras de OmniRoute:
 `bash scripts/equipo-dev/opencode.sh [rol]` (Linux, macOS o WSL; como dejarlo
 andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
 `.claude/skills/`. Sus roles planifican, revisan, verifican y diagnostican con

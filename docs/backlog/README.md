@@ -61,8 +61,8 @@ Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
 ## Alcance
 
 Desde el 2026-10-10 el equipo trabaja con una **directiva de alcance**: la
-prioridad es funcionalidad nueva, no solo endurecer lo que existe (ver la
-seccion del mismo nombre en `.claude/skills/equipo-dev/SKILL.md`). Cada ficha
+prioridad es funcionalidad nueva, no solo endurecer lo que existe (ver
+`.claude/skills/equipo-dev/alcance.md`). Cada ficha
 lleva `tipo:` (`funcionalidad`, `bug`, `tests`, `deuda`) y, si es parte de
 algo grande, `epica:`. El product owner propone al menos una funcionalidad por
 turno; tests y deuda sueltos solo entran con 3 funcionalidades esperando; los
@@ -110,6 +110,20 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
   `.claude/skills/equipo-dev/rutina.md` (llega por merge o por una sesion
   tuya); lo que edites a mano en claude.ai lo revierte el Release al
   compararlo.
+- **Crear o reanudar la rutina**: el equipo nunca crea, enciende ni borra
+  Routines; si no hay ninguna, el loop solo corre cuando alguien lo lanza (asi
+  quedo desde el 2026-10-30 20:13 UTC, cuando la del equipo dejo de existir).
+  Para recrearla en claude.ai: repositorio `bfigueroa99/r6-replay-lab`, un
+  nombre que lleve `r6-replay-lab` (el Release la busca por nombre), prompt =
+  `rutina.md` tal cual, **una sesion nueva por disparo** (con una sesion
+  persistente cada turno hereda la memoria del anterior y la independencia
+  entre dev, revisor y QA bloquea las fichas que esa sesion ya toco) y
+  cadencia de 3 o 4 horas (`1 */3 * * *` calza con la tabla del reloj; con
+  otra, `estado.sh` mide la real). Conviene que su permiso incluya `bash`
+  sobre `scripts/equipo-dev/*.sh` y las herramientas
+  `mcp__claude-code-remote__list_triggers` y `update_trigger` (paso 9 del
+  Release). Un orquestador que lance turnos en subagentes de una misma
+  sesion le pasa a cada uno su contexto: `turno.sh --contexto <id>`.
 - **Pausar**: crear el archivo `docs/backlog/PAUSA` en la rama `backlog`
   desde la web de GitHub. Ningun turno nuevo hace nada mientras exista, y uno
   que ya arranco lo ve antes de su proximo push y cierra.

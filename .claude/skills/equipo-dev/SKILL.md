@@ -9,31 +9,34 @@ Siete roles se turnan: **release manager, product owner, arquitecto, dev,
 revisor, QA e investigador**. Cada sesion es un turno de un solo rol; el trabajo pasa de un
 rol al siguiente a traves de **fichas** (un archivo por item en
 `docs/backlog/`) que viven en git. Nadie recuerda nada entre turnos: todo lo
-que un rol necesita saber esta en las fichas, en las ramas y en este archivo.
+que un rol necesita saber esta en las fichas, en las ramas y en el playbook.
 
-Lo que manda, en este orden: `CLAUDE.md` (reglas duras del proyecto), este
-documento (como trabaja el equipo), las fichas (que hay que hacer). Si algo de
+El playbook, leido siempre de `$REF` y nunca del checkout, son tres partes:
+este nucleo comun; `roles/<rol>.md`, el rol del turno; y `alcance.md`, la
+Directiva de alcance (PO, Arquitecto, Investigador). `turno.sh` imprime que
+leer. Cada parte queda bajo 28 KB: la herramienta Bash guarda en un archivo
+toda salida de mas de 30 KB y muestra solo 2 KB (con el playbook de 59 KB en
+un solo archivo, el arranque no veia ni el estado ni las reglas).
+
+Lo que manda, en este orden: `CLAUDE.md` (reglas duras del proyecto), el
+playbook (como trabaja el equipo), las fichas (que hay que hacer). Si algo de
 aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
 
-El turno tambien corre en OpenCode, con un modelo detras de OmniRoute:
-`scripts/equipo-dev/opencode.sh` lo lanza en un worktree propio con el
-comando `.opencode/commands/equipo-dev.md`, que pasa esta misma rutina y dice
-que herramienta reemplaza a cada una de Claude Code (`gh` en vez de las de
-GitHub, `task` en vez de `Agent`). Sus commits firman `OpenCode`: tambien es
-el equipo.
+El turno tambien corre en OpenCode (`scripts/equipo-dev/opencode.sh`, con
+el comando `.opencode/commands/equipo-dev.md`, que dice que herramienta
+reemplaza a cada una de Claude Code). Sus commits firman `OpenCode`: tambien
+es el equipo.
 
-Los roles se apoyan en los agentes de oh-my-claudecode (OMC), vendorizados en
+Los roles se apoyan en los agentes de oh-my-claudecode (OMC),
 `.claude/agents/omc-*.md`, con las recetas de `.claude/skills/omc/SKILL.md`
-(leerla de `$REF`, como el resto del playbook): plan por consenso (receta 1),
-revision en dos ejes (2), verificacion con evidencia (3) y diagnostico (4).
-Cada rol dice abajo en que paso usa cual. Los modos persistentes de OMC
-(`autopilot`, `ralph`, `team` y los demas que la skill lista) no se usan: el
-turno ya es el loop. La sesion carga los agentes del checkout, que puede ser
-`main` o una rama sin ellos: si `subagent_type: "omc-<x>"` no existe, el
-fallback de la skill (`general-purpose`, o `task` en OpenCode, con el cuerpo
-de `git show $EQUIPO_REF:.claude/agents/omc-<x>.md` desde `<Adaptacion_Loop>`).
-OMC nunca frena un turno: si un agente falla o el reloj no alcanza (P9), se
-sigue como sin el y se anota en `**OMC:**` del informe.
+(leerla de `$REF`): plan por consenso (receta 1), revision en dos ejes (2),
+verificacion con evidencia (3) y diagnostico (4); cada `roles/<rol>.md` dice
+en que paso. Sus modos persistentes (`autopilot`, `ralph`, `team`) no se
+usan: el turno ya es el loop. Si `subagent_type: "omc-<x>"` no existe en el
+checkout, el fallback de la skill (`general-purpose` con el cuerpo de
+`git show $EQUIPO_REF:.claude/agents/omc-<x>.md` desde `<Adaptacion_Loop>`).
+OMC nunca frena un turno: si falla o el reloj no alcanza (P9), se sigue sin
+el y se anota en `**OMC:**` del informe.
 
 ## Principios
 
@@ -41,11 +44,13 @@ sigue como sin el y se anota en `**OMC:**` del informe.
    prueba y se entrega antes de abrir trabajo nuevo.
 2. **Un item, una ficha, una rama.** La ficha viaja con el codigo y se
    mergea con el. Nadie toca `docs/roadmap.md`: quedo como historia.
-3. **Verde o no se empuja codigo.** `./scripts/check.sh` tiene que terminar
-   en `Todo en verde.` con todos sus pasos (lint, tests, build, e2e). Un verde a medias no
-   es verde.
-4. **Independencia.** Una misma sesion firma como mucho una de estas etapas
-   sobre la misma ficha: implementar, revisar, probar.
+3. **Verde o no se empuja codigo.** `check.sh` tiene que terminar en
+   `Todo en verde.` con todos sus pasos (lint, tests, build, e2e), corrido
+   con `verificar.sh` (ver "Comandos largos"). Un verde a medias no es verde.
+4. **Independencia.** Un mismo contexto firma como mucho una de estas
+   etapas sobre la misma ficha: implementar, revisar, probar. El contexto es
+   el sufijo de `EQUIPO_SESION` en `turnos:`; lo verifica
+   `scripts/equipo-dev/independencia.sh`.
 5. **El release manager mergea en `dev`.** Un item entra a `dev` solo por
    PR y solo cuando paso la puerta de merge: dev, revisor y QA en tres
    sesiones distintas, `check.sh` en verde sobre la rama ya fusionada con
@@ -65,75 +70,33 @@ sigue como sin el y se anota en `**OMC:**` del informe.
    todavia no hace, "no hay nada que proponer" no es una salida valida del
    PO ni del Arquitecto: es una seccion de `ALCANCE.md` que falta escribir.
 7. **Crecer es el objetivo.** El equipo existe para que la app haga cada vez
-   mas cosas, no solo para endurecer las que ya hace. Ver "Directiva de
-   alcance": manda sobre la eleccion de que proponer, disenar e implementar,
-   y no relaja ninguna regla dura de `CLAUDE.md`.
+   mas cosas, no solo para endurecer las que ya hace. La Directiva de
+   alcance (`alcance.md`) manda sobre la eleccion de que proponer, disenar e
+   implementar, y no relaja ninguna regla dura de `CLAUDE.md`. Lo que todo
+   rol necesita de ella: `tipo:` es `funcionalidad`, `bug`, `tests` o
+   `deuda` (sin `tipo:` no es funcionalidad); un bug real entra siempre; lo
+   grande se parte en tramos de una `epica:`; overlay, scraping, red sin
+   clic, dependencias nuevas, cuentas, nube, telemetria y datos que el `.rec`
+   no trae siguen prohibidos.
 
-## Directiva de alcance (del humano, 2026-10-10)
-
-Pedido literal: "que el loop aumente el alcance lo mas posible del
-proyecto". Hasta la ficha 35 el papel fue casi todo tests y arreglos de 500;
-desde aca la prioridad es **funcionalidad nueva** que quien usa la app vea o
-pueda usar. Lo que sigue manda sobre las fuentes y el orden de eleccion de
-cada rol; la independencia, la puerta de merge y `check.sh` siguen
-exactamente igual.
-
-- **Que cuenta como funcionalidad** (`tipo: funcionalidad` en la ficha):
-  una pagina, panel, tabla, grafico, metrica, regla del coach, filtro,
-  exportacion, flujo (importar, configurar, respaldar, etiquetar) o
-  integracion de la app de escritorio que hoy no existe, o una ampliacion
-  visible de una que existe. No cuenta: tests, refactors, robustez, docs ni
-  arreglos (`tipo: tests | bug | deuda`). Ficha sin `tipo:` = no es
-  funcionalidad.
-- **Mezcla.** Cada turno del PO propone al menos una funcionalidad. Una ficha
-  `tests` o `deuda` suelta solo entra si el papel ya tiene 3 funcionalidades
-  esperando (`propuesto` o `disenado`). Un **bug real** (numeros mal, 500 con
-  datos legitimos, importacion que se cae) no paga cuota: entra siempre, con
-  prioridad 1 o 2, porque un numero equivocado le quita valor a todo lo demas.
-  Los tests que una funcionalidad necesita van dentro de su ficha.
-- **`ALCANCE.md`**, en la rama `backlog`, es el mapa de lo que la app todavia
-  no hace: epicas por tema, cada una con sus tramos, los datos del `.rec` que
-  usa y su estado (`idea`, `ficha NN`, `en dev`, `PR #n`; las marcas viejas
-  `en main` cuentan igual). Lo mantiene el PO y lo alimentan dos lados: el
-  PO y el Arquitecto con lo que ven adentro del repo, y el **Investigador** con lo que trae de afuera (otras
-  herramientas, otros juegos, la comunidad, parsers abiertos), con su
-  bitacora en `INVESTIGACION.md`. Las semillas estan en `docs/backlog/` de
-  `$REF` y se copian a `backlog` si no existen. El humano lo edita desde la web para reordenar o
-  tachar ideas: una idea tachada o marcada `no` no se propone.
-- **Epicas y tramos.** Lo grande no se descarta por grande: se parte en
-  tramos de una epica (`epica: <slug>` en la cabecera). Cada tramo cabe en un
-  turno de Dev, se mergea solo y deja algo que el usuario ve o puede hacer;
-  un tramo "solo backend" vale si el siguiente ya esta `propuesto` con
-  "Implementar despues de #NN". Una epica empezada se termina antes de abrir
-  otra del mismo tema.
-- **Ideas con PR abierto fuera del equipo** (hoy #1, #12 y #14) no se
-  proponen mientras ese PR siga abierto: duplicarlo es pelear con trabajo del
-  humano. Quedan en `ALCANCE.md` con `PR #n`; si el humano lo cierra sin
-  mergear, la idea vuelve a estar libre.
-- **Decisiones de producto.** Si una funcionalidad necesita una decision del
-  humano, el PO propone la variante mas conservadora y reversible, deja la
-  alternativa en `## Para el humano` y la ficha avanza igual. Solo se frena
-  (P10) lo que no se puede deshacer.
-- **Lo que crecer no toca.** Overlay in-game, scraping, red sin clic,
-  dependencias nuevas, cuentas, nube, telemetria, datos que el `.rec` no
-  trae, metricas de replay que dependan de Ubisoft: siguen prohibidos. Una
-  idea que choca con eso va a "Ideas descartadas" de `ALCANCE.md` con el
-  motivo, para que nadie la vuelva a proponer.
-- **Medida.** `estado.sh` cuenta las funcionalidades en papel y en las ramas
-  de trabajo, y `ESTADO.md` muestra en `## Alcance` las epicas en curso y
-  las funcionalidades que llegaron a `dev` en los ultimos 7 dias. Si en 7
-  dias no llego ninguna, el Release lo dice en `## Para el humano` con el
-  cuello de botella (papel vacio, diseno trabado, cola llena, rojo).
 
 ## Arranque comun (todos los roles, 5 minutos)
+
+Lo que dice `rutina.md`, en este orden, cada paso en su propia llamada a
+Bash:
 
 ```bash
 cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
 git fetch origin dev main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
 for REF in origin/dev origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
 git show $REF:scripts/equipo-dev/turno.sh | bash -s --      # decide el rol; escribe .git/equipo-dev.env (un rol al final solo si lo pidieron)
-git show $REF:scripts/equipo-dev/estado.sh | bash           # papel, ramas, cola, rutina, entorno
 ```
+
+y despues cada linea `# leer:` que imprime `turno.sh`: `estado.sh` (papel,
+ramas, cola, rutina, entorno), este archivo, `roles/<rol>.md` y, para PO,
+Arquitecto e Investigador, `alcance.md`. Se leen enteros antes de hacer
+nada; si una salida igual sale cortada ("Output too large"), se lee el
+archivo que la herramienta indica, entero.
 
 La cadena prueba `rutina.md`, que solo este playbook tiene, y va primero a
 `dev`, donde el equipo integra: `main` (release) y la rama del playbook son
@@ -144,27 +107,26 @@ probar el acceso con `git push --dry-run origin HEAD:refs/heads/claude/equipo-de
 (no crea nada); si devuelve 403 u otro rechazo, no se implementa nada:
 informe con el comando y el mensaje exactos.
 
-`turno.sh` escribe `.git/equipo-dev.env` (nunca se commitea) con `EQUIPO_ROL`,
-`EQUIPO_FRANJA`, `EQUIPO_MOTIVO` (por que ese rol), `EQUIPO_RELOJ` (el rol que
-decia el reloj), `EQUIPO_INICIO` (epoch), `EQUIPO_SESION` (id del turno,
-formato `AAAAMMDDTHHMMZ`, va en `turnos:` y en `ESTADO.md`), `EQUIPO_CIERRE`
-(hora UTC `HH:MM` a la que hay que cerrar), `EQUIPO_MINUTOS` y `EQUIPO_REF`,
-lo imprime entero y resume todo en una linea `# turno:`. **Las variables no sobreviven entre
+`turno.sh` escribe `.git/equipo-dev.env` (nunca se commitea; lo imprime
+entero y lo resume en la linea `# turno:`): `EQUIPO_ROL`, `EQUIPO_MOTIVO`,
+`EQUIPO_RELOJ`, `EQUIPO_FRANJA`, `EQUIPO_INICIO` (epoch), `EQUIPO_SESION`
+(`AAAAMMDDTHHMMZ-<contexto>`, va en `turnos:` y en `ESTADO.md`),
+`EQUIPO_CONTEXTO`, `EQUIPO_CIERRE` (`HH:MM` UTC), `EQUIPO_MINUTOS` y
+`EQUIPO_REF`. **Las variables no sobreviven entre
 comandos ni llegan a los subagentes**: cada comando que las use empieza con
 `source "$(git rev-parse --git-dir)/equipo-dev.env"`, y a un subagente se le
 pasan los valores como literales en su prompt. Lo mismo vale para `REF`: usar
 `$EQUIPO_REF` o el literal de la linea `# turno:`. Un rol pedido
 (`/equipo-dev revisor`, o `rol: revisor` en el disparo) va como ultimo
-argumento de `turno.sh`, en minuscula.
-`estado.sh` imprime el playbook en uso, si hay `PAUSA`, el papel, las ramas
-de trabajo con su ficha, estado, candado, edad y commits humanos, las ramas
-viejas sin ficha, las ramas borrables en un solo comando (`BORRAR`), el
-tamano de `## Para el humano` (`PARA_EL_HUMANO`), la cadencia real de la
-rutina y sus disparos sin rastro (`CADENCIA`, `TURNOS_SIN_RASTRO`), `COLA`,
-`TOTAL`, la rotacion del alcance (`ROTACION`), el tiempo de reclamo a
-`dev` (`CICLO`), lo que `dev` lleva sin promover a `main` (`RELEASE`), la
-linea `RESUMEN` que lee `turno.sh` y si el entorno esta completo. Con eso se sabe todo lo que hace falta para decidir. El playbook se lee siempre de
-`$REF`, nunca del checkout: una rama vieja trae un playbook viejo.
+argumento de `turno.sh`, en minuscula. El contexto es fijo para una misma
+sesion de la nube; un orquestador que lanza cada turno en un subagente nuevo
+le pasa a cada uno el suyo (`turno.sh --contexto <id>`), si no todos cuentan
+como uno (`independencia.sh` explica por que).
+`estado.sh` imprime, solo desde git, todo lo que hace falta para decidir:
+playbook en uso, `PAUSA`, papel, ramas de trabajo (ficha, estado, candado,
+edad, commits humanos, si este turno puede firmar su etapa siguiente),
+`BORRAR`, `PARA_EL_HUMANO`, `CADENCIA` y `TURNOS_SIN_RASTRO`, `COLA`,
+`TOTAL`, `ROTACION`, `CICLO`, `RELEASE`, la linea `RESUMEN` y el entorno.
 
 Entorno incompleto: `python3 -m pip install -r requirements.txt
 -r requirements-dev.txt` y `npm install` en `frontend/`. Si sigue incompleto,
@@ -174,6 +136,27 @@ Rama de trabajo: el dueno del repo autorizo al equipo, al configurar la
 rutina, a crear y empujar ramas `claude/equipo-dev/*`. Esa autorizacion vale
 aunque la sesion anuncie otra rama de salida: el trabajo del equipo va en sus
 ramas, para que las fichas y los PRs sigan siendo uno por item.
+
+## Comandos largos: check.sh y la espera
+
+En una Routine **el turno terminado es la corrida terminada**: lo que quede
+corriendo cuando el turno cierra no lo mira nadie. La herramienta Bash manda
+a segundo plano todo comando de mas de 120 s sin `timeout`, corta en 600 s
+aun con el, y bloquea un `sleep` suelto. `check.sh` completo tarda unos
+200 s (mas con sesiones simultaneas). Por eso:
+
+- Todo `check.sh` del playbook se corre con
+  `git show $EQUIPO_REF:scripts/equipo-dev/verificar.sh | bash -s --`
+  desde la raiz del checkout a verificar, en la herramienta Bash con
+  `timeout: 600000`, y se vuelve a llamar igual mientras salga 124: retoma
+  la misma corrida. Sale 0 con `VERDE <sha>` y los conteos que pide el
+  informe, o 1 con `ROJO` y el final del log. `--estado` dice si ya hay un
+  verde completo sobre `HEAD` (condicion f del Release).
+- Nunca `./scripts/check.sh` pelado, `run_in_background`, `Monitor`, `sleep`
+  suelto ni cerrar el turno con "espero la notificacion": un proceso que
+  sigue vivo al cerrar es trabajo perdido y candados colgados.
+- Lo que se levanta para probar (el `runserver` de QA) se baja antes de
+  cerrar, y toda otra espera es en primer plano: nada vivo al cerrar.
 
 ## Turnos
 
@@ -197,12 +180,15 @@ linea `RESUMEN` de `estado.sh --resumen`, el primero que aplique:
 11. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
 12. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
 
-Un rol pedido (`rol: revisor` en el disparo, o `/equipo-dev revisor`) gana a
+Las fichas cuya etapa siguiente este contexto no puede firmar
+(independencia) no cuentan en `implementado` ni `revisado`: van a
+`bloqueadas=` de `RESUMEN` y al motivo, asi un turno no recae en un rol sin
+nada que hacer. Un rol pedido (`rol: revisor` en el disparo, o `/equipo-dev revisor`) gana a
 todo, motivo `pedido`. Sin linea `RESUMEN` (fetch caido), rol del reloj,
 motivo `sin resumen: reloj`. Se decide una vez al arrancar y no se
 recalcula; `EQUIPO_MOTIVO` y `EQUIPO_RELOJ` quedan en el env y en `ESTADO.md`.
 
-### Rol por reloj: desempate cuando nada espera, alternancia del Investigador y nemotecnia
+### Rol por reloj: desempate cuando nada espera
 
 Franja de 3 horas mas cercana, `((minuto_del_dia + 90) / 180) % 8`, tolera
 arranques demorados hasta 88 minutos. La tabla supone disparos cada 3 h; si
@@ -220,25 +206,13 @@ cae en la franja mas cercana y solo desempata: los roles salen del estado.
 | 6 | 18:01 | 15:01 | QA |
 | 7 | 21:01 | 18:01 | Investigador los dias pares, Revisor los impares |
 
-Dias pares e impares se cuentan desde 1970 sobre la hora del disparo
-(`disparo / 86400 % 2`), no sobre el dia del mes: asi no se repite el mismo
-rol dos noches seguidas al cambiar de mes. `turno.sh` lo resuelve; no se
-calcula a mano.
+Dias pares e impares se cuentan desde 1970 sobre la hora del disparo, no
+sobre el dia del mes; `turno.sh` lo resuelve, no se calcula a mano. Las
+prioridades de abajo se atienden antes del turno pero no cambian el rol
+anotado, salvo P6 y P7, que lo dicen. Cero estado compartido para decidir:
+dos disparos simultaneos eligen igual y se reparten por candado (P8), y un
+disparo perdido lo recupera el siguiente, que ve el mismo estado.
 
-Nemotecnica: el dia UTC arranca entregando, despues propone, disena,
-implementa, revisa, implementa, prueba, y cierra revisando o mirando afuera
-(un dia si, uno no). Un item disenado a las 06:01
-puede ser un PR listo a las 00:01 del dia siguiente, cuando el humano esta
-sentado en Santiago.
-
-Excepciones: solo el rol pedido (arriba). Las prioridades de abajo se
-atienden antes del turno pero no cambian el rol anotado, salvo P6 y P7, que
-lo dicen.
-
-Por que es robusta: cero estado compartido para decidir (el conteo sale de
-git); dos disparos simultaneos eligen igual y se reparten por candado (P8);
-un disparo perdido cuesta 3 h y no 24, porque el siguiente ve el mismo
-estado.
 
 ## Prioridades sobre el turno
 
@@ -296,7 +270,8 @@ estado.
   arranque o 15 minutos antes del disparo de la franja siguiente, lo que
   llegue primero (`EQUIPO_MINUTOS` dice cuantos quedaron). Turnos largos
   dejan que un tramo de funcionalidad quepa en un solo Dev. Antes de cada
-  `check.sh`, cada subagente y cada fase nueva: `source "$(git rev-parse --git-dir)/equipo-dev.env"
+  `check.sh`, cada subagente y cada fase nueva (una llamada a
+  `verificar.sh` que sale 124 no es fase nueva: se repite): `source "$(git rev-parse --git-dir)/equipo-dev.env"
   && echo "minuto $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 )) de $EQUIPO_MINUTOS, cierre a las
   $EQUIPO_CIERRE UTC"`. Llegada la hora de cierre (si el archivo se perdio:
   compararla con `date -u +%H:%M`), se cierra con lo que esta verde: push,
@@ -310,6 +285,7 @@ estado.
   resto de las decisiones sigue la Directiva de alcance: variante
   conservadora y reversible, pregunta anotada, y la ficha avanza.
 
+
 ## Fichas
 
 Formato fijo en `docs/backlog/PLANTILLA.md` (leerla siempre de `$REF`).
@@ -317,8 +293,9 @@ Cabecera legible con `grep`: `estado:`, `candado:`, `rama:`, `tipo:`,
 `epica:`, `area:`, `prioridad:`, `fuente:`, `archivos:`, `turnos:`. `tipo:` es
 `funcionalidad`, `bug`, `tests` o `deuda` (ver Directiva de alcance); `epica:`
 es el slug de la epica de `ALCANCE.md` o `-`. `turnos:` es una sola linea
-con pares `rol sesion` separados por coma, en orden cronologico:
-`turnos: po 20261008T0305Z, arquitecto 20261008T0610Z, dev 20261008T0905Z`.
+con pares `rol EQUIPO_SESION` separados por coma, en orden cronologico:
+`turnos: po 20261101T0305Z-c4kQ2x, arquitecto 20261101T0610Z-c8Hn1d, dev 20261101T0905Z-cWq7Lm`
+(las fichas viejas traen el id sin contexto; valen igual).
 
 Estados, vocabulario cerrado y quien los escribe: `propuesto` (PO) ->
 `disenado` (Arquitecto) -> `en curso <fecha>` (Dev, el reclamo) ->
@@ -362,20 +339,12 @@ backlog y en las ramas de trabajo) + 1`. Se arranca en 30 porque `mercado/*`
 y `claude/loop-*` ya usan del 20 al 26 en el roadmap.
 
 **`ESTADO.md`**, el tablero, en la rama `backlog`, regenerado entero por cada
-turno al cerrar siguiendo `docs/backlog/ESTADO.plantilla.md` (leerla de `$REF`): `actualizado:` (rol, sesion), `playbook:` (`$REF@sha`),
-`pausa:`; cola con rama, ficha, estado, horas desde el ultimo commit, link
-`https://github.com/bfigueroa99/r6-replay-lab/compare/dev...<rama>?expand=1`
-y si tiene PR; orden de merge sugerido (merge de prueba por pares con
-`git merge-tree --write-tree origin/A origin/B` y que archivos libera cada
-merge); papel (`propuesto`, `disenado`, `descartado` de los ultimos 30 dias,
-con `tipo`); `## Alcance` (epicas en curso con sus tramos, funcionalidades
-que llegaron a `dev` en los ultimos 7 dias, ideas libres en `ALCANCE.md`:
-las lineas de `== alcance` de `estado.sh`); ultimo turno de
-cada rol; `## Para el humano` (preguntas acumuladas, la linea `BORRAR` de
-`estado.sh` tal cual, que borra todas las ramas borrables, aviso unico de CI
-remota, cambios que piden "Verificar en el PC"); `## Para el equipo`,
-que escribe el humano y el equipo preserva tal cual, agregando respuestas
-fechadas debajo.
+turno al cerrar con `docs/backlog/ESTADO.plantilla.md` (leerla de `$REF`),
+que fija sus secciones: cabecera, cola con link de compare y PR, orden de
+merge sugerido (`git merge-tree --write-tree origin/A origin/B` por pares),
+papel, `## Alcance` (las lineas de `== alcance` de `estado.sh`), ultimo turno
+de cada rol, `## Para el humano` y `## Para el equipo`, que escribe el humano
+y el equipo preserva tal cual, agregando respuestas fechadas debajo.
 
 ## Limite de trabajo en curso
 
@@ -404,458 +373,24 @@ al humano siga siendo poco.
   commits salen de `COLA`, siguen en `TOTAL` y aparecen en `ESTADO.md` como
   abandonadas; el equipo nunca las borra.
 
-## Especificacion por rol
 
-### Release manager
+## Roles
 
-Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
+La especificacion de cada rol esta en `roles/<rol>.md` (entrada, trabajo,
+salida, turno bien hecho, sin trabajo), y `turno.sh` imprime la del turno:
 
-- **Entrada:** `estado.sh` completo; `## Para el equipo`; con herramientas,
-  PRs `[equipo-dev]`, sus comentarios y si alguno fue cerrado sin mergear.
-- **Trabajo, en orden:** (1) P2 y P3 sobre todas las ramas de trabajo, de la
-  mas vieja a la mas nueva. (2) PR cerrado por el humano sin merge:
-  `estado: descartado (cerrado por el humano <fecha>)` en la rama; no se
-  mantiene mas. (3) Por cada ficha `aprobado`, hasta 2 por turno, la mas
-  vieja primero: candado `release`; verificar que `turnos:` tenga dev,
-  revisor y qa de sesiones distintas (si falta la revision independiente la
-  ficha vuelve a `implementado`, si falta la QA independiente vuelve a
-  `revisado`, se anota en la ficha y se pasa a la siguiente); `git merge origin/dev` si dev se
-  movio; `check.sh` en verde; `README.md` solo si cambia algo que el usuario
-  hace; escribir `## PR` arriba de todo (titulo `[equipo-dev][area] Titulo`,
-  cuerpo de `plantilla-pr.md` armado desde Implementacion, Revision y QA,
-  "Como probarlo en 2 minutos" con comandos exactos, "Verificar en el PC" si
-  existe); recortar la ficha a unas 80 lineas (Revision condensada al
-  veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
-  ultimo commit `Entrega: NN titulo` (el titulo del PR lo lleva solo el
-  commit de merge; repetirlo en la rama dejaba en `dev` dos commits
-  seguidos con el mismo titulo por cada entrega); `estado: entregado`;
-  push. (4) Con herramientas: abrir el PR con `## PR` tal cual a toda ficha
-  `entregado` que no lo tenga (incluidas las `entregado (PR pendiente de
-  abrir)` que dejo un turno sin herramientas); sin herramientas: `entregado
-  (PR pendiente de abrir)`. No se usa `subscribe_pr_activity`: la sesion
-  termina con el turno y nadie atenderia esos avisos. (5) **Puerta de merge** sobre cada `entregado`, de
-  la mas vieja a la mas nueva; si falla una condicion, la ficha queda
-  `entregado (PR pendiente de merge: <motivo>)` y el motivo va a
-  `ESTADO.md`:
-  - a. No hay `SIN_MERGE` ni `PAUSA`.
-  - b. `turnos:` tiene `dev`, `revisor` y `qa` de tres sesiones distintas y
-    el estado venia de `aprobado`.
-  - c. Sin commits del humano sin responder en la rama; en el PR, sin
-    "changes requested" ni comentario humano sin respuesta; `## Para el
-    humano` de la ficha sin preguntas abiertas (solo avisos informativos).
-  - d. El diff (`git diff --name-only origin/dev...<rama>`) no toca lo que
-    el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
-    `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
-    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md`,
-    `docs/backlog/INVESTIGACION.md` (las semillas; los vivos estan en
-    `backlog`) y `docs/backlog/MAQUINARIA.md`, `frontend/electron/`,
-    `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
-    `.github/`, `.opencode/`.
-  - e. Hay herramientas de GitHub y el PR esta abierto contra `dev`
-    (nunca contra `main`: ese lo promueve el humano; no hay push directo).
-  - f. `origin/dev` ya esta fusionado en la rama y empujado, y `check.sh`
-    completo (con e2e) termino en `Todo en verde.` sobre ese commit exacto
-    en esta misma sesion.
-  Merge: `mcp__github__merge_pull_request` con metodo `merge`, titulo del
-  commit = titulo del PR, cuerpo = `## Que cambia` del PR. Despues `git
-  fetch origin dev`, confirmar que la ficha existe en `origin/dev`, borrar
-  la rama recien mergeada (`git push origin --delete <rama>`, la unica rama
-  que el equipo borra; si el proxy lo corta con 403 no se reintenta: la rama
-  sale sola en `BORRAR`) y, si el espejo de la ficha sigue en `backlog`,
-  quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
-  las ramas que sigan abiertas. (7) `## Alcance` de `ESTADO.md` con las
-  lineas `DEV_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`, `ALCANCE`, `ROTACION` y
-  `CICLO` de `estado.sh`, y la linea `RELEASE` en `## Para el humano`. Si
-  `DEV_7D` dice `funcionalidad:0`, una linea en `## Para el humano` con el cuello de botella exacto (papel sin
-  funcionalidades, diseno trabado, cola llena, rojo, PR esperando). (8)
-  Playbook: `git show $EQUIPO_REF:scripts/equipo-dev/pruebas.sh | bash -s -- $EQUIPO_REF`.
-  El resultado va al informe (`**Playbook:** <ref>@<sha corto> (pruebas: ok |
-  FALLAN k)`); un fallo va ademas a `## Para el humano` como `Playbook:
-  pruebas.sh fallo: <linea FALLA>` (el equipo no toca `scripts/equipo-dev/`;
-  lo arregla una sesion que el humano inicie). (9) Rutina: con
-  `mcp__claude-code-remote__get_trigger` disponible, leer
-  `trig_01SLH6dc1rT5C6ZLMXPEsckN`, guardar `derived_state.prompt` en el
-  scratchpad y compararlo con
-  `git show $EQUIPO_REF:.claude/skills/equipo-dev/rutina.md` (`diff`,
-  ignorando el salto de linea final). Si difiere y el texto de `$EQUIPO_REF`
-  contiene los literales `turno.sh`, `estado.sh` y `rol:`:
-  `mcp__claude-code-remote__update_trigger` con `trigger_id` y solo `prompt`
-  (nunca `cron_expression`, `enabled` ni `model`), y la cabecera `rutina:` de
-  `ESTADO.md` suma `prompt sincronizado con rutina.md@<sha corto>`. Si
-  `enabled` es false: vineta en `## Para el humano` (`la rutina esta apagada;
-  el equipo no la enciende`) y nada mas. Sin herramientas o sin permiso: `sin
-  herramientas para comparar`.
-- **Salida:** merges a `dev` de lo que paso la puerta; pushes a las ramas
-  entregadas y mantenidas; PRs si hay herramientas; `ESTADO.md` completo;
-  informe.
-- **Turno bien hecho:** ninguna rama con conflicto contra dev; toda
-  `aprobado` que encontro esta mergeada, o `entregado` con el motivo exacto por el
-  que no; `ESTADO.md` dice que le queda al humano y que borrar, con los
-  comandos.
-- **No hace:** implementar, revisar, abrir ramas de trabajo (salvo P4 y P6).
-- **Sin trabajo:** mantenimiento, (8), (9), `ESTADO.md` e informe. Es el
-  unico rol que siempre produce algo.
+| rol | archivo | ademas lee |
+|---|---|---|
+| Release manager | `roles/release.md` | `roles/dev.md` si actua como Dev (P4, P6) |
+| Product owner | `roles/po.md` | `alcance.md` |
+| Arquitecto | `roles/arquitecto.md` | `alcance.md` |
+| Dev | `roles/dev.md` | |
+| Revisor | `roles/revisor.md` | `roles/qa.md` en su fallback sin trabajo |
+| QA | `roles/qa.md` | `roles/release.md` al seguir como Release; `roles/revisor.md` en su fallback |
+| Investigador | `roles/investigador.md` | `alcance.md` |
 
-### Product owner
-
-Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
-
-- **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
-  en este turno) y la ultima entrada de `INVESTIGACION.md` (las ideas que
-  trajo el Investigador, con su fuente, van primero a la cola de lectura);
-  `origin/dev` fresco: `CLAUDE.md`, `README.md` contra lo
-  que el codigo hace, `docs/formato-rec.md`, las notas de pendientes y deuda
-  del roadmap (al final de cada item: "Pendiente", "Lo que falta", "Deuda",
-  "Queda anotado") y el `Fuera de alcance` y `## Para el humano` de las
-  fichas ya mergeadas, que son el siguiente paso que alguien ya vio; las
-  fichas de `backlog` y de las ramas de trabajo; `## Para el equipo`; como
-  ideas y nada mas, `mercado/*`, `claude/loop-*` y los PRs abiertos que no
-  son del equipo.
-- **Trabajo, en orden:**
-  1. **Reconciliar:** quitar de `backlog` las fichas que ya estan en
-     `origin/dev` y poner `en curso` + `rama:` a las que ya viven en una
-     rama de trabajo. Las `descartado` no se borran: son historia y reservan
-     su numero. En `ALCANCE.md`, marcar `en dev` lo que llego y `ficha NN`
-     lo que ya tiene ficha. A una ficha vieja del papel sin `tipo:` se le
-     pone el que corresponde.
-  2. **Hacer crecer `ALCANCE.md`:** al menos 2 ideas nuevas por turno, cada
-     una con que gana el usuario, que datos usa (archivo y campo del parser
-     o del modelo) y tamano S/M/L. Fuentes, rotando para no secar ninguna:
-     datos que el parser ya extrae o la base ya guarda y ninguna pantalla
-     muestra; lo que tienen las herramientas de replay de la tabla de
-     competidores del roadmap (la busqueda afuera es del Investigador; el
-     PO no la repite); lo que solo sale del historial
-     acumulado (el diferencial del proyecto); los `Fuera de alcance` y la
-     deuda de arriba; la friccion que anoto QA. Una idea que choca con una
-     regla dura va a "Ideas descartadas" con el motivo.
-  3. **Proponer**, si hay menos de 6 `propuesto`: hasta 3 fichas nuevas
-     desde `PLANTILLA.md`, numero siguiente libre, `tipo:`, `epica:` si es
-     tramo de una, "Que gana quien usa la app" en dos frases, 3 a 6
-     criterios de aceptacion convertibles en test o `curl`, "Fuera de
-     alcance", `area`, `prioridad`, `fuente` concreta. Orden de eleccion:
-     (a) bug real con numeros mal, 500 con datos legitimos o importacion que
-     se cae, prioridad 1 o 2; (b) el tramo siguiente de una epica en curso,
-     solo si una ficha ya lo dejo escrito ("Implementar despues de #NN"):
-     otra idea suelta del mismo tema no es un tramo;
-     (c) la funcionalidad de mas valor de `ALCANCE.md` que pase los filtros
-     (a igual tamano, primero un `must` de la epica `paridad-referencia`,
-     que la referencia tiene y la app no), con la linea `ROTACION` de
-     `estado.sh`: ninguna ficha nueva sale de una epica de `saturadas` ni
-     suma una tarjeta a una pagina de `saturadas` (salvo que junte o
-     reemplace tarjetas que ya estan), y si `sin entrega` no esta vacia, al
-     menos una funcionalidad del turno sale de una de esas epicas;
-     (d) deuda; (e) tests y robustez sueltos, solo si el papel ya tiene 3
-     funcionalidades esperando. Al menos una de las fichas del turno es
-     funcionalidad (Directiva de alcance). Filtros duros de `CLAUDE.md`
-     antes de escribir. Lo grande se parte en tramos de una epica: el
-     primero con criterios completos y los siguientes como `propuesto` con
-     "Implementar despues de #NN". Una decision de producto reversible no
-     frena la ficha (Directiva de alcance); una irreversible va a
-     `## Para el humano` (P10). Items que solo se verifican en Windows
-     (Electron, `.ps1`, instalador) llevan la nota "verificado solo en
-     nube" en los criterios.
-- **Salida:** push a `claude/equipo-dev/backlog`, solo `docs/backlog/*.md`,
-  commits `Propone: NN titulo` y `Alcance: <que cambio>`. Nunca PR, nunca
-  rama de trabajo, nunca codigo.
-- **Turno bien hecho:** cada ficha nueva la puede disenar un Arquitecto sin
-  preguntar nada, el humano entiende en 30 segundos que gana, y `ALCANCE.md`
-  tiene mas ideas libres que al empezar.
-- **Sin trabajo:** no existe con `ALCANCE.md` vivo. Con 6 o mas `propuesto`:
-  grooming (afinar criterios, reordenar prioridades, descartar lo que dev
-  ya cubre, partir lo que no cabe) y el paso 2 completo. `Entregado: nada`
-  solo si todas las ideas de `ALCANCE.md` estan tomadas, tachadas o
-  descartadas, y en ese caso el turno escribe ideas nuevas hasta que haya
-  al menos 5 libres.
-
-### Arquitecto
-
-Cuando el estado lo pide (regla 9); por reloj, franja 2.
-
-- **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
-  igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
-  antes que `tests` o `deuda`, y la mas vieja; hasta 3 por turno; `git diff --name-only origin/dev...<rama>` de
-  todas las ramas de trabajo abiertas (archivos ocupados); `aggregates.py`,
-  `metrics.py`, `ui.jsx`, `logica.test.js` para ver como el repo ya resuelve
-  lo parecido.
-- **Trabajo:** candado `arquitecto`, push. Filtros duros como si no conociera
-  al PO: si falla uno, `estado: descartado (<filtro>)`. Si pasa, `## Diseno`
-  y `archivos:`: archivos exactos y por que esos; tests nuevos con nombre en
-  espanol; orden de implementacion; que puede romperse; verificacion manual;
-  fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral
-  nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
-  los de una rama abierta, o agrega migracion mientras otra rama abierta ya
-  agrega una: `Implementar despues de que #NN se mergee` (prioriza, no
-  bloquea). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
-  partir en tramos de la misma epica: el diseno cubre el primer tramo que
-  ya deja algo visible y el resto queda como fichas `propuesto` con
-  `epica:` y "Implementar despues de #NN". Grande no es motivo de
-  descarte; solo lo son los filtros duros. Si la ficha entra en un dominio
-  que el repo todavia no resuelve (un grafico o una tabla nuevos, una
-  migracion delicada, un flujo e2e nuevo), antes de disenar se busca una
-  skill de afuera que lo cubra (`.claude/skills/equipo-dev/skills.md`,
-  leerlo de `$REF`): una busqueda por turno, se consulta sin instalarla y
-  `## Diseno` lleva su linea `Skills:` (tambien si no aplica). Si una ficha
-  admite disenos genuinamente distintos y la eleccion importa, el diseno
-  sale de una arena
-  (`.claude/skills/equipo-dev/arena.md`, leerlo de `$REF`): una por turno,
-  `--agents 4`, en un worktree de `$EQUIPO_REF`; con una sola forma obvia,
-  no hay arena. Si la ficha es grande o dificil de deshacer (no cabe en un
-  turno de Dev y se parte en tramos, o toca lo que QA manda a `## Verificar
-  en el PC`: migraciones, `recompute`, parser, Electron, `.ps1`), el
-  `## Diseno` sale de un plan por consenso (receta 1 de OMC): uno por turno,
-  con 45 minutos o mas antes de `EQUIPO_CIERRE`, la de mas riesgo primero, y
-  el brief del planner pide lo que lleva `## Diseno`. Modo deliberado si
-  reescribe o borra datos ya importados, o toca `backend/externo/`,
-  `perfil_externo.py`, `config/envfile.py` o un POST. Si la ficha tambien va
-  a arena, el ganador es el borrador y pasa directo por architect y critic.
-  Sin APPROVE tras 2 rondas, el diseno cubre solo la parte aprobada y el
-  resto queda como tramo `propuesto`; un filtro duro es `descartado`, y una
-  ficha con un CRITICAL abierto no llega a `disenado`. Fichas chicas y de una
-  forma obvia: sin consenso. Spikes en el scratchpad, nunca
-  codigo commiteado. `estado: disenado`, `candado: -`.
-- **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
-- **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
-  ninguna decision de alcance.
-- **Sin trabajo:** con 3 `disenado` esperando, no disena mas: revalida esos
-  disenos contra el dev actual y anota los ajustes. Sin `propuesto` que
-  disenar: hace el paso 2 del PO sobre `ALCANCE.md` (ideas nuevas con los
-  archivos y campos exactos que usarian), que es lo que el proximo PO
-  convierte en fichas. Nunca escribe fichas `propuesto` el mismo.
-
-### Dev
-
-Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
-
-- **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
-  `en curso` con candado muerto (mas de 3 h sin commits) o con
-  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
-  `COLA < 4` y `TOTAL < 6`, `disenado` de mayor prioridad (a igual
-  prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
-  no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
-  menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
-- **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/dev` (el
-  mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
-  `backlog`; `estado: en curso <fecha>`, `candado: dev
-  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
-  origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
-  siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
-  curso`, `rama:`); si ese push falla, no importa.
-- **Trabajo:** implementar el diseno completo: backend + frontend + tests +
-  fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
-  con `tipo: bug`, el test que falla primero (receta 4 de OMC):
-  `omc-test-engineer` lo propone antes de tocar el codigo, el Dev lo escribe
-  y lo ve fallar (comando y falla en `## Implementacion`) y recien entonces
-  arregla; migracion + `metrics.py` + `recompute` si hay columna nueva;
-  estilo del repo (espanol sin tildes en codigo, con tildes en la UI,
-  comentarios que explican por que). Dos subagentes para backend y frontend
-  si son independientes. Si un punto cae en un dominio que ni el diseno ni el repo
-  resuelven y el Arquitecto no busco para esa ficha (su linea `Skills:`),
-  una busqueda de skills de afuera (`.claude/skills/equipo-dev/skills.md`):
-  una por turno, se consulta sin instalarla; `## Implementacion` lleva la
-  linea `Skills:` siempre. Si el diseno deja abierto un punto con enfoques
-  genuinamente distintos (un algoritmo, la decodificacion de un campo) y no
-  lo decidio una arena del Arquitecto, ese punto se juega en una arena
-  (`.claude/skills/equipo-dev/arena.md`): una por turno, `--agents 4`, el
-  diff del ganador pasa por los mismos tests, `check.sh` y revision que
-  cualquier cambio. Antes del ultimo push: subagente ciego
-  `omc-code-reviewer` con `revision.md` (receta 2 de OMC, eje de estandares)
-  sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'` y corregir lo real (es el primer
-  filtro, no el ultimo; el diff que se le pasa excluye `docs/backlog`, que
-  es el plan); un CRITICAL o HIGH confirmado que no alcanza a corregirse
-  deja la ficha `en curso` con `## Pendiente`, nunca `implementado`.
-  `check.sh` en `Todo en verde.`. `## Implementacion`:
-  que quedo, que no, desvios del diseno. `estado: implementado`,
-  `candado: -`, push.
-- **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
-  `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
-  `candado: -`. No se tira trabajo parcial verde.
-- **Salida:** rama de trabajo nueva o pushes a la existente; commits en
-  presente (`Agrega ...`, `Corrige ...`). Nunca abre el PR.
-- **Turno bien hecho:** cada criterio de aceptacion tiene un test con nombre;
-  el Revisor puede trabajar sin preguntar nada.
-- **Sin trabajo:** sin nada tomable y con lugar en la cola: un bug real
-  reproducible (test que falla, 500 con datos legitimos, deprecacion que va
-  a romper, `.rec` raro que tumba la importacion) con ficha propia escrita
-  en el momento (criterios, diseno de 5 lineas, implementacion) y dejada en
-  `implementado`. Solo bugs, nunca features, nunca Electron ni `.ps1`. Cola
-  llena o solo cosmetica: `Entregado: nada, <motivo>`.
-
-### Revisor
-
-Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impares.
-
-- **Entrada:** fichas `implementado`, de la mas vieja a la mas nueva, hasta
-  2 por turno; `revision.md`; `CLAUDE.md`.
-- **Trabajo:** candado `revisor`, push. `git merge origin/dev` si dev se
-  movio y `check.sh` para partir de verde. Revision a ciegas primero:
-  subagente `omc-code-reviewer` con el prompt de `revision.md` (receta 2 de
-  OMC; `revision.md` dice cuando se suman el eje de intencion y
-  `omc-security-reviewer`) sobre `git diff
-  origin/dev...origin/<rama> -- . ':(exclude)docs/backlog'`; despues el
-  lider confirma cada hallazgo reproduciendolo (el subagente propone, el
-  Revisor confirma). Recien entonces la ficha: cada criterio de aceptacion
-  cubierto por un test o por una verificacion anotada; el diff no toca
-  archivos fuera de `archivos:` sin explicacion en Implementacion; fila en
-  `docs/metricas.md` por cada numero nuevo; identificadores sin tildes, UI
-  con tildes; sin `print` ni `console.log`. Puede empujar tests de casos
-  borde que pasan; un test que falla nunca se empuja: va como hallazgo con
-  el test exacto a agregar. `## Revision <fecha> sobre <sha corto>` con el
-  formato de `revision.md` y el veredicto: `aprobar` -> `revisado`;
-  `corregir` -> `con hallazgos`. Un CRITICAL o HIGH confirmado, de cualquier
-  eje, es `corregir`: lo arregla el Dev en su turno, no el Revisor. Tercera
-  pasada sobre la misma ficha con solo hallazgos menores (MEDIUM o LOW):
-  `revisado`, y los hallazgos a `## Para el humano`.
-  Gustos y cambios de alcance no se reportan. Con herramientas y PR
-  existente, los hallazgos van ademas como review de tipo comentario (nunca
-  aprobar ni pedir cambios formalmente).
-- **Salida:** commits `Revisa: NN titulo` docs-only sobre la rama, mas tests
-  verdes si agrego. Nunca arregla el codigo que revisa (salvo P2 y P3), nunca
-  PR.
-- **Turno bien hecho:** cada hallazgo tiene input concreto y arreglo
-  sugerido; el veredicto se sostiene sin haber leido el plan.
-- **Sin trabajo:** sin `implementado`, hace la QA de las `revisado` con la
-  especificacion de QA (nunca QA de lo que esta misma sesion reviso). Sin
-  eso, salud de ramas `entregado`: merge de dev si se movio, `check.sh`,
-  push. Sin nada, informe.
-
-### QA
-
-Cuando el estado lo pide (regla 2); por reloj, franja 6.
-
-- **Entrada:** fichas `revisado`, de la mas vieja a la mas nueva, hasta 2
-  por turno; `backend/tests/factories.py`.
-- **Trabajo:** candado `qa`, push. Ejercita el sistema, no relee el diff.
-  Por ficha: `check.sh` completo; `runserver` con base vacia y con base sembrada desde
-  `factories.py` (script temporal en el scratchpad; nunca `.rec` reales ni
-  `.sqlite3` al repo) y `curl` a los endpoints tocados y vecinos con
-  parametros borde (`until=foo`, `page=-1`, filtros vacios, partida de un
-  jugador, nick repetido, ronda sin bajas); si hay migracion: base con el
-  esquema de `origin/dev`, `migrate` y `recompute` sobre ella; si toco
-  `frontend/src`: chunk inicial de `vite build` sin crecer mas de 10 % sin
-  justificacion; si toco el parser: `tests.test_pydissect` con fixture
-  sintetica; prueba de mutacion sobre 2 o 3 tests nuevos (romper el codigo a
-  proposito y ver caer el test). Cada criterio con evidencia (comando y
-  resultado) en `## QA <fecha> sobre <sha>`. Si toca migraciones,
-  `recompute`, parser, Electron o `.ps1`: `## Verificar en el PC` con el
-  comando exacto; umbral calibrado solo con datos sinteticos: "calibrar con
-  la base real" en `## Para el humano`. Antes de `aprobado`, receta 3 de
-  OMC: `omc-verifier` con los criterios, los comandos con su salida resumida
-  y codigo de salida, y el diff; con INCOMPLETE se completa la evidencia
-  que marco PARTIAL o MISSING, y con FAIL el criterio cae como hallazgo.
-  Criterio que falla: `con hallazgos`
-  con el repro exacto (no lo arregla). Todo bien: `aprobado`. `candado: -`.
-  Con la ficha en `aprobado`, sin `PAUSA` ni `SIN_MERGE` y con 20 minutos o
-  mas antes del cierre, el mismo turno sigue como Release sobre esa ficha
-  (pasos 3 a 5 de su especificacion, puerta de merge incluida) y anota
-  `release <sesion>` en `turnos:`. Probar y mergear no chocan con la
-  independencia (el principio 4 cuenta implementar, revisar y probar), y
-  el Release aparte costaba un disparo entero por entrega para repetir el
-  `check.sh` que la QA acaba de correr sobre el mismo commit.
-- **Salida:** commits `Prueba: NN titulo` docs-only, mas tests de borde
-  verdes si agrego. Nunca rama de trabajo; PR y merge solo como Release en
-  el mismo turno, como dice arriba.
-- **Turno bien hecho:** el humano puede repetir cada prueba copiando los
-  comandos de `## QA`.
-- **Sin trabajo:** sin `revisado`, revisa las `implementado` con la
-  especificacion del Revisor (las deja en `revisado`, nunca las aprueba en la
-  misma sesion). Sin eso, 20 minutos sobre dev: `check.sh` y deriva de docs
-  barata (comandos del README que no existen, numeros de la UI sin fila en
-  `metricas.md`, variables de `.env.example` sin uso en `settings.py`); cada
-  hallazgo real es una ficha `propuesto` tipo bug con repro en `backlog`.
-  Lo que se echo de menos usando la app (un filtro que falta, un dato que
-  no se puede ver, un paso de mas) va como idea a `ALCANCE.md`, con la
-  pantalla y el paso. Sin nada, informe.
-
-### Investigador
-
-Cuando el estado lo pide (reglas 6 y 11); por reloj, la franja 7 de los dias pares.
-
-Los demas roles miran adentro (el codigo, las fichas, el historial); este
-mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la
-Directiva de alcance: el PO convierte en fichas, el Investigador llena el
-pozo del que el PO saca.
-
-- **Entrada:** `INVESTIGACION.md` y `ALCANCE.md` de `backlog` (si faltan,
-  copiarlos de `$REF`), para saber que fuentes se visitaron, cuales dieron
-  algo y que ideas ya existen; `CLAUDE.md` y `docs/formato-rec.md`, para
-  saber que datos hay; las fichas en `dev` y en papel, y los PRs abiertos,
-  para no traer lo que ya existe.
-- **Fuentes**, por familias. Cada turno toma 3 o 4, primero las que llevan
-  mas tiempo sin visitarse y las que dieron senal la ultima vez; ninguna se
-  repite dos turnos seguidos:
-  1. **Parsers abiertos del `.rec`**: primero r6-dissect, del que
-     `pydissect/` es un port (README, "Creditos"), con sus commits, releases
-     e issues desde la ultima visita; despues sus forks y otros parsers.
-     Campos que alguien decodifico y `pydissect/` todavia no lee. Es la
-     fuente que mas agranda el alcance, porque trae datos nuevos.
-  2. **Herramientas de replay de Siege** (las de la tabla de competidores
-     del roadmap y las que aparezcan): que muestran, que piden sus usuarios.
-  3. **Trackers de API** (stats.cc, R6 Tracker): solo su descripcion
-     publica, resenas y lo que se dice de ellos. Si una pagina responde 403,
-     se usa la busqueda y se sigue; nunca se intenta pasar la proteccion.
-  4. **Herramientas de otros juegos tacticos** (CS2: Leetify, Scope.gg,
-     CS Demo Manager; Valorant: Blitz, tracker.gg; MOBAs: OP.GG, Dotabuff):
-     metricas y pantallas que se traducen a Siege.
-  5. **Comunidad** (r/Rainbow6, r/R6ProLeague, Siege.GG, contenido de
-     coaching): lo que los jugadores dicen que quieren ver de sus partidas.
-  6. **Ubisoft**: notas de parche y temporada (operadores, mapas, modos y
-     cambios del sistema de replays que van a llegar al parser).
-  7. **Analitica de esports y deporte**: ratings compuestos, probabilidad de
-     ganar la ronda segun la ventaja numerica, redes de trade, rating de
-     clutch.
-  8. **Paridad con la referencia (Replica)**: la pasada del pack Replica
-     sobre la app de referencia (recon, columna `clone` contra `dev`,
-     `parity.py`, resenas reales), siguiendo
-     `.claude/skills/equipo-dev/replica.md` (leerlo de `$REF`), que dice cual
-     es la referencia y como cambiarla. No rota como las demas: va primero en
-     el primer turno en que su fila de la tabla de Fuentes lleve 7 dias o mas
-     sin visita, o no exista; asi corre una vez por semana.
-- **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
-  existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
-  con link verificado, fecha y una linea de que hace. Despues el lider
-  filtra cada candidato, en este orden:
-  (a) **dato**: que campo de `pydissect/` o de `models.py` lo alimenta,
-  con archivo; si no existe pero un parser abierto lo decodifica, entra
-  como idea de la epica `datos-nuevos-del-parser` con el link al hallazgo y
-  la nota "verificar con `.rec` reales en el PC"; si nadie lo tiene, va a
-  "Ideas descartadas" con el motivo.
-  (b) **reglas duras** de `CLAUDE.md`.
-  (c) **duplicado** contra `dev`, `ALCANCE.md` y los PRs abiertos.
-  Lo que pasa entra a `ALCANCE.md`: en la epica que corresponda, o en una
-  nueva si no encaja, con `[fuente](url)` en la celda de la idea. De otros
-  proyectos se traen ideas, no codigo. La excepcion es r6-dissect (MIT): su
-  logica se porta igual que el resto de `pydissect/`, con el commit de
-  origen anotado en la idea y el credito del README al dia. Por ultimo, la
-  entrada del turno en `INVESTIGACION.md`, la mas nueva arriba: fecha,
-  familias visitadas, que dio senal, que salio seco, ideas agregadas (con su
-  `id`), descartadas y por que. Se actualiza la tabla de fuentes. El archivo
-  se mantiene bajo unos 10.000 caracteres condensando las entradas viejas.
-  Sin candado: no hay ficha que candar, y un push rechazado sigue la receta
-  unica de `backlog` (en `ALCANCE.md` e `INVESTIGACION.md` se conservan las
-  filas y entradas de los dos lados).
-- **Sin red** (la sesion no tiene busqueda web o el proxy la corta): el
-  turno no se pierde. Hace la investigacion interna: datos que el parser
-  extrae y ninguna pantalla muestra, ramas `mercado/*` y PRs cerrados sin
-  mergear, y las ideas van igual a `ALCANCE.md`. Se anota "sin red" en
-  `INVESTIGACION.md`, y una sola vez en `## Para el humano` de `ESTADO.md`,
-  con la configuracion de red del entorno como causa probable. Si le toca
-  la familia 8, igual actualiza `clone` y corre `parity.py`, que no usan red.
-- **Prioridades:** P1, P2 y P3 como cualquier rol. P4 a P7 no le tocan:
-  nunca implementa, revisa ni prueba.
-- **Salida:** commits `Investiga: <familias>` en `backlog`, solo
-  `docs/backlog/ALCANCE.md` y `docs/backlog/INVESTIGACION.md`, mas
-  `docs/backlog/replica/*` con la familia 8 (y `ESTADO.md` al cerrar). Nunca
-  fichas: priorizar es del PO. Nunca PR, nunca rama de trabajo, nunca
-  codigo.
-- **Turno bien hecho:** al menos 3 ideas nuevas en `ALCANCE.md` que pasan
-  los tres filtros, cada una con su fuente real; el PO siguiente (cuando
-  el estado lo pide; por reloj, franja 1) puede convertir cualquiera en
-  ficha sin volver a buscar.
-- **No hace:** inventar links, versiones ni numeros (si no pudo abrir la
-  fuente, la idea no entra); hacer que la app consulte esas fuentes (la
-  investigacion es del equipo, no de la app); scraping ni nada que esquive
-  una proteccion.
-- **Sin trabajo:** no existe; siempre hay una familia sin visitar.
+Cada lectura extra es un `git show $EQUIPO_REF:.claude/skills/equipo-dev/<archivo>`
+aparte, en su momento, no al arrancar.
 
 ## Cierre comun (todos los roles, 5 minutos)
 
@@ -868,8 +403,8 @@ pozo del que el PO saca.
    `ESTADO.md` la linea `rutina:` (la de `TURNOS_SIN_RASTRO` tal cual; el
    Release agrega la parte del prompt) y la linea `RESUMEN` debajo de
    `COLA=...`; a `## Para el humano`, si corresponde, `Rutina: <n> disparos
-   sin rastro en 48 h (<lista>); revisar el historial de la Routine
-   \`r6-replay-lab: equipo dev cada 3h\`` y `Playbook candidato: <linea
+   sin rastro en 48 h (<lista>); revisar el historial de la Routine del
+   equipo (la que lleva \`r6-replay-lab\` en el nombre)` y `Playbook candidato: <linea
    PLAYBOOK_CANDIDATO>`. `## Para el humano` lleva solo lo que el humano
    tiene que decidir o hacer: preguntas abiertas, PRs que esperan su merge,
    la linea `BORRAR`, "Verificar en el PC" (una linea por ficha, con su
@@ -892,16 +427,17 @@ pozo del que el PO saca.
 **GitHub:** con herramientas (<PRs tocados>) | sin herramientas
 **Descartado esta vez:** <ficha o idea> porque <filtro> | nada
 **Para el humano:** <decision, pregunta o rama para mergear/borrar> | nada
-**Verificacion:** check.sh en verde (<n> tests backend, <n> frontend, build ok) | sin pushes de codigo
+**Verificacion:** verificar.sh: VERDE <sha> (<n> tests backend, <n> vitest, <n> e2e) | sin pushes de codigo
 **OMC:** plan=<APPROVE|ITERATE|REJECT|—> · revisión=<N hallazgos (M arreglados)|—> · verificación=<PASS|FAIL|INCOMPLETE|—> | no disponible (<motivo>)
 ```
 
 Lo que va entre corchetes en `**Playbook:**` y `**Rutina:**` lo escribe solo
-el Release (pasos 8 y 9 de su turno). `**OMC:**` es la linea de registro de
+el Release (pasos 8 y 9 de `roles/release.md`). `**OMC:**` es la linea de registro de
 `.claude/skills/omc/SKILL.md`, con `—` en lo que el turno no uso (PO e
 Investigador, las tres); la misma linea, como `OMC: ...`, cierra la seccion
 de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
 `## Revision`, `## QA`), igual que `Skills:`.
+
 
 ## Transicion
 
@@ -912,19 +448,8 @@ de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
   empuja a esa rama sin `bash scripts/equipo-dev/pruebas.sh` en
   `PRUEBAS_OK`. Lo diferido de la maquinaria vive en
   `docs/backlog/MAQUINARIA.md`.
-- Ramas del playbook anterior (`estado.sh` las lista: reclamaban en
-  `docs/roadmap.md` con un commit `Reclama:` y la sesion les imponia el
-  nombre, como `claude/confident-feynman-*`). Con codigo: el primer Revisor
-  (o QA en su fallback) les crea la ficha a partir de su entrada en el
-  roadmap y del mensaje de su ultimo commit, en `implementado`, y sigue como
-  siempre; si ya tienen PR abierto, el PR se conserva y la sesion que las
-  hizo ya termino, asi que no aplica la espera de 3 horas de P8 (sin
-  herramientas para ver el PR, vale la regla general: commits de menos de 3
-  horas = posible sesion viva). Con solo el commit de reclamo: borrables, se
-  listan en `ESTADO.md` y no se les crea ficha.
-- Los numeros 20 a 29 del roadmap estan tomados o reservados por
-  `mercado/*`, `claude/loop-*` y los PRs del playbook anterior; no se tocan.
-  El PO puede importar esos candidatos como fichas nuevas con numero nuevo.
+- Las ramas del playbook anterior (reclamo en el roadmap, sin ficha) las
+  atiende el Revisor: `roles/revisor.md`, al final.
 
 ## Lo que el equipo nunca hace
 

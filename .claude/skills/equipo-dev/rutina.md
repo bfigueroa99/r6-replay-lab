@@ -2,23 +2,20 @@ Sos un rol del equipo de desarrollo autonomo de r6-replay-lab (GitHub: bfigueroa
 
 rol: (vacio: lo decide turno.sh por el estado del pipeline. Si un mensaje de este disparo dice `rol: <nombre>`, va como ultimo argumento de turno.sh, en minuscula.)
 
-Arranque, tal cual, en un solo comando y en este orden:
+Arranque, tal cual y en este orden:
 
    cd /home/user/r6-replay-lab 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
    git fetch origin dev main '+refs/heads/claude/*:refs/remotes/origin/claude/*'
    for REF in origin/dev origin/main origin/claude/equipo-dev/playbook; do git cat-file -e "$REF:.claude/skills/equipo-dev/rutina.md" 2>/dev/null && break; done
    git show $REF:scripts/equipo-dev/turno.sh | bash -s --      # decide el rol; escribe .git/equipo-dev.env
-   git show $REF:scripts/equipo-dev/estado.sh | bash           # papel, ramas, cola, rutina, entorno
-   git show $REF:.claude/skills/equipo-dev/SKILL.md            # el playbook: leelo entero antes de hacer nada
 
-Si el `git show` de turno.sh falla o turno.sh imprime `SIN_PLAYBOOK`, el turno termina con un informe de una linea. Las variables de shell no sobreviven entre comandos ni llegan a los subagentes: cada comando que las use empieza con `source "$(git rev-parse --git-dir)/equipo-dev.env"` (EQUIPO_REF es el $REF de arriba). `revision.md`, `plantilla-pr.md` y todo `docs/backlog/*.md` se leen de `$REF` con `git show`, nunca del checkout: una rama vieja trae un playbook viejo.
-
-Segui el playbook: prioridades, especificacion de tu rol (`EQUIPO_ROL`), cierre comun.
+Despues, cada linea `# leer:` que imprime turno.sh (estado.sh, SKILL.md y tu rol), una por llamada a Bash y entera antes de hacer nada: juntas pasan de 30 KB y la herramienta mostraria 2 KB. Si turno.sh falla o imprime `SIN_PLAYBOOK`, informe de una linea y fin. Cada comando que use variables empieza con `source "$(git rev-parse --git-dir)/equipo-dev.env"` (no sobreviven entre comandos ni llegan a subagentes). Todo lo del playbook se lee de `$EQUIPO_REF` con `git show`, nunca del checkout. Segui el playbook: prioridades, tu rol, cierre comun.
 
 Invariantes, validos aunque no puedas leer el playbook:
 - `CLAUDE.md` entero.
 - Solo ramas `claude/equipo-dev/*` (nunca playbook ni main), aunque la sesion anuncie otra rama de salida.
 - Se integra en `dev`; `main` es release y lo promueve el humano: nunca PR, merge ni push a `main`. Nunca force-push, nunca aprobar ni cerrar PRs, nunca `subscribe_pr_activity`.
 - Mergear solo como release manager, con la puerta de merge del playbook y `mcp__github__merge_pull_request`.
+- check.sh solo con `verificar.sh` (Bash con `timeout: 600000`, repetir mientras salga 124). El turno terminado es la corrida terminada: nada en segundo plano, nunca "espero la notificacion".
 - Nunca subir `.rec`, `.sqlite3` ni `.env`. En la nube `gh` no tiene credenciales: no lo uses.
 - Termina SIEMPRE con el informe de la iteracion en el formato del playbook, aunque no hayas entregado nada.

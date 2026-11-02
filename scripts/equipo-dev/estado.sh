@@ -6,6 +6,10 @@
 #       scripts/equipo-dev/estado.sh --resumen   (solo la linea RESUMEN; la lee turno.sh)
 #       git show <ref>:scripts/equipo-dev/estado.sh | bash [-s -- --resumen]
 #       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh   (fija "ahora"; gancho de pruebas)
+#       EQUIPO_CONTEXTO=<id> scripts/equipo-dev/estado.sh   (el contexto del turno, lo pasa turno.sh:
+#           una ficha cuya etapa siguiente ese contexto no puede firmar no cuenta como
+#           implementado ni revisado y suma a bloqueadas; ver independencia.sh)
+#       EQUIPO_INDEPENDENCIA=<ruta> ...   (independencia.sh a usar en vez del de la ref; pruebas)
 #       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh --rastros "<epochs>"
 #           (solo CADENCIA y TURNOS_SIN_RASTRO sobre esos commits; sin git; lo usa pruebas.sh)
 set -u
@@ -139,6 +143,14 @@ if git cat-file -e "$ref:.claude/skills/equipo-dev/rutina.md" 2>/dev/null; then
 else
     echo "SIN_PLAYBOOK"
 fi
+# independencia.sh de la misma ref que gano la cadena (un playbook viejo no lo
+# tiene: entonces no se bloquea nada, como antes).
+indep=${EQUIPO_INDEPENDENCIA:-}
+if [ -z "$indep" ] && git cat-file -e "$ref:scripts/equipo-dev/independencia.sh" 2>/dev/null; then
+    indep=$(mktemp); trap 'rm -f "$indep"' EXIT
+    git show "$ref:scripts/equipo-dev/independencia.sh" > "$indep"
+fi
+contexto=${EQUIPO_CONTEXTO:-}
 
 echo "== pausa"
 pausa=no
@@ -174,7 +186,7 @@ fi
 echo "== ramas de trabajo (origin/claude/* no mergeadas con ficha)"
 borrables=()
 cola=0; total=0; cola_func=0
-en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0
+en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0; bloqueadas=0
 for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
@@ -194,12 +206,22 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     ult=$(git log -1 --format=%ct "$r" -- "$f"); ult=${ult:-0}
     muerto=no
     [ "$candado" != "-" ] && [ $(( ahora - ult )) -ge 10800 ] && muerto=si
+    # La etapa que sigue (revisar una implementado, probar una revisado) solo
+    # la firma un contexto que no firmo las otras dos. Lo que este no puede
+    # firmar no cuenta para elegir su rol: sumaba un turno sin nada que hacer.
+    firmable=si; siguiente=""
+    case "$estado" in implementado*) siguiente=revisor ;; revisado*) siguiente=qa ;; esac
+    if [ -n "$siguiente" ] && [ -n "$contexto" ] && [ -n "$indep" ] \
+        && ! bash "$indep" --firmable "$(campo "$r" "$f" turnos)" "$siguiente" "$contexto" >/dev/null 2>&1; then
+        firmable="no (este contexto ya firmo otra etapa; $siguiente de otra sesion)"
+        bloqueadas=$((bloqueadas + 1))
+    fi
     case "$estado" in
         aprobado*) aprobado=$((aprobado + 1)) ;;
         entregado) entregado=$((entregado + 1)) ;;
         "entregado ("*) espera_humano=$((espera_humano + 1)) ;;
-        revisado*) revisado=$((revisado + 1)) ;;
-        implementado*) implementado=$((implementado + 1)) ;;
+        revisado*) [ "$firmable" = si ] && revisado=$((revisado + 1)) ;;
+        implementado*) [ "$firmable" = si ] && implementado=$((implementado + 1)) ;;
         "con hallazgos"*) con_hallazgos=$((con_hallazgos + 1)) ;;
         "en curso"*)
             en_curso=$((en_curso + 1))
@@ -209,8 +231,9 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     # Sin merges: un "Update branch" del humano desde GitHub no es un pedido. El equipo
     # firma `Claude` (la nube) u `OpenCode` (opencode.sh); cualquier otro autor es el humano.
     humano=$(git log --no-merges "origin/dev..$r" --format=%an | grep -vE '^(Claude|OpenCode)' | sort -u | tr '\n' ' ')
-    printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s | candado muerto: %s\n' \
-        "$r" "$f" "$estado" "$tipo" "$candado" "$edad" "$reciente" "${humano:-ninguno}" "$muerto"
+    printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s | candado muerto: %s%s\n' \
+        "$r" "$f" "$estado" "$tipo" "$candado" "$edad" "$reciente" "${humano:-ninguno}" "$muerto" \
+        "$([ -n "$siguiente" ] && echo " | firmable por este turno: $firmable")"
 done
 
 echo "== ramas del playbook anterior (sin ficha; reclamo en el roadmap)"
@@ -374,8 +397,8 @@ echo "ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotaci
 
 echo "== resumen"
 # Una linea con todo lo que turno.sh necesita para elegir el rol. Mismo orden
-# siempre: pruebas.sh cuenta los 20 pares.
-linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h"
+# siempre: pruebas.sh cuenta los 21 pares.
+linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas"
 echo "$linea_resumen"
 
 echo "== entorno"
