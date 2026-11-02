@@ -1,7 +1,7 @@
 # 72. La apertura marcada en la timeline de la ronda
 
-estado: en curso 2026-11-02
-candado: dev 2026-11-02T16:26Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/72-apertura-marcada-en-la-timeline
 tipo: funcionalidad
 epica: paridad-referencia
@@ -154,6 +154,41 @@ coherentes con sus eventos (mueve numeros del e2e: ficha `deuda` aparte).
 Tamano: unas 40 lineas de JS, 30 de JSX, 120 de tests.
 
 ## Implementacion
+
+Dev 20261102T1626Z-cDEQrsE sobre `origin/dev@1ccf4cb`. Lo del diseno, sin
+desvios de fondo:
+- `frontend/src/aperturas.js`: `marcasDeApertura(ronda, miEquipo)` ->
+  `{ apertura, entry }` (`order` o `null`), regla de `metrics.analyse_round`.
+- `frontend/src/casosApertura.json`: los 6 casos del diseno, compartidos.
+- `frontend/src/aperturas.test.js`: por caso, marcas esperadas, mismas con
+  el array al reves y sin equipo (-1); mas ronda sin eventos y `undefined`.
+- `backend/tests/test_casos_apertura.py`:
+  `test_los_casos_de_la_timeline_son_los_del_import` (subTest por caso contra
+  `analyse_round`). Ademas verifica que el `entry` del JSON sea el primer
+  `Kill` de tu equipo por indice, no solo por nick (hallazgo de la revision
+  ciega). Probado a mano que cae: cambiar la apertura de un caso en el JSON
+  rompe el test de Django y 3 de vitest.
+- `MatchDetail.jsx`, `Timeline`: chips "apertura" y "entry" (con `title`)
+  antes de HS; sin CSS nuevo.
+- `frontend/e2e/humo.spec.js`: `el timeline marca la apertura de cada ronda`
+  recorre las rondas de la primera partida: un solo "apertura" por ronda con
+  bajas, en la primera fila de baja, sin "entry" en esa fila; como mucho un
+  "entry" y, si esta, en la primera fila `.mine` (los Kill de tu equipo); al
+  menos un "entry" en la partida.
+- `docs/metricas.md`: nada (sin numero nuevo).
+
+Criterio 4: cubierto como dice el diseno (casos compartidos + e2e de la
+regla visible), no con las banderas de `seed_demo`, que no son coherentes con
+sus eventos (ficha `deuda` aparte, anotada por el Arquitecto).
+
+Revision ciega (`omc-code-reviewer` via general-purpose con `revision.md`):
+0 bugs, 3 LOW (entry solo por nick en Django, e2e flojo con el entry, tests
+de vitest repetidos); los 3 arreglados.
+
+verificar.sh: VERDE ffbec2b00 (859 tests backend, 153 vitest, 54 e2e).
+
+Skills: no aplica (patron de `matrizDuelos.js` y `humo.spec.js`).
+OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
 
 ## Revision <fecha> sobre <sha>
 
