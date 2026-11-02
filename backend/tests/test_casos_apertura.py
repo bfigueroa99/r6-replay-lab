@@ -67,4 +67,13 @@ class CasosAperturaTests(SimpleTestCase):
                 entry = set()
                 if caso["entry"] is not None:
                     entry = {caso["eventos"][caso["entry"]][1]}
+                    # El nick solo no alcanza: el evento marcado tiene que ser
+                    # el primer Kill de tu equipo, no uno posterior del mismo.
+                    equipo = dict(caso["jugadores"])
+                    antes = [
+                        actor
+                        for kind, actor, _ in caso["eventos"][: caso["entry"]]
+                        if kind == "Kill" and equipo.get(actor) == caso["mi_equipo"]
+                    ]
+                    self.assertEqual(antes, [])
                 self.assertEqual(con(metricas, "entry_kill", caso["mi_equipo"]), entry)

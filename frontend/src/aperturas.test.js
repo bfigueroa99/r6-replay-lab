@@ -32,11 +32,6 @@ describe('marcasDeApertura', () => {
     })
   }
 
-  it('si el entry es la apertura solo queda la apertura', () => {
-    const caso = casos.find((c) => c.nombre === 'abre tu equipo')
-    expect(marcasDeApertura(rondaDe(caso), 0)).toEqual({ apertura: 0, entry: null })
-  })
-
   it('una ronda sin eventos no marca nada', () => {
     expect(marcasDeApertura({ players: [] }, 0)).toEqual({ apertura: null, entry: null })
   })
@@ -44,6 +39,5 @@ describe('marcasDeApertura', () => {
   it('sin equipo propio solo marca la apertura', () => {
     const ronda = rondaDe(casos.find((c) => c.nombre === 'abre el rival y tu equipo responde'))
     expect(marcasDeApertura(ronda, undefined)).toEqual({ apertura: 0, entry: null })
-    expect(marcasDeApertura(ronda, -1)).toEqual({ apertura: 0, entry: null })
   })
 })

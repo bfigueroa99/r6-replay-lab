@@ -387,6 +387,10 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
     await expect(bajas.first().locator('.chip', { hasText: /^entry$/ })).toHaveCount(0)
     const n = await entry.count()
     expect(n).toBeLessThanOrEqual(1)
+    // Las filas .mine son los Kill de tu equipo: el entry va en la primera
+    if (n === 1) {
+      await expect(panel.locator('.timeline li.mine').first().locator('.chip', { hasText: /^entry$/ })).toHaveCount(1)
+    }
     entries += n
   }
   // seed_demo: toda ronda donde mueres primero y tu equipo despues mata lleva entry
