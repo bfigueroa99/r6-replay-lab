@@ -1,7 +1,7 @@
 # 71. La partida dice que version del mapa se jugo
 
-estado: revisado
-candado: qa 2026-11-02T12:07Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/71-version-del-mapa-en-la-partida
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: idea A6 de `ALCANCE.md` ("Implementar despues de #70"; la 70 esta en `dev` desde 0fedc7b, PR #65). Fuera de alcance de la ficha 70: "listado, records, sesiones y detalle de partida". `etiqueta_de_version` (`pydissect/header.py:239`) y `etiquetas_de_version` (`replays/analytics/aggregates.py:481`) ya existen; `match_list` y `match_detail` (`replays/views.py:434` y `:543`) devuelven `map: match.map_name`
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_mapa_de_la_partida.py, docs/metricas.md
-turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261031T2135Z, revisor 20261102T0805Z-cD882za
+turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261031T2135Z, revisor 20261102T0805Z-cD882za, qa 20261102T1206Z-cLhn4iG
 
 ## PR
 
@@ -242,7 +242,53 @@ Veredicto: aprobar. Solo dos LOW, ninguno cambia un dato que ve el usuario.
 
 Skills: no aplica. OMC: plan=— · revisión=2 hallazgos (0 arreglados, LOW) · verificación=—
 
-## QA <fecha> sobre <sha>
+## QA 2026-11-02 sobre 0c7be44
+
+QA 20261102T1206Z-cLhn4iG. Rama sin conflicto con `origin/dev@e146e74`
+(`git merge-tree --write-tree origin/dev HEAD`, salida 0).
+
+- `check.sh`: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 0c7be4453 en 118s: 858 tests backend, 133 vitest, 53 e2e. Todo en verde.`
+  (criterio 5: el e2e corre sobre `seed_demo`, con `map_id=0`, sin cambios).
+- Base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3 python3 manage.py migrate`,
+  `runserver 8701`): `GET /api/matches/` 200 con 0 partidas;
+  `?page=-1` 200 vacio; `/api/matches/1/` 404.
+- Base sembrada con `tests/factories.py` (script en el scratchpad, `manage.py
+  shell < sembrar.py`): Consulate `2609221242`, `418126004176` (dos, una sin
+  rondas), `379218689149`, `999` llamado "Consulate", Kanal `1460220617`, Club
+  House `0`. `runserver 8702`:
+  - `GET /api/matches/` -> 7 filas: "Consulate (Y10)" x2, "Club House",
+    "Kanal", "Consulate (id 999)", "Consulate", "Consulate (Y7)"; `map_slug`
+    sin cambios (criterio 1).
+  - `?map=consulate` -> las 5 Consulate con su etiqueta; `?map=418126004176`
+    -> solo las 2 Y10; `?map=` -> 7; `?map=foo` -> 0 (criterio 5).
+  - `?until=foo`, `?page=-1`, `?page=999` -> 200 con 7, como en `dev`.
+  - `?limit=1&offset=3` -> "Consulate (id 999)" aunque la otra Consulate
+    este en otra pagina (criterio 3).
+  - Detalle: `/2/` "Consulate (Y10)", `/4/` "Consulate (id 999)", `/6/` "Club
+    House", `/7/` (partida sin rondas) "Consulate (Y10)", `/999/` 404
+    (criterio 2).
+  - `GET /api/export/?table=maps` (`by_map`): Club House, Consulate (id 999),
+    Consulate (Y7), Consulate, Consulate (Y10), Kanal: el mismo conjunto que
+    el listado (criterio 3).
+  - Ningun 500 en el log de los dos servidores. Servidores bajados.
+- Resumen copiado (criterio 4): `textoResumenPartida` de
+  `frontend/src/resumenPartida.js` con node sobre el JSON real de
+  `/api/matches/2/` -> primera linea `Consulate (Y10) · 4-2 · victoria`.
+- Frontend sin tocar: no hay chunk que medir. Sin migracion, `recompute` ni
+  parser: nada para el PC.
+- Mutaciones (`python3 manage.py test tests.test_mapa_de_la_partida`,
+  restauradas con `git checkout`): detalle con `match.map_name` -> 4 fallos;
+  `etiquetas_de_mapas` con `map_slug__in` vacio -> 5 fallos; listado y
+  detalle con `match.map_name` -> 5 fallos.
+
+Observacion, no bloquea (fuera de los criterios): la tabla `matches` de
+Exportar (`/api/export/?table=matches`) sigue diciendo "Consulate" sin
+version, mientras `maps` ya la dice. Va como idea a `ALCANCE.md` junto a A8.
+
+Veredicto: aprobado.
+
+Skills: no aplica. OMC: plan=— · revisión=— · verificación=PASS (5 de 5 VERIFIED, 0 bloqueantes)
 
 ## Verificar en el PC
 
