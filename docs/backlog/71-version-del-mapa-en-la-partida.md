@@ -1,7 +1,7 @@
 # 71. La partida dice que version del mapa se jugo
 
-estado: implementado
-candado: revisor 2026-11-02 08:05 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/71-version-del-mapa-en-la-partida
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: idea A6 de `ALCANCE.md` ("Implementar despues de #70"; la 70 esta en `dev` desde 0fedc7b, PR #65). Fuera de alcance de la ficha 70: "listado, records, sesiones y detalle de partida". `etiqueta_de_version` (`pydissect/header.py:239`) y `etiquetas_de_version` (`replays/analytics/aggregates.py:481`) ya existen; `match_list` y `match_detail` (`replays/views.py:434` y `:543`) devuelven `map: match.map_name`
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_mapa_de_la_partida.py, docs/metricas.md
-turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261031T2135Z
+turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261031T2135Z, revisor 20261102T0805Z-cD882za
 
 ## PR
 
@@ -194,7 +194,53 @@ de arriba. La revision independiente queda para el Revisor.
 Skills: no aplica (el patron ya esta en `etiquetas_de_version` y
 `_opciones_de_mapa`). Arena: no, una sola forma.
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-11-02 sobre 0e9ae7b
+
+Revisor 20261102T0805Z-cD882za. Rama fusionada con `origin/dev@e146e74` (solo playbook;
+sin conflicto). `verificar.sh`: VERDE 0e9ae7b (858 backend, 133 vitest,
+53 e2e).
+
+Revision a ciegas (subagente con el prompt de `revision.md`, eje de
+estandares; diff de 125 lineas y un solo tema, sin eje de intencion; no toca
+POST, red, `.rec` ni rutas, sin eje de seguridad). Hallazgos, los dos
+confirmados leyendo el codigo:
+
+- [regla] LOW `backend/replays/analytics/aggregates.py:501`
+  Que pasa: el docstring dice "la misma que usa Mapas", pero
+  `etiquetas_de_mapas` mira todas las `Match`, como el selector
+  (`views._opciones_de_mapa`), y `by_map` etiqueta sobre las filas filtradas.
+  Como reproducirlo: Consulate sin sufijo fuera del rango de fechas y un id
+  999 llamado "Consulate" dentro: Mapas dice "Consulate", Partidas "Consulate
+  (id 999)". Es la diferencia que el diseno ya dejo fuera de alcance (A8).
+  Arreglo sugerido: "la misma que usa el selector de mapa (y Mapas sin
+  filtros)".
+- [estilo] LOW `backend/replays/views.py:155`
+  Que pasa: `_opciones_de_mapa` repite la consulta que ahora encapsula
+  `etiquetas_de_mapas` (mismo `values`, `distinct` y `order_by`).
+  Como reproducirlo: si alguien cambia el orden en una sola, el `setdefault`
+  de `etiquetas_de_version` puede elegir otro `map_name` y el selector y
+  Partidas dejan de coincidir.
+  Arreglo sugerido: que `_opciones_de_mapa` use `etiquetas_de_mapas()` cuando
+  se toque (A8).
+
+Ficha:
+- Criterio 1 (listado: Y10, sin sufijo, `map_id=0`):
+  `test_el_listado_dice_la_version_del_mapa`. Cubierto.
+- Criterio 2 (detalle): `test_el_detalle_dice_la_version_del_mapa`. Cubierto.
+- Criterio 3 (misma etiqueta que `by_map`, con "(id N)"):
+  `test_listado_y_detalle_dicen_lo_mismo_que_mapas` y
+  `test_la_etiqueta_no_cambia_con_la_pagina`. Cubierto.
+- Criterio 4 (resumen copiado): sin test, `resumenPartida.js` toma
+  `match.map` del detalle; queda para QA, como dice el diseno.
+- Criterio 5 (`seed_demo`, filtros): `test_el_filtro_del_listado_sigue_igual`
+  y el e2e sin cambios en verde. Cubierto.
+- Archivos: los cuatro de `archivos:`, nada fuera.
+- `docs/metricas.md`: sin numero nuevo; fila **Mapa** al dia.
+- Identificadores sin tildes, sin `print` ni `console.log`, tests en espanol.
+
+Veredicto: aprobar. Solo dos LOW, ninguno cambia un dato que ve el usuario.
+
+Skills: no aplica. OMC: plan=— · revisión=2 hallazgos (0 arreglados, LOW) · verificación=—
 
 ## QA <fecha> sobre <sha>
 
