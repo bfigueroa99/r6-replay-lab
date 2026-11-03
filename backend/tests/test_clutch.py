@@ -104,10 +104,13 @@ class OneVxTests(TestCase):
         self.assertEqual(con_valor(one_vx(eventos, CINCO, 0)), {"A4": 1})
 
     def test_un_muerto_que_se_desconecta_no_cambia_nada(self):
-        base = [kill("B0", f"A{n}") for n in range(4)] + [kill("A4", "B0")]
-        con_abandono = [*base[:2], leave("A0"), *base[2:]]
+        # el abandono de A0 cae con dos en pie: si descontara otra vez, la baja
+        # a B1 ya contaria para el clutch
+        base = [kill("B0", f"A{n}") for n in range(3)] + [
+            kill("A4", "B1"), kill("B0", "A3"), kill("A4", "B0")]
+        con_abandono = [*base[:3], leave("A0"), *base[3:]]
         self.assertEqual(one_vx(con_abandono, CINCO, 0), one_vx(base, CINCO, 0))
-        self.assertEqual(one_vx(base, CINCO, 0)["A4"], 5)
+        self.assertEqual(one_vx(base, CINCO, 0)["A4"], 4)
 
     def test_quien_se_fue_no_cobra_aunque_despues_figure_muerto(self):
         eventos = [kill("B0", f"A{n}") for n in range(4)] + [leave("A4"), death("A4")]

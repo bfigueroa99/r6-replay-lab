@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
-estado: en curso 2026-11-03
-candado: dev 2026-11-03 04:04 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
 epica: -
@@ -198,11 +198,71 @@ Tamano: unas 60 lineas de codigo y 150 de tests.
 
 ## Implementacion
 
+Dev 20261103T0403Z-cYjVEvZ sobre `origin/dev@6aee89a`. #68 ya estaba en dev: sin espera.
+
+Que quedo, segun el diseno:
+- `metrics.equipo_ganador(teams)` y `metrics.one_vx(eventos, team_of, ganador)`
+  (reglas 1-5 del diseno). `analyse_round` usa `equipo_ganador` para `winner`
+  y pisa `one_vx` despues de `won`. Docstring del modulo con la fila `one_vx`.
+- `recompute`: `CAMPOS` suma `one_vx`, `_recompute_round` llama a `one_vx`
+  con `equipo_ganador(rnd.teams)`; docstrings del modulo, de `recompute()`, y
+  docstring y `help` del comando.
+- `docs/metricas.md`: fila **1vX (clutch)** y la frase de la fila de
+  conversion.
+
+Tests (nombres de los criterios):
+- Criterio 1: `test_clutch.OneVxTests.test_un_companero_que_se_fue_no_cuenta_como_vivo`
+  e `ImportClutchTests.test_el_import_cuenta_el_clutch_con_un_companero_que_se_fue`
+  (por `analyse_round`, con el `stats` del parser en 0).
+- Criterio 2: `test_un_rival_que_se_fue_no_suma_al_x` (da 1; r6-dissect 2).
+  Desvio: el escenario del diseno no decia que pasaba con B0-B2; el test los
+  mata primero (A0-A2 matan a B0-B2) para que el numero sea el 1 del diseno.
+- Resto de la regla: `test_un_muerto_que_se_desconecta_no_cambia_nada`,
+  `test_quien_se_fue_no_cobra_aunque_despues_figure_muerto`,
+  `test_si_un_companero_se_va_despues_de_la_ultima_muerte_nadie_cobra`,
+  `test_si_el_companero_se_fue_antes_el_ultimo_que_muere_cobra` (A3 = 5),
+  `test_sin_ganador_cuenta_el_equipo_cero_como_r6_dissect`,
+  `test_el_ganador_es_el_ultimo_equipo_con_won`.
+- Criterio 3: `test_player_stats.OneVxParidadTests.test_sin_abandonos_da_lo_mismo_que_el_parser`
+  (`Random(69)`, 3000 rondas, ganador 0/1/ninguno, bajas repetidas, `Death` de
+  nick desconocido, `OperatorSwap`; cero diferencias y mas de 300 rondas con
+  1vX) y `test_el_parser_sigue_contando_al_que_se_fue_como_vivo`. El revisor
+  ciego corrio ademas un fuzz de 50.000 rondas con equipos de 1 a 5 y tamanos
+  distintos: cero diferencias.
+- Criterio 4: `test_recompute.RecomputeOneVxTests` (`..._cuenta_el_clutch_...`,
+  `..._dry_run_cuenta_el_1vx_sin_escribir`, `..._de_1vx_es_idempotente`).
+  `ComandoTests.setUp`: el amigo lleva `one_vx=1` (punto 5 del diseno).
+- Criterio 5: la fila de `metricas.md`.
+
+Test que falla primero (`tipo: bug`): `git stash -- replays` y
+`manage.py test tests.test_clutch` da `ImportError` (no existe `one_vx`); el
+comportamiento viejo lo fija `test_el_parser_sigue_contando_al_que_se_fue_como_vivo`,
+que da `{}` en el escenario 1 donde la app ahora da `{"A4": 2}`.
+
+Revision ciega (omc-code-reviewer via general-purpose, el tipo no cargo al
+arrancar): 0 CRITICAL/HIGH. Arreglados: MEDIUM, la fila de `metricas.md`
+decia "rivales vivos cuando quedaste solo" y "como en Clutch", pero el `X`
+(de r6-dissect) se cuenta desde el final, y un rival que se va con vos ya
+solo no suma (lo pide el criterio 2): la fila ahora lo dice. LOW: el fixture
+de `test_un_muerto_que_se_desconecta_no_cambia_nada` no detectaba un doble
+descuento; cambiado por uno que si (da 4, sin la guarda daria 5). No
+arreglado (LOW, previo): nicks repetidos en una ronda se juntan en `team_of`,
+como en todas las metricas que lo usan.
+
+Sin migracion, sin frontend, sin cambios en `seed_demo`.
+
+Skills: no aplica (el diseno ya resolvio el dominio).
+OMC: plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—
+
 ## Revision <fecha> sobre <sha>
 
 ## QA <fecha> sobre <sha>
 
 ## Verificar en el PC
+
+- `manage.py backup`, `manage.py recompute --dry-run` (cuenta las filas de
+  jugador que cambian; solo partidas anteriores a Y9S1 con abandonos) y
+  `manage.py recompute` sobre la base real.
 
 ## Pendiente
 
