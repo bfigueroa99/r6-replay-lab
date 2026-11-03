@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
 estado: aprobado
-candado: -
+candado: release 2026-11-03T12:12Z
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 31); `pydissect/stats.py:100-104` arma `winners_alive` solo con `died`, que `PlayerLeave` no marca
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/tests/test_clutch.py, backend/tests/test_player_stats.py, backend/tests/test_recompute.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261030T1652Z, dev 20261103T0403Z-cYjVEvZ, revisor 20261103T0804Z-chGRfoT, qa 20261103T1205Z-cZPEnjG
+turnos: po 20261029T0004Z, arquitecto 20261030T1652Z, dev 20261103T0403Z-cYjVEvZ, revisor 20261103T0804Z-chGRfoT, qa 20261103T1205Z-cZPEnjG, release 20261103T1205Z-cZPEnjG
 
 ## PR
 
