@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-03T08:04Z
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
 epica: -
