@@ -16,6 +16,7 @@ untraded_death murio y nadie lo vengo (la muerte mas caras del juego)
 death_elapsed  segundos jugados de la fase de accion hasta su muerte
 kst            aporto en la ronda: mato, sobrevivio o su muerte fue tradeada
 clutch_vs      rivales vivos cuando quedo como unico vivo de su equipo (0 si nunca)
+one_vx         1vX de r6-dissect, pero quien se fue (PlayerLeave) esta fuera de la ronda
 """
 
 from __future__ import annotations
@@ -161,6 +162,87 @@ def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
     return valor
 
 
+def equipo_ganador(teams: list[dict]) -> int | None:
+    """Indice del equipo que gano la ronda, `None` si no hay ganador conocido.
+
+    Si dos figuran con `won` gana el ultimo, como en r6-dissect. Lo usan el
+    import y `recompute` para leer el ganador igual.
+    """
+    ganador = None
+    for i, t in enumerate(teams or []):
+        if t.get("won"):
+            ganador = i
+    return ganador
+
+
+def one_vx(eventos: list[dict], team_of: dict[str, int], ganador: int | None) -> dict[str, int]:
+    """1vX del ultimo en pie del equipo ganador.
+
+    Unica implementacion: la usan el import y `recompute`. Sigue a
+    `pydissect.stats.player_round_stats` (r6-dissect) con una diferencia,
+    decidida por el humano (ficha 69): quien se fue de la partida
+    (`PlayerLeave`), compañero o rival, esta fuera de la ronda, como en
+    `clutch_vs`. r6-dissect solo mira `died`, que un abandono no marca, y el
+    que se fue seguia "vivo": te quitaba el clutch o sumaba al X.
+
+    Sin abandonos da exactamente lo de r6-dissect, incluidas sus rarezas: una
+    baja repetida descuenta dos veces y sin ganador conocido cuenta el equipo 0.
+    """
+    valor = dict.fromkeys(team_of, 0)
+    equipo = 0 if ganador is None else ganador
+
+    # primer recorrido: quien sale y cuando; los eventos que no cuentan
+    # (sobre alguien que ya se fue, o el abandono de un muerto) quedan fuera
+    salida: dict[str, int] = {}
+    se_fue: set[str] = set()
+    cuentan: list[tuple[int, str]] = []
+    ultima_muerte: tuple[int, str] | None = None
+    for i, e in enumerate(eventos):
+        kind = e.get("kind")
+        if kind == KILL:
+            nick = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            nick = e.get("actor")
+        else:
+            continue
+        if nick not in team_of or nick in se_fue:
+            continue
+        if kind == PLAYER_LEAVE:
+            if nick in salida:
+                continue
+            se_fue.add(nick)
+        else:
+            ultima_muerte = (i, nick)
+        salida.setdefault(nick, i)
+        cuentan.append((i, nick))
+
+    ganadores = [nick for nick, t in team_of.items() if t == equipo]
+    en_pie = [nick for nick in ganadores if nick not in salida]
+    ultimo = None
+    if len(en_pie) == 1:
+        ultimo = en_pie[0]
+    elif not en_pie and ultima_muerte is not None:
+        i, nick = ultima_muerte
+        # sin abandonos siempre se cumple; con ellos evita darle el clutch a
+        # quien murio con un compañero en la ronda que se fue despues
+        if team_of[nick] == equipo and all(salida[n] < i for n in ganadores if n != nick):
+            ultimo = nick
+    if ultimo is None:
+        return valor
+
+    descuentos = {i for i, nick in cuentan if team_of[nick] == equipo}
+    quedan = len(ganadores)
+    x = 0
+    for i, e in enumerate(eventos):
+        if i in descuentos:
+            quedan -= 1
+        if e.get("kind") == KILL and e.get("actor") == ultimo and quedan < 2:
+            x += 1
+    x += sum(1 for nick, t in team_of.items() if t != equipo and nick not in salida)
+    valor[ultimo] = x
+    return valor
+
+
 def analyse_round(round_data: dict, window: float | None = None) -> dict:
     """Devuelve eventos anotados + metricas por jugador para una ronda."""
     players = round_data.get("players", [])
@@ -280,10 +362,7 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
     annotate_trades(kill_events, team_of, metrics, trade_window() if window is None else window)
 
     # ---------------------------------------------------------------- resultado
-    winner = None
-    for i, t in enumerate(teams):
-        if t.get("won"):
-            winner = i
+    winner = equipo_ganador(teams)
     loser = None if winner is None else winner ^ 1
 
     team_sizes: dict[int, int] = {}
@@ -315,6 +394,10 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
 
     for m in metrics.values():
         m["won"] = winner is not None and m["team_index"] == winner
+
+    for nick, vx in one_vx(events, team_of, winner).items():
+        if nick in metrics:
+            metrics[nick]["one_vx"] = vx
 
     return {
         "events": events,

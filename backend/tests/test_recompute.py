@@ -157,8 +157,9 @@ class ComandoTests(TestCase):
         make_round_player(rnd, username=ME, kills=0, died=True)
         # como lo deja el import de hoy: el rival arranca solo frente a dos y tras
         # mi muerte quedan 1v1, con clutch_vs ya calculado
+        # y el 1vX: muero yo, queda 1v1 y el amigo mata al rival
         make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False,
-                          clutch_vs=1)
+                          clutch_vs=1, one_vx=1)
         make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True,
                           clutch_vs=2)
         make_event(rnd, 0, "rival", ME, clock=100.0)
@@ -207,6 +208,44 @@ class RecomputeClutchTests(TestCase):
     def test_dry_run_no_escribe_clutch_vs(self):
         self.assertTrue(recompute(window=3.0, dry_run=True).changed)
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 0)
+
+
+class RecomputeOneVxTests(TestCase):
+    """Importada antes de la ficha 69: A3 se fue y A4 quedo con 1vX 0."""
+
+    def setUp(self):
+        rnd = make_round(make_match(index=0), 0)
+        # como lo guarda el import; las factories no ponen `won`
+        rnd.teams = [{"name": "YOUR TEAM", "won": True}, {"name": "ENEMY TEAM", "won": False}]
+        rnd.save(update_fields=["teams"])
+        for n in range(5):
+            make_round_player(rnd, username=f"A{n}", is_me=n == 0, team_index=0,
+                              kills=0, died=n < 3)
+            make_round_player(rnd, username=f"B{n}", is_me=False, team_index=1,
+                              kills=0, died=True)
+        eventos = (
+            [(f"A{n}", f"B{n}", "Kill") for n in range(3)]
+            + [("B3", f"A{n}", "Kill") for n in range(3)]
+            + [("A3", "", "PlayerLeave"), ("A4", "B3", "Kill"), ("A4", "B4", "Kill")]
+        )
+        for orden, (actor, target, kind) in enumerate(eventos):
+            make_event(rnd, orden, actor, target, kind=kind, clock=170.0 - orden)
+        # el resto (bajas, trades, clutch_vs) ya al dia: solo cambia el 1vX
+        recompute(window=3.0)
+        RoundPlayer.objects.filter(username="A4").update(one_vx=0)
+
+    def test_recompute_cuenta_el_clutch_con_un_companero_que_se_fue(self):
+        self.assertEqual(recompute(window=3.0).players_changed, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 2)
+
+    def test_recompute_dry_run_cuenta_el_1vx_sin_escribir(self):
+        self.assertEqual(recompute(window=3.0, dry_run=True).players_changed, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 0)
+
+    def test_recompute_de_1vx_es_idempotente(self):
+        recompute(window=3.0)
+        self.assertFalse(recompute(window=3.0).changed)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 2)
 
 
 class RecomputeBajasTests(TestCase):
