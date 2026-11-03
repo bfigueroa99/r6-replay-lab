@@ -11,3 +11,7 @@ listas estan vacias y no hay plan de arreglos. Nada de esta pasada entra a
 Lo que si sirve como senal de producto es el roadmap publico de r6-replay.com
 (https://r6-replay.com/roadmap): esta en `features.csv` como filas de la
 referencia, no como resenas.
+
+Pasada del 2026-11-03: otra vez 0 resenas (Trustpilot de las dos da 404,
+Hacker News por Algolia 0, busqueda general sin menciones). Sin plan de
+arreglos; nada nuevo entra a `features.csv` con `original` en `no`.
