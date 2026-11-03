@@ -13,7 +13,7 @@ pausa: no
 Vacia: la 69 entro a dev por [PR #71](https://github.com/bfigueroa99/r6-replay-lab/pull/71) (ec263c3).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=2 bloqueadas=0
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=78 sin_merge=no pausa=no sin_rastro_48h=2 bloqueadas=0
 
 ## Orden de merge sugerido
 
