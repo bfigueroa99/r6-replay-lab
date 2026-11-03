@@ -8,7 +8,7 @@ from django.apps import apps
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
-from replays.analytics.metrics import analyse_round, clutch_vs
+from replays.analytics.metrics import analyse_round, clutch_vs, equipo_ganador, one_vx
 from replays.models import RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
@@ -18,6 +18,31 @@ EQUIPOS = {"yo": 0, "a1": 0, "a2": 0, "r1": 1, "r2": 1, "r3": 1}
 
 def kill(actor: str, target: str) -> dict:
     return {"kind": "Kill", "actor": actor, "target": target}
+
+
+def leave(actor: str) -> dict:
+    return {"kind": "PlayerLeave", "actor": actor, "target": ""}
+
+
+def death(actor: str) -> dict:
+    return {"kind": "Death", "actor": actor, "target": ""}
+
+
+#: 5v5: el equipo 0 (A0..A4) gana la ronda
+CINCO = {f"{letra}{n}": i for i, letra in enumerate("AB") for n in range(5)}
+
+
+def con_valor(valores: dict[str, int]) -> dict[str, int]:
+    return {nick: v for nick, v in valores.items() if v}
+
+
+def escenario_companero_que_se_fue() -> list[dict]:
+    """A0-A2 matan a B0-B2, B3 mata a A0-A2, A3 se va, A4 mata a B3 y B4."""
+    return (
+        [kill(f"A{n}", f"B{n}") for n in range(3)]
+        + [kill("B3", f"A{n}") for n in range(3)]
+        + [leave("A3"), kill("A4", "B3"), kill("A4", "B4")]
+    )
 
 
 class ClutchVsTests(TestCase):
@@ -64,6 +89,56 @@ class ClutchVsTests(TestCase):
         self.assertEqual(clutch_vs([kill("r1", "yo")], equipos)["yo"], 3)
 
 
+class OneVxTests(TestCase):
+    def test_un_companero_que_se_fue_no_cuenta_como_vivo(self):
+        # r6-dissect da 0: A3 sigue "vivo" y A4 no queda ultimo en pie
+        self.assertEqual(con_valor(one_vx(escenario_companero_que_se_fue(), CINCO, 0)), {"A4": 2})
+
+    def test_un_rival_que_se_fue_no_suma_al_x(self):
+        eventos = (
+            [kill(f"A{n}", f"B{n}") for n in range(3)]
+            + [kill("B3", f"A{n}") for n in range(4)]
+            + [leave("B4"), kill("A4", "B3")]
+        )
+        # la baja a B3 llega con A4 solo; r6-dissect sumaba a B4 como vivo y daba 2
+        self.assertEqual(con_valor(one_vx(eventos, CINCO, 0)), {"A4": 1})
+
+    def test_un_muerto_que_se_desconecta_no_cambia_nada(self):
+        base = [kill("B0", f"A{n}") for n in range(4)] + [kill("A4", "B0")]
+        con_abandono = [*base[:2], leave("A0"), *base[2:]]
+        self.assertEqual(one_vx(con_abandono, CINCO, 0), one_vx(base, CINCO, 0))
+        self.assertEqual(one_vx(base, CINCO, 0)["A4"], 5)
+
+    def test_quien_se_fue_no_cobra_aunque_despues_figure_muerto(self):
+        eventos = [kill("B0", f"A{n}") for n in range(4)] + [leave("A4"), death("A4")]
+        self.assertEqual(con_valor(one_vx(eventos, CINCO, 0)), {})
+
+    def test_si_un_companero_se_va_despues_de_la_ultima_muerte_nadie_cobra(self):
+        eventos = [kill("B0", f"A{n}") for n in range(4)] + [leave("A4")]
+        self.assertEqual(con_valor(one_vx(eventos, CINCO, 0)), {})
+
+    def test_si_el_companero_se_fue_antes_el_ultimo_que_muere_cobra(self):
+        eventos = (
+            [leave("A4")]
+            + [kill("B0", f"A{n}") for n in range(3)]
+            + [kill("A3", "B1"), kill("B0", "A3")]
+        )
+        # la baja a B1 llega con A3 solo; B0, B2, B3 y B4 siguen en la ronda
+        self.assertEqual(con_valor(one_vx(eventos, CINCO, 0)), {"A3": 5})
+
+    def test_sin_ganador_cuenta_el_equipo_cero_como_r6_dissect(self):
+        eventos = escenario_companero_que_se_fue()
+        self.assertEqual(one_vx(eventos, CINCO, None), one_vx(eventos, CINCO, 0))
+        # con el equipo 1 como ganador el ultimo en pie es B4, frente a A4
+        self.assertEqual(con_valor(one_vx(eventos, CINCO, 1)), {"B4": 1})
+
+    def test_el_ganador_es_el_ultimo_equipo_con_won(self):
+        self.assertEqual(equipo_ganador([{"won": True}, {"won": False}]), 0)
+        self.assertEqual(equipo_ganador([{"won": True}, {"won": True}]), 1)
+        self.assertIsNone(equipo_ganador([{"name": "YOUR TEAM"}, {}]))
+        self.assertIsNone(equipo_ganador([]))
+
+
 def round_data(ganamos: bool, rivales: int) -> dict:
     """Quedo solo frente a `rivales` (el resto de mi equipo cae primero)."""
     rivales_nicks = [f"r{i}" for i in range(1, 4)]
@@ -95,6 +170,23 @@ class ImportClutchTests(TestCase):
         self.assertEqual(yo["clutch_vs"], 2)
         self.assertEqual(yo["one_vx"], 2)
         self.assertTrue(yo["won"])
+
+
+    def test_el_import_cuenta_el_clutch_con_un_companero_que_se_fue(self):
+        feed = [
+            {"type": {"name": e["kind"]}, "username": e["actor"], "target": e["target"],
+             "timeInSeconds": 170.0 - i}
+            for i, e in enumerate(escenario_companero_que_se_fue())
+        ]
+        data = {
+            "clockStart": 180.0,
+            "players": [{"username": nick, "teamIndex": t} for nick, t in CINCO.items()],
+            "teams": [{"role": "Attack", "won": True}, {"role": "Defense", "won": False}],
+            # lo que da r6-dissect: A3 sigue "vivo" y nadie cobra
+            "stats": [{"username": "A4", "died": False, "1vX": 0}],
+            "matchFeedback": feed,
+        }
+        self.assertEqual(analyse_round(data)["players"]["A4"]["one_vx"], 2)
 
 
 class ConversionTests(TestCase):

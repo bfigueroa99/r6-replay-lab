@@ -1,9 +1,10 @@
-"""Recalcula bajas, trades (con la ventana configurada) y clutch de lo ya importado.
+"""Recalcula bajas, trades (con la ventana configurada), clutch y 1vX de lo ya importado.
 
 Los trades se guardan calculados al importar, asi que cambiar
 `TRADE_WINDOW_SECONDS` en el `.env` no mueve nada hasta correr esto. Tambien
 llena `clutch_vs` en partidas importadas antes de que existiera y saca los
-teamkills de las bajas y los headshots. Rehace tambien el resultado de cada
+teamkills de las bajas y los headshots. Rehace el 1vX, donde quien se fue de
+la partida ya no cuenta como vivo. Rehace tambien el resultado de cada
 partida: la que tiene un marcador que la regla de su tipo no cierra queda
 incompleta:
 
@@ -24,7 +25,7 @@ from replays.recompute import recompute
 class Command(BaseCommand):
     help = (
         "Recalcula bajas y headshots (sin teamkills), trades, muertes sin trade, "
-        "KST (con la ventana configurada), clutch_vs y el resultado de cada partida."
+        "KST (con la ventana configurada), clutch_vs, 1vX y el resultado de cada partida."
     )
 
     def add_arguments(self, parser) -> None:
