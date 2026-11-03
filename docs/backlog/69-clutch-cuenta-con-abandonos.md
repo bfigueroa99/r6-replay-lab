@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
-estado: implementado
-candado: revisor 2026-11-03T08:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: decision del humano 2026-10-28 en `## Para el equipo` de `ESTADO.md` (pregunta de la ficha 31); `pydissect/stats.py:100-104` arma `winners_alive` solo con `died`, que `PlayerLeave` no marca
 archivos: backend/replays/analytics/metrics.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/tests/test_clutch.py, backend/tests/test_player_stats.py, backend/tests/test_recompute.py, docs/metricas.md
-turnos: po 20261029T0004Z, arquitecto 20261030T1652Z, dev 20261103T0403Z-cYjVEvZ
+turnos: po 20261029T0004Z, arquitecto 20261030T1652Z, dev 20261103T0403Z-cYjVEvZ, revisor 20261103T0804Z-chGRfoT
 
 ## PR
 
@@ -254,7 +254,47 @@ Sin migracion, sin frontend, sin cambios en `seed_demo`.
 Skills: no aplica (el diseno ya resolvio el dominio).
 OMC: plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-11-03 sobre 42bad97
+
+Revisor 20261103T0804Z-chGRfoT. Rama ya al dia con `origin/dev@6aee89a`; `verificar.sh`:
+VERDE 42bad97 (873 tests backend, 153 vitest, 54 e2e).
+
+Revision a ciegas, dos ejes (diff de ~520 lineas):
+- Estandares (omc-code-reviewer via general-purpose): 0 CRITICAL/HIGH/MEDIUM.
+  - [estilo] LOW `backend/replays/analytics/metrics.py:305`: `analyse_round`
+    sigue inicializando `"one_vx": int(s.get("1vX", 0))` del parser, que
+    `one_vx(...)` siempre pisa (devuelve una clave por nick de `team_of`, los
+    mismos de `metrics`). Confirmado leyendo el codigo. El diseno lo deja asi
+    a proposito ("queda como valor inicial"); no cambia ningun numero.
+    Arreglo opcional: inicializar en 0 como `clutch_vs`.
+- Intencion (contra que gana, criterios y fuera de alcance): aprobar.
+  - [intencion] LOW `backend/pydissect/events.py:292`: la ganancia se limita
+    a replays anteriores a Y9S1 (el parser no emite `PlayerLeave` desde ahi).
+    Ya esta en la fila de `metricas.md` y en el Diseno; va a la descripcion
+    del PR para que el humano no espere cambios en partidas recientes.
+
+Confirmado por el lider, ademas de los subagentes:
+- `Round.teams` guarda `won` desde `0001_initial` / `ingest.py:217-226`, asi
+  que `recompute` lee el ganador real en todo lo importado (sin `won`
+  cambiaria clutch del equipo 1 al 0: no pasa).
+- Los `Event` guardados traen `kind="PlayerLeave"` y `actor_name` con el nick
+  (`pydissect/events.py:301-311`, `ingest.py:284`): alcanza sin reparsear.
+- `one_vx` se lee al consultar solo para agregar (`aggregates.py:131,174,445,1687`,
+  `views.py:483,590`, `narrative.py:155`): Clutch, record, rating y narrativa
+  toman el valor nuevo sin cambios.
+
+Criterios: 1 (`OneVxTests.test_un_companero_que_se_fue_no_cuenta_como_vivo`,
+`ImportClutchTests.test_el_import_cuenta_el_clutch_con_un_companero_que_se_fue`),
+2 (`test_un_rival_que_se_fue_no_suma_al_x`), 3
+(`OneVxParidadTests.test_sin_abandonos_da_lo_mismo_que_el_parser`, 3000
+rondas, no pasa vacio), 4 (`RecomputeOneVxTests`, tres tests), 5 (fila de
+`metricas.md`): cubiertos. `archivos:` coincide con el diff. Sin tildes en
+identificadores, sin `print`/`console.log`, sin dependencias, sin frontend.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados, ninguno bloquea) · verificación=—
 
 ## QA <fecha> sobre <sha>
 
