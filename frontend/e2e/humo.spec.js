@@ -361,6 +361,44 @@ test('el detalle de una partida muestra la matriz de duelos', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('el timeline marca la apertura de cada ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  const pestanas = panel.locator('.round-tab')
+  await expect(pestanas.first()).toBeVisible()
+  const total = await pestanas.count()
+  let entries = 0
+  for (let i = 0; i < total; i++) {
+    await pestanas.nth(i).click()
+    await expect(pestanas.nth(i)).toHaveClass(/active/)
+    const bajas = panel.locator('.timeline li', { hasText: /mato a|murio/ })
+    if ((await bajas.count()) === 0) continue
+    const apertura = panel.locator('.timeline .chip', { hasText: /^apertura$/ })
+    const entry = panel.locator('.timeline .chip', { hasText: /^entry$/ })
+    // Una sola apertura por ronda, en la primera baja; el entry nunca en esa fila
+    await expect(apertura).toHaveCount(1)
+    await expect(bajas.first().locator('.chip', { hasText: /^apertura$/ })).toHaveCount(1)
+    await expect(bajas.first().locator('.chip', { hasText: /^entry$/ })).toHaveCount(0)
+    const n = await entry.count()
+    expect(n).toBeLessThanOrEqual(1)
+    // Las filas .mine son los Kill de tu equipo: el entry va en la primera
+    if (n === 1) {
+      await expect(panel.locator('.timeline li.mine').first().locator('.chip', { hasText: /^entry$/ })).toHaveCount(1)
+    }
+    entries += n
+  }
+  // seed_demo: toda ronda donde mueres primero y tu equipo despues mata lleva entry
+  expect(entries).toBeGreaterThan(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo: demo-17 tiene dos rondas tuyas de 2 bajas; la primera de la lista no tiene ninguna

@@ -14,6 +14,7 @@ import {
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
+import { marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
 
@@ -242,6 +243,7 @@ export default function MatchDetail() {
 
 function Timeline({ round }) {
   const mineTeam = new Set(round.players.filter((p) => p.team_index === myTeam(round)).map((p) => p.username))
+  const marcas = marcasDeApertura(round, myTeam(round))
 
   if (!round.events.length) {
     return <p className="note">Esta ronda no registro eventos en el feed.</p>
@@ -269,6 +271,16 @@ function Timeline({ round }) {
               </>
             )}
             <span className="tags">
+              {event.order === marcas.apertura ? (
+                <span className="chip" title="Primera baja de la ronda">
+                  apertura
+                </span>
+              ) : null}
+              {event.order === marcas.entry ? (
+                <span className="chip" title="Primera baja de tu equipo">
+                  entry
+                </span>
+              ) : null}
               {event.headshot ? <span className="chip">HS</span> : null}
               {event.traded ? <span className="chip">tradeada</span> : null}
             </span>
