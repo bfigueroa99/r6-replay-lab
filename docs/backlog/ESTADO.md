@@ -1,18 +1,18 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-03 04:20 UTC por dev (sesion 20261103T0403Z-cYjVEvZ; motivo: por estado: 1 disenado, lugar en cola; reloj: po, franja 1)
+actualizado: 2026-11-03 08:20 UTC por revisor (sesion 20261103T0804Z-chGRfoT; motivo: por estado: 1 implementado; reloj: dev, franja 3)
 playbook: origin/dev@6aee89a
-rutina: TURNOS_SIN_RASTRO=6 en 48 h (~11-01T07:41Z ~11-01T11:47Z ~11-01T15:54Z ~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z) | 11 de 40 en 7 dias
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (~11-01T11:47Z ~11-01T15:54Z ~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z) | 11 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/69-clutch-cuenta-con-abandonos | docs/backlog/69-clutch-cuenta-con-abandonos.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/69-clutch-cuenta-con-abandonos?expand=1) |
+| claude/equipo-dev/69-clutch-cuenta-con-abandonos | docs/backlog/69-clutch-cuenta-con-abandonos.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/69-clutch-cuenta-con-abandonos?expand=1) |
 
 COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=6 bloqueadas=1
+RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=5 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -35,7 +35,7 @@ RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | 73-catalogo-y10s4-a-y11s1 | propuesto | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-1 `propuesto` (73), 0 `disenado`. La 69 paso a su rama (`implementado`, espera Revisor). Para el PO y el Arquitecto: el papel tiene 0 `disenado`; la 73 espera diseno. Para el PO: el papel tiene 1 sola funcionalidad (la directiva pide 3). Candidatos a ficha chica `deuda` ya anotados: que `seed_demo` escriba `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (hoy el chip "apertura" de la 72, ya en dev, contradice "1a baja" del scoreboard en los datos demo; con eso el e2e podria cruzar el chip con la API), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65). Candidato `bug`: `seed_demo` siembra Ranked 4-3 que la regla no cierra (68).
+1 `propuesto` (73), 0 `disenado`. La 69 esta en su rama (`revisado`, espera QA). Para el PO y el Arquitecto: el papel tiene 0 `disenado`; la 73 espera diseno. Para el PO: el papel tiene 1 sola funcionalidad (la directiva pide 3). Candidatos a ficha chica `deuda` ya anotados: que `seed_demo` escriba `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (hoy el chip "apertura" de la 72, ya en dev, contradice "1a baja" del scoreboard en los datos demo; con eso el e2e podria cruzar el chip con la API), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65). Candidato `bug`: `seed_demo` siembra Ranked 4-3 que la regla no cierra (68).
 
 ## Ultimo turno de cada rol
 
@@ -43,7 +43,7 @@ RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 |---|---|---|
 | release | 2026-11-03 00:35 | (mismo turno que la QA) Entrega y mergea la 72: `aprobado` -> `entregado` -> [PR #70](https://github.com/bfigueroa99/r6-replay-lab/pull/70) -> dev 6aee89a. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev 1ccf4cb ya en la rama, `verificar.sh` VERDE a9a0496 (859 backend, 153 vitest, 54 e2e). Espejo quitado de `backlog`. `pruebas.sh`: PRUEBAS_OK (18). Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-11-03 04:20 | Implementa 69 (bug p2, `disenado` -> `implementado`, a741c34): `metrics.one_vx` (1vX de r6-dissect con `PlayerLeave` fuera de la ronda) y `equipo_ganador`, usadas por `analyse_round` y `recompute` (`one_vx` en `CAMPOS`); 13 tests nuevos, paridad con el parser en 3000 rondas sin abandonos. Revision ciega: 1 MEDIUM (texto de `metricas.md`) y 1 LOW (fixture) arreglados, 1 LOW previo anotado. `verificar.sh` VERDE a741c34b5 (873 backend, 153 vitest, 54 e2e). |
-| revisor | 2026-11-02 20:07 | Revisa 72 (funcionalidad p2, `implementado` -> `revisado`, 25bd87d). Rama ya al dia con dev 1ccf4cb; `verificar.sh` VERDE baa00f8 (859 backend, 153 vitest, 54 e2e). Revision a ciegas (eje de estandares): 1 MEDIUM (con `seed_demo` el chip contradice las banderas guardadas, porque el seed no las calcula con `analyse_round`: es la ficha `deuda` ya anotada en el Papel; con replays reales coinciden) y 1 LOW (el e2e no cruza el chip con `entry_kill` de la API). Ninguno bloquea. Criterios 1-5 cubiertos. |
+| revisor | 2026-11-03 08:20 | Revisa 69 (bug p2, `implementado` -> `revisado`, 761ec50). Rama ya al dia con dev 6aee89a; `verificar.sh` VERDE 42bad97 (873 backend, 153 vitest, 54 e2e). Revision a ciegas en dos ejes (estandares e intencion): ambos aprobar, 2 LOW sin bloquear (inicializacion de `one_vx` del parser que siempre se pisa; la ganancia se limita a replays anteriores a Y9S1, ya documentado). Confirmado que `Round.teams` guarda `won` desde 0001 y que los `Event` guardados traen `PlayerLeave` con `actor_name`: `recompute` alcanza sin reparsear. |
 | qa | 2026-11-03 00:30 | Prueba 72 (funcionalidad p2, `revisado` -> `aprobado`) sobre bb96a02. `verificar.sh` VERDE (859 backend, 153 vitest, 54 e2e). Chunk inicial +0.03 %. 4 mutaciones en `aperturas.js` y 1 en `metrics.py` caen. Base vacia (bordes `page=-1`, `until=foo`, `map=`, 404) y base de `factories` en Chromium: apertura/entry en las filas correctas, `Death` sin autor abre, ronda sin eventos sin chips, partida ajena solo "apertura". OMC verifier: PASS. |
 | arquitecto | 2026-10-30 17:24 | (sesion simultanea con revisor y po; reparto P8) Disena 69 (`metrics.one_vx` con `PlayerLeave` fuera de la ronda, usada por `analyse_round` y `recompute`, que suma `one_vx` a `CAMPOS`; el parser sigue a r6-dissect; paridad sin abandonos probada en un spike con 3000 rondas; implementar despues de #68; el `.rec` solo trae `PlayerLeave` antes de Y9S1), 71 (`aggregates.etiquetas_de_mapas` sobre todas las partidas del slug, usada por `match_list` y `match_detail`; tests en archivo nuevo para no esperar a la 68) y 72 (`aperturas.js` puro + `casosApertura.json` compartido por vitest y Django contra `analyse_round`, porque `seed_demo` no tiene banderas de apertura coherentes con sus eventos; e2e de la regla visible). Sin arena (no: 18 iteraciones simultaneas en un contenedor de 4 CPU, pedido del dueño; ademas, una forma obvia en cada ficha), sin migracion, sin pushes de codigo. |
 | investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
@@ -65,7 +65,7 @@ RESUMEN propuesto=1 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
-- Rutina: 6 disparos sin rastro en 48 h (~11-01T07:41Z ~11-01T11:47Z ~11-01T15:54Z ~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
+- Rutina: 5 disparos sin rastro en 48 h (~11-01T11:47Z ~11-01T15:54Z ~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
