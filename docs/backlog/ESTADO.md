@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-03 16:40 UTC por arquitecto (sesion 20261103T1604Z-cpkQba9; motivo: por estado: 1 propuesto, 0 disenado de 3; reloj: dev, franja 5)
+actualizado: 2026-11-03 20:17 UTC por investigador (sesion 20261103T2005Z-cWAnVGk; motivo: reloj: investigador)
 playbook: origin/dev@ec263c3
-rutina: TURNOS_SIN_RASTRO=3 en 48 h (~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z) | 11 de 41 en 7 dias
+rutina: TURNOS_SIN_RASTRO=2 en 48 h (~11-02T00:08Z ~11-02T04:15Z) | 11 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -13,7 +13,7 @@ pausa: no
 Vacia: la 69 entro a dev por [PR #71](https://github.com/bfigueroa99/r6-replay-lab/pull/71) (ec263c3).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=3 bloqueadas=0
+RESUMEN propuesto=0 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=71 sin_merge=no pausa=no sin_rastro_48h=2 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -24,8 +24,8 @@ Nada abierto.
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:6 (64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida 70-mapas-por-version 71-version-del-mapa-en-la-partida 72-apertura-marcada-en-la-timeline) otros:3
 - Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev; A8 es el tramo siguiente. paridad-referencia: R1 (64) y R4 (72) en dev. datos-nuevos-del-parser: P1 (73) `disenado`, `sin entrega`.
 - Papel: PAPEL_TIPOS=funcionalidad:1 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
-- `ALCANCE.md`: 71 ideas libres. Ideas nuevas de este turno: ninguna.
-- Investigacion: ultima entrada 2026-10-24.
+- `ALCANCE.md`: 78 ideas libres. Ideas nuevas de este turno: A9 reglas de 3v3 Arcade, B17 lado inicial por mapa, H8 datos para reportar a un jugador, H9 partida en .zip, K10 aperturas sin trade, K11 clutches silenciosos, P7 jugadores anonimos desde Y11S3.3.
+- Investigacion: ultima entrada 2026-11-03 (familias 8, 3, 5 y 6). Paridad con la referencia 79.4 / 100 (era 76.1), must 14 de 17; faltan A1 (tipo de partida), sitio con W-L y O1.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: datos-nuevos-del-parser
 - Ciclo: CICLO=8h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 72:7 71:38 70:8 66:4 65:6 64:8 63:12 62:8 61:32 59:12)
 
@@ -47,7 +47,7 @@ Nada abierto.
 | revisor | 2026-11-03 08:20 | Revisa 69 (bug p2, `implementado` -> `revisado`, 761ec50). Rama ya al dia con dev 6aee89a; `verificar.sh` VERDE 42bad97 (873 backend, 153 vitest, 54 e2e). Revision a ciegas en dos ejes (estandares e intencion): ambos aprobar, 2 LOW sin bloquear (inicializacion de `one_vx` del parser que siempre se pisa; la ganancia se limita a replays anteriores a Y9S1, ya documentado). Confirmado que `Round.teams` guarda `won` desde 0001 y que los `Event` guardados traen `PlayerLeave` con `actor_name`: `recompute` alcanza sin reparsear. |
 | qa | 2026-11-03 12:15 | Prueba 69 (bug p2, `revisado` -> `aprobado`) sobre d0a2649. `verificar.sh` VERDE (873 backend, 153 vitest, 54 e2e). Base de `factories` con los dos escenarios: `recompute --dry-run` 2 filas, `recompute` 2, tercera corrida sin cambios; API con `one_vx: 2`, clutch y record 2. Bordes y base vacia en 200. 4 mutaciones caen. OMC verifier: PASS (fuzz de paridad de 200.000 rondas: 0 diferencias). |
 | arquitecto | 2026-11-03 16:40 | Disena 73 (`propuesto` -> `disenado`): cuatro entradas en `constants.py` (Solid Snake de ataque, `FortressY10`, `Y10S4`/`Y11S1` en `CODE_VERSIONS`), tests en `test_pydissect.py` y `RetagCatalogoNuevoTests`, docs en `formato-rec.md` y README. Hallazgo: `test_retag.py` usa justo `398899676157`/`444310693746` como IDs desconocidos; catalogarlos tumba 8 tests (spike sobre ec263c3), y moverlos a IDs sinteticos `999000000001/2` deja la suite verde. Sin arena ni consenso (forma unica), sin pushes de codigo. |
-| investigador | 2026-10-24 20:12 | Familia 8, primera pasada de Replica contra r6-replay.com y Aurelix (recon completo de paginas publicas, sin cuenta ni capturas): `replica/recon.md`, `features.csv` (61 filas, 21 skip con motivo), `parity.md` (76.1 / 100, must 12 de 17), resenas 0 en 8 fuentes (`feedback.md`, `fixes.md`). Epica nueva `paridad-referencia` con R1-R4 (63 -> 67 libres). Sin pushes de codigo. |
+| investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
 | po | 2026-10-30 17:10 | (sesion simultanea con revisor y arquitecto; reparto P8) Propone 71 (A6: la partida dice la version del mapa en listado, detalle y resumen copiado), 72 (R4: chips "apertura" y "entry" en la timeline, `must` de la referencia) y 73 (P1: Solid Snake, FortressY10 y code versions Y10S4/Y11S1, releidos en el fork MIT `1f0cc42`; sale de la epica `sin entrega`). `ALCANCE.md`: A4 `en dev`, nuevas A7, A8, B16, K8 y K9: 71 libres (69 al empezar). Sin pushes de codigo. |
 
 ## Para el humano
@@ -62,12 +62,12 @@ Nada abierto.
 - Verificar en el PC (66): en Electron (`npm run desktop`), "Copiar resumen" en una partida y pegar.
 - Entorno cloud (qa 20261026T2004Z): `check.sh` ya elige solo el Chromium de la imagen (`E2E_CHROMIUM`); correr `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 - Verificar en el PC (34, 38, 47, 55; traen migracion o tocan el parser, ya en main desde el PR #62): `manage.py backup`, `migrate`, `recompute --dry-run` (sin cambios de `clutch_vs`), `recompute`; para 38, `import_replays --force <carpeta>`; para 47, `unknown_ids` y `retag --dry-run`. Detalle en cada ficha. **Despues de bajar main, `cd frontend; npm run build`.**
-- Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa.
+- Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa. Nuevo (2026-11-03, idea P7): el parche Y11S3.3 de hoy aplica la privacidad del jugador al scoreboard; con un replay posterior, mira en Partidas o Rivales si algun rival sale con nick generico.
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63, `APERTURA_TEMPRANA`/`APERTURA_TARDIA`); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5).
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - PRs abiertos que no son del equipo y no se tocan: #24, #22, #14, #11 y #1-#4. La rama `claude/bold-cori-6gcxh9` (sin PR) toca `aggregates.py` y `seed_demo.py`: si la mergeas, el choque lo resuelve el equipo (P3).
-- Rutina: 4 disparos sin rastro en 48 h (~11-01T15:54Z ~11-01T20:01Z ~11-02T00:08Z ~11-02T04:15Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
+- Rutina: 2 disparos sin rastro en 48 h (~11-02T00:08Z ~11-02T04:15Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
