@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-03T16:05Z
 rama: -
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
