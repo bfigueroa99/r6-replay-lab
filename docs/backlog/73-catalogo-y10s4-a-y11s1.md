@@ -68,11 +68,13 @@ de tabla): sin arena ni consenso.
 **Riesgo que la ficha no veia: `test_retag.py` ya usa estos dos IDs como
 "desconocidos".** `MAPA_NUEVO = 398899676157` y `OPERADOR_NUEVO =
 444310693746` (lineas 20-21; `test_unknowns.py` los importa de ahi) son la
-base de 20 tests que suponen `Unknown(...)` y que el override les da el
+base de los tests que suponen `Unknown(...)` y que el override les da el
 nombre ("Nighthaven Labs", "Denari"). Al catalogarlos, las constantes ganan
-al override y esos tests fallan (`test_sin_overrides_no_cambia_nada`,
+al override y fallan 8 (spike en el scratchpad sobre ec263c3:
+`test_sin_overrides_no_cambia_nada`,
 `test_aplica_el_nombre_*`, `UnknownIdsCommandTests`, el POST de
-`test_unknowns.py`...). Arreglo: **cambiar solo el valor** de las dos
+`test_unknowns.py`); con el arreglo, la suite entera del backend queda
+verde. Arreglo: **cambiar solo el valor** de las dos
 constantes del test a IDs sinteticos que ningun catalogo va a usar,
 `MAPA_NUEVO = 999000000001` y `OPERADOR_NUEVO = 999000000002`, con un
 comentario de por que (los IDs reales se catalogan con el tiempo). Ningun
@@ -161,7 +163,7 @@ sin `metricas.md` (no hay numero nuevo), sin pagina nueva (sin e2e nuevo).
 
 ### Que puede romperse
 
-- Si se hace el paso 2 sin el 1: ~20 tests de retag/unknowns en rojo. Es
+- Si se hace el paso 2 sin el 1: 8 tests de retag/unknowns en rojo. Es
   la senal de que falta el paso 1, no de un bug.
 - `operator_side` / `derive_team_roles`: "Solid Snake" pasa a ser operador
   conocido de ataque y vota en la mayoria del equipo. Es lo correcto; si el
