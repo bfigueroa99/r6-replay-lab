@@ -1,7 +1,7 @@
 # 72. La apertura marcada en la timeline de la ronda
 
 estado: revisado
-candado: -
+candado: qa 2026-11-03T00:04Z
 rama: claude/equipo-dev/72-apertura-marcada-en-la-timeline
 tipo: funcionalidad
 epica: paridad-referencia
