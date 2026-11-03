@@ -1,7 +1,7 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
-estado: revisado
-candado: qa 2026-11-03T12:06Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
 epica: -
@@ -296,7 +296,45 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados, ninguno bloquea) · verificación=—
 
-## QA <fecha> sobre <sha>
+## QA 2026-11-03 sobre d0a2649
+
+QA 20261103T1205Z-cZPEnjG. Rama al dia con `origin/dev@6aee89a` (merge-tree sin conflicto).
+
+- `verificar.sh` (check.sh completo): VERDE d0a2649 en 122 s, 873 tests
+  backend, 153 vitest, 54 e2e.
+- Base sembrada (script en el scratchpad, `SQLITE_PATH` temporal, nada al
+  repo) con `factories`: escenario 1 (A0-A2 matan a B0-B2, B3 mata a A0-A2,
+  A3 `PlayerLeave`, A4 mata a B3 y B4) y escenario 2 (B3 mata a A0-A3, B4
+  `PlayerLeave`, A4 mata a B3), `one_vx` de A4 en 0 como el import viejo:
+  - `manage.py recompute --dry-run`: "cambiarian 2 filas de jugador ... sobre 2 rondas".
+  - `manage.py recompute`: "se actualizaron 2 filas"; otra vez: "Nada que
+    recalcular ... las 2 rondas ya estan al dia" (idempotente).
+  - `one_vx` de A4: escenario 1 = 2 (criterio 1), escenario 2 = 1 (criterio 2).
+  - `runserver` + `curl /api/matches/1/`: A4 `one_vx: 2`, scoreboard
+    `clutches: 1`. Con A4 como `is_me`: `/api/overview/` `clutch_rounds: 2`,
+    `records.biggest_clutch.value: 2`; `/api/teammates/` `clutch_conversion`
+    1v2 2/2 (no cambia: ya tomaba `PlayerLeave`).
+  - Bordes: `/api/overview/?until=foo`, `/api/matches/?page=-1`,
+    `/api/matches/?map=`, `/api/sessions/?days=99999999999`, `/api/coach/`,
+    `/api/trends/`, `/api/compare/`, `/api/players/1/`,
+    `/api/export/?table=rounds`: 200; `/api/matches/999/`: 404.
+- Base vacia: `recompute` "Nada que recalcular ... 0 rondas"; `/api/overview/`,
+  `/api/matches/`, `/api/teammates/` 200.
+- Sin migracion, sin frontend (chunk sin cambios), sin parser (`pydissect/` no se toca).
+- Mutacion (`tests.test_clutch tests.test_recompute tests.test_player_stats`,
+  restaurado despues): M1 `PlayerLeave` ignorado en `one_vx` -> 10 fallan;
+  M2 rival que se fue suma al X -> 2 fallan (`test_un_rival_que_se_fue_no_suma_al_x`);
+  M3 sin la guarda `all(salida[n] < i ...)` -> 2 fallan
+  (`test_si_un_companero_se_va_despues_de_la_ultima_muerte_nadie_cobra`);
+  M4 `one_vx` fuera de `CAMPOS` de `recompute` -> 3 de `RecomputeOneVxTests` fallan.
+- omc-verifier (general-purpose con su cuerpo): PASS, 5/5 VERIFIED; corrio
+  ademas un fuzz de paridad de 200.000 rondas sin abandonos contra
+  `pydissect.stats`: 0 diferencias.
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
