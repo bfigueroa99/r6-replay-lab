@@ -1,6 +1,6 @@
 # 69. El 1vX cuenta cuando un compañero se fue
 
-estado: en curso 2026-11-03
+estado: implementado
 candado: -
 rama: claude/equipo-dev/69-clutch-cuenta-con-abandonos
 tipo: bug
