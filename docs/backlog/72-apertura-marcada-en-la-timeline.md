@@ -1,7 +1,7 @@
 # 72. La apertura marcada en la timeline de la ronda
 
-estado: revisado
-candado: qa 2026-11-03T00:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/72-apertura-marcada-en-la-timeline
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: idea R4 de `ALCANCE.md`; fila "Kill feed por ronda con la apertura destacada" de `replica/features.csv` (`must`, `clone: partial`), [r6-replay.com](https://r6-replay.com/) ("See exactly who got the opening pick, who traded it"). Hoy la timeline de `frontend/src/pages/MatchDetail.jsx:271-274` solo marca HS y tradeada; la apertura la dicen la tabla de jugadores ("1a baja", "1a muerte") y el resumen en texto
 archivos: frontend/src/aperturas.js, frontend/src/aperturas.test.js, frontend/src/casosApertura.json, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, backend/tests/test_casos_apertura.py
-turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261102T1626Z-cDEQrsE, revisor 20261102T2004Z-cS7svm1
+turnos: po 20261030T1653Z, arquitecto 20261030T1652Z, dev 20261102T1626Z-cDEQrsE, revisor 20261102T2004Z-cS7svm1, qa 20261103T0004Z-cRkutk1
 
 ## PR
 
@@ -242,7 +242,50 @@ Veredicto: aprobar.
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (0 arreglados, ninguno bloquea) · verificación=—
 
-## QA <fecha> sobre <sha>
+## QA 2026-11-03 sobre bb96a02
+
+QA 20261103T0004Z-cRkutk1. Ejercitado el sistema, no el diff.
+
+- `check.sh` (verificar.sh): VERDE bb96a021a en 116s (859 tests backend,
+  153 vitest, 54 e2e).
+- Chunk inicial (`vite build` de `origin/dev` contra la rama):
+  `index` 188.91 kB -> 188.97 kB (+0.03 %); `MatchDetail` (lazy)
+  11.47 kB -> 12.16 kB. Sin CSS nuevo.
+- Mutacion (`cd frontend && npx vitest run src/aperturas.test.js`, 20
+  tests): sin `.sort(porOrden)` caen 5; sin anular entry = apertura caen 4;
+  entry de cualquier equipo caen 6; solo `Kill` abre (sin `Death`) caen 3.
+  Backend: `if death_events and False:` en el bloque "aperturas" de
+  `metrics.py` -> `manage.py test tests.test_casos_apertura` FAILED
+  (failures=5, un subTest por caso). Todo restaurado, 20/20 y OK.
+- `runserver` con base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3`,
+  `migrate`): `/api/matches/` 200 total 0; `?page=-1`, `?until=foo`,
+  `?map=` 200 vacio; `/api/matches/1/` y `/999/` 404; la pagina
+  `/partidas/1` muestra la UI sin rondas y sin errores de runtime (solo el
+  404 de red pedido a proposito).
+- `runserver` con base sembrada desde `tests/factories.py`
+  (`build_dataset(matches=2, rounds_per_match=4)` + una partida de borde y
+  una ajena con `teams=[]` y sin `is_me`), Chromium sobre la timeline:
+  - rival abre y `companero` responde: "rival mato a BearF99 apertura",
+    "companero mato a rival entry".
+  - `OperatorSwap`, `Death` sin autor rival, `Kill` propio: el `Death`
+    lleva "apertura", el `Kill` "entry", el swap nada.
+  - ronda sin eventos: la nota de siempre, sin chips.
+  - abre BearF99 con HS: "apertura HS", sin "entry".
+  - partida ajena (sin `is_me` ni equipo marcado): solo "apertura" en la
+    primera baja, ningun "entry".
+  - `/api/matches/<id>/` trae `order`, `kind`, `actor`, `target` (criterio
+    5: sin backend de produccion; `metricas.md` sin cambios).
+- Criterio 4: cubierto como lo redefinio el Diseno (casos compartidos +
+  e2e de la regla visible); la paridad con las banderas de `seed_demo` sigue
+  dependiendo de la ficha `deuda` del seed, que todavia no esta abierta
+  (anotado en `ESTADO.md` para el PO).
+- `omc-verifier` (via general-purpose): criterios 1, 2, 3, 5 VERIFIED; 4
+  PARTIAL frente al texto original, cumplido segun el Diseno. Veredicto PASS.
+
+Veredicto: aprobado.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
