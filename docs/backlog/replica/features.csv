@@ -8,22 +8,22 @@ feature,area,priority,original,clone,notes,referencia,evidencia
 "Cargar partida desde captura de pantalla (OCR)",importar,could,yes,skip,"necesita una dependencia de OCR (CLAUDE.md: sin dependencias nuevas)",aurelix,https://aurelix.app/privacy-policy
 "Carga manual de resultados de partida",importar,could,yes,no,"la app solo lee .rec; un POST nuevo seria decision del humano",aurelix,https://aurelix.app/features
 "Lista de partidas recientes con resultado y mapa",historial,must,yes,yes,"Inicio > Ultimas partidas y pagina Partidas",aurelix,https://aurelix.app/
-"Resumen: partidas jugadas, win rate de partida, rondas medias, partidas cerradas y mejor mapa",perfil,must,yes,partial,"Inicio muestra rondas, winrate de rondas, K/D, KPR, aperturas, KST; no winrate de partida, rondas por partida ni mejor mapa (idea R1)",aurelix,https://aurelix.app/
+"Resumen: partidas jugadas, win rate de partida, rondas medias, partidas cerradas y mejor mapa",perfil,must,yes,yes,"Inicio > fila de partidas: ganadas sobre jugadas, rondas por partida, mejor y peor mapa (ficha 64); partidas cerradas y holgadas en Tendencias (ficha 50)",aurelix,https://aurelix.app/
 "Marcador de partida con KDA y HS% por jugador",partida,must,yes,yes,"MatchDetail > Scoreboard de la partida; sin asistencias",aurelix,https://aurelix.app/features
 "Historial de rondas con condicion de victoria y sitio",partida,must,yes,yes,"MatchDetail > Rondas: sitio, lado, marcador, condicion (inferida si falta)",aurelix,https://aurelix.app/features
 "Desglose completo de la partida ronda por ronda",partida,must,yes,yes,"MatchDetail: pestana por ronda con timeline, resumen y jugadores",r6replay,https://r6-replay.com/
 "Linea de tiempo de la ronda desde la apertura hasta el cierre",ronda,must,yes,yes,"Timeline de MatchDetail con reloj de cada evento",r6replay,https://r6-replay.com/
-"Kill feed por ronda con la apertura destacada",ronda,must,yes,partial,"El feed esta y el resumen de la ronda nombra el primer duelo; la linea de la apertura no lleva marca propia en la timeline (idea R4)",r6replay,https://r6-replay.com/
+"Kill feed por ronda con la apertura destacada",ronda,must,yes,yes,"Timeline de MatchDetail con marcas apertura y entry (ficha 72, aperturas.js)",r6replay,https://r6-replay.com/
 "Trades marcados con el tiempo del refrag",ronda,must,yes,yes,"chip tradeada en la timeline; el resumen da el margen en segundos",r6replay,https://r6-replay.com/
 "Kills, muertes, headshots y aperturas por ronda",ronda,must,yes,yes,"Jugadores de la ronda; DBNO no se lee (idea P3)",aurelix,https://aurelix.app/features
 "Plants y defuses con el jugador que los hizo",ronda,must,yes,skip,"plants y defuses de temporadas nuevas no vienen en el .rec (CLAUDE.md, formato-rec.md); solo plant probable inferido del reloj",r6replay,https://r6-replay.com/
 "Resultado de la ronda cruzado con el momento del plant",ronda,should,yes,skip,"mismo motivo: plants fuera del .rec en temporadas nuevas",r6replay,https://r6-replay.com/
 "Duelos limpios contra trades que se escapan, por equipo, en la partida",partida,should,yes,partial,"MatchDetail da tus muertes sin trade y trades por jugador; no compara los dos equipos (idea R2)",r6replay,https://r6-replay.com/
 "Como cambia la ventaja numerica dentro de la ronda",ronda,should,yes,partial,"el resumen de la ronda da segundos en inferioridad; la tira de vivos es la idea F13",r6replay,https://r6-replay.com/
-"Bajas y muertes en tramos de 30 s (early, mid, late)",ronda,should,yes,partial,"Cuando mueres por tramos de 30 s esta en main; cuando matas es la ficha 62; por partida no existe (idea R3)",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
+"Bajas y muertes en tramos de 30 s (early, mid, late)",ronda,should,yes,partial,"Cuando mueres y Cuando matas (ficha 62) por tramos de 30 s en Tendencias; por partida y por equipo no existe (idea R3)",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
 "Tiempo medio de victoria por lado",ronda,should,yes,yes,"Tendencias > Cuanto tardas en ganar y en perder (ficha 52); post-plant y retake son skip por plants",aurelix,https://aurelix.app/
 "Win rate por operador",operadores,must,yes,yes,"pagina Operadores",aurelix,https://aurelix.app/features
-"Delta de win rate de un operador contra la base, por mapa y sitio",operadores,must,yes,partial,"Coach compara operador contra tu promedio; el delta por mapa y sitio es la idea O1 y el global O5",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
+"Delta de win rate de un operador contra la base, por mapa y sitio",operadores,must,yes,partial,"Operadores: presencia y winrate contra tu lado (ficha 65, O5); falta el corte por mapa y sitio (idea O1)",aurelix,https://aurelix.app/blog/how-to-analyse-r6-siege-replays
 "Ranking de operadores por mapa",operadores,should,yes,partial,"cubierto por O1 (idea)",aurelix,https://aurelix.app/features
 "Win rate por sitio de defensa con W-L",mapas,must,yes,partial,"agregados por sitio en el Coach y en el CSV; la pagina de mapas y sitios se retiro a proposito (096fd52)",aurelix,https://aurelix.app/features
 "Win rate por mapa separado en ataque y defensa",mapas,must,yes,yes,"aggregates.by_map da attack_winrate y defense_winrate por mapa (Coach y CSV)",aurelix,https://aurelix.app/features
@@ -43,7 +43,7 @@ feature,area,priority,original,clone,notes,referencia,evidencia
 "Roster con jugadores conocidos",perfil,should,yes,yes,"pagina Compañeros y perfil de cada jugador",aurelix,https://aurelix.app/features
 "Vincular tu nick a la app",perfil,should,yes,yes,"automatico: ingest.py marca is_me por profileID o recordingPlayer del replay",aurelix,https://aurelix.app/privacy-policy
 "Borrar una partida importada",historial,should,yes,no,"idea G2 (excluir sin borrar), en decision del humano",aurelix,https://aurelix.app/privacy-policy
-"Analisis de ronda en fases early, mid y execute",ronda,could,yes,partial,"tramos de 30 s en Cuando mueres; ver R3",r6replay,https://r6-replay.com/roadmap
+"Analisis de ronda en fases early, mid y execute",ronda,could,yes,partial,"tramos de 30 s en Cuando mueres y Cuando matas (Tendencias); por partida es R3",r6replay,https://r6-replay.com/roadmap
 "Recorridos de jugadores sobre el plano del mapa",mapas,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",ambas,https://aurelix.app/features
 "Heatmaps de posiciones",mapas,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",r6replay,https://r6-replay.com/roadmap
 "Visor 2D del replay",ronda,could,yes,skip,"coordenadas: el .rec no las entrega (CLAUDE.md)",r6replay,https://r6-replay.com/roadmap
