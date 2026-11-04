@@ -277,7 +277,7 @@ def _partidas(map_name: str, map_id: int, ganadas: int, total: int, desde: int):
 
 
 class MejorYPeorMapaPorVersionTests(TestCase):
-    """El Inicio nombra la misma fila que Mapas: un rework no suma con el viejo."""
+    """El Inicio cuenta por version, como Mapas: un rework no suma con el viejo."""
 
     def test_mejor_y_peor_mapa_separan_las_versiones(self):
         # juntas, Consulate seria 3/6 = 50 %: mejor Border y peor "Consulate"

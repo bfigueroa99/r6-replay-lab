@@ -1,7 +1,7 @@
 # 74. La version del mapa tambien en el Inicio, Clutch por mapa, Mapas que mejoran y el CSV de partidas
 
-estado: en curso 2026-11-04
-candado: dev 2026-11-04T20:05Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -157,6 +157,51 @@ Skills: no aplica (dominio que el repo ya resuelve: ficha 70).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261104T2004Z-cGQmDVc)
+
+Quedo el diseno entero, en el orden 1 a 4:
+
+1. `matches_summary` agrupa por `(map_slug, map_id)`; etiqueta con
+   `etiquetas_de_version` sobre la muestra (nombre de la partida mas
+   reciente). `best_map`/`worst_map` traen `slug`, `map_id`, `map`,
+   `matches`, `wins`, `winrate`.
+2. `clutch_by_site` agrupa por `(slug, map_id, site)`, etiqueta de
+   `etiquetas_de_mapas`; cada fila suma `map_id`. Key de React en
+   `Teammates.jsx:305` con `map_id`.
+3. `by_map` de `compare_periods` agrupa por `("round__match__map_slug",
+   "round__match__map_id")` y `_etiquetar_corte` pone `map`. Key de
+   `TablaDeCambio` (`Trends.jsx:59`) con `map_id` cuando hay `slug`.
+4. `trend_by_match` suma `map_version` (etiqueta) al final de cada fila: el
+   CSV `table=matches` la trae como ultima columna y las demas no se mueven.
+
+Tests nuevos (los cinco fallan con el codigo de `dev`, comprobado con
+`git stash` del agregado: 4 ERROR y 1 FAIL):
+- `test_aggregates.MejorYPeorMapaPorVersionTests.test_mejor_y_peor_mapa_separan_las_versiones`
+- `test_aggregates.MejorYPeorMapaPorVersionTests.test_una_version_sin_muestra_minima_no_entra`
+- `test_aggregates.VersionesDeMapaTests.test_clutch_por_sitio_separa_el_mismo_sitio_en_dos_versiones`
+- `test_compare.CortesPorMapaYOperadorTests.test_progreso_por_mapa_separa_versiones`
+- `test_export.VersionesDeMapaCsvTests.test_csv_de_partidas_dice_la_version`
+  (la cabecera sin `map_version` es la `_columnas` de las filas sin ella)
+
+`test_resumen_partidas` y `test_clutch` pasan sin cambios. `partida()` de
+`test_compare.py` gana un `map_id=0` opcional.
+
+Desvios del diseno: `clutch_by_site` no lleva `map_name` en el `.values()`
+(el diseno lo listaba): la etiqueta sale de `etiquetas_de_mapas`, y sin el
+nombre un renombre dentro de la version no parte la fila, igual que en el
+corte de `compare_periods`.
+
+Revision ciega (fallback `general-purpose` con `omc-code-reviewer`: el tipo
+de agente no existe en esta nube): aprobar, 3 LOW. Arreglado: docstring de
+`MejorYPeorMapaPorVersionTests`. Quedan, por decision del diseno: (a) si el
+usuario renombra en Datos una version, el Inicio usa el nombre mas reciente
+y Clutch/Tendencias/CSV el primero alfabetico de `etiquetas_de_mapas`
+(el diseno eligio asi para no romper `test_variantes_del_mapa_cuentan_juntas`);
+(b) el "(id N)" del Inicio sale de la muestra filtrada, como en `by_map`.
+
+Skills: no aplica (dominio que el repo ya resuelve: ficha 70).
+OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
 ## Revision
 
