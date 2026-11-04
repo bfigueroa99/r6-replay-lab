@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
-estado: revisado
-candado: qa 2026-11-04 08:04
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/73-catalogo-y10s4-a-y11s1
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
@@ -9,7 +9,7 @@ area: parser
 prioridad: 2
 fuente: idea P1 de `ALCANCE.md` (epica `sin entrega` en la linea `ROTACION` de `estado.sh`). Verificado por el PO el 2026-10-30 en el fork MIT de r6-dissect [ImAAhmad/r6-dissect](https://github.com/ImAAhmad/r6-dissect/tree/main/dissect), commit `1f0cc42` (2026-03-10, "Y11S1 SolidSnake, improved defuser detection"): `dissect/header.go` (`SolidSnake Operator = 444310693746`, `FortressY10 Map = 398899676157`), `dissect/operator_roles.go` (`444310693746: Attack`), `dissect/version.go` (`Y10S4 int = 9394857`, `Y11S1 int = 9578674`); [r6-dissect #130](https://github.com/redraskal/r6-dissect/issues/130). En `dev` 0fedc7b ninguno de los cuatro esta en `pydissect/constants.py` (`CODE_VERSIONS` termina en `Y10S3_1`)
 archivos: backend/pydissect/constants.py, backend/tests/test_pydissect.py, backend/tests/test_retag.py, docs/formato-rec.md, README.md
-turnos: po 20261030T1653Z, arquitecto 20261103T1604Z-cpkQba9, dev 20261104T0003Z-cmWzGBm, revisor 20261104T0403Z-cMkuzSY
+turnos: po 20261030T1653Z, arquitecto 20261103T1604Z-cpkQba9, dev 20261104T0003Z-cmWzGBm, revisor 20261104T0403Z-cMkuzSY, qa 20261104T0804Z-cwJxvZj
 
 ## PR
 
@@ -249,9 +249,39 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
-## QA <fecha> sobre <sha>
+## QA 2026-11-04 sobre bcc1edd
+
+QA 20261104T0804Z-cwJxvZj. Ejercita el sistema con bases sinteticas en el scratchpad (`DATA_DIR`/`SQLITE_PATH` fuera del repo).
+
+- `verificar.sh` (check.sh completo): VERDE bcc1edd97 en 145 s, 882 tests backend, 153 vitest, 54 e2e.
+- Base sembrada con `factories` (partida `map_id=398899676157` como `Unknown(398899676157)`; dos filas `operator_id=444310693746`, una `Unknown(444310693746)` y otra `Solidsnake`; mas una partida en el Fortress viejo):
+  `retag --dry-run` -> "cambiaria 1 partidas y 2 rondas de jugador", base sin cambios (query antes y despues);
+  `retag` -> "Reetiquetadas 1 partidas y 2 rondas", quedan `Fortress`/`fortress` y "Solid Snake" x2;
+  segunda `retag` -> "Nada que reetiquetar: los nombres ya estan al dia."; `unknown_ids` -> "Todo identificado". Todo exit 0.
+- `runserver` sobre esa base: `/api/filters/` da `fortress` con versiones `126196841359 "Fortress"` y `398899676157 "Fortress (Y10)"`, y "Solid Snake" entre los operadores; `/api/matches/1/` dice "Fortress (Y10)"; `overview/`, `overview/?map=fortress`, `operators/?map=fortress&until=foo`, `matches/?page=-1`, `matches/?map=` y `unknown/` en 200, sin traceback.
+- Base vacia: los mismos endpoints en 200, `matches/999/` 404; `/api/operators/catalog/` trae `{"name": "Solid Snake", "side": "Attack"}`; `retag` y `unknown_ids` sin nada que hacer.
+- Mutaciones (revertidas): Solid Snake en `DEFENSE` -> cae `test_solid_snake_tiene_nombre_y_lado_de_ataque`; sin la entrada `FortressY10` -> caen 4 (slug, "(Y10)", dry-run y aplicacion del retag); `Y11S1 = 9000000` -> cae `test_las_versiones_y10s4_e_y11s1_estan_en_orden`; sin Solid Snake en `OPERATORS` -> caen 5.
+- Sin `frontend/src`, sin migracion: no aplica el chunk de `vite build` ni `migrate` sobre esquema viejo.
+- Observacion fuera de alcance (ya estaba en `dev`): `retag` imprime por cada nombre viejo las filas del ID entero ("Solidsnake -> Solid Snake (2 filas)" con una sola fila de ese nombre); el total final es correcto.
+
+Criterios: los cinco cumplidos (verifier PASS en los cinco; lo de `.rec` reales va abajo).
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
+
+Con la base real, desde `backend/`:
+
+```powershell
+..\.venv\Scripts\python.exe manage.py retag --dry-run   # lista Unknown(398899676157) -> Fortress y las filas de Solid Snake
+..\.venv\Scripts\python.exe manage.py retag
+..\.venv\Scripts\python.exe manage.py unknown_ids        # ya no muestra 398899676157 ni 444310693746
+```
+
+En la app: Mapas muestra "Fortress (Y10)" aparte de "Fortress"; en una partida con Solid Snake su equipo sale atacando en las rondas de ataque.
 
 ## Pendiente
 
