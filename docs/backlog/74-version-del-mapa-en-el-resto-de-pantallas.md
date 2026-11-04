@@ -45,19 +45,26 @@ Una sola forma obvia: repetir en cuatro lugares lo que la ficha 70 ya hizo en
 `by_map`/`by_site`. Sin arena ni consenso: es al consultar, sin migracion ni
 `recompute`, y se deshace con un revert.
 
-**Etiqueta.** En los cuatro lugares la etiqueta sale de
-`etiquetas_de_mapas(slugs)` (`aggregates.py:500`), la que usa el detalle de
-partida (`views.py:538`): mira todas las partidas del slug, asi el "(id N)"
-no depende de que filas trajo el filtro. Clave siempre `(map_slug, map_id)`.
+**Etiqueta.** En 2, 3 y 4 la etiqueta sale de `etiquetas_de_mapas(slugs)`
+(`aggregates.py:500`), la que usa el detalle de partida (`views.py:538`): mira
+todas las partidas del slug, asi el "(id N)" no depende de que filas trajo el
+filtro. En 1, `etiquetas_de_version` sobre las versiones de la muestra (ver
+abajo por que). Clave siempre `(map_slug, map_id)`.
 
 **1. `matches_summary`** (`backend/replays/analytics/aggregates.py:1007`).
 - `.values(...)` suma `"map_id"`. `por_mapa` se indexa por
-  `(p["map_slug"], p["map_id"])` y cada entrada lleva `slug`, `map_id`.
-- Despues del bucle, `etiquetas = etiquetas_de_mapas({slug for slug, _ in por_mapa})`
-  y `m["map"] = etiquetas.get((slug, map_id), nombre_guardado)`. Se borra el
-  comentario "Por slug: las variantes de temporada..." y el `m["map"] =
-  p["map_name"]` dentro del bucle (el nombre "mas reciente" ya no hace falta:
-  una version tiene un nombre).
+  `(p["map_slug"], p["map_id"])` y cada entrada lleva `slug`, `map_id` y
+  `map_name` = el nombre de la partida mas reciente de esa version (el bucle
+  ya va en orden de fecha: se conserva el `m["map"] = p["map_name"]` actual,
+  renombrado a `map_name`).
+- Despues del bucle, `etiquetas = etiquetas_de_version(por_mapa.values())` y
+  `m["map"] = etiquetas[(m["slug"], m["map_id"])]`; `map_name` se saca de la
+  salida. **Aca no se usa `etiquetas_de_mapas`**: ordena por nombre y tomaria
+  "Club House" en vez del mas reciente, y rompe
+  `tests/test_resumen_partidas.py:101` (`test_variantes_del_mapa_cuentan_juntas`:
+  mismo slug y mismo `map_id = 0`, nombre renombrado), que tiene que seguir
+  pasando sin cambios. Se actualiza el comentario "Por slug: ..." a "Por
+  version (`slug`, `map_id`): ...".
 - `best_map`/`worst_map` traen `slug`, `map_id`, `map` (etiqueta), `matches`,
   `wins`, `winrate`. `Dashboard.jsx:251-252` lee `.map`: no cambia.
 
@@ -72,13 +79,15 @@ no depende de que filas trajo el filtro. Clave siempre `(map_slug, map_id)`.
   versiones repiten la key de React y la consola del e2e se ensucia.
 
 **3. Corte por mapa de `compare_periods`** (`aggregates.py:2445-2452`).
-- `campos = ("round__match__map_slug", "round__match__map_id", "round__match__map_name")`,
-  `labels = ("slug", "map_id", "map")`. Despues de `_corte_por_periodo`, una
-  pasada: `etiquetas = etiquetas_de_mapas({f["slug"] for f in filas})` y
-  `f["map"] = etiquetas.get((f["slug"], f["map_id"]), f["map"])`. Va en una
-  funcion chica `_etiquetar_corte(filas)` para no ensuciar `compare_periods`.
-  `_corte_por_periodo` no cambia: la clave de union entre periodos ya es la
-  tupla de labels.
+- `campos = ("round__match__map_slug", "round__match__map_id")`, `labels =
+  ("slug", "map_id")`: sin `map_name` en la agrupacion, asi un renombre dentro
+  de la misma version no parte la fila. Despues de `_corte_por_periodo`, una
+  funcion chica `_etiquetar_corte(filas)`: `etiquetas = etiquetas_de_mapas({f["slug"] for f in filas})`
+  y `f["map"] = etiquetas.get((f["slug"], f["map_id"]), f["slug"])`.
+  `_corte_por_periodo` no cambia: la union entre periodos ya es por la tupla
+  de labels, y su orden (`str` de cada label) queda slug y despues `map_id`.
+  `tests/test_compare.py:180` (`club["map"] == "Club House"`) sigue pasando:
+  con `map_id = 0` la etiqueta es el nombre guardado.
 - `frontend/src/pages/Trends.jsx:59`: la key de `TablaDeCambio` pasa a
   `${row.slug}-${row.map_id}` cuando la fila trae `slug`, y la de operador
   (`${row.operator}-${row.side}`) igual que hoy.
