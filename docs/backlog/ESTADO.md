@@ -1,29 +1,28 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-04 16:18 UTC por arquitecto (sesion 20261104T1604Z-cAKAGx1; motivo: por estado: 3 propuesto, 0 disenado de 3)
+actualizado: 2026-11-04 20:15 UTC por dev (sesion 20261104T2004Z-cGQmDVc; motivo: por estado: 3 disenado, lugar en cola)
 playbook: origin/dev@bcdbdf5
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 42 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
+| claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas | docs/backlog/74-version-del-mapa-en-el-resto-de-pantallas.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas?expand=1) |
 
-Vacia: la 73 entro a dev por [PR #72](https://github.com/bfigueroa99/r6-replay-lab/pull/72).
-
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=1
 
 ## Orden de merge sugerido
 
-Sin ramas abiertas.
+1. `claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas`: unica rama abierta; al dia con dev bcdbdf5. Toca `aggregates.py` y `metricas.md`, que tambien listan la 76: si la 76 se reclama antes de mergear la 74, la segunda en mergear resuelve con P3.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:6 (65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida 70-mapas-por-version 71-version-del-mapa-en-la-partida 72-apertura-marcada-en-la-timeline 73-catalogo-y10s4-a-y11s1) otros:3
-- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev, A8 (74) en papel. paridad-referencia: R1 (64) y R4 (72) en dev, R2 (75) en papel. impacto: K3 (55) y K5 (59) en dev, K10 (76) en papel. datos-nuevos-del-parser: P1 (73) en dev.
-- Papel: PAPEL_TIPOS=funcionalidad:3 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:0 de 0 ramas de trabajo.
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:4 (70-mapas-por-version 71-version-del-mapa-en-la-partida 72-apertura-marcada-en-la-timeline 73-catalogo-y10s4-a-y11s1) otros:3
+- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev, A8 (74) en cola (`implementado`). paridad-referencia: R1 (64) y R4 (72) en dev, R2 (75) en papel. impacto: K3 (55) y K5 (59) en dev, K10 (76) en papel. datos-nuevos-del-parser: P1 (73) en dev.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 80 ideas libres (78 al empezar, 3 pasaron a ficha). Ideas nuevas de este turno: B18 prorroga por lado, D8 cuantas de tus muertes son headshot, E13 la primera partida despues de un descanso, O8 que operador eliges segun el marcador, R6 dos partidas lado a lado.
 - Investigacion: ultima entrada 2026-11-03 (familias 8, 3, 5 y 6). Paridad con la referencia 79.4 / 100, must 14 de 17.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
@@ -33,19 +32,18 @@ Sin ramas abiertas.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 74-version-del-mapa-en-el-resto-de-pantallas | disenado | funcionalidad | temporada-y-modo | 2 | backend | - |
 | 75-trades-de-los-dos-equipos | disenado | funcionalidad | paridad-referencia | 2 | frontend | - |
 | 76-aperturas-sin-trade | disenado | funcionalidad | impacto | 3 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 3 `disenado`: el proximo disparo es Dev (regla 8). Orden sugerido: 75 (sin migracion, archivos propios: `views.py`, `MatchDetail.jsx`), 74 (sin migracion; `aggregates.py`, `Teammates.jsx`, `Trends.jsx`), 76 (migracion 0004 + `recompute`; comparte `aggregates.py` y `metricas.md` con la 74 en zonas distintas: si van en paralelo, la segunda en mergear resuelve con P3). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
+0 `propuesto`, 2 `disenado` (la 74 paso a su rama, `implementado`). Proximo disparo: Revisor de la 74 (regla 3) o Dev si el turno no puede firmarla. Orden sugerido: 75 (sin migracion, archivos propios: `views.py`, `MatchDetail.jsx`), 76 (migracion 0004 + `recompute`; comparte `aggregates.py` y `metricas.md` con la 74 en zonas distintas: si van en paralelo, la segunda en mergear resuelve con P3). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-04 08:14 | (mismo turno que la QA) Entrega y mergea la 73: `aprobado` -> `entregado` -> [PR #72](https://github.com/bfigueroa99/r6-replay-lab/pull/72) -> dev bcdbdf5. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev ec263c3 ya en la rama, `verificar.sh` VERDE 55a1c5c8d (882 backend, 153 vitest, 54 e2e). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). `pruebas.sh`: PRUEBAS_OK (18). |
-| dev | 2026-11-04 00:20 | Implementa 73 (funcionalidad p2, `disenado` -> `implementado`, 9fbef62): Solid Snake (ataque), `FortressY10` y `Y10S4`/`Y11S1` en `constants.py`; IDs sinteticos en `test_retag.py` como pedia el diseno; 6 tests en `test_pydissect.py` y `RetagCatalogoNuevoTests` (3); docs en `formato-rec.md` y README. Revision ciega: 1 LOW (comentario) arreglado. `verificar.sh` VERDE cb26bbf12 (882 backend, 153 vitest, 54 e2e). |
+| dev | 2026-11-04 20:15 | Implementa 74 (funcionalidad p2, `disenado` -> `implementado`, 937a652): mejor y peor mapa del Inicio, Clutch por mapa y sitio, corte por mapa de Mapas que mejoran y CSV de partidas (`map_version` al final) por `(slug, map_id)`; keys de React con `map_id` en Teammates y Trends; `metricas.md` fila Mapa. 5 tests nuevos, todos fallan sin el cambio. Revision ciega (fallback general-purpose): aprobar, 3 LOW, 1 arreglado. `verificar.sh` VERDE 937a652bc (887 backend, 153 vitest, 54 e2e). |
 | revisor | 2026-11-04 04:12 | Revisa 73 (funcionalidad p2, `implementado` -> `revisado`, 23a0eb0). Rama ya al dia con dev ec263c3; `verificar.sh` VERDE e4785f1 (882 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, sin hallazgos; confirmado que `CODE_VERSIONS` no la lee el parser, que `FortressY10` comparte slug y etiqueta "(Y10)", que nada mapea nombres de operador y que el cambio de IDs en `test_retag.py` es solo de valor. |
 | qa | 2026-11-04 08:14 | Prueba 73 (funcionalidad p2, `revisado` -> `aprobado`, 5106b4f). `verificar.sh` VERDE bcc1edd97 (882 backend, 153 vitest, 54 e2e). Base de `factories` con Fortress rehecho y Solid Snake como `Unknown`/`Solidsnake`: `retag --dry-run` 1 partida y 2 filas sin tocar la base, `retag` las nombra, segunda corrida y `unknown_ids` sin nada. API: `/api/filters/` con "Fortress (Y10)" y "Solid Snake"; bordes y base vacia en 200. 4 mutaciones caen. OMC verifier: PASS. |
 | arquitecto | 2026-11-04 16:18 | Disena 74, 75 y 76 (`propuesto` -> `disenado`). 74: `matches_summary`, `clutch_by_site`, corte por mapa de `compare_periods` y CSV de partidas (columna nueva `map_version` al final) por `(slug, map_id)`; hallazgo: `test_variantes_del_mapa_cuentan_juntas` exige el nombre mas reciente, asi que `matches_summary` usa `etiquetas_de_version` y no `etiquetas_de_mapas`. 75: `team_trades` en `/api/matches/<id>/` desde las filas ya armadas, panel entre Matriz y Scoreboard. 76: plan por consenso (deliberado) APPROVE en ronda 1: columna `opening_kill_traded` escrita en `annotate_trades`, migracion 0004 desde `Event.traded`, desglose solo en `overview.overall`, panel "Aperturas que pesan". Sin pushes de codigo. |
