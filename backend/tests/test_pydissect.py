@@ -19,7 +19,7 @@ import zstandard
 from django.test import SimpleTestCase
 
 from pydissect import Reader, overrides, stats
-from pydissect.constants import ATTACK, DEFENSE, RECRUIT
+from pydissect.constants import ATTACK, CODE_VERSIONS, DEFENSE, RECRUIT
 from pydissect.errors import InvalidFile
 from pydissect.header import (
     derive_team_roles,
@@ -29,6 +29,7 @@ from pydissect.header import (
     map_slug,
     match_type_name,
     operator_label,
+    operator_name,
     operator_side,
 )
 from pydissect.reader import _decompress_chunks
@@ -170,6 +171,12 @@ class HeaderTests(SimpleTestCase):
         self.assertEqual([t["startingScore"] for t in reader.teams], [0, 0])
 
 
+# catalogados desde el fork MIT ImAAhmad/r6-dissect (1f0cc42)
+SOLID_SNAKE = 444310693746
+FORTRESS_Y10 = 398899676157
+FORTRESS = 126196841359  # la version vieja
+
+
 class NameTests(SimpleTestCase):
     def test_mapa_conocido(self):
         self.assertEqual(map_name(407193663917), "Club House")
@@ -195,12 +202,47 @@ class NameTests(SimpleTestCase):
     def test_operador_conocido_ignora_la_cabecera(self):
         self.assertEqual(operator_label({"operator": 92270642318, "roleName": "OTRO"}), "Mute")
 
+    def test_solid_snake_tiene_nombre_y_lado_de_ataque(self):
+        self.assertEqual(operator_name(SOLID_SNAKE), "Solid Snake")
+        self.assertEqual(operator_side(SOLID_SNAKE), "Attack")
+
+    def test_solid_snake_no_se_anota_como_desconocido(self):
+        with mock.patch("pydissect.header.record_unknown") as anotar:
+            operator_name(SOLID_SNAKE)
+            anotar.assert_not_called()
+            operator_name(1)  # control: un ID fuera del catalogo si se anota
+            anotar.assert_called_once_with("operators", 1)
+
+    def test_el_catalogo_gana_al_rolename_de_la_cabecera(self):
+        # sin el catalogo, la cabecera daria "Solidsnake"
+        jugador = {"operator": SOLID_SNAKE, "roleName": "SOLIDSNAKE"}
+        self.assertEqual(operator_label(jugador), "Solid Snake")
+
+    def test_fortress_rehecho_comparte_slug_con_el_viejo(self):
+        self.assertEqual(map_name(FORTRESS_Y10), "Fortress")
+        self.assertEqual(map_slug(FORTRESS_Y10), "fortress")
+        self.assertEqual(map_slug(FORTRESS_Y10), map_slug(FORTRESS))
+
+
+class CodeVersionsTests(SimpleTestCase):
+    def test_las_versiones_y10s4_e_y11s1_estan_en_orden(self):
+        self.assertEqual(CODE_VERSIONS["Y10S4"], 9394857)
+        self.assertEqual(CODE_VERSIONS["Y11S1"], 9578674)
+        # el orden de toda la tabla, no solo de las nuevas: las ramas de
+        # lectura comparan con "<=" y una version fuera de lugar las cruza
+        valores = list(CODE_VERSIONS.values())
+        self.assertEqual(valores, sorted(set(valores)))
+
 
 class EtiquetaDeVersionTests(SimpleTestCase):
     def test_la_etiqueta_lleva_el_sufijo_de_la_version(self):
         self.assertEqual(etiqueta_de_version(418126004176), "Consulate (Y10)")
         self.assertEqual(etiqueta_de_version(2609221242, "Consulate"), "Consulate (Y7)")
         self.assertEqual(etiqueta_de_version(436375283234), "Coastline (Y11)")
+
+    def test_fortress_rehecho_lleva_y10(self):
+        self.assertEqual(etiqueta_de_version(FORTRESS_Y10), "Fortress (Y10)")
+        self.assertEqual(etiqueta_de_version(FORTRESS), "Fortress")
 
     def test_la_version_sin_sufijo_queda_con_el_nombre(self):
         self.assertEqual(etiqueta_de_version(379218689149), "Consulate")

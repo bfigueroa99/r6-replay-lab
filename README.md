@@ -458,6 +458,9 @@ El trabajo de reverse engineering del formato Dissect es de
 [r6-dissect](https://github.com/redraskal/r6-dissect) (redraskal, licencia MIT).
 `pydissect` es un port a Python de esa logica, con los ajustes necesarios para
 las temporadas nuevas. Si el parser te sirve, el credito es de alla.
+Los IDs de Y10S4 e Y11S1 (Solid Snake, el Fortress rehecho y las dos
+versiones) salen del fork [ImAAhmad/r6-dissect](https://github.com/ImAAhmad/r6-dissect)
+(MIT, commit `1f0cc42`).
 
 Este proyecto no esta afiliado a Ubisoft.
 
