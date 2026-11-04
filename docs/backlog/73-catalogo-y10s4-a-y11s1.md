@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-04 04:04
 rama: claude/equipo-dev/73-catalogo-y10s4-a-y11s1
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
@@ -9,7 +9,7 @@ area: parser
 prioridad: 2
 fuente: idea P1 de `ALCANCE.md` (epica `sin entrega` en la linea `ROTACION` de `estado.sh`). Verificado por el PO el 2026-10-30 en el fork MIT de r6-dissect [ImAAhmad/r6-dissect](https://github.com/ImAAhmad/r6-dissect/tree/main/dissect), commit `1f0cc42` (2026-03-10, "Y11S1 SolidSnake, improved defuser detection"): `dissect/header.go` (`SolidSnake Operator = 444310693746`, `FortressY10 Map = 398899676157`), `dissect/operator_roles.go` (`444310693746: Attack`), `dissect/version.go` (`Y10S4 int = 9394857`, `Y11S1 int = 9578674`); [r6-dissect #130](https://github.com/redraskal/r6-dissect/issues/130). En `dev` 0fedc7b ninguno de los cuatro esta en `pydissect/constants.py` (`CODE_VERSIONS` termina en `Y10S3_1`)
 archivos: backend/pydissect/constants.py, backend/tests/test_pydissect.py, backend/tests/test_retag.py, docs/formato-rec.md, README.md
-turnos: po 20261030T1653Z, arquitecto 20261103T1604Z-cpkQba9, dev 20261104T0003Z-cmWzGBm
+turnos: po 20261030T1653Z, arquitecto 20261103T1604Z-cpkQba9, dev 20261104T0003Z-cmWzGBm, revisor 20261104T0403Z-cMkuzSY
 
 ## PR
 
