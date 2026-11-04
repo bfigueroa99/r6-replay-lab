@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
-estado: implementado
-candado: revisor 2026-11-04 04:04
+estado: revisado
+candado: -
 rama: claude/equipo-dev/73-catalogo-y10s4-a-y11s1
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
@@ -223,7 +223,31 @@ verificar.sh: VERDE cb26bbf12 (882 tests backend, 153 vitest, 54 e2e).
 Skills: no aplica (entradas de tabla y tests del patron existente).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-11-04 sobre e4785f1
+
+Revisor 20261104T0403Z-cMkuzSY. Rama ya contiene `dev` ec263c3; `verificar.sh` de partida: VERDE e4785f1 (882 tests backend, 153 vitest, 54 e2e).
+
+Revision a ciegas (omc-code-reviewer via general-purpose, el tipo omc no existe en el checkout; prompt de `revision.md`, sin `docs/backlog/`): sin hallazgos, veredicto aprobar. Diff chico y de un tema (~130 lineas): sin eje de intencion; toca `pydissect/constants.py` pero no la lectura de `.rec`, sin eje de seguridad.
+
+Confirmado por el lider:
+- `CODE_VERSIONS` no la lee ninguna rama de `events.py`/`header.py` (comparan constantes sueltas): agregar Y10S4/Y11S1 no cambia el parseo.
+- `MAPS` se fusiona con `MAPS_EXTRA` sin pisar 398899676157; slug `fortress` compartido con 126196841359 y `etiqueta_de_version` da "Fortress (Y10)".
+- Ningun archivo de `frontend/src` ni del backend fuera de `constants.py` mapea nombres de operador (`git grep Denari`): "Solid Snake" con espacio no rompe nada.
+- El cambio de `MAPA_NUEVO`/`OPERADOR_NUEVO` en `test_retag.py` es solo de valor: ninguna asercion cambio, ningun test se salto.
+
+Criterios de aceptacion:
+- [x] Solid Snake: `test_solid_snake_tiene_nombre_y_lado_de_ataque`, `test_solid_snake_no_se_anota_como_desconocido` (con control), `test_el_catalogo_gana_al_rolename_de_la_cabecera`.
+- [x] Fortress rehecho: `test_fortress_rehecho_comparte_slug_con_el_viejo`, `test_fortress_rehecho_lleva_y10`.
+- [x] Versiones: `CodeVersionsTests.test_las_versiones_y10s4_e_y11s1_estan_en_orden`.
+- [x] Lo ya importado: `RetagCatalogoNuevoTests` (dry-run, aplicacion, segunda corrida y comando "Nada que reetiquetar").
+- [x] Docs: `formato-rec.md` y `## Credito` del README, leidos en el diff. Lo de `.rec` reales queda para `## Verificar en el PC` (QA).
+
+Archivos dentro de `archivos:`. Sin numero nuevo en la UI (sin fila en `metricas.md`). Identificadores y comentarios sin tildes; sin `print` ni `console.log`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## QA <fecha> sobre <sha>
 
