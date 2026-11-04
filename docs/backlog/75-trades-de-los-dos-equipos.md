@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-04T16:05Z
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia

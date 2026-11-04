@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-04T16:05Z
 rama: -
 tipo: funcionalidad
 epica: impacto

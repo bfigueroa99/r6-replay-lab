@@ -1,7 +1,7 @@
 # 74. La version del mapa tambien en el Inicio, Clutch por mapa, Mapas que mejoran y el CSV de partidas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-04T16:05Z
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
