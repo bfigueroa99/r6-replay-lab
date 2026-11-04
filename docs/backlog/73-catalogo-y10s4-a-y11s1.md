@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
-estado: en curso 2026-11-04 00:04
-candado: dev 2026-11-04 00:04 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/73-catalogo-y10s4-a-y11s1
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
@@ -191,6 +191,37 @@ patron de `test_pydissect.py`/`test_retag.py`).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+2026-11-04 (dev 20261104T0003Z-cmWzGBm) sobre `dev` ec263c3. Diseno completo, sin desvios de fondo:
+
+- `constants.py`: `CODE_VERSIONS` suma `Y10S4`/`Y11S1`; `MAPS[398899676157] = ("FortressY10", "Fortress")`
+  despues de `ConsulateY10`; `OPERATORS[444310693746] = "Solid Snake"` y su lado `ATTACK`. Comentario
+  con la fuente (fork `1f0cc42`) arriba de cada entrada.
+- `test_retag.py`: `MAPA_NUEVO`/`OPERADOR_NUEVO` pasan a `999000000001`/`999000000002` con
+  comentario de por que (paso 1 del diseno; ningun test cambio de asercion). Clase nueva
+  `RetagCatalogoNuevoTests` sin overrides: `test_dry_run_cuenta_mapa_y_operador_sin_tocar_la_base`,
+  `test_retag_pone_el_nombre_del_catalogo`, `test_la_segunda_corrida_no_tiene_nada_que_hacer`
+  (este ultimo tambien por `call_command("retag")`, "Nada que reetiquetar").
+- `test_pydissect.py`: en `NameTests`, `test_solid_snake_tiene_nombre_y_lado_de_ataque`,
+  `test_solid_snake_no_se_anota_como_desconocido` (con control `operator_name(1)`),
+  `test_el_catalogo_gana_al_rolename_de_la_cabecera`, `test_fortress_rehecho_comparte_slug_con_el_viejo`;
+  en `EtiquetaDeVersionTests`, `test_fortress_rehecho_lleva_y10`; clase nueva `CodeVersionsTests`
+  con `test_las_versiones_y10s4_e_y11s1_estan_en_orden`.
+- `docs/formato-rec.md` (seccion IDs de mapas y operadores) y `README.md` (`## Credito`, archivo CRLF:
+  se mantuvieron los finales de linea).
+
+Criterios -> tests: los cinco criterios tienen test con nombre arriba, salvo el de docs (verificable
+leyendo el diff) y la parte de `.rec` reales, que va a `## Verificar en el PC` (la escribe QA desde
+el diseno).
+
+Revision previa (omc-code-reviewer via general-purpose, el tipo omc no existe en el checkout): 1 LOW
+real, el comentario del test de orden decia que las ramas de lectura comparan contra
+`CODE_VERSIONS`, pero la tabla no la lee nadie (comparan las constantes sueltas). Corregido.
+
+verificar.sh: VERDE cb26bbf12 (882 tests backend, 153 vitest, 54 e2e).
+
+Skills: no aplica (entradas de tabla y tests del patron existente).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## Revision <fecha> sobre <sha>
 
