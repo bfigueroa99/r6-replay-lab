@@ -1,7 +1,7 @@
 # 73. Solid Snake, Fortress rehecho y las versiones Y10S4 e Y11S1 con nombre
 
 estado: aprobado
-candado: -
+candado: release 2026-11-04 08:09
 rama: claude/equipo-dev/73-catalogo-y10s4-a-y11s1
 tipo: funcionalidad
 epica: datos-nuevos-del-parser
