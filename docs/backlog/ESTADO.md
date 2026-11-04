@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-04 00:20 UTC por dev (sesion 20261104T0003Z-cmWzGBm; motivo: por estado: 1 disenado, lugar en cola)
+actualizado: 2026-11-04 04:12 UTC por revisor (sesion 20261104T0403Z-cMkuzSY; motivo: por estado: 1 implementado)
 playbook: origin/dev@ec263c3
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-02T04:15Z) | 11 de 41 en 7 dias
 pausa: no
@@ -9,7 +9,7 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/73-catalogo-y10s4-a-y11s1 | docs/backlog/73-catalogo-y10s4-a-y11s1.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/73-catalogo-y10s4-a-y11s1?expand=1) |
+| claude/equipo-dev/73-catalogo-y10s4-a-y11s1 | docs/backlog/73-catalogo-y10s4-a-y11s1.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/73-catalogo-y10s4-a-y11s1?expand=1) |
 
 COLA=1/4  TOTAL=1/6
 RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=78 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
@@ -21,7 +21,7 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:6 (64-partidas-en-el-inicio 65-presencia-y-delta-por-operador 66-copiar-resumen-de-partida 70-mapas-por-version 71-version-del-mapa-en-la-partida 72-apertura-marcada-en-la-timeline) otros:3
-- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev; A8 es el tramo siguiente. paridad-referencia: R1 (64) y R4 (72) en dev. datos-nuevos-del-parser: P1 (73) `implementado` en su rama.
+- Epicas en curso: temporada-y-modo: A4 (70) y A6 (71) en dev; A8 es el tramo siguiente. paridad-referencia: R1 (64) y R4 (72) en dev. datos-nuevos-del-parser: P1 (73) `revisado` en su rama (espera QA de otra sesion).
 - Papel: PAPEL_TIPOS=funcionalidad:0 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 78 ideas libres. Ideas nuevas de este turno: A9 reglas de 3v3 Arcade, B17 lado inicial por mapa, H8 datos para reportar a un jugador, H9 partida en .zip, K10 aperturas sin trade, K11 clutches silenciosos, P7 jugadores anonimos desde Y11S3.3.
 - Investigacion: ultima entrada 2026-11-03 (familias 8, 3, 5 y 6). Paridad con la referencia 79.4 / 100 (era 76.1), must 14 de 17; faltan A1 (tipo de partida), sitio con W-L y O1.
@@ -32,10 +32,10 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 73-catalogo-y10s4-a-y11s1 | en curso (espejo; en su rama: implementado) | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
+| 73-catalogo-y10s4-a-y11s1 | en curso (espejo; en su rama: revisado) | funcionalidad | datos-nuevos-del-parser | 2 | parser | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 0 `disenado`; la 73 paso a su rama (`implementado`, espera Revisor de otra sesion). Para el PO: el papel esta vacio (la directiva pide 3). Candidatos a ficha chica `deuda` ya anotados: que `seed_demo` escriba `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (hoy el chip "apertura" de la 72 contradice "1a baja" del scoreboard en los datos demo), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65). Candidato `bug`: `seed_demo` siembra Ranked 4-3 que la regla no cierra (68).
+0 `propuesto`, 0 `disenado`; la 73 esta en su rama (`revisado`, espera QA de otra sesion). Para el PO: el papel esta vacio (la directiva pide 3). Candidatos a ficha chica `deuda` ya anotados: que `seed_demo` escriba `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (hoy el chip "apertura" de la 72 contradice "1a baja" del scoreboard en los datos demo), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65). Candidato `bug`: `seed_demo` siembra Ranked 4-3 que la regla no cierra (68).
 
 ## Ultimo turno de cada rol
 
@@ -43,7 +43,7 @@ RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 |---|---|---|
 | release | 2026-11-03 12:25 | (mismo turno que la QA) Entrega y mergea la 69: `aprobado` -> `entregado` -> [PR #71](https://github.com/bfigueroa99/r6-replay-lab/pull/71) -> dev ec263c3. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev 6aee89a ya en la rama, `verificar.sh` VERDE 7117f26 (873 backend, 153 vitest, 54 e2e). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). |
 | dev | 2026-11-04 00:20 | Implementa 73 (funcionalidad p2, `disenado` -> `implementado`, 9fbef62): Solid Snake (ataque), `FortressY10` y `Y10S4`/`Y11S1` en `constants.py`; IDs sinteticos en `test_retag.py` como pedia el diseno; 6 tests en `test_pydissect.py` y `RetagCatalogoNuevoTests` (3); docs en `formato-rec.md` y README. Revision ciega: 1 LOW (comentario) arreglado. `verificar.sh` VERDE cb26bbf12 (882 backend, 153 vitest, 54 e2e). |
-| revisor | 2026-11-03 08:20 | Revisa 69 (bug p2, `implementado` -> `revisado`, 761ec50). Rama ya al dia con dev 6aee89a; `verificar.sh` VERDE 42bad97 (873 backend, 153 vitest, 54 e2e). Revision a ciegas en dos ejes (estandares e intencion): ambos aprobar, 2 LOW sin bloquear (inicializacion de `one_vx` del parser que siempre se pisa; la ganancia se limita a replays anteriores a Y9S1, ya documentado). Confirmado que `Round.teams` guarda `won` desde 0001 y que los `Event` guardados traen `PlayerLeave` con `actor_name`: `recompute` alcanza sin reparsear. |
+| revisor | 2026-11-04 04:12 | Revisa 73 (funcionalidad p2, `implementado` -> `revisado`, 23a0eb0). Rama ya al dia con dev ec263c3; `verificar.sh` VERDE e4785f1 (882 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, sin hallazgos; confirmado que `CODE_VERSIONS` no la lee el parser, que `FortressY10` comparte slug y etiqueta "(Y10)", que nada mapea nombres de operador y que el cambio de IDs en `test_retag.py` es solo de valor. |
 | qa | 2026-11-03 12:15 | Prueba 69 (bug p2, `revisado` -> `aprobado`) sobre d0a2649. `verificar.sh` VERDE (873 backend, 153 vitest, 54 e2e). Base de `factories` con los dos escenarios: `recompute --dry-run` 2 filas, `recompute` 2, tercera corrida sin cambios; API con `one_vx: 2`, clutch y record 2. Bordes y base vacia en 200. 4 mutaciones caen. OMC verifier: PASS (fuzz de paridad de 200.000 rondas: 0 diferencias). |
 | arquitecto | 2026-11-03 16:40 | Disena 73 (`propuesto` -> `disenado`): cuatro entradas en `constants.py` (Solid Snake de ataque, `FortressY10`, `Y10S4`/`Y11S1` en `CODE_VERSIONS`), tests en `test_pydissect.py` y `RetagCatalogoNuevoTests`, docs en `formato-rec.md` y README. Hallazgo: `test_retag.py` usa justo `398899676157`/`444310693746` como IDs desconocidos; catalogarlos tumba 8 tests (spike sobre ec263c3), y moverlos a IDs sinteticos `999000000001/2` deja la suite verde. Sin arena ni consenso (forma unica), sin pushes de codigo. |
 | investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
