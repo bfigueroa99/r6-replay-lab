@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-04 12:10 UTC por po (sesion 20261104T1206Z-c8cAo8L; motivo: papel vacio)
+actualizado: 2026-11-04 16:18 UTC por arquitecto (sesion 20261104T1604Z-cAKAGx1; motivo: por estado: 3 propuesto, 0 disenado de 3)
 playbook: origin/dev@bcdbdf5
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 40 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -13,7 +13,7 @@ pausa: no
 Vacia: la 73 entro a dev por [PR #72](https://github.com/bfigueroa99/r6-replay-lab/pull/72).
 
 COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=3 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -33,12 +33,12 @@ Sin ramas abiertas.
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 74-version-del-mapa-en-el-resto-de-pantallas | propuesto | funcionalidad | temporada-y-modo | 2 | backend | - |
-| 75-trades-de-los-dos-equipos | propuesto | funcionalidad | paridad-referencia | 2 | frontend | - |
-| 76-aperturas-sin-trade | propuesto | funcionalidad | impacto | 3 | backend | - |
+| 74-version-del-mapa-en-el-resto-de-pantallas | disenado | funcionalidad | temporada-y-modo | 2 | backend | - |
+| 75-trades-de-los-dos-equipos | disenado | funcionalidad | paridad-referencia | 2 | frontend | - |
+| 76-aperturas-sin-trade | disenado | funcionalidad | impacto | 3 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-3 `propuesto`, 0 `disenado`: el proximo disparo es Arquitecto (regla 9). Orden sugerido: 74 (sin migracion, tramo escrito por la 70), 75 (sin migracion, `should` de la referencia), 76 (migracion + `recompute` en `RoundPlayer`). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
+0 `propuesto`, 3 `disenado`: el proximo disparo es Dev (regla 8). Orden sugerido: 75 (sin migracion, archivos propios: `views.py`, `MatchDetail.jsx`), 74 (sin migracion; `aggregates.py`, `Teammates.jsx`, `Trends.jsx`), 76 (migracion 0004 + `recompute`; comparte `aggregates.py` y `metricas.md` con la 74 en zonas distintas: si van en paralelo, la segunda en mergear resuelve con P3). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
 
 ## Ultimo turno de cada rol
 
@@ -48,7 +48,7 @@ Sin ramas abiertas.
 | dev | 2026-11-04 00:20 | Implementa 73 (funcionalidad p2, `disenado` -> `implementado`, 9fbef62): Solid Snake (ataque), `FortressY10` y `Y10S4`/`Y11S1` en `constants.py`; IDs sinteticos en `test_retag.py` como pedia el diseno; 6 tests en `test_pydissect.py` y `RetagCatalogoNuevoTests` (3); docs en `formato-rec.md` y README. Revision ciega: 1 LOW (comentario) arreglado. `verificar.sh` VERDE cb26bbf12 (882 backend, 153 vitest, 54 e2e). |
 | revisor | 2026-11-04 04:12 | Revisa 73 (funcionalidad p2, `implementado` -> `revisado`, 23a0eb0). Rama ya al dia con dev ec263c3; `verificar.sh` VERDE e4785f1 (882 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, sin hallazgos; confirmado que `CODE_VERSIONS` no la lee el parser, que `FortressY10` comparte slug y etiqueta "(Y10)", que nada mapea nombres de operador y que el cambio de IDs en `test_retag.py` es solo de valor. |
 | qa | 2026-11-04 08:14 | Prueba 73 (funcionalidad p2, `revisado` -> `aprobado`, 5106b4f). `verificar.sh` VERDE bcc1edd97 (882 backend, 153 vitest, 54 e2e). Base de `factories` con Fortress rehecho y Solid Snake como `Unknown`/`Solidsnake`: `retag --dry-run` 1 partida y 2 filas sin tocar la base, `retag` las nombra, segunda corrida y `unknown_ids` sin nada. API: `/api/filters/` con "Fortress (Y10)" y "Solid Snake"; bordes y base vacia en 200. 4 mutaciones caen. OMC verifier: PASS. |
-| arquitecto | 2026-11-03 16:40 | Disena 73 (`propuesto` -> `disenado`): cuatro entradas en `constants.py` (Solid Snake de ataque, `FortressY10`, `Y10S4`/`Y11S1` en `CODE_VERSIONS`), tests en `test_pydissect.py` y `RetagCatalogoNuevoTests`, docs en `formato-rec.md` y README. Hallazgo: `test_retag.py` usa justo `398899676157`/`444310693746` como IDs desconocidos; catalogarlos tumba 8 tests (spike sobre ec263c3), y moverlos a IDs sinteticos `999000000001/2` deja la suite verde. Sin arena ni consenso (forma unica), sin pushes de codigo. |
+| arquitecto | 2026-11-04 16:18 | Disena 74, 75 y 76 (`propuesto` -> `disenado`). 74: `matches_summary`, `clutch_by_site`, corte por mapa de `compare_periods` y CSV de partidas (columna nueva `map_version` al final) por `(slug, map_id)`; hallazgo: `test_variantes_del_mapa_cuentan_juntas` exige el nombre mas reciente, asi que `matches_summary` usa `etiquetas_de_version` y no `etiquetas_de_mapas`. 75: `team_trades` en `/api/matches/<id>/` desde las filas ya armadas, panel entre Matriz y Scoreboard. 76: plan por consenso (deliberado) APPROVE en ronda 1: columna `opening_kill_traded` escrita en `annotate_trades`, migracion 0004 desde `Event.traded`, desglose solo en `overview.overall`, panel "Aperturas que pesan". Sin pushes de codigo. |
 | investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
 | po | 2026-11-04 12:10 | Papel vacio. Propone 74 (A8: version del mapa en mejor y peor mapa del Inicio, Clutch por mapa y sitio, Mapas que mejoran y el CSV de partidas; tramo que dejo escrito la 70), 75 (R2: trades de los dos equipos en el detalle de partida, `should` de la referencia) y 76 (K10: aperturas ganadas limpias y perdidas vengadas, del rating de Siege.GG 2026). `ALCANCE.md`: A6, R4 y P1 `en dev` (71, 72, 73); nuevas B18, D8, E13, O8 y R6: 80 libres (78 al empezar). Sin pushes de codigo. |
 
@@ -61,6 +61,7 @@ Sin ramas abiertas.
 - Verificar en el PC (69, en dev por PR #71): `manage.py backup`, `recompute --dry-run` (cuenta las filas de 1vX que cambian; solo partidas anteriores a Y9S1 con abandonos) y `recompute`.
 - Verificar en el PC (68, en dev por PR #66): `manage.py recompute --dry-run` ("... y N partidas (resultado)", pocas) y `recompute`; esas partidas salen `incompleta` y dejan de contar en el winrate de partidas.
 - Verificar en el PC (67, en dev por PR #64): `manage.py backup`, `recompute --dry-run`, `recompute` y otra vez `recompute` ("Nada que recalcular"); K/D, KPR y rating bajan solo donde hubo teamkills. El `.exe` no corre `recompute` (aviso en la ficha).
+- Pregunta abierta (76, no bloquea): la "apertura devuelta" se define por el trade del evento (el equipo de tu victima te mato en la ventana), no por "moriste dentro de la ventana"; teamkill, `Death` sin autor o victima fuera de la lista dejan la apertura limpia. Si preferis la letra, decilo en la ficha.
 - PRs que esperan tu merge contra dev: ninguno. Promover a main cuando quieras: RELEASE=dev lleva 96 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1).
 - Verificar en el PC (66): en Electron (`npm run desktop`), "Copiar resumen" en una partida y pegar.
 - Entorno cloud (qa 20261026T2004Z): `check.sh` ya elige solo el Chromium de la imagen (`E2E_CHROMIUM`); correr `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
