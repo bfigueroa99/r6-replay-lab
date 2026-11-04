@@ -177,6 +177,13 @@ mecanismos:
 
 `MAPS_EXTRA` en `constants.py` ya trae los IDs identificados por este metodo.
 
+Catalogados desde el fork MIT [ImAAhmad/r6-dissect](https://github.com/ImAAhmad/r6-dissect)
+(commit `1f0cc42`): Solid Snake `444310693746` (ataque), Fortress rehecho
+`398899676157` (`FortressY10`), versiones `Y10S4 = 9394857` e
+`Y11S1 = 9578674`. Calypso Casino, Noor y el Dokkaebi rehecho siguen saliendo
+de `unknown_ids`. Lo ya importado se corrige con `manage.py retag`, sin
+reimportar.
+
 ## Como diagnosticar
 
 Cuando algo deje de andar, esto es lo que sirve:

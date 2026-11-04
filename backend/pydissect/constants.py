@@ -32,6 +32,8 @@ CODE_VERSIONS = {
     "Y10S2_5": 9158643,
     "Y10S3": 9199003,
     "Y10S3_1": 9211553,
+    "Y10S4": 9394857,
+    "Y11S1": 9578674,
 }
 
 Y7S1 = 6884476
@@ -105,6 +107,8 @@ MAPS = {
     417890697769: ("LairY10", "Lair"),
     418119057546: ("NighthavenLabsY10", "Nighthaven Labs"),
     418126004176: ("ConsulateY10", "Consulate"),
+    # del fork MIT ImAAhmad/r6-dissect (1f0cc42): el revamp de Fortress de Y10
+    398899676157: ("FortressY10", "Fortress"),
 }
 
 # IDs observados en replays mas nuevos que la tabla de arriba. Se identifican
@@ -194,6 +198,8 @@ OPERATORS = {
     386098331713: "Skopos",
     386098331923: "Rauora",
     374667787937: "Denari",
+    # del fork MIT ImAAhmad/r6-dissect (1f0cc42), no de un replay observado
+    444310693746: "Solid Snake",
 }
 RECRUIT = 359656345734
 
@@ -279,6 +285,7 @@ OPERATOR_SIDES = {
     "Skopos": DEFENSE,
     "Rauora": DEFENSE,
     "Denari": ATTACK,
+    "Solid Snake": ATTACK,
 }
 
 # --- tipos de evento del match feedback -------------------------------------------
