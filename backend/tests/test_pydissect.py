@@ -228,8 +228,9 @@ class CodeVersionsTests(SimpleTestCase):
     def test_las_versiones_y10s4_e_y11s1_estan_en_orden(self):
         self.assertEqual(CODE_VERSIONS["Y10S4"], 9394857)
         self.assertEqual(CODE_VERSIONS["Y11S1"], 9578674)
-        # el orden de toda la tabla, no solo de las nuevas: las ramas de
-        # lectura comparan con "<=" y una version fuera de lugar las cruza
+        # el orden de toda la tabla, no solo de las nuevas: es el registro de
+        # versiones del que salen las constantes sueltas (Y9S4, ...) que si
+        # comparan las ramas de lectura, y una fuera de lugar engana al leerla
         valores = list(CODE_VERSIONS.values())
         self.assertEqual(valores, sorted(set(valores)))
 
