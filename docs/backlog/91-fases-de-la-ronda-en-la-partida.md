@@ -1,7 +1,7 @@
 # 91. Fases de la ronda en el detalle de partida
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T19:27Z
 rama: claude/equipo-dev/91-fases-de-la-ronda-en-la-partida
 tipo: funcionalidad
 epica: paridad-referencia
