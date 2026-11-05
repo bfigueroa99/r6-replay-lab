@@ -68,6 +68,11 @@ A4 (70) en dev; A6 -> ficha 71, R4 -> ficha 72, P1 -> ficha 73; nuevas A7, A8, B
 Investigador 2026-11-03 (sesion 20261103T2005Z-cWAnVGk): familias 8, 3, 5 y 6; nuevas A9, B17, H8, H9, K10, K11 y P7 (71 -> 78 libres).
 Reconciliado el 2026-11-04 (sesion 20261104T1206Z-c8cAo8L) contra `dev` bcdbdf5:
 A6 (71), R4 (72) y P1 (73) en dev; A8 -> ficha 74, R2 -> ficha 75, K10 -> ficha 76; nuevas B18, D8, E13, O8 y R6 (78 -> 80 libres).
+Reconciliado el 2026-11-05 (sesion 20261105T0230Z-c8Ahepa) contra `dev` 2da1b7d:
+A8 (74) en dev; respuestas del humano del 2026-11-05: E2, F2 y G2 pasan de
+`decision` a `idea` (POST permitidos) y las ideas de los PRs cerrados vuelven
+como A10, E14, F15, F16, F17, S1 y S2 (epica nueva `posicionamiento`).
+A1 -> ficha 77, F16 -> ficha 78, G2 -> ficha 79.
 
 ## Epicas
 
@@ -75,14 +80,15 @@ A6 (71), R4 (72) y P1 (73) en dev; A8 -> ficha 74, R2 -> ficha 75, K10 -> ficha 
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
-| A1 | Selector de tipo de partida en la barra de filtros | Filtrar todo por ranked, unranked, rapida o la que sea, y no solo con "solo ranked" | `Match.match_type`; la API ya filtra (`views.py:48`) y `filters/` ya devuelve `match_types`; falta en `Filters.jsx`, que PR #14 tambien toca | S | idea |
+| A1 | Selector de tipo de partida en la barra de filtros | Filtrar todo por ranked, unranked, rapida o la que sea, y no solo con "solo ranked" | `Match.match_type`; la API ya filtra (`views.py:48`) y `filters/` ya devuelve `match_types`; falta en `Filters.jsx` (PR #14, que tambien lo tocaba, se cerro sin merge el 2026-11-05) | S | ficha 77 |
 | A2 | Etiquetar modos de juego desconocidos en Datos | Un modo nuevo deja de verse como `Unknown(...)` | `gamemode_name` (`header.py:233`) no llama a `record_unknown`, a diferencia de mapas y operadores; candidato de `mercado/2026-09-13`. Incluye tipos de partida (`match_type_name`, `header.py:229`) | S | en main (PR #36) |
 | A3 | Temporada como dimension: etiqueta, filtro y comparacion | Saber si mejoraste de una temporada a otra | `Match.game_version` y `code_version` (`models.py:57-58`); tabla version -> temporada en `constants.py`, y las versiones sin nombre se etiquetan en Datos como los mapas | M | idea |
 | A4 | Mapas rehechos como su propia fila | Fortress (rework Y10S4), Consulate, Club House y los demas `*Y10` tienen otro ID y otro slug que la version vieja pero el mismo nombre: en Mapas salen dos filas "Fortress" iguales de nombre, y el winrate por lado de las dos es el mismo numero mezclado, porque `by_map` une el lado por `map_name` y no por slug (`aggregates.py:395`); `by_site` tambien agrupa por nombre y mezcla sitios de layouts distintos. Etiquetar la version ("Fortress (2025)") y unir por slug. Incluye un bug de numeros: el PO puede abrirlo como `tipo: bug`. [fuente](https://www.ubisoft.com/en-us/game/rainbow-six/siege/news-updates/seasons/tenfoldpursuit) ("Fortress now has less hallways, bombsites have been balanced") | `MAPS` (`pydissect/constants.py:72-115`: `Fortress` 126196841359 y `FortressY10` en P1, `ConsulateY7`/`ConsulateY10`, `ClubHouse`/`ClubHouseY10`...), `Match.map_slug` y `map_name` (`models.py:53-54`), `by_map` y `by_site` (`aggregates.py:383-414`). Villa cambio de sitios en Y11S3 sin ID nuevo conocido: verificar con `.rec` reales en el PC | S | en dev (70, PR #65; la 49 sigue descartada como bug) |
 | A6 | Version del mapa en el listado y el detalle de partida | Despues de la ficha 70: la partida dice "Consulate (Y10)" y no solo "Consulate" en Partidas, en el detalle y en el resumen copiado, asi el nombre cuadra con la fila de Mapas a la que suma. Implementar despues de #70 | `Match.map_id` (`ingest.py:160`) y la funcion de etiqueta de version que deja la 70 sobre `MAPS` (`pydissect/constants.py`); `views.py` (listado y detalle), `resumenPartida.js` | S | en dev (71, PR #70) |
 | A7 | Modo de juego como dimension | En partidas rapidas y no clasificatorias se juega Bomba, Rehen y Area segura, y hoy todo se mezcla: los sitios, el winrate de ataque y la duracion de las rondas de Bomba suman rondas de Rehen. Un selector de modo en la barra de filtros y una tabla "Por modo" en Tendencias (partidas, winrate de partida y de ronda, K/D, rating) separan el modo que te va bien del que no. A1 filtra el tipo de partida (ranked, rapida); esto, el modo | `Match.gamemode` (`models.py:56`, texto de `gamemode_name`, `pydissect/header.py`, sobre `GAME_MODES` de `pydissect/constants.py`: `Bomb`, `SecureArea`, `Hostage`, `QuickMatchBomb`); hoy solo sale en la cabecera de `MatchDetail.jsx:57` y en Datos (desconocidos). Filtro nuevo en `_filters` de `views.py` como `match_type`; los modos sin nombre (`Unknown(...)`) van en su propia fila | S | idea |
-| A8 | Version del mapa en el resto de las pantallas por mapa | Despues de la ficha 70, Mapas y el CSV separan "Consulate (Y10)" de la version vieja, pero el mejor y peor mapa del Inicio (64), Clutch por mapa y sitio (59), Mapas que mejoran y empeoran (56) y los mapas de cada rival en Duelos siguen juntando versiones (y la tabla `matches` de Exportar, `replays/export.py`, dice `map_name` sin version: visto en la QA de la 71, 2026-11-02): el Inicio puede nombrar "Consulate" como tu peor mapa mezclando dos layouts. Lo deja anotado el `Fuera de alcance` de la 70 | la clave `(map_slug, map_id)` y `etiquetas_de_version` de `replays/analytics/aggregates.py` (ficha 70) aplicadas a `matches_summary` (mejor y peor mapa, agrupa por `map_slug`), `clutch_by_site`, el corte `by_map` de `compare_periods` y `_agregar_mapas` de Duelos (lista `map_name` sin version), todas en el mismo archivo; misma muestra minima por fila que hoy | S | ficha 74 |
+| A8 | Version del mapa en el resto de las pantallas por mapa | Despues de la ficha 70, Mapas y el CSV separan "Consulate (Y10)" de la version vieja, pero el mejor y peor mapa del Inicio (64), Clutch por mapa y sitio (59), Mapas que mejoran y empeoran (56) y los mapas de cada rival en Duelos siguen juntando versiones (y la tabla `matches` de Exportar, `replays/export.py`, dice `map_name` sin version: visto en la QA de la 71, 2026-11-02): el Inicio puede nombrar "Consulate" como tu peor mapa mezclando dos layouts. Lo deja anotado el `Fuera de alcance` de la 70 | la clave `(map_slug, map_id)` y `etiquetas_de_version` de `replays/analytics/aggregates.py` (ficha 70) aplicadas a `matches_summary` (mejor y peor mapa, agrupa por `map_slug`), `clutch_by_site`, el corte `by_map` de `compare_periods` y `_agregar_mapas` de Duelos (lista `map_name` sin version), todas en el mismo archivo; misma muestra minima por fila que hoy | S | en dev (74, PR #73) |
 | A9 | Reglas de partida para 3v3 Arcade | Hoy solo Ranked tiene regla en `reglas_partida.REGLAS`: las partidas de 3v3 Arcade (Y11S3 por tiempo limitado, vuelve en Y11S4) no tienen match point y su marcador final no se valida, asi que un `.rec` faltante cuenta como victoria o derrota. Con la regla oficial (primero a 4, prorroga a 5, 7 rondas maximo) entran a Match point y a `won=None` como Ranked. [fuente](https://www.ubisoft.com/en-us/game/rainbow-six/siege/news-updates/seasons/splitfire) ("Matches have 7 rounds max (first team to win 4 out of 6 matches, with 1 overtime round if needed)"), [fuente](https://www.ubisoft.com/en-us/game/rainbow-six/siege/news-updates/oCwKLIyu3x8Xi7YtJKQCw/rainbow-six-siege-community-checkpoint-recap-balancing-testing-grounds-hostage-and-more) (2026-11-02, "the 3v3 playlist will return in Y11S4") | `REGLAS` de `replays/analytics/reglas_partida.py` (clave `Match.match_type`); como se llama el tipo o el modo 3v3 en la cabecera (`match_type_name`/`gamemode_name`, `pydissect/header.py`) no se sabe: sale `Unknown(...)` en Datos (A2). Verificar con un `.rec` de 3v3 en el PC antes de la ficha | S | idea |
+| A10 | Filtros en la URL | Recargar no pierde los filtros, el menu los conserva al cambiar de pagina y una vista filtrada se puede guardar como marcador del navegador. Salio del PR #14 (cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sigue, con `frontend/src/filtros.js` y el Link `Enlace` de referencia) | filtros que ya entiende la API (`views.py`, `filters/`); solo frontend: `Filters.jsx`, `api.js` y el router | M | idea |
 
 ### lado-y-marcador: mitades, prorroga y presion
 
@@ -144,7 +150,7 @@ A6 (71), R4 (72) y P1 (73) en dev; A8 -> ficha 74, R2 -> ficha 75, K10 -> ficha 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | E1 | Curva de aprendizaje por operador | Tu rating en las primeras N rondas con un operador contra las siguientes: si practicarlo rinde | `RoundPlayer` por operador ordenado por fecha, como `trend_by_match`; fila nueva en `docs/metricas.md` | M | idea |
-| E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | decision (POST nuevo: ver Para el humano) |
+| E2 | Metas personales | Fijar una meta (KST 70 %, menos de 30 % de muertes sin trade) y ver si la cumpliste en cada sesion | modelo nuevo de metadatos + POST de accion explicita que `CLAUDE.md` hoy no admite; sesiones de `sessions/` | M | idea (POST permitido por el humano el 2026-11-05: entra a la lista de POST de `CLAUDE.md` cuando su ficha se disene, local y con `application/json`) |
 | E3 | Rendimiento por hora del dia y dia de la semana | Saber si juegas peor de madrugada o los domingos, con muestra suficiente para creerlo | `Match.played_at` (`models.py:50`), ya en hora local (`USE_TZ = False`, `TIME_ZONE` en `config/settings.py:143`); agrupar por franja de 3 h y por dia con `ExtractHour`/`ExtractWeekDay` | S | en main |
 | E4 | Records personales | Tu mejor partida (rating, bajas), tu ronda con mas bajas, tu 1vX mas grande y tu mejor dia, cada uno con enlace a la partida: lo que da gusto volver a mirar y marca el techo a superar | `RoundPlayer.kills`, `one_vx` y rating por partida (`trend_by_match`), `trend_by_day`; un agregado nuevo que devuelve el maximo con su `match_id`. La racha actual es de PR #14: no se duplica | S | en main (ficha 44) |
 | E5 | Mapas que mejoran y mapas que empeoran | En Tendencias, junto a la comparacion de periodos que ya muestra `Trends.jsx`, por cada mapa con muestra en los dos periodos, tu rating y winrate de las ultimas N partidas contra las N anteriores, ordenado por la diferencia: en que mapa estas mejorando y cual se te esta cayendo, con la banda de ruido que ya usa la comparacion general | `compare_periods` (`aggregates.py:1316`, `_periodo_por_partidas` y `_ruido`) hoy compara el total; agruparlo por `round__match__map_slug` como `by_map`. Mapas sin muestra minima en un periodo no se listan | S | en main (56, PR #49) |
@@ -156,13 +162,14 @@ A6 (71), R4 (72) y P1 (73) en dev; A8 -> ficha 74, R2 -> ficha 75, K10 -> ficha 
 | E11 | Que mapas te tocan | En Tendencias, cuantas partidas jugaste en cada mapa por semana de las ultimas 8, con tu winrate al lado: ver como rota el pool, que mapa te sale cada vez mas y si tus numeros de un mapa son de hace un mes. Ninguna pantalla muestra la frecuencia en el tiempo | `Match.map_name` y `Match.played_at` (`models.py`), filtros de siempre; agrupacion por semana ISO en el agregado, como `trend_by_day` | S | idea |
 | E12 | Tu semana contra la anterior | En el Inicio, una tarjeta que compara los ultimos 7 dias con los 7 anteriores: partidas jugadas, winrate de partida, winrate de rondas, K/D y rating, con la flecha y la banda de ruido de la comparacion de Tendencias. Hoy `compare_periods` corta por cantidad de partidas; esto corta por calendario, que es como uno piensa "esta semana" | `Match.played_at` (hora local, `USE_TZ = False`), `Match.won`, `RoundPlayer` con los filtros de siempre; `_ruido` de `aggregates.py`. Una semana sin partidas da `null`, no 0 | S | idea |
 | E13 | La primera partida despues de un descanso | Tu winrate y rating en la primera partida tras 1, 3 y 7 o mas dias sin jugar, contra el resto: si vuelves oxidado y te conviene una partida no clasificatoria antes de entrar a ranked. E6 mira derrotas seguidas dentro de la sesion; esto, los dias entre sesiones | `Match.played_at` (hora local, `USE_TZ = False`) ordenado entre todas tus partidas sin filtros de lado, el hueco con la partida anterior; `Match.won` (None fuera del %), rating por partida como `trend_by_match`; banda de ruido por fila (`_ruido`, `aggregates.py`) | S | idea |
+| E14 | Racha actual de partidas | En el Inicio, cuantas partidas seguidas llevas ganando o perdiendo ahora, al lado del resultado de la ultima. Salio del PR #14 (cerrado sin merge) | `Match.won` y `Match.date` en orden; las partidas `incompleta` (`won=None`, ficha 68) no cortan ni suman | S | idea |
 
 ### revision-de-rondas: revisar rondas
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | F1 | Buscador de rondas entre partidas | Encontrar todas tus rondas de un tipo (clutch, apertura perdida sin trade, ronda perdida tras abrir ganando) y saltar al detalle de cada una Ampliacion (2026-10-14): filtro por composicion (1 a 5 operadores de tu equipo + mapa, sitio, resultado) con su winrate. [fuente](https://r6tv.online/how-it-works) | banderas de `RoundPlayer` (`one_vx`, `entry_kill`, `untraded_death`, `models.py:140-148`). PR #14 enlaza señales del coach a rondas: revisarlo antes de disenar para no duplicar | M | idea |
-| F2 | Notas y marcadores por ronda | Anotar que paso en una ronda y volver a las marcadas | modelo nuevo + POST de accion explicita; candidato #22 de `mercado/2026-09-16` | M | decision (POST nuevo: ver Para el humano) |
+| F2 | Notas y marcadores por ronda | Anotar que paso en una ronda y volver a las marcadas | modelo nuevo + POST de accion explicita; candidato #22 de `mercado/2026-09-16` | M | idea (POST permitido por el humano el 2026-11-05: entra a la lista de POST de `CLAUDE.md` cuando su ficha se disene, local y con `application/json`) |
 | F4 | Tira de rondas en el listado de partidas | En Partidas, cada fila muestra la secuencia de rondas ganadas y perdidas (y el lado) y no solo el marcador final: se ven las remontadas y los derrumbes sin abrir la partida | `Round.my_team_won`, `my_side`, `number` por partida; `match_list` (`views.py`) agrega una lista corta por partida en la misma consulta paginada. PR #14 toca `Matches.jsx` (filtros): disenar sin pisarlo o esperar | S | idea |
 | F3 | Cambios de operador y spawn en la linea de tiempo | Ver en el detalle de la ronda quien cambio de operador y desde que spawn salio cada uno | eventos `OPERATOR_SWAP` (`constants.py:292`), hoy una linea generica en `MatchDetail.jsx`; `spawn` ya viene en `matches/<id>/` y ninguna pagina lo pinta | S | idea |
 | F5 | Ventaja numerica tirada | Rondas que tu equipo perdio despues de quedar con un jugador mas (o dos), contadas por lado y mapa, con enlace a cada una: el error que mas duele y que el marcador no muestra | orden de las bajas por ronda (`Event` de tipo kill con su reloj y el `team_index` de victima y autor), conteo de vivos por equipo; `Round.my_team_won`. Los abandonos (`PLAYER_LEAVE`) cuentan como baja, igual que en `stats.py` | M | idea |
@@ -175,6 +182,9 @@ A6 (71), R4 (72) y P1 (73) en dev; A8 -> ficha 74, R2 -> ficha 75, K10 -> ficha 
 | F10 | Multikills por tamaño: 2K, 3K, 4K y ace | Hoy solo existe `multikill_pct` (rondas con 2 o mas). Conteo por tamaño en el scoreboard de la partida y en Jugador, con el ace aparte. Distinto de E4 y F8. [fuente](https://cs-demo-manager.com/changelog), [fuente](https://www.vlr.gg/188013/velaris-vs-clg-red-complexity-paradox-invitational-playoffs-lr3/?game=all&tab=performance) | `RoundPlayer.kills` por ronda; `aggregates.py:143` ya cuenta `multikill_rounds` | S | en main (53) |
 | F11 | Rondas perdidas sobreviviendo | Cuantas rondas terminaste vivo y tu equipo igual perdio, por lado y por mapa: en ataque es tiempo agotado o defuse, en defensa es la bomba plantada o tiempo de ataque bien jugado por el rival. Dice si te guardas de mas cuando la ronda se esta perdiendo, y lista esas rondas para revisarlas | `RoundPlayer.survived`, `won` y `side`, `Match.map_slug` (`models.py`); agregado nuevo en `aggregates.py` como `by_round_length`, sin columna nueva. No usa `possible_plant` (ver Ideas descartadas) | S | idea |
 | F14 | Teamkill marcado en la timeline de la ronda | En la timeline de `MatchDetail`, una baja entre compañeros lleva un chip "TK" (junto a HS y tradeada) y no se lee como una baja mas: tras la ficha 67 no suma a las bajas, y en el feed tiene que verse por que el numero no cuadra con la timeline | `Event` (`actor_name`, `target_name`, `kind == Kill`) y `RoundPlayer.team_index` de los dos en esa ronda, la misma comparacion de `_teamkills` (`aggregates.py:1841`); sin columnas nuevas | S | idea |
+| F15 | "Ver esas rondas" desde las señales del Coach | Cada señal con mapa, lado, operador o sitio abre el Resumen con esos filtros, y la de rival abre Duelos. Complementa F6 (que salta a una ronda puntual). Salio del PR #14 (cerrado sin merge) | `coach.py` devuelve los filtros de cada señal; `by_site` y `by_spawn` necesitan el slug del mapa para armar el enlace | S | idea |
+| F16 | Filtros en el listado de Partidas | Buscar en Partidas por mapa, periodo, sesion, ranked y resultado (victoria, derrota, empate, incompleta) en vez de recorrer la lista entera. Salio del PR #14 (cerrado sin merge) | `Match.map_slug`, `date`, `match_type`, `won`; `matches_list` en `views.py`; `Matches.jsx` hoy no filtra | S | ficha 78 |
+| F17 | Partida anterior y siguiente, y flechas para cambiar de ronda | Desde el detalle de una partida, pasar a la anterior o la siguiente sin volver al listado, y recorrer las rondas con las flechas del teclado. Salio del PR #14 (cerrado sin merge) | `Match.date` para el orden; `/api/matches/<id>/` suma `prev_id`/`next_id`; `MatchDetail.jsx` | S | idea |
 
 ### impacto: cuanto mueve cada baja la probabilidad de ganar la ronda
 
@@ -215,7 +225,7 @@ solo el conteo de vivos.
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
 | G1 | Calidad de datos | Ver las partidas con avisos del parser o leidas con una version vieja, y recalcularlas sin abrir una consola | `Match.warnings` (`models.py:69`, hoy solo por partida), `Match.parser_version` (`models.py:68`, sin exponer), `recompute.py` | M | idea |
-| G2 | Excluir una partida de los agregados | Sacar una custom o una partida rara de tus numeros sin borrarla, y volver a meterla | campo nuevo + migracion + POST; reversible por diseno (nunca borra) | M | decision (POST nuevo: ver Para el humano) |
+| G2 | Excluir una partida de los agregados | Sacar una custom o una partida rara de tus numeros sin borrarla, y volver a meterla | campo nuevo + migracion + POST; reversible por diseno (nunca borra) | M | ficha 79 (POST permitido por el humano el 2026-11-05) |
 | G3 | Unir jugadores y alias desde Datos | Juntar dos perfiles que son la misma persona | alias de `Player`, `retag.py`. Reescribe datos: disenar reversible (tabla de equivalencias) o va a P10 | M | idea |
 | G4 | Boton de backup en Datos | Respaldar la base desde la app (deuda del #16) | `replays/backup.py` + POST | S | en main |
 | G5 | Carpeta de replays desde la UI | Fijar `REPLAY_DIR` sin editar un `.env` (deuda del #19 y #20) | `config/replay_dir.py` + POST | S | en main |
@@ -277,6 +287,19 @@ anotan en la matriz y no se repiten aca.
 | R5 | Tema claro y oscuro | La UI sigue el tema del sistema (`prefers-color-scheme`) y un selector en Ajustes lo fija en claro u oscuro; la referencia ofrece los dos y aca hay uno solo. El selector se guarda en `localStorage` del navegador (preferencia de vista, no configuracion: no va al `.env`). [fuente](https://r6-replay.com/) (`replica/features.csv`, could) | solo CSS: las variables de color de `frontend/src/` pasan a tokens con un bloque por tema; sin dependencias ni backend | S | idea |
 | R6 | Dos partidas lado a lado | Elegir dos partidas tuyas (la que ganaste y la que perdiste en el mismo mapa, o la de hoy contra la de la semana pasada) y ver sus lineas lado a lado: marcador, rondas por lado, tus aperturas, sin trade, KST y rating, con la diferencia resaltada. La referencia compara partidas; hoy hay que abrir dos pestañas. Distinto de comparar jugadores (descartada) | `/api/matches/<id>/` dos veces, ya trae todo; pagina nueva o modo del detalle con `?vs=<id>`, armado en una funcion pura con vitest. Sin backend nuevo | S | idea |
 
+### posicionamiento: sitio y spawn, la granularidad espacial que el `.rec` trae
+
+Sin coordenadas: la zona es el sitio de bomba (defensa) y el spawn (ataque).
+Las dos ideas vuelven de PRs que el humano cerro sin merge el 2026-11-05 (ramas
+no borradas, sirven de referencia). La "Pagina de mapas y sitios" sigue
+descartada: la variante conservadora es un panel en Tendencias o una señal
+del Coach; una pagina nueva "Posicionamiento" se pregunta en la ficha.
+
+| id | idea | que gana quien usa la app | datos | tam | estado |
+|---|---|---|---|---|---|
+| S1 | Donde quedas fuera de posicion | Por sitio (defensa) y spawn (ataque), las rondas en que moriste sin bajas y sin que nadie te vengara, contra el resto de tu historial y no contra el total; señales `zona-dormidero` y `zona-solida` del Coach. Es lo que pedia "en que partes del mapa suelo dormir" al nivel que el formato permite. Salio del PR #1 (`claude/loop-lwjbgs`, commit 1ffdb89) | `RoundPlayer.site`, `spawn`, `kills`, `died`, `was_traded`; `by_site` y `by_spawn` de `aggregates.py` | M | idea |
+| S2 | Salida del spawn por mapa | Rondas de ataque en que mueres en los primeros 15 s de accion, por mapa y lado, con tus bajas en esa ventana y un enlace por mapa a la biblioteca de spawn peeks de peekabooR6 que abre el navegador (como los de stats.cc: la app no le pide nada). Cubre las muertes tempranas por spawn de R6 Analyst y los runouts que pide la comunidad. Salio del PR #22 (`ccr-ec8265ab-4qn7k2`, commit c994090) | `RoundPlayer.death_elapsed`, `spawn`, `side` y las bajas por tiempo de `Event`; enlace estatico en `externo/enlaces.py` | M | idea |
+
 ### deuda-y-tests: no son funcionalidad
 
 Entran por la regla de mezcla de la Directiva (solo con 3 funcionalidades
@@ -291,18 +314,22 @@ esperando en el papel) o como bug si lo son. Su estado es `idea (tests)` o
 
 ## Cubierto por PRs abiertos que no son del equipo
 
-No se proponen mientras el PR siga abierto. Si el humano lo cierra sin
-mergear, sus ideas pasan a `idea`; si lo mergea, a `en main`.
+Ninguno desde el 2026-11-05. Ese dia el humano cerro sin merge, con
+comentario, los PRs #1, #2, #3, #4, #11, #14, #22 y #24 contra `main`, y sus
+ideas volvieron a `idea` (las ramas no se borraron):
 
-- **PR #1** (`claude/loop-lwjbgs`): pagina Posicionamiento, con veredicto por
-  sitio y spawn.
-- **PR #22** (`ccr-ec8265ab-4qn7k2`): spawn peeks de peekabooR6 por mapa,
-  cruzados con la salida del spawn. Toca lo mismo que cualquier idea de
-  agregados por spawn. Cubre tambien las muertes tempranas por spawn de R6 Analyst y los spawn peeks y runouts que pide la comunidad (Siege.GG, 2026-02-22): no se proponen aparte.
-- **PR #14** (`claude/dazzling-einstein-w3qcyq`): filtros en la URL, "Ver esas
-  rondas" desde las señales, vigia de importacion, filtros en Partidas,
-  partida anterior y siguiente, flechas para cambiar de ronda, racha actual,
-  pick rate por operador.
+- **PR #1** (Posicionamiento) -> S1. **PR #22** (spawn peeks) -> S2.
+- **PR #14**: filtros en la URL -> A10; "Ver esas rondas" desde las señales
+  -> F15; filtros en Partidas -> F16; partida anterior y siguiente y flechas
+  de ronda -> F17; racha actual -> E14. El vigia de importacion ya esta (I2,
+  `vigilante.py`) y el pick rate por operador lo cubre la presencia de O5.
+- **PRs #2, #3 y #4** (`mercado/*`): sus candidatos ya estaban aca (A1, A2,
+  B3, F2) o descartados (timeline de utilidad).
+- **PRs #11 y #24**: maquinaria del equipo, sin ideas de producto; los
+  reemplazo el playbook (PR #21).
+
+Si aparece otro PR abierto fuera del equipo, se anota aca y sus ideas no se
+proponen mientras siga abierto.
 
 ## Ideas descartadas
 
