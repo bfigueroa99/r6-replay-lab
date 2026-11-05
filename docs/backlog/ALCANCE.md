@@ -76,7 +76,7 @@ A1 -> ficha 77, F16 -> ficha 78, G2 -> ficha 79, S1 -> ficha 80.
 Reconciliado el 2026-11-05 (sesion 20261105T1759Z-cCJ5erc) contra `dev`
 4a1aa8e: A1 (77), F16 (78), K10 (76), G7 (68, solo el `won=None`), R2 (75)
 y S1 (80) en dev; S2 -> ficha 89, D4 -> ficha 90, R3 -> ficha 91; nuevas S3
-y S4.
+S4, E15 y O9.
 
 ## Epicas
 
@@ -167,6 +167,7 @@ y S4.
 | E12 | Tu semana contra la anterior | En el Inicio, una tarjeta que compara los ultimos 7 dias con los 7 anteriores: partidas jugadas, winrate de partida, winrate de rondas, K/D y rating, con la flecha y la banda de ruido de la comparacion de Tendencias. Hoy `compare_periods` corta por cantidad de partidas; esto corta por calendario, que es como uno piensa "esta semana" | `Match.played_at` (hora local, `USE_TZ = False`), `Match.won`, `RoundPlayer` con los filtros de siempre; `_ruido` de `aggregates.py`. Una semana sin partidas da `null`, no 0 | S | idea |
 | E13 | La primera partida despues de un descanso | Tu winrate y rating en la primera partida tras 1, 3 y 7 o mas dias sin jugar, contra el resto: si vuelves oxidado y te conviene una partida no clasificatoria antes de entrar a ranked. E6 mira derrotas seguidas dentro de la sesion; esto, los dias entre sesiones | `Match.played_at` (hora local, `USE_TZ = False`) ordenado entre todas tus partidas sin filtros de lado, el hueco con la partida anterior; `Match.won` (None fuera del %), rating por partida como `trend_by_match`; banda de ruido por fila (`_ruido`, `aggregates.py`) | S | idea |
 | E14 | Racha actual de partidas | En el Inicio, cuantas partidas seguidas llevas ganando o perdiendo ahora, al lado del resultado de la ultima. Salio del PR #14 (cerrado sin merge) | `Match.won` y `Match.date` en orden; las partidas `incompleta` (`won=None`, ficha 68) no cortan ni suman | S | idea |
+| E15 | Cuantas partidas seguidas te rinden | Tu rating, winrate de rondas y KST segun el numero de partida dentro de la sesion (1ra, 2da, 3ra, 4ta o mas): saber a partir de que partida de la noche conviene cortar. Solo sale del historial acumulado; las sesiones ya existen en la pagina de sesiones | `_sessions_raw()` y `session_match_ids()` de `aggregates.py` (corte de sesion ya definido), `Match.played_at` para el orden dentro de la sesion, totales de `RoundPlayer` por tramo con `totals()` | S | idea |
 
 ### revision-de-rondas: revisar rondas
 
@@ -222,6 +223,7 @@ solo el conteo de vivos.
 | O5 | Presencia y delta de winrate por operador | En Operadores, por operador y lado: % de tus rondas de ese lado jugadas con el y su winrate menos tu winrate base del lado. Version global de O1; puede ser su primer tramo. [fuente](https://r6tv.online/how-it-works), [fuente](https://aurelix.app/blog/how-to-analyse-r6-siege-replays) | `RoundPlayer.operator`, `side`, `won`; tabla de `frontend/src/pages/Operators.jsx` | S | en dev (65, PR #60) |
 | O7 | Tu pool de operadores por lado | En Operadores, cuantos operadores distintos jugaste por lado en tus ultimas 20 partidas y en todo el historial, y la lista de los del catalogo que nunca jugaste (o no jugas desde hace 30 dias): si dependes de dos operadores y que te falta practicar para cuando te los banean o te los quitan | `_catalogo_operadores` (`views.py`, catalogo con lado) contra `RoundPlayer.operator`, `side` y `Match.played_at` de tus filas; al consultar, sin columna nueva. Distinto de E1 (curva) y de O5 (presencia sobre lo jugado) | S | idea |
 | O8 | Que operador eliges segun el marcador | Por lado, tu pick rate de cada operador yendo adelante, empatado y atras en el marcador, y el winrate de ronda de cada combinacion: si cuando vas perdiendo te refugias en tu main o cambias a algo que no dominas. Los cortes por marcador (ficha 41) hoy no miran el operador | `RoundPlayer.operator` y `side`, `Round.score_before` con el mismo corte `code_version >= Y9S4` y la misma clasificacion de `by_score_state` (`aggregates.py`), `won`; muestra minima por operador como `by_operator` | S | idea |
+| O9 | Operadores con los que mueres solo | Por operador, el porcentaje de tus muertes que nadie vengo (`untraded_death`) contra el de tus otros operadores, con muestra minima: un operador de roam o de flanco que te deja morir aislado se ve aca aunque su K/D cuadre | `RoundPlayer.operator`, `died`, `untraded_death`, `side`; `by_operator` de `aggregates.py` ya agrupa por operador | S | idea |
 | O6 | Clutch por operador | Despues de la ficha 55: intentos y conversion de clutch por operador y lado, para saber con que operador cierras las rondas que quedan en tus manos y con cual las sueltas. Implementar despues de #55 | `RoundPlayer.clutch_vs` (columna de la ficha 55), `operator`, `side`, `won`; agrupacion como `by_operator` (`aggregates.py`), con la muestra minima por operador que ya usan las tablas de operadores | S | en main (61, PR #53) |
 
 ### datos: datos y configuracion
