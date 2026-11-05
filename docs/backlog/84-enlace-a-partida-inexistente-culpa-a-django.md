@@ -8,7 +8,7 @@ epica: -
 area: fullstack
 prioridad: 4
 fuente: QA 20261105T0418Z-cq6Wet6, prueba de bordes sobre dev ed39632 con `seed_demo` y Chromium. `frontend/src/components/ui.jsx:236` (`ErrorBox`) trata todo error como API caida; `backend/config/urls.py:35` (`re_path(r"^(?P<path>.*)$", spa)`) tambien atrapa `/api/<ruta desconocida>`
-archivos: frontend/src/components/ui.jsx, frontend/src/api.js, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/PlayerProfile.jsx, backend/config/urls.py, backend/tests/, frontend/e2e/
+archivos: frontend/src/components/ui.jsx, frontend/src/api.js, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, backend/config/urls.py, backend/tests/, frontend/e2e/
 turnos: qa 20261105T0418Z-cq6Wet6
 
 ## PR
