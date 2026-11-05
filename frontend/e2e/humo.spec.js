@@ -811,6 +811,7 @@ test('el selector de tipo filtra el Inicio', async ({ page }) => {
   await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
 
   await tipo.selectOption('Unranked')
+  await expect(subtitulo).toHaveText('0 rondas con estos filtros')
   await expect(page.getByText('Ninguna ronda con estos filtros')).toBeVisible()
   await expect(page.locator('.filters')).toBeVisible()
   await expect(page.locator('.empty-state')).toHaveCount(0)
