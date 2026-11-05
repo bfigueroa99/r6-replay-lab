@@ -1,7 +1,7 @@
 # 85. Un filtro sin rondas esconde la barra en Coach, Operadores, Compañeros, Duelos y Tendencias
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 13:14 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/85-filtro-sin-rondas-esconde-la-barra
 tipo: bug
 epica: -
@@ -69,6 +69,36 @@ hace el Inicio desde la 77.
   cinco paginas por el menu (los filtros viven en el estado de `App`).
 
 ## Implementacion
+
+(dev 20261105T1303Z-c1PA8YY, sobre dev 696c79d; turno "Sin trabajo": la 79
+la reclamo otra sesion segundos antes.)
+
+- `tipoPartida.js`: `vistaSinRondas({ vacio, filtros, cargando })` junto a
+  `hayFiltros`, con 4 vitest (`vistaSinRondas (ficha 85)`).
+- `ui.jsx`: `SinRondasFiltradas({ titulo, filtros })`, con los mismos textos
+  que el Inicio ("0 rondas con estos filtros" y "Ninguna ronda con estos
+  filtros. Cambia alguno o usa Limpiar.").
+- Coach, Operadores, Compañeros (`loading || overview.loading`), Duelos y
+  Tendencias deciden con `vistaSinRondas`; cada una pasa su barra con sus
+  props (`showOperator={false}`, `showSession`).
+- e2e `un filtro sin rondas deja la barra en todas las páginas`
+  (`humo.spec.js`): Unranked en el Inicio (agregado con `page.route`), las
+  cinco paginas por el menu, Limpiar desde Tendencias. **Falla sin el
+  arreglo** (paginas revertidas con `git stash`, build): `expect(h1)
+  toHaveText "Coach"`, element not found, `humo.spec.js:846`. Pasa con el
+  arreglo.
+- Desvio: ninguno. El Inicio queda con su criterio propio
+  (`hayFiltros(overview.data?.filters)`); las cinco usan `cargando`, que no
+  necesita que la API devuelva los filtros.
+- Revision ciega (`omc-code-reviewer`, eje estandares): aprobar, 3 LOW sin
+  arreglar, anotados para el Revisor: (1) Duelos decide por `!totals?.duels`,
+  asi que un filtro con rondas y sin duelos dice "0 rondas"; (2) con la base
+  vacia de verdad y una recarga en curso se ve un instante "0 rondas con
+  estos filtros"; (3) dos criterios para lo mismo (Inicio y las cinco).
+- `verificar.sh`: VERDE 951aeab5d (953 tests backend, 190 vitest, 60 e2e).
+
+Skills: no aplica (patron ya resuelto en el Inicio por la 77).
+OMC: plan=— · revisión=3 hallazgos (0 arreglados, todos LOW) · verificación=—
 
 ## Revision
 
