@@ -1,6 +1,6 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/80-donde-quedas-fuera-de-posicion
 tipo: funcionalidad
