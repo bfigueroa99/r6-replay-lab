@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
-estado: implementado
-candado: revisor 2026-11-05T15:21Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 4
 fuente: QA 20261105T0418Z-cq6Wet6, prueba de bordes sobre dev ed39632 con `seed_demo` y Chromium. `frontend/src/components/ui.jsx:236` (`ErrorBox`) trata todo error como API caida; `backend/config/urls.py:35` (`re_path(r"^(?P<path>.*)$", spa)`) tambien atrapa `/api/<ruta desconocida>`
 archivos: backend/config/urls.py, backend/replays/views.py, backend/tests/test_api.py, backend/tests/test_player.py, frontend/src/api.js, frontend/src/api.test.js, frontend/src/components/ui.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A
+turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A, revisor 20261105T1521Z-c41wXWJ
 
 ## PR
 
@@ -187,7 +187,30 @@ Conflictos previstos: la 81 toca la misma linea de `ErrorBox` y lineas cercanas 
 Skills: no aplica (el Arquitecto ya dijo que no hay dominio nuevo)
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
-## Revision <fecha> sobre <sha>
+## Revision 2026-11-05 sobre 6bcdd7e
+
+(revisor 20261105T1521Z-c41wXWJ, rama ya al dia con dev 85009f6)
+
+Revision a ciegas: `omc-code-reviewer` (estandares) aprobar con 1 LOW; `omc-security-reviewer` (toca la vista POST `player_ubisoft` y agrega `@csrf_exempt`) aprobar, 0 hallazgos: `api_no_existe` no lee la request ni escribe, y en el POST el chequeo de JSON sigue antes del 404. Backend y vitest verdes. El veredicto lo cambia lo que encontro `check.sh`.
+
+Hallazgos:
+
+- [test] [HIGH] frontend/e2e/humo.spec.js:1020
+  Que pasa: el e2e nuevo `una partida o un jugador que no existe lo dice sin culpar a Django` es intermitente y deja `check.sh` en rojo.
+  Como reproducirlo o por que es cierto: `verificar.sh` sobre 6bcdd7e dio `ROJO` (1 failed, 62 passed) con `request fallida: http://127.0.0.1:8099/api/filters/ (net::ERR_ABORTED)` en la consola. Aislado, `npx playwright test e2e/humo.spec.js -g "no existe lo dice" --repeat-each=10` falla 1 de 10 con el mismo error. Causa: despues del clic en el enlace, la lista (Partidas o Compañeros) monta `Filters` y pide `/api/filters/`. Solo se espera el `h1`, asi que el `page.goto` de la vuelta siguiente corta esa request en vuelo y `vigilarConsola` la anota.
+  Arreglo sugerido: despues de `await expect(page.locator('h1')).toHaveText(lista)` agregar `await page.waitForLoadState('networkidle')`. Probado en local sin empujar: 25 de 25 en verde con `--repeat-each=25`.
+
+- [bug] [LOW] frontend/src/api.js:66 (`useApi`)
+  Que pasa: al cambiar de `path` en el mismo componente (de `/partidas/999999` a `/partidas/1` con atras o adelante), `status` sigue en 404 hasta que llega la respuesta nueva. Mientras tanto se ve "Esa partida no existe" en vez de `<Loading />`.
+  Como reproducirlo o por que es cierto: el efecto hace `setLoading(true)` pero no limpia `status`, y la pagina mira `status === 404` antes que `loading`. Con `error` ya pasaba lo mismo antes de este cambio, y se corrige solo cuando llega la respuesta. Confirmado leyendo el codigo, no en el navegador.
+  Arreglo sugerido: `setStatus(null)` junto al `setLoading(true)` del efecto (opcional, no bloquea).
+
+Ficha: los cuatro criterios tienen test (backend, vitest y e2e). Lo que toca el diff esta dentro de `archivos:`. No hay numeros nuevos, asi que no hace falta fila en `metricas.md`. Identificadores sin tildes y textos de UI con tildes. Sin `print` ni `console.log`.
+
+Veredicto: corregir (el HIGH: un e2e intermitente deja `check.sh` en rojo; Principio 3).
+
+Skills: no aplica
+OMC: plan=— · revisión=2 hallazgos (0 arreglados; HIGH confirmado reproduciendo, LOW leyendo el codigo; seguridad 0) · verificación=—
 
 ## QA <fecha> sobre <sha>
 
