@@ -367,7 +367,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           initialSort={{ key: 'played_at', dir: 'desc' }}
           rowKey={(row) => `${row.match_id}-${row.round}`}
           csvName="clutches"
-          empty="Todavía no ganaste ninguna ronda quedandote solo."
+          empty="Todavía no ganaste ninguna ronda quedándote solo."
         />
       </Panel>
     </>
