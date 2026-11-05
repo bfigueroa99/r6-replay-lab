@@ -1,7 +1,7 @@
 # 85. Un filtro sin rondas esconde la barra en Coach, Operadores, Compañeros, Duelos y Tendencias
 
-estado: implementado
-candado: revisor 2026-11-05 13:50 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/85-filtro-sin-rondas-esconde-la-barra
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: idea anotada en ESTADO.md por la sesion de la 77 ("Coach, Operadores, Compañeros, Duelos y Tendencias con 0 rondas filtradas muestran 'Todavía no hay replays importados' y esconden la barra de filtros"); el Inicio ya se arreglo en la 77
 archivos: frontend/src/tipoPartida.js, frontend/src/tipoPartida.test.js, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: dev 20261105T1303Z-c1PA8YY
+turnos: dev 20261105T1303Z-c1PA8YY, revisor 20261105T1330Z-cTQKqvr
 
 ## PR
 
@@ -100,7 +100,51 @@ la reclamo otra sesion segundos antes.)
 Skills: no aplica (patron ya resuelto en el Inicio por la 77).
 OMC: plan=— · revisión=3 hallazgos (0 arreglados, todos LOW) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 6658a30
+
+Revisor 20261105T1330Z-cTQKqvr. Revision a ciegas (eje de estandares; diff de
+un solo tema y 125 lineas, sin superficie de seguridad), confirmada por el
+lider. Partida de verde: verificar.sh VERDE 6658a30 (953 tests backend,
+190 vitest, 60 e2e).
+
+Criterios de aceptacion:
+
+- Titulo, barra y "0 rondas con estos filtros" sin `.empty-state` en las cinco
+  paginas: e2e de `humo.spec.js` (navega por el menu, asi no pierde los
+  filtros; con el codigo anterior falla porque el EmptyState no tiene el `h1`).
+  Cumple.
+- Limpiar vuelve a los numeros: mismo e2e. Cumple.
+- Base vacia sin filtros sigue en el EmptyState: `vistaSinRondas` en
+  `tipoPartida.test.js`. Cumple.
+- Sin parpadeo al limpiar: rama `cargando` cubierta en vitest (el e2e solo
+  mira el estado final; alcanza con el unitario). Cumple.
+
+`hayFiltros` mira el objeto entero de App, asi que cuentan tambien `session`,
+`since/until` y `operator` aunque la barra de la pagina no los muestre;
+`ranked_only: false` y `match_type: ''` no cuentan. El diff toca solo
+archivos de `archivos:`; sin `console.log`, identificadores sin tildes, UI con
+tildes, sin numeros nuevos.
+
+Hallazgos (ninguno bloquea):
+
+- [bug] MEDIUM frontend/src/pages/Duelos.jsx:43
+  Que pasa: Duelos decide "vacio" por `totals.duels` (bajas + muertes contra
+  rivales), no por rondas, y muestra "0 rondas con estos filtros".
+  Por que es cierto: un filtro de mapa/lado con rondas pero sin ningun duelo
+  (sobreviviste sin matar) deja 1 ronda y 0 duelos, y la pagina dice
+  "0 rondas". Antes decia "Todavía no hay replays importados", que era peor.
+  Arreglo sugerido: que `SinRondasFiltradas` acepte el texto y Duelos pase
+  "0 duelos con estos filtros".
+- [estilo] LOW frontend/src/components/ui.jsx:260: durante la carga despues de
+  Limpiar la nota dice "usa Limpiar" y el boton ya no esta (dura lo que tarda
+  la respuesta). Sin arreglo obligatorio.
+- [bug] LOW Coach/Operadores/Compañeros/Duelos: si el filtro que deja 0 rondas
+  es `session` (puesto en Tendencias), la barra no lo muestra; Limpiar lo
+  resuelve. Ya pasaba en la vista normal. Sin arreglo obligatorio.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=3 hallazgos (0 arreglados; 1 MEDIUM, 2 LOW) · verificación=—
 
 ## QA
 
