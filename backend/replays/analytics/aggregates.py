@@ -6,6 +6,7 @@ import math
 from collections import Counter
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from itertools import combinations
 
 from django.conf import settings
 from django.db.models import (
@@ -2247,17 +2248,13 @@ def nemesis(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["balance"], r["username"]))
 
 
-def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
-    """Record de partidas contra cada persona que te toco de rival varias veces.
+def _rivales_por_partida(me_ids: list[int], **filters) -> dict[int, set[int]]:
+    """match_id -> Player.id de quienes estuvieron en el equipo contrario en al
+    menos una de tus rondas filtradas de esa partida.
 
-    Rival es quien estuvo en el equipo contrario en al menos una de tus rondas
-    filtradas de esa partida: el equipo se lee por ronda, como en el perfil,
-    porque la misma persona puede ser companero en una partida y rival en otra.
-    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    El equipo se lee por ronda, como en el perfil, porque la misma persona
+    puede ser companero en una partida y rival en otra.
     """
-    me_ids = _me_ids()
-    if not me_ids:
-        return []
     mine = base_queryset(**filters)
     cruces = (
         RoundPlayer.objects.filter(Exists(mine.filter(round_id=OuterRef("round_id"))))
@@ -2268,9 +2265,36 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
         .values_list("player_id", "round__match_id")
         .distinct()
     )
-    partidas: dict[int, set[int]] = {}
+    por_partida: dict[int, set[int]] = {}
     for pid, match_id in cruces:
-        partidas.setdefault(pid, set()).add(match_id)
+        por_partida.setdefault(match_id, set()).add(pid)
+    return por_partida
+
+
+def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
+    wins = sum(1 for mid in ids if resultado.get(mid) is True)
+    losses = sum(1 for mid in ids if resultado.get(mid) is False)
+    return {
+        "matches": len(ids),
+        "wins": wins,
+        "losses": losses,
+        # las partidas sin resultado no ensucian el winrate
+        "winrate": _pct(wins, wins + losses),
+    }
+
+
+def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
+    """Record de partidas contra cada persona que te toco de rival varias veces.
+
+    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    partidas: dict[int, set[int]] = {}
+    for match_id, rivales in _rivales_por_partida(me_ids, **filters).items():
+        for pid in rivales:
+            partidas.setdefault(pid, set()).add(match_id)
     partidas = {pid: ids for pid, ids in partidas.items() if len(ids) >= min_matches}
     if not partidas:
         return []
@@ -2279,22 +2303,65 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
     resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
     nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
 
-    salida = []
-    for pid, ids in partidas.items():
-        wins = sum(1 for mid in ids if resultado.get(mid) is True)
-        losses = sum(1 for mid in ids if resultado.get(mid) is False)
-        salida.append(
-            {
-                "player_id": pid,
-                "username": nicks.get(pid, ""),
-                "matches": len(ids),
-                "wins": wins,
-                "losses": losses,
-                # las partidas sin resultado no ensucian el winrate
-                "winrate": _pct(wins, wins + losses),
-            }
-        )
+    salida = [
+        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado)}
+        for pid, ids in partidas.items()
+    ]
     return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
+
+
+def rival_stacks(min_matches: int = 2, **filters) -> list[dict]:
+    """Grupos de 2 o mas rivales que te tocaron juntos en varias partidas.
+
+    Por cada conjunto de partidas queda solo el grupo mas grande que estuvo
+    en todas: si A, B y C se repiten juntos, A+B no sale aparte salvo que sume
+    alguna partida propia. Ese grupo es unico (la interseccion de los rivales
+    de esas partidas), asi que quedarse con el mas largo alcanza.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    soporte: dict[frozenset[int], set[int]] = {}
+    for match_id, rivales in _rivales_por_partida(me_ids, **filters).items():
+        orden = sorted(rivales)
+        # 5 rivales (algo mas con reemplazos) dan unas decenas de subconjuntos
+        for k in range(2, len(orden) + 1):
+            for grupo in combinations(orden, k):
+                soporte.setdefault(frozenset(grupo), set()).add(match_id)
+
+    mejor: dict[frozenset[int], frozenset[int]] = {}
+    for grupo, ids in soporte.items():
+        if len(ids) < min_matches:
+            continue
+        clave = frozenset(ids)
+        actual = mejor.get(clave)
+        if actual is None or len(grupo) > len(actual):
+            mejor[clave] = grupo
+    if not mejor:
+        return []
+
+    match_ids = set().union(*mejor.keys())
+    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    nicks = dict(
+        Player.objects.filter(id__in=set().union(*mejor.values())).values_list("id", "username")
+    )
+
+    salida = []
+    for ids, grupo in mejor.items():
+        jugadores = sorted(
+            ({"player_id": pid, "username": nicks.get(pid, "")} for pid in grupo),
+            key=lambda j: (j["username"].lower(), j["player_id"]),
+        )
+        salida.append({"players": jugadores, "size": len(grupo), **_record(set(ids), resultado)})
+    return sorted(
+        salida,
+        key=lambda r: (
+            -r["matches"],
+            -r["size"],
+            -r["losses"],
+            ", ".join(j["username"] for j in r["players"]),
+        ),
+    )
 
 
 def _agregar_mapas(salida: list[dict], contra_mi, a_favor) -> None:
