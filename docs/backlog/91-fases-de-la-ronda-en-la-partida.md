@@ -1,7 +1,7 @@
 # 91. Fases de la ronda en el detalle de partida
 
-estado: implementado
-candado: revisor 2026-11-05T19:25Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/91-fases-de-la-ronda-en-la-partida
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: R3 de ALCANCE.md; `replica/features.csv` "Analisis de ronda en fases early, mid y execute" (could, partial: los tramos existen entre partidas en Tendencias, no por partida); [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays)
 archivos: backend/replays/analytics/aggregates.py (fases_de_partida), backend/replays/views.py (match_detail), backend/tests/test_fases_de_la_ronda.py, frontend/e2e/partida-sin-rondas.json, frontend/src/fasesRonda.js, frontend/src/fasesRonda.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cz3m6mE
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cz3m6mE, revisor 20261105T1921Z-cP5bnKD
 
 ## PR
 
@@ -291,3 +291,51 @@ Verificacion manual (PC): la del diseno, sobre una partida real.
 
 Skills: no aplica (el diseno lo resolvia; sin dominio nuevo).
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados: frase de metricas.md y un comentario que repetia el codigo) · verificación=—
+
+## Revision 2026-11-05 sobre 9fb1c05
+
+(revisor 20261105T1921Z-cP5bnKD)
+
+Veredicto: **aprobar** -> `revisado`. Sin CRITICAL ni HIGH en ninguno de los
+dos ejes (estandares e intencion, dos `omc-code-reviewer` a ciegas); seguridad
+no aplica (no toca POST, `.rec`, rutas ni `externo/`). Partio de verde:
+`verificar.sh` VERDE 624808c (975 backend, 206 vitest, 65 e2e).
+
+Criterios: los cinco cubiertos (cortes 29.9/30/119.9/120, reparto y teamkills,
+rondas dominadas sin las de resultado desconocido, autor sin fila, panel con
+e2e y texto sin bajas, fila en `metricas.md`). El diff no sale de `archivos:`;
+identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
+
+Hallazgos confirmados:
+
+- [test] MEDIUM `backend/tests/test_fases_de_la_ronda.py` `test_tu_equipo_se_lee_por_ronda`:
+  pasa tambien con `mio = my_team_index` fijo (la ronda con `mi_equipo=1`
+  tiene una baja de cada lado y el total da igual (2, 1)). Confirmado con el
+  mutante. **Arreglado por el Revisor con tests nuevos que pasan**:
+  `test_cambiar_de_lado_en_la_ronda_no_confunde_a_los_equipos` (bajas
+  asimetricas, mata al mutante), `test_una_ronda_dominada_por_el_rival_que_ganaste_igual`
+  (`rounds_behind_won` > 0: el mutante `+= 0` sobrevivia a toda la suite) y
+  `test_una_ronda_sin_tu_fila_usa_el_equipo_de_la_partida`. El test viejo
+  queda tal cual (no prueba nada falso, solo menos de lo que dice).
+- [test] MEDIUM `frontend/e2e/humo.spec.js` (fases): el unico numero de
+  `seed_demo` que fija es el 0 de Temprano; medio y tarde se comparan contra
+  la misma respuesta que pinta la pagina, asi que un backend que devolviera
+  ceros pasaria. Arreglo sugerido (QA o un tramo siguiente): fijar el
+  `mine`/`rival` de Medio de la primera partida de `/partidas` con su
+  valor del seed.
+- [bug] LOW `frontend/src/pages/MatchDetail.jsx` `FasesDeLaRonda`: si
+  ninguna baja entra a una fase, el return temprano dice "no tiene bajas con
+  reloj entre equipos" y no muestra `notaDeFases`; con todas las bajas de
+  autor sin fila el texto habla de reloj y no dice cuantas quedaron afuera,
+  aunque `metricas.md` dice que "se avisan debajo de la tabla". Arreglo:
+  mostrar la nota tambien en esa rama.
+- [estilo] LOW mismo componente: el encabezado "Rondas que dominó el rival
+  (ganadas)" se puede leer como ganadas por el rival; el tooltip lo aclara.
+  Sugerencia: "(ganaste)" en las dos columnas.
+
+Pregunta abierta, no bloquea y no la introduce este cambio: si tras un plant
+el feed trae el tiempo del defuser, `Event.elapsed` de esas bajas cae en
+"tarde" de mas; afecta igual a `death_elapsed` y a "Cuando mueres".
+
+Skills: no aplica.
+OMC: plan=— · revisión=4 hallazgos (1 MEDIUM cubierto con 3 tests; 1 MEDIUM y 2 LOW anotados) · verificación=—

@@ -153,3 +153,30 @@ class FasesDeLaRondaTests(TestCase):
         fases = fases_de_partida([], 0)
         self.assertEqual([f["key"] for f in fases["rows"]], ["temprano", "medio", "tarde"])
         self.assertEqual(fases["rows"][2]["end"], None)
+
+    def test_cambiar_de_lado_en_la_ronda_no_confunde_a_los_equipos(self):
+        # Bajas asimetricas: con el indice de la partida fijo, la baja de "mate"
+        # en la segunda ronda contaria como del rival.
+        r0 = self._ronda(0, mi_equipo=0)
+        _baja(r0, 0, ME, "rival1", 40)
+        r1 = self._ronda(1, mi_equipo=1)
+        _baja(r1, 0, "mate", "rival1", 40)
+        medio = self._fila(self._fases(), "medio")
+        self.assertEqual((medio["mine"], medio["rival"]), (2, 0))
+
+    def test_una_ronda_dominada_por_el_rival_que_ganaste_igual(self):
+        rnd = self._ronda(0, won=True)
+        _baja(rnd, 0, "rival1", "mate", 50)
+        medio = self._fila(self._fases(), "medio")
+        self.assertEqual(
+            (medio["rounds_behind"], medio["rounds_behind_won"], medio["rounds_behind_winrate"]),
+            (1, 1, 100.0),
+        )
+
+    def test_una_ronda_sin_tu_fila_usa_el_equipo_de_la_partida(self):
+        rnd = make_round(self.match, 0, won=True)
+        make_round_player(rnd, username="mate", is_me=False, team_index=0)
+        make_round_player(rnd, username="rival1", is_me=False, team_index=1, won=False)
+        _baja(rnd, 0, "mate", "rival1", 40)
+        medio = self._fila(self._fases(), "medio")
+        self.assertEqual((medio["mine"], medio["rival"]), (1, 0))
