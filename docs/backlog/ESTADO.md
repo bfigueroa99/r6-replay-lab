@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 02:18 UTC por qa (sesion 20261105T0215Z-ckLDgDx; motivo: pedido; turno duplicado: otra sesion QA simultanea tomo el candado de la 74 a las 02:15, esta paso al fallback: dev bcdbdf5 VERDE, sin deriva de docs)
+actualizado: 2026-11-05 02:35 UTC por dev (sesion 20261105T0215Z-cVoFB5j; motivo: pedido; sesiones simultaneas: la 74 la entrego otra sesion y la 76 la reclamo otro Dev a las 02:21)
 playbook: origin/dev@bcdbdf5
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
@@ -9,14 +9,18 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas | docs/backlog/74-version-del-mapa-en-el-resto-de-pantallas.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas?expand=1) |
+| claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas | docs/backlog/74-version-del-mapa-en-el-resto-de-pantallas.md | entregado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas?expand=1) |
+| claude/equipo-dev/75-trades-de-los-dos-equipos | docs/backlog/75-trades-de-los-dos-equipos.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/75-trades-de-los-dos-equipos?expand=1) |
+| claude/equipo-dev/76-aperturas-sin-trade | docs/backlog/76-aperturas-sin-trade.md | en curso 2026-11-05 | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/76-aperturas-sin-trade?expand=1) |
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=1
+COLA=3/4  TOTAL=3/6
+RESUMEN propuesto=0 disenado=1 en_curso=1 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=1 espera_humano=0 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=1 (la 75 implementada no cuenta: este contexto no puede revisarla)
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas`: unica rama abierta, `revisado` (2035ae1); al dia con dev bcdbdf5. Toca `aggregates.py` y `metricas.md`, que tambien listan la 76: si la 76 se reclama antes de mergear la 74, la segunda en mergear resuelve con P3.
+1. `claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas`: `entregado`; mergear primero.
+2. `claude/equipo-dev/75-trades-de-los-dos-equipos`: `implementado` (1815a6b); `git merge-tree` contra la 74 sin conflicto. Toca `views.py` (`match_detail`), `MatchDetail.jsx`, `humo.spec.js` y la seccion Trades de `metricas.md`.
+3. `claude/equipo-dev/76-aperturas-sin-trade`: en curso (otra sesion); comparte `humo.spec.js` y `metricas.md` con la 75 en zonas distintas: si chocan, la segunda en mergear resuelve con P3.
 
 ## Alcance
 
@@ -32,7 +36,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 75-trades-de-los-dos-equipos | disenado | funcionalidad | paridad-referencia | 2 | frontend | - |
+| 75-trades-de-los-dos-equipos | implementado (en su rama) | funcionalidad | paridad-referencia | 2 | frontend | - |
 | 76-aperturas-sin-trade | disenado | funcionalidad | impacto | 3 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
@@ -43,7 +47,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-04 08:14 | (mismo turno que la QA) Entrega y mergea la 73: `aprobado` -> `entregado` -> [PR #72](https://github.com/bfigueroa99/r6-replay-lab/pull/72) -> dev bcdbdf5. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev ec263c3 ya en la rama, `verificar.sh` VERDE 55a1c5c8d (882 backend, 153 vitest, 54 e2e). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). `pruebas.sh`: PRUEBAS_OK (18). |
-| dev | 2026-11-04 20:15 | Implementa 74 (funcionalidad p2, `disenado` -> `implementado`, 937a652): mejor y peor mapa del Inicio, Clutch por mapa y sitio, corte por mapa de Mapas que mejoran y CSV de partidas (`map_version` al final) por `(slug, map_id)`; keys de React con `map_id` en Teammates y Trends; `metricas.md` fila Mapa. 5 tests nuevos, todos fallan sin el cambio. Revision ciega (fallback general-purpose): aprobar, 3 LOW, 1 arreglado. `verificar.sh` VERDE 937a652bc (887 backend, 153 vitest, 54 e2e). |
+| dev | 2026-11-05 02:35 | Implementa 75 (funcionalidad p2, `disenado` -> `implementado`, 1815a6b): `team_trades` por equipo en `/api/matches/<id>/` (equipo resuelto por ronda, cero queries), panel "Trades por equipo" en el detalle de partida con el mejor resaltado, fila en `metricas.md`. 7 tests backend, 6 vitest, 1 e2e. Revision ciega: aprobar, 1 MEDIUM (cuadratura con el scoreboard si el `team_index` cambia en la partida: documentado en `metricas.md`) y 2 LOW (1 arreglado). `verificar.sh` VERDE 1815a6bc2 (889 backend, 159 vitest, 55 e2e). |
 | revisor | 2026-11-05 00:25 | Revisa 74 (funcionalidad p2, `implementado` -> `revisado`, 2035ae1). Rama al dia con dev bcdbdf5; `verificar.sh` VERDE 5b4faee (887 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, 1 LOW aceptado (con dos nombres en una misma version, Clutch/progreso/CSV toman el alfabetico y el Inicio el mas reciente; decision del diseno, ya anotada). Cinco criterios cubiertos por test; keys de React unicas con dos versiones. |
 | qa | 2026-11-04 08:14 | Prueba 73 (funcionalidad p2, `revisado` -> `aprobado`, 5106b4f). `verificar.sh` VERDE bcc1edd97 (882 backend, 153 vitest, 54 e2e). Base de `factories` con Fortress rehecho y Solid Snake como `Unknown`/`Solidsnake`: `retag --dry-run` 1 partida y 2 filas sin tocar la base, `retag` las nombra, segunda corrida y `unknown_ids` sin nada. API: `/api/filters/` con "Fortress (Y10)" y "Solid Snake"; bordes y base vacia en 200. 4 mutaciones caen. OMC verifier: PASS. |
 | arquitecto | 2026-11-04 16:18 | Disena 74, 75 y 76 (`propuesto` -> `disenado`). 74: `matches_summary`, `clutch_by_site`, corte por mapa de `compare_periods` y CSV de partidas (columna nueva `map_version` al final) por `(slug, map_id)`; hallazgo: `test_variantes_del_mapa_cuentan_juntas` exige el nombre mas reciente, asi que `matches_summary` usa `etiquetas_de_version` y no `etiquetas_de_mapas`. 75: `team_trades` en `/api/matches/<id>/` desde las filas ya armadas, panel entre Matriz y Scoreboard. 76: plan por consenso (deliberado) APPROVE en ronda 1: columna `opening_kill_traded` escrita en `annotate_trades`, migracion 0004 desde `Event.traded`, desglose solo en `overview.overall`, panel "Aperturas que pesan". Sin pushes de codigo. |
