@@ -24,7 +24,7 @@ from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
 from .backup import backup_database
 from .ingest import find_match_folders, import_job, start_import
-from .models import ImportLog, Match, Player, Round, RoundPlayer
+from .models import ImportLog, Match, Player, Round, RoundPlayer, filtro_resultado
 from .retag import retag
 
 # --------------------------------------------------------------------- helpers
@@ -395,11 +395,10 @@ def match_list(request: HttpRequest) -> JsonResponse:
     limit = _int_param(request, "limit", 50, minimum=1, maximum=200)
     offset = _int_param(request, "offset", 0, minimum=0, maximum=1_000_000)
 
-    qs = Match.objects.all()
-    if request.GET.get("map"):
-        qs = qs.filter(**agg.filtro_mapa(request.GET["map"], prefijo=""))
-    if request.GET.get("match_type"):
-        qs = qs.filter(match_type=request.GET["match_type"])
+    qs = agg.match_queryset(**_filters(request))
+    resultado = filtro_resultado(request.GET.get("result", ""))
+    if resultado is not None:
+        qs = qs.filter(resultado)
     total = qs.count()
     page = list(qs[offset : offset + limit])
 

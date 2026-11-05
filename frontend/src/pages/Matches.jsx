@@ -2,26 +2,86 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, ResultChip } from '../components/ui.jsx'
+import {
+  OPCIONES_DE_RESULTADO,
+  claveDeFiltros,
+  filtrosDePartida,
+  offsetVigente,
+  paramsDePartidas,
+  subtituloDePartidas,
+} from '../partidas.js'
+import { hayFiltros } from '../tipoPartida.js'
 
 const PAGE = 50
 
-export default function Matches({ runImport, importing }) {
-  const [offset, setOffset] = useState(0)
-  const { data, error, loading } = useApi('/matches/', { limit: PAGE, offset })
+export default function Matches({ filters, setFilters, runImport, importing }) {
+  // el resultado es local: en el Inicio o el Coach un `result=` no significaria
+  // nada y prenderia "Limpiar" con un filtro que esa pagina no muestra
+  const [resultado, setResultado] = useState('')
+  const clave = claveDeFiltros(filters, resultado)
+  const [pagina, setPagina] = useState({ clave, offset: 0 })
+  const offset = offsetVigente(pagina, clave)
+  const { data, error, loading } = useApi('/matches/', paramsDePartidas(filters, resultado, offset, PAGE))
+
+  const filtrado = hayFiltros(filtrosDePartida(filters)) || Boolean(resultado)
+
+  const cambiarFiltros = (nuevos) => {
+    setFilters(nuevos)
+    // "Limpiar" manda {}: tambien borra el resultado, que vive aca
+    if (Object.keys(nuevos).length === 0) setResultado('')
+  }
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
-  if (!data?.total) return <EmptyState onImport={runImport} importing={importing} />
+  if (!data?.total && !filtrado) return <EmptyState onImport={runImport} importing={importing} />
 
-  return (
+  const total = data?.total || 0
+
+  const cabecera = (
     <>
       <div className="page-head">
         <div>
           <h1>Partidas</h1>
-          <p>{data.total} partidas importadas.</p>
+          <p>{subtituloDePartidas(total, filtrado)}</p>
         </div>
       </div>
+
+      <Filters
+        value={filters}
+        onChange={cambiarFiltros}
+        showSide={false}
+        showOperator={false}
+        showSession
+        hayExtra={Boolean(resultado)}
+      >
+        <label>
+          Resultado
+          <select value={resultado} onChange={(event) => setResultado(event.target.value)}>
+            {OPCIONES_DE_RESULTADO.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Filters>
+    </>
+  )
+
+  if (!total) {
+    return (
+      <>
+        {cabecera}
+        <p className="note">Ninguna partida con estos filtros. Cambia alguno o usa Limpiar.</p>
+      </>
+    )
+  }
+
+  return (
+    <>
+      {cabecera}
 
       <Panel>
         <DataTable
@@ -59,13 +119,13 @@ export default function Matches({ runImport, importing }) {
 
         {data.total > PAGE ? (
           <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
-            <button className="btn small" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>
+            <button className="btn small" disabled={offset === 0} onClick={() => setPagina({ clave, offset: Math.max(0, offset - PAGE) })}>
               Anteriores
             </button>
             <button
               className="btn small"
               disabled={offset + PAGE >= data.total}
-              onClick={() => setOffset(offset + PAGE)}
+              onClick={() => setPagina({ clave, offset: offset + PAGE })}
             >
               Siguientes
             </button>
