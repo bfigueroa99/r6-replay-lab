@@ -1,7 +1,7 @@
 # 89. Salida del spawn por mapa
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-05T19:20Z
 rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
 epica: posicionamiento
