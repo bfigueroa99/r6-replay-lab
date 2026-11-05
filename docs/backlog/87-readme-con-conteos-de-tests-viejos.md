@@ -1,6 +1,6 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-05T17:45Z
 rama: claude/equipo-dev/87-readme-con-conteos-de-tests-viejos
 tipo: bug
@@ -9,7 +9,7 @@ area: docs
 prioridad: 5
 fuente: QA 20261105T1521Z-cGymdxX, deriva de docs sobre dev 85009f6 (fallback sin trabajo: 81, 86 y 84 tenian candado de otras sesiones)
 archivos: README.md
-turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec, revisor 20261105T1734Z-c34hH6Y
+turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec, revisor 20261105T1734Z-c34hH6Y, qa 20261105T1734Z-cpRZAms
 
 ## PR
 
@@ -127,6 +127,26 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica (docs).
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre e4ac8fb
+
+(qa 20261105T1734Z-cpRZAms; rama mezclada con dev 3ca8c12, que trae la 81,
+sin conflictos. Docs: sin `runserver` ni mutacion de codigo que aplique.)
+
+- [x] Criterio 1: `grep -nE "[0-9]+ tests" README.md` rc=1; el grep amplio
+      `grep -niE "[0-9]+ *(pruebas|tests?|specs?|casos)\b" README.md` tambien
+      rc=1: no queda ningun conteo de la suite.
+- [x] Criterio 2: `git diff --stat origin/dev HEAD -- . ':(exclude)docs/backlog'`
+      = `README.md | 6 +++---`, las tres lineas del diseno; `cat -A` muestra
+      `^M$` en las tres (`file README.md`: UTF-8, CRLF) y la columna del
+      arbol sigue alineada (`sed -n 425,433p README.md`).
+- [x] Criterio 3: `verificar.sh`: VERDE e4ac8fbe3 (963 tests backend, 199
+      vitest, 64 e2e).
+
+`omc-verifier`: PASS en los tres, con sus propios comandos. Nota cosmetica,
+no bloquea: el arbol queda `tests/                tests (parser, ...)`.
+
+Veredicto: `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
