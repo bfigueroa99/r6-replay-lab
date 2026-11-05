@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: implementado
-candado: revisor 2026-11-05T17:07Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv, revisor 20261105T1605Z-csxB8d1, qa 20261105T1613Z-cAimE1D, dev 20261105T1641Z-cY8pL9A
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv, revisor 20261105T1605Z-csxB8d1, qa 20261105T1613Z-cAimE1D, dev 20261105T1641Z-cY8pL9A, revisor 20261105T1706Z-czYXSXu
 
 ## PR
 
@@ -504,6 +504,46 @@ Revision ciega (`omc-code-reviewer`): aprobar, 1 LOW (el chip), arreglado.
 Skills: no aplica (cambio de textos).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
+## Revision 2026-11-05 sobre d668c93 (cuarta pasada)
+
+(revisor 20261105T1706Z-czYXSXu; rama mezclada con dev e7cc919 en d668c93, que trae la 88, sin
+conflictos.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; un solo tema, solo
+cadenas): aprobar, 1 LOW. El delta desde la tercera pasada son 5711255 y
+7a17ba9 (lo que pidio la segunda QA, mas el chip de "Jugo de").
+
+Confirmado por el Revisor:
+
+- `CONDITIONS` de `MatchDetail.jsx`: cambian solo los valores visibles; las
+  claves `KilledOpponents` y `Time` siguen iguales.
+- `render` de la columna `died`: `'sí'` solo en pantalla; el CSV sale de
+  `celdaCsv` (`ui.jsx:90`), que sigue en `'si'`/`'no'`.
+- Chip de `Jugador.jsx:217-218`: la comparacion y la clase siguen sobre el
+  valor crudo `'companero'` que manda el backend; solo cambia el texto.
+- `git grep -nE "eliminacion del equipo|se acabo el tiempo|'si' : 'no'" -- frontend/src`:
+  solo `ui.jsx:90` (el CSV, a proposito).
+- Ningun e2e ni vitest busca un texto viejo.
+
+Hallazgo:
+
+- [estilo] LOW `frontend/src/pages/Trends.jsx:321` (y `VENTANAS`, `:41-42`)
+  Que pasa: el selector de ventana pinta "Últimas 7 días" / "Últimas 30 días"
+  (concordancia de genero).
+  Por que es cierto: `Últimas {v.label}` con `label: '7 días'`; en dev ya era
+  "Ultimas 7 dias", la ficha solo le puso tildes.
+  Arreglo sugerido: llevar el adjetivo al `label` ("últimos 7 días"). Cambia
+  palabras, no tildes: "Fuera de alcance" lo deja para otra ficha. No bloquea.
+
+Criterios: 1 cubierto; 2 cubierto (salvo las cabeceras de columna/CSV que la
+ficha deja a proposito); 3 cubierto; 4 `verificar.sh`: VERDE d668c93c5 (963
+tests backend, 199 vitest, 64 e2e).
+
+Veredicto: aprobar -> `revisado` (cuarta pasada, solo un LOW previo y fuera de
+alcance, que va a `## Para el humano`).
+
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados; el Revisor no arregla) · verificación=—
+
 ## Verificar en el PC
 
 ## Pendiente
@@ -511,3 +551,4 @@ OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 ## Para el humano
 
 - 2026-11-05 (revisor 20261105T1455Z-caYiimg): LOW sin arreglar, no bloquean (el de `MatchDetail.jsx:309` ya quedo arreglado en la correccion de QA): cabeceras `'Jugo de'`, `'Metrica'` (junto a `'Cuando'`, `'Duro'`, `'Murio'`) quedan sin tilde porque son tambien cabecera del CSV: decidir en una ficha de cabeceras de CSV.
+- 2026-11-05 (revisor 20261105T1706Z-czYXSXu): LOW fuera de alcance, no bloquea: el selector de ventana de Tendencias dice "Últimas 7 días" / "Últimas 30 días" (`Trends.jsx:321`, concordancia de genero, ya estaba en dev). Arreglarlo cambia palabras, no tildes: va en otra ficha si se quiere.
