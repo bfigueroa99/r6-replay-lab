@@ -1,7 +1,7 @@
 # 74. La version del mapa tambien en el Inicio, Clutch por mapa, Mapas que mejoran y el CSV de partidas
 
-estado: revisado
-candado: qa 2026-11-05T02:15Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: idea A8 de `ALCANCE.md`, tramo siguiente que dejo escrito el `## Fuera de alcance` de la ficha 70 ("Mejor y peor mapa", "Clutch por mapa y sitio", progreso por mapa y Duelos siguen por slug: otra ficha de la epica) y la QA de la 71 (tabla `matches` de Exportar sin version). En `dev` bcdbdf5: `matches_summary` agrupa por `map_slug` (`replays/analytics/aggregates.py:1031`), `clutch_by_site` por `round__match__map_slug` (`:1603`), el corte por mapa de `compare_periods` por `("round__match__map_slug", "round__match__map_name")` (`:2448`)
 archivos: backend/replays/analytics/aggregates.py, backend/tests/test_aggregates.py, backend/tests/test_compare.py, backend/tests/test_export.py, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261104T2004Z-cGQmDVc, revisor 20261105T0004Z-cXefbfB
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261104T2004Z-cGQmDVc, revisor 20261105T0004Z-cXefbfB, qa 20261105T0215Z-cfTdV9W
 
 ## PR
 
@@ -244,7 +244,62 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=1 hallazgo (0 arreglados, LOW aceptado) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre 05414be
+
+(qa 20261105T0215Z-cfTdV9W)
+
+Base: rama al dia con `origin/dev` (bcdbdf5; `git merge-tree --write-tree origin/dev HEAD` sale 0).
+`verificar.sh`: VERDE 05414be (887 tests backend, 153 vitest, 54 e2e).
+
+Bases de prueba, sembradas con `tests/factories.py` desde un script del
+scratchpad (`SQLITE_PATH=<scratch>/x.sqlite3 python3 manage.py migrate` y
+despues el script): vacia (:8701); sembrada (:8702) con Consulate Y7
+(`map_id` 2609221242) 3 de 3 ganadas, Consulate Y10 (418126004176) 0 de 3,
+Border 2 de 3 y Bank 1; y otra (:8703) con Y7, Y10 y Bank alternadas en 12
+partidas para `compare`.
+
+- [x] Inicio: `curl :8702/api/overview/` -> `best_map` "Consulate (Y7)"
+  (`map_id` 2609221242, 3/3, 100 %) y `worst_map` "Consulate (Y10)" (0 %).
+  Juntas darian Consulate 50 % y mejor Border.
+- [x] Clutch por mapa y sitio: `curl :8702/api/teammates/` -> "1F Lobby" en
+  "Consulate (Y7)" y en "Consulate (Y10)", 6 intentos cada uno (no 12);
+  Border y Bank con nombre pelado y `map_id` 0.
+- [x] Progreso por mapa: `curl ':8703/api/compare/?by=matches&n=6'` ->
+  tres filas: "Consulate (Y10)" +33.4, "Consulate (Y7)" -33.4, "Bank" -33.4
+  (una sola version: nombre pelado).
+- [x] CSV: `curl ':8702/api/export/?table=matches'` -> cabecera empieza
+  `map,match_id,played_at,rounds` y termina en `map_version`; vale
+  "Consulate (Y7)" x3, "Consulate (Y10)" x3, "Border", "Bank"; `map` sigue
+  "Consulate".
+- [x] e2e con `seed_demo` sin cambios: 54 verdes.
+- Bordes, base vacia y sembrada: `overview` (`until=foo`, `map=`,
+  `map=consulate`, `map=nada`), `teammates` (`until=foo`, `map=consulate`),
+  `trends` (`limit=-1`), `compare` (`n=-1`, `by=days&n=foo`), `export`
+  matches (`map=consulate`, `page=-1`) -> 200; `table=nada` -> 400. Cero 500
+  en los logs.
+- Chromium (playwright) sobre las tres bases, `/`, `/companeros`,
+  `/tendencias`, `/partidas`: 0 errores o warnings de consola; las dos
+  etiquetas se ven en pantalla. Keys de React con dos versiones: Clutch 8
+  filas y 8 keys unicas (6 sin `map_id`), `by_map` 3 y 3 (2 sin `map_id`).
+  El build de produccion de React no avisa de keys duplicadas (lo probe
+  quitando `map_id` de la key de `Teammates.jsx`: consola limpia igual), asi
+  que la proteccion es la key calculada, no el e2e.
+- Mutacion (codigo roto, tests nuevos, codigo restaurado): clave de
+  `matches_summary` a `(slug, 0)` -> caen los 2 de
+  `MejorYPeorMapaPorVersionTests`; clave de `clutch_by_site` a `(slug, 0)` ->
+  cae el de clutch por sitio; `map_version = map` -> cae el del CSV;
+  `_etiquetar_corte` sin etiqueta -> cae el de progreso por mapa.
+- Chunk inicial: `index-*.js` 188.91 kB (gzip 62.15 kB); el cambio vive en
+  los chunks de Compañeros y Tendencias.
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: nada que verificar
+en el PC obligatoriamente; la verificacion manual del diseno (base real con
+Consulate vieja y Y10) queda como opcional.
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, fallback general-purpose: 5 de 5 VERIFIED)
 
 ## Verificar en el PC
 
