@@ -22,6 +22,7 @@ RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 
 1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`): al dia con dev a9f8a28; dev ya sumo la 82 (85009f6), que toca `MatchDetail.jsx` y `humo.spec.js` como la 79: si GitHub marca conflicto, lo resuelve el equipo (P3).
 2. `claude/equipo-dev/81-textos-de-la-ui-sin-tildes` (`implementado`): ya fusiono dev 85009f6 (conflicto en `MatchDetail.jsx` con la 82, resuelto); no choca con la 79 salvo contexto en `MatchDetail.jsx`/`humo.spec.js`. Despues de su merge: 84 y 86. Papel: la 83 despues de la 79.
+3. `claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos` (`implementado`): sin conflicto con la 81 ni con la 79 (`git merge-tree`, limpio en los dos pares); toca `Duelos.jsx`, `ui.jsx` y `humo.spec.js` como la 81.
 
 ## Alcance
 
