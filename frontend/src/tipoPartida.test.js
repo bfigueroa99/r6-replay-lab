@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { qs } from './api.js'
-import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido, vistaSinRondas } from './tipoPartida.js'
+import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido, textosSinDuelos, vistaDuelos, vistaSinRondas } from './tipoPartida.js'
 
 describe('opcionesDeTipo', () => {
   it('opciones de tipo arrancan con Todos y siguen el orden de la API', () => {
@@ -82,5 +82,42 @@ describe('vistaSinRondas (ficha 85)', () => {
 
   it('recien limpiado y cargando no pasa por el EmptyState', () => {
     expect(vistaSinRondas({ vacio: true, filtros: {}, cargando: true })).toBe('filtrado')
+  })
+})
+
+describe('vistaDuelos (ficha 86)', () => {
+  it('con rondas y duelos no hay vista especial', () => {
+    expect(vistaDuelos({ rondas: 3, duelos: 2, filtros: { map: 'bank' }, cargando: false })).toBe(null)
+  })
+
+  it('con rondas y sin duelos es sin-duelos', () => {
+    expect(vistaDuelos({ rondas: 1, duelos: 0, filtros: { map: 'bank' }, cargando: false })).toBe('sin-duelos')
+    expect(vistaDuelos({ rondas: 1, duelos: 0, filtros: {}, cargando: false })).toBe('sin-duelos')
+  })
+
+  it('sin rondas y con filtros es filtrado', () => {
+    expect(vistaDuelos({ rondas: 0, duelos: 0, filtros: { map: 'bank' }, cargando: false })).toBe('filtrado')
+  })
+
+  it('sin rondas ni filtros es importar', () => {
+    expect(vistaDuelos({ rondas: 0, duelos: 0, filtros: {}, cargando: false })).toBe('importar')
+  })
+
+  it('sin rondas mientras carga es filtrado', () => {
+    expect(vistaDuelos({ rondas: 0, duelos: 0, filtros: {}, cargando: true })).toBe('filtrado')
+  })
+})
+
+describe('textosSinDuelos (ficha 86)', () => {
+  it('con filtros habla de los filtros y de Limpiar', () => {
+    const t = textosSinDuelos({ map: 'bank' })
+    expect(t.subtitulo).toBe('0 duelos con estos filtros')
+    expect(t.nota).toContain('usa Limpiar')
+  })
+
+  it('sin filtros no menciona filtros ni Limpiar', () => {
+    const t = textosSinDuelos({})
+    expect(t.subtitulo).toBe('0 duelos')
+    expect(t.nota).not.toMatch(/filtro|Limpiar/)
   })
 })

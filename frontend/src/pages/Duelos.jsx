@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
-import { vistaSinRondas } from '../tipoPartida.js'
+import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
@@ -40,10 +40,19 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   if (loading && !data) return <Loading />
 
   const totals = data?.totals
-  const vista = vistaSinRondas({ vacio: !totals?.duels, filtros: filters, cargando: loading })
+  const vista = vistaDuelos({ rondas: data?.rounds, duelos: totals?.duels, filtros: filters, cargando: loading })
   if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
   if (vista === 'filtrado') {
     return <SinRondasFiltradas titulo="Duelos" filtros={<Filters value={filters} onChange={setFilters} />} />
+  }
+  if (vista === 'sin-duelos') {
+    return (
+      <SinRondasFiltradas
+        titulo="Duelos"
+        {...textosSinDuelos(filters)}
+        filtros={<Filters value={filters} onChange={setFilters} />}
+      />
+    )
   }
 
   const base = totals.winrate
