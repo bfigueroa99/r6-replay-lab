@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T13:59Z
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
