@@ -1,8 +1,8 @@
 # 82. Una partida sin rondas rompe el detalle de partida
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/82-partida-sin-rondas-rompe-el-detalle
 tipo: bug
 epica: -
 area: frontend
