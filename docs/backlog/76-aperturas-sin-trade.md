@@ -47,10 +47,12 @@ python manage.py runserver
 
 ### Verificar en el PC
 
-Base real, en `backend/`: respaldo desde Ajustes; `python manage.py recompute --dry-run`
-(anotar N); `python manage.py migrate` (anotar cuanto tarda); `python manage.py recompute
---dry-run` otra vez (si el primero dio 0, tiene que dar 0). En el Inicio, limpias +
-devueltas == aperturas ganadas y vengadas + sin vengar == perdidas, con y sin filtro de lado.
+Base real, en `backend/`: respaldo desde Ajustes; `python manage.py migrate` primero
+(anotar cuanto tarda; con el codigo nuevo, `recompute` antes de migrar falla con `no such
+column: replays_roundplayer.opening_kill_traded`, lo vio la QA); despues `python manage.py
+recompute --dry-run` (anotar N; si N > 0, correr `python manage.py recompute` y otra vez
+`--dry-run`: "Nada que recalcular"). En el Inicio, limpias + devueltas == aperturas ganadas
+y vengadas + sin vengar == perdidas, con y sin filtro de lado.
 
 ### Para el humano
 
@@ -113,10 +115,12 @@ OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
-Base real, en `backend/`: respaldo desde Ajustes; `python manage.py recompute --dry-run`
-(anotar N); `python manage.py migrate` (anotar cuanto tarda); `python manage.py recompute
---dry-run` otra vez (si el primero dio 0, tiene que dar 0). En el Inicio, limpias +
-devueltas == aperturas ganadas y vengadas + sin vengar == perdidas, con y sin filtro de lado.
+Base real, en `backend/`: respaldo desde Ajustes; `python manage.py migrate` primero
+(anotar cuanto tarda; con el codigo nuevo, `recompute` antes de migrar falla con `no such
+column: replays_roundplayer.opening_kill_traded`, lo vio la QA); despues `python manage.py
+recompute --dry-run` (anotar N; si N > 0, correr `python manage.py recompute` y otra vez
+`--dry-run`: "Nada que recalcular"). En el Inicio, limpias + devueltas == aperturas ganadas
+y vengadas + sin vengar == perdidas, con y sin filtro de lado.
 
 ## Pendiente
 
