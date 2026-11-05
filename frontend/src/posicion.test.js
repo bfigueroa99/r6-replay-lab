@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  claseSalida,
   claseVeredicto,
   comoMargen,
   conSigno,
+  etiquetaSalida,
   etiquetaVeredicto,
   hayZonas,
   notaDeMuestra,
+  textoSinSalidas,
 } from './posicion.js'
 
 describe('posicion', () => {
@@ -48,5 +51,33 @@ describe('posicion', () => {
     expect(conSigno(null)).toBe('—')
     expect(comoMargen(13.8)).toBe('±13.8')
     expect(comoMargen(null)).toBe('—')
+  })
+
+  it('cada veredicto de salida del spawn tiene su etiqueta', () => {
+    expect(etiquetaSalida('temprano')).toBe('Caes temprano')
+    expect(etiquetaSalida('aguanta')).toBe('Sales bien')
+    expect(etiquetaSalida('ruido')).toBe('Sin señal')
+    expect(etiquetaSalida('otro')).toBe('Sin señal')
+    expect(etiquetaSalida(undefined)).toBe('Sin señal')
+  })
+
+  it('caer temprano pinta en rojo y salir bien en verde', () => {
+    expect(claseSalida('temprano')).toBe('loss')
+    expect(claseSalida('aguanta')).toBe('win')
+    expect(claseSalida('ruido')).toBe('')
+    expect(claseSalida(null)).toBe('')
+  })
+
+  it('sin rondas de ataque con spawn lo dice', () => {
+    expect(textoSinSalidas({ spawn_exit_attack: { rounds: 0 }, min_rounds: 5 })).toBe(
+      'Todavía no hay rondas de ataque con spawn con estos filtros.',
+    )
+    expect(textoSinSalidas(undefined)).toBe('Todavía no hay rondas de ataque con spawn con estos filtros.')
+  })
+
+  it('con rondas pero sin muestra dice cuanta falta', () => {
+    expect(textoSinSalidas({ spawn_exit_attack: { rounds: 12 }, min_rounds: 5 })).toBe(
+      'Ningún spawn llega a 5 rondas de ataque.',
+    )
   })
 })

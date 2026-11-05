@@ -1014,6 +1014,30 @@ test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra la salida del spawn', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Salida del spawn' }),
+  })
+  // seed_demo no tiene bajas antes de los 30 s: 116 rondas de ataque con spawn
+  // en seis spawns (cinco de 20 y East Alley con 16), ninguna muerte temprana.
+  await expect(panel.locator('.salida-ataque')).toContainText('en el 0% de las rondas (0 de 116)')
+  await expect(panel.locator('tbody tr')).toHaveCount(6)
+  // Columnas: mapa, spawn, rondas, mueres temprano, %, resto, diferencia, margen, bajas, veredicto.
+  const boulevard = panel.locator('tr', {
+    has: page.getByRole('cell', { name: 'Boulevard', exact: true }),
+  })
+  await expect(boulevard.locator('td').nth(0)).toHaveText('Bank')
+  await expect(boulevard.locator('td').nth(2)).toHaveText('20')
+  await expect(boulevard.locator('td').nth(3)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(8)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(9)).toHaveText('Sin señal')
+
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
