@@ -77,6 +77,35 @@ class StacksRivalesTests(TestCase):
         self.assertEqual(agg.rival_stacks(map="club-house")[0]["matches"], 2)
         self.assertEqual(agg.rival_stacks(map="border"), [])
 
+    def _partida_por_rondas(self, index, rondas):
+        """Una partida ganada con una alineacion rival distinta en cada ronda."""
+        match = make_match(index=index, my_score=4, opponent_score=2)
+        for numero, rivales in enumerate(rondas):
+            rnd = make_round(match, numero)
+            make_round_player(rnd)
+            for nick in rivales:
+                make_round_player(rnd, username=nick, is_me=False, team_index=1)
+        return match
+
+    def test_un_reemplazo_no_forma_grupo_con_quien_reemplazo(self):
+        # A se va despues de la primera ronda y entra B: nunca jugaron juntos
+        self._partida_por_rondas(0, [["A", "C"], ["B", "C"]])
+        self._partida_por_rondas(1, [["A", "C"], ["B", "C"]])
+
+        grupos = [nicks(f) for f in agg.rival_stacks()]
+        self.assertEqual(grupos, [["A", "C"], ["B", "C"]])
+        self.assertNotIn(["A", "B", "C"], grupos)
+        self.assertNotIn(["A", "B"], grupos)
+
+    def test_ronda_con_rivales_de_mas_no_arma_grupos(self):
+        # dato raro: mas rivales que los que entran en un equipo
+        muchos = [f"R{i}" for i in range(11)]
+        self._partida(0, muchos)
+        self._partida(1, muchos)
+        self.assertEqual(agg.rival_stacks(), [])
+        # rivales repetidos, que no arma subconjuntos, los sigue contando
+        self.assertEqual(len(agg.repeated_rivals()), 11)
+
     def test_sin_grupos_repetidos_devuelve_lista_vacia(self):
         self._partida(0, ["A", "B"])
         self._partida(1, ["C", "D"])
