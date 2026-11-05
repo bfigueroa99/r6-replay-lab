@@ -1,7 +1,7 @@
 # 78. Filtros en el listado de Partidas
 
-estado: implementado
-candado: revisor 2026-11-05 08:05 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md F16 (del PR #14, cerrado sin merge el 2026-11-05; rama claude/dazzling-einstein-w3qcyq como referencia, no se mergea)
 archivos: backend/replays/models.py (filtro_resultado), backend/replays/analytics/aggregates.py (match_queryset), backend/replays/views.py (match_list), frontend/src/partidas.js, frontend/src/partidas.test.js, frontend/src/components/Filters.jsx, frontend/src/pages/Matches.jsx, backend/tests/test_filtros_de_partidas.py, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cQaYMkM
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cQaYMkM, revisor 20261105T0804Z-cuHheZT
 
 ## PR
 
@@ -316,7 +316,53 @@ Verificacion: verificar.sh VERDE 0d12c3602 (934 tests backend, 179 vitest, 58 e2
 Skills: no aplica (dominio que ya existe en el repo).
 OMC: plan=— · revisión=2 hallazgos (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre e5e4aa5
+
+Revisor 20261105T0804Z-cuHheZT. A ciegas: `omc-code-reviewer` en estandares
+y otro en intencion (diff de mas de 150 lineas); sin `omc-security-reviewer`
+(no hay POST nuevo, ni red, ni `.rec`, ni rutas de archivos). Cada hallazgo
+confirmado o refutado por el lider.
+
+- [test] [MEDIUM -> refutado] frontend/e2e/humo.spec.js:893-897
+  Que pasa: el revisor temia que el e2e de la respuesta tardia pasara con el
+  bug de `useApi` presente.
+  Por que no es cierto: con `frontend/src/api.js` de 0d12c36^ (la bandera
+  `alive` compartida) y el build rehecho, "Partidas filtra por resultado y
+  por mapa" falla 3 de 3 en la linea 896; con el arreglo pasa. El test caza
+  el bug.
+- [test] [LOW] backend/tests/test_filtros_de_partidas.py:28
+  Que pasa: el fixture del empate trae solo `won=False`; un
+  `filtro_resultado("empate")` reescrito como `Q(won=False) & empatada`
+  pasaba los tres tests.
+  Arreglo: agregado por el Revisor
+  `test_un_empate_con_won_true_sale_como_empate_y_no_como_victoria` (pasa).
+- [bug] [LOW] frontend/src/components/Filters.jsx:166
+  Que pasa: en Partidas aparece "Limpiar" sin ningun filtro visible puesto.
+  Como reproducirlo: elegir Lado = Ataque en el Coach y abrir Partidas: el
+  subtitulo dice "29 partidas importadas." y el boton esta; apretarlo borra
+  el lado en todas las paginas.
+  Arreglo sugerido: que Partidas le pase a `Filters` si hay filtros visibles,
+  calculado con `filtrosDePartida(filters)`.
+- [test] [LOW] frontend/e2e/humo.spec.js:272-276 (criterio 5)
+  Que pasa: con "Derrota" el e2e no ve ninguna fila (seed_demo gana sus 29
+  partidas); el chip de derrota y el filtro los cubre el backend
+  (`test_cada_resultado_trae_solo_sus_partidas`), el chip `.chip.win` el e2e.
+  Arreglo sugerido: si se vuelve a tocar el test, `page.route` con una fila
+  `result: 'derrota'`; no bloquea.
+
+Criterios: 1, 2 y 3 cubiertos por `tests/test_filtros_de_partidas.py`; 4 por
+`src/partidas.test.js` (offset y subtitulo) y el e2e (barra sin Lado ni
+Operador); 5 por el e2e con la consola limpia (ver el LOW de arriba). Sin
+archivos fuera de `archivos:` sin explicar, sin numero nuevo (no pide fila en
+`metricas.md`), sin `print` ni `console.log`, identificadores sin tildes.
+
+Verificacion: verificar.sh VERDE e5e4aa569 (934 backend, 179 vitest, 58 e2e)
+antes del test nuevo; la del commit de la revision, abajo.
+
+Veredicto: aprobar -> `revisado`. Los LOW quedan para el Dev si vuelve a
+tocar la ficha; ninguno bloquea.
+
+OMC: plan=— · revisión=4 hallazgos (1 refutado, 1 arreglado con test del Revisor) · verificación=—
 
 ## QA
 

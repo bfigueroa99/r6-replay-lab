@@ -50,6 +50,14 @@ class FiltroDeResultadoTests(TestCase):
                 )
                 self.assertEqual(en_cuantos, 1)
 
+    def test_un_empate_con_won_true_sale_como_empate_y_no_como_victoria(self):
+        empate_ganado = _partida(4, won=True, my_score=3, opponent_score=3)
+        self.assertEqual(empate_ganado.result, "empate")
+        empates = {m["id"] for m in self.client.get("/api/matches/?result=empate").json()["matches"]}
+        victorias = {m["id"] for m in self.client.get("/api/matches/?result=victoria").json()["matches"]}
+        self.assertIn(empate_ganado.id, empates)
+        self.assertNotIn(empate_ganado.id, victorias)
+
     def test_un_resultado_desconocido_se_ignora_y_no_da_500(self):
         response = self.client.get("/api/matches/?result=ganada")
         self.assertEqual(response.status_code, 200)
