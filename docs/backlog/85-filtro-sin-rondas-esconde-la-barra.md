@@ -1,7 +1,7 @@
 # 85. Un filtro sin rondas esconde la barra en Coach, Operadores, Compañeros, Duelos y Tendencias
 
-estado: revisado
-candado: qa 2026-11-05T13:59Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/85-filtro-sin-rondas-esconde-la-barra
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: idea anotada en ESTADO.md por la sesion de la 77 ("Coach, Operadores, Compañeros, Duelos y Tendencias con 0 rondas filtradas muestran 'Todavía no hay replays importados' y esconden la barra de filtros"); el Inicio ya se arreglo en la 77
 archivos: frontend/src/tipoPartida.js, frontend/src/tipoPartida.test.js, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: dev 20261105T1303Z-c1PA8YY, revisor 20261105T1330Z-cTQKqvr
+turnos: dev 20261105T1303Z-c1PA8YY, revisor 20261105T1330Z-cTQKqvr, qa 20261105T1358Z-cxcyM5F
 
 ## PR
 
@@ -146,6 +146,49 @@ Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=3 hallazgos (0 arreglados; 1 MEDIUM, 2 LOW) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre bd0ed81
+
+QA 20261105T1358Z-cxcyM5F. Scripts en el scratchpad (no van al repo); base
+SQLite aparte con `SQLITE_PATH`, nunca la del usuario.
+
+- `verificar.sh` (check.sh completo): VERDE bd0ed8118 en 114 s, 953 tests
+  backend, 190 vitest, 60 e2e.
+- Criterio 1, app real por el camino de la UI (sin `page.route`):
+  `SQLITE_PATH=<tmp> manage.py migrate && manage.py seed_demo` (29 partidas,
+  203 rondas), `runserver 127.0.0.1:8785`; Playwright: en el Resumen,
+  Periodo = "Entre dos fechas", 2000-01-01 a 2000-01-02, y por el menu a las
+  cinco paginas. Coach, Operadores, Compañeros, Duelos y Tendencias: `h1`
+  correcto, `.filters`=1, `.empty-state`=0, "0 rondas con estos filtros"=1,
+  el rango sigue puesto. Cumple.
+- Criterio 2: Limpiar en cada una de las cinco con el rango puesto: la nota
+  se va, `.empty-state`=0, paneles/tablas 6/4/12/8/38. Consola sin errores
+  ni warnings. Cumple.
+- Criterio 3: base recien migrada, sin datos ni filtros, `/coach`,
+  `/operadores`, `/companeros`, `/duelos`, `/tendencias`: `.empty-state`=1,
+  sin barra ni nota; consola limpia. Vitest `sin filtros y base vacia
+  ofrece importar` en verde. Cumple.
+- Criterio 4: vitest `recien limpiado y cargando no pasa por el EmptyState`
+  en verde. Cumple.
+- Mutaciones (codigo restaurado despues, `git status` limpio):
+  (1) sin `|| cargando` en `vistaSinRondas` -> cae el vitest del criterio 4;
+  (2) `vistaSinRondas` siempre `'filtrado'` -> cae `sin filtros y base vacia
+  ofrece importar`; (3) `Duelos.jsx` de `origin/dev` + `vite build` ->
+  `E2E_CHROMIUM=/opt/pw-browsers/chromium npx playwright test
+  e2e/humo.spec.js -g "un filtro sin rondas deja la barra"` falla en
+  `humo.spec.js:846`; restaurado, 1 passed.
+- Chunk inicial: `index-*.js` 191,2 kB en la rama contra 190,7 kB en dev
+  (+0,3 %).
+- Hallazgo MEDIUM del revisor, reproducido (no cae ningun criterio: la
+  ficha habla de 0 rondas): base con una partida en Club House con un duelo
+  y otra en Bank con 1 ronda sin bajas ni muertes (`factories.py`), Duelos
+  con Mapa = Bank dice "0 rondas con estos filtros" y el Resumen con el
+  mismo filtro muestra la ronda (`/api/overview/?map=bank` rounds=1,
+  `/api/duels/?map=bank` duels=0). Antes decia "Todavía no hay replays
+  importados". Va como ficha 86 (bug, `propuesto`) en `backlog`.
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 4 criterios VERIFIED, 0 bloqueantes)
 
 ## Para el humano
