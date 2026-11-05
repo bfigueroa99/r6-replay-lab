@@ -13,9 +13,10 @@ importada con un `.rec` faltante pudo quedar como victoria o derrota con un
 marcador que la regla no cierra. Marcador, tipo y version estan en `Match`.
 
 Las reglas no se reimplementan aca: se llama a las mismas
-`metrics.bajas_a_rivales`, `metrics.annotate_trades` (tambien marca la apertura devuelta), `metrics.clutch_vs`,
-`metrics.one_vx` y `reglas_partida.resultado` que usa el import. Duplicarlas
-significaria numeros distintos segun por donde pasaste.
+`metrics.bajas_a_rivales`, `metrics.annotate_trades` (tambien marca la
+apertura devuelta), `metrics.clutch_vs`, `metrics.one_vx` y
+`reglas_partida.resultado` que usa el import. Duplicarlas significaria
+numeros distintos segun por donde pasaste.
 """
 
 from __future__ import annotations
