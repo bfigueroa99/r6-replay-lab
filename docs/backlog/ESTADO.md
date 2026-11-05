@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 02:45 UTC por qa (sesion 20261105T0215Z-cfTdV9W; motivo: por estado: 1 revisado; siguio como release sobre la 74)
+actualizado: 2026-11-05 02:50 UTC por dev (sesion 20261105T0220Z-cPG9p3E; motivo: pedido)
 playbook: origin/dev@bcdbdf5
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
@@ -10,15 +10,15 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/75-trades-de-los-dos-equipos | docs/backlog/75-trades-de-los-dos-equipos.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/75-trades-de-los-dos-equipos?expand=1) |
-| claude/equipo-dev/76-aperturas-sin-trade | docs/backlog/76-aperturas-sin-trade.md | en curso 2026-11-05 | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/76-aperturas-sin-trade?expand=1) |
+| claude/equipo-dev/76-aperturas-sin-trade | docs/backlog/76-aperturas-sin-trade.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/76-aperturas-sin-trade?expand=1) |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=0 disenado=1 en_curso=1 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+RESUMEN propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=80 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
 
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/75-trades-de-los-dos-equipos`: `implementado`; sin conflicto con dev 2da1b7d ni con la 76 (`git merge-tree`). Toca `views.py` (`match_detail`), `MatchDetail.jsx`, `humo.spec.js` y la seccion Trades de `metricas.md`.
-2. `claude/equipo-dev/76-aperturas-sin-trade`: en curso (otra sesion); sin conflicto con dev ni con la 75 hoy. Comparte `humo.spec.js` y `metricas.md` con la 75 en zonas distintas: si chocan, la segunda en mergear resuelve con P3.
+2. `claude/equipo-dev/76-aperturas-sin-trade`: `implementado` (574ecce); sin conflicto con dev 2da1b7d ni con la 75 (`git merge-tree`). Trae la migracion `0004_roundplayer_opening_kill_traded` (unica `0004` en vuelo). Toca `metrics.py`, `recompute.py`, `aggregates.py` (`overview`), `Dashboard.jsx`, `humo.spec.js` y *Duelos de apertura* de `metricas.md`.
 
 ## Alcance
 
@@ -35,17 +35,17 @@ RESUMEN propuesto=0 disenado=1 en_curso=1 huerfanas=0 implementado=1 revisado=0 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 75-trades-de-los-dos-equipos | implementado (en su rama) | funcionalidad | paridad-referencia | 2 | frontend | - |
-| 76-aperturas-sin-trade | en curso 2026-11-05 (en su rama) | funcionalidad | impacto | 3 | backend | - |
+| 76-aperturas-sin-trade | implementado (en su rama) | funcionalidad | impacto | 3 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-0 `propuesto`, 1 `disenado` (la 76, reclamada por otro Dev a las 02:21); la 74 ya esta en dev (PR #73). Proximo disparo: Revisor de la 75 (regla 3); con el papel casi vacio, PO pronto. Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
+0 `propuesto`, 0 `disenado`: papel vacio. Proximo disparo: Revisor de la 75 o la 76 (regla 3); despues PO (regla 7). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-05 02:45 | (mismo turno que la QA) Entrega y mergea la 74: `aprobado` -> `entregado` -> [PR #73](https://github.com/bfigueroa99/r6-replay-lab/pull/73) -> dev 2da1b7d. Puerta a-f cumplida: dev, revisor y qa de contextos distintos, dev bcdbdf5 ya en la rama, `verificar.sh` VERDE 4044ab4f5 (887 backend, 153 vitest, 54 e2e). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). `pruebas.sh`: PRUEBAS_OK (18). |
-| dev | 2026-11-05 02:35 | Implementa 75 (funcionalidad p2, `disenado` -> `implementado`, 1815a6b): `team_trades` por equipo en `/api/matches/<id>/` (equipo resuelto por ronda, cero queries), panel "Trades por equipo" en el detalle de partida con el mejor resaltado, fila en `metricas.md`. 7 tests backend, 6 vitest, 1 e2e. Revision ciega: aprobar, 1 MEDIUM (cuadratura con el scoreboard si el `team_index` cambia en la partida: documentado en `metricas.md`) y 2 LOW (1 arreglado). `verificar.sh` VERDE 1815a6bc2 (889 backend, 159 vitest, 55 e2e). |
+| dev | 2026-11-05 02:50 | Implementa 76 (funcionalidad p3, `disenado` -> `implementado`, 574ecce): columna `RoundPlayer.opening_kill_traded` marcada en `annotate_trades`, migracion 0004 desde `Event.traded`, `recompute` la rehace, desglose de 8 claves en `overview.overall` y panel "Aperturas que pesan" en el Resumen; fila en `metricas.md`. 20 tests backend nuevos, 3 vitest, 1 e2e. Revision ciega: aprobar, 3 LOW (1 arreglado). `verificar.sh` VERDE fe66a2de0 (902 backend, 156 vitest, 55 e2e). (Otra sesion dev implemento la 75 a las 02:35.) |
 | revisor | 2026-11-05 00:25 | Revisa 74 (funcionalidad p2, `implementado` -> `revisado`, 2035ae1). Rama al dia con dev bcdbdf5; `verificar.sh` VERDE 5b4faee (887 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, 1 LOW aceptado (con dos nombres en una misma version, Clutch/progreso/CSV toman el alfabetico y el Inicio el mas reciente; decision del diseno, ya anotada). Cinco criterios cubiertos por test; keys de React unicas con dos versiones. |
 | qa | 2026-11-05 02:40 | Prueba 74 (funcionalidad p2, `revisado` -> `aprobado`, 05ca8bd). `verificar.sh` VERDE 05414be (887 backend, 153 vitest, 54 e2e). Bases de `factories` con Consulate Y7 y Y10: `overview` (mejor "Consulate (Y7)", peor "Consulate (Y10)"), `teammates` (clutch por sitio separado), `compare` (by_map por version, Bank pelado), `export` (`map_version` al final). Bordes en base vacia y sembrada sin 500; Chromium sin errores de consola; 4 mutaciones caen. OMC verifier: PASS. |
 | arquitecto | 2026-11-04 16:18 | Disena 74, 75 y 76 (`propuesto` -> `disenado`). 74: `matches_summary`, `clutch_by_site`, corte por mapa de `compare_periods` y CSV de partidas (columna nueva `map_version` al final) por `(slug, map_id)`; hallazgo: `test_variantes_del_mapa_cuentan_juntas` exige el nombre mas reciente, asi que `matches_summary` usa `etiquetas_de_version` y no `etiquetas_de_mapas`. 75: `team_trades` en `/api/matches/<id>/` desde las filas ya armadas, panel entre Matriz y Scoreboard. 76: plan por consenso (deliberado) APPROVE en ronda 1: columna `opening_kill_traded` escrita en `annotate_trades`, migracion 0004 desde `Event.traded`, desglose solo en `overview.overall`, panel "Aperturas que pesan". Sin pushes de codigo. |
@@ -61,6 +61,7 @@ RESUMEN propuesto=0 disenado=1 en_curso=1 huerfanas=0 implementado=1 revisado=0 
 - Verificar en el PC (69, en dev por PR #71): `manage.py backup`, `recompute --dry-run` (cuenta las filas de 1vX que cambian; solo partidas anteriores a Y9S1 con abandonos) y `recompute`.
 - Verificar en el PC (68, en dev por PR #66): `manage.py recompute --dry-run` ("... y N partidas (resultado)", pocas) y `recompute`; esas partidas salen `incompleta` y dejan de contar en el winrate de partidas.
 - Verificar en el PC (67, en dev por PR #64): `manage.py backup`, `recompute --dry-run`, `recompute` y otra vez `recompute` ("Nada que recalcular"); K/D, KPR y rating bajan solo donde hubo teamkills. El `.exe` no corre `recompute` (aviso en la ficha).
+- Verificar en el PC (76, cuando llegue a dev): `manage.py backup`, `recompute --dry-run` (anotar N), `migrate` (anotar cuanto tarda la 0004), `recompute --dry-run` otra vez (si el primero dio 0, tiene que seguir en 0); en el Resumen, limpias + devueltas = aperturas ganadas.
 - Pregunta abierta (76, no bloquea): la "apertura devuelta" se define por el trade del evento (el equipo de tu victima te mato en la ventana), no por "moriste dentro de la ventana"; teamkill, `Death` sin autor o victima fuera de la lista dejan la apertura limpia. Si preferis la letra, decilo en la ficha.
 - PRs que esperan tu merge contra dev: ninguno. Promover a main cuando quieras: RELEASE=dev lleva 106 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1).
 - Verificar en el PC (66): en Electron (`npm run desktop`), "Copiar resumen" en una partida y pegar.
