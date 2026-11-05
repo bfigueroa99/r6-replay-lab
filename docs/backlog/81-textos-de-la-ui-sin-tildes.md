@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: revisado
-candado: qa 2026-11-05 16:14 UTC
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -425,6 +425,57 @@ y ya estan en `## Para el humano`. Tercera pasada con solo LOW: `revisado`.
 Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=2 hallazgos LOW ya conocidos (0 arreglados; el Revisor no arregla) · verificación=—
+
+## QA 2026-11-05 sobre a7b7f5c (segunda QA)
+
+(qa 20261105T1613Z-cAimE1D; rama al dia con dev 0861b0b. Base de
+`seed_demo` en el scratchpad; nunca `.rec` ni `.sqlite3` al repo.)
+
+Evidencia por criterio:
+
+1. Textos del repro con tilde: cubierto. Los tres greps de "Verificacion del
+   barrido" sobre `frontend/src`: 0 lineas cada uno;
+   `git grep -nE "referencia solida|no registro eventos" -- frontend/src`: 0.
+2. Barrido de las demas cadenas visibles: **falla**. Lo encontro
+   `omc-verifier` y lo confirme leyendo el codigo y `seed_demo`:
+   - `frontend/src/pages/MatchDetail.jsx:360` `'eliminacion del equipo rival'`
+     y `:363` `'se acabo el tiempo'` (mapa `CONDITIONS`, que pinta
+     `translateCondition` en "Condición: ..." del panel de la ronda,
+     `MatchDetail.jsx:134`). Se ve en cualquier ronda ganada por eliminacion
+     (`seed_demo` las siembra con `win_condition="KilledOpponents"`):
+     "Condición: eliminacion del equipo rival" -> "eliminación";
+     "se acabó el tiempo".
+   - `frontend/src/pages/MatchDetail.jsx:161` `render: (row) => (row.died ? 'si' : 'no')`
+     (columna "Murio" de la tabla de jugadores de la ronda): el `render` es
+     solo pantalla (el CSV lo arma `ui.jsx:90` aparte), asi que `'si'` ->
+     `'sí'`. El `'si'` de `ui.jsx:90` es el valor del CSV y queda como esta
+     (fuera de alcance, lo afirma `logica.test.js:139`).
+   Repro: `git grep -nE "eliminacion del equipo|se acabo el tiempo|'si' : 'no'" origin/claude/equipo-dev/81-textos-de-la-ui-sin-tildes -- frontend/src/pages`
+   devuelve las tres lineas. Mi recorrido en Chromium (14 rutas, ~50
+   palabras en `body.innerText`) no las vio porque su lista no tenia
+   "eliminacion" ni "acabo": la unica sin tilde que salio fue "mato", de la
+   narrativa del backend (ficha 88).
+   `label: 'Murio a los'` (`MatchDetail.jsx:165`) es cabecera de columna/CSV:
+   misma familia que `'Murio'`, `'Cuando'`, `'Duro'`, que la ficha deja a
+   proposito.
+3. Ningun test afirma el texto viejo: cubierto. Mutacion: "Sus números" ->
+   "Sus numeros" (`Jugador.jsx`) y "No había partidas nuevas" sin tilde
+   (`App.jsx`), `vite build`,
+   `E2E_CHROMIUM=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome npx playwright test -g "tu perfil enlaza|los POST de la UI mandan JSON"`:
+   2 failed; restaurado: 2 passed. Ningun test busca "eliminacion" ni "se acabo".
+4. Build y `check.sh`: cubierto. `verificar.sh`: VERDE a7b7f5cd9 (955 tests
+   backend, 197 vitest, 62 e2e). Chunk inicial `index-*.js` 191687 bytes
+   (sin cambio de tamano relevante: solo texto).
+
+Veredicto: `con hallazgos`. Arreglo: las tres cadenas de arriba (solo tildes,
+`'sí'` solo en el `render` de pantalla); repetir el barrido mirando tambien
+los mapas de constantes (`CONDITIONS`) y los `render:` de columnas.
+
+Choca con la 84 (que queda `aprobado` en este turno) en `ui.jsx`,
+`MatchDetail.jsx`, `Jugador.jsx` y `humo.spec.js`: si la 84 entra a dev
+antes, la correccion arranca con P3.
+
+OMC: plan=— · revisión=— · verificación=FAIL (criterio 2 PARTIAL: `MatchDetail.jsx:360,363,161`)
 
 ## Verificar en el PC
 
