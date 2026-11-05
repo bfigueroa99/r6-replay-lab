@@ -1,7 +1,7 @@
 # 88. Textos que arma el backend (narrativa de la partida, coach) sin tildes
 
-estado: implementado
-candado: revisor 2026-11-05 16:14 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/88-textos-del-backend-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 4
 fuente: QA 20261105T1521Z-cEexMKJ de la 81, recorriendo `/partidas/N` en Chromium con `seed_demo`. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". La 81 dejo fuera, a proposito, los textos que manda el backend
 archivos: backend/replays/analytics/narrative.py, backend/replays/analytics/coach.py, backend/replays/analytics/aggregates.py, backend/tests/test_narrative.py, backend/tests/test_compare.py, backend/tests/test_textos_con_tildes.py
-turnos: qa 20261105T1521Z-cEexMKJ, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1547Z-cLk3BF3
+turnos: qa 20261105T1521Z-cEexMKJ, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1547Z-cLk3BF3, revisor 20261105T1613Z-czS2t8M
 
 ## PR
 
@@ -218,6 +218,27 @@ Revision ciega (`omc-code-reviewer`): aprobar, 4 LOW, dejados a proposito:
 
 Skills: no aplica (el Arquitecto ya dijo que no hay dominio nuevo)
 OMC: plan=— · revisión=4 hallazgos LOW (0 arreglados) · verificación=—
+
+## Revision 2026-11-05 sobre fe348bb
+
+(revisor 20261105T1613Z-czS2t8M, rama al dia con dev 0861b0b)
+
+Revision ciega (`omc-code-reviewer`, sin leer la ficha): aprobar, 3 LOW. Confirmados por el lider:
+- [test] LOW `test_textos_con_tildes.py`: el control solo probaba la regex, no el recorrido con `ast`; si el filtro de docstrings o de espacios descartara todo, la guardia pasaria vacia. Confirmado leyendo el codigo. Lo cubre el test que agrego esta revision (`test_el_recorrido_encuentra_el_literal_y_salta_docstrings_y_claves`: modulo temporal con docstrings, una clave `fatiga-sesion` y un f-string; afirma que encuentra solo `modulo.py:5 'mato'`). Pasa.
+- [test] LOW: un fragmento de f-string sin espacio (`f"{x}mato"`) se escapa del filtro "con un espacio". Limite conocido, ya anotado por el Dev; hoy no hay ninguno. No se arregla.
+- [estilo] LOW fuera del diff: `Trends.jsx:321` "Ultimas {v.label}", `Trends.jsx:41-42` "7 dias"/"30 dias" y `Filters.jsx:11-13` "Ultimos N dias" siguen sin tilde junto a la etiqueta del backend que ahora dice "Últimas 4 partidas". Es frontend y esta en el alcance de la 81 (`revisado`); si la 81 entra sin `Trends.jsx:321`, va a ficha propia.
+
+Verificaciones propias:
+- La guardia sobre `coach.py` y `narrative.py` de dev (sin el arreglo) da 60 hallazgos; sobre la rama, 0.
+- Ninguna clave de señal, `metric=`, severidad ni valor comparado cambio: el diff toca solo literales de frases.
+- `grep` en `frontend/src` y `frontend/e2e` de los textos viejos: ninguna comparacion contra ellos (`humo.spec.js:439` es la timeline del frontend).
+- Criterios: 1 y 2 por la guardia y los asserts de `test_narrative.py`; 3 por `test_narrative.py`/`test_compare.py` actualizados sin borrar casos (`test_teamkills.py` no los afirma); 4 `verificar.sh` VERDE.
+- `archivos:` cubre todo el diff; sin metricas nuevas (`metricas.md` no cambia); identificadores sin tildes, textos con tildes; sin `print`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica
+OMC: plan=— · revisión=3 hallazgos LOW (1 cubierto con test) · verificación=—
 
 ## QA
 

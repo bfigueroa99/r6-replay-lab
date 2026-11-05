@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import re
+import tempfile
 from pathlib import Path
 
 from django.test import SimpleTestCase
@@ -61,3 +62,17 @@ class TextosConTildesTests(SimpleTestCase):
         # sin este caso, un patron roto pasaria el test de arriba sin mirar nada
         self.assertTrue(PATRON.search("te mato Rival. Nadie la vengo."))
         self.assertIsNone(PATRON.search("te mató Rival. Nadie la vengó."))
+
+    def test_el_recorrido_encuentra_el_literal_y_salta_docstrings_y_claves(self):
+        # el control de arriba prueba la regex; este prueba que `ast` visita los literales
+        fuente = (
+            '"""Docstring que dice mato y no cuenta."""\n'
+            'CLAVE = "fatiga-sesion"\n'
+            'def f(x):\n'
+            '    """Otra docstring con despues."""\n'
+            '    return f"{x} te mato. Nadie la vengó."\n'
+        )
+        with tempfile.TemporaryDirectory() as carpeta:
+            ruta = Path(carpeta) / "modulo.py"
+            ruta.write_text(fuente, encoding="utf-8")
+            self.assertEqual(palabras_sin_tilde(ruta), ["modulo.py:5 'mato'"])
