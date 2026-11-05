@@ -14,10 +14,10 @@ import {
 import { vistaSinRondas } from '../tipoPartida.js'
 
 const GROUPS = [
-  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
+  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
   { key: 'media', title: 'Para trabajar', hint: 'Patrones claros con muestra suficiente.' },
-  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales mas debiles o de contexto.' },
-  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apoyate en esto al elegir rol y picks.' },
+  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales más débiles o de contexto.' },
+  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apóyate en esto al elegir rol y picks.' },
 ]
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
@@ -40,8 +40,8 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         <div>
           <h1>Coach</h1>
           <p>
-            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el numero, con que se compara
-            y cuantas rondas lo respaldan.
+            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el número, con qué se compara
+            y cuántas rondas lo respaldan.
           </p>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
                 <h3>{insight.title}</h3>
                 <p>{insight.detail}</p>
                 <div className="action">
-                  <b>Que hacer:</b> {insight.action}
+                  <b>Qué hacer:</b> {insight.action}
                 </div>
                 <div className="meta">
                   {insight.metric ? (

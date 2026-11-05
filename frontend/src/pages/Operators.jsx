@@ -94,7 +94,7 @@ function Table({ rows, nombre }) {
           help: 'Winrate con este operador menos tu winrate de todas las rondas de ese lado, en puntos. Un +10 con poca presencia puede ser varianza.',
           render: (row) => <DeltaLado valor={row.winrate_delta} />,
         },
-        { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica. Ver docs/metricas.md para la formula y los pesos.' },
+        { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica. Ver docs/metricas.md para la fórmula y los pesos.' },
         { key: 'kills', label: 'Bajas' },
         { key: 'kpr', label: 'KPR', digits: 2 },
         { key: 'kd', label: 'K/D', digits: 2 },
