@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
-estado: implementado
-candado: revisor 2026-11-05T02:48Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: idea R2 de `ALCANCE.md`; fila `should` "Duelos limpios contra trades que se escapan, por equipo, en la partida" de `docs/backlog/replica/features.csv` (clone `partial`), de [r6-replay.com](https://r6-replay.com/) ("Know which duels your team wins clean and where trades slip through."). En `dev` bcdbdf5 `match_detail` (`replays/views.py:462`) ya devuelve `trade_kills`, `was_traded` y `untraded_death` por jugador y ronda, y el scoreboard (`views.py:576-593`, `MatchDetail.jsx:222-223`) los suma por jugador; nada los suma por equipo
 archivos: backend/replays/views.py, backend/tests/test_trades_por_equipo.py, frontend/src/tradesEquipo.js, frontend/src/tradesEquipo.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j, revisor 20261105T0247Z-cQMp2TZ
 
 ## PR
 
@@ -145,7 +145,25 @@ Desvio menor: la revision ciega marco (MEDIUM) que con un `team_index` que cambi
 Skills: no aplica (lo resuelven `DataTable` y `Panel`).
 OMC: plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 5e780a5
+
+Revisor 20261105T0247Z-cQMp2TZ. Rama fusionada con dev (2da1b7d) y `verificar.sh` VERDE 5e780a5 (894 tests backend, 159 vitest, 55 e2e) antes de revisar. Revision a ciegas en dos ejes (estandares e intencion) sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'`; seguridad no aplica (no toca POST, externo, rutas ni `.rec`).
+
+Hallazgos (confirmados leyendo el codigo; ninguno bloquea):
+
+- [test] [LOW] backend/tests/test_trades_por_equipo.py `test_un_teamkill_cuenta_como_ya_lo_guarda_el_import`
+  Que pasa: el `make_event` del teamkill no influye; la factory ya deja `untraded_death = died and not was_traded` y la vista no mira eventos, asi que el test no distingue "sumar lo guardado" de "recalcular".
+  Arreglo: agregado por el Revisor `test_suma_untraded_death_tal_cual_lo_guardo_el_import` (fila muerta con `untraded_death=False` guardado a mano: da 0, prueba que se suma la columna). Pasa. El test del teamkill queda; el comportamiento del teamkill en si lo cubre `test_metrics.py`.
+- [estilo] [LOW] frontend/src/pages/MatchDetail.jsx `TradesPorEquipo`
+  Que pasa: el comentario "La celda del equipo que sale mejor en esa columna va resaltada" dice el que, no el por que.
+  Arreglo sugerido: borrarlo en el proximo toque de la pagina.
+
+Ficha: criterio 1 (suma_cada_equipo, usa_el_equipo_de_cada_ronda, sin_tu_fila), 2 (cuadra_con_el_scoreboard), 3 (traded_sin_muerte y el test nuevo), 4 (e2e compara celdas con la API, consola limpia), 5 (fila en `metricas.md`). Diff dentro de `archivos:`. Sin tildes en identificadores, UI con tildes, sin `print` ni `console.log`. Nada fuera de alcance.
+
+Veredicto: aprobar.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos (1 arreglado con test) · verificación=—
 
 ## QA
 

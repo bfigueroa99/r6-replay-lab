@@ -111,3 +111,14 @@ class TradesPorEquipoTests(TestCase):
         trades = self._detalle()["team_trades"]
         self.assertEqual(trades["mine"]["traded_deaths"], 0)
         self.assertEqual(trades["mine"]["deaths"], 0)
+
+    def test_suma_untraded_death_tal_cual_lo_guardo_el_import(self):
+        # Una fila muerta sin was_traded pero con untraded_death=False guardado:
+        # si la vista derivara "died and not was_traded" contaria 1.
+        rnd = make_round(self.match, 0)
+        fila = make_round_player(rnd, kills=0, died=True)
+        fila.untraded_death = False
+        fila.save()
+        trades = self._detalle()["team_trades"]
+        self.assertEqual(trades["mine"]["deaths"], 1)
+        self.assertEqual(trades["mine"]["untraded_deaths"], 0)
