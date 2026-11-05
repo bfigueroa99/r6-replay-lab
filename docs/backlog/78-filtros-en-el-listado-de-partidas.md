@@ -357,7 +357,7 @@ archivos fuera de `archivos:` sin explicar, sin numero nuevo (no pide fila en
 `metricas.md`), sin `print` ni `console.log`, identificadores sin tildes.
 
 Verificacion: verificar.sh VERDE e5e4aa569 (934 backend, 179 vitest, 58 e2e)
-antes del test nuevo; la del commit de la revision, abajo.
+antes del test nuevo y VERDE 3af5b042a (935 backend, 179 vitest, 58 e2e) con el.
 
 Veredicto: aprobar -> `revisado`. Los LOW quedan para el Dev si vuelve a
 tocar la ficha; ninguno bloquea.
