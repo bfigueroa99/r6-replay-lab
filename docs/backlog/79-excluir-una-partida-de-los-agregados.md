@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
-estado: implementado
-candado: revisor 2026-11-05 13:36 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md G2; decision del humano del 2026-11-05 (POST nuevo permitido, local y con application/json, entra a la lista de CLAUDE.md al disenarse)
 archivos: backend/replays/models.py, backend/replays/migrations/0005_match_excluded.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/replays/ingest.py (comentario), backend/tests/factories.py, backend/tests/test_excluir_partida.py, frontend/src/pages/MatchDetail.jsx, frontend/e2e/partidas-excluidas.spec.js, CLAUDE.md, docs/metricas.md
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 20261105T1303Z-ciG2Prg
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 20261105T1303Z-ciG2Prg, revisor 20261105T1330Z-cTQKqvr
 
 ## PR
 
@@ -529,7 +529,72 @@ Verificacion: verificar.sh VERDE 8b3ee9d (973 tests backend, 186 vitest, 60 e2e)
 Skills: no aplica (el repo ya tiene el patron de columna, POST y e2e).
 OMC: plan=— · revisión=5 hallazgos LOW (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre d0fa759
+
+Revisor 20261105T1330Z-cTQKqvr. Revision a ciegas en tres ejes (estandares,
+intencion y seguridad, por el POST nuevo), despues confirmada por el lider.
+Partida de verde: verificar.sh VERDE d0fa759 (973 tests backend, 186 vitest,
+60 e2e).
+
+Criterios de aceptacion:
+
+- POST, 415, 404: `match_exclude` (views.py) con `_es_json` antes del 404,
+  como `player_ubisoft`; tests `test_sin_json_da_415`,
+  `test_partida_inexistente_da_404`, `test_json_sin_booleano_da_400`,
+  `test_get_no_esta_permitido`. Docstring de `_es_json` al dia. Cumple.
+- Fuera de todo agregado: `test_cada_get_agregado_da_lo_mismo_que_sin_la_partida`
+  y `test_cada_tabla_del_csv_da_lo_mismo_que_sin_la_partida` comparan contra
+  la base con X borrada; `test_la_partida_x_cambia_los_numeros` prueba que X
+  mueve 10 rutas (el control que impide un assert trivial) y
+  `test_toda_ruta_esta_clasificada` obliga a clasificar cada ruta nueva.
+  Fuera de `aggregates.py`, `export.py`, `coach.py`, `narrative.py` y
+  `reglas_partida.py` no consultan modelos directo. Cumple.
+- Sigue en el listado y en el detalle; ida y vuelta exacta
+  (`IdaYVueltaTests`). Cumple.
+- `--force` conserva la marca (`excluded` fuera de `defaults`;
+  `ReimportarConservaLaMarcaTests`). Cumple.
+- UI y e2e: `partidas-excluidas.spec.js` 203/29 -> 196/28 -> 203/29 con
+  consola limpia y `afterEach` que la vuelve a incluir. Cumple.
+- `CLAUDE.md` (POST nuevo, aprobado por el humano hoy como G2) y
+  `docs/metricas.md` al dia. Cumple.
+
+El diff toca solo archivos de `archivos:`. Sin `print` ni `console.log`;
+identificadores sin tildes, UI con tildes. Seguridad: cuerpo validado como
+objeto con `excluded` booleano estricto (`1`, `"false"`, `null`, lista y
+no-UTF-8 dan 400), GET/PUT/DELETE/PATCH 405, solo `.update()` del campo.
+
+Hallazgos (ninguno bloquea):
+
+- [bug] MEDIUM backend/replays/analytics/aggregates.py:2991 (`player_profile`)
+  Que pasa: el perfil de un jugador dice "visto entre <first_seen> y
+  <last_seen>" contando la partida excluida.
+  Por que es cierto: las fechas salen de `Player.first_seen/last_seen`, que
+  se fijan al importar; alguien que solo aparece en X excluida muestra 0
+  rondas juntos y 0 en contra pero "visto entre <fecha de X> y <fecha de X>".
+  El test de comparacion no lo ve porque `self.x.delete()` tampoco toca
+  `Player`. Es un dato de inventario, no un agregado, por eso no bloquea.
+  Arreglo sugerido: en la 83, sacar el rango de `Min/Max` de
+  `round__match__played_at` sobre `rondas_contables`, o anotar en
+  `metricas.md` que ese rango cuenta todas las importadas.
+- [intencion] LOW aggregates.py (`match_queryset` con `session`) y
+  views.py (opciones de mapa y tipo): con `?session=` o con un tipo/version
+  de mapa que solo tenian excluidas, Partidas ya no puede mostrar la
+  excluida. Previsto en el diseno; `metricas.md` lo dice para el mapa pero
+  no para la sesion. Arreglo sugerido: una linea en `## Sesiones` de
+  `metricas.md` (puede ir con la 83).
+- [bug] LOW aggregates.py `_sessions_raw`: excluir la partida que une dos
+  bloques renumera las sesiones, asi que un `?session=N` ya puesto apunta a
+  otra. Consecuencia del diseno; misma linea de `metricas.md` lo cubre.
+- [intencion] LOW MatchDetail.jsx: chip "excluida" en el titulo del detalle,
+  extra chico que no choca con lo diferido a la 83.
+
+Respuesta de seguridad fuera del diff (no es de esta ficha): un cuerpo JSON
+con anidamiento muy profundo da `RecursionError` -> 500 en todos los POST
+(`save_overrides`, `app_settings` y este); idea para una ficha de deuda.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=4 hallazgos (0 arreglados; 1 MEDIUM, 3 LOW) · verificación=—
 
 ## QA
 
