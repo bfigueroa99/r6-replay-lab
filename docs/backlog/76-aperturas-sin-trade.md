@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T02:57Z
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: idea K10 de `ALCANCE.md` (Investigador 2026-11-03); [Siege.GG, rating rebalance](https://siege.gg/blog/946-player-rating-rebalance) (2026-08-11, "we are now only factoring in an extra weight on opening kills that were not traded"; "players are not penalized extra for going in first, only to die and have their deaths traded"). En `dev` bcdbdf5 `RoundPlayer` guarda `opening_kill`, `opening_death` y `was_traded`; `docs/metricas.md:160-171` define Duelos de apertura sin distinguir trades
 archivos: backend/replays/models.py, backend/replays/migrations/0004_roundplayer_opening_kill_traded.py, backend/replays/analytics/metrics.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py, frontend/src/aperturasTrade.js, frontend/src/aperturasTrade.test.js, frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, backend/tests/test_aperturas_trade.py, backend/tests/test_recompute.py, backend/tests/test_ingest.py, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E, revisor 20261105T0247Z-cw2xCMP
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E, revisor 20261105T0247Z-cw2xCMP, qa 20261105T0256Z-c25s1Gw
 
 ## PR
 
