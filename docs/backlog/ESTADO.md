@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 02:40 UTC por po (sesion 20261105T0230Z-c8Ahepa; motivo: pedido)
+actualizado: 2026-11-05 02:51 UTC por arquitecto (sesion 20261105T0247Z-cSs57wh; motivo: pedido)
 playbook: origin/dev@2da1b7d
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
@@ -13,7 +13,7 @@ pausa: no
 | claude/equipo-dev/76-aperturas-sin-trade | docs/backlog/76-aperturas-sin-trade.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/76-aperturas-sin-trade?expand=1) |
 
 COLA=2/4  TOTAL=2/6
-RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+RESUMEN propuesto=3 disenado=1 en_curso=0 huerfanas=0 implementado=2 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -34,7 +34,7 @@ RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 77-selector-de-tipo-de-partida | propuesto | funcionalidad | temporada-y-modo | 2 | frontend | - |
+| 77-selector-de-tipo-de-partida | disenado (implementar despues de la 76) | funcionalidad | temporada-y-modo | 2 | frontend | - |
 | 78-filtros-en-el-listado-de-partidas | propuesto | funcionalidad | revision-de-rondas | 2 | fullstack | - |
 | 79-excluir-una-partida-de-los-agregados | propuesto | funcionalidad | datos | 3 | fullstack | - |
 | 80-donde-quedas-fuera-de-posicion | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
@@ -42,7 +42,7 @@ RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 | 76-aperturas-sin-trade | implementado (en su rama) | funcionalidad | impacto | 3 | backend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-4 `propuesto`, 0 `disenado`. Proximo disparo: Revisor de la 75 o la 76 (regla 3); despues Arquitecto para 77-80. Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
+3 `propuesto`, 1 `disenado` (77). Proximo disparo: Revisor de la 75 o la 76 (regla 3); despues Dev para la 77 y Arquitecto para 78-80. Idea para el PO (de la 77): Coach, Operadores, Compañeros, Duelos y Tendencias con 0 rondas filtradas muestran "Todavía no hay replays importados" y esconden la barra de filtros; la 77 solo lo arregla en el Inicio. Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
 
 ## Ultimo turno de cada rol
 
@@ -52,7 +52,7 @@ RESUMEN propuesto=4 disenado=0 en_curso=0 huerfanas=0 implementado=2 revisado=0 
 | dev | 2026-11-05 02:50 | Implementa 76 (funcionalidad p3, `disenado` -> `implementado`, 574ecce): columna `RoundPlayer.opening_kill_traded` marcada en `annotate_trades`, migracion 0004 desde `Event.traded`, `recompute` la rehace, desglose de 8 claves en `overview.overall` y panel "Aperturas que pesan" en el Resumen; fila en `metricas.md`. 20 tests backend nuevos, 3 vitest, 1 e2e. Revision ciega: aprobar, 3 LOW (1 arreglado). `verificar.sh` VERDE fe66a2de0 (902 backend, 156 vitest, 55 e2e). (Otra sesion dev implemento la 75 a las 02:35.) |
 | revisor | 2026-11-05 00:25 | Revisa 74 (funcionalidad p2, `implementado` -> `revisado`, 2035ae1). Rama al dia con dev bcdbdf5; `verificar.sh` VERDE 5b4faee (887 backend, 153 vitest, 54 e2e). Revision a ciegas (estandares): aprobar, 1 LOW aceptado (con dos nombres en una misma version, Clutch/progreso/CSV toman el alfabetico y el Inicio el mas reciente; decision del diseno, ya anotada). Cinco criterios cubiertos por test; keys de React unicas con dos versiones. |
 | qa | 2026-11-05 02:40 | Prueba 74 (funcionalidad p2, `revisado` -> `aprobado`, 05ca8bd). `verificar.sh` VERDE 05414be (887 backend, 153 vitest, 54 e2e). Bases de `factories` con Consulate Y7 y Y10: `overview` (mejor "Consulate (Y7)", peor "Consulate (Y10)"), `teammates` (clutch por sitio separado), `compare` (by_map por version, Bank pelado), `export` (`map_version` al final). Bordes en base vacia y sembrada sin 500; Chromium sin errores de consola; 4 mutaciones caen. OMC verifier: PASS. |
-| arquitecto | 2026-11-04 16:18 | Disena 74, 75 y 76 (`propuesto` -> `disenado`). 74: `matches_summary`, `clutch_by_site`, corte por mapa de `compare_periods` y CSV de partidas (columna nueva `map_version` al final) por `(slug, map_id)`; hallazgo: `test_variantes_del_mapa_cuentan_juntas` exige el nombre mas reciente, asi que `matches_summary` usa `etiquetas_de_version` y no `etiquetas_de_mapas`. 75: `team_trades` en `/api/matches/<id>/` desde las filas ya armadas, panel entre Matriz y Scoreboard. 76: plan por consenso (deliberado) APPROVE en ronda 1: columna `opening_kill_traded` escrita en `annotate_trades`, migracion 0004 desde `Event.traded`, desglose solo en `overview.overall`, panel "Aperturas que pesan". Sin pushes de codigo. |
+| arquitecto | 2026-11-05 02:51 | Pedido (`rol: arquitecto`, sesiones en paralelo). Disena 77 (`propuesto` -> `disenado`): el backend ya filtra `match_type`, asi que es frontend + tests de contrato; el selector "Tipo" reemplaza al checkbox "Solo ranked" (la API sigue aceptando `ranked_only`), logica pura en `tipoPartida.js`; el Inicio filtrado a 0 rondas deja de mostrar el vacio sin barra; e2e con `/api/filters/` interceptado (seed_demo no se toca). Implementar despues de la 76 (`Dashboard.jsx`, `humo.spec.js`). Sin pushes de codigo. |
 | investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
 | po | 2026-11-05 02:40 | Pedido (`rol: po`) con las respuestas del humano del 2026-11-05. Registradas en `ESTADO.md` (`## Para el equipo`), `ALCANCE.md` y la ficha 76 (espejo y rama, 7e6415c, solo docs). `ALCANCE.md`: E2, F2 y G2 de `decision` a `idea`; las ideas de los PRs cerrados vuelven como A10, E14, F15, F16, F17, S1 y S2 (epica nueva `posicionamiento`); A8 en dev. Propone 77 (A1 selector de tipo de partida, `must` partial de la referencia), 78 (F16 filtros en Partidas), 79 (G2 excluir una partida, POST nuevo) y 80 (S1 fuera de posicion por sitio y spawn, por `sin entrega: posicionamiento`). Ideas libres 80 -> 85. Sin pushes de codigo. |
 
