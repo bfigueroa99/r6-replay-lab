@@ -1,6 +1,6 @@
 # 89. Salida del spawn por mapa
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-05T19:45Z
 rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
@@ -352,6 +352,53 @@ los dos subagentes (116 rondas, 6 filas, Bank / Boulevard 20 y 0).
 verificar.sh: VERDE bcfe83aa9 (975 tests backend, 203 vitest, 65 e2e).
 Skills: no aplica.
 OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 1 arreglado con test) · verificación=—
+
+## QA 2026-11-05 sobre ff44ebd
+
+(qa 20261105T1945Z-cLLCG3x) Veredicto: `aprobado`. Rama fusionada con
+`origin/dev` (0127019, ficha 91) antes de probar; sin conflictos.
+
+- `check.sh` con `verificar.sh` sobre ff44ebd: VERDE, 990 tests backend,
+  210 vitest, 66 e2e.
+- Bases temporales en el scratchpad (`SQLITE_PATH=<scratch>/vacia.sqlite3`
+  y `sembrada.sqlite3`, `migrate`, siembra con `tests/factories.py` por
+  `manage.py shell -c "exec(open('sembrar.py').read())"`): Club House con
+  Warehouse (10 rondas, muertes a 5, 8, 10, 12, 14, 14.9, 14.99, 6, 15.0 y
+  40 s; baja a rival a 14.9 s y teamkill a 5 s), Shipping (10 rondas,
+  muertes a 60 s, 3 bajas a los 5 s), Garage (6 rondas con
+  `death_elapsed=None`), 3 de defensa y 3 de ataque sin spawn muriendo a
+  3 s; Border con una ronda de un jugador sin bajas.
+- `curl localhost:8702/api/positioning/` -> 200, ataque 27 rondas, 8
+  tempranas (29.6 %), 4 bajas tempranas. Warehouse 8/10 (80 %, 1 baja:
+  el teamkill no suma, 15.0 no cuenta) `temprano`; Shipping 0/10, resto
+  47.1, `aguanta`; Garage 0/6 `ruido`; Border/Valley no sale (1 < 5) y sale
+  como `ruido` con `?min_rounds=1`. `?map=club-house` -> 26 rondas, mismas
+  filas; `?map=border` -> 1 ronda, 0 filas; `?side=Defense` -> 0 rondas.
+  `?until=foo`, `?since=2030-01-01`, `?map=noexiste&page=-1`: 200 sin romper.
+  Base vacia: 200, `rounds 0`, `early_death_pct null`. `/api/coach/` y
+  `/api/matches/` 200 en las dos bases.
+- Playwright sobre el build real servido por `runserver`, `/coach`: nota
+  "mueres antes de los 15 s en el 29.6% de las rondas (8 de 27)", filas
+  ordenadas por %, chips "Caes temprano", "Sales bien", "Sin señal" (con
+  señal, lo que el e2e de `seed_demo` no ve). Lado = Solo defensa: "Todavía
+  no hay rondas de ataque con spawn con estos filtros."; Mapa = Border:
+  "Ningún spawn llega a 5 rondas de ataque."; base vacia: estado "Todavía no
+  hay replays importados". 0 errores de consola.
+- Chunk inicial: `index-*.js` 191939 B sin codigo de la ficha (`Coach.jsx`
+  es `lazy`; "Sales bien" solo esta en `Coach-*.js`). No crece.
+- Mutacion (`tests.test_salida_del_spawn`, cada una revertida): `__lt` ->
+  `__lte` en `_temprano`: 2 FAIL; sin `__gt: 0`: 2 FAIL; sin
+  `exclude(spawn="")` en `spawn_exits`: 1 FAIL; bajas sin la ventana: 2 FAIL.
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: nada para
+  `## Verificar en el PC` salvo calibrar el umbral (abajo).
+
+OMC: plan=— · revisión=— · verificación=PASS (5 de 5 criterios VERIFIED)
+
+## Verificar en el PC
+
+- Calibrar con la base real: en el Coach, la nota de "Salida del spawn"
+  (`spawn_exit_attack.early_death_pct`); si da ~0 % en todo, 15 s es poco y
+  conviene 20 s (`SALIDA_SPAWN_SEGUNDOS`). No bloquea.
 
 ## Para el humano
 
