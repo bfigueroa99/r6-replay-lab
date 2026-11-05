@@ -24,6 +24,9 @@ test('excluir y volver a contar una partida no ensucia la consola', async ({ pag
   const respuesta = await request.get('/api/matches/?limit=1')
   partidaId = (await respuesta.json()).matches[0].id
 
+  // El Inicio sigue pidiendo coach, tendencias y filtros despues de pintar el
+  // conteo; un goto en ese momento los aborta y vigilarConsola los cuenta.
+  const salirDelInicio = () => page.waitForLoadState('networkidle')
   const conteo = page
     .locator('.stat', { has: page.locator('.label', { hasText: /^Rondas por partida$/ }) })
     .locator('.sub')
@@ -31,6 +34,7 @@ test('excluir y volver a contar una partida no ensucia la consola', async ({ pag
   // seed_demo: 29 partidas de 7 rondas (RONDAS_POR_PARTIDA)
   await page.goto('/')
   await expect(conteo).toHaveText('203 rondas en 29 partidas')
+  await salirDelInicio()
 
   await page.goto(`/partidas/${partidaId}`)
   await page.getByRole('button', { name: 'Excluir de mis números' }).click()
@@ -39,6 +43,7 @@ test('excluir y volver a contar una partida no ensucia la consola', async ({ pag
 
   await page.goto('/')
   await expect(conteo).toHaveText('196 rondas en 28 partidas')
+  await salirDelInicio()
 
   await page.goto(`/partidas/${partidaId}`)
   await page.getByRole('button', { name: 'Volver a contarla' }).click()
@@ -47,6 +52,7 @@ test('excluir y volver a contar una partida no ensucia la consola', async ({ pag
 
   await page.goto('/')
   await expect(conteo).toHaveText('203 rondas en 29 partidas')
+  await salirDelInicio()
 
   expect(errores).toEqual([])
 })

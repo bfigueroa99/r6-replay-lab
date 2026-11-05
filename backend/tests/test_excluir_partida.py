@@ -239,8 +239,13 @@ class ExcluidaIgualQueSinImportarTests(_ConPartidaX):
         _excluir(self.client, self.x.pk)
         sin_x = self._capturar()
         for nombre in ("filters", "overview", "overview session", "teammates", "duels",
-                       "sessions", "coach"):
+                       "sessions", "coach", "trends", "operators", "positioning"):
             self.assertNotEqual(_normalizar(con_x[nombre]), _normalizar(sin_x[nombre]), nombre)
+
+    def test_la_partida_x_cambia_el_csv_por_partida(self):
+        con_x = self._capturar_csv()
+        _excluir(self.client, self.x.pk)
+        self.assertNotEqual(con_x["matches"], self._capturar_csv()["matches"])
 
     def test_cada_get_agregado_da_lo_mismo_que_sin_la_partida(self):
         """Cubre tambien las raices de agregados de `views.py` (filtros), que
