@@ -2617,12 +2617,12 @@ def compare_periods(
         inicio_previo = corte - timedelta(days=n * 2)
         actual = base_queryset(since=inicio_actual, **filters)
         previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
-        etiquetas = (f"Ultimos {n} dias", f"Los {n} dias anteriores")
+        etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
     else:
         recientes, anteriores = _periodo_por_partidas(filters, n)
         actual = base_queryset(**filters).filter(round__match_id__in=recientes)
         previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
-        etiquetas = (f"Ultimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
+        etiquetas = (f"Últimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
 
     fila_actual = _resumen(actual, baseline, etiquetas[0])
     fila_previa = _resumen(previo, baseline, etiquetas[1])
