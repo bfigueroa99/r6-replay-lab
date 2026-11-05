@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
-estado: aprobado
-candado: release 2026-11-05 03:03
+estado: entregado
+candado: -
 rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,11 +9,46 @@ area: frontend
 prioridad: 2
 fuente: idea R2 de `ALCANCE.md`; fila `should` "Duelos limpios contra trades que se escapan, por equipo, en la partida" de `docs/backlog/replica/features.csv` (clone `partial`), de [r6-replay.com](https://r6-replay.com/) ("Know which duels your team wins clean and where trades slip through."). En `dev` bcdbdf5 `match_detail` (`replays/views.py:462`) ya devuelve `trade_kills`, `was_traded` y `untraded_death` por jugador y ronda, y el scoreboard (`views.py:576-593`, `MatchDetail.jsx:222-223`) los suma por jugador; nada los suma por equipo
 archivos: backend/replays/views.py, backend/tests/test_trades_por_equipo.py, frontend/src/tradesEquipo.js, frontend/src/tradesEquipo.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j, revisor 20261105T0247Z-cQMp2TZ, qa 20261105T0256Z-cFRtPBc
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j, revisor 20261105T0247Z-cQMp2TZ, qa 20261105T0256Z-cFRtPBc, release 20261105T0256Z-cFRtPBc
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][frontend] Trades por equipo en el detalle de partida`
+
+### Que cambia
+
+El detalle de una partida suma el panel "Trades por equipo": tu equipo y el rival lado a lado con muertes, tradeadas, sin trade, % sin trade y trade kills, y resaltado el que sale mejor en cada columna comparable. Se ve si la partida se perdio regalando muertes sueltas aunque el K/D cuadre. `GET /api/matches/<id>/` trae `team_trades: {mine, rival}`.
+
+### Por que esto y no otra cosa
+
+Ficha 75 (idea R2 de `ALCANCE.md`, fila `should` de la referencia r6-replay.com). Suma las columnas que `metrics.py` ya escribe al importar: sin migracion, sin `recompute`, cero queries nuevas. Descartado recalcular trades al consultar (daria numeros distintos al scoreboard).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 5e4c0ab, 895 tests backend, 159 vitest, 55 e2e.
+- Tests nuevos (`tests/test_trades_por_equipo.py`): suma por equipo, cuadra con el scoreboard, equipo de cada ronda, sin tu fila vale el de la partida, % null sin muertes, teamkill, tradeada sin muerte no descuadra, suma `untraded_death` tal cual lo guardo el import. Vitest `tradesEquipo.test.js` (6). e2e `el detalle de una partida muestra los trades por equipo` compara las celdas con la API.
+- Manual (QA): 29 partidas de `seed_demo` cuadran con el scoreboard; bordes con fabricas (un jugador, sin muertes, sin rondas); 4 mutaciones, todas atrapadas.
+- OMC: Diseno `plan=— · revisión=— · verificación=—`; Implementacion `plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—`; Revision `plan=— · revisión=2 hallazgos (1 arreglado con test) · verificación=—`; QA `plan=— · revisión=— · verificación=PASS`.
+
+### Riesgos y lo que no entra
+
+Nada persistente: el payload crece en un objeto. Si `team_index` cambiara entre rondas, el panel (por ronda) y el scoreboard (por indice) no cuadrarian; `metricas.md` lo dice. En `seed_demo` el rival sale con 0 sin trade porque el seed solo marca trades en tu fila. Fuera: el corte entre partidas (Tendencias, Compañeros), matriz de quien venga a quien, refrag.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py test tests.test_trades_por_equipo
+cd frontend; npm run build; cd ../backend; python manage.py runserver
+```
+Abrir una partida en Partidas: el panel "Trades por equipo" queda entre "Matriz de duelos" y el scoreboard; la columna "Sin trade" de tu equipo es la suma de esa columna del scoreboard para tu equipo.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ficha 81 (bug, `propuesto` en `backlog`): el detalle de una partida sin rondas rompe la pagina (`MatchDetail.jsx:33`), ya en dev.
 
 ## Que gana quien usa la app
 
@@ -39,92 +74,9 @@ Sin migracion: las columnas ya existen.
 
 ## Diseno
 
-Una sola forma obvia (sumar columnas que ya escribe `metrics.py`): sin arena
-ni consenso. Sin migracion, sin `recompute`, sin tocar el parser.
+Sumar las columnas que ya escribe `metrics.py` (`died`, `was_traded`, `untraded_death`, `trade_kills`) por equipo, con "tu equipo" resuelto por ronda (el `team_index` de tu fila; sin ella, el de la partida). `_trades_por_equipo` en `views.py` recorre las rondas ya armadas; `tradesEquipo.js` arma las filas y quien sale mejor; panel con `DataTable` y `chip win`, sin CSS nuevo. Sin migracion ni `recompute`. Detalle completo en `git log` de esta ficha.
 
-**Backend, `backend/replays/views.py`.**
-
-- Funcion nueva `_trades_por_equipo(rounds: list[dict], my_team_index: int) -> dict`
-  junto a `_match_scoreboard` (`views.py:574`). Recorre la lista `rounds` que
-  `match_detail` ya armo (`views.py:468-532`, cada ronda con `players`): cero
-  queries nuevas.
-- Equipo de cada fila: en cada ronda, "mine" es el `team_index` de la fila con
-  `is_me`; si la ronda no tiene fila `is_me`, `my_team_index` de la partida.
-  Asi un `team_index` que cambie entre rondas no rompe nada (el criterio 1 lo
-  pide), aunque hoy sea fijo por equipo.
-- Por equipo suma: `deaths` (filas con `died`), `traded_deaths` (`died` y
-  `was_traded`), `untraded_deaths` (`untraded_death`), `trade_kills` (suma de
-  `trade_kills`) y `untraded_pct = round(untraded / deaths * 100, 1)` o `None`
-  sin muertes. `traded_deaths + untraded_deaths == deaths` por construccion
-  (`metrics.annotate_trades`: `untraded_death = died and not was_traded`);
-  `traded_deaths` filtra por `died` para que una fila rara con `was_traded`
-  sin muerte no descuadre. Nada se recalcula.
-- `match_detail` agrega al payload `"team_trades": {"mine": {...}, "rival": {...}}`
-  (despues de `scoreboard`). Las claves: `deaths`, `traded_deaths`,
-  `untraded_deaths`, `trade_kills`, `untraded_pct`.
-
-**Frontend.**
-
-- `frontend/src/tradesEquipo.js` (logica pura, como `matrizDuelos.js`):
-  `filasTradesEquipo(teamTrades)` devuelve las dos filas (`Tu equipo`,
-  `Rival`) y, por columna, cual equipo sale mejor (`mejor: 'mine' | 'rival' | null`):
-  menos `untraded_deaths` y menor `untraded_pct` es mejor; mas `trade_kills` es
-  mejor; empate o `null` = `null`. Devuelve `[]` si `teamTrades` falta (una
-  respuesta vieja cacheada no rompe la pagina).
-- `frontend/src/tradesEquipo.test.js` (vitest): `marca al rival cuando dejo
-  mas muertes sin trade`, `empate no marca a nadie`, `sin muertes el porcentaje
-  queda en null y no marca`, `sin team_trades devuelve lista vacia`.
-- `frontend/src/pages/MatchDetail.jsx`: `<Panel title="Trades por equipo"
-  hint="Muertes que tu equipo y el rival dejaron sin vengar en la ventana de trade.">`
-  entre "Matriz de duelos" (`:190`) y "Scoreboard de la partida" (`:197`).
-  Tabla simple (`DataTable` como el scoreboard, `rowKey` por equipo, sin
-  `csvName` nuevo si complica) con columnas Muertes, Tradeadas, Sin trade,
-  % sin trade, Trade kills. La celda del equipo mejor en cada columna va en
-  `<span className="chip win">` (`styles.css:303`): sin CSS nuevo.
-  Debajo, una nota en una linea: "Tu equipo dejó N muertes sin trade; el rival, M."
-
-**Tests backend**, `backend/tests/test_trades_por_equipo.py` (nuevo; fabricas
-de `tests/factories.py`):
-
-- `test_trades_por_equipo_suma_cada_equipo`: partida a mano con 2 rondas, 2
-  jugadores por lado, muertes tradeadas y sin trade en los dos equipos;
-  afirma los cinco numeros de `mine` y `rival` via `GET /api/matches/<id>/`.
-- `test_trades_por_equipo_cuadra_con_el_scoreboard`: suma las filas de
-  `scoreboard` con `team_index == my_team_index` (columnas `trade_kills` y
-  `untraded_deaths`, y `deaths`) y las compara con `mine`; idem rival.
-- `test_trades_por_equipo_usa_el_equipo_de_cada_ronda`: una ronda donde la
-  fila `is_me` tiene otro `team_index` que `match.my_team_index`; sus
-  compañeros de esa ronda cuentan en `mine`.
-- `test_sin_muertes_el_porcentaje_es_null`.
-- `test_un_teamkill_cuenta_como_ya_lo_guarda_el_import`: la fila muerta por
-  teamkill con `untraded_death=True` suma en `untraded_deaths` de su equipo,
-  sin recalcular.
-
-**e2e**, `frontend/e2e/humo.spec.js`: test `el detalle de una partida muestra
-los trades por equipo`, igual que el de la matriz (`:345`): abre la primera
-partida, busca `section.panel` con heading `Trades por equipo`, ve dos filas
-(`Tu equipo`, `Rival`) con celdas numericas y la consola limpia. No afirmar
-numeros exactos salvo que el Dev los lea de `seed_demo` y los deje con
-comentario de donde salen.
-
-**`docs/metricas.md`**, seccion `## Trades` (`:177`): fila **Trades por
-equipo**: por equipo de la partida (el de cada ronda), muertes, tradeadas, sin
-trade, % sin trade sobre muertes y trade kills; misma ventana
-`TRADE_WINDOW_SECONDS` y mismas columnas que el scoreboard; nada se recalcula
-al consultar.
-
-**Orden:** backend + tests, `tradesEquipo.js` + vitest, panel, e2e, `metricas.md`,
-`npm run build`.
-
-**Que puede romperse:** nada persistente. El payload crece en un objeto. El
-riesgo es el e2e si `seed_demo` no tiene muertes en algun equipo: el panel
-sale igual (ceros y `—`).
-
-**Verificacion manual:** `runserver`, abrir una partida real: la suma de la
-columna "Sin trade" del scoreboard de tu equipo es la celda "Sin trade" de
-"Tu equipo".
-
-Skills: no aplica (tabla y panel que el repo ya resuelve con `DataTable` y `Panel`).
+Skills: no aplica.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
@@ -147,20 +99,7 @@ OMC: plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—
 
 ## Revision 2026-11-05 sobre 5e780a5
 
-Revisor 20261105T0247Z-cQMp2TZ. Rama fusionada con dev (2da1b7d) y `verificar.sh` VERDE 5e780a5 (894 tests backend, 159 vitest, 55 e2e) antes de revisar. Revision a ciegas en dos ejes (estandares e intencion) sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'`; seguridad no aplica (no toca POST, externo, rutas ni `.rec`).
-
-Hallazgos (confirmados leyendo el codigo; ninguno bloquea):
-
-- [test] [LOW] backend/tests/test_trades_por_equipo.py `test_un_teamkill_cuenta_como_ya_lo_guarda_el_import`
-  Que pasa: el `make_event` del teamkill no influye; la factory ya deja `untraded_death = died and not was_traded` y la vista no mira eventos, asi que el test no distingue "sumar lo guardado" de "recalcular".
-  Arreglo: agregado por el Revisor `test_suma_untraded_death_tal_cual_lo_guardo_el_import` (fila muerta con `untraded_death=False` guardado a mano: da 0, prueba que se suma la columna). Pasa. El test del teamkill queda; el comportamiento del teamkill en si lo cubre `test_metrics.py`.
-- [estilo] [LOW] frontend/src/pages/MatchDetail.jsx `TradesPorEquipo`
-  Que pasa: el comentario "La celda del equipo que sale mejor en esa columna va resaltada" dice el que, no el por que.
-  Arreglo sugerido: borrarlo en el proximo toque de la pagina.
-
-Ficha: criterio 1 (suma_cada_equipo, usa_el_equipo_de_cada_ronda, sin_tu_fila), 2 (cuadra_con_el_scoreboard), 3 (traded_sin_muerte y el test nuevo), 4 (e2e compara celdas con la API, consola limpia), 5 (fila en `metricas.md`). Diff dentro de `archivos:`. Sin tildes en identificadores, UI con tildes, sin `print` ni `console.log`. Nada fuera de alcance.
-
-Veredicto: aprobar.
+Revisor 20261105T0247Z-cQMp2TZ. VERDE 5e780a5 (894/159/55). Veredicto: aprobar. Hallazgos: [LOW] el test del teamkill no distinguia sumar de recalcular -> agregado `test_suma_untraded_death_tal_cual_lo_guardo_el_import`; [LOW] un comentario de `TradesPorEquipo` dice el que, no el por que (borrar en el proximo toque).
 
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (1 arreglado con test) · verificación=—
