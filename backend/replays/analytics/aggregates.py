@@ -181,6 +181,30 @@ AGGREGATES = {
 }
 
 
+#: Las aperturas partidas por trade (ficha 76). Aparte de AGGREGATES a proposito:
+#: ahi cambiarian los CSV (columnas = union de claves) y cada agrupacion pagaria
+#: ocho conteos que solo muestra el Inicio. Ojo con la `s`: `opening_kill_traded`
+#: es el campo y no puede ser alias.
+APERTURAS_CON_TRADE = {
+    "opening_kills_clean": Count("id", filter=Q(opening_kill=True, opening_kill_traded=False)),
+    "opening_kills_traded": Count("id", filter=Q(opening_kill=True, opening_kill_traded=True)),
+    "opening_deaths_traded": Count("id", filter=Q(opening_death=True, was_traded=True)),
+    "opening_deaths_untraded": Count("id", filter=Q(opening_death=True, was_traded=False)),
+    "won_opening_kill_clean": Count(
+        "id", filter=Q(opening_kill=True, opening_kill_traded=False, won=True)
+    ),
+    "won_opening_kill_traded": Count(
+        "id", filter=Q(opening_kill=True, opening_kill_traded=True, won=True)
+    ),
+    "won_opening_death_traded": Count(
+        "id", filter=Q(opening_death=True, was_traded=True, won=True)
+    ),
+    "won_opening_death_untraded": Count(
+        "id", filter=Q(opening_death=True, was_traded=False, won=True)
+    ),
+}
+
+
 def _pct(part, whole) -> float | None:
     if not whole:
         return None
@@ -267,6 +291,22 @@ def group_by(qs: QuerySet[RoundPlayer], *fields: str, labels: tuple[str, ...] | 
     return rows
 
 
+def desglose_aperturas(qs: QuerySet[RoundPlayer]) -> dict:
+    """Aperturas ganadas limpias o devueltas y perdidas vengadas o no, con su winrate."""
+    fila = qs.aggregate(**APERTURAS_CON_TRADE)
+    salida = {}
+    for grupo in ("opening_kills_clean", "opening_kills_traded",
+                  "opening_deaths_traded", "opening_deaths_untraded"):
+        # opening_kills_clean -> winrate_opening_kill_clean
+        sufijo = grupo.replace("opening_kills_", "opening_kill_").replace(
+            "opening_deaths_", "opening_death_"
+        )
+        rondas = fila[grupo] or 0
+        salida[grupo] = rondas
+        salida[f"winrate_{sufijo}"] = _pct(fila[f"won_{sufijo}"] or 0, rondas)
+    return salida
+
+
 # --------------------------------------------------------------------- vistas
 
 def overview(**filters) -> dict:
@@ -274,8 +314,10 @@ def overview(**filters) -> dict:
     baseline = rating_baseline()
     attack = totals(qs.filter(side="Attack"), baseline)
     defense = totals(qs.filter(side="Defense"), baseline)
+    overall = totals(qs, baseline)
+    overall.update(desglose_aperturas(qs))
     return {
-        "overall": totals(qs, baseline),
+        "overall": overall,
         "attack": attack,
         "defense": defense,
         "recent_form": recent_form(**filters),

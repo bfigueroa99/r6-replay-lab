@@ -9,6 +9,7 @@ Definiciones (documentadas a proposito, para que los numeros se puedan auditar)
 kills          bajas a rivales; los teamkills no cuentan
 opening_kill   la primera baja de la ronda la hizo este jugador
 opening_death  este jugador fue la primera baja de la ronda
+opening_kill_traded  su apertura quedo tradeada: el equipo de la victima lo mato en la ventana
 entry_kill     la primera baja de su equipo la hizo este jugador
 trade_kills    mato al asesino de un compañero dentro de la ventana de trade
 was_traded     un compañero vengo su muerte dentro de la ventana de trade
@@ -61,6 +62,7 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
     for m in metrics.values():
         m["was_traded"] = False
         m["trade_kills"] = 0
+        m["opening_kill_traded"] = False
     for e in kill_events:
         e["traded"] = False
 
@@ -91,6 +93,14 @@ def annotate_trades(kill_events: list[dict], team_of: dict, metrics: dict, windo
         actor = kill_events[j]["actor"]
         if actor in metrics:
             metrics[actor]["trade_kills"] += 1
+
+    # `opening_kill` solo existe si la primera muerte de la ronda es un Kill, y
+    # entonces ese Kill es `kill_events[0]`: la apertura devuelta es su marca
+    # `traded`, la misma que muestra el timeline (ficha 76).
+    if kill_events and kill_events[0]["traded"]:
+        autor = metrics.get(kill_events[0]["actor"])
+        if autor is not None and autor.get("opening_kill"):
+            autor["opening_kill_traded"] = True
 
     for m in metrics.values():
         m["untraded_death"] = bool(m.get("died")) and not m["was_traded"]
@@ -306,6 +316,7 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
             "clutch_vs": 0,
             "opening_kill": False,
             "opening_death": False,
+            "opening_kill_traded": False,
             "entry_kill": False,
             "trade_kills": 0,
             "was_traded": False,

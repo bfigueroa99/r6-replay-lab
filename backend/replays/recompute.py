@@ -13,7 +13,7 @@ importada con un `.rec` faltante pudo quedar como victoria o derrota con un
 marcador que la regla no cierra. Marcador, tipo y version estan en `Match`.
 
 Las reglas no se reimplementan aca: se llama a las mismas
-`metrics.bajas_a_rivales`, `metrics.annotate_trades`, `metrics.clutch_vs`,
+`metrics.bajas_a_rivales`, `metrics.annotate_trades` (tambien marca la apertura devuelta), `metrics.clutch_vs`,
 `metrics.one_vx` y `reglas_partida.resultado` que usa el import. Duplicarlas
 significaria numeros distintos segun por donde pasaste.
 """
@@ -36,10 +36,11 @@ from .analytics.metrics import (
 from .analytics.reglas_partida import regla_para, resultado
 from .models import Event, Match, Round, RoundPlayer
 
-#: Campos que se recalculan: bajas, los que dependen de la ventana de trade y el clutch.
+#: Campos que se recalculan: bajas, los que dependen de la ventana de trade (con la
+#: apertura devuelta) y el clutch.
 CAMPOS = (
     "kills", "headshots", "was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs",
-    "one_vx",
+    "one_vx", "opening_kill_traded",
 )
 
 
@@ -67,6 +68,7 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
             "kills": p.kills,
             "died": p.died,
             "survived": p.survived,
+            "opening_kill": p.opening_kill,
             "was_traded": p.was_traded,
             "trade_kills": p.trade_kills,
         }

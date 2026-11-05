@@ -452,6 +452,27 @@ test('el Resumen muestra tus multikills', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Resumen muestra las aperturas que pesan', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const respuesta = page.waitForResponse((r) => r.url().includes('/api/overview/'))
+  await page.goto('/')
+  const total = (await (await respuesta).json()).overall
+
+  // seed_demo: ninguna apertura ganada queda tradeada ni ninguna perdida vengada
+  const panel = page.locator('.panel', { has: page.locator('h2', { hasText: 'Aperturas que pesan' }) })
+  await expect(panel).toBeVisible()
+  const fila = (nombre) => panel.locator('tbody tr', { has: page.locator('td', { hasText: nombre }) })
+  await expect(fila(/^Ganada limpia$/).locator('td').nth(1)).toHaveText(String(total.opening_kills))
+  await expect(fila(/^Ganada devuelta$/).locator('td').nth(1)).toHaveText('0')
+  await expect(fila(/^Ganada devuelta$/).locator('td').nth(2)).toHaveText('—')
+  await expect(fila(/^Perdida vengada$/).locator('td').nth(2)).toHaveText('—')
+  await expect(fila(/^Perdida sin vengar$/).locator('td').nth(1)).toHaveText(String(total.opening_deaths))
+  expect(total.opening_kills).toBeGreaterThan(0)
+  expect(total.opening_deaths).toBeGreaterThan(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el Resumen muestra tus partidas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/')

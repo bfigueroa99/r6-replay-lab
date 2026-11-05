@@ -144,6 +144,9 @@ class RoundPlayer(models.Model):
     # --- metricas derivadas
     opening_kill = models.BooleanField(default=False)
     opening_death = models.BooleanField(default=False)
+    # columna y no consulta: el Inicio separa aperturas limpias de devueltas sin
+    # una subconsulta por fila, y queda igual a la marca `traded` del timeline
+    opening_kill_traded = models.BooleanField(default=False)
     entry_kill = models.BooleanField(default=False)
     trade_kills = models.IntegerField(default=0)
     was_traded = models.BooleanField(default=False)
