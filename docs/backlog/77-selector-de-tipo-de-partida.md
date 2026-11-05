@@ -1,7 +1,7 @@
 # 77. Selector de tipo de partida en la barra de filtros
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T02:48Z
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
