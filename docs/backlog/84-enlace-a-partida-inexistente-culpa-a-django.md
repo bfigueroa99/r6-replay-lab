@@ -162,6 +162,31 @@ OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=�
 
 ## Implementacion
 
+(dev 20261105T1455Z-c4eLe1A, sobre dev 85009f6)
+
+Hecho todo el diseno, sin desvios de fondo:
+
+- `config/urls.py`: `api_no_existe` (404 JSON) con `re_path(r"^api/(?P<path>.*)$")` despues del `include` y antes de `admin/` y del `spa`. Desvio: lleva `@csrf_exempt` (hallazgo LOW del revisor ciego): sin el, un POST a una ruta `/api/` desconocida recibia el 403 HTML de CSRF en vez del 404 JSON. No hace nada, asi que no abre nada.
+- `replays/views.py`: los tres `raise Http404` pasan a `_ok({"error": ...}, status=404)`; `Http404` sale del import. En `player_ubisoft` el chequeo de JSON sigue antes del 404.
+- `api.js`: `get` adjunta `error.status`; `useApi` devuelve `status` (null en exito y con la red caida).
+- `ui.jsx`: `NoExiste({ titulo, a, texto })` y la nota de `ErrorBox` sin puerto ("Revisa que Django esté corriendo."). `App.jsx` no se toco.
+- `MatchDetail.jsx` y `Jugador.jsx`: `status === 404` -> `NoExiste` con enlace a `/partidas` / `/companeros`.
+
+Test que falla primero (tipo bug): `cd backend && python3 manage.py test tests.test_api tests.test_player` sobre dev sin el arreglo -> `FAILED (failures=6)` (`test_partida_inexistente_da_404`, `test_una_partida_con_id_no_numerico_da_404_json`, `test_una_ruta_desconocida_de_la_api_da_404_json` x2 subtests, `test_jugador_inexistente_da_404`, `test_el_post_de_ubisoft_a_un_jugador_inexistente_da_404_json`); vitest `get > con un 404 tira un error con el status` fallaba (`error.status` undefined). Con el arreglo, verdes.
+
+Tests por criterio:
+1. `/api/<desconocida>` 404 JSON y la SPA fuera de `/api/`: `test_una_ruta_desconocida_de_la_api_da_404_json`, `test_una_partida_con_id_no_numerico_da_404_json`, `test_un_post_a_una_ruta_desconocida_de_la_api_da_404_json`, `test_fuera_de_la_api_se_sigue_sirviendo_la_spa` (test_api.py).
+2. Partida/jugador inexistente 404 JSON: `test_partida_inexistente_da_404` (ampliado), `test_jugador_inexistente_da_404` (ampliado), `test_el_post_de_ubisoft_a_un_jugador_inexistente_da_404_json` (test_player.py).
+3. Paginas: e2e `una partida o un jugador que no existe lo dice sin culpar a Django` (humo.spec.js; los cuatro ids, h2, sin "Django", enlace a la lista). La consola admite exactamente los cuatro "status of 404" de los casos y nada mas (hallazgo LOW del revisor ciego: el filtro abierto escondia otros 404).
+4. API caida: e2e `con la API caida el aviso sigue culpando a Django` y vitest `get con la red caida tira un error sin status` (`src/api.test.js`, nuevo).
+
+`grep -rn "api/" backend/tests | grep -v "/api/[a-z_]*/"`: ningun test esperaba HTML o 200 en una ruta rara.
+
+Conflictos previstos: la 81 toca la misma linea de `ErrorBox` y lineas cercanas en `MatchDetail.jsx`, `Jugador.jsx` y `humo.spec.js`; se tomo antes de que la 81 se mergee porque el diseno dice "prioriza, no bloquea". Si la 81 entra primero, P3 lo resuelve (choque de texto).
+
+Skills: no aplica (el Arquitecto ya dijo que no hay dominio nuevo)
+OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
+
 ## Revision <fecha> sobre <sha>
 
 ## QA <fecha> sobre <sha>

@@ -15,7 +15,11 @@ export function qs(params = {}) {
 export async function get(path, params) {
   const response = await fetch(`${BASE}${path}${qs(params)}`)
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} en ${path}`)
+    // el status viaja aparte para que la pagina distinga "no existe" (404) de
+    // la API caida, que llega como TypeError del fetch y sin status
+    const error = new Error(`${response.status} ${response.statusText} en ${path}`)
+    error.status = response.status
+    throw error
   }
   return response.json()
 }
@@ -44,10 +48,11 @@ export async function post(path, params, body = {}) {
   return response.json()
 }
 
-/** Hook de lectura: devuelve { data, error, loading, reload }. */
+/** Hook de lectura: devuelve { data, error, status, loading, reload }. */
 export function useApi(path, params, deps = []) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
+  const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [nonce, setNonce] = useState(0)
 
@@ -64,9 +69,15 @@ export function useApi(path, params, deps = []) {
         if (vigente) {
           setData(payload)
           setError(null)
+          setStatus(null)
         }
       })
-      .catch((err) => vigente && setError(err.message))
+      .catch((err) => {
+        if (vigente) {
+          setError(err.message)
+          setStatus(err.status ?? null)
+        }
+      })
       .finally(() => vigente && setLoading(false))
     return () => {
       vigente = false
@@ -75,5 +86,5 @@ export function useApi(path, params, deps = []) {
   }, [path, serialized, nonce, ...deps])
 
   const reload = useCallback(() => setNonce((n) => n + 1), [])
-  return { data, error, loading, reload }
+  return { data, error, status, loading, reload }
 }

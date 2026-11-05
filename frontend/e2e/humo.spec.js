@@ -1003,3 +1003,37 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
 
   expect(errores).toEqual([])
 })
+
+test('una partida o un jugador que no existe lo dice sin culpar a Django', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const casos = [
+    ['/partidas/999999', 'Esa partida no existe', 'Partidas'],
+    ['/partidas/abc', 'Esa partida no existe', 'Partidas'],
+    ['/jugadores/999999', 'Ese jugador no existe', 'Compañeros'],
+    ['/jugadores/abc', 'Ese jugador no existe', 'Compañeros'],
+  ]
+  for (const [ruta, titulo, lista] of casos) {
+    await page.goto(ruta)
+    await expect(page.locator('main h2')).toHaveText(titulo)
+    await expect(page.getByText('Django')).toHaveCount(0)
+    await page.locator('.empty-state a.btn').click()
+    await expect(page.locator('h1')).toHaveText(lista)
+  }
+
+  // Chromium loguea cada 404 como "Failed to load resource" sin la URL en el
+  // texto; se esperan exactamente los cuatro de los casos, asi un 404 de otra
+  // cosa en estas paginas sigue haciendo fallar la prueba
+  const de404 = errores.filter((e) => e.includes('status of 404'))
+  expect(de404).toHaveLength(casos.length)
+  expect(errores.filter((e) => !e.includes('status of 404'))).toEqual([])
+})
+
+test('con la API caida el aviso sigue culpando a Django', async ({ page }) => {
+  // el abort es a proposito y ensucia la consola: este test no la mira
+  await page.route('**/api/matches/**', (route) => route.abort())
+  await page.goto('/partidas/1')
+  const aviso = page.locator('.error')
+  await expect(aviso).toContainText('No pude leer la API')
+  await expect(aviso).toContainText('Revisa que Django esté corriendo.')
+  await expect(aviso).not.toContainText('8000')
+})

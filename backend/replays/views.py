@@ -8,7 +8,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
-from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -305,7 +305,7 @@ def player_detail(request: HttpRequest, pk: int) -> JsonResponse:
     """Perfil de un companero o rival dentro de tus partidas."""
     payload = agg.player_profile(pk, **_filters(request))
     if payload is None:
-        raise Http404("jugador no encontrado")
+        return _ok({"error": "jugador no encontrado"}, status=404)
     payload["externo"] = perfil_externo.resumen(Player.objects.get(pk=pk))
     return _ok(payload)
 
@@ -324,7 +324,7 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
         return _ok({"error": "se esperaba application/json"}, status=415)
     player = Player.objects.filter(pk=pk).first()
     if player is None:
-        raise Http404("jugador no encontrado")
+        return _ok({"error": "jugador no encontrado"}, status=404)
     if not perfil_externo.configurado():
         return _ok(
             {"error": "Falta configurar UBI_EMAIL y UBI_PASSWORD en el .env."}, status=400
@@ -468,8 +468,8 @@ def match_list(request: HttpRequest) -> JsonResponse:
 def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
     try:
         match = Match.objects.get(pk=pk)
-    except Match.DoesNotExist as exc:
-        raise Http404("partida no encontrada") from exc
+    except Match.DoesNotExist:
+        return _ok({"error": "partida no encontrada"}, status=404)
 
     rounds = []
     for rnd in match.rounds.prefetch_related("players__player", "events").all():

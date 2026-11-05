@@ -238,7 +238,19 @@ export function ErrorBox({ error }) {
     <div className="error">
       <b>No pude leer la API.</b> {String(error)}
       <br />
-      <span className="note">Revisa que Django este corriendo en el puerto 8000.</span>
+      <span className="note">Revisa que Django esté corriendo.</span>
+    </div>
+  )
+}
+
+/** Un enlace a algo que no esta en la base: no es la API caida, y no hay que culparla. */
+export function NoExiste({ titulo, a, texto }) {
+  return (
+    <div className="empty-state">
+      <h2>{titulo}</h2>
+      <Link className="btn" to={a}>
+        {texto}
+      </Link>
     </div>
   )
 }
