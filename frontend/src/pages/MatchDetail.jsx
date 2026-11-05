@@ -131,9 +131,9 @@ export default function MatchDetail() {
               </h3>
               <p className="note" style={{ marginTop: 0 }}>
                 Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
-                {round.score_after?.join('-')} · duro {Math.round(round.duration)}s
+                {round.score_after?.join('-')} · duró {Math.round(round.duration)}s
                 <br />
-                Condicion: {translateCondition(round.win_condition)}
+                Condición: {translateCondition(round.win_condition)}
                 {round.win_condition_certain ? '' : ' (inferida)'}
                 {round.possible_plant ? ' · plant probable' : ''}
               </p>
@@ -160,7 +160,7 @@ export default function MatchDetail() {
                   },
                   { key: 'operator', label: 'Operador', left: true },
                   { key: 'kills', label: 'K' },
-                  { key: 'died', label: 'Murio', render: (row) => (row.died ? 'si' : 'no') },
+                  { key: 'died', label: 'Murio', render: (row) => (row.died ? 'sí' : 'no') },
                   { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
                   {
                     key: 'death_elapsed',
@@ -213,7 +213,7 @@ export default function MatchDetail() {
         <TradesPorEquipo teamTrades={data.team_trades} />
       </Panel>
 
-      <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las metricas derivadas.">
+      <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las métricas derivadas.">
         <DataTable
           columns={[
             {
@@ -308,7 +308,7 @@ function Timeline({ round }) {
   const marcas = marcasDeApertura(round, myTeam(round))
 
   if (!round.events.length) {
-    return <p className="note">Esta ronda no registro eventos en el feed.</p>
+    return <p className="note">Esta ronda no registró eventos en el feed.</p>
   }
 
   return (
@@ -321,11 +321,11 @@ function Timeline({ round }) {
             <span className="clock">{event.clock_raw || '—'}</span>
             {event.kind === 'Kill' ? (
               <>
-                <span className="who">{event.actor}</span> mato a <span className="who">{event.target}</span>
+                <span className="who">{event.actor}</span> mató a <span className="who">{event.target}</span>
               </>
             ) : event.kind === 'Death' ? (
               <>
-                <span className="who">{event.actor}</span> murio
+                <span className="who">{event.actor}</span> murió
               </>
             ) : (
               <>
@@ -359,10 +359,10 @@ const myTeam = (round) => {
 }
 
 const CONDITIONS = {
-  KilledOpponents: 'eliminacion del equipo rival',
+  KilledOpponents: 'eliminación del equipo rival',
   DefusedBomb: 'bomba plantada y detonada',
   DisabledDefuser: 'defuser desactivado',
-  Time: 'se acabo el tiempo',
+  Time: 'se acabó el tiempo',
   ObjectiveOrTime: 'objetivo o tiempo',
   '': 'sin determinar',
 }

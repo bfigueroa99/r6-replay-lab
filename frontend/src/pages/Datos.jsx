@@ -60,7 +60,7 @@ export default function Datos() {
         text: result.changes.length
           ? `${result.changes.map((c) => `${c.old} → ${c.new}`).join(', ')}. Reetiquetadas ` +
             `${result.matches} partidas y ${result.round_players} rondas de jugador.`
-          : 'Etiquetas guardadas. No habia nada importado con esos IDs.',
+          : 'Etiquetas guardadas. No había nada importado con esos IDs.',
       })
       unknown.reload()
       status.reload()
@@ -79,7 +79,7 @@ export default function Datos() {
         <div>
           <h1>Datos</h1>
           <p>
-            Que tan completa esta tu base: los IDs que el parser no supo nombrar y lo que falta por
+            Qué tan completa está tu base: los IDs que el parser no supo nombrar y lo que falta por
             importar.
           </p>
         </div>
@@ -114,7 +114,7 @@ export default function Datos() {
               <div>
                 <div className="note" style={{ marginBottom: 5 }}>
                   Sitios de bomba vistos. El juego los nombra igual aunque cambie el ID del mapa,
-                  asi que delatan cual es:
+                  así que delatan cuál es:
                 </div>
                 <div className="unknown-sites">
                   {row.sites.length ? (
@@ -124,7 +124,7 @@ export default function Datos() {
                       </span>
                     ))
                   ) : (
-                    <span className="note">Ningun sitio detectado en esas rondas.</span>
+                    <span className="note">Ningún sitio detectado en esas rondas.</span>
                   )}
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function Datos() {
                 ))}
                 <span className="note">
                   {plural(row.rounds, 'ronda', 'rondas')} · {rango(row)} ·{' '}
-                  {row.mine ? 'lo jugaste tu' : 'solo rivales'}
+                  {row.mine ? 'lo jugaste tú' : 'solo rivales'}
                 </span>
               </div>
               {row.maps.length ? (
@@ -210,13 +210,13 @@ export default function Datos() {
           <p className="note" style={{ margin: 0 }}>
             Todo identificado: no hay mapas, operadores, modos ni tipos de partida sin nombre.
             Cuando salga una temporada
-            nueva van a aparecer aca solos.
+            nueva van a aparecer acá solos.
           </p>
         </Panel>
       )}
 
       <Panel
-        title="Importacion"
+        title="Importación"
         hint={`Carpeta vigilada: ${status.data?.replay_dir || '—'}`}
       >
         {status.data && !status.data.replay_dir_exists ? (
@@ -266,7 +266,7 @@ export default function Datos() {
           rows={log}
           initialSort={{ key: 'started_at', dir: 'desc' }}
           rowKey={(row) => `${row.folder}-${row.started_at}`}
-          empty="Todavia no hay importaciones registradas."
+          empty="Todavía no hay importaciones registradas."
         />
       </Panel>
     </>

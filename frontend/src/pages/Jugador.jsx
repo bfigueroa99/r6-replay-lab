@@ -49,7 +49,7 @@ export default function Jugador() {
         <div>
           <h1>
             {player.username}
-            {player.is_me ? <span className="chip" style={{ marginLeft: 10 }}>eres tu</span> : null}
+            {player.is_me ? <span className="chip" style={{ marginLeft: 10 }}>eres tú</span> : null}
           </h1>
           <p>
             {juntos} rondas en tu equipo
@@ -82,8 +82,8 @@ export default function Jugador() {
           title="Tu rendimiento con y sin"
           hint={
             flaco
-              ? 'Ojo: uno de los dos lados tiene menos de 20 rondas, asi que la diferencia puede ser varianza y no la persona.'
-              : 'Tus numeros en las rondas que compartieron, contra el resto de tu historial.'
+              ? 'Ojo: uno de los dos lados tiene menos de 20 rondas, así que la diferencia puede ser varianza y no la persona.'
+              : 'Tus números en las rondas que compartieron, contra el resto de tu historial.'
           }
         >
           <DataTable
@@ -122,7 +122,7 @@ export default function Jugador() {
               <div className="value">{duels.kills}</div>
             </div>
             <div className="stat">
-              <div className="label">Te gano</div>
+              <div className="label">Te ganó</div>
               <div className="value">{duels.deaths}</div>
             </div>
             <div className={`stat ${duels.balance > 0 ? 'good' : duels.balance < 0 ? 'bad' : ''}`}>
@@ -143,8 +143,8 @@ export default function Jugador() {
       ) : null}
 
       <Panel
-        title="Sus numeros"
-        hint="Lo que hizo esa persona en las rondas que compartieron. Sale del kill feed, asi que no incluye su scoreboard completo. Sin rating: el 1.00 es tu promedio, no el suyo."
+        title="Sus números"
+        hint="Lo que hizo esa persona en las rondas que compartieron. Sale del kill feed, así que no incluye su scoreboard completo. Sin rating: el 1.00 es tu promedio, no el suyo."
       >
         <div className="kpis" style={{ marginBottom: 14 }}>
           <div className="stat">
@@ -215,7 +215,7 @@ export default function Jugador() {
               label: 'Jugo de',
               render: (row) => (
                 <span className={`chip ${row.role === 'companero' ? 'win' : 'loss'}`}>
-                  {row.role}
+                  {row.role === 'companero' ? 'compañero' : row.role}
                 </span>
               ),
             },
