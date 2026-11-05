@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 14:56 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
 epica: -
