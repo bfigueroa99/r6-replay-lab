@@ -239,6 +239,21 @@ class VersionesDeMapaTests(TestCase):
         self.assertEqual([r["map"] for r in filas], ["Consulate (Y10)"])
         self.assertEqual(agg.overview(map=str(CONSULATE_Y7))["overall"]["rounds"], 4)
 
+    def test_clutch_por_sitio_separa_el_mismo_sitio_en_dos_versiones(self):
+        for indice, map_id in ((2, CONSULATE_Y7), (3, CONSULATE_Y10)):
+            match = make_match(map_name="Consulate", map_id=map_id, index=indice)
+            rnd = make_round(match, 0, site="1F Lobby", won=True)
+            make_round_player(rnd, clutch_vs=2)
+        filas = agg.clutch_by_site()
+        mapas = [(f["map"], f["map_id"], f["attempts"]) for f in filas if f["kind"] == "map"]
+        sitios = [(f["map"], f["site"], f["attempts"]) for f in filas if f["kind"] == "site"]
+        self.assertEqual(
+            sorted(mapas), [("Consulate (Y10)", CONSULATE_Y10, 1), ("Consulate (Y7)", CONSULATE_Y7, 1)]
+        )
+        self.assertEqual(
+            sorted(sitios), [("Consulate (Y10)", "1F Lobby", 1), ("Consulate (Y7)", "1F Lobby", 1)]
+        )
+
     def test_un_id_nombrado_igual_que_una_version_lleva_el_id(self):
         # un rework que MAPS no conoce y que el usuario llamo "Consulate" en Datos
         conocido = make_match(map_name="Consulate", map_id=379218689149, index=2)
@@ -249,3 +264,38 @@ class VersionesDeMapaTests(TestCase):
         self.assertEqual(
             nombres, ["Consulate", "Consulate (Y10)", "Consulate (Y7)", "Consulate (id 999)"]
         )
+
+
+def _partidas(map_name: str, map_id: int, ganadas: int, total: int, desde: int):
+    for n in range(total):
+        gano = n < ganadas
+        match = make_match(
+            map_name=map_name, map_id=map_id, index=desde + n,
+            my_score=4 if gano else 2, opponent_score=2 if gano else 4,
+        )
+        make_round_player(make_round(match, 0, won=gano))
+
+
+class MejorYPeorMapaPorVersionTests(TestCase):
+    """El Inicio cuenta por version, como Mapas: un rework no suma con el viejo."""
+
+    def test_mejor_y_peor_mapa_separan_las_versiones(self):
+        # juntas, Consulate seria 3/6 = 50 %: mejor Border y peor "Consulate"
+        _partidas("Consulate", CONSULATE_Y7, 3, 3, desde=0)
+        _partidas("Consulate", CONSULATE_Y10, 0, 3, desde=10)
+        _partidas("Border", 0, 2, 3, desde=20)
+        resumen = agg.matches_summary()
+        mejor, peor = resumen["best_map"], resumen["worst_map"]
+        self.assertEqual((mejor["map"], mejor["map_id"], mejor["winrate"]),
+                         ("Consulate (Y7)", CONSULATE_Y7, 100.0))
+        self.assertEqual((peor["map"], peor["map_id"], peor["winrate"]),
+                         ("Consulate (Y10)", CONSULATE_Y10, 0.0))
+        self.assertEqual(mejor["slug"], "consulate")
+
+    def test_una_version_sin_muestra_minima_no_entra(self):
+        self.assertEqual(agg.MIN_PARTIDAS_MAPA, 3)
+        _partidas("Consulate", CONSULATE_Y7, 2, 2, desde=0)
+        _partidas("Consulate", CONSULATE_Y10, 0, 2, desde=10)
+        resumen = agg.matches_summary()
+        self.assertIsNone(resumen["best_map"])
+        self.assertIsNone(resumen["worst_map"])
