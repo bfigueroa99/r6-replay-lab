@@ -1,7 +1,7 @@
 # 88. Textos que arma el backend (narrativa de la partida, coach) sin tildes
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T16:41Z
 rama: claude/equipo-dev/88-textos-del-backend-sin-tildes
 tipo: bug
 epica: -
