@@ -1,7 +1,7 @@
 # 77. Selector de tipo de partida en la barra de filtros
 
-estado: implementado
-candado: revisor 2026-11-05T03:50Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/77-selector-de-tipo-de-partida
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: ALCANCE.md A1; replica/features.csv ("Soporte de ranked, unranked y custom", must, clone partial: falta el selector en Filters.jsx); PR #14 cerrado sin merge el 2026-11-05 ya no lo cubre
 archivos: frontend/src/tipoPartida.js, frontend/src/tipoPartida.test.js, frontend/src/components/Filters.jsx, frontend/src/pages/Dashboard.jsx, backend/tests/test_tipo_de_partida.py, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0247Z-cSs57wh, dev 20261105T0320Z-cNojwdB
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0247Z-cSs57wh, dev 20261105T0320Z-cNojwdB, revisor 20261105T0350Z-c5JBREy
 
 ## PR
 
@@ -235,8 +235,33 @@ No quedo nada sin hacer. Sin migracion, sin `recompute` y sin fila de `metricas.
 Skills: no aplica (el diseno ya lo resolvia todo). Sin arena.
 OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado, 1 comentario corregido, 1 sin cambio: el e2e de Ranked lo cubre la espera de la request) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 6aae353
+
+Revisor 20261105T0350Z-c5JBREy. Lo revisado es el codigo del Dev (d6d794d) mas el test que agrega esta revision. Primero la revision a ciegas en dos ejes (receta 2): uno de estandares sobre el diff sin `docs/backlog`, y otro de intencion contra Que gana, Criterios y Fuera de alcance. Despues confirme cada hallazgo leyendo el codigo. No hizo falta `omc-security-reviewer`: el diff no toca POST, `externo/`, `.rec`, rutas, Electron ni dependencias.
+
+Hallazgos:
+
+- [test] [LOW] frontend/e2e/humo.spec.js (`el selector de tipo filtra el Inicio`)
+  Que pasa: al elegir Unranked, el e2e afirmaba la nota pero no el total del subtitulo, que es lo que nombra el criterio 5.
+  Como reproducirlo o por que es cierto: despues de `selectOption('Unranked')` no habia ninguna asercion sobre `.page-head p`.
+  Arreglo: **lo agregue en esta revision** (`expect(subtitulo).toHaveText('0 rondas con estos filtros')`). Pasa: verificar.sh VERDE 6aae353.
+- [bug] [LOW] frontend/src/pages/Dashboard.jsx:41 (condicion del EmptyState)
+  Que pasa: si la base esta vacia y hay algun filtro puesto, el Inicio muestra "0 rondas con estos filtros" en vez del EmptyState con el boton de importar.
+  Como reproducirlo o por que es cierto: con la base vacia, poner un rango de fechas en otra pagina (los filtros viven en App) y volver al Inicio. `vacio` da verdadero, pero tambien `hayFiltros(filters)`, asi que el EmptyState no se muestra. Limpiar lo devuelve. Es casi imposible de alcanzar: sin partidas, el selector solo ofrece "Todos".
+  Arreglo sugerido (no bloquea): preferir el EmptyState cuando `health.matches === 0`, o sumar el boton de importar a la nota. Queda en `## Para el humano`.
+
+Ficha:
+
+- Criterios 1 a 5: los cubren los tests que cita la Implementacion. Los confirme en el diff: el vitest `elegir un tipo apaga solo ranked` con `qs`, `test_filtrar_por_ranked_da_lo_mismo_que_solo_ranked` (compara overall, attack y defense) y el e2e (opciones, request con `match_type=Ranked`, 0 rondas sin `.empty-state`, Limpiar vuelve a `''`, consola limpia).
+- El diff toca solo archivos de `archivos:`. No hay numero nuevo en la UI: el total de rondas ya existia, asi que `metricas.md` no cambia. No hay identificadores con tildes ni `print` o `console.log`. Respeta Fuera de alcance: no toca modo, URL, Partidas ni `seed_demo`, y Coach y las otras paginas siguen igual.
+- verificar.sh: VERDE 01ffb79 (codigo del Dev) y VERDE 6aae353 (con el test nuevo). Cada corrida: 922 tests backend, 170 vitest y 57 e2e.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado con test, 1 a Para el humano) · verificación=—
 
 ## QA
 
 ## Para el humano
+
+- (revisor 2026-11-05) No bloquea: con la base vacia y un filtro puesto, el Inicio muestra "0 rondas con estos filtros" en vez del boton de importar (detalle en Revision). Se arregla con Limpiar.
