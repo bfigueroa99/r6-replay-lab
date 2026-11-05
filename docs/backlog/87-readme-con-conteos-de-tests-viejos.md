@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
-estado: propuesto
-candado: arquitecto 2026-11-05 15:48 UTC
+estado: disenado
+candado: -
 rama: -
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: docs
 prioridad: 5
 fuente: QA 20261105T1521Z-cGymdxX, deriva de docs sobre dev 85009f6 (fallback sin trabajo: 81, 86 y 84 tenian candado de otras sesiones)
 archivos: README.md
-turnos: qa 20261105T1521Z-cGymdxX
+turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu
 
 ## PR
 
@@ -48,6 +48,36 @@ git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --
 cualquier otro texto del README.
 
 ## Diseno
+
+Arquitecto 20261105T1547Z-cDskDBu, sobre dev 0861b0b. Una sola forma obvia:
+sin arena ni consenso.
+
+`archivos:` solo `README.md` (y esta ficha). Ninguna rama abierta (79, 81,
+84) toca `README.md`: no hay orden de merge que cuidar.
+
+Cambios exactos, tres lineas y nada mas (en el arbol el texto sigue
+arrancando en la misma columna que hoy):
+
+1. `README.md:270`
+   `| \`manage.py test tests\` | Corre la suite (419 tests). |`
+   -> `| \`manage.py test tests\` | Corre la suite completa. |`
+2. `README.md:430`
+   `  tests/                419 tests (parser, metricas, agregados, coach, API)`
+   -> `  tests/                tests (parser, metricas, agregados, coach, API)`
+3. `README.md:431`
+   `frontend/               React + Vite + recharts (65 tests con vitest)`
+   -> `frontend/               React + Vite + recharts (tests con vitest)`
+
+Orden: editar, `grep -nE "[0-9]+ tests" README.md` (vacio), `git diff --stat`
+(1 archivo, 3+/3-), `check.sh`.
+
+Tests: ninguno nuevo; es un README. Que puede romperse: nada que ejecute
+codigo; el riesgo es tocar otra linea (lo cubren el criterio "Ninguna otra
+linea cambia" y el diff de 3 lineas). Verificacion manual: el README
+renderizado en GitHub, la tabla de comandos y el arbol sin desalinear.
+
+Skills: no aplica (docs, ningun dominio nuevo).
+OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
