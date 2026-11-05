@@ -17,6 +17,7 @@ import { detalleMultikills, textoMultikills } from '../multikills.js'
 import { marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
+import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -194,6 +195,13 @@ export default function MatchDetail() {
         />
       </Panel>
 
+      <Panel
+        title="Trades por equipo"
+        hint="Muertes que tu equipo y el rival dejaron sin vengar en la ventana de trade."
+      >
+        <TradesPorEquipo teamTrades={data.team_trades} />
+      </Panel>
+
       <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las metricas derivadas.">
         <DataTable
           columns={[
@@ -237,6 +245,49 @@ export default function MatchDetail() {
           rowClass={(row) => (row.is_me ? 'me' : '')}
         />
       </Panel>
+    </>
+  )
+}
+
+function TradesPorEquipo({ teamTrades }) {
+  const filas = filasTradesEquipo(teamTrades)
+  const nota = textoTradesEquipo(teamTrades)
+  // La celda del equipo que sale mejor en esa columna va resaltada
+  const resaltar = (col, texto) => (row) =>
+    row.mejor[col] ? <span className="chip win">{texto(row)}</span> : texto(row)
+  return (
+    <>
+      <DataTable
+        columns={[
+          { key: 'label', label: 'Equipo', left: true, sortable: false },
+          { key: 'deaths', label: 'Muertes', sortable: false },
+          { key: 'traded_deaths', label: 'Tradeadas', sortable: false },
+          {
+            key: 'untraded_deaths',
+            label: 'Sin trade',
+            sortable: false,
+            render: resaltar('untraded_deaths', (row) => row.untraded_deaths),
+          },
+          {
+            key: 'untraded_pct',
+            label: '% sin trade',
+            sortable: false,
+            render: resaltar('untraded_pct', (row) => fmt(row.untraded_pct, 0, '%')),
+          },
+          {
+            key: 'trade_kills',
+            label: 'Trade kills',
+            sortable: false,
+            render: resaltar('trade_kills', (row) => row.trade_kills),
+          },
+        ]}
+        rows={filas}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        rowKey={(row) => row.key}
+        rowClass={(row) => (row.key === 'mine' ? 'me' : '')}
+        empty="Esta partida no trae trades por equipo."
+      />
+      {nota ? <p className="note">{nota}</p> : null}
     </>
   )
 }

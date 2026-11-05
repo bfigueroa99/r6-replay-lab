@@ -534,6 +534,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
 
     rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
+    team_trades = _trades_por_equipo(rounds, match.my_team_index)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
     etiquetas = agg.etiquetas_de_mapas({match.map_slug})
 
@@ -559,6 +560,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "rounds": rounds,
             "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
+            "team_trades": team_trades,
             "my_totals": my_totals,
         }
     )
@@ -568,6 +570,41 @@ def _racha_con_etiqueta(racha: dict | None) -> dict | None:
     if racha is None:
         return None
     return {"length": racha["length"], "from_round_label": f"R{racha['from_number'] + 1}"}
+
+
+def _trades_por_equipo(rounds: list[dict], my_team_index: int) -> dict:
+    """Muertes tradeadas y sin trade de cada equipo, sumando lo que dejo el import.
+
+    Recorre las rondas ya armadas para la respuesta: cero queries y nada se
+    recalcula, asi cuadra con las columnas *Trades* y *Sin trade* del
+    scoreboard. "Tu equipo" se resuelve por ronda (el `team_index` de tu
+    fila) porque el indice no esta garantizado fijo en toda la partida; sin tu
+    fila en la ronda, vale el de la partida.
+    """
+    totales = {
+        lado: {"deaths": 0, "traded_deaths": 0, "untraded_deaths": 0, "trade_kills": 0}
+        for lado in ("mine", "rival")
+    }
+    for ronda in rounds:
+        jugadores = ronda["players"]
+        yo = next((p for p in jugadores if p["is_me"]), None)
+        mio = yo["team_index"] if yo else my_team_index
+        for p in jugadores:
+            t = totales["mine" if p["team_index"] == mio else "rival"]
+            if p["died"]:
+                t["deaths"] += 1
+                # Filtrado por `died`: una fila rara con `was_traded` sin
+                # muerte no puede descuadrar tradeadas + sin trade == muertes.
+                if p["was_traded"]:
+                    t["traded_deaths"] += 1
+            if p["untraded_death"]:
+                t["untraded_deaths"] += 1
+            t["trade_kills"] += p["trade_kills"] or 0
+    for t in totales.values():
+        t["untraded_pct"] = (
+            round(t["untraded_deaths"] / t["deaths"] * 100, 1) if t["deaths"] else None
+        )
+    return totales
 
 
 def _match_scoreboard(match: Match) -> list[dict]:
