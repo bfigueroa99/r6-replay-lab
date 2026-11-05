@@ -1,7 +1,7 @@
 # 90. Stacks rivales repetidos
 
-estado: implementado
-candado: revisor 2026-11-05T20:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: D4 de ALCANCE.md; `replica/features.csv` "Historial contra un equipo rival concreto" (should, partial: la referencia lo tiene por equipo y la app solo por persona, D1 en dev)
 archivos: backend/replays/analytics/aggregates.py (repeated_rivals, rival_stacks nueva), backend/replays/views.py (duels), frontend/src/pages/Duelos.jsx, backend/tests/test_stacks_rivales.py, frontend/e2e/stacks-rivales.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1920Z-cAaALb8, dev 20261105T1945Z-ceRZh1z
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1920Z-cAaALb8, dev 20261105T1945Z-ceRZh1z, revisor 20261105T2004Z-cx71xGT
 
 ## PR
 
@@ -306,3 +306,44 @@ Verificacion: `verificar.sh` VERDE cbb28a5 (988 tests backend, 206 vitest,
 Skills: no aplica (patron `Panel` + `DataTable` que el repo ya resuelve).
 
 OMC: plan=— · revisión=5 hallazgos (3 arreglados: 2 MEDIUM y el LOW de test; 2 LOW aceptados) · verificación=—
+
+## Revision 2026-11-05 sobre 441253b
+
+(Revisor 20261105T2004Z-cx71xGT, fusionada con `origin/dev@9bc4bf6` en 485e226.)
+
+Revision a ciegas en dos ejes (estandares e intencion, `omc-code-reviewer`
+cada uno, sin leer el plan). Sin eje de seguridad: el diff no toca POST,
+`externo/`, `pydissect/`, rutas de archivos ni dependencias.
+
+- Estandares: un hallazgo, confirmado.
+  - [estilo] LOW `docs/metricas.md:220` (fila **Stack rival repetido**)
+    Que pasa: la columna "Juntos" del panel no tiene definicion propia.
+    Como reproducirlo: la fila define el grupo y remite el record a
+    **Récord contra un rival**, pero no dice que "Juntos" es cuantas personas
+    tiene el grupo (`Duelos.jsx`, columna `size`).
+    Arreglo sugerido: agregar a la fila "Juntos: cuantas personas tiene el
+    grupo".
+- Intencion: los cinco criterios cubiertos (tests y archivo:linea en el
+  informe del subagente; el numero del e2e se comprobo corriendo
+  `seed_demo` y `/api/duels/`: una fila Kaid_/Mozzie99/Thorn.exe, 3, 29,
+  29-0, 100.0). Un LOW anotado como limite consciente, no hallazgo: una
+  ronda con mas de 10 rivales no arma grupos (documentado en `metricas.md`
+  y con test).
+- Ficha: cada criterio tiene test; el diff no sale de `archivos:`; fila en
+  `metricas.md`; identificadores sin tildes y UI con tildes; sin `print` ni
+  `console.log`. Los desvios del diseno (grupos por ronda, varios maximales
+  por mismo conjunto de partidas, tope de 10 rivales) estan explicados en
+  Implementacion y van en la direccion de la intencion (un reemplazo no
+  forma grupo con quien reemplazo).
+
+Verificacion: `verificar.sh` VERDE 485e226 (1000 tests backend, 210 vitest,
+67 e2e). La primera corrida salio ROJO en `humo.spec.js` (Resumen con h1
+"R6 Replay Lab") mientras los subagentes corrian la suite y `seed_demo` en
+paralelo; repetida sola con `--de-nuevo`, verde. No es de esta rama.
+
+Veredicto: aprobar. El LOW lo puede arreglar el Dev o el QA de paso; no
+bloquea.
+
+Skills: no aplica.
+
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
