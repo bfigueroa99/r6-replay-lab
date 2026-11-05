@@ -1,7 +1,7 @@
 # 88. Textos que arma el backend (narrativa de la partida, coach) sin tildes
 
-estado: revisado
-candado: qa 2026-11-05T16:41Z
+estado: aprobado
+candado: release 2026-11-05T16:46Z
 rama: claude/equipo-dev/88-textos-del-backend-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 4
 fuente: QA 20261105T1521Z-cEexMKJ de la 81, recorriendo `/partidas/N` en Chromium con `seed_demo`. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". La 81 dejo fuera, a proposito, los textos que manda el backend
 archivos: backend/replays/analytics/narrative.py, backend/replays/analytics/coach.py, backend/replays/analytics/aggregates.py, backend/tests/test_narrative.py, backend/tests/test_compare.py, backend/tests/test_textos_con_tildes.py
-turnos: qa 20261105T1521Z-cEexMKJ, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1547Z-cLk3BF3, revisor 20261105T1613Z-czS2t8M
+turnos: qa 20261105T1521Z-cEexMKJ, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1547Z-cLk3BF3, revisor 20261105T1613Z-czS2t8M, qa 20261105T1641Z-cpQZfWz
 
 ## PR
 
@@ -240,7 +240,20 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica
 OMC: plan=— · revisión=3 hallazgos LOW (1 cubierto con test) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre 1fc5005
+
+(qa 20261105T1641Z-cpQZfWz; rama fusionada con dev 3d89622, sin conflictos)
+
+- `verificar.sh`: VERDE 1fc5005 en 124 s (963 tests backend, 199 vitest, 64 e2e).
+- Base vacia + `seed_demo` (29 partidas, 203 rondas), `runserver :8788` con `SQLITE_PATH` en el scratchpad. `curl` a `/api/matches/1..29/`, `/api/coach/` (`?days=7`, `?until=foo`, `?page=-1`), `/api/compare/` (`by=days&n=30`, `by=matches&n=4`, `by=days&n=-5`, `by=foo&n=abc`), `/api/trends/`, `/api/overview/`: todos 200 (`/api/matches/9999/` 404). Barrido regex de palabras sin tilde (`despues|mas|sesion|ultimas|dias|mato|vengo|cerro|...`) sobre toda cadena con espacio de las respuestas: 0. Se ve "te mató Thorn.exe. Nadie la vengó.", "La ronda se cerró por eliminación.", "De los 160s de acción", "el equipo jugó", "Últimos 30 días" / "Los 30 días anteriores", "Últimas 4 partidas"; `n=-5` se acota a "Últimos 1 días" (ya pasaba antes, no es de esta ficha).
+- Chromium (playwright) sobre `/partidas/1` y `/coach`: textos con tilde visibles, 0 errores de consola. En `/tendencias` queda "sesion", "7 dias" y "Ultimas {label}": son de `Trends.jsx` (frontend), alcance de la 81, no de esta.
+- Mutacion: "Nadie la vengó" -> "vengo" en `narrative.py` hace caer `test_perder_el_primer_duelo_propio` y la guardia (`narrative.py:80 'vengo'`); "más kills" -> "mas" en `coach.py` hace caer la guardia (`coach.py:377 'mas'`); "Últimas" -> "Ultimas" en `aggregates.py` hace caer `test_compare` (failures=1). Restaurado, `git status` limpio.
+- Sin migraciones, parser, `recompute`, Electron ni `.ps1`: no hay "Verificar en el PC". Sin cambios en `frontend/src`: el chunk no cambia.
+
+Criterios: 1, 2 y 3 VERIFIED, 4 VERIFIED (verde de esta QA). Veredicto: `aprobado`.
+
+Skills: no aplica
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Pendiente
 
