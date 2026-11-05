@@ -64,6 +64,9 @@ export function useApi(path, params, deps = []) {
     // prendida por la request nueva y pisa sus datos
     let vigente = true
     setLoading(true)
+    // un 404 del path anterior haria que la pagina diga "no existe" mientras
+    // carga el nuevo
+    setStatus(null)
     get(path, params)
       .then((payload) => {
         if (vigente) {

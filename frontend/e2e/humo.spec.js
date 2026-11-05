@@ -1018,6 +1018,9 @@ test('una partida o un jugador que no existe lo dice sin culpar a Django', async
     await expect(page.getByText('Django')).toHaveCount(0)
     await page.locator('.empty-state a.btn').click()
     await expect(page.locator('h1')).toHaveText(lista)
+    // la lista pide /api/filters/ al montar; sin esperarla, el goto de la
+    // vuelta siguiente la corta en vuelo y la consola anota un ERR_ABORTED
+    await page.waitForLoadState('networkidle')
   }
 
   // Chromium loguea cada 404 como "Failed to load resource" sin la URL en el
