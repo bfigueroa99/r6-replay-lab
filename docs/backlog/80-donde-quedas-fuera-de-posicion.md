@@ -1,7 +1,7 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T04:18Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/80-donde-quedas-fuera-de-posicion
 tipo: funcionalidad
 epica: posicionamiento
@@ -299,6 +299,70 @@ OMC: plan=— · revisión=— · verificación=— (sin parser, migracion, reco
   1.5 es cambiar una constante; si salen mas de un tercio, el margen es poco.
 
 ## Implementacion
+
+(dev 20261105T0418Z-cT3J25j)
+
+Quedo el diseno completo:
+
+- `aggregates.py`: `_FUERA_DE_POSICION` (`died=True, kills=0, was_traded=False`),
+  `caught_out_rounds` en `AGGREGATES` y `caught_out_pct` en `derive` (salen en
+  todo agregado y en los CSV). Seccion `# ---- posicion` con
+  `POSICION_MIN_RONDAS = 5`, `POSICION_BANDAS = 2`, `_contra_el_resto` y
+  `positioning()`, con filas ordenadas por `caught_out_delta` descendente.
+- `views.py`/`urls.py`: `GET /api/positioning/` (acepta los filtros y
+  `min_rounds`). No hay POST nuevo.
+- `coach.py`: `POSICION_MIN_RONDAS_COACH = 8` y `_posicion`, que solo redacta
+  el `verdict` (`zona-dormidero` media, `zona-solida` positivo; una de cada
+  una como mucho).
+- `frontend/src/posicion.js` + `posicion.test.js` (7 casos) y el panel
+  "Dónde quedas fuera de posición" en `Coach.jsx`, con tablas Sitios y Spawns
+  de ataque, CSV (el veredicto baja como etiqueta) y `ErrorBox` propio.
+- e2e `el Coach muestra dónde quedas fuera de posición` en `humo.spec.js`.
+- `docs/metricas.md`: fila en Trades, parrafo en granularidad espacial y fila
+  de muestra minima.
+
+**Desvio del diseno (margen).** La revision ciega encontro que `_ruido`
+(Wald, varianza por muestra) da margen casi nulo con una zona en 0 % o 100 %:
+0 de 5 rondas contra un resto del 30 % salia `solido` con margen 6.5, y eso
+pasa por azar 1 de cada 6 veces. El margen ahora usa la proporcion combinada
+(zona + resto = el total del alcance): `_ruido_combinado`. Con `seed_demo` los
+veredictos de la tabla del diseno no cambian; si los margenes: B Church
+±17.4 (no 13.8), A Ventilation ±20.0, Warehouse ±24.4, Valley ±24.4 (sigue
+ruido). El e2e afirma ±17.4. Sin resto (una sola zona o filtro que la deja
+sola) el margen es `None` y el veredicto `ruido`.
+
+Otros cambios menores de la revision: la nota final del Coach lee el minimo
+de la api (no un 5 fijo) y, ya que se tocaba esa linea, lleva tildes
+("mínima", "así", "todavía"); `rowKey` de las tablas incluye la etiqueta del
+mapa.
+
+**No tomado de la revision (queda para el Revisor o el humano):**
+- Los sitios mezclan ataque y defensa contra el resto de todo: es la decision
+  2 del Arquitecto (el corte por lado lo da el filtro Lado). Si el reparto de
+  lados de un sitio es muy desparejo puede inclinar el veredicto; con
+  `seed_demo` no pasa.
+- Comparaciones multiples: con ~20 zonas, dos errores estandar todavia dejan
+  alguna señal por azar. Es la calibracion de `POSICION_BANDAS` que pide
+  "Verificar en el PC".
+- `positioning` corre dos veces por carga del Coach (señal con minimo 8 y
+  tabla con 5). Aceptable en SQLite local.
+
+Tests backend (`tests/test_posicion.py`, 17): las cuatro condiciones, CSV,
+contra el resto y no contra el total, spawn contra el resto del ataque, ruido
+dentro del margen, dormidero y solido, zona chica en 0 % sin veredicto, una
+sola zona, `min_rounds` en la vista, zona bajo el minimo, filtro de lado,
+base vacia sin 500, y las señales del Coach (dormidero, solida, spawn con
+"resto de tu ataque", sin muestra, en ruido).
+
+Nota de la verificacion: la primera corrida de `verificar.sh` (sobre b6d7133)
+salio roja por ruff (`dict()` en el test, corregido) y por el e2e
+`el selector de tipo filtra el Inicio`, que no toca esta ficha; en la corrida
+siguiente paso (probable choque con otra sesion en paralelo). Si vuelve a
+fallar, es para mirar aparte.
+
+Verificacion: verificar.sh VERDE 441bb4d0c (939 tests backend, 177 vitest, 58 e2e).
+Skills: no aplica (tablas, `DataTable` y señales del Coach ya existen).
+OMC: plan=— · revisión=7 hallazgos (4 arreglados: margen Wald, tests de resto vacio y min_rounds, nota con minimo de la api y tildes, rowKey) · verificación=—
 
 ## Revision
 
