@@ -790,7 +790,9 @@ test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
 test('el selector de tipo filtra el Inicio', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo siembra todo Ranked y no se toca: el segundo tipo se suma aca
+  let pedidosDeFiltros = 0
   await page.route('**/api/filters/', async (route) => {
+    pedidosDeFiltros += 1
     const respuesta = await route.fetch()
     const json = await respuesta.json()
     await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
@@ -816,9 +818,9 @@ test('el selector de tipo filtra el Inicio', async ({ page }) => {
   await page.getByRole('button', { name: 'Limpiar' }).click()
   await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
   await expect(tipo).toHaveValue('')
-  // la barra se vuelve a montar al limpiar y pide /api/filters/ de nuevo:
-  // sin esto la ruta queda en vuelo cuando el test cierra la pagina
-  await page.unrouteAll({ behavior: 'ignoreErrors' })
+  // pasar por 0 rondas no vuelve a montar la barra (perderia el rango de
+  // fechas abierto): /api/filters/ se pide una sola vez
+  expect(pedidosDeFiltros).toBe(1)
 
   expect(errores).toEqual([])
 })

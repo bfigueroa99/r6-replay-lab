@@ -1,7 +1,7 @@
 # 77. Selector de tipo de partida en la barra de filtros
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 03:21 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/77-selector-de-tipo-de-partida
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -195,6 +195,45 @@ por consenso: chica, sin datos que se reescriban.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T0320Z-cNojwdB)
+
+Quedo el diseno completo, en el orden que pedia:
+
+- `frontend/src/tipoPartida.js`: `opcionesDeTipo`, `tipoElegido`, `conTipo` y `hayFiltros`,
+  como dice el diseno. `frontend/src/tipoPartida.test.js` tiene los 8 tests con los nombres
+  del diseno.
+- `backend/tests/test_tipo_de_partida.py`: los 5 tests. Pasaron sin tocar el backend, asi que
+  el filtro ya andaba.
+- `Filters.jsx`: se fue el checkbox "Solo ranked". En su lugar esta el `<select>` "Tipo"
+  despues de Periodo y del rango de fechas, y "Limpiar" usa `hayFiltros(value)`.
+- `Dashboard.jsx`: con 0 rondas y filtros puestos se ve el subtitulo "0 rondas con estos
+  filtros", la barra y la nota "Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar."
+  (sin `.empty-state`).
+- e2e `el selector de tipo filtra el Inicio`, en `humo.spec.js`, con `/api/filters/`
+  interceptado para sumar Unranked.
+
+Criterios: (1) e2e y vitest `elegir un tipo apaga solo ranked`; (2)
+`test_filtrar_por_ranked_da_lo_mismo_que_solo_ranked`; (3) el checkbox se reemplaza (e2e:
+"Solo ranked" en 0); (4) e2e "Limpiar" deja el selector en `''`; (5) e2e de punta a punta.
+
+Desvios del diseno:
+
+- **El vacio filtrado comparte arbol con el Resumen normal**, en vez de un `return` aparte. La
+  revision ciega vio que la barra se volvia a montar al pasar por 0 rondas: se perdia el rango
+  "Entre dos fechas" abierto y se volvia a pedir `/api/filters/`. Lo medi en Chromium contando
+  montajes de `Filters`. La causa no era el arbol: al apretar "Limpiar", la respuesta vieja de
+  0 rondas seguia en pantalla con `filters={}` y se pintaba el EmptyState un instante. Ahora
+  el EmptyState pide ademas que la respuesta tampoco traiga filtros
+  (`hayFiltros(overview.data?.filters)`: `/api/overview/` ya los devuelve). El e2e lo fija:
+  `/api/filters/` se pide una sola vez en todo el recorrido.
+- El comentario de `tipoElegido` dice que la lectura de `ranked_only` es para A10 (filtros en
+  la URL). Hoy nadie lo pone; el diseno la pedia igual.
+
+No quedo nada sin hacer. Sin migracion, sin `recompute` y sin fila de `metricas.md`.
+
+Skills: no aplica (el diseno ya lo resolvia todo). Sin arena.
+OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado, 1 comentario corregido, 1 sin cambio: el e2e de Ranked lo cubre la espera de la request) · verificación=—
 
 ## Revision
 

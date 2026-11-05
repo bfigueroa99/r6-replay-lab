@@ -32,22 +32,14 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
   if (overview.loading && !overview.data) return <Loading />
 
   const total = overview.data?.overall
-  if (!total || !total.rounds) {
-    // con filtros puestos la base no esta vacia: el EmptyState escondia la
-    // barra y no habia forma de apretar Limpiar
-    if (!hayFiltros(filters)) return <EmptyState onImport={runImport} importing={importing} />
-    return (
-      <>
-        <div className="page-head">
-          <div>
-            <h1>Resumen</h1>
-            <p>0 rondas con estos filtros</p>
-          </div>
-        </div>
-        <Filters value={filters} onChange={setFilters} />
-        <p className="note">Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.</p>
-      </>
-    )
+  // con filtros puestos y 0 rondas la base no esta vacia: el EmptyState
+  // escondia la barra y no habia forma de apretar Limpiar. Se mira tambien
+  // los filtros que devolvio la API: al limpiar, la respuesta filtrada de 0
+  // rondas sigue en pantalla hasta que llega la nueva, y pintar el EmptyState
+  // en ese instante volvia a montar la barra
+  const vacio = !total || !total.rounds
+  if (vacio && !hayFiltros(filters) && !hayFiltros(overview.data?.filters)) {
+    return <EmptyState onImport={runImport} importing={importing} />
   }
 
   const { attack, defense, recent_form: form, data_health: health } = overview.data
@@ -65,12 +57,19 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         <div>
           <h1>Resumen</h1>
           <p>
-            {total.matches} partidas · {total.rounds} rondas analizadas
+            {vacio ? '0 rondas con estos filtros' : `${total.matches} partidas · ${total.rounds} rondas analizadas`}
           </p>
         </div>
       </div>
 
       <Filters value={filters} onChange={setFilters} />
+
+      {/* un solo arbol para los dos casos: la barra no se vuelve a montar al
+          pasar por 0 rondas y no pierde el rango de fechas abierto */}
+      {vacio ? (
+        <p className="note">Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.</p>
+      ) : (
+      <>
 
       <div className="kpis" style={{ marginBottom: 18 }}>
         <Stat3 label="Rondas ganadas" value={pct(total.winrate)} sub={`${total.rounds_won} de ${total.rounds}`} value_={total.winrate} />
@@ -267,6 +266,8 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           </ul>
         </Panel>
       ) : null}
+      </>
+      )}
     </>
   )
 }

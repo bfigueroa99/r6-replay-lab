@@ -19,7 +19,11 @@ export function opcionesDeTipo(matchTypes) {
   return opciones
 }
 
-/** Lo que muestra el selector. Un `ranked_only` suelto (enlace viejo) se lee como Ranked. */
+/**
+ * Lo que muestra el selector. Hoy los filtros viven en el estado de App y
+ * nadie pone `ranked_only`; si llegan filtros en la URL (A10) con un enlace
+ * viejo, se lee como Ranked en vez de mostrar "Todos" filtrando.
+ */
 export function tipoElegido(filtros) {
   if (!filtros) return ''
   return filtros.match_type || (filtros.ranked_only ? 'Ranked' : '')
