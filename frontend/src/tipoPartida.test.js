@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { qs } from './api.js'
-import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido } from './tipoPartida.js'
+import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido, vistaSinRondas } from './tipoPartida.js'
 
 describe('opcionesDeTipo', () => {
   it('opciones de tipo arrancan con Todos y siguen el orden de la API', () => {
@@ -59,5 +59,28 @@ describe('hayFiltros', () => {
     expect(hayFiltros(undefined)).toBe(false)
     expect(hayFiltros({ match_type: '', ranked_only: false, days: '' })).toBe(false)
     expect(hayFiltros({ match_type: 'Ranked' })).toBe(true)
+  })
+})
+
+describe('vistaSinRondas (ficha 85)', () => {
+  it('con rondas no hay vista vacia', () => {
+    expect(vistaSinRondas({ vacio: false, filtros: { map: 'bank' }, cargando: false })).toBe(null)
+  })
+
+  it('con filtros y 0 rondas se queda la barra', () => {
+    expect(vistaSinRondas({ vacio: true, filtros: { match_type: 'Unranked' }, cargando: false })).toBe(
+      'filtrado',
+    )
+  })
+
+  it('sin filtros y base vacia ofrece importar', () => {
+    expect(vistaSinRondas({ vacio: true, filtros: {}, cargando: false })).toBe('importar')
+    expect(vistaSinRondas({ vacio: true, filtros: { match_type: '', days: '' }, cargando: false })).toBe(
+      'importar',
+    )
+  })
+
+  it('recien limpiado y cargando no pasa por el EmptyState', () => {
+    expect(vistaSinRondas({ vacio: true, filtros: {}, cargando: true })).toBe('filtrado')
   })
 })

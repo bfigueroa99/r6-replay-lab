@@ -243,6 +243,25 @@ export function ErrorBox({ error }) {
   )
 }
 
+/**
+ * Pagina sin rondas por culpa de los filtros: la barra se queda para poder
+ * apretar Limpiar. Recibe la barra armada porque cada pagina la configura distinto.
+ */
+export function SinRondasFiltradas({ titulo, filtros }) {
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>{titulo}</h1>
+          <p>0 rondas con estos filtros</p>
+        </div>
+      </div>
+      {filtros}
+      <p className="note">Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.</p>
+    </>
+  )
+}
+
 export function EmptyState({ onImport, importing }) {
   return (
     <div className="empty-state">
