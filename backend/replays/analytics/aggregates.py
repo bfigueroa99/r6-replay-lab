@@ -687,6 +687,12 @@ POSICION_MIN_RONDAS = 5
 #: tercio de las zonas saldria marcado por azar.
 POSICION_BANDAS = 2
 
+#: Segundos jugados de la fase de accion que cuentan como "salida del spawn".
+#: Es la mitad del primer tramo de "Sales muy temprano" (30 s): a los 15 s el
+#: atacante todavia esta saliendo del spawn o en el runout, y morir ahi no es
+#: lo mismo que morir en el primer contacto armado.
+SALIDA_SPAWN_SEGUNDOS = 15
+
 
 def _totales_de_posicion(qs: QuerySet[RoundPlayer]) -> dict:
     fila = qs.aggregate(
@@ -717,6 +723,20 @@ def _ruido_combinado(parte: int, n: int, parte_total: int, n_total: int) -> floa
     return round(math.sqrt(p * (1 - p) * (1 / n + 1 / resto)) * 100, 1)
 
 
+def _margen_y_veredicto(delta: float | None, parte: int, n: int, parte_total: int,
+                        n_total: int, nombres: tuple[str, str]) -> tuple[float | None, str]:
+    """Margen de ruido de la zona y su veredicto: `nombres` es (peor, mejor)."""
+    se = _ruido_combinado(parte, n, parte_total, n_total)
+    margen = round(POSICION_BANDAS * se, 1) if se is not None else None
+    if delta is None or margen is None:
+        return margen, "ruido"
+    if delta > margen:
+        return margen, nombres[0]
+    if delta < -margen:
+        return margen, nombres[1]
+    return margen, "ruido"
+
+
 def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
     """Compara cada zona contra el resto del historial, no contra el total.
 
@@ -728,17 +748,10 @@ def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
         resto = total["rounds"] - rondas
         resto_pct = _pct(total["caught_out_rounds"] - fila["caught_out_rounds"], resto)
         delta = _delta(fila["caught_out_pct"], resto_pct)
-        se = _ruido_combinado(fila["caught_out_rounds"], rondas,
-                              total["caught_out_rounds"], total["rounds"])
-        margen = round(POSICION_BANDAS * se, 1) if (se is not None and resto) else None
-        if delta is None or margen is None:
-            veredicto = "ruido"
-        elif delta > margen:
-            veredicto = "dormidero"
-        elif delta < -margen:
-            veredicto = "solido"
-        else:
-            veredicto = "ruido"
+        margen, veredicto = _margen_y_veredicto(
+            delta, fila["caught_out_rounds"], rondas,
+            total["caught_out_rounds"], total["rounds"], ("dormidero", "solido"),
+        )
         fila.update(
             {
                 "rest_rounds": resto,
@@ -751,6 +764,100 @@ def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
     # Mayor diferencia primero; las que no tienen diferencia, al final.
     filas.sort(key=lambda f: (f["caught_out_delta"] is None, -(f["caught_out_delta"] or 0)))
     return filas
+
+
+def _temprano(campo: str) -> Q:
+    """Muerte o baja dentro de la salida del spawn.
+
+    El 0 no cuenta: `metrics.py` escribe `elapsed = 0.0` cuando el feed no
+    trae reloj, y en una ventana de 15 s ese 0 espurio pesaria mucho.
+    """
+    return Q(**{f"{campo}__gt": 0, f"{campo}__lt": SALIDA_SPAWN_SEGUNDOS})
+
+
+def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[dict], dict]:
+    """Muertes y bajas en los primeros segundos de accion, por mapa y spawn de ataque.
+
+    Mide si un spawn te cuesta rondas por salir a pelear antes de tiempo
+    (runout o spawn peek que sale mal). Cada spawn va contra el resto de tu
+    ataque, no contra el total: la zona esta dentro del total y la banda de
+    ruido supone dos muestras independientes. Devuelve las filas y el total
+    del ataque, que se calcula antes del minimo para que ocultar una fila no
+    mueva las demas.
+    """
+    ataque = ataque.exclude(spawn="")
+    # Las bajas se agrupan con la misma clave que las filas (mapa entero, con
+    # nombre): si una version tiene dos nombres, cada fila suma solo las suyas.
+    bajas: Counter = Counter()
+    me_ids = _me_ids()
+    if me_ids:
+        _, a_favor = _duelos(ataque, me_ids)
+        mi_spawn = Subquery(
+            RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True)
+            .values("spawn")[:1]
+        )
+        tempranas = (
+            a_favor.filter(_temprano("elapsed"))
+            .annotate(mi_spawn=mi_spawn)
+            .order_by()
+            .values(*_MAPA, "mi_spawn")
+            .annotate(n=Count("id"))
+        )
+        for t in tempranas:
+            if t["mi_spawn"]:
+                bajas[(*(t[c] for c in _MAPA), t["mi_spawn"])] += t["n"]
+
+    crudas = ataque.order_by().values(*_MAPA, "spawn").annotate(
+        rounds=Count("id"),
+        early_deaths=Count("id", filter=Q(died=True) & _temprano("death_elapsed")),
+    )
+    filas = _etiquetar([
+        {
+            **{etiqueta: c[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+            "spawn": c["spawn"],
+            "rounds": c["rounds"],
+            "early_deaths": c["early_deaths"],
+            "early_kills": bajas[(*(c[campo] for campo in _MAPA), c["spawn"])],
+        }
+        for c in crudas
+    ])
+
+    total_rondas = sum(f["rounds"] for f in filas)
+    total_tempranas = sum(f["early_deaths"] for f in filas)
+    total = {
+        "rounds": total_rondas,
+        "early_deaths": total_tempranas,
+        "early_death_pct": _pct(total_tempranas, total_rondas),
+        "early_kills": sum(bajas.values()),
+    }
+
+    for f in filas:
+        rondas, tempranas_fila = f["rounds"], f["early_deaths"]
+        kills = f["early_kills"]
+        resto = total_rondas - rondas
+        pct = _pct(tempranas_fila, rondas)
+        resto_pct = _pct(total_tempranas - tempranas_fila, resto)
+        delta = _delta(pct, resto_pct)
+        margen, veredicto = _margen_y_veredicto(
+            delta, tempranas_fila, rondas, total_tempranas, total_rondas, ("temprano", "aguanta"),
+        )
+        f.update(
+            {
+                "early_death_pct": pct,
+                "early_kills_per_round": _ratio(kills, rondas),
+                "rest_rounds": resto,
+                "rest_early_death_pct": resto_pct,
+                "early_death_delta": delta,
+                "margin": margen,
+                "verdict": veredicto,
+            }
+        )
+
+    filas = [f for f in filas if f["rounds"] >= min_rounds]
+    filas.sort(key=lambda f: (
+        f["early_death_pct"] is None, -(f["early_death_pct"] or 0), -f["rounds"], f["spawn"],
+    ))
+    return filas, total
 
 
 def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
@@ -774,6 +881,7 @@ def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
     ))
     total = _totales_de_posicion(qs)
     total_ataque = _totales_de_posicion(ataque)
+    salidas, salida_ataque = spawn_exits(ataque, min_rounds)
     return {
         "overall": total,
         "attack": total_ataque,
@@ -781,6 +889,9 @@ def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
         "spawns": _contra_el_resto(spawns, total_ataque),
         "min_rounds": min_rounds,
         "bands": POSICION_BANDAS,
+        "spawn_exits": salidas,
+        "spawn_exit_attack": salida_ataque,
+        "spawn_exit_seconds": SALIDA_SPAWN_SEGUNDOS,
     }
 
 

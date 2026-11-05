@@ -44,3 +44,35 @@ export function comoMargen(valor) {
   if (valor === null || valor === undefined) return '—'
   return `±${Number(valor).toFixed(1)}`
 }
+
+/*
+ * Panel "Salida del spawn" (ficha 89): muertes en los primeros segundos de
+ * ataque, por spawn, contra el resto de tu ataque.
+ */
+export const VEREDICTOS_SALIDA = {
+  temprano: 'Caes temprano',
+  aguanta: 'Sales bien',
+  ruido: 'Sin señal',
+}
+
+export function etiquetaSalida(veredicto) {
+  return VEREDICTOS_SALIDA[veredicto] ?? VEREDICTOS_SALIDA.ruido
+}
+
+/** Rojo donde caes antes que en el resto de tu ataque, verde donde sales mejor. */
+export function claseSalida(veredicto) {
+  if (veredicto === 'temprano') return 'loss'
+  if (veredicto === 'aguanta') return 'win'
+  return ''
+}
+
+/**
+ * Por que la tabla esta vacia: sin ataque con spawn (o con el filtro Lado en
+ * defensa) no es lo mismo que tener rondas sin la muestra minima.
+ */
+export function textoSinSalidas(datos) {
+  if (!datos?.spawn_exit_attack?.rounds) {
+    return 'Todavía no hay rondas de ataque con spawn con estos filtros.'
+  }
+  return `Ningún spawn llega a ${datos?.min_rounds ?? 5} rondas de ataque.`
+}
