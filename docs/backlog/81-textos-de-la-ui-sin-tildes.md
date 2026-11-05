@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T14:29Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -260,6 +260,40 @@ Veredicto: corregir -> `con hallazgos` (el MEDIUM deja el criterio 2 sin
 cumplir; es la razon de ser de la ficha).
 
 OMC: plan=— · revisión=2 hallazgos (0 arreglados; el Revisor no arregla) · verificación=—
+
+### Correccion de hallazgos (dev 20261105T1429Z-cps2PzJ, sobre dev mezclado en 394d368)
+
+P3: la rama chocaba con dev en `MatchDetail.jsx` (la 82 envolvio el panel
+Rondas en `{round ? ...}`); resuelto tomando el bloque de dev y reaplicando
+"Condición".
+
+MEDIUM del Revisor, aplicado entero (solo tildes):
+
+- `Filters.jsx`: "Últimos 7/30/90 días".
+- `Trends.jsx`: `label: '7 días'`, `'30 días'`; hint "bajo presión".
+- `MatchDetail.jsx`: timeline "mató a" / "murió"; "duró {n}s".
+- `Jugador.jsx`: "Te ganó". `Coach.jsx`: "Apóyate en esto", "Qué hacer:".
+- e2e: regex de la timeline a `/mató a|murió/`, y el subtitulo de Tendencias
+  del test `un filtro sin rondas deja la barra en todas las páginas` (entro a
+  dev con la 85 afirmando el texto viejo; el primer `check.sh` fallo ahi).
+
+Barrido extra de preteritos agudos (mato, murio, gano, quedo, duro, cambio,
+paso, bajo, ...) y de palabras comunes en cadenas visibles: solo quedan
+sustantivos ("cambio", "bajo" adjetivo) e identificadores.
+
+LOW (cabeceras `label: 'Cuando'`, `'Duro'`, y `'Murio'`/`'Murio a los'` de
+la tabla de jugadores de la ronda): se dejan como estan, variante
+conservadora. El `label` de una columna es tambien la cabecera del CSV
+descargado, y "Fuera de alcance" deja quieto lo del CSV. Si se quiere, va en
+una ficha aparte que decida las cabeceras de CSV.
+
+Revision ciega (`omc-code-reviewer`): 1 HIGH (el e2e de la 85), arreglado;
+sin tildes mal puestas.
+
+`verificar.sh`: VERDE de1a41e2c (954 tests backend, 190 vitest, 61 e2e).
+
+Skills: no aplica (cambio de textos).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## QA
 
