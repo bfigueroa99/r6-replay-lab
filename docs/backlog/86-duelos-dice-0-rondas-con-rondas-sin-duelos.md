@@ -1,8 +1,8 @@
 # 86. Duelos dice "0 rondas con estos filtros" con un filtro que tiene rondas pero ningun duelo
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos
 tipo: bug
 epica: -
 area: fullstack
