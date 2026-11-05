@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
-estado: aprobado
-candado: qa 2026-11-05T17:45Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/87-readme-con-conteos-de-tests-viejos
 tipo: bug
 epica: -
@@ -9,11 +9,52 @@ area: docs
 prioridad: 5
 fuente: QA 20261105T1521Z-cGymdxX, deriva de docs sobre dev 85009f6 (fallback sin trabajo: 81, 86 y 84 tenian candado de otras sesiones)
 archivos: README.md
-turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec, revisor 20261105T1734Z-c34hH6Y, qa 20261105T1734Z-cpRZAms
+turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec, revisor 20261105T1734Z-c34hH6Y, qa 20261105T1734Z-cpRZAms, release 20261105T1734Z-cpRZAms
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][docs] El README deja de fijar cuantos tests tiene la suite`
+
+### Que cambia
+
+El README ya no promete "419 tests" ni "65 tests con vitest" (hoy son 963 y
+199): la tabla de comandos dice "Corre la suite completa." y el arbol del
+repo describe los tests sin numero. Quien clona el repo no ve una cifra que
+no coincide con lo que corre.
+
+### Por que esto y no otra cosa
+
+Ficha 87, deriva de docs de QA sobre dev 85009f6. Actualizar los numeros se
+descarto: vuelven a envejecer con cada ficha.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE <sha>, 963 tests backend, 199 vitest, 64 e2e.
+- Tests nuevos: ninguno (docs).
+- Verificacion manual: `grep -nE "[0-9]+ tests" README.md` vacio; diff de 3 lineas, CRLF intacto, arbol alineado.
+- OMC: plan=— · revisión=— · verificación=— (Diseno)
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (Implementacion)
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (Revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+
+### Riesgos y lo que no entra
+
+Ninguno: solo `README.md`. `docs/roadmap.md` (historia) no se toca.
+
+### Como probarlo en 2 minutos
+
+```powershell
+Select-String -Path README.md -Pattern '[0-9]+ tests'   # sin resultados
+git diff origin/dev...origin/claude/equipo-dev/87-readme-con-conteos-de-tests-viejos -- README.md
+```
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -36,11 +77,11 @@ git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --
 
 ## Criterios de aceptacion
 
-- [ ] `grep -nE "[0-9]+ tests" README.md` no devuelve conteos de la suite
+- [x] `grep -nE "[0-9]+ tests" README.md` no devuelve conteos de la suite
       (se sacan o se cambian por una descripcion sin numero: "Corre la suite",
       "tests (parser, metricas, agregados, coach, API)", "tests con vitest").
-- [ ] Ninguna otra linea del README cambia.
-- [ ] `check.sh` en verde.
+- [x] Ninguna otra linea del README cambia.
+- [x] `check.sh` en verde.
 
 ## Fuera de alcance
 
