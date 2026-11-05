@@ -75,7 +75,7 @@ como A10, E14, F15, F16, F17, S1 y S2 (epica nueva `posicionamiento`).
 A1 -> ficha 77, F16 -> ficha 78, G2 -> ficha 79, S1 -> ficha 80.
 Reconciliado el 2026-11-05 (sesion 20261105T1759Z-cCJ5erc) contra `dev`
 4a1aa8e: A1 (77), F16 (78), K10 (76), G7 (68, solo el `won=None`), R2 (75)
-y S1 (80) en dev; S2 -> ficha 89, D4 -> ficha 90, R3 -> ficha 91; nuevas S3
+y S1 (80) en dev; S2 -> ficha 89, D4 -> ficha 90, R3 -> ficha 91; nuevas S3,
 S4, E15 y O9.
 
 ## Epicas
