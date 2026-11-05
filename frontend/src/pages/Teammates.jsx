@@ -11,10 +11,12 @@ import {
   Loading,
   Panel,
   SideChip,
+  SinRondasFiltradas,
   Stat,
   fmt,
   pct,
 } from '../components/ui.jsx'
+import { vistaSinRondas } from '../tipoPartida.js'
 import { filasDeGrupo, textoHabituales } from '../grupo.js'
 import { MUESTRA_PARTIDAS } from '../margen.js'
 import { filasConPocaMuestra } from '../muestra.js'
@@ -35,7 +37,11 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   if (loading && !data) return <Loading />
 
   const base = overview.data?.overall
-  if (base && !base.rounds) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaSinRondas({ vacio: Boolean(base) && !base.rounds, filtros: filters, cargando: loading || overview.loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Compañeros" filtros={<Filters value={filters} onChange={setFilters} />} />
+  }
 
   const baseline = base?.winrate ?? null
   const rows = (data?.synergy || []).map((row) => ({
