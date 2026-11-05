@@ -1,7 +1,7 @@
 # 86. Duelos dice "0 rondas con estos filtros" con un filtro que tiene rondas pero ningun duelo
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T14:29Z
 rama: -
 tipo: bug
 epica: -

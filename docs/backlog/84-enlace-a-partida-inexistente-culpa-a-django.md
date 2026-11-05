@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T14:29Z
 rama: -
 tipo: bug
 epica: -
