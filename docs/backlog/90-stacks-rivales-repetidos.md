@@ -1,6 +1,6 @@
 # 90. Stacks rivales repetidos
 
-estado: implementado (espejo; la ficha vive en su rama)
+estado: revisado (espejo; la ficha vive en su rama)
 candado: -
 rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
