@@ -5,6 +5,7 @@ import { post, useApi } from '../api.js'
 import {
   DataTable,
   ErrorBox,
+  NoExiste,
   Loading,
   Panel,
   ResultChip,
@@ -21,11 +22,12 @@ import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
-  const { data, error, loading, reload } = useApi(`/matches/${id}/`)
+  const { data, error, status, loading, reload } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
   const [copia, setCopia] = useState(null)
   const [errorExclusion, setErrorExclusion] = useState(null)
 
+  if (status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
   if (!data) return null

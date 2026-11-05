@@ -8,6 +8,7 @@ import {
   Bar,
   DataTable,
   ErrorBox,
+  NoExiste,
   Loading,
   Panel,
   ResultChip,
@@ -24,8 +25,9 @@ const MUESTRA_MINIMA = 20
 
 export default function Jugador() {
   const { id } = useParams()
-  const { data, error, loading } = useApi(`/players/${id}/`)
+  const { data, error, status, loading } = useApi(`/players/${id}/`)
 
+  if (status === 404) return <NoExiste titulo="Ese jugador no existe" a="/companeros" texto="Ver tus compañeros" />
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
   if (!data) return null
