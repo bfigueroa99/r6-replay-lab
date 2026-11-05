@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T03:55Z
 rama: -
 tipo: funcionalidad
 epica: datos
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md G2; decision del humano del 2026-11-05 (POST nuevo permitido, local y con application/json, entra a la lista de CLAUDE.md al disenarse)
 archivos: backend/replays/models.py (+ migracion), backend/replays/views.py, backend/replays/analytics/aggregates.py, CLAUDE.md (lista de POST), docs/metricas.md, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Datos.jsx, frontend/e2e
-turnos: po 20261105T0230Z-c8Ahepa
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM
 
 ## PR
 
