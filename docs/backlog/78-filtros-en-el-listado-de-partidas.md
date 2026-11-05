@@ -1,8 +1,8 @@
 # 78. Filtros en el listado de Partidas
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack
