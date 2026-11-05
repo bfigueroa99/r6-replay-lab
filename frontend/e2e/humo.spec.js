@@ -891,6 +891,49 @@ test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }
   expect(errores).toEqual([])
 })
 
+test('Duelos con rondas pero sin duelos dice 0 duelos y no 0 rondas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // ficha 86: seed_demo no tiene un filtro con rondas y sin duelos; se vacian
+  // los duelos de la respuesta real y se dejan sus rondas tal cual
+  await page.route(
+    (url) => url.pathname === '/api/duels/',
+    async (route) => {
+      const respuesta = await route.fetch()
+      const json = await respuesta.json()
+      expect(json.rounds).toBeGreaterThan(0)
+      await route.fulfill({
+        response: respuesta,
+        json: {
+          ...json,
+          totals: { kills: 0, deaths: 0, duels: 0, winrate: null },
+          nemesis: [],
+          operators: [],
+          rivals: [],
+        },
+      })
+    },
+  )
+  await page.goto('/duelos')
+  await expect(page.locator('h1')).toHaveText('Duelos')
+  // sin filtros puestos no hay "estos filtros" ni Limpiar del que hablar
+  await expect(page.locator('.page-head p')).toHaveText('0 duelos')
+  await expect(page.getByText('Hay rondas importadas, pero en ninguna mataste a un rival')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  // con un filtro la barra se queda y el texto habla de el
+  // se espera la respuesta filtrada: con la vieja en pantalla el texto ya
+  // cambia, y el test terminaria con la ruta interceptada en vuelo
+  const filtrada = page.waitForResponse((r) => new URL(r.url()).searchParams.get('side') === 'Attack')
+  await page.getByLabel('Lado').selectOption({ index: 1 })
+  await filtrada
+  await expect(page.locator('.page-head p')).toHaveText('0 duelos con estos filtros')
+  await expect(page.getByText('Hay rondas con estos filtros, pero en ninguna mataste a un rival')).toBeVisible()
+  await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Limpiar' })).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+  expect(errores).toEqual([])
+})
+
 test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/coach')

@@ -365,3 +365,22 @@ class RivalesRepetidosTests(TestCase):
                 respuesta = self.client.get(f"/api/duels/?min_matches={valor}")
                 self.assertEqual(respuesta.status_code, 200)
                 self.assertIn("rivals", respuesta.json())
+
+
+class RondasSinDuelosTests(TestCase):
+    """Ficha 86: Duelos necesita las rondas para no decir "0 rondas" cuando las hay."""
+
+    def test_la_api_de_duelos_cuenta_las_rondas_aunque_no_haya_duelos(self):
+        club = make_match(map_name="Club House", index=0)
+        rnd = make_round(club, 0)
+        make_round_player(rnd, operator="Zofia")
+        make_round_player(rnd, username="rival", is_me=False, team_index=1, side="Defense")
+        make_event(rnd, 0, ME, "rival")
+
+        bank = make_match(map_name="Bank", index=1)
+        make_round_player(make_round(bank, 0), kills=0, died=False)
+
+        data = self.client.get("/api/duels/?map=bank").json()
+        self.assertEqual(data["rounds"], 1)
+        self.assertEqual(data["totals"]["duels"], 0)
+        self.assertEqual(self.client.get("/api/duels/").json()["rounds"], 2)
