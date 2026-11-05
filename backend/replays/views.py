@@ -387,6 +387,9 @@ def duels(request: HttpRequest) -> JsonResponse:
     return _ok(
         {
             "totals": agg.duel_totals(**filters),
+            # Fuera de `totals` porque ese dict lo comparte el coach; sin las
+            # rondas la pagina no distingue "filtro vacio" de "rondas sin duelos".
+            "rounds": agg.base_queryset(**filters).count(),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
