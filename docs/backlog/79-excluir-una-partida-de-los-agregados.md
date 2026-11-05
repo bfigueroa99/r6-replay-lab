@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 13:03 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -479,6 +479,55 @@ compara.
 OMC: plan=APPROVE (ronda 2; ronda 1 ITERATE: guardia estatica imposible por `_me_ids` y `etiquetas_de_mapas(incluir_excluidas)`, resueltas) · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1303Z-ciG2Prg, sobre dev 696c79d.)
+
+Quedo todo el tramo 1 del diseno, con la 78 ya en dev:
+
+- `Match.excluded` + migracion `0005_match_excluded` (solo `AddField`, default False);
+  `make_match(excluded=)`; comentario en `ingest.py` (no va en `defaults`).
+- `aggregates.py`: `rondas_contables`, `partidas_contables(incluir_excluidas=)` y
+  `_mia_en_la_ronda` antes de `base_queryset`; cada fila del inventario del diseno
+  (base_queryset, rating_baseline, comebacks, by_margin, matches_summary, by_stack,
+  `_MI_EQUIPO`, kills_by_time, etiquetas_de_mapas con kwarg, `_sessions_raw`).
+  `match_queryset` (de la 78) arranca de `partidas_contables(incluir_excluidas=True)`.
+- `views.py`: `match_exclude` (415 -> 404 -> 400, `update` para no tocar
+  `parsed_at`), docstring de `_es_json`, `filter_options` y `_opciones_de_mapa`
+  contables, `excluded` en listado y detalle, detalle completo con
+  `RoundPlayer.objects.filter(is_me=True, round__match=match)`. Ruta `match-exclude`.
+- `MatchDetail.jsx`: boton "Excluir de mis números" / "Volver a contarla", aviso,
+  chip "excluida", error en `<span className="note">` sin consola.
+- e2e `partidas-excluidas.spec.js`: 203/29 -> 196/28 -> 203/29, consola limpia.
+- `CLAUDE.md` (POST nuevo + regla de raices contables) y `docs/metricas.md`
+  (intro + Sesiones), con los textos exactos del diseno.
+
+Tests (`test_excluir_partida.py`, 20): todos los del diseno, mas
+`test_la_partida_x_cambia_los_numeros` y `..._el_csv_por_partida` (control: la X
+mueve cada ruta comparada importante, si no la comparacion seria vacia) y
+`test_la_guardia_ve_una_consulta_raiz_sin_helper`. Mutaciones probadas a mano:
+volver `_sessions_raw`, `rating_baseline` o `by_stack.mia` a `RoundPlayer/Match.objects`
+hace fallar la comparacion y la guardia.
+
+Desvios del diseno:
+- La guardia estatica de `RoundPlayer` mira `is_me=True` (o no constante False) y no
+  cualquier `is_me`: `teammate_synergy`, `by_stack.companeros` y `rounds_vs_operator`
+  usan `is_me=False` (los otros de tus rondas), correlacionados con una raiz contable.
+- El e2e espera `networkidle` antes de salir del Inicio: un `goto` mientras el
+  Inicio pide coach/tendencias/filtros aborta esas requests y `vigilarConsola` las
+  cuenta (primer rojo de este turno).
+
+Revision ciega (omc-code-reviewer, eje estandares): aprobar, 0 CRITICAL/HIGH/MEDIUM,
+5 LOW. Arreglado: el control del test cubria pocas rutas. No arreglados, a proposito:
+CLAUDE.md cambia en el mismo PR (autorizado el 2026-11-05; va en un parrafo del PR);
+Partidas filtrada por `?session=` no muestra la excluida (previsto en el diseno,
+"coherente y no se cambia"); el chip en Partidas es la ficha 83; con todas las
+partidas excluidas, Tendencias/Compañeros/Duelos muestran el empty state de "sin
+replays" (caso extremo, anotado para la 83).
+
+Verificacion: verificar.sh VERDE 8b3ee9d (973 tests backend, 186 vitest, 60 e2e).
+
+Skills: no aplica (el repo ya tiene el patron de columna, POST y e2e).
+OMC: plan=— · revisión=5 hallazgos LOW (1 arreglado) · verificación=—
 
 ## Revision
 
