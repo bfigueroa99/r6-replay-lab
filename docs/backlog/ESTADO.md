@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 03:30 UTC por dev (sesiones 20261105T0320Z-c1h4kUt y 20261105T0320Z-cg1CseZ; motivo: por estado: 1 disenado, lugar en cola; sin trabajo: la 77 la reclamo otra sesion dev en el mismo minuto)
-playbook: origin/dev@2da1b7d (al arrancar; dev ahora en fb431f7)
+actualizado: 2026-11-05 03:45 UTC por dev (sesion 20261105T0320Z-cNojwdB; motivo: por estado: 1 disenado, lugar en cola)
+playbook: origin/dev@fb431f7
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
 
@@ -9,14 +9,14 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| (vacia: la 75 y la 76 ya estan en dev) | | | | |
+| claude/equipo-dev/77-selector-de-tipo-de-partida | docs/backlog/77-selector-de-tipo-de-partida.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/77-selector-de-tipo-de-partida?expand=1) |
 
-COLA=0/4  TOTAL=0/6
-RESUMEN propuesto=5 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+COLA=1/4  TOTAL=1/6
+RESUMEN propuesto=5 disenado=1 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
 
 ## Orden de merge sugerido
 
-Nada abierto: la 76 entro a dev (fb431f7, [PR #76](https://github.com/bfigueroa99/r6-replay-lab/pull/76)) despues de fusionar la 75 (7a87ddc).
+1. `claude/equipo-dev/77-selector-de-tipo-de-partida`: es la unica rama; no choca con dev (fb431f7).
 
 ## Alcance
 
@@ -32,7 +32,7 @@ Nada abierto: la 76 entro a dev (fb431f7, [PR #76](https://github.com/bfigueroa9
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 77-selector-de-tipo-de-partida | en curso (rama claude/equipo-dev/77-selector-de-tipo-de-partida, dev 20261105T0320Z-cNojwdB) | funcionalidad | temporada-y-modo | 2 | frontend | - |
+| 77-selector-de-tipo-de-partida | implementado (rama claude/equipo-dev/77-selector-de-tipo-de-partida; falta revisor) | funcionalidad | temporada-y-modo | 2 | frontend | - |
 | 78-filtros-en-el-listado-de-partidas | propuesto | funcionalidad | revision-de-rondas | 2 | fullstack | - |
 | 79-excluir-una-partida-de-los-agregados | propuesto | funcionalidad | datos | 3 | fullstack | - |
 | 80-donde-quedas-fuera-de-posicion | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
@@ -40,14 +40,14 @@ Nada abierto: la 76 entro a dev (fb431f7, [PR #76](https://github.com/bfigueroa9
 | 82-partida-sin-rondas-rompe-el-detalle | propuesto | bug | - | 3 | frontend | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-5 `propuesto` (81 y 82 son bugs de la QA), 1 `disenado` (77). Proximo disparo: Release de la 76 si sigue `entregado` sin merge (regla 1); despues Dev para la 77 y Arquitecto para 78-80 y 82. Idea para el PO (de la 77): Coach, Operadores, Compañeros, Duelos y Tendencias con 0 rondas filtradas muestran "Todavía no hay replays importados" y esconden la barra de filtros; la 77 solo lo arregla en el Inicio. Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `was_traded`/`untraded_death` solo en tu fila (compañeros y rivales salen con 0 sin trade en "Trades por equipo" de la demo; QA 75), `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
+5 `propuesto` (81 y 82 son bugs de la QA); la 77 esta `implementado` en su rama. Proximo disparo: Revisor de la 77 (en otra sesion), despues Arquitecto para 78-80 y 82. Idea para el PO (de la 77): Coach, Operadores, Compañeros, Duelos y Tendencias con 0 rondas filtradas muestran "Todavía no hay replays importados" y esconden la barra de filtros; la 77 solo lo arregla en el Inicio (su `Dashboard.jsx` mira tambien `overview.data.filters` para no confundir una respuesta vieja con la base vacia: las otras paginas necesitan lo mismo). Candidatos anotados por turnos anteriores, todavia sin ficha: `seed_demo` con `was_traded`/`untraded_death` solo en tu fila (compañeros y rivales salen con 0 sin trade en "Trades por equipo" de la demo; QA 75), `seed_demo` con `opening_kill`/`opening_death`/`entry_kill` coherentes con sus eventos (72), singular "1 baja / 1 muerte" y aviso "Copiado" (66), detalles de `DeltaLado` (65), `seed_demo` siembra Ranked 4-3 que la regla no cierra (68), `retag` imprime las filas del ID entero por cada nombre viejo (73, cosmetico).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-05 03:13 | (mismo turno que la QA 20261105T0256Z-c25s1Gw) Entrega y mergea la 76: `aprobado` -> `entregado` -> [PR #76](https://github.com/bfigueroa99/r6-replay-lab/pull/76) -> dev fb431f7. Fusiono dev 7a87ddc (con la 75) sin conflictos; puerta a-f cumplida, `verificar.sh` VERDE 2e1d5b8af (917 backend, 162 vitest, 56 e2e). Corrigio el orden de Verificar en el PC (migrate antes de recompute). Espejo quitado de `backlog`. Borrar la rama: el clasificador nego `git push --delete` (queda en `BORRAR`). Antes, release cFRtPBc (03:30): mergea la 75 (PR #75). |
-| dev | 2026-11-05 03:30 | Sin trabajo (sesiones c1h4kUt y cg1CseZ, misma causa): fue a reclamar la 77 y la rama ya existia, reclamada a las 03:21 por la sesion dev cNojwdB (P8); no queda otra `disenado` y los `propuesto` esperan al Arquitecto. cg1CseZ ademas barrio los 17 GET de la API con unos 100 parametros invalidos sobre `seed_demo` (dev fb431f7): 0 respuestas 500, ningun bug nuevo que fichar. Sin pushes de codigo. Antes: Implementa 76 (funcionalidad p3, `disenado` -> `implementado`, 574ecce): columna `RoundPlayer.opening_kill_traded` marcada en `annotate_trades`, migracion 0004 desde `Event.traded`, `recompute` la rehace, desglose de 8 claves en `overview.overall` y panel "Aperturas que pesan" en el Resumen; fila en `metricas.md`. 20 tests backend nuevos, 3 vitest, 1 e2e. Revision ciega: aprobar, 3 LOW (1 arreglado). `verificar.sh` VERDE fe66a2de0 (902 backend, 156 vitest, 55 e2e). (Otra sesion dev implemento la 75 a las 02:35.) |
+| dev | 2026-11-05 03:45 | Implementa 77 (funcionalidad p2, `disenado` -> `implementado`, d6d794d): un `<select>` "Tipo" reemplaza al checkbox "Solo ranked" (la logica pura esta en `tipoPartida.js`). El Inicio con filtros y 0 rondas ya no esconde la barra. Ademas, al limpiar, el EmptyState ya no aparece un instante por la respuesta vieja, que hacia volver a montar la barra (lo encontro la revision ciega y lo medi en Chromium). 5 tests backend, 8 vitest y 1 e2e. Revision ciega: aprobar, 3 LOW (1 arreglado). `verificar.sh` VERDE d6d794df6 (922 backend, 170 vitest, 57 e2e). Antes, dev c1h4kUt y cg1CseZ (03:30): sin trabajo, la 77 ya estaba reclamada. |
 | revisor | 2026-11-05 03:05 | Pedido (`rol: revisor`, sesiones en paralelo; la 75 la tomo otra sesion). Revisa 76 (funcionalidad p3, `implementado` -> `revisado`, efaf61a). Rama fusionada con dev 2da1b7d; `verificar.sh` VERDE (909 backend, 156 vitest, 55 e2e). Revision a ciegas en tres ejes (estandares, intencion, seguridad): aprobar, 3 LOW; suma 2 tests de borde de *perdida vengada*; e2e sin aperturas devueltas por limite de `seed_demo` y una frase sobre el teamkill vengado por tu equipo en `metricas.md` quedan anotados. Proximo: QA de la 76 en otra sesion. Tambien, revisor 20261105T0247Z-cQMp2TZ (02:54): revisa 75 (funcionalidad p2, `implementado` -> `revisado`, f8028cc). Rama fusionada con dev 2da1b7d; `verificar.sh` VERDE (895 backend, 159 vitest, 55 e2e). Revision a ciegas en dos ejes (estandares, intencion): aprobar, 2 LOW; suma un test de que el panel suma `untraded_death` tal cual. Proximo: QA de la 75 en otra sesion. |
 | qa | 2026-11-05 03:13 | Prueba 76 (`revisado` -> `aprobado`, OMC PASS): `verificar.sh` VERDE c4c687fe6; migracion 0004 sobre base con esquema de dev en 0,39 s, 0 de 1330 filas difieren de `recompute`; `curl /api/overview/` con 16 combinaciones de filtros en base vacia y sembrada; Chromium sin errores; chunk +0,6 %; 4 de 5 mutaciones caen. Hubo tres sesiones QA en paralelo: el candado de la 76 lo piso otra y lo devolvio (b5dd15c). Antes, qa cFRtPBc (03:30): prueba 75. |
 | arquitecto | 2026-11-05 02:51 | Pedido (`rol: arquitecto`, sesiones en paralelo). Disena 77 (`propuesto` -> `disenado`): el backend ya filtra `match_type`, asi que es frontend + tests de contrato; el selector "Tipo" reemplaza al checkbox "Solo ranked" (la API sigue aceptando `ranked_only`), logica pura en `tipoPartida.js`; el Inicio filtrado a 0 rondas deja de mostrar el vacio sin barra; e2e con `/api/filters/` interceptado (seed_demo no se toca). Implementar despues de la 76 (`Dashboard.jsx`, `humo.spec.js`). Sin pushes de codigo. |
