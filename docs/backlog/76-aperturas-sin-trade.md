@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
-estado: aprobado
-candado: release 2026-11-05T03:06Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
@@ -9,11 +9,56 @@ area: backend
 prioridad: 3
 fuente: idea K10 de `ALCANCE.md` (Investigador 2026-11-03); [Siege.GG, rating rebalance](https://siege.gg/blog/946-player-rating-rebalance) (2026-08-11, "we are now only factoring in an extra weight on opening kills that were not traded"; "players are not penalized extra for going in first, only to die and have their deaths traded"). En `dev` bcdbdf5 `RoundPlayer` guarda `opening_kill`, `opening_death` y `was_traded`; `docs/metricas.md:160-171` define Duelos de apertura sin distinguir trades
 archivos: backend/replays/models.py, backend/replays/migrations/0004_roundplayer_opening_kill_traded.py, backend/replays/analytics/metrics.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py, frontend/src/aperturasTrade.js, frontend/src/aperturasTrade.test.js, frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, backend/tests/test_aperturas_trade.py, backend/tests/test_recompute.py, backend/tests/test_ingest.py, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E, revisor 20261105T0247Z-cw2xCMP, qa 20261105T0256Z-c25s1Gw
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E, revisor 20261105T0247Z-cw2xCMP, qa 20261105T0256Z-c25s1Gw, release 20261105T0256Z-c25s1Gw
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][backend] Aperturas que pesan: las que no te devolvieron y las que nadie vengo`
+
+### Que cambia
+
+El Inicio suma, debajo de la grilla de KPIs, el panel *Aperturas que pesan*: de tus aperturas ganadas, cuantas quedaron limpias y cuantas te devolvieron (el equipo de tu victima te mato dentro de la ventana de trade), y de las perdidas, cuantas vengo tu equipo y cuantas no, con el winrate de ronda de cada grupo. `GET /api/overview/` trae las 8 claves nuevas en `overall` y respeta los filtros de siempre. El Rating y los CSV no cambian.
+
+### Por que esto y no otra cosa
+
+Ficha 76, idea K10 de `ALCANCE.md` (epica `impacto`), de la rebalanceada del rating de Siege.GG (solo pesan las aperturas no tradeadas). Definicion: la marca `traded` del evento, la misma del timeline (respuesta del humano 2026-11-05: opcion a). Descartado: derivarla al consultar con `Exists` (rompe "se calcula al importar"), la letra con `death_clock` (contradice el timeline) y meterla en `AGGREGATES` (8 columnas mas en los CSV).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE c4c687fe6, 909 tests backend, 156 vitest, 55 e2e (QA, sobre `dev` 2da1b7d fusionado; despues solo commits de la ficha).
+- Tests nuevos: `tests/test_aperturas_trade.py` (22: borde exacto de la ventana para devuelta y vengada, ventana corta, teamkill, victima fuera de los jugadores, ronda que abre con Death, reset de la marca; API con las cuatro filas que suman las crudas, filtro de lado, `null` sin muestra, CSV y Rating sin cambios; `recompute` llena, dry-run, idempotente; migracion y coincidencia con `recompute`), invariante en `test_ingest.test_datos_coherentes`, vitest `aperturasTrade.test.js` (3) y e2e `el Resumen muestra las aperturas que pesan`.
+- Manual (QA): base con esquema de `dev` + `seed_demo` + siembra sintetica, `migrate` (0,39 s) y `recompute`: 0 de 1330 filas difieren entre migracion y recompute. `curl /api/overview/` con 16 combinaciones de filtros y bordes en base vacia y sembrada: 200, la suma cierra siempre. Chromium: panel visible, consola limpia. Chunk inicial +0,6 %. 4 de 5 mutaciones caen (la que sobrevive es casi equivalente).
+- OMC: diseno plan=APPROVE · implementacion revisión=3 hallazgos (1 arreglado) · revision revisión=3 hallazgos LOW (1 arreglado con tests) · QA verificación=PASS.
+
+### Riesgos y lo que no entra
+
+Migracion `0004_roundplayer_opening_kill_traded` (AddField + RunPython que copia `Event.traded` del primer Kill, sin abrir `.rec`) y campo nuevo en `recompute`: en la base real, migrar antes de correr `recompute`. Queda limpia una apertura si moriste en la ventana por teamkill, por un Death sin autor o si la victima no figura entre los jugadores; un teamkill de apertura vengado por tu propio equipo queda devuelto. Fuera: peso de la apertura en el Rating (P10), el corte por operador o mapa, clutches silenciosos (K11).
+
+### Como probarlo en 2 minutos
+
+```bash
+cd backend
+python manage.py migrate
+python manage.py test tests.test_aperturas_trade tests.test_recompute
+python manage.py runserver
+# http://127.0.0.1:8000/  -> panel "Aperturas que pesan" debajo de los KPIs
+# http://127.0.0.1:8000/api/overview/?side=Attack  -> overall.opening_kills_clean + opening_kills_traded == opening_kills
+```
+
+### Verificar en el PC
+
+Base real, en `backend/`: respaldo desde Ajustes; `python manage.py recompute --dry-run`
+(anotar N); `python manage.py migrate` (anotar cuanto tarda); `python manage.py recompute
+--dry-run` otra vez (si el primero dio 0, tiene que dar 0). En el Inicio, limpias +
+devueltas == aperturas ganadas y vengadas + sin vengar == perdidas, con y sin filtro de lado.
+
+### Para el humano
+
+Nada (la pregunta de la apertura devuelta quedo respondida el 2026-11-05).
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -27,11 +72,11 @@ muestre.
 
 ## Criterios de aceptacion
 
-- [ ] Apertura ganada *limpia*: tienes `opening_kill` y no moriste dentro de `TRADE_WINDOW_SECONDS` despues de esa baja (reloj del feed, el mismo que usa `traded`). Apertura perdida *vengada*: `opening_death` y `was_traded`. Se calcula al importar (regla de `CLAUDE.md`: las metricas se calculan al importar) y `manage.py recompute` llena lo ya importado. Test por cada caso, con borde exacto en la ventana.
-- [ ] `GET /api/overview/` devuelve en `total` `opening_kills_clean`, `opening_deaths_traded` y el winrate de ronda de las cuatro filas (ganada limpia, ganada devuelta, perdida vengada, perdida sin vengar); `null` sin muestra. Respeta los filtros de siempre.
-- [ ] Las cuatro filas suman las aperturas crudas (`opening_kills` y `opening_deaths`): test que lo afirma.
-- [ ] El Inicio (`Dashboard.jsx`) lo muestra junto a la tarjeta de Aperturas que ya existe, sin tarjeta nueva en la grilla de arriba (subtitulo o panel debajo, lo decide el Arquitecto); el e2e lo ve con `seed_demo`.
-- [ ] Fila nueva en `docs/metricas.md`, en *Duelos de apertura*. El Rating no cambia (cambiar su definicion es P10).
+- [x] Apertura ganada *limpia*: tienes `opening_kill` y no moriste dentro de `TRADE_WINDOW_SECONDS` despues de esa baja (reloj del feed, el mismo que usa `traded`). Apertura perdida *vengada*: `opening_death` y `was_traded`. Se calcula al importar (regla de `CLAUDE.md`: las metricas se calculan al importar) y `manage.py recompute` llena lo ya importado. Test por cada caso, con borde exacto en la ventana.
+- [x] `GET /api/overview/` devuelve en `total` `opening_kills_clean`, `opening_deaths_traded` y el winrate de ronda de las cuatro filas (ganada limpia, ganada devuelta, perdida vengada, perdida sin vengar); `null` sin muestra. Respeta los filtros de siempre.
+- [x] Las cuatro filas suman las aperturas crudas (`opening_kills` y `opening_deaths`): test que lo afirma.
+- [x] El Inicio (`Dashboard.jsx`) lo muestra junto a la tarjeta de Aperturas que ya existe, sin tarjeta nueva en la grilla de arriba (subtitulo o panel debajo, lo decide el Arquitecto); el e2e lo ve con `seed_demo`.
+- [x] Fila nueva en `docs/metricas.md`, en *Duelos de apertura*. El Rating no cambia (cambiar su definicion es P10).
 
 ## Fuera de alcance
 
@@ -40,283 +85,28 @@ por mapa (otra ficha si rinde); clutches silenciosos (K11).
 
 ## Diseno
 
-Plan por consenso (receta 1 de OMC, modo deliberado: migracion + `recompute`),
-APPROVE en la ronda 1 con las correcciones del architect y del critic ya
-absorbidas. Referencias sobre `dev` bcdbdf5.
-
-**Lectura del criterio 2:** `overview()` devuelve `overall`
-(`aggregates.py:278`); "en `total`" de la ficha es `overall` (`total` es la
-variable de `Dashboard.jsx:32`).
-
-### Decisiones
-
-1. **Definicion: el trade del evento, no la letra de la ficha.**
-   - *Ganada devuelta*: tienes `opening_kill` y el primer `Kill` de la ronda
-     (que es tu apertura) quedo `traded` (el equipo de tu victima te mato
-     dentro de `TRADE_WINDOW_SECONDS`; gap == ventana cuenta, igual que
-     `annotate_trades`, `metrics.py:76-79`). *Ganada limpia*: `opening_kill`
-     sin esa marca.
-   - *Perdida vengada*: `opening_death` y `was_traded`. *Perdida sin vengar*:
-     `opening_death` y no `was_traded` (un `Death` sin autor de apertura cae
-     siempre aca).
-   - Por que: es la misma marca "tradeada" que ya muestra el timeline (la
-     ronda no puede decir tradeada y el Inicio limpia), coincide con Siege.GG
-     ("opening kills that were not traded") y la migracion la llena exacta.
-   - Diferencias con la letra ("no moriste dentro de la ventana"), que van a
-     `metricas.md` y a `## Para el humano`: la apertura queda **limpia** si
-     moriste dentro de la ventana (a) por teamkill, (b) por un `Death` sin
-     autor, o (c) si la victima no figura entre los jugadores
-     (`metrics.py:71-73`, `victim_team is None`). En 5v5 fuera de esos casos
-     las dos lecturas dan lo mismo.
-2. **Columna nueva `RoundPlayer.opening_kill_traded`** (opcion A). Descartadas:
-   derivar al consultar con `Exists` (rompe "se calcula al importar" y mete
-   una subconsulta correlacionada en `overview`); la letra con `death_clock`
-   (habria que guardar el reloj de la apertura y contradice el timeline). Se
-   elige la columna, ademas, porque es robusta ante una baja repetida sobre la
-   misma victima (rareza de r6-dissect), donde la autounion de `RoundPlayer`
-   divergeria.
-3. **Agregados: dict aparte, solo en `overview()["overall"]`.** No va en
-   `AGGREGATES`: no cambian los CSV de `export.py` (columnas = union de
-   claves) ni `_fold` (`aggregates.py:1764`). Tampoco en `totals()`.
-4. **UI: panel debajo de la grilla `.kpis` del Inicio**, antes de
-   `ResumenPartidas` (`Dashboard.jsx:84-86`): el `sub` de la tarjeta de la
-   `:65` no tiene lugar para 4 conteos con 4 winrates.
-5. **`seed_demo` no cambia.** Ahi toda fila con `opening_kill` sobrevive
-   (`seed_demo.py:229-240`, `indice%6==0` implica `murio=False`) y ninguna
-   `opening_death` esta tradeada: el e2e ve limpias == aperturas ganadas y
-   "—" en el winrate de devueltas y vengadas. Los casos con datos los cubre
-   el backend.
-
-### Claves (las fijan API, vitest y e2e)
-
-En `overall`: `opening_kills_clean`, `opening_kills_traded`,
-`opening_deaths_traded`, `opening_deaths_untraded` (conteos) y
-`winrate_opening_kill_clean`, `winrate_opening_kill_traded`,
-`winrate_opening_death_traded`, `winrate_opening_death_untraded` (`_pct`,
-`null` sin muestra). Alias internos `won_opening_kill_clean` etc. Cuidado con
-la `s`: `opening_kill_traded` es el campo y `opening_kills_traded` el alias;
-ningun alias puede repetir un nombre de campo (`aggregates.py:158`).
-
-### Plan
-
-1. **Modelo, regla, migracion.**
-   - `backend/replays/models.py:145-150`: `opening_kill_traded =
-     models.BooleanField(default=False)` con comentario del por que.
-   - `backend/replays/analytics/metrics.py`: linea en el docstring de
-     definiciones (`:9-19`). En `annotate_trades` (`:51`): en el reset,
-     `m["opening_kill_traded"] = False`; al final, si `kill_events` y
-     `kill_events[0]["traded"]` y `metrics.get(actor, {}).get("opening_kill")`,
-     True. Vale porque `opening_kill` solo existe si `death_events[0]` es un
-     Kill (`:320-324`), y entonces es `kill_events[0]`. El dict base de
-     `analyse_round` (`:307`) suma `"opening_kill_traded": False`.
-   - `backend/replays/ingest.py:261`: pasar el campo.
-   - `backend/replays/migrations/0004_roundplayer_opening_kill_traded.py`:
-     AddField + `RunPython(llenar, noop)`, estilo `0003`. `llenar`: UPDATE
-     `pk__in` de las filas con `opening_kill=True` cuyo primer `Event`
-     `kind="Kill"` por `order` tiene `traded=True` y `actor_name == username`
-     (Subquery). Copia el estado que dejo `annotate_trades` en `Event.traded`
-     (no hay ventana persistida: es la que estaba en `settings` al importar o
-     al ultimo `recompute`); no recalcula trades ni abre `.rec`.
-2. **Recompute** (`backend/replays/recompute.py`): `"opening_kill_traded"` en
-   `CAMPOS` (`:40`); `"opening_kill": p.opening_kill` en el dict de
-   `:65-74` (sin eso recompute pone todas en False sin error: pre-mortem 1);
-   docstring del modulo y `help` del comando.
-3. **Agregados y API** (`backend/replays/analytics/aggregates.py`): dict
-   `APERTURAS_CON_TRADE` junto a `AGGREGATES` y `desglose_aperturas(qs) ->
-   dict` con las 8 claves; `overview()` hace `overall.update(desglose_aperturas(qs))`
-   sobre el mismo `qs` filtrado (una consulta mas). `attack`/`defense` no cambian.
-4. **UI y docs.**
-   - `frontend/src/aperturasTrade.js` (modulo nuevo; `aperturas.js` ya existe
-     y es de las marcas del timeline, con `casosApertura.json`: no se toca):
-     `filasDeAperturasConTrade(overall)` -> 4 filas `{key, label, rondas, winrate}`
-     en orden Ganada limpia, Ganada devuelta, Perdida vengada, Perdida sin
-     vengar; claves ausentes (backend viejo) dan `null`.
-   - `frontend/src/pages/Dashboard.jsx`: `<Panel title="Aperturas que pesan"
-     hint="Si tu apertura sobrevivió al trade y si tu equipo vengó la que perdiste.">`
-     con `DataTable` (Apertura / Rondas / Ganadas %), `rowKey` = `key`.
-   - `docs/metricas.md`, seccion *Duelos de apertura* (`:160-171`): fila
-     **Aperturas limpias, devueltas y vengadas** con la definicion de la
-     decision 1, el borde, los tres casos (a)(b)(c), que las cuatro filas
-     suman las crudas y que el Rating no cambia.
-5. **Tests.**
-   - Unit, `backend/tests/test_aperturas_trade.py` (con `round_data(gap)` de
-     `tests/test_recompute.py:18`): `test_apertura_devuelta_en_el_borde_exacto_de_la_ventana`
-     (gap 3.0, ventana 3.0 -> True), `test_apertura_limpia_si_la_venganza_llega_pasada_la_ventana`
-     (3.01 -> False), `test_achicar_la_ventana_saca_la_apertura_devuelta`,
-     `test_ronda_que_abre_con_death_no_marca_apertura_devuelta`,
-     `test_solo_el_autor_de_la_apertura_queda_marcado`,
-     `test_morir_por_teamkill_en_la_ventana_no_devuelve_la_apertura`,
-     `test_victima_fuera_de_los_jugadores_deja_la_apertura_limpia`,
-     `test_teamkill_de_apertura_vengado_por_el_equipo_queda_devuelto`.
-   - Integracion: `test_las_cuatro_filas_suman_las_aperturas_crudas` (en
-     `/api/overview/`), `test_el_desglose_respeta_el_filtro_de_lado`,
-     `test_sin_muestra_el_winrate_es_null`,
-     `test_el_csv_de_mapas_no_trae_columnas_nuevas`,
-     `test_el_rating_no_cambia_con_la_apertura_devuelta`; en
-     `tests/test_ingest.py` `test_datos_coherentes` (`:96`) suma el invariante
-     `opening_kill_traded => opening_kill` y que coincide con `Event.traded`
-     del primer Kill.
-   - Recompute (`tests/test_recompute.py`): `test_recompute_llena_la_apertura_devuelta_de_lo_ya_importado`,
-     `test_recompute_dry_run_no_escribe_la_apertura_devuelta`,
-     `test_recompute_de_apertura_devuelta_es_idempotente`.
-   - Migracion (patron `tests/test_clutch.py:249`):
-     `test_la_migracion_llena_la_apertura_devuelta_desde_los_eventos` (Kill
-     tradeado marca, no tradeado no, ronda que abre con Death y ronda sin
-     jugadores no la tumban) y `test_migracion_y_recompute_coinciden`:
-     siguiendo `test_recompute.py:233-235`, primero `recompute()` (las
-     fabricas `kills=1, died=True` no cuadran con los eventos), despues
-     `update(opening_kill_traded=False)`, `llenar(apps, None)` y recien ahi
-     `recompute(dry_run=True).players_changed == 0`.
-   - Vitest, `frontend/src/aperturasTrade.test.js`: `da cuatro filas en orden`,
-     `sin muestra el winrate queda en null`, `sin claves nuevas no rompe`.
-   - e2e, `frontend/e2e/humo.spec.js`: `el Resumen muestra las aperturas que
-     pesan`: panel visible; "Ganada limpia" con el mismo conteo que
-     `opening_kills` (leido de `/api/overview/` o del KPI "Duelos de
-     apertura"); "Perdida sin vengar" con su conteo igual a `opening_deaths`;
-     "Ganada devuelta" con "—" de winrate; consola limpia.
-
-**Orden:** 1, 2, tests unit/recompute/migracion, 3 + integracion, 4 +
-vitest + e2e, `npm run build`, `check.sh` completo.
-
-**Pre-mortem:** (1) recompute borra las devueltas si falta `opening_kill` en
-su dict: lo frenan los tests de recompute y de coincidencia. (2) meterlo en
-`AGGREGATES` por comodidad: CSV con 8 columnas mas; lo frena el test del CSV.
-(3) base real con `Event.traded` de una ventana vieja (cambiada sin
-recompute): la migracion copia ese estado, coherente con el `was_traded` que
-ya se muestra; `recompute` alinea las dos cosas.
-
-**Que puede romperse:** migracion sobre la base real (UPDATE con Subquery,
-sin tiempo medido); `recompute` (campo nuevo en `CAMPOS`); build. No se
-mueven Rating, CSV ni numeros de `seed_demo`.
-
-**Verificacion manual / Verificar en el PC (base real):** respaldo desde
-Ajustes; `python manage.py recompute --dry-run` (anotar N); `migrate`
-(anotar cuanto tarda); `recompute --dry-run` otra vez: si el primero dio 0,
-el segundo tiene que dar 0 (si sube, migracion y regla discrepan: es bug);
-si el primero dio N>0, correr `recompute` y seguir. En el Inicio, limpias +
-devueltas == aperturas ganadas de la tarjeta y vengadas + sin vengar ==
-perdidas, con y sin filtro de lado.
+Columna `RoundPlayer.opening_kill_traded`, marcada en `annotate_trades` cuando `kill_events[0]` queda `traded` y su autor tiene `opening_kill`; migracion `0004` la llena desde `Event.traded`; `recompute` la rehace (`CAMPOS` y `opening_kill` en su dict). Desglose `APERTURAS_CON_TRADE` aparte de `AGGREGATES`, solo en `overview()["overall"]`. Panel debajo de la grilla `.kpis` del Inicio. `seed_demo` sin cambios. Detalle completo, decisiones y pre-mortem en `git log` de esta rama.
 
 Skills: no aplica (panel y tabla que el repo ya resuelve; migracion con precedente `0003`).
 OMC: plan=APPROVE · revisión=— · verificación=—
 
 ## Implementacion
 
-2026-11-05 (dev 20261105T0220Z-cPG9p3E). Todo el diseno, sin desvios de fondo.
+(dev 20261105T0220Z-cPG9p3E) Diseno entero. Desvio menor: sin muestra la celda de winrate muestra un solo "—". Revision ciega: aprobar, 3 LOW (1 arreglado).
 
-- **Regla:** `annotate_trades` resetea `opening_kill_traded` y la marca si
-  `kill_events[0]` quedo `traded` y su autor tiene `opening_kill`
-  (`metrics.py`); `analyse_round` la suma al dict base; `ingest.py` la guarda.
-- **Columna y migracion:** `RoundPlayer.opening_kill_traded`; `0004` hace
-  AddField + `RunPython(llenar)` que anota el primer `Kill` por `order`
-  (autor y `traded`, dos Subquery) sobre las filas con `opening_kill` y hace
-  UPDATE por lotes de 500 `pk`. No recalcula trades ni abre `.rec`.
-- **Recompute:** campo en `CAMPOS` y `opening_kill` en el dict; docstrings
-  del modulo y del comando al dia.
-- **API:** `APERTURAS_CON_TRADE` + `desglose_aperturas(qs)` en
-  `aggregates.py`, solo en `overview()["overall"]` (8 claves del diseno).
-  No entra en `AGGREGATES`: CSV y Rating sin cambios (tests).
-- **UI:** `frontend/src/aperturasTrade.js` (`filasDeAperturasConTrade`, con
-  `orden` para la tabla) y panel *Aperturas que pesan* debajo de la grilla de
-  KPIs del Resumen. Desvio menor: sin muestra la celda de winrate muestra un
-  solo "—" (no barra vacia + "—").
-- **Docs:** fila *Aperturas limpias, devueltas y vengadas* en
-  `docs/metricas.md`, *Duelos de apertura*.
-- **Tests:** `backend/tests/test_aperturas_trade.py` (20: unit con borde
-  exacto, ventana, teamkill, victima fantasma, Death de apertura; API con
-  suma de las cuatro filas, filtro de lado, null, CSV, Rating; recompute
-  llena, dry-run, idempotente, ventana corta; migracion y coincidencia con
-  recompute). Agregado `test_annotate_trades_resetea_la_marca` y
-  `test_recompute_con_ventana_corta_saca_la_apertura_devuelta`.
-  `test_ingest.test_datos_coherentes` suma el invariante contra
-  `Event.traded`. Vitest `aperturasTrade.test.js` (3). e2e
-  `el Resumen muestra las aperturas que pesan` (lee `/api/overview/`).
-- **Revision ciega** (omc-code-reviewer via general-purpose, el tipo omc no
-  esta registrado en la sesion): aprobar, 3 LOW. Arreglado: el invariante de
-  `test_ingest` falla con mensaje si no hay Kill. Sin cambio: el test de la
-  migracion usa el registro de apps actual (mismo patron que `0003` en
-  `test_clutch.py`); el e2e depende de que `seed_demo` no tenga aperturas
-  devueltas (comentado en el test).
-- `verificar.sh`: VERDE fe66a2de0, 902 tests backend, 156 vitest, 55 e2e.
-
-Skills: no aplica (el Arquitecto ya lo dijo; nada fuera del repo).
+Skills: no aplica.
 OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
 ## Revision 2026-11-05 sobre 6cb03c4
 
-Revisor 20261105T0247Z-cw2xCMP. Rama fusionada con `origin/dev` 2da1b7d (sin conflictos;
-dev no trae otra migracion `0004`). Revision a ciegas en tres ejes (omc-code-reviewer de
-estandares, omc-code-reviewer de intencion contra la ficha, omc-security-reviewer por
-tocar `ingest.py` y una migracion de datos; los tres via general-purpose con el cuerpo del
-agente): los tres `aprobar`, sin CRITICAL ni HIGH. Confirmado por el lider:
-
-- [test] [LOW] `backend/tests/test_aperturas_trade.py`: el borde exacto de la ventana
-  estaba probado solo para *ganada devuelta*, no para *perdida vengada* (criterio 1 pide
-  borde por caso). **Agregados por el Revisor** (pasan):
-  `test_apertura_perdida_vengada_en_el_borde_exacto_de_la_ventana` (gap 3.0, ventana 3.0)
-  y `test_apertura_perdida_sin_vengar_si_la_venganza_llega_pasada_la_ventana` (3.01).
-- [test] [LOW] `frontend/e2e/humo.spec.js`: `seed_demo` no tiene aperturas devueltas ni
-  vengadas, asi que el e2e no veria las claves de esas dos filas cruzadas en
-  `Dashboard.jsx`; lo cubre el vitest de `aperturasTrade.js`. Limite del seed (cambiarlo
-  mueve numeros de otras pruebas): sin cambio.
-- [formato] [LOW] `docs/metricas.md`, fila *Aperturas limpias, devueltas y vengadas*: no
-  dice que un teamkill de apertura que tu propio equipo venga cuenta como *ganada devuelta*
-  (lo fija `test_teamkill_de_apertura_vengado_por_el_equipo_queda_devuelto`). Arreglo
-  sugerido: una frase en la fila. No bloquea; a `## Para el humano` ya estaba anotado.
-- Sin hallazgos de seguridad: migracion solo con ORM (Subquery, `pk__in` por lotes de
-  500), `/api/overview/` sigue de lectura, sin red ni dependencias.
-
-Ficha: los 5 criterios cubiertos por tests (unit con borde, API con suma de las cuatro
-filas, filtro de lado y null, CSV y Rating sin cambios, recompute, migracion, vitest, e2e).
-El diff no sale de `archivos:` (la migracion, `factories` sin tocar). Fila en
-`metricas.md` presente. Identificadores sin tildes, UI con tildes, sin `print` ni
-`console.log`. Los asserts nuevos de `test_ingest.py` corren solo con `.rec` reales
-(skip en la nube): la regla igual la prueban los tests sinteticos.
-
-Veredicto: **aprobar** -> `revisado`.
+(revisor 20261105T0247Z-cw2xCMP) Tres ejes a ciegas (estandares, intencion, seguridad): aprobar, sin CRITICAL ni HIGH. Corregido: borde exacto de *perdida vengada* (2 tests agregados). Aceptados LOW: el e2e no ve devueltas ni vengadas (limite de `seed_demo`, lo cubre vitest); `metricas.md` no dice que un teamkill de apertura vengado por tu equipo cuenta como devuelta (esta en el PR).
 
 Skills: no aplica.
 OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado con tests) · verificación=—
 
 ## QA 2026-11-05 sobre c4c687f
 
-QA 20261105T0256Z-c25s1Gw. Rama ya fusionada con `origin/dev` 2da1b7d. `S` = scratchpad de la sesion;
-`SQLITE_PATH` y `R6_ENV_FILE` apuntan ahi (nada de `.sqlite3` ni `.env` al repo).
-
-- **check.sh completo:** `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
-  -> `VERDE c4c687fe6 en 112s: 909 tests backend, 156 vitest, 55 e2e. Todo en verde.`
-- **Migracion sobre esquema de dev:** `git worktree add $S/wt-dev origin/dev`; ahi
-  `manage.py migrate`, `seed_demo` (29 partidas) y una siembra con `tests/factories.py`
-  (`$S/sembrar_76.py`: apertura tradeada por eventos, apertura limpia, apertura perdida
-  vengada, ronda sin bajas). En la rama, `manage.py migrate` -> `Applying
-  replays.0004_roundplayer_opening_kill_traded... OK` en 0,39 s; marca 1 fila (la ronda
-  tradeada, `BearF99`). Copia + `manage.py recompute` (988 filas: `seed_demo` no cuadra
-  con sus eventos, ya conocido) y `recompute --dry-run` -> "Nada que recalcular".
-  `opening_kill_traded` migracion vs recompute: **0 de 1330 filas difieren**;
-  `opening_kill_traded=1 AND opening_kill=0`: 0 filas. Nota: `recompute --dry-run` antes de
-  `migrate` falla con `no such column` (como cualquier columna nueva: migrar primero).
-- **API** (`runserver` con base vacia y con la sembrada; `curl /api/overview/<q>`): `""`,
-  `?until=foo`, `?page=-1`, `?side=`, `?side=Attack`, `?side=Defense`, `?map=Border`,
-  `?map=border`, `?map=0`, `?map=NoExiste`, `?days=99999999999`, `?since=2026-13-40`,
-  `?match_type=Ranked`, `?operator=Zofia`, `?site=`, `?map=border&side=Attack`: todos 200,
-  logs sin Traceback. Vacia: 4 conteos en 0 y 4 winrates `null`. Sembrada sin filtro:
-  limpias 16 + devueltas 1 = `opening_kills` 17; vengadas 1 + sin vengar 27 =
-  `opening_deaths` 28; winrates 62,5 / 100 / 0 / 48,1. Attack 9+1=10 y 1+13=14; Defense
-  7+0=7 con `winrate_opening_kill_traded: null`. La suma cierra en los 16 casos.
-- **UI** (Chromium con playwright sobre la base sembrada): panel *Aperturas que pesan*
-  debajo de la grilla, tabla Ganada limpia 16 63 % / Ganada devuelta 1 100 % / Perdida
-  vengada 1 0 % / Perdida sin vengar 27 48 %; consola limpia. Base vacia: el EmptyState de
-  siempre (`Dashboard.jsx:34`), sin panel.
-- **Bundle:** chunk inicial de `vite build` 188,91 kB (dev) -> 190,12 kB (+0,6 %).
-- **Mutaciones** (`manage.py test tests.test_aperturas_trade`): quitar la marca en
-  `annotate_trades` -> 8 fallas; quitar `opening_kill` del dict de `recompute` -> 4
-  fallas; `won=False` en `won_opening_kill_traded` -> 1 falla; vitest con la clave de
-  winrate de *Perdida vengada* cambiada -> 1 falla. Sobrevive quitar `autor == username`
-  en la migracion: casi equivalente (solo son candidatas las filas `opening_kill=True` y
-  el autor del primer Kill es ese jugador salvo datos incoherentes). LOW, sin cambio.
-- **omc-verifier:** PASS, los 5 criterios VERIFIED.
-
-Veredicto: **aprobado**.
+(qa 20261105T0256Z-c25s1Gw) Detalle completo en `git log` de esta rama (commit `Prueba: 76 aperturas sin trade`). `verificar.sh` VERDE c4c687fe6 (909 backend, 156 vitest, 55 e2e). Migracion sobre base con esquema de `dev`: OK en 0,39 s; 0 de 1330 filas difieren de `recompute`; invariante `opening_kill_traded => opening_kill` sin violaciones. `curl /api/overview/` con 16 combinaciones (incluidas `until=foo`, `page=-1`, `since=2026-13-40`, `map=NoExiste`) en base vacia y sembrada: 200, suma cerrada. Chromium: panel y consola limpia. Chunk inicial +0,6 %. Mutaciones: 4 de 5 caen; sobrevive quitar `autor == username` en la migracion (casi equivalente, LOW). omc-verifier PASS, 5 criterios VERIFIED. Veredicto: aprobado.
 
 Skills: no aplica.
 OMC: plan=— · revisión=— · verificación=PASS
