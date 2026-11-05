@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
 estado: con hallazgos
-candado: -
+candado: dev 2026-11-05T15:48Z
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 4
 fuente: QA 20261105T0418Z-cq6Wet6, prueba de bordes sobre dev ed39632 con `seed_demo` y Chromium. `frontend/src/components/ui.jsx:236` (`ErrorBox`) trata todo error como API caida; `backend/config/urls.py:35` (`re_path(r"^(?P<path>.*)$", spa)`) tambien atrapa `/api/<ruta desconocida>`
 archivos: backend/config/urls.py, backend/replays/views.py, backend/tests/test_api.py, backend/tests/test_player.py, frontend/src/api.js, frontend/src/api.test.js, frontend/src/components/ui.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A, revisor 20261105T1521Z-c41wXWJ
+turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A, revisor 20261105T1521Z-c41wXWJ, dev 20261105T1547Z-cLk3BF3
 
 ## PR
 
