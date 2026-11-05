@@ -1,7 +1,7 @@
 # 78. Filtros en el listado de Partidas
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T04:18Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -266,6 +266,55 @@ es un dominio nuevo).
 OMC: plan=— · revisión=— · verificación=— (ficha chica de una forma obvia: sin consenso)
 
 ## Implementacion
+
+(dev 20261105T0418Z-cQaYMkM)
+
+Quedo el diseno completo, en el orden del diseno:
+
+- `models.py`: `RESULTADOS` y `filtro_resultado` junto a `match_result`, con el
+  mismo orden de decision (incompleta por `won=None` antes que empate).
+- `aggregates.match_queryset`, debajo de `base_queryset`; ignora lado,
+  operador y sitio. `match_list` lo usa con `_filters(request)` y suma el
+  `filtro_resultado`; un `result` desconocido se ignora.
+- `frontend/src/partidas.js` (+ `partidas.test.js`, 9 tests con los nombres
+  del diseno). `Filters.jsx` gana `showSide`, `hayExtra` y `children`, con
+  defaults que dejan igual a las demas paginas. `Matches.jsx` con la barra
+  sin Lado ni Operador, con Sesion, el selector Resultado local, la pagina
+  derivada de la clave de filtros y la nota "Ninguna partida con estos
+  filtros" sin `Panel` ni `.empty-state`.
+- `backend/tests/test_filtros_de_partidas.py`: los 11 tests del diseno mas
+  `test_match_queryset_filtra_el_mapa_e_ignora_el_lado`.
+- e2e `Partidas filtra por resultado y por mapa` en `humo.spec.js`.
+
+**Desvio: arreglo en `useApi` (`frontend/src/api.js`).** El primer `check.sh`
+dio rojo en el e2e nuevo: con "Derrota" elegida la tabla seguia mostrando
+las 29 victorias. La traza mostro que la API respondio bien (`total: 0`);
+el problema era `useApi`, que compartia un solo `alive` (useRef) entre
+requests: si la respuesta de "Victoria" llegaba despues de la de "Derrota",
+veia la bandera prendida por la request nueva y pisaba sus datos. Es un bug
+previo que afecta a toda pagina que cambie filtros rapido (Inicio, Coach,
+etc.). Ahora cada efecto tiene su propia bandera `vigente`. El e2e suma un
+paso que demora la respuesta de "Victoria" con `page.route` hasta que
+"Derrota" ya respondio: con el `api.js` de `origin/dev` falla
+(`humo.spec.js:896`, la nota no aparece) y con el arreglo pasa. Los pasos
+del e2e esperan la respuesta (`waitForResponse`) y no solo la request.
+
+Revision ciega (`omc-code-reviewer`, revision.md): aprobar, 2 LOW.
+- Docstring de `match_queryset` prometia el mismo conteo que el Resumen: no es
+  cierto con operador o sitio puestos. Corregido.
+- "Limpiar" aparece en Partidas si viene un Lado puesto desde otra pagina,
+  con el subtitulo "importadas": no se cambio, es lo que el diseno decide
+  ("Filtros arrastrados desde otra pagina", Limpiar borra tambien lo que
+  Partidas no muestra). Queda para el Revisor/QA si lo ven confuso.
+
+Sin migracion, sin `recompute`, sin fila en `metricas.md` (cuenta partidas).
+`grep "api/matches/?" backend/tests`: ningun test existente manda `days` ni
+`since`.
+
+Verificacion: verificar.sh VERDE 0d12c3602 (934 tests backend, 179 vitest, 58 e2e).
+
+Skills: no aplica (dominio que ya existe en el repo).
+OMC: plan=— · revisión=2 hallazgos (1 arreglado) · verificación=—
 
 ## Revision
 
