@@ -361,6 +361,35 @@ test('el detalle de una partida muestra la matriz de duelos', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('el detalle de una partida muestra los trades por equipo', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Trades por equipo', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(2)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Tu equipo')
+  await expect(filas.nth(1).locator('td').first()).toHaveText('Rival')
+
+  // Los numeros salen de la misma respuesta que pinta la pagina: la tabla
+  // tiene que mostrar las muertes y las sin trade de cada equipo tal cual.
+  const id = page.url().match(/\/partidas\/(\d+)$/)[1]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  for (const [i, lado] of [[0, 'mine'], [1, 'rival']]) {
+    const celdas = filas.nth(i).locator('td')
+    await expect(celdas.nth(1)).toHaveText(String(detalle.team_trades[lado].deaths))
+    await expect(celdas.nth(3)).toHaveText(String(detalle.team_trades[lado].untraded_deaths))
+  }
+  await expect(panel.getByText(/^Tu equipo dejó \d+ muertes? sin trade; el rival, \d+\.$/)).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
