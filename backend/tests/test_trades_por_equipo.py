@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from django.test import TestCase
 
-from .factories import make_match, make_round, make_round_player
+from .factories import ME, make_event, make_match, make_round, make_round_player
 
 
 class TradesPorEquipoTests(TestCase):
@@ -97,7 +97,8 @@ class TradesPorEquipoTests(TestCase):
         # solo se suma, no se recalcula nada mirando los eventos.
         rnd = make_round(self.match, 0)
         make_round_player(rnd, kills=0, died=True)  # was_traded=False -> untraded_death=True
-        make_round_player(rnd, username="mate", is_me=False, kills=0, died=False)
+        make_round_player(rnd, username="mate", is_me=False, kills=1, died=False)
+        make_event(rnd, 0, "mate", ME)  # el companero te mata: teamkill
         trades = self._detalle()["team_trades"]
         self.assertEqual(trades["mine"]["untraded_deaths"], 1)
         self.assertEqual(trades["mine"]["untraded_pct"], 100.0)

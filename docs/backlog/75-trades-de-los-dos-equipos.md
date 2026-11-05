@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T02:15Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
@@ -128,6 +128,22 @@ Skills: no aplica (tabla y panel que el repo ya resuelve con `DataTable` y `Pane
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+2026-11-05 (dev 20261105T0215Z-cVoFB5j). Diseno completo, sin desvios de fondo.
+
+- Backend: `_trades_por_equipo(rounds, my_team_index)` en `replays/views.py`, junto a `_match_scoreboard`; recorre las rondas ya armadas (cero queries) y `match_detail` devuelve `team_trades: {mine, rival}` con `deaths`, `traded_deaths`, `untraded_deaths`, `trade_kills`, `untraded_pct`.
+- Frontend: `src/tradesEquipo.js` (`filasTradesEquipo`, `textoTradesEquipo`) y el panel "Trades por equipo" en `MatchDetail.jsx`, entre la matriz y el scoreboard. `DataTable` sin orden por clic (siempre Tu equipo arriba), fila `me` en tu equipo, `chip win` en la celda del que sale mejor (menos sin trade, menor %, mas trade kills). Sin CSS nuevo, sin `csvName`.
+- Tests backend (`tests/test_trades_por_equipo.py`): `test_trades_por_equipo_suma_cada_equipo`, `test_trades_por_equipo_cuadra_con_el_scoreboard`, `test_trades_por_equipo_usa_el_equipo_de_cada_ronda`, `test_sin_tu_fila_vale_el_equipo_de_la_partida`, `test_sin_muertes_el_porcentaje_es_null`, `test_un_teamkill_cuenta_como_ya_lo_guarda_el_import` (con evento Kill de un companero), `test_traded_sin_muerte_no_descuadra`.
+- Vitest (`src/tradesEquipo.test.js`): los cuatro del diseno mas dos de la nota.
+- e2e (`humo.spec.js`): `el detalle de una partida muestra los trades por equipo`: dos filas, muertes y sin trade de cada una iguales a `team_trades` de `/api/matches/<id>/` (no numeros fijos de `seed_demo`), la nota y consola limpia.
+- `docs/metricas.md`, seccion Trades: fila **Trades por equipo**.
+
+Criterios: 1 -> suma_cada_equipo + usa_el_equipo_de_cada_ronda; 2 -> cuadra_con_el_scoreboard; 3 -> teamkill + traded_sin_muerte; 4 -> e2e; 5 -> metricas.md.
+
+Desvio menor: la revision ciega marco (MEDIUM) que con un `team_index` que cambie entre rondas el panel (por ronda, como pide el criterio 1) y el scoreboard (agrupa por indice y lo etiqueta con el de la partida) no cuadrarian. Se dejo la logica por ronda que pide la ficha y `metricas.md` lo dice explicito; en `seed_demo` y en partidas normales el indice es fijo y cuadran. Hallazgo LOW sin cambio: el test de cuadratura no puede comparar `traded_deaths` con el scoreboard porque el scoreboard no tiene esa columna.
+
+Skills: no aplica (lo resuelven `DataTable` y `Panel`).
+OMC: plan=— · revisión=3 hallazgos (2 arreglados) · verificación=—
 
 ## Revision
 
