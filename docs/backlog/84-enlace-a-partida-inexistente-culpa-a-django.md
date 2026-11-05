@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
-estado: implementado
-candado: revisor 2026-11-05T16:06Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 4
 fuente: QA 20261105T0418Z-cq6Wet6, prueba de bordes sobre dev ed39632 con `seed_demo` y Chromium. `frontend/src/components/ui.jsx:236` (`ErrorBox`) trata todo error como API caida; `backend/config/urls.py:35` (`re_path(r"^(?P<path>.*)$", spa)`) tambien atrapa `/api/<ruta desconocida>`
 archivos: backend/config/urls.py, backend/replays/views.py, backend/tests/test_api.py, backend/tests/test_player.py, frontend/src/api.js, frontend/src/api.test.js, frontend/src/components/ui.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Jugador.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A, revisor 20261105T1521Z-c41wXWJ, dev 20261105T1547Z-cLk3BF3
+turnos: qa 20261105T0418Z-cq6Wet6, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1455Z-c4eLe1A, revisor 20261105T1521Z-c41wXWJ, dev 20261105T1547Z-cLk3BF3, revisor 20261105T1605Z-csxB8d1
 
 ## PR
 
@@ -222,6 +222,53 @@ Veredicto: corregir (el HIGH: un e2e intermitente deja `check.sh` en rojo; Princ
 Skills: no aplica
 OMC: plan=— · revisión=2 hallazgos (0 arreglados; HIGH confirmado reproduciendo, LOW leyendo el codigo; seguridad 0) · verificación=—
 
+## Revision 2026-11-05 sobre 48e989a (segunda pasada)
+
+(revisor 20261105T1605Z-csxB8d1; rama mezclada con dev 0861b0b en 48e989a, sin conflictos.)
+
+Revision a ciegas: `omc-code-reviewer` (estandares) aprobar con 3 LOW;
+`omc-security-reviewer` (vista POST `player_ubisoft`, `@csrf_exempt` en
+`api_no_existe`) aprobar, 0 hallazgos: la vista atrapa-todo no lee ni escribe
+ni refleja la ruta, va despues del `include` asi que los POST reales siguen
+con su chequeo de `application/json`, y en `player_ubisoft` el orden
+JSON -> 404 -> `configurado()` se mantiene (el test no sale a la red).
+
+Los dos hallazgos de la primera pasada quedaron resueltos: el HIGH (e2e
+intermitente) con `waitForLoadState('networkidle')`, y `check.sh` completo
+paso en verde; el LOW de `status` con `setStatus(null)` en el efecto.
+
+Criterios: los cuatro cubiertos por test (backend `test_api.py` y
+`test_player.py`, vitest `api.test.js`, e2e de no existe y de API caida). El
+diff no sale de `archivos:`; sin numeros nuevos (sin fila en `metricas.md`);
+identificadores sin tildes, UI con tildes; sin `print` ni `console.log`.
+`verificar.sh`: VERDE 48e989a3a (960 tests backend, 199 vitest, 64 e2e).
+
+Hallazgos (todos LOW, no bloquean):
+
+- [bug] LOW frontend/src/api.js:69 (`useApi`)
+  Que pasa: al pasar de un id con 404 a otro id sin desmontar la pagina,
+  `status` vuelve a `null` pero `error` conserva "404 Not Found en ...", asi
+  que mientras carga se ve el `ErrorBox` ("Revisa que Django esté
+  corriendo") un instante.
+  Por que es cierto: confirmado leyendo el codigo; el efecto limpia `status`
+  y no `error`, y la pagina mira `if (error)` antes que `loading`. Dificil de
+  alcanzar (el enlace de `NoExiste` lleva a una lista y desmonta), y el error
+  que persiste mientras carga ya pasaba antes de este cambio.
+  Arreglo sugerido: `setError(null)` junto al `setStatus(null)` del efecto.
+- [test] LOW `frontend/src/api.test.js`: nada prueba la transicion de `status`
+  en `useApi` (solo `get`). Un e2e de 404 a id valido sin recarga lo cubriria.
+- [estilo] LOW `frontend/e2e/humo.spec.js` `networkidle`: hoy estable (no hay
+  polling sin importacion activa); si se vuelve fragil,
+  `page.waitForResponse('**/api/filters/**')`.
+
+Veredicto: aprobar -> `revisado`. Los LOW quedan en `## Para el humano` de la
+ficha.
+
+Skills: no aplica
+OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados; el Revisor no arregla; seguridad 0) · verificación=—
+
 ## QA <fecha> sobre <sha>
 
 ## Pendiente
+
+- 2026-11-05 (revisor 20261105T1605Z-csxB8d1): LOW sin arreglar, no bloquean: `useApi` no limpia `error` al cambiar de path (un instante de "Revisa que Django esté corriendo" al ir de un id inexistente a uno valido sin desmontar); arreglo de una linea, `setError(null)` en el efecto.
