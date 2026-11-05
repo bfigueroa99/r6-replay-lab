@@ -160,7 +160,7 @@ export default function MatchDetail() {
                   },
                   { key: 'operator', label: 'Operador', left: true },
                   { key: 'kills', label: 'K' },
-                  { key: 'died', label: 'Murio', render: (row) => (row.died ? 'si' : 'no') },
+                  { key: 'died', label: 'Murio', render: (row) => (row.died ? 'sí' : 'no') },
                   { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
                   {
                     key: 'death_elapsed',
@@ -359,10 +359,10 @@ const myTeam = (round) => {
 }
 
 const CONDITIONS = {
-  KilledOpponents: 'eliminacion del equipo rival',
+  KilledOpponents: 'eliminación del equipo rival',
   DefusedBomb: 'bomba plantada y detonada',
   DisabledDefuser: 'defuser desactivado',
-  Time: 'se acabo el tiempo',
+  Time: 'se acabó el tiempo',
   ObjectiveOrTime: 'objetivo o tiempo',
   '': 'sin determinar',
 }
