@@ -2912,6 +2912,107 @@ def opening_timing(**filters) -> dict:
     return salida
 
 
+#: Cortes de las fases de la ronda, en segundos jugados de la fase de accion.
+#: 30 es el mismo corte de "sales muy temprano" y de la apertura temprana; 120
+#: deja el ultimo minuto de los 180 s como cierre. No se usa el 90 de
+#: `APERTURA_TARDIA`: ese habla de cuando llega la primera baja, no de en que
+#: momento de la ronda se pelea.
+FASE_MEDIA = APERTURA_TEMPRANA
+FASE_TARDIA = 120
+
+FASES = (
+    ("temprano", "Temprano (<30 s)", 0, FASE_MEDIA),
+    ("medio", "Medio (30–120 s)", FASE_MEDIA, FASE_TARDIA),
+    ("tarde", "Tarde (120 s o más)", FASE_TARDIA, None),
+)
+
+
+def _fase_de(elapsed: float) -> str:
+    if elapsed < FASE_MEDIA:
+        return "temprano"
+    if elapsed < FASE_TARDIA:
+        return "medio"
+    return "tarde"
+
+
+def fases_de_partida(rondas: list[dict], my_team_index: int) -> dict:
+    """Bajas de cada equipo en temprano, medio y tarde, y rondas dominadas por fase.
+
+    Recibe las rondas ya armadas de `match_detail` (cero queries). "Tu equipo"
+    se lee por ronda desde tu fila, como en Trades por equipo. El feed nombra
+    por nick: si un nick se repitiera en los dos equipos de una ronda (no
+    deberia pasar), el dict se queda con la ultima fila.
+    """
+    claves = [clave for clave, *_ in FASES]
+    bajas = {clave: Counter() for clave in claves}
+    rondas_por_fase = {clave: Counter() for clave in claves}
+    untimed = unknown = teamkills = 0
+
+    for ronda in rondas:
+        jugadores = ronda["players"]
+        yo = next((p for p in jugadores if p["is_me"]), None)
+        mio = yo["team_index"] if yo else my_team_index
+        equipo = {p["username"]: p["team_index"] for p in jugadores}
+        en_ronda = {clave: Counter() for clave in claves}
+        for evento in ronda["events"]:
+            # Un Death sin autor no es baja de ningun equipo.
+            if evento["kind"] != "Kill":
+                continue
+            # elapsed 0 es "sin reloj" (el feed no trajo el segundo), no el segundo 0.
+            if not evento["elapsed"]:
+                untimed += 1
+                continue
+            autor = equipo.get(evento["actor"])
+            victima = equipo.get(evento["target"])
+            if autor is None:
+                unknown += 1
+                continue
+            if victima is not None and autor == victima:
+                teamkills += 1
+                continue
+            lado = "mine" if autor == mio else "rival"
+            fase = _fase_de(evento["elapsed"])
+            bajas[fase][lado] += 1
+            en_ronda[fase][lado] += 1
+
+        gano = ronda["my_team_won"]
+        if gano is None:
+            continue
+        for fase, cuenta in en_ronda.items():
+            if cuenta["mine"] > cuenta["rival"]:
+                rondas_por_fase[fase]["ahead"] += 1
+                rondas_por_fase[fase]["ahead_won"] += bool(gano)
+            elif cuenta["rival"] > cuenta["mine"]:
+                rondas_por_fase[fase]["behind"] += 1
+                rondas_por_fase[fase]["behind_won"] += bool(gano)
+
+    filas = []
+    for clave, etiqueta, inicio, fin in FASES:
+        r = rondas_por_fase[clave]
+        filas.append(
+            {
+                "key": clave,
+                "label": etiqueta,
+                "start": inicio,
+                "end": fin,
+                "mine": bajas[clave]["mine"],
+                "rival": bajas[clave]["rival"],
+                "rounds_ahead": r["ahead"],
+                "rounds_ahead_won": r["ahead_won"],
+                "rounds_ahead_winrate": _pct(r["ahead_won"], r["ahead"]),
+                "rounds_behind": r["behind"],
+                "rounds_behind_won": r["behind_won"],
+                "rounds_behind_winrate": _pct(r["behind_won"], r["behind"]),
+            }
+        )
+    return {
+        "rows": filas,
+        "untimed_kills": untimed,
+        "unknown_team_kills": unknown,
+        "teamkills": teamkills,
+    }
+
+
 # --------------------------------------------------------------------- jugador
 
 

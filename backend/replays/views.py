@@ -570,6 +570,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
             "team_trades": team_trades,
+            "phases": agg.fases_de_partida(rounds, match.my_team_index),
             "my_totals": my_totals,
         }
     )

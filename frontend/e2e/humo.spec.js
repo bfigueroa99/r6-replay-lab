@@ -396,6 +396,36 @@ test('el detalle de una partida muestra los trades por equipo', async ({ page })
   expect(errores).toEqual([])
 })
 
+test('el detalle de una partida muestra las fases de la ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Temprano (<30 s)')
+  await expect(filas.nth(2).locator('td').first()).toHaveText('Tarde (120 s o más)')
+
+  // Las bajas de cada fase son las de la misma respuesta que pinta la pagina
+  const id = page.url().match(/\/partidas\/(\d+)$/)[1]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  for (let i = 0; i < 3; i++) {
+    const celdas = filas.nth(i).locator('td')
+    await expect(celdas.nth(1)).toHaveText(String(detalle.phases.rows[i].mine))
+    await expect(celdas.nth(2)).toHaveText(String(detalle.phases.rows[i].rival))
+  }
+  // seed_demo no tiene bajas antes de los 30 s: temprano queda en cero en toda partida
+  await expect(filas.nth(0).locator('td').nth(1)).toHaveText('0')
+  await expect(filas.nth(0).locator('td').nth(2)).toHaveText('0')
+
+  expect(errores).toEqual([])
+})
+
 test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo no tiene partidas sin rondas: se toma una y se le vacia el detalle
@@ -416,6 +446,10 @@ test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) =
   // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
   await expect(rondas.locator('.round-tab')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Scoreboard de la partida', exact: true })).toBeVisible()
+  const fases = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(fases).toContainText('Esta partida no tiene bajas con reloj entre equipos.')
 
   expect(errores).toEqual([])
 })

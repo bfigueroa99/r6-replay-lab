@@ -19,6 +19,7 @@ import { marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
+import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -213,6 +214,13 @@ export default function MatchDetail() {
         <TradesPorEquipo teamTrades={data.team_trades} />
       </Panel>
 
+      <Panel
+        title="Fases de la ronda"
+        hint="Bajas de cada equipo según el momento de la ronda, y cómo terminaron las rondas en que un equipo dominó esa fase."
+      >
+        <FasesDeLaRonda phases={data.phases} />
+      </Panel>
+
       <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las métricas derivadas.">
         <DataTable
           columns={[
@@ -297,6 +305,43 @@ function TradesPorEquipo({ teamTrades }) {
         rowKey={(row) => row.key}
         rowClass={(row) => (row.key === 'mine' ? 'me' : '')}
         empty="Esta partida no trae trades por equipo."
+      />
+      {nota ? <p className="note">{nota}</p> : null}
+    </>
+  )
+}
+
+function FasesDeLaRonda({ phases }) {
+  if (!hayBajas(phases)) {
+    return <p className="note">Esta partida no tiene bajas con reloj entre equipos.</p>
+  }
+  const nota = notaDeFases(phases)
+  // La celda del equipo que saco mas bajas en esa fase va resaltada
+  const resaltar = (lado) => (row) =>
+    row.mejor === lado ? <span className="chip win">{row[lado]}</span> : row[lado]
+  return (
+    <>
+      <DataTable
+        columns={[
+          { key: 'label', label: 'Fase', left: true, sortable: false },
+          { key: 'mine', label: 'Tu equipo', sortable: false, render: resaltar('mine') },
+          { key: 'rival', label: 'Rival', sortable: false, render: resaltar('rival') },
+          {
+            key: 'ganadasAdelante',
+            label: 'Rondas que dominaste (ganadas)',
+            sortable: false,
+            help: 'Rondas en que tu equipo sacó más bajas que el rival en esta fase, y cuántas ganaste.',
+          },
+          {
+            key: 'ganadasAtras',
+            label: 'Rondas que dominó el rival (ganadas)',
+            sortable: false,
+            help: 'Rondas en que el rival sacó más bajas en esta fase, y cuántas ganaste igual.',
+          },
+        ]}
+        rows={filasDeFases(phases)}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        rowKey={(row) => row.key}
       />
       {nota ? <p className="note">{nota}</p> : null}
     </>
