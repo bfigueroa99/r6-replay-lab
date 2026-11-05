@@ -1,8 +1,8 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/80-donde-quedas-fuera-de-posicion
 tipo: funcionalidad
 epica: posicionamiento
 area: fullstack
