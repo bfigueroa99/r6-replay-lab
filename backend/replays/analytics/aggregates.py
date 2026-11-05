@@ -1056,7 +1056,7 @@ def matches_summary(**filters) -> dict:
     ids = list(base_queryset(**filtros).values_list("round__match_id", flat=True).distinct())
     partidas = list(
         Match.objects.filter(id__in=ids)
-        .values("id", "map_slug", "map_name", "played_at", "won")
+        .values("id", "map_slug", "map_id", "map_name", "played_at", "won")
         .order_by("played_at", "id")
     )
     ganadas = sum(1 for p in partidas if p["won"] is True)
@@ -1064,16 +1064,26 @@ def matches_summary(**filters) -> dict:
     decididas = ganadas + perdidas
     rondas = RoundPlayer.objects.filter(is_me=True, round__match_id__in=ids).count()
 
-    # Por slug: las variantes de temporada de un mapa son el mismo mapa. Las
-    # partidas vienen en orden de fecha, asi el nombre queda el mas reciente.
-    por_mapa: dict[str, dict] = {}
+    # Por version (`slug`, `map_id`), como la pagina Mapas: un rework es otro
+    # layout. Un renombre dentro de la misma version no la parte, y como las
+    # partidas vienen en orden de fecha el nombre queda el mas reciente.
+    por_mapa: dict[tuple[str, int], dict] = {}
     for p in partidas:
         if p["won"] is None:
             continue
-        m = por_mapa.setdefault(p["map_slug"], {"slug": p["map_slug"], "matches": 0, "wins": 0})
-        m["map"] = p["map_name"]
+        m = por_mapa.setdefault(
+            (p["map_slug"], p["map_id"]),
+            {"slug": p["map_slug"], "map_id": p["map_id"], "matches": 0, "wins": 0},
+        )
+        m["map_name"] = p["map_name"]
         m["matches"] += 1
         m["wins"] += 1 if p["won"] else 0
+    # `etiquetas_de_version` y no `etiquetas_de_mapas`: esa ordena por nombre
+    # y se quedaria con un nombre viejo en vez del mas reciente.
+    etiquetas = etiquetas_de_version(por_mapa.values())
+    for m in por_mapa.values():
+        del m["map_name"]
+        m["map"] = etiquetas[(m["slug"], m["map_id"])]
     candidatos = [
         {**m, "winrate": _pct(m["wins"], m["matches"])}
         for m in por_mapa.values() if m["matches"] >= MIN_PARTIDAS_MAPA
@@ -1325,7 +1335,8 @@ def trend_by_match(limit: int = 40, **filters) -> list[dict]:
     rows = []
     for raw in (
         qs.values(
-            "round__match_id", "round__match__played_at", "round__match__map_name"
+            "round__match_id", "round__match__played_at", "round__match__map_name",
+            "round__match__map_slug", "round__match__map_id",
         )
         .annotate(**AGGREGATES)
         .order_by("-round__match__played_at")[:limit]
@@ -1334,7 +1345,14 @@ def trend_by_match(limit: int = 40, **filters) -> list[dict]:
         row["match_id"] = row.pop("round__match_id")
         row["played_at"] = row.pop("round__match__played_at").isoformat()
         row["map"] = row.pop("round__match__map_name")
+        # `map_version` al final y no `map_id`: `map_id` esta entre las
+        # primeras columnas del CSV y moveria las que ya existen.
+        row["_version"] = (row.pop("round__match__map_slug"), row.pop("round__match__map_id"))
         rows.append(derive(row, baseline))
+    etiquetas = etiquetas_de_mapas({r["_version"][0] for r in rows})
+    for row in rows:
+        clave = row.pop("_version")
+        row["map_version"] = etiquetas.get(clave, row["map"])
     return list(reversed(rows))
 
 
@@ -1642,23 +1660,26 @@ def clutch_by_site(**filters) -> list[dict]:
     filas = (
         base_queryset(**filters)
         .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
-        .values("round__match__map_slug", "round__match__map_name", "round__site")
+        .values("round__match__map_slug", "round__match__map_id", "round__site")
         .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
     )
-    mapas: dict[str, dict] = {}
+    # Por version, como Mapas: un rework cambia los sitios aunque se llamen
+    # igual. Sin `map_name` en la agrupacion, asi un renombre no parte la fila.
+    filas = list(filas)
+    etiquetas = etiquetas_de_mapas({f["round__match__map_slug"] for f in filas})
+    mapas: dict[tuple[str, int], dict] = {}
     for f in filas:
-        mapa = mapas.setdefault(
-            f["round__match__map_slug"],
-            {"map": f["round__match__map_name"], "sitios": {}},
-        )
+        clave = (f["round__match__map_slug"], f["round__match__map_id"])
+        mapa = mapas.setdefault(clave, {"map": etiquetas.get(clave, clave[0]), "sitios": {}})
         sitio = mapa["sitios"].setdefault(f["round__site"], [0, 0])
         sitio[0] += f["attempts"]
         sitio[1] += f["won"]
 
-    def _fila(kind, slug, nombre, site, attempts, won):
+    def _fila(kind, clave, nombre, site, attempts, won):
         return {
             "kind": kind,
-            "slug": slug,
+            "slug": clave[0],
+            "map_id": clave[1],
             "map": nombre,
             "site": site,
             "attempts": attempts,
@@ -1668,14 +1689,14 @@ def clutch_by_site(**filters) -> list[dict]:
         }
 
     salida = []
-    for slug, mapa in sorted(mapas.items(), key=lambda par: (par[1]["map"], par[0])):
+    for clave, mapa in sorted(mapas.items(), key=lambda par: (par[1]["map"], par[0])):
         sitios = mapa["sitios"]
         # "Sin sitio" va ultima: no es un lugar del mapa al que volver a mirar
         orden = sorted(sitios.items(), key=lambda par: (par[0] == "", -par[1][0], par[0]))
         salida.append(
             _fila(
                 "map",
-                slug,
+                clave,
                 mapa["map"],
                 None,
                 sum(a for a, _ in sitios.values()),
@@ -1683,7 +1704,7 @@ def clutch_by_site(**filters) -> list[dict]:
             )
         )
         salida.extend(
-            _fila("site", slug, mapa["map"], site or "Sin sitio", a, w) for site, (a, w) in orden
+            _fila("site", clave, mapa["map"], site or "Sin sitio", a, w) for site, (a, w) in orden
         )
     return salida
 
@@ -2416,6 +2437,18 @@ def _resumen(qs, baseline, etiqueta: str) -> dict:
     return fila
 
 
+def _etiquetar_corte(filas: list[dict]) -> list[dict]:
+    """Pone en cada fila por version la etiqueta de Mapas.
+
+    Se agrupa por `(slug, map_id)` sin el nombre para que un renombre dentro de
+    la misma version no parta la fila entre los dos periodos.
+    """
+    etiquetas = etiquetas_de_mapas({f["slug"] for f in filas})
+    for f in filas:
+        f["map"] = etiquetas.get((f["slug"], f["map_id"]), f["slug"])
+    return filas
+
+
 def compare_periods(
     by: str = "matches",
     n: int = 10,
@@ -2483,13 +2516,15 @@ def compare_periods(
         "previous": fila_previa,
         "metrics": metricas,
         "min_rows": min_rows,
-        "by_map": _corte_por_periodo(
-            actual,
-            previo,
-            baseline,
-            ("round__match__map_slug", "round__match__map_name"),
-            ("slug", "map"),
-            min_rows,
+        "by_map": _etiquetar_corte(
+            _corte_por_periodo(
+                actual,
+                previo,
+                baseline,
+                ("round__match__map_slug", "round__match__map_id"),
+                ("slug", "map_id"),
+                min_rows,
+            )
         ),
         "by_operator": _corte_por_periodo(
             actual.exclude(operator=""),

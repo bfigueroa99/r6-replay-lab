@@ -8,6 +8,7 @@ from io import StringIO
 from django.test import TestCase
 
 from replays import export
+from replays.analytics import aggregates as agg
 
 from .factories import make_match, make_round, make_round_player
 
@@ -112,3 +113,24 @@ class VersionesDeMapaCsvTests(TestCase):
         filas = leer(response.content.decode("utf-8"))
         self.assertEqual(sorted(f["map"] for f in filas), ["Consulate (Y10)", "Consulate (Y7)"])
         self.assertEqual(sorted(f["map_id"] for f in filas), ["2609221242", "418126004176"])
+
+    def test_csv_de_partidas_dice_la_version(self):
+        for i, map_id in enumerate((2609221242, 418126004176)):
+            match = make_match(map_name="Consulate", map_id=map_id, index=i)
+            make_round_player(make_round(match, 0))
+        make_round_player(make_round(make_match(map_name="Bank", index=5), 0))
+        response = self.client.get("/api/export/?table=matches")
+        texto = response.content.decode("utf-8")
+        filas = leer(texto)
+        self.assertEqual(
+            [f["map_version"] for f in filas], ["Consulate (Y7)", "Consulate (Y10)", "Bank"]
+        )
+        self.assertEqual([f["map"] for f in filas], ["Consulate"] * 2 + ["Bank"])
+        # la columna nueva va al final: las demas conservan su orden de antes
+        cabecera = texto.splitlines()[0].split(",")
+        self.assertEqual(cabecera[-1], "map_version")
+        sin_version = [
+            {k: v for k, v in r.items() if k != "map_version"}
+            for r in agg.trend_by_match(limit=1000)
+        ]
+        self.assertEqual(cabecera[:-1], export._columnas(sin_version))

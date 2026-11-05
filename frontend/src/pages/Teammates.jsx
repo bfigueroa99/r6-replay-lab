@@ -302,7 +302,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           ]}
           rows={porSitio}
           initialSort={{ key: 'orden', dir: 'asc' }}
-          rowKey={(row) => `${row.slug}-${row.kind}-${row.site}`}
+          rowKey={(row) => `${row.slug}-${row.map_id}-${row.kind}-${row.site}`}
           csvName="clutch-por-sitio"
           empty="Todavía no quedaste último en ninguna ronda."
         />
