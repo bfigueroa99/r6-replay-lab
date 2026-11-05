@@ -1,7 +1,7 @@
 # 91. Fases de la ronda en el detalle de partida
 
-estado: revisado
-candado: qa 2026-11-05T19:27Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/91-fases-de-la-ronda-en-la-partida
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: R3 de ALCANCE.md; `replica/features.csv` "Analisis de ronda en fases early, mid y execute" (could, partial: los tramos existen entre partidas en Tendencias, no por partida); [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays)
 archivos: backend/replays/analytics/aggregates.py (fases_de_partida), backend/replays/views.py (match_detail), backend/tests/test_fases_de_la_ronda.py, frontend/e2e/partida-sin-rondas.json, frontend/src/fasesRonda.js, frontend/src/fasesRonda.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cz3m6mE, revisor 20261105T1921Z-cP5bnKD
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cz3m6mE, revisor 20261105T1921Z-cP5bnKD, qa 20261105T1920Z-cSTWy1D (fallback del revisor)
 
 ## PR
 
@@ -339,3 +339,54 @@ el feed trae el tiempo del defuser, `Event.elapsed` de esas bajas cae en
 
 Skills: no aplica.
 OMC: plan=— · revisión=4 hallazgos (1 MEDIUM cubierto con 3 tests; 1 MEDIUM y 2 LOW anotados) · verificación=—
+
+## QA 2026-11-05 sobre 72b58ef
+
+(qa 20261105T1920Z-cSTWy1D, fallback de un turno de revisor sin
+`implementado` tomable; este contexto no implemento ni reviso la 91)
+
+Veredicto: **aprobado**. Todos los comandos desde la raiz del checkout;
+`S` es un directorio temporal cualquiera.
+
+1. `check.sh` completo: `verificar.sh` VERDE 72b58ef (978 tests backend,
+   206 vitest, 65 e2e).
+2. Base vacia: `SQLITE_PATH=$S/vacia.sqlite3 python3 manage.py migrate` y
+   `runserver`; `curl` a `/api/matches/1/`, `/999999/`, `/foo/`, `/-1/`,
+   `/0/` -> 404; `/api/matches/?page=-1` -> 200.
+3. Base `seed_demo` (29 partidas, 203 rondas), `curl /api/matches/<id>/`:
+   - 29 (demo-28, Bank): temprano 0/0; medio 4/2 (dominadas 4, ganadas 3;
+     dominadas por el rival 2, ganadas 1); tarde 1/3; kills del detalle 10 =
+     suma de las fases 10.
+   - 1: medio 0/5, tarde 0/2, 7 = 7. 15: medio 7/3, tarde 1/2, 13 = 13.
+   - `?side=Attack`, `?until=foo`, `?map=` sobre 29 -> 200 (los ignora).
+4. Base de bordes con `backend/tests/factories.py` (`manage.py shell`):
+   - Partida de un jugador sin bajas -> 200, tres filas en 0, winrates `null`.
+   - Partida de 5 rondas: baja mia a 29.9 s -> temprano; del rival a 30.0 s
+     -> medio; de un compa a 120.0 s -> tarde (ronda ganada: dominada y
+     ganada en temprano y tarde, dominada por el rival y ganada en medio).
+     Ronda perdida con reloj 0, teamkill y autor sin fila -> `untimed 1`,
+     `teamkills 1`, `unknown 1`, ninguna fase. `Death` sin autor: no suma.
+     Ronda con `my_team_won=None` y baja del rival a 80 s: suma la baja
+     (medio 0/2) y no entra al denominador. Ronda sin bajas: nada. Log del
+     server sin errores.
+5. Mutacion (`manage.py test tests.test_fases_de_la_ronda`), los 4 mueren:
+   `<` -> `<=` en el corte de 30 (`test_los_cortes_de_las_fases_caen_donde_dicen`);
+   resultado desconocido como derrota (`test_una_ronda_sin_resultado_no_entra_al_denominador`);
+   teamkill que suma (`test_un_teamkill_no_suma_a_ningun_equipo`); reloj 0
+   que entra a temprano (`test_una_baja_sin_reloj_queda_fuera_de_las_fases`).
+6. `npx vite build`: chunk inicial 191.85 kB en la rama y en dev (gzip
+   62.92 / 62.93): no crece.
+7. e2e: atendido el MEDIUM de la revision. El caso "el detalle de una
+   partida muestra las fases de la ronda" ahora fija los numeros de
+   `seed_demo` de la partida mas nueva (medio 4/2, tarde 1/3, los del punto
+   3); antes medio y tarde solo se comparaban contra la misma respuesta.
+   Pasa dentro del verde del punto 1.
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hay
+`## Verificar en el PC` nuevo (queda la verificacion manual del diseno sobre
+una partida real). Los dos LOW de la revision (nota oculta cuando ninguna
+baja entra a una fase; "(ganadas)" ambiguo) no rompen ningun criterio y
+quedan anotados ahi.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 5 de 5 criterios VERIFIED)
