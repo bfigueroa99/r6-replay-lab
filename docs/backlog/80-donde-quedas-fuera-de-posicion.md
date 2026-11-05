@@ -1,7 +1,7 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-05 08:05 UTC
 rama: claude/equipo-dev/80-donde-quedas-fuera-de-posicion
 tipo: funcionalidad
 epica: posicionamiento
