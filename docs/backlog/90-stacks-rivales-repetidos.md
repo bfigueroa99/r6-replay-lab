@@ -1,8 +1,8 @@
 # 90. Stacks rivales repetidos
 
-estado: disenado
+estado: en curso 2026-11-05 (espejo; la ficha vive en su rama)
 candado: -
-rama: -
+rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
 area: fullstack
