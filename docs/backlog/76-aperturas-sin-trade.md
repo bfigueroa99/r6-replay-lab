@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
-estado: implementado
-candado: revisor 2026-11-05T02:48Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: idea K10 de `ALCANCE.md` (Investigador 2026-11-03); [Siege.GG, rating rebalance](https://siege.gg/blog/946-player-rating-rebalance) (2026-08-11, "we are now only factoring in an extra weight on opening kills that were not traded"; "players are not penalized extra for going in first, only to die and have their deaths traded"). En `dev` bcdbdf5 `RoundPlayer` guarda `opening_kill`, `opening_death` y `was_traded`; `docs/metricas.md:160-171` define Duelos de apertura sin distinguir trades
 archivos: backend/replays/models.py, backend/replays/migrations/0004_roundplayer_opening_kill_traded.py, backend/replays/analytics/metrics.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py, frontend/src/aperturasTrade.js, frontend/src/aperturasTrade.test.js, frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, backend/tests/test_aperturas_trade.py, backend/tests/test_recompute.py, backend/tests/test_ingest.py, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0220Z-cPG9p3E, revisor 20261105T0247Z-cw2xCMP
 
 ## PR
 
@@ -242,7 +242,41 @@ OMC: plan=APPROVE · revisión=— · verificación=—
 Skills: no aplica (el Arquitecto ya lo dijo; nada fuera del repo).
 OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 6cb03c4
+
+Revisor 20261105T0247Z-cw2xCMP. Rama fusionada con `origin/dev` 2da1b7d (sin conflictos;
+dev no trae otra migracion `0004`). Revision a ciegas en tres ejes (omc-code-reviewer de
+estandares, omc-code-reviewer de intencion contra la ficha, omc-security-reviewer por
+tocar `ingest.py` y una migracion de datos; los tres via general-purpose con el cuerpo del
+agente): los tres `aprobar`, sin CRITICAL ni HIGH. Confirmado por el lider:
+
+- [test] [LOW] `backend/tests/test_aperturas_trade.py`: el borde exacto de la ventana
+  estaba probado solo para *ganada devuelta*, no para *perdida vengada* (criterio 1 pide
+  borde por caso). **Agregados por el Revisor** (pasan):
+  `test_apertura_perdida_vengada_en_el_borde_exacto_de_la_ventana` (gap 3.0, ventana 3.0)
+  y `test_apertura_perdida_sin_vengar_si_la_venganza_llega_pasada_la_ventana` (3.01).
+- [test] [LOW] `frontend/e2e/humo.spec.js`: `seed_demo` no tiene aperturas devueltas ni
+  vengadas, asi que el e2e no veria las claves de esas dos filas cruzadas en
+  `Dashboard.jsx`; lo cubre el vitest de `aperturasTrade.js`. Limite del seed (cambiarlo
+  mueve numeros de otras pruebas): sin cambio.
+- [formato] [LOW] `docs/metricas.md`, fila *Aperturas limpias, devueltas y vengadas*: no
+  dice que un teamkill de apertura que tu propio equipo venga cuenta como *ganada devuelta*
+  (lo fija `test_teamkill_de_apertura_vengado_por_el_equipo_queda_devuelto`). Arreglo
+  sugerido: una frase en la fila. No bloquea; a `## Para el humano` ya estaba anotado.
+- Sin hallazgos de seguridad: migracion solo con ORM (Subquery, `pk__in` por lotes de
+  500), `/api/overview/` sigue de lectura, sin red ni dependencias.
+
+Ficha: los 5 criterios cubiertos por tests (unit con borde, API con suma de las cuatro
+filas, filtro de lado y null, CSV y Rating sin cambios, recompute, migracion, vitest, e2e).
+El diff no sale de `archivos:` (la migracion, `factories` sin tocar). Fila en
+`metricas.md` presente. Identificadores sin tildes, UI con tildes, sin `print` ni
+`console.log`. Los asserts nuevos de `test_ingest.py` corren solo con `.rec` reales
+(skip en la nube): la regla igual la prueban los tests sinteticos.
+
+Veredicto: **aprobar** -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado con tests) · verificación=—
 
 ## QA
 

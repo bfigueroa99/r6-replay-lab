@@ -62,6 +62,17 @@ class AperturaDevueltaTests(TestCase):
         self.assertTrue(_marca(analyse_round(datos, window=10.0), "yo"))
         self.assertFalse(_marca(analyse_round(datos, window=3.0), "yo"))
 
+    def test_apertura_perdida_vengada_en_el_borde_exacto_de_la_ventana(self):
+        # Desde el lado de `rival`: pierde la apertura y `rival2` lo venga
+        rival = analyse_round(ronda_apertura(3.0), window=3.0)["players"]["rival"]
+        self.assertTrue(rival["opening_death"])
+        self.assertTrue(rival["was_traded"])
+
+    def test_apertura_perdida_sin_vengar_si_la_venganza_llega_pasada_la_ventana(self):
+        rival = analyse_round(ronda_apertura(3.01), window=3.0)["players"]["rival"]
+        self.assertTrue(rival["opening_death"])
+        self.assertFalse(rival["was_traded"])
+
     def test_annotate_trades_resetea_la_marca(self):
         metrics = {"yo": {"opening_kill": True, "opening_kill_traded": True}}
         annotate_trades([], {"yo": 0}, metrics, 3.0)
