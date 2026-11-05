@@ -1,6 +1,6 @@
 # 77. Selector de tipo de partida en la barra de filtros
 
-estado: en curso 2026-11-05 (implementado en su rama)
+estado: en curso 2026-11-05 (revisado en su rama)
 candado: -
 rama: claude/equipo-dev/77-selector-de-tipo-de-partida
 tipo: funcionalidad
