@@ -31,7 +31,7 @@ Este PR es el tramo 1. El chip en Partidas y la lista en Datos quedan en la fich
 
 ### Como se probo
 
-- `check.sh` (con `verificar.sh`): VERDE 19ca3b5, con 973 tests backend, 186 vitest y 60 e2e. Despues de eso solo cambio la ficha.
+- `check.sh` (con `verificar.sh`): VERDE 19ca3b5 (973 backend, 186 vitest, 60 e2e) y, ya fusionada con dev a9f8a28 (la 85), VERDE fcba82e (973 tests backend, 190 vitest, 61 e2e).
 - `test_excluir_partida.py` (20 tests):
   - POST: 415, 404, 400 y 405.
   - Cada GET agregado y cada tabla del CSV dan lo mismo que la base sin la partida. Un test de control comprueba que la partida X si mueve los numeros.
