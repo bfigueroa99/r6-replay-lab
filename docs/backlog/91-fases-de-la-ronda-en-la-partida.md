@@ -1,7 +1,7 @@
 # 91. Fases de la ronda en el detalle de partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05 18:26 UTC
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia

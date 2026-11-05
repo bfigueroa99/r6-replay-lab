@@ -1,7 +1,7 @@
 # 89. Salida del spawn por mapa
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05 18:26 UTC
 rama: -
 tipo: funcionalidad
 epica: posicionamiento
