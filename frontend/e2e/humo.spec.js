@@ -422,6 +422,12 @@ test('el detalle de una partida muestra las fases de la ronda', async ({ page })
   // seed_demo no tiene bajas antes de los 30 s: temprano queda en cero en toda partida
   await expect(filas.nth(0).locator('td').nth(1)).toHaveText('0')
   await expect(filas.nth(0).locator('td').nth(2)).toHaveText('0')
+  // Numeros fijos de seed_demo (la partida mas nueva, demo-28 en Bank): sin
+  // ellos un backend que devolviera ceros pasaria la comparacion de arriba.
+  for (const [i, mias, rivales] of [[1, '4', '2'], [2, '1', '3']]) {
+    await expect(filas.nth(i).locator('td').nth(1)).toHaveText(mias)
+    await expect(filas.nth(i).locator('td').nth(2)).toHaveText(rivales)
+  }
 
   expect(errores).toEqual([])
 })
