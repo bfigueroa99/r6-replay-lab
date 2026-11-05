@@ -6,6 +6,7 @@ import { filasDeAperturasConTrade } from '../aperturasTrade.js'
 import { filasDeRecords } from '../records.js'
 import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import Filters from '../components/Filters.jsx'
+import { hayFiltros } from '../tipoPartida.js'
 import {
   Bar,
   DataTable,
@@ -32,7 +33,21 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
 
   const total = overview.data?.overall
   if (!total || !total.rounds) {
-    return <EmptyState onImport={runImport} importing={importing} />
+    // con filtros puestos la base no esta vacia: el EmptyState escondia la
+    // barra y no habia forma de apretar Limpiar
+    if (!hayFiltros(filters)) return <EmptyState onImport={runImport} importing={importing} />
+    return (
+      <>
+        <div className="page-head">
+          <div>
+            <h1>Resumen</h1>
+            <p>0 rondas con estos filtros</p>
+          </div>
+        </div>
+        <Filters value={filters} onChange={setFilters} />
+        <p className="note">Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.</p>
+      </>
+    )
   }
 
   const { attack, defense, recent_form: form, data_health: health } = overview.data
