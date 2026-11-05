@@ -74,7 +74,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       <div className="kpis" style={{ marginBottom: 18 }}>
         <Stat3 label="Rondas ganadas" value={pct(total.winrate)} sub={`${total.rounds_won} de ${total.rounds}`} value_={total.winrate} />
         <Stat3 label="K/D" value={ratio(total.kd)} sub={`${total.kills} bajas · ${total.deaths} muertes`} value_={total.kd === null ? null : total.kd * 50} />
-        <Stat3 label="Kills por ronda" value={ratio(total.kpr)} sub="referencia solida: 0.8" value_={total.kpr === null ? null : total.kpr * 60} />
+        <Stat3 label="Kills por ronda" value={ratio(total.kpr)} sub="referencia sólida: 0.8" value_={total.kpr === null ? null : total.kpr * 60} />
         <Stat3 label="Headshots" value={pct(total.hs_pct)} sub={`${total.headshots} de ${total.kills}`} value_={total.hs_pct} />
         <Stat3
           label="Duelos de apertura"

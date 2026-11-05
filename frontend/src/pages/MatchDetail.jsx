@@ -306,7 +306,7 @@ function Timeline({ round }) {
   const marcas = marcasDeApertura(round, myTeam(round))
 
   if (!round.events.length) {
-    return <p className="note">Esta ronda no registro eventos en el feed.</p>
+    return <p className="note">Esta ronda no registró eventos en el feed.</p>
   }
 
   return (
