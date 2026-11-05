@@ -1,7 +1,7 @@
 # 74. La version del mapa tambien en el Inicio, Clutch por mapa, Mapas que mejoran y el CSV de partidas
 
-estado: implementado
-candado: revisor 2026-11-05 00:10 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: idea A8 de `ALCANCE.md`, tramo siguiente que dejo escrito el `## Fuera de alcance` de la ficha 70 ("Mejor y peor mapa", "Clutch por mapa y sitio", progreso por mapa y Duelos siguen por slug: otra ficha de la epica) y la QA de la 71 (tabla `matches` de Exportar sin version). En `dev` bcdbdf5: `matches_summary` agrupa por `map_slug` (`replays/analytics/aggregates.py:1031`), `clutch_by_site` por `round__match__map_slug` (`:1603`), el corte por mapa de `compare_periods` por `("round__match__map_slug", "round__match__map_name")` (`:2448`)
 archivos: backend/replays/analytics/aggregates.py, backend/tests/test_aggregates.py, backend/tests/test_compare.py, backend/tests/test_export.py, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261104T2004Z-cGQmDVc
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261104T2004Z-cGQmDVc, revisor 20261105T0004Z-cXefbfB
 
 ## PR
 
@@ -203,7 +203,46 @@ y Clutch/Tendencias/CSV el primero alfabetico de `etiquetas_de_mapas`
 Skills: no aplica (dominio que el repo ya resuelve: ficha 70).
 OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 937a652
+
+(revisor 20261105T0004Z-cXefbfB)
+
+Base: rama al dia con `origin/dev` (bcdbdf5, sin merge que hacer).
+`verificar.sh`: VERDE 5b4faee (887 tests backend, 153 vitest, 54 e2e).
+
+Revision ciega (eje de estandares, `general-purpose` con el cuerpo de
+`omc-code-reviewer`; diff de 156 lineas y un solo tema, sin eje de intencion;
+no toca rutas de seguridad): aprobar, 1 hallazgo.
+
+- [bug] [LOW] `aggregates.py:1627`, `:1311` y `_etiquetar_corte`: si una
+  misma version `(slug, map_id)` tiene dos nombres guardados (override
+  parcial en Datos), Clutch por sitio, progreso por mapa y `map_version`
+  toman el primero alfabetico (`etiquetas_de_mapas` ordena por `map_name`);
+  el Inicio, el mas reciente. Confirmado leyendo `etiquetas_de_mapas`. Es la
+  misma etiqueta que la pagina Mapas y lo eligio el diseno; ya anotado en
+  Implementacion (a). No se pide cambio.
+
+Ficha, criterio por criterio:
+- `matches_summary` por version con muestra minima por version:
+  `MejorYPeorMapaPorVersionTests` (los dos tests; juntas daria otro mejor
+  mapa, y 2+2 pasaria el minimo).
+- `clutch_by_site` por version: `test_clutch_por_sitio_separa_el_mismo_sitio_en_dos_versiones`.
+- `compare_periods.by_map` por version y nombre pelado con una sola:
+  `test_progreso_por_mapa_separa_versiones` (afirma "Bank").
+- CSV `table=matches` con `map_version` al final sin mover las demas:
+  `test_csv_de_partidas_dice_la_version` (compara la cabecera).
+- e2e sin cambios con `seed_demo` (`map_id = 0`): 54 e2e verdes.
+
+Diff dentro de `archivos:`; `metricas.md` (fila Mapa) al dia, sin numero
+nuevo; identificadores sin tildes; sin `print` ni `console.log`. Keys de
+React de `Teammates.jsx:305` y `Trends.jsx:59` unicas con dos versiones;
+`Dashboard.jsx:251` sigue leyendo `.map`; `coach.py` y `export.py` no leen
+lo que cambio.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=1 hallazgo (0 arreglados, LOW aceptado) · verificación=—
 
 ## QA
 
