@@ -1,7 +1,7 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T03:52Z
 rama: -
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S1, del PR #1 (`claude/loop-lwjbgs`, commit 1ffdb89: pedido del usuario "en que partes del mapa suelo dormir"), cerrado sin merge el 2026-11-05; el humano devolvio la idea a `idea`. La rama queda como referencia, no se mergea
 archivos: backend/replays/analytics/aggregates.py (AGGREGATES, by_site, by_spawn), backend/replays/analytics/coach.py, backend/replays/views.py, frontend/src/pages/Trends.jsx o Coach.jsx, docs/metricas.md, backend/tests, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn
 
 ## PR
 
