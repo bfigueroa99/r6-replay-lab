@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 00:25 UTC por revisor (sesion 20261105T0004Z-cXefbfB; motivo: por estado: 1 implementado)
+actualizado: 2026-11-05 02:18 UTC por qa (sesion 20261105T0215Z-ckLDgDx; motivo: pedido; turno duplicado: otra sesion QA simultanea tomo el candado de la 74 a las 02:15, esta paso al fallback: dev bcdbdf5 VERDE, sin deriva de docs)
 playbook: origin/dev@bcdbdf5
-rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 40 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 11 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
