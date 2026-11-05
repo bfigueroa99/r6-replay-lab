@@ -1,7 +1,7 @@
 # 77. Selector de tipo de partida en la barra de filtros
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-05T03:50Z
 rama: claude/equipo-dev/77-selector-de-tipo-de-partida
 tipo: funcionalidad
 epica: temporada-y-modo
