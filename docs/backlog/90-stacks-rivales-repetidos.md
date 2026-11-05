@@ -1,7 +1,7 @@
 # 90. Stacks rivales repetidos
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T19:45Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -260,4 +260,49 @@ sin plan por consenso, segun `roles/arquitecto.md`)
 
 ## Implementacion
 
-(Dev)
+(Dev 20261105T1945Z-ceRZh1z, sobre `origin/dev@0127019`.)
+
+Quedo el diseno completo: `rival_stacks` en `aggregates.py`, la clave
+`rival_stacks` en `GET /api/duels/` (comparte `min_matches` con `rivals`), el
+panel "Stacks rivales que se repiten" en `Duelos.jsx` debajo de "Rivales
+repetidos", `test_stacks_rivales.py` (10 tests), `e2e/stacks-rivales.spec.js`
+y la fila **Stack rival repetido** en `docs/metricas.md`. `test_duels.py` no
+se toco y sigue en verde: es la red del refactor de `repeated_rivals`, que
+ahora usa el helper compartido y `_record` (los mismos numeros de antes).
+
+Criterios -> tests:
+- `rival_stacks` en la API, `min_matches`: `test_la_api_de_duelos_trae_rival_stacks`.
+- Grupo mas grande: `test_tres_rivales_juntos_en_dos_partidas_dan_una_sola_fila`,
+  `test_un_grupo_mas_chico_sale_aparte_si_suma_partidas_propias`.
+- Winrate sin las partidas sin resultado: `test_el_record_deja_las_partidas_sin_resultado_fuera_del_winrate`.
+- Equipo por ronda y filtros: `test_un_companero_que_fue_rival_solo_cuenta_donde_fue_rival`,
+  `test_respeta_el_filtro_de_mapa`.
+- Panel, enlaces y numero del seed (29 partidas, 29-0, Kaid_ · Mozzie99 ·
+  Thorn.exe, medido con `seed_demo` en una base del scratchpad):
+  `e2e/stacks-rivales.spec.js`. El seed no cambio.
+
+**Desvios del diseno** (por la revision ciega, dos MEDIUM reales):
+- El helper es `_rivales_por_ronda` (`(match_id, round_id) -> rivales`), no
+  `_rivales_por_partida`: los subconjuntos se arman **por ronda** y la partida
+  suma al grupo si estuvo entero en alguna de sus rondas. Por partida, un
+  rival que se fue y el que entro en su lugar salian como stack sin haber
+  jugado juntos (test `test_un_reemplazo_no_forma_grupo_con_quien_reemplazo`),
+  y una partida con muchos reemplazos daba 2^n subconjuntos. `repeated_rivals`
+  junta las rondas por partida y da lo mismo que antes.
+- Por ronda, el grupo mas grande con un mismo conjunto de partidas ya no es
+  unico (alineaciones distintas entre rondas): salen todos los grupos que no
+  estan contenidos en otro con las mismas partidas, no uno solo.
+- Una ronda con mas de 10 rivales (dato raro) no arma grupos
+  (`_MAX_RIVALES_POR_RONDA`; test `test_ronda_con_rivales_de_mas_no_arma_grupos`).
+  `metricas.md` lo dice.
+
+No quedo: nada del diseno. Aceptado sin cambiar: `repeated_rivals` y
+`rival_stacks` corren cada una su consulta de cruces en el mismo request
+(LOW de la revision; una consulta indexada mas).
+
+Verificacion: `verificar.sh` VERDE cbb28a5 (988 tests backend, 206 vitest,
+66 e2e).
+
+Skills: no aplica (patron `Panel` + `DataTable` que el repo ya resuelve).
+
+OMC: plan=— · revisión=5 hallazgos (3 arreglados: 2 MEDIUM y el LOW de test; 2 LOW aceptados) · verificación=—
