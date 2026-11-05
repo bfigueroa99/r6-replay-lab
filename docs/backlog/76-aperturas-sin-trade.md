@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T02:21Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
@@ -201,6 +201,46 @@ Skills: no aplica (panel y tabla que el repo ya resuelve; migracion con preceden
 OMC: plan=APPROVE · revisión=— · verificación=—
 
 ## Implementacion
+
+2026-11-05 (dev 20261105T0220Z-cPG9p3E). Todo el diseno, sin desvios de fondo.
+
+- **Regla:** `annotate_trades` resetea `opening_kill_traded` y la marca si
+  `kill_events[0]` quedo `traded` y su autor tiene `opening_kill`
+  (`metrics.py`); `analyse_round` la suma al dict base; `ingest.py` la guarda.
+- **Columna y migracion:** `RoundPlayer.opening_kill_traded`; `0004` hace
+  AddField + `RunPython(llenar)` que anota el primer `Kill` por `order`
+  (autor y `traded`, dos Subquery) sobre las filas con `opening_kill` y hace
+  UPDATE por lotes de 500 `pk`. No recalcula trades ni abre `.rec`.
+- **Recompute:** campo en `CAMPOS` y `opening_kill` en el dict; docstrings
+  del modulo y del comando al dia.
+- **API:** `APERTURAS_CON_TRADE` + `desglose_aperturas(qs)` en
+  `aggregates.py`, solo en `overview()["overall"]` (8 claves del diseno).
+  No entra en `AGGREGATES`: CSV y Rating sin cambios (tests).
+- **UI:** `frontend/src/aperturasTrade.js` (`filasDeAperturasConTrade`, con
+  `orden` para la tabla) y panel *Aperturas que pesan* debajo de la grilla de
+  KPIs del Resumen. Desvio menor: sin muestra la celda de winrate muestra un
+  solo "—" (no barra vacia + "—").
+- **Docs:** fila *Aperturas limpias, devueltas y vengadas* en
+  `docs/metricas.md`, *Duelos de apertura*.
+- **Tests:** `backend/tests/test_aperturas_trade.py` (20: unit con borde
+  exacto, ventana, teamkill, victima fantasma, Death de apertura; API con
+  suma de las cuatro filas, filtro de lado, null, CSV, Rating; recompute
+  llena, dry-run, idempotente, ventana corta; migracion y coincidencia con
+  recompute). Agregado `test_annotate_trades_resetea_la_marca` y
+  `test_recompute_con_ventana_corta_saca_la_apertura_devuelta`.
+  `test_ingest.test_datos_coherentes` suma el invariante contra
+  `Event.traded`. Vitest `aperturasTrade.test.js` (3). e2e
+  `el Resumen muestra las aperturas que pesan` (lee `/api/overview/`).
+- **Revision ciega** (omc-code-reviewer via general-purpose, el tipo omc no
+  esta registrado en la sesion): aprobar, 3 LOW. Arreglado: el invariante de
+  `test_ingest` falla con mensaje si no hay Kill. Sin cambio: el test de la
+  migracion usa el registro de apps actual (mismo patron que `0003` en
+  `test_clutch.py`); el e2e depende de que `seed_demo` no tenga aperturas
+  devueltas (comentado en el test).
+- `verificar.sh`: VERDE fe66a2de0, 902 tests backend, 156 vitest, 55 e2e.
+
+Skills: no aplica (el Arquitecto ya lo dijo; nada fuera del repo).
+OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
 ## Revision
 
