@@ -1,6 +1,6 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-05 16:14 UTC
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
@@ -267,8 +267,83 @@ ficha.
 Skills: no aplica
 OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados; el Revisor no arregla; seguridad 0) · verificación=—
 
-## QA <fecha> sobre <sha>
+## QA 2026-11-05 sobre f0aa83a
+
+(qa 20261105T1613Z-cAimE1D; rama al dia con dev 0861b0b. Bases sinteticas en
+el scratchpad: una vacia y una de `seed_demo`; nunca `.rec` ni `.sqlite3` al
+repo.)
+
+Como repetirlo:
+
+```bash
+cd backend
+export SQLITE_PATH=$SCRATCH/qa.sqlite3 R6_ENV_FILE=$SCRATCH/qa.env DATA_DIR=$SCRATCH/data
+python manage.py migrate -v0 && python manage.py seed_demo
+python manage.py runserver 127.0.0.1:8766 --noreload
+curl -s -w ' %{http_code} %{content_type}\n' localhost:8766/api/nada/
+```
+
+Evidencia por criterio:
+
+1. `/api/<desconocida>` 404 JSON, SPA fuera de `/api/`: cubierto. Con base
+   vacia y con base sembrada, `curl` a `/api/nada/`, `/api/nada`,
+   `/api/matches/abc/`, `/api/players/abc/`, `/api/matches/-1/` y `/api/`:
+   `404 application/json {"error": "esa ruta de la API no existe"}`.
+   `/partidas/999999` y `/jugadores/abc`: `200 text/html` (la SPA);
+   `/admin/`: 302. POST JSON a `/api/nada/`: 404 JSON (sin el 403 de CSRF).
+   Borde LOW (no incumple, el criterio habla de `/api/<ruta>/`): `/api` sin
+   barra da 200 con la SPA, porque la regex es `^api/`.
+2. Partida/jugador inexistente 404 JSON: cubierto. `/api/matches/999999/` ->
+   `404 {"error": "partida no encontrada"}`, `/api/players/999999/` ->
+   `404 {"error": "jugador no encontrado"}`; en base vacia `/api/matches/1/`
+   y `/api/players/1/` igual. Validos (`/api/matches/1/`, `/api/players/1/`)
+   200 JSON; `/api/matches/?page=-1` y `?until=foo` 200 JSON. POST JSON a
+   `/api/players/999999/ubisoft/` -> 404 JSON; con `text/plain` -> 415 (el
+   chequeo de JSON sigue antes del 404); POST form a `/api/import/` -> 415.
+3. Paginas: cubierto. Chromium sobre el `runserver`: `/partidas/999999`,
+   `/partidas/abc` -> "Esa partida no existe" + enlace `/partidas`;
+   `/jugadores/999999`, `/jugadores/abc` -> "Ese jugador no existe" + enlace
+   `/companeros`; en base vacia `/partidas/1` y `/jugadores/1` igual. Ningun
+   "Django" en `main`; la consola trae solo el "Failed to load resource ...
+   404" de cada caso. De `/partidas/999999` a `/partidas/1` sin recargar
+   (`pushState` + `popstate`): se ve la partida.
+4. API caida: cubierto. Con `page.route('**/api/**', r => r.abort())` y
+   `/partidas/1`: "No pude leer la API. Failed to fetch Revisa que Django
+   esté corriendo." (sin 8000). e2e "con la API caida..." verde.
+
+Mutacion (romper y ver caer, restaurar y ver verde):
+- `config/urls.py` sin el `re_path` de `api_no_existe`:
+  `python manage.py test tests.test_api tests.test_player` -> FAILED
+  (failures=4: ruta desconocida x2, id no numerico, POST desconocido).
+- `api.js` sin `error.status = response.status`: `npx vitest run src/api.test.js`
+  -> 1 failed ("con un 404 tira un error con el status").
+- `MatchDetail.jsx` sin la rama `status === 404`, `vite build` y
+  `npx playwright test -g "no existe lo dice"` -> 1 failed.
+- Restaurado: los dos e2e nuevos con `--repeat-each=10` -> 20 passed (sin
+  intermitencia).
+
+`check.sh`: `verificar.sh` VERDE f0aa83a57 (960 tests backend, 199 vitest,
+64 e2e). Sin migracion, recompute, parser, Electron ni `.ps1`: no va a
+`## Verificar en el PC`.
+
+`omc-verifier`: PASS, 4 criterios VERIFIED; `@csrf_exempt` en
+`api_no_existe` inocuo (no lee ni escribe). Gaps LOW: `/api` sin barra sirve
+la SPA (arreglo posible `^api(/.*)?$`), y el e2e cuenta exactamente cuatro
+404 en consola (estable hoy).
+
+Choca con la 81 (`revisado` -> `con hallazgos` en este turno) en
+`ui.jsx`, `MatchDetail.jsx`, `Jugador.jsx` y `humo.spec.js`
+(`git merge-tree` de las dos ramas: conflicto). La que entre segunda
+resuelve con P3.
+
+Veredicto: `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Pendiente
 
 - 2026-11-05 (revisor 20261105T1605Z-csxB8d1): LOW sin arreglar, no bloquean: `useApi` no limpia `error` al cambiar de path (un instante de "Revisa que Django esté corriendo" al ir de un id inexistente a uno valido sin desmontar); arreglo de una linea, `setError(null)` en el efecto.
+
+## Para el humano
+
+- 2026-11-05 (qa 20261105T1613Z-cAimE1D): LOW sin arreglar, no bloquean: `/api` sin barra final sigue sirviendo la SPA (200 HTML), la regex es `^api/`; y el LOW del revisor de `useApi` (no limpia `error` al cambiar de path) sigue en `## Pendiente`.
