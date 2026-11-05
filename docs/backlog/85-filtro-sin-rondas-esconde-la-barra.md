@@ -1,7 +1,7 @@
 # 85. Un filtro sin rondas esconde la barra en Coach, Operadores, Compañeros, Duelos y Tendencias
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T13:59Z
 rama: claude/equipo-dev/85-filtro-sin-rondas-esconde-la-barra
 tipo: bug
 epica: -
