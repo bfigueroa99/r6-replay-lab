@@ -1,7 +1,7 @@
 # 88. Textos que arma el backend (narrativa de la partida, coach) sin tildes
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T15:55Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/88-textos-del-backend-sin-tildes
 tipo: bug
 epica: -
@@ -189,6 +189,35 @@ Skills: no aplica (textos en un modulo que ya existe, ningun dominio nuevo).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1547Z-cLk3BF3, sobre dev 0861b0b)
+
+Hecha la lista completa del diseno en `narrative.py`, `coach.py` y `aggregates.py`, solo tildes: claves de señales, `metric=`, identificadores, comentarios y docstrings no cambian.
+
+Desvios del diseno (todos en textos visibles, encontrados al recorrer con `ast` las cadenas de `coach.py` despues de aplicar la lista):
+- `coach.py:312` "quien abre, quien tradea" -> "quién abre, quién tradea" (interrogativa indirecta).
+- `coach.py:391` "quedandote solo" -> "quedándote solo".
+- `coach.py:464` "te ganan ahi" -> "ahí".
+- `coach.py:629` "ya te funciono" -> "funcionó".
+- `aggregates.py:2620` tambien "Los {n} dias anteriores" -> "días" (la otra mitad de la misma tupla).
+- La guardia suma `quedandote` y `ahi` a la lista del diseno, y un segundo test (`test_la_guardia_encuentra_una_palabra_sin_tilde`) para que un patron roto no pase el primero sin mirar nada.
+
+Test que falla primero (tipo bug): `cd backend && python3 manage.py test tests.test_textos_con_tildes` sobre dev sin el arreglo -> `FAILED (failures=1)` con 57 hallazgos (`coach.py:124 'explicitamente'` ... `narrative.py:92 'vengo'`). Con el arreglo, verde.
+
+Tests por criterio:
+1. Narrativa con tildes: `test_los_textos_del_coach_y_la_narrativa_no_pierden_las_tildes` (nuevo) y los asserts de `test_narrative.py` (lineas 68, 69, 77, 88, 161, 165) pasados al texto nuevo.
+2. Barrido de `coach.py`: el mismo test guardia; identificadores intactos (lo confirmo la revision ciega).
+3. Tests y e2e: `test_narrative.py` y `test_compare.py` (`Últimas 4 partidas`, `Últimos 10 días`) actualizados, ningun caso borrado; ningun e2e afirma estos textos (`/mato a|murio/` de `humo.spec.js` es la timeline del frontend, ficha 81).
+4. `verificar.sh`: VERDE 3c431b6 (957 tests backend, 197 vitest, 62 e2e).
+
+Revision ciega (`omc-code-reviewer`): aprobar, 4 LOW, dejados a proposito:
+- la guardia no mira `aggregates.py` (muchos docstrings y textos internos; sus dos etiquetas las afirma `test_compare.py`);
+- el filtro "con un espacio" deja pasar un texto visible de una sola palabra (hoy no hay ninguno en estos modulos);
+- algunas palabras de la lista existen sin tilde ("vengo", "paro", "jugo"): un texto futuro podria dar un falso positivo, que se arregla afinando la lista;
+- fuera del diff: `Trends.jsx:321` "Ultimas {v.label}" y `Filters.jsx:11-13` "Ultimos N dias" (frontend). `Filters.jsx` ya lo cubre la 81. El de `Trends.jsx` hay que confirmarlo cuando la 81 se mergee.
+
+Skills: no aplica (el Arquitecto ya dijo que no hay dominio nuevo)
+OMC: plan=— · revisión=4 hallazgos LOW (0 arreglados) · verificación=—
 
 ## QA
 
