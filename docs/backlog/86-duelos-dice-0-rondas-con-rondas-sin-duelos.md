@@ -1,7 +1,7 @@
 # 86. Duelos dice "0 rondas con estos filtros" con un filtro que tiene rondas pero ningun duelo
 
-estado: revisado
-candado: qa 2026-11-05 15:21 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: hallazgo MEDIUM del Revisor de la 85 (`Duelos.jsx:43`), reproducido por la QA 20261105T1358Z-cxcyM5F en la app real
 archivos: backend/replays/views.py, backend/tests/test_duels.py, frontend/src/tipoPartida.js, frontend/src/tipoPartida.test.js, frontend/src/components/ui.jsx, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T1358Z-cxcyM5F, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1429Z-chSa5eY, revisor 20261105T1455Z-caYiimg
+turnos: qa 20261105T1358Z-cxcyM5F, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1429Z-chSa5eY, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ
 
 ## PR
 
@@ -208,7 +208,43 @@ Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados; el Revisor no arregla) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre 27c46da
+
+(qa 20261105T1521Z-cEexMKJ; rama al dia con dev 85009f6. Bases sinteticas en
+el scratchpad, nunca `.rec` ni `.sqlite3` al repo.)
+
+Base del Repro con `factories.py` (Club House con una baja a un rival, Bank
+con una ronda sin bajas ni muerte), `runserver`; tambien base vacia y base de
+`seed_demo`.
+
+1. Rondas sin duelos -> "0 duelos": cubierto. `curl /api/duels/?map=bank`:
+   `rounds=1 duels=0`. En Chromium, Duelos con Mapa = Bank: h1 "Duelos",
+   subtitulo "0 duelos con estos filtros", nota "Hay rondas con estos filtros,
+   pero en ninguna mataste a un rival ni te mató uno...", barra y Limpiar
+   visibles, sin `.empty-state`; Limpiar vuelve a los numeros. Consola limpia.
+2. 0 rondas -> "0 rondas con estos filtros": cubierto. Bank + Lado Defensa en
+   Chromium: "0 rondas con estos filtros" con la barra; API `rounds=0`.
+3. Base vacia sin filtros: cubierto. `.empty-state` "Todavía no hay replays
+   importados", sin barra; API `rounds=0 duels=0`.
+
+Bordes de `/api/duels/` (base factories), todos 200: sin filtro 2/1,
+`?map=club-house` 1/1, `?map=noexiste` 0/0, `?map=` 2/1, `?until=foo` 2/1,
+`?page=-1` 2/1, `?days=-1` 0/0, `?match_type=Ranked` 2/1. `rounds` de Duelos
+igual a `overall.rounds` de `/api/overview/` en 8 combinaciones (factories y
+seed_demo: 203, Bank 70, Attack 116, `days=-1` 0).
+
+Mutacion: `rounds` fijo en 0 en `views.py` -> `RondasSinDuelosTests` FAIL
+(`0 != 1`); `vistaDuelos` sin `'sin-duelos'` -> 1 vitest y el e2e `Duelos con
+rondas pero sin duelos dice 0 duelos y no 0 rondas` fallan; subtitulo
+cambiado a "0 rondas con estos filtros" -> 1 vitest falla. Restaurado: verde.
+
+Chunk inicial de `vite build`: dev 191.14 kB -> rama 191.66 kB (+0.27 %).
+`verificar.sh`: VERDE 27c46daef (955 tests backend, 197 vitest, 62 e2e).
+`omc-verifier`: PASS (3 VERIFIED).
+
+Veredicto: `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
