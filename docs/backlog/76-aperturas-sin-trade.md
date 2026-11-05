@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
 estado: revisado
-candado: qa 2026-11-05 03:03
+candado: qa 2026-11-05T02:57Z
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
