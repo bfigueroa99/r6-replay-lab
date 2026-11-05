@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: implementado
-candado: revisor 2026-11-05 14:56 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg
 
 ## PR
 
@@ -295,6 +295,42 @@ sin tildes mal puestas.
 Skills: no aplica (cambio de textos).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
+## Revision 2026-11-05 sobre 7015c73 (segunda pasada)
+
+(revisor 20261105T1455Z-caYiimg; rama al dia con dev 85009f6.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; un solo tema,
+solo cadenas, sin eje de intencion ni seguridad). Confirmado por el Revisor:
+ningun `value`, `key`, ruta, `csvName` ni cabecera de CSV cambio (los `label`
+tocados son los del selector de periodo de `Filters.jsx` y de `Trends.jsx`,
+solo visibles; en Trends el label tambien es `key` de un `<option>` y sigue
+unico); las tildes agregadas son correctas ("solo" sigue sin tilde); ningun
+e2e ni vitest afirma un texto viejo. El MEDIUM de la primera pasada quedo
+resuelto entero (`grep` sobre la rama: sin "Ultimos", "mato a", "murio",
+"Te gano", "Apoyate", "Que hacer", "presion" visibles).
+
+Criterios: 1 cubierto (tabla del diseno aplicada, greps del barrido vacios);
+2 cubierto salvo los LOW de abajo; 3 cubierto (`humo.spec.js` actualizado,
+e2e verde); 4 `verificar.sh`: VERDE 244da02af (954 tests backend, 190
+vitest, 61 e2e).
+
+Hallazgos (todos LOW, no bloquean):
+
+- [estilo] LOW `frontend/src/pages/MatchDetail.jsx:309`
+  Que pasa: "Esta ronda no registro eventos en el feed." sigue sin tilde.
+  Como reproducirlo: `grep -n "no registro" frontend/src -r` sobre la rama.
+  Arreglo sugerido: "registró". Es texto suelto (no `label` ni CSV).
+- [estilo] LOW cabeceras `label: 'Jugo de'` (`Jugador.jsx:213`) y
+  `label: 'Metrica'` (`Trends.jsx:338`), de la misma familia que `'Cuando'`,
+  `'Duro'`, `'Murio'` que el Dev dejo a proposito (el `label` es tambien la
+  cabecera del CSV). Coherente con esa decision; van juntas a la ficha de
+  cabeceras de CSV si se abre.
+
+Veredicto: aprobar -> `revisado`. Los LOW quedan en `## Para el humano` de
+la ficha.
+
+OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados; el Revisor no arregla) · verificación=—
+
 ## QA
 
 ## Verificar en el PC
@@ -302,3 +338,5 @@ OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 ## Pendiente
 
 ## Para el humano
+
+- 2026-11-05 (revisor 20261105T1455Z-caYiimg): LOW sin arreglar, no bloquean: `MatchDetail.jsx:309` "no registro eventos" -> "registró"; cabeceras `'Jugo de'`, `'Metrica'` (junto a `'Cuando'`, `'Duro'`, `'Murio'`) quedan sin tilde porque son tambien cabecera del CSV: decidir en una ficha de cabeceras de CSV.
