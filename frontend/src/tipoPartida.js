@@ -50,3 +50,12 @@ export function vistaSinRondas({ vacio, filtros, cargando }) {
   if (!vacio) return null
   return hayFiltros(filtros) || cargando ? 'filtrado' : 'importar'
 }
+
+/**
+ * Duelos cuenta bajas y muertes contra rivales, no rondas: un mapa donde no
+ * mataste ni moriste tiene rondas y 0 duelos, y decir "0 rondas" ahi es falso.
+ */
+export function vistaDuelos({ rondas, duelos, filtros, cargando }) {
+  if (!rondas) return vistaSinRondas({ vacio: true, filtros, cargando })
+  return duelos ? null : 'sin-duelos'
+}
