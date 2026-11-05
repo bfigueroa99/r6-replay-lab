@@ -1,7 +1,7 @@
 # 82. Una partida sin rondas rompe el detalle de partida
 
-estado: implementado
-candado: revisor 2026-11-05T13:59Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/82-partida-sin-rondas-rompe-el-detalle
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: QA 20261105T0256Z-cFRtPBc de la ficha 75 (anotado alli como "ficha 81"; el 81 lo tomo otra sesion a la vez). En dev 7a87ddc, `frontend/src/pages/MatchDetail.jsx:33`: `const round = rounds[Math.min(selected, rounds.length - 1)]` da `rounds[-1]` = `undefined` con 0 rondas, y `round.label` (`:124`) tira `TypeError`
 archivos: frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, frontend/e2e/partida-sin-rondas.json, backend/tests/test_partida_sin_rondas.py
-turnos: qa 20261105T0256Z-cFRtPBc, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1330Z-c4QLGh8
+turnos: qa 20261105T0256Z-cFRtPBc, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1330Z-c4QLGh8, revisor 20261105T1358Z-caeHwMj
 
 ## PR
 
@@ -21,10 +21,10 @@ Una partida importada sin rondas (un `.rec` cortado o una carpeta a medias) hoy 
 
 ## Criterios de aceptacion
 
-- [ ] Repro de hoy: base con una partida sin rondas (`make_match` sin `make_round`), `runserver`, abrir `/partidas/<id>`: `TypeError: Cannot read properties of undefined (reading 'label')` y sin contenido. `GET /api/matches/<id>/` responde 200 con `rounds: []`.
-- [ ] Con el arreglo, `/partidas/<id>` muestra la cabecera de la partida y un aviso de que no hay rondas, sin error en consola.
-- [ ] Una partida con rondas se ve igual que antes (el e2e existente sigue verde).
-- [ ] Test que lo cubre: e2e con ruta interceptada que devuelve `rounds: []`, o logica pura extraida y probada con vitest.
+- [x] Repro de hoy: base con una partida sin rondas (`make_match` sin `make_round`), `runserver`, abrir `/partidas/<id>`: `TypeError: Cannot read properties of undefined (reading 'label')` y sin contenido. `GET /api/matches/<id>/` responde 200 con `rounds: []`.
+- [x] Con el arreglo, `/partidas/<id>` muestra la cabecera de la partida y un aviso de que no hay rondas, sin error en consola.
+- [x] Una partida con rondas se ve igual que antes (el e2e existente sigue verde).
+- [x] Test que lo cubre: e2e con ruta interceptada que devuelve `rounds: []`, o logica pura extraida y probada con vitest.
 
 ## Fuera de alcance
 
@@ -180,7 +180,48 @@ Arena: no.
 
 OMC: plan=— · revisión=1 hallazgo LOW (1 arreglado: comentario del e2e decia "lo genera") · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 6494edd
+
+(revisor 20261105T1358Z-caeHwMj; rama al dia con dev 696c79d, sin merge
+necesario.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; diff de 4
+archivos, un solo tema: sin eje de intencion ni de seguridad). Con `git diff
+-w`, `MatchDetail.jsx` es la guarda de `round` y el panel alternativo; el resto
+es reindentacion.
+
+Hallazgos:
+
+- [estilo] LOW frontend/e2e/humo.spec.js:8-9
+  Que pasa: el comentario de `SIN_RONDAS` junta dos motivos (origen y
+  regeneracion del JSON; `fs` en vez de import attributes) en una linea muy
+  larga.
+  Como reproducirlo o por que es cierto: la linea 9 pasa de lejos el ancho
+  del resto del archivo.
+  Arreglo sugerido: partirlo en dos comentarios cortos. No bloquea.
+
+Confirmado por el Revisor:
+
+- Test rojo antes del arreglo, reproducido: con `MatchDetail.jsx` de dev
+  696c79d, `npx playwright test e2e/humo.spec.js -g "sin rondas"` da
+  `1 failed` (`toContainText` / `element(s) not found`: pagina en blanco);
+  con el de la rama, `1 passed`.
+- El e2e conserva el `match` real y solo reemplaza el resto con el JSON; el
+  test de backend afirma que ese JSON es la respuesta real de una partida sin
+  rondas, asi que no puede quedar viejo.
+- Criterios: los cuatro cubiertos (backend 200 con `rounds: []` ->
+  `test_partida_sin_rondas`; cabecera y aviso sin errores de consola -> e2e
+  nuevo; partida con rondas igual -> e2e del detalle existentes; test -> e2e
+  con ruta interceptada).
+- Diff dentro de `archivos:`; sin numeros nuevos (nada para `metricas.md`);
+  texto de UI con tildes, comentarios e identificadores sin tildes; sin
+  `print` ni `console.log`; sin dependencias.
+
+check.sh: `verificar.sh` VERDE 8e0e146 (954 tests backend, 186 vitest, 60 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
 
 ## QA
 
