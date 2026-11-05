@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T13:07Z
 rama: -
 tipo: bug
 epica: -
