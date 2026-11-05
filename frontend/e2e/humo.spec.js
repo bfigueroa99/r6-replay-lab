@@ -839,9 +839,9 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   await expect(page.getByLabel('Operador')).toHaveCount(0)
 
   const resultado = page.getByLabel('Resultado')
-  let pedido = page.waitForRequest(/\/api\/matches\/\?.*result=victoria/)
+  let respuesta = page.waitForResponse(/\/api\/matches\/\?.*result=victoria/)
   await resultado.selectOption('victoria')
-  await pedido
+  await respuesta
   await expect(subtitulo).toHaveText('29 partidas con estos filtros.')
   const filas = page.locator('table tbody tr')
   await expect(filas).toHaveCount(29)
@@ -861,9 +861,9 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const opcion = mapa.locator('option').nth(1)
   const valor = await opcion.getAttribute('value')
   const etiqueta = (await opcion.textContent()).trim()
-  pedido = page.waitForRequest(/\/api\/matches\/\?.*map=/)
+  respuesta = page.waitForResponse(/\/api\/matches\/\?.*map=/)
   await mapa.selectOption(valor)
-  await pedido
+  await respuesta
   await expect(subtitulo).toHaveText(/^\d+ partidas? con estos filtros\.$/)
   const n = Number((await subtitulo.textContent()).split(' ')[0])
   expect(n).toBeGreaterThan(0)
@@ -875,5 +875,26 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   }
 
   await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(subtitulo).toHaveText('29 partidas importadas.')
+
+  // una respuesta vieja que llega tarde no pisa la del filtro nuevo: la de
+  // "Victoria" se demora hasta que "Derrota" ya respondio
+  let soltarVictoria
+  const victoriaDemorada = new Promise((resolve) => (soltarVictoria = resolve))
+  await page.route(/\/api\/matches\/\?.*result=victoria/, async (route) => {
+    await victoriaDemorada
+    await route.continue()
+  })
+  await resultado.selectOption('victoria')
+  respuesta = page.waitForResponse(/\/api\/matches\/\?.*result=derrota/)
+  await resultado.selectOption('derrota')
+  await respuesta
+  await expect(subtitulo).toHaveText('0 partidas con estos filtros.')
+  const tarde = page.waitForResponse(/\/api\/matches\/\?.*result=victoria/)
+  soltarVictoria()
+  await tarde
+  await expect(page.getByText('Ninguna partida con estos filtros')).toBeVisible()
+  await expect(page.locator('table tbody tr')).toHaveCount(0)
+
   expect(errores).toEqual([])
 })

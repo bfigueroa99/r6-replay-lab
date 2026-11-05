@@ -86,10 +86,12 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
 def match_queryset(**filters) -> QuerySet[Match]:
     """Partidas con los filtros de la barra, leidos igual que en `base_queryset`.
 
-    Existe para que Partidas y el Resumen cuenten las mismas partidas: si se
-    agrega un filtro a uno, va tambien al otro. `side`, `operator` y `site` se
-    ignoran a proposito: una partida tiene los dos lados, diez operadores y
-    varios sitios, asi que no hay una partida "de ataque" que filtrar.
+    Esta al lado de `base_queryset` para que un filtro nuevo de la barra entre
+    a los dos. `side`, `operator` y `site` se ignoran a proposito: una partida
+    tiene los dos lados, diez operadores y varios sitios, asi que no hay una
+    partida "de ataque" que filtrar. Por eso, con esos filtros puestos, el
+    conteo no coincide con el del Resumen, que cuenta partidas con rondas que
+    los cumplen.
     """
     qs = Match.objects.all()
     if filters.get("map"):
