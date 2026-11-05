@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-05 14:56 UTC
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
