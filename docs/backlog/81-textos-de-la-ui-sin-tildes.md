@@ -1,6 +1,6 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-05T17:34Z
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv, revisor 20261105T1605Z-csxB8d1, qa 20261105T1613Z-cAimE1D, dev 20261105T1641Z-cY8pL9A, revisor 20261105T1706Z-czYXSXu
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv, revisor 20261105T1605Z-csxB8d1, qa 20261105T1613Z-cAimE1D, dev 20261105T1641Z-cY8pL9A, revisor 20261105T1706Z-czYXSXu, qa 20261105T1734Z-cpRZAms
 
 ## PR
 
@@ -543,6 +543,44 @@ Veredicto: aprobar -> `revisado` (cuarta pasada, solo un LOW previo y fuera de
 alcance, que va a `## Para el humano`).
 
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados; el Revisor no arregla) · verificación=—
+
+## QA 2026-11-05 sobre 613e25e (tercera QA)
+
+(qa 20261105T1734Z-cpRZAms; rama al dia con dev e7cc919. Base de `seed_demo`
+en el scratchpad; nunca `.rec` ni `.sqlite3` al repo.)
+
+Evidencia por criterio:
+
+1. Textos del repro con tilde: cubierto. Mutacion: "Esa página no existe"
+   (`App.jsx`) y "Cómo se mueven tus números" (`Trends.jsx`) vueltos a sin
+   tilde, `npx vite build`,
+   `E2E_CHROMIUM=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome npx playwright test -g "una ruta que no existe|un filtro sin rondas deja la barra"`:
+   2 failed; restaurado y rebuild: 2 passed.
+2. Barrido de las demas cadenas visibles: cubierto. `runserver` con
+   `SQLITE_PATH` en el scratchpad + `seed_demo` (29 partidas), recorrido en
+   Chromium de 16 rutas (`/`, `/coach`, `/operadores`, `/companeros`,
+   `/duelos`, `/tendencias`, `/partidas`, `/partidas/1`, `/partidas/29`,
+   `/partidas/99999`, `/jugadores/1`, `/jugadores/2`, `/ruleta`, `/datos`,
+   `/ajustes`, `/no-existe`) con una regex de ~50 palabras sin tilde sobre
+   `body.innerText` y `title`/`placeholder`/`aria-label`. Solo salen
+   conjunciones y relativos que no la llevan ("que", "como", "cuando", "esta
+   tabla", "sea de quien sea"), la ruta `docs/metricas.md` y las cabeceras de
+   columna/CSV que la ficha deja a proposito (`Metrica`, `Jugo de`, `Cuando`,
+   `Murio`). Se ve "Condición: eliminación del equipo rival" y la columna de
+   muerte pinta "sí". Unico error de consola: el 404 de `/partidas/99999`
+   (esperado). `omc-verifier` hizo su propio grep (~100 palabras e
+   interrogativas en mayuscula sobre `*.jsx`/`*.js`): nada fuera de las
+   excepciones.
+3. Ningun test afirma el texto viejo: cubierto (suite verde; los 5 cambios
+   de `humo.spec.js` van al texto nuevo, y la mutacion de 1 los hace caer).
+4. Build y `check.sh`: cubierto. `verificar.sh`: VERDE 613e25e60 (963 tests
+   backend, 199 vitest, 64 e2e). Chunk inicial `index-*.js` 191939 bytes
+   (segunda QA: 191687; solo los bytes de las tildes).
+
+Veredicto: `aprobado`. El LOW de "Últimas 7 días" queda en `## Para el
+humano` (cambia palabras, fuera de alcance).
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
