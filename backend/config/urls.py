@@ -2,8 +2,9 @@
 
 from django.conf import settings
 from django.contrib import admin
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.urls import include, path, re_path
+from django.views.decorators.csrf import csrf_exempt
 
 DIST = settings.FRONTEND_DIST
 INDEX = DIST / "index.html"
@@ -28,8 +29,21 @@ def spa(request, path: str = ""):
     )
 
 
+@csrf_exempt
+def api_no_existe(request, path: str = ""):
+    """404 en JSON para cualquier /api/ que no calce.
+
+    Sin esto el atrapa-todo de la SPA devuelve el index.html con 200 y el
+    frontend lo toma por la API caida. Va aca y no al final de replays/urls.py
+    para que una ruta nueva de la API nunca quede detras de el. Sin CSRF
+    porque no hace nada: un POST mal dirigido tambien recibe su 404 en JSON.
+    """
+    return JsonResponse({"error": "esa ruta de la API no existe"}, status=404)
+
+
 urlpatterns = [
     path("api/", include("replays.urls")),
+    re_path(r"^api/(?P<path>.*)$", api_no_existe),
     path("admin/", admin.site.urls),
     re_path(r"^(?P<path>.*)$", spa, name="spa"),
 ]

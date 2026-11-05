@@ -134,7 +134,19 @@ class PerfilApiTests(TestCase):
         self.assertEqual(data["rounds_together"], 1)
 
     def test_jugador_inexistente_da_404(self):
-        self.assertEqual(self.client.get("/api/players/99999/").status_code, 404)
+        response = self.client.get("/api/players/99999/")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("error", response.json())
+
+    def test_el_post_de_ubisoft_a_un_jugador_inexistente_da_404_json(self):
+        # el 404 va antes de configurado(): no hace falta parchear la red
+        response = self.client.post(
+            "/api/players/99999/ubisoft/", data="{}", content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("error", response.json())
 
     def test_mi_propio_perfil_se_marca(self):
         yo = Player.objects.get(username=ME)
