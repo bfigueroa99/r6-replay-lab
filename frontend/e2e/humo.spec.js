@@ -856,6 +856,41 @@ test('el selector de tipo filtra el Inicio', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // ficha 85: los filtros viven en App y se comparten. seed_demo es todo
+  // Ranked: un tipo sin partidas deja 0 rondas en todas las paginas
+  await page.route('**/api/filters/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
+  })
+  await page.goto('/')
+  await page.getByLabel('Tipo').selectOption('Unranked')
+  await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+
+  const nav = page.locator('nav')
+  for (const [ruta, titulo] of PAGINAS.slice(1, 6)) {
+    // por el menu y no con goto: un goto recarga y pierde los filtros
+    await nav.locator(`a[href="${ruta}"]`).click()
+    await expect(page.locator('h1')).toHaveText(titulo)
+    await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+    await expect(page.locator('.filters')).toBeVisible()
+    await expect(page.getByLabel('Tipo')).toHaveValue('Unranked')
+    await expect(page.locator('.empty-state')).toHaveCount(0)
+  }
+
+  // la ultima es Tendencias: Limpiar desde ahi vuelve a los numeros
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(page.locator('.page-head p')).toHaveText(
+    'Como se mueven tus numeros en el tiempo y en que momento de la partida te caes.',
+  )
+  await expect(page.getByLabel('Tipo')).toHaveValue('')
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/coach')
