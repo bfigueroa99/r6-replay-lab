@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05 15:48 UTC
 rama: -
 tipo: bug
 epica: -

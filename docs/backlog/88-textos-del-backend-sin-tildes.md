@@ -1,7 +1,7 @@
 # 88. Textos que arma el backend (narrativa de la partida, coach) sin tildes
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05 15:48 UTC
 rama: -
 tipo: bug
 epica: -
