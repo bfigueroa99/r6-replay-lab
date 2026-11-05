@@ -11,6 +11,7 @@ urlpatterns = [
     path("filters/", views.filter_options, name="filters"),
     path("overview/", views.overview, name="overview"),
     path("coach/", views.coach, name="coach"),
+    path("positioning/", views.positioning, name="positioning"),
     path("operators/", views.operators, name="operators"),
     path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
     path("trends/", views.trends, name="trends"),

@@ -826,6 +826,46 @@ test('el selector de tipo filtra el Inicio', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Dónde quedas fuera de posición' }),
+  })
+  await expect(panel.getByText('El .rec no trae coordenadas')).toBeVisible()
+  // Columnas: mapa, zona, rondas, fuera de posicion, resto, diferencia, margen, veredicto.
+  // Numeros de seed_demo: 203 rondas, 118 fuera de posicion; 116 de ataque con 66.
+  const sitios = panel.locator('h3:text-is("Sitios") + .table-wrap')
+  const church = sitios.locator('tr', { has: page.getByRole('cell', { name: 'B Church, B Arsenal Room' }) })
+  await expect(church.locator('td').nth(3)).toHaveText('85%')
+  await expect(church.locator('td').nth(5)).toHaveText('+33.5')
+  await expect(church.locator('td').nth(6)).toHaveText('±17.4')
+  await expect(church.locator('td').nth(7)).toHaveText('Te agarran más')
+  const ventilation = sitios.locator('tr', { has: page.getByRole('cell', { name: 'A Ventilation, A Workshop' }) })
+  await expect(ventilation.locator('td').nth(3)).toHaveText('25%')
+  await expect(ventilation.locator('td').nth(7)).toHaveText('Te sostienes')
+  // Bank A Vault tiene 4 rondas: bajo el minimo de 5.
+  await expect(sitios.getByRole('cell', { name: 'A Vault, A Gold Partition' })).toHaveCount(0)
+
+  const spawns = panel.locator('h3:text-is("Spawns de ataque") + .table-wrap')
+  const warehouse = spawns.locator('tr', { has: page.getByRole('cell', { name: 'Warehouse', exact: true }) })
+  await expect(warehouse.locator('td').nth(3)).toHaveText('80%')
+  await expect(warehouse.locator('td').nth(7)).toHaveText('Te agarran más')
+  // Con un error estandar seria solido; con dos es ruido.
+  const valley = spawns.locator('tr', { has: page.getByRole('cell', { name: 'Valley', exact: true }) })
+  await expect(valley.locator('td').nth(7)).toHaveText('Sin señal')
+
+  await expect(
+    page.getByRole('heading', {
+      name: 'En B Church, B Arsenal Room (Club House) te agarran fuera de posición el 85% de las rondas',
+    }),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'En A Ventilation, A Workshop (Border) te sostienes' })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

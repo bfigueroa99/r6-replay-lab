@@ -181,6 +181,11 @@ MULTIKILLS = {
     "multikill_rounds": Count("id", filter=Q(kills__gte=2)),
 }
 
+#: Fuera de posicion (ficha 80): moriste, no aportaste ninguna baja y nadie te
+#: vengo. Ver `docs/metricas.md`. No se usa `untraded_death`: es lo mismo al
+#: importar, pero una fila armada a mano puede no traerlo.
+_FUERA_DE_POSICION = Q(died=True, kills=0, was_traded=False)
+
 # Los alias no pueden repetir nombres de campos del modelo: si `kills` fuera a
 # la vez alias y campo, Django no podria resolver los filtros que usan `kills`.
 AGGREGATES = {
@@ -198,6 +203,7 @@ AGGREGATES = {
     "untraded_deaths": Count("id", filter=Q(untraded_death=True)),
     "kst_rounds": Count("id", filter=Q(kst=True)),
     "clutch_rounds": Count("id", filter=Q(one_vx__gt=0)),
+    "caught_out_rounds": Count("id", filter=_FUERA_DE_POSICION),
     **MULTIKILLS,
     "triple_plus_rounds": Count("id", filter=Q(kills__gte=3)),
     "won_after_opening_kill": Count("id", filter=Q(opening_kill=True, won=True)),
@@ -280,6 +286,9 @@ def derive(row: dict, baseline: float | None = None) -> dict:
             "traded_pct": _pct(traded, deaths),
             "multikill_pct": _pct(row.get("multikill_rounds") or 0, rounds),
             "clutch_pct": _pct(row.get("clutch_rounds") or 0, rounds),
+            # Sobre rondas y no sobre muertes: la pregunta es cada cuanto te
+            # pasa, y las rondas que sobreviviste tambien cuentan.
+            "caught_out_pct": _pct(row.get("caught_out_rounds") or 0, rounds),
             "winrate_after_opening_kill": _pct(row.get("won_after_opening_kill") or 0, ok),
             "winrate_after_opening_death": _pct(row.get("won_after_opening_death") or 0, od),
             "avg_death_elapsed": (
@@ -663,6 +672,115 @@ def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
         labels=(*_MAPA_LABELS, "spawn"),
         min_rounds=min_rounds,
     ))
+
+
+# --------------------------------------------------------------------- posicion
+
+#: Filas de la tabla de posicion: con menos rondas, el margen se come cualquier
+#: diferencia.
+POSICION_MIN_RONDAS = 5
+
+#: Cuantos errores estandar tiene que pasar la diferencia para que la zona
+#: tenga veredicto. Progreso usa uno porque mira 10 metricas fijas; aca hay una
+#: fila por sitio y spawn (20 o mas en un historial real) y con uno solo un
+#: tercio de las zonas saldria marcado por azar.
+POSICION_BANDAS = 2
+
+
+def _totales_de_posicion(qs: QuerySet[RoundPlayer]) -> dict:
+    fila = qs.aggregate(
+        rounds=Count("id"),
+        caught_out_rounds=Count("id", filter=_FUERA_DE_POSICION),
+    )
+    rondas = fila["rounds"] or 0
+    fuera = fila["caught_out_rounds"] or 0
+    return {
+        "rounds": rondas,
+        "caught_out_rounds": fuera,
+        "caught_out_pct": _pct(fuera, rondas),
+    }
+
+
+def _ruido_combinado(parte: int, n: int, parte_total: int, n_total: int) -> float | None:
+    """Error estandar de la diferencia zona - resto, con la proporcion combinada.
+
+    No se usa `_ruido` (Wald, una varianza por muestra): con una zona en 0 % o
+    100 % su varianza es cero, el margen se achica a casi nada y una zona de 5
+    rondas sale con veredicto por azar. Con la proporcion de zona + resto (el
+    total) el margen no colapsa en los bordes.
+    """
+    resto = n_total - n
+    if not n or not resto:
+        return None
+    p = parte_total / n_total
+    return round(math.sqrt(p * (1 - p) * (1 / n + 1 / resto)) * 100, 1)
+
+
+def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
+    """Compara cada zona contra el resto del historial, no contra el total.
+
+    La zona esta dentro del total: compararla con el la acerca a si misma, y
+    la banda de ruido supone dos muestras independientes.
+    """
+    for fila in filas:
+        rondas = fila["rounds"]
+        resto = total["rounds"] - rondas
+        resto_pct = _pct(total["caught_out_rounds"] - fila["caught_out_rounds"], resto)
+        delta = _delta(fila["caught_out_pct"], resto_pct)
+        se = _ruido_combinado(fila["caught_out_rounds"], rondas,
+                              total["caught_out_rounds"], total["rounds"])
+        margen = round(POSICION_BANDAS * se, 1) if (se is not None and resto) else None
+        if delta is None or margen is None:
+            veredicto = "ruido"
+        elif delta > margen:
+            veredicto = "dormidero"
+        elif delta < -margen:
+            veredicto = "solido"
+        else:
+            veredicto = "ruido"
+        fila.update(
+            {
+                "rest_rounds": resto,
+                "rest_caught_out_pct": resto_pct,
+                "caught_out_delta": delta,
+                "margin": margen,
+                "verdict": veredicto,
+            }
+        )
+    # Mayor diferencia primero; las que no tienen diferencia, al final.
+    filas.sort(key=lambda f: (f["caught_out_delta"] is None, -(f["caught_out_delta"] or 0)))
+    return filas
+
+
+def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
+    """Donde quedas fuera de posicion: sitio contra el resto, spawn contra el resto del ataque.
+
+    El spawn va contra el ataque y no contra todo porque solo existe en ataque,
+    y en ataque se queda fuera de posicion mas seguido: compararlo con todo lo
+    marcaria por el lado y no por el spawn. Las filas no se filtran por
+    veredicto: la tabla tambien muestra las que son ruido.
+    """
+    qs = base_queryset(**filters)
+    baseline = rating_baseline()
+    ataque = qs.filter(side="Attack")
+    sitios = _etiquetar(group_by(
+        qs.exclude(round__site=""), *_MAPA, "round__site",
+        labels=(*_MAPA_LABELS, "site"), min_rounds=min_rounds, baseline=baseline,
+    ))
+    spawns = _etiquetar(group_by(
+        ataque.exclude(spawn=""), *_MAPA, "spawn",
+        labels=(*_MAPA_LABELS, "spawn"), min_rounds=min_rounds, baseline=baseline,
+    ))
+    total = _totales_de_posicion(qs)
+    total_ataque = _totales_de_posicion(ataque)
+    return {
+        "overall": total,
+        "attack": total_ataque,
+        "sites": _contra_el_resto(sitios, total),
+        "spawns": _contra_el_resto(spawns, total_ataque),
+        "min_rounds": min_rounds,
+        "bands": POSICION_BANDAS,
+    }
 
 
 def by_round_number(**filters) -> list[dict]:

@@ -2,7 +2,15 @@ import React from 'react'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { EmptyState, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import {
+  claseVeredicto,
+  comoMargen,
+  conSigno,
+  etiquetaVeredicto,
+  hayZonas,
+  notaDeMuestra,
+} from '../posicion.js'
 
 const GROUPS = [
   { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
@@ -13,6 +21,7 @@ const GROUPS = [
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/coach/', filters)
+  const posicion = useApi('/positioning/', filters)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -64,12 +73,91 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         )
       })}
 
+      <PanelPosicion {...posicion} />
+
       <p className="note">
-        Las reglas exigen una muestra minima antes de opinar (20 rondas en general, 8-15 por
-        mapa/sitio/operador), asi que si algo no aparece es porque todavia no hay datos para
-        afirmarlo.
+        Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
+        mapa/sitio/operador, {posicion.data?.min_rounds ?? 5} por zona en la tabla de posición),
+        así que si algo no aparece es porque todavía no hay datos para afirmarlo.
       </p>
     </>
+  )
+}
+
+const pctCol = (key, label, help) => ({ key, label, help, digits: 0, suffix: '%' })
+
+const columnasDeZona = (clave, etiqueta) => [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: clave, label: etiqueta, left: true },
+  { key: 'rounds', label: 'Rondas' },
+  pctCol('caught_out_pct', 'Fuera de posición', 'Rondas en que moriste sin bajas y sin que nadie te vengara.'),
+  pctCol(
+    'rest_caught_out_pct',
+    'Resto',
+    'El mismo porcentaje en el resto de tus rondas; para un spawn, el resto de tu ataque.',
+  ),
+  { key: 'caught_out_delta', label: 'Diferencia', render: (row) => conSigno(row.caught_out_delta) },
+  {
+    key: 'margin',
+    label: 'Margen',
+    dim: true,
+    help: 'Dos errores estándar de la diferencia. Con muchas zonas, una diferencia menor que esto sale sola por azar.',
+    render: (row) => comoMargen(row.margin),
+  },
+  {
+    key: 'verdict',
+    label: 'Veredicto',
+    sortable: false,
+    csv: (row) => etiquetaVeredicto(row.verdict),
+    render: (row) => <span className={`chip ${claseVeredicto(row.verdict)}`.trim()}>{etiquetaVeredicto(row.verdict)}</span>,
+  },
+]
+
+const ORDEN_ZONAS = { key: 'caught_out_delta', dir: 'desc' }
+
+function PanelPosicion({ data, error, loading }) {
+  return (
+    <Panel
+      title="Dónde quedas fuera de posición"
+      hint="Rondas en que moriste sin bajas y sin que nadie te vengara, por zona, contra el resto de tu historial."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : (
+        <>
+          <p className="note">
+            El .rec no trae coordenadas: la zona es el sitio de bomba o el spawn de ataque.{' '}
+            {notaDeMuestra(data)} Usa el filtro Lado para ver solo tu defensa o tu ataque.
+          </p>
+          {!hayZonas(data) ? (
+            <p className="note">Todavía no hay zonas con {data?.min_rounds ?? 5} rondas.</p>
+          ) : (
+            <>
+              <h3>Sitios</h3>
+              <DataTable
+                columns={columnasDeZona('site', 'Sitio')}
+                rows={data.sites}
+                rowKey={(row) => `${row.map}-${row.map_id}-${row.site}`}
+                initialSort={ORDEN_ZONAS}
+                csvName="fuera-de-posicion-sitios"
+                empty="Ningún sitio con muestra suficiente."
+              />
+              <h3>Spawns de ataque</h3>
+              <DataTable
+                columns={columnasDeZona('spawn', 'Spawn')}
+                rows={data.spawns}
+                rowKey={(row) => `${row.map}-${row.map_id}-${row.spawn}`}
+                initialSort={ORDEN_ZONAS}
+                csvName="fuera-de-posicion-spawns"
+                empty="Ningún spawn de ataque con muestra suficiente."
+              />
+            </>
+          )}
+        </>
+      )}
+    </Panel>
   )
 }
 

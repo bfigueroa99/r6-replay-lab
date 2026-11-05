@@ -192,6 +192,7 @@ que ventana estan calculados los numeros que muestra.
 |---|---|
 | **Muerte tradeada** | Alguien vengo tu muerte en la ventana. Tu muerte costo poco: intercambiaste. |
 | **Muerte sin trade** | Moriste y nadie te vengo. Es la muerte que realmente pierde rondas: tu equipo queda 4v5 gratis. Un porcentaje sobre 65% casi siempre significa que juegas muy separado o muy adelantado. |
+| **Fuera de posición** | Rondas en que moriste, sin bajas y sin que nadie te vengara / rondas jugadas. Es "te agarraron mal parado": morir peleando (con una baja) o morir y que te venguen no cuenta. Sale en todo agregado y en los CSV (`caught_out_rounds`, `caught_out_pct`). |
 | **Trade kills** | Veces que **tu** mataste al asesino de un compañero dentro de la ventana. Cuenta bajas, no compañeros vengados: si el rival habia matado a dos y lo matas, es un trade kill (y las dos muertes cuentan como tradeadas). |
 | **Trades por equipo** | En el detalle de una partida, por equipo: muertes, tradeadas, sin trade, % sin trade (sobre las muertes de ese equipo; `—` sin muertes) y trade kills. El equipo se toma ronda a ronda (el `team_index` de tu fila; sin tu fila, el de la partida). Misma ventana `TRADE_WINDOW_SECONDS` y mismas columnas que el scoreboard, que ya se guardan al importar; nada se recalcula al consultar. Con tu `team_index` fijo toda la partida (lo normal) es la suma de las filas *Trades* y *Sin trade* de cada equipo del scoreboard; si cambiara en alguna ronda, el panel sigue a tu equipo ronda a ronda y el scoreboard, que agrupa por indice, no. Una muerte por teamkill o sin autor cuenta como sin trade, igual que en el scoreboard. Se resalta el equipo con menos muertes sin trade, menor % sin trade y mas trade kills. |
 
@@ -295,6 +296,18 @@ posiciones sobre el minimapa. Lo mas fino que entrega el formato es sitio de
 bomba y spawn de ataque: con eso trabajan el Coach y las tablas `maps`, `sites`
 y `spawns` de la exportacion CSV.
 
+La tabla **Dónde quedas fuera de posición** del Coach usa esa granularidad:
+compara el % fuera de posición de cada sitio contra el **resto** de tus rondas
+y el de cada spawn contra el resto de tu **ataque** (el spawn solo existe en
+ataque, y en ataque se queda fuera de posición mas seguido: contra todo, el
+spawn saldria marcado por el lado). No se compara contra el total porque la
+zona esta dentro de el. El veredicto (*Te agarran más*, *Te sostienes*) solo
+habla si la diferencia pasa el **margen**, dos errores estandar de la
+diferencia, calculados con la proporcion combinada (zona + resto: con la de cada
+muestra, una zona en 0 % o 100 % tendria margen casi nulo). Con una fila por sitio y spawn (20 o mas
+en un historial real), con uno solo un tercio de las zonas saldria marcado por
+azar. El filtro Lado deja el resto del mismo lado.
+
 ## Progreso
 
 Comparar lo reciente contra lo inmediatamente anterior es la unica forma honesta
@@ -351,6 +364,7 @@ opinar:
 | Mapa | 15 rondas en ese mapa |
 | Operador | 12 rondas con ese operador |
 | Sitio / spawn | 8 rondas |
+| Zona fuera de posición | 5 rondas en la tabla, 8 para la señal del Coach |
 | Cortes de Tendencias (ronda anterior, marcador, como se cierran, hora, dia) | 30 rondas por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.
