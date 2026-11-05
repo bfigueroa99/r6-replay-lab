@@ -13,9 +13,9 @@ import {
 } from '../posicion.js'
 
 const GROUPS = [
-  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
+  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
   { key: 'media', title: 'Para trabajar', hint: 'Patrones claros con muestra suficiente.' },
-  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales mas debiles o de contexto.' },
+  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales más débiles o de contexto.' },
   { key: 'positivo', title: 'Tus fortalezas', hint: 'Apoyate en esto al elegir rol y picks.' },
 ]
 
@@ -35,8 +35,8 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         <div>
           <h1>Coach</h1>
           <p>
-            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el numero, con que se compara
-            y cuantas rondas lo respaldan.
+            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el número, con qué se compara
+            y cuántas rondas lo respaldan.
           </p>
         </div>
       </div>

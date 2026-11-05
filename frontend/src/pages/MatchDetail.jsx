@@ -129,7 +129,7 @@ export default function MatchDetail() {
               Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
               {round.score_after?.join('-')} · duro {Math.round(round.duration)}s
               <br />
-              Condicion: {translateCondition(round.win_condition)}
+              Condición: {translateCondition(round.win_condition)}
               {round.win_condition_certain ? '' : ' (inferida)'}
               {round.possible_plant ? ' · plant probable' : ''}
             </p>
@@ -202,7 +202,7 @@ export default function MatchDetail() {
         <TradesPorEquipo teamTrades={data.team_trades} />
       </Panel>
 
-      <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las metricas derivadas.">
+      <Panel title="Scoreboard de la partida" hint="Los dos equipos, con las métricas derivadas.">
         <DataTable
           columns={[
             {

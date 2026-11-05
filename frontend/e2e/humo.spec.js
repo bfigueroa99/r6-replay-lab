@@ -673,7 +673,7 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {
-    has: page.getByRole('heading', { name: 'Sus numeros', exact: true }),
+    has: page.getByRole('heading', { name: 'Sus números', exact: true }),
   })
   await expect(numeros).toContainText('14×2K')
 
@@ -706,7 +706,7 @@ test('los POST de la UI mandan JSON', async ({ page }) => {
 
   await page.goto('/')
   await page.locator('.topbar').getByRole('button', { name: 'Importar replays' }).click()
-  await expect(page.getByText('No habia partidas nuevas para importar.')).toBeVisible()
+  await expect(page.getByText('No había partidas nuevas para importar.')).toBeVisible()
   expect(tipo).toContain('application/json')
 
   expect(errores).toEqual([])
@@ -716,7 +716,7 @@ test('una ruta que no existe no rompe la app', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/no-existe')
 
-  await expect(page.getByText('Esa pagina no existe')).toBeVisible()
+  await expect(page.getByText('Esa página no existe')).toBeVisible()
   await page.getByRole('link', { name: 'Volver al resumen' }).click()
   await expect(page.locator('h1')).toHaveText('Resumen')
 

@@ -162,7 +162,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           />
         </Panel>
 
-        <Panel title="Ultimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
+        <Panel title="Últimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
           <div className="form-row" style={{ marginBottom: 12 }}>
             {form.map((match) => (
               <Link
@@ -186,7 +186,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               { key: 'kills', label: 'K' },
               { key: 'deaths', label: 'D' },
               { key: 'kd', label: 'K/D', digits: 2 },
-              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
               {
                 key: 'played_at',
                 label: 'Cuando',
@@ -226,15 +226,15 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       ) : null}
 
       {series.length > 2 ? (
-        <Panel title="Evolucion por partida" hint="Rondas ganadas y kills por ronda, en orden cronologico.">
-          <Suspense fallback={<Loading>Cargando grafico...</Loading>}>
+        <Panel title="Evolución por partida" hint="Rondas ganadas y kills por ronda, en orden cronológico.">
+          <Suspense fallback={<Loading>Cargando gráfico...</Loading>}>
             <EvolucionChart series={series} />
           </Suspense>
         </Panel>
       ) : null}
 
       {topInsights.length ? (
-        <Panel title="Lo que hay que corregir" right={<Link className="btn small" to="/coach">Ver todo el analisis</Link>}>
+        <Panel title="Lo que hay que corregir" right={<Link className="btn small" to="/coach">Ver todo el análisis</Link>}>
           {topInsights.map((insight) => (
             <div key={insight.key} className={`insight ${insight.severity}`}>
               <h3>{insight.title}</h3>
@@ -246,22 +246,22 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       ) : null}
 
       {health ? (
-        <Panel title="Que tan completa esta la data" hint="Lo que el formato .rec entrega y lo que hay que inferir.">
+        <Panel title="Qué tan completa está la data" hint="Lo que el formato .rec entrega y lo que hay que inferir.">
           <ul className="note" style={{ margin: 0, paddingLeft: 18 }}>
             <li>{health.rounds} rondas tuyas importadas de {health.matches} partidas.</li>
             <li>
-              {health.rounds_uncertain_win_condition} rondas donde la condicion de victoria se
+              {health.rounds_uncertain_win_condition} rondas donde la condición de victoria se
               infiere (el replay ya no expone los eventos del defuser).
             </li>
-            <li>{health.rounds_possible_plant} rondas con plant probable segun el reloj.</li>
+            <li>{health.rounds_possible_plant} rondas con plant probable según el reloj.</li>
             <li>
               Trades calculados con una ventana de <b>{fmt(health.trade_window, 0)}s</b>. Se cambia
-              en el <code>.env</code> con <code>TRADE_WINDOW_SECONDS</code>, y despues hay que
+              en el <code>.env</code> con <code>TRADE_WINDOW_SECONDS</code>, y después hay que
               correr <code>manage.py recompute</code>.
             </li>
             {health.rounds_without_site ? <li>{health.rounds_without_site} rondas sin sitio detectado.</li> : null}
             {!health.assists_available ? (
-              <li>Asistencias no disponibles en esta version del juego.</li>
+              <li>Asistencias no disponibles en esta versión del juego.</li>
             ) : null}
           </ul>
         </Panel>

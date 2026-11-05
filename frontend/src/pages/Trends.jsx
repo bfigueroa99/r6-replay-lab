@@ -106,7 +106,7 @@ const COLUMNAS_POR_TRAMO = [
   { key: 'tramo', label: 'Tramo', sortable: false, left: true },
   { key: 'rounds', label: 'Rondas', sortable: false },
   { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
-  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+  { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
   { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
   { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
 ]
@@ -212,7 +212,7 @@ function TablaDeCorte({ filas, columna, etiquetas, rowKey, csvName }) {
         { key: 'tramo', label: columna, sortable: false, left: true },
         { key: 'rounds', label: 'Rondas', sortable: false },
         { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%', sortable: false },
-        { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+        { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
         { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
         { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
       ]}
@@ -293,7 +293,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       <div className="page-head">
         <div>
           <h1>Tendencias</h1>
-          <p>Como se mueven tus numeros en el tiempo y en que momento de la partida te caes.</p>
+          <p>Cómo se mueven tus números en el tiempo y en qué momento de la partida te caes.</p>
         </div>
       </div>
 
@@ -303,9 +303,9 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         <Panel
           title="Progreso"
           hint={
-            'Lo reciente contra lo inmediatamente anterior. La banda de ruido es cuanto se mueve ' +
-            'sola una metrica con esta cantidad de rondas: si el cambio no la pasa, no es un ' +
-            'cambio. Solo se calcula para porcentajes; en el resto la flecha es solo la direccion.'
+            'Lo reciente contra lo inmediatamente anterior. La banda de ruido es cuánto se mueve ' +
+            'sola una métrica con esta cantidad de rondas: si el cambio no la pasa, no es un ' +
+            'cambio. Solo se calcula para porcentajes; en el resto la flecha es solo la dirección.'
           }
           right={
             <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -313,7 +313,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               <select value={ventana} onChange={(e) => setVentana(Number(e.target.value))}>
                 {VENTANAS.map((v, i) => (
                   <option key={v.label} value={i}>
-                    Ultimas {v.label}
+                    Últimas {v.label}
                   </option>
                 ))}
               </select>
@@ -324,7 +324,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             <div className="flash bad" style={{ marginTop: 0 }}>
               Muestra insuficiente: {progreso.data.current.rounds} rondas contra{' '}
               {progreso.data.previous.rounds}, y hacen falta {progreso.data.min_rounds} de cada
-              lado. Los numeros estan abajo, pero no alcanzan para decir que algo cambio.
+              lado. Los números están abajo, pero no alcanzan para decir que algo cambió.
             </div>
           )}
 
@@ -347,7 +347,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               {
                 key: 'noise',
                 label: 'Ruido',
-                help: 'Error estandar de la diferencia: el tamano tipico de un cambio que no significa nada.',
+                help: 'Error estándar de la diferencia: el tamaño típico de un cambio que no significa nada.',
                 render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
                 dim: true,
               },
@@ -376,7 +376,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </Panel>
       ) : null}
 
-      <Panel title="Por dia de juego" hint="Cada punto es una sesion. Sirve para ver si mejoras o si solo tuviste un buen dia.">
+      <Panel title="Por día de juego" hint="Cada punto es una sesión. Sirve para ver si mejoras o si solo tuviste un buen día.">
         <div style={{ height: 260 }}>
           <ResponsiveContainer>
             <LineChart data={byDay} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
@@ -395,7 +395,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </div>
       </Panel>
 
-      <Panel title="Por partida" hint="Orden cronologico, de la mas vieja a la mas reciente.">
+      <Panel title="Por partida" hint="Orden cronológico, de la más vieja a la más reciente.">
         <div style={{ height: 240 }}>
           <ResponsiveContainer>
             <LineChart data={byMatch} margin={{ top: 6, right: 12, bottom: 0, left: -18 }}>
@@ -419,8 +419,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
 
       {porPosicion.length > 2 ? (
         <Panel
-          title="Curva de la sesion"
-          hint={`Como rindes segun si fue tu primera partida de la noche o la quinta. Una sesion se corta despues de ${horas} horas sin jugar (SESSION_GAP_MINUTES en el .env).`}
+          title="Curva de la sesión"
+          hint={`Cómo rindes según si fue tu primera partida de la noche o la quinta. Una sesión se corta después de ${horas} horas sin jugar (SESSION_GAP_MINUTES en el .env).`}
         >
           <div style={{ height: 220 }}>
             <ResponsiveContainer>
@@ -430,7 +430,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                 <YAxis domain={[0, 100]} {...AXIS} />
                 <Tooltip
                   {...TOOLTIP}
-                  labelFormatter={(l) => `${l} partida de la sesion`}
+                  labelFormatter={(l) => `${l} partida de la sesión`}
                   formatter={(v, n) => [fmt(v, 0), n]}
                 />
                 <RBar dataKey="winrate" name="Rondas ganadas %" fill="#ff8a3d" radius={[4, 4, 0, 0]} />
@@ -443,7 +443,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'matches', label: 'Partidas' },
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
-              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%' },
@@ -462,7 +462,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       ) : null}
 
       {sesiones.data?.sessions?.length ? (
-        <Panel title="Sesiones" hint="Cada bloque de juego, de la mas reciente hacia atras.">
+        <Panel title="Sesiones" hint="Cada bloque de juego, de la más reciente hacia atrás.">
           <DataTable
             columns={[
               {
@@ -474,7 +474,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'hours', label: 'Duro', render: (row) => `${row.hours}h` },
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
-              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
@@ -528,11 +528,11 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
 
       {muertes.length ? (
         <Panel
-          title="Cuando mueres"
+          title="Cuándo mueres"
           hint={
             'El promedio esconde la forma: morir siempre a los 100s no es lo mismo que morir ' +
             'la mitad de las veces a los 20 y la otra mitad a los 170, y las dos cosas se ' +
-            'arreglan distinto. Los segundos son de fase de accion, no del reloj de la ronda.'
+            'arreglan distinto. Los segundos son de fase de acción, no del reloj de la ronda.'
           }
         >
           <div style={{ height: 240 }}>
@@ -560,7 +560,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                     <div className="label">{lado}: sales muy temprano</div>
                     <div className="value">{fmt(fila.first30_pct, 0, '%')}</div>
                     <div className="sub">
-                      {fila.first30} de {fila.deaths} muertes en los primeros 30s de accion
+                      {fila.first30} de {fila.deaths} muertes en los primeros 30s de acción
                     </div>
                   </div>
                   <div className="stat">
@@ -587,7 +587,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                 label: 'Sin trade',
                 digits: 0,
                 suffix: '%',
-                help: 'De las muertes de ese tramo, cuantas quedaron sin vengar.',
+                help: 'De las muertes de ese tramo, cuántas quedaron sin vengar.',
               },
             ]}
             rows={muertes}
@@ -939,7 +939,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       ) : null}
 
       <Panel
-        title="Por numero de ronda"
+        title="Por número de ronda"
         hint="Si el winrate cae en las rondas finales, el problema es de decisiones bajo presion, no de aim."
       >
         <div style={{ height: 220 }}>

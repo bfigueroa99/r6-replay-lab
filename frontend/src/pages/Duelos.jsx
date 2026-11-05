@@ -49,7 +49,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      Muestra minima
+      Muestra mínima
       <select value={minDuels} onChange={(e) => setMinDuels(Number(e.target.value))}>
         {MUESTRAS.map((m) => (
           <option key={m.value} value={m.value}>
@@ -77,7 +77,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
         <div>
           <h1>Duelos</h1>
           <p>
-            Quien te mata y a quien matas. Sale del kill feed, no de un scoreboard: son duelos
+            Quién te mata y a quién matas. Sale del kill feed, no de un scoreboard: son duelos
             reales, uno contra uno.
           </p>
         </div>
@@ -103,9 +103,9 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       <Panel
         title="Por operador rival"
         hint={
-          'Con que operador te estaban matando. El operador sale del scoreboard de esa ronda, ' +
+          'Con qué operador te estaban matando. El operador sale del scoreboard de esa ronda, ' +
           'porque el kill feed del .rec no lo trae en el evento. Un porcentaje muy bajo suele ' +
-          'ser utilidad que no estas limpiando, no punteria.'
+          'ser utilidad que no estás limpiando, no puntería.'
         }
         right={selector}
       >
@@ -122,7 +122,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           initialSort={{ key: 'duels', dir: 'desc' }}
           rowKey={(row) => row.operator}
           csvName="duelos-por-operador"
-          empty={`Ningun operador llega a ${minDuels} duelos con estos filtros.`}
+          empty={`Ningún operador llega a ${minDuels} duelos con estos filtros.`}
         />
       </Panel>
 
@@ -167,8 +167,8 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       <Panel
         title="Por rival"
         hint={
-          'Agrupado por persona (profileID), asi que un cambio de nick no parte la fila. En ' +
-          'ranked solo casi nadie se repite: con pocos duelos esto es anecdota y no patron, y ' +
+          'Agrupado por persona (profileID), así que un cambio de nick no parte la fila. En ' +
+          'ranked solo casi nadie se repite: con pocos duelos esto es anécdota y no patrón, y ' +
           'por eso el coach solo opina desde 8 duelos contra la misma persona.'
         }
       >

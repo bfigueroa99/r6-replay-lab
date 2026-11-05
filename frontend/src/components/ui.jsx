@@ -238,7 +238,7 @@ export function ErrorBox({ error }) {
     <div className="error">
       <b>No pude leer la API.</b> {String(error)}
       <br />
-      <span className="note">Revisa que Django este corriendo en el puerto 8000.</span>
+      <span className="note">Revisa que Django esté corriendo en el puerto 8000.</span>
     </div>
   )
 }

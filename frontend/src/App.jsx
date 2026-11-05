@@ -104,7 +104,7 @@ export default function App() {
           ? `Error al importar: ${job.error}`
           : ok
             ? `Importadas ${ok} partida(s).` + (job.errors ? ` ${job.errors} con error.` : '')
-            : 'No habia partidas nuevas para importar.' +
+            : 'No había partidas nuevas para importar.' +
               (job.errors ? ` ${job.errors} con error.` : ''),
       )
       health.reload()
@@ -184,7 +184,7 @@ export default function App() {
             path="*"
             element={
               <div className="empty-state">
-                <h2>Esa pagina no existe</h2>
+                <h2>Esa página no existe</h2>
                 <NavLink className="btn" to="/">
                   Volver al resumen
                 </NavLink>

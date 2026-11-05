@@ -65,7 +65,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
         <div>
           <h1>Compañeros</h1>
           <p>
-            Con quien ganas y con quien no. Solo cuentan las rondas que jugaron en tu equipo
+            Con quién ganas y con quién no. Solo cuentan las rondas que jugaron en tu equipo
             {baseline === null ? '' : `, contra tu ${baseline.toFixed(0)}% general`}.
           </p>
         </div>
@@ -75,10 +75,10 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Sinergia"
-        hint="El winrate de un compañero es el de las rondas compartidas, no el suyo aparte. Con pocas rondas es varianza: sube la muestra minima antes de sacar conclusiones."
+        hint="El winrate de un compañero es el de las rondas compartidas, no el suyo aparte. Con pocas rondas es varianza: sube la muestra mínima antes de sacar conclusiones."
         right={
           <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            Muestra minima
+            Muestra mínima
             <select value={minRounds} onChange={(e) => setMinRounds(Number(e.target.value))}>
               {SAMPLES.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -367,7 +367,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           initialSort={{ key: 'played_at', dir: 'desc' }}
           rowKey={(row) => `${row.match_id}-${row.round}`}
           csvName="clutches"
-          empty="Todavia no ganaste ninguna ronda quedandote solo."
+          empty="Todavía no ganaste ninguna ronda quedandote solo."
         />
       </Panel>
     </>

@@ -110,7 +110,7 @@ export default function Filters({
 
       {showSession ? (
         <label>
-          Sesion
+          Sesión
           <select value={value.session ?? ''} onChange={set('session')}>
             <option value="">Todas</option>
             {(data?.sessions || []).map((s) => (
