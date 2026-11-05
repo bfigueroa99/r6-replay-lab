@@ -921,7 +921,11 @@ test('Duelos con rondas pero sin duelos dice 0 duelos y no 0 rondas', async ({ p
   await expect(page.locator('.empty-state')).toHaveCount(0)
 
   // con un filtro la barra se queda y el texto habla de el
+  // se espera la respuesta filtrada: con la vieja en pantalla el texto ya
+  // cambia, y el test terminaria con la ruta interceptada en vuelo
+  const filtrada = page.waitForResponse((r) => new URL(r.url()).searchParams.get('side') === 'Attack')
   await page.getByLabel('Lado').selectOption({ index: 1 })
+  await filtrada
   await expect(page.locator('.page-head p')).toHaveText('0 duelos con estos filtros')
   await expect(page.getByText('Hay rondas con estos filtros, pero en ninguna mataste a un rival')).toBeVisible()
   await expect(page.locator('.filters')).toBeVisible()
