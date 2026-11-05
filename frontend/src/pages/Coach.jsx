@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas } from '../components/ui.jsx'
 import {
   claseVeredicto,
   comoMargen,
@@ -11,6 +11,7 @@ import {
   hayZonas,
   notaDeMuestra,
 } from '../posicion.js'
+import { vistaSinRondas } from '../tipoPartida.js'
 
 const GROUPS = [
   { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
@@ -25,7 +26,11 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
-  if (!data?.totals?.rounds) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaSinRondas({ vacio: !data?.totals?.rounds, filtros: filters, cargando: loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Coach" filtros={<Filters value={filters} onChange={setFilters} />} />
+  }
 
   const insights = data.insights || []
 

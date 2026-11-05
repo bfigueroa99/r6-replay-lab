@@ -10,15 +10,21 @@ import {
   Loading,
   Panel,
   SideChip,
+  SinRondasFiltradas,
   pct,
 } from '../components/ui.jsx'
+import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Operators({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/operators/', { ...filters, min_rounds: 1 })
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
-  if (!data?.operators?.length) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaSinRondas({ vacio: !data?.operators?.length, filtros: filters, cargando: loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Operadores" filtros={<Filters value={filters} onChange={setFilters} showOperator={false} />} />
+  }
 
   const rows = data.operators
   const attack = rows.filter((r) => r.side === 'Attack')

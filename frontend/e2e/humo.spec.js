@@ -5,6 +5,12 @@ import { expect, test } from '@playwright/test'
 import { vigilarConsola } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
+// backend/tests/test_partida_sin_rondas.py afirma que es la forma real del detalle sin
+// rondas; si falla, se regenera con json.dumps(indent=2, ensure_ascii=False) de esa respuesta. Con fs y no con import attributes: el Node del PC puede ser otro
+const SIN_RONDAS = JSON.parse(
+  fs.readFileSync(new URL('./partida-sin-rondas.json', import.meta.url), 'utf8'),
+)
+
 /** Ruta -> el h1 que tiene que aparecer. Las del menu, menos la Ruleta (tiene su spec). */
 const PAGINAS = [
   ['/', 'Resumen'],
@@ -386,6 +392,30 @@ test('el detalle de una partida muestra los trades por equipo', async ({ page })
     await expect(celdas.nth(3)).toHaveText(String(detalle.team_trades[lado].untraded_deaths))
   }
   await expect(panel.getByText(/^Tu equipo dejó \d+ muertes? sin trade; el rival, \d+\.$/)).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene partidas sin rondas: se toma una y se le vacia el detalle
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id, map } = matches[0]
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, ...SIN_RONDAS } })
+  })
+  await page.goto(`/partidas/${id}`)
+
+  await expect(page.locator('h1')).toContainText(map)
+  const rondas = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  await expect(rondas).toContainText('Esta partida no tiene rondas importadas.')
+  // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
+  await expect(rondas.locator('.round-tab')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Scoreboard de la partida', exact: true })).toBeVisible()
 
   expect(errores).toEqual([])
 })
@@ -822,6 +852,41 @@ test('el selector de tipo filtra el Inicio', async ({ page }) => {
   // pasar por 0 rondas no vuelve a montar la barra (perderia el rango de
   // fechas abierto): /api/filters/ se pide una sola vez
   expect(pedidosDeFiltros).toBe(1)
+
+  expect(errores).toEqual([])
+})
+
+test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // ficha 85: los filtros viven en App y se comparten. seed_demo es todo
+  // Ranked: un tipo sin partidas deja 0 rondas en todas las paginas
+  await page.route('**/api/filters/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
+  })
+  await page.goto('/')
+  await page.getByLabel('Tipo').selectOption('Unranked')
+  await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+
+  const nav = page.locator('nav')
+  for (const [ruta, titulo] of PAGINAS.slice(1, 6)) {
+    // por el menu y no con goto: un goto recarga y pierde los filtros
+    await nav.locator(`a[href="${ruta}"]`).click()
+    await expect(page.locator('h1')).toHaveText(titulo)
+    await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+    await expect(page.locator('.filters')).toBeVisible()
+    await expect(page.getByLabel('Tipo')).toHaveValue('Unranked')
+    await expect(page.locator('.empty-state')).toHaveCount(0)
+  }
+
+  // la ultima es Tendencias: Limpiar desde ahi vuelve a los numeros
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(page.locator('.page-head p')).toHaveText(
+    'Como se mueven tus numeros en el tiempo y en que momento de la partida te caes.',
+  )
+  await expect(page.getByLabel('Tipo')).toHaveValue('')
+  await expect(page.locator('.empty-state')).toHaveCount(0)
 
   expect(errores).toEqual([])
 })

@@ -31,7 +31,8 @@ export default function MatchDetail() {
 
   const { match, rounds, scoreboard, my_totals: mine } = data
   const rachas = textoDeRachas(data.round_streaks)
-  const round = rounds[Math.min(selected, rounds.length - 1)]
+  // Un .rec cortado deja la partida sin rondas: rounds[-1] seria undefined y tumbaria la pagina
+  const round = rounds.length ? rounds[Math.min(selected, rounds.length - 1)] : null
 
   async function copiarResumen() {
     // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
@@ -101,92 +102,100 @@ export default function MatchDetail() {
         />
       </div>
 
-      <Panel title="Rondas" hint="Clic en una ronda para ver su timeline.">
-        <div className="round-tabs">
-          {rounds.map((r, i) => (
-            <button
-              key={r.number}
-              className={`round-tab ${r.my_team_won === null ? '' : r.my_team_won ? 'win' : 'loss'} ${
-                i === selected ? 'active' : ''
-              }`}
-              onClick={() => setSelected(i)}
-              title={`${r.site || 'sitio desconocido'} · ${r.my_side === 'Attack' ? 'ataque' : 'defensa'}`}
-            >
-              <span className="n">{r.label}</span>
-              <span className="dot" />
-              <span style={{ fontSize: 10 }}>{r.my_side === 'Attack' ? 'ATK' : 'DEF'}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="round-detail">
-          <div>
-            <h3 style={{ marginTop: 0, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {round.label} <SideChip side={round.my_side} />
-              <ResultChip won={round.my_team_won} />
-            </h3>
-            <p className="note" style={{ marginTop: 0 }}>
-              Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
-              {round.score_after?.join('-')} · duro {Math.round(round.duration)}s
-              <br />
-              Condición: {translateCondition(round.win_condition)}
-              {round.win_condition_certain ? '' : ' (inferida)'}
-              {round.possible_plant ? ' · plant probable' : ''}
-            </p>
-            {round.summary?.length ? (
-              <p className="resumen">{round.summary.join(' ')}</p>
-            ) : null}
-            <Timeline round={round} />
+      {round ? (
+        <Panel title="Rondas" hint="Clic en una ronda para ver su timeline.">
+          <div className="round-tabs">
+            {rounds.map((r, i) => (
+              <button
+                key={r.number}
+                className={`round-tab ${r.my_team_won === null ? '' : r.my_team_won ? 'win' : 'loss'} ${
+                  i === selected ? 'active' : ''
+                }`}
+                onClick={() => setSelected(i)}
+                title={`${r.site || 'sitio desconocido'} · ${r.my_side === 'Attack' ? 'ataque' : 'defensa'}`}
+              >
+                <span className="n">{r.label}</span>
+                <span className="dot" />
+                <span style={{ fontSize: 10 }}>{r.my_side === 'Attack' ? 'ATK' : 'DEF'}</span>
+              </button>
+            ))}
           </div>
 
-          <div>
-            <h3 style={{ marginTop: 0 }}>Jugadores de la ronda</h3>
-            <DataTable
-              columns={[
-                {
-                  key: 'username',
-                  label: 'Jugador',
-                  left: true,
-                  render: (row) =>
-                    row.player_id ? (
-                      <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
-                    ) : (
-                      row.username
+          <div className="round-detail">
+            <div>
+              <h3 style={{ marginTop: 0, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {round.label} <SideChip side={round.my_side} />
+                <ResultChip won={round.my_team_won} />
+              </h3>
+              <p className="note" style={{ marginTop: 0 }}>
+                Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
+                {round.score_after?.join('-')} · duro {Math.round(round.duration)}s
+                <br />
+                Condición: {translateCondition(round.win_condition)}
+                {round.win_condition_certain ? '' : ' (inferida)'}
+                {round.possible_plant ? ' · plant probable' : ''}
+              </p>
+              {round.summary?.length ? (
+                <p className="resumen">{round.summary.join(' ')}</p>
+              ) : null}
+              <Timeline round={round} />
+            </div>
+
+            <div>
+              <h3 style={{ marginTop: 0 }}>Jugadores de la ronda</h3>
+              <DataTable
+                columns={[
+                  {
+                    key: 'username',
+                    label: 'Jugador',
+                    left: true,
+                    render: (row) =>
+                      row.player_id ? (
+                        <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>
+                      ) : (
+                        row.username
+                      ),
+                  },
+                  { key: 'operator', label: 'Operador', left: true },
+                  { key: 'kills', label: 'K' },
+                  { key: 'died', label: 'Murio', render: (row) => (row.died ? 'si' : 'no') },
+                  { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
+                  {
+                    key: 'death_elapsed',
+                    label: 'Murio a los',
+                    render: (row) => (row.death_elapsed ? `${Math.round(row.death_elapsed)}s` : '—'),
+                  },
+                  {
+                    key: 'flags',
+                    label: 'Notas',
+                    sortable: false,
+                    wrap: true,
+                    render: (row) => (
+                      <span className="tags">
+                        {row.opening_kill ? <span className="chip win">1a baja</span> : null}
+                        {row.opening_death ? <span className="chip loss">1a muerte</span> : null}
+                        {row.trade_kills ? <span className="chip">{row.trade_kills} trade</span> : null}
+                        {row.untraded_death ? <span className="chip loss">sin trade</span> : null}
+                        {row.one_vx ? <span className="chip win">1v{row.one_vx}</span> : null}
+                      </span>
                     ),
-                },
-                { key: 'operator', label: 'Operador', left: true },
-                { key: 'kills', label: 'K' },
-                { key: 'died', label: 'Murio', render: (row) => (row.died ? 'si' : 'no') },
-                { key: 'hs_pct', label: 'HS%', digits: 0, suffix: '%' },
-                {
-                  key: 'death_elapsed',
-                  label: 'Murio a los',
-                  render: (row) => (row.death_elapsed ? `${Math.round(row.death_elapsed)}s` : '—'),
-                },
-                {
-                  key: 'flags',
-                  label: 'Notas',
-                  sortable: false,
-                  wrap: true,
-                  render: (row) => (
-                    <span className="tags">
-                      {row.opening_kill ? <span className="chip win">1a baja</span> : null}
-                      {row.opening_death ? <span className="chip loss">1a muerte</span> : null}
-                      {row.trade_kills ? <span className="chip">{row.trade_kills} trade</span> : null}
-                      {row.untraded_death ? <span className="chip loss">sin trade</span> : null}
-                      {row.one_vx ? <span className="chip win">1v{row.one_vx}</span> : null}
-                    </span>
-                  ),
-                },
-              ]}
-              rows={round.players}
-              initialSort={{ key: 'kills', dir: 'desc' }}
-              rowKey={(row) => row.username}
-              rowClass={(row) => (row.is_me ? 'me' : '')}
-            />
+                  },
+                ]}
+                rows={round.players}
+                initialSort={{ key: 'kills', dir: 'desc' }}
+                rowKey={(row) => row.username}
+                rowClass={(row) => (row.is_me ? 'me' : '')}
+              />
+            </div>
           </div>
-        </div>
-      </Panel>
+        </Panel>
+      ) : (
+        <Panel title="Rondas">
+          <p className="note" style={{ margin: 0 }}>
+            Esta partida no tiene rondas importadas.
+          </p>
+        </Panel>
+      )}
 
       <Panel title="Matriz de duelos" hint="Quién mató a quién en esta partida. Filas: el que mata.">
         <MatrizDuelos
