@@ -1,7 +1,7 @@
 # 89. Salida del spawn por mapa
 
-estado: implementado
-candado: revisor 2026-11-05T19:20Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: S2 de ALCANCE.md (idea del PR #22 que el humano cerro sin merge el 2026-11-05, rama `ccr-ec8265ab-4qn7k2`, commit c994090); `ROTACION` de estado.sh marca `posicionamiento` como epica sin entrega
 archivos: backend/replays/analytics/aggregates.py (spawn_exits, positioning), backend/tests/test_salida_del_spawn.py, frontend/src/posicion.js, frontend/src/posicion.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cBJfgUn
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cBJfgUn, revisor 20261105T1920Z-cSTWy1D
 
 ## PR
 
@@ -311,6 +311,47 @@ sigue a calibrar con la base real (ver Diseno).
 verificar.sh: VERDE 6be48daed (974 tests backend, 203 vitest, 65 e2e).
 Skills: no aplica (el diseno ya resolvia el dominio).
 OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
+
+## Revision 2026-11-05 sobre 2f17f03
+
+Veredicto: aprobar -> `revisado`.
+
+Revision a ciegas (eje de estandares, `omc-code-reviewer`) y eje de
+intencion (diff de 443 lineas, otro `omc-code-reviewer` contra Que gana,
+Criterios y Fuera de alcance); sin eje de seguridad (no toca POST, `.rec`,
+rutas, `externo/` ni dependencias). Ninguno de los dos encontro CRITICAL ni
+HIGH. Confirmado por el lider:
+
+- [test] MEDIUM `frontend/e2e/humo.spec.js:382-394` (los dos ejes)
+  Que pasa: en `seed_demo` la primera muerte y la primera baja son a los
+  35 s, asi que todas las columnas tempranas valen 0 y el veredicto es "Sin
+  señal" en las 6 filas; si el render cruzara `early_deaths` con
+  `early_kills` o el conteo diera siempre 0 en la app real, el e2e seguiria
+  verde. El calculo lo cubren backend y vitest. Es la limitacion que la
+  Implementacion ya anoto como aceptada; no bloquea.
+  Arreglo sugerido: si un tramo futuro toca `seed_demo`, sumarle muertes
+  antes de 15 s en un spawn y afirmar ese conteo (mueve numeros de otros
+  casos e2e: va con su propia ficha).
+- [test] LOW `backend/tests/test_salida_del_spawn.py`: el borde 14.9 / 15.0
+  estaba probado para muertes y no para bajas. Agregado por el Revisor,
+  pasa: `test_una_baja_a_los_14_9_cuenta_y_a_los_15_no`.
+- [intencion] LOW: el criterio dice `< 15` y el codigo `0 < x < 15`; el 0.0
+  es el "sin reloj" que escribe `metrics.py`, y `metricas.md` lo dice igual.
+  Desviacion correcta, sin cambio.
+- [intencion] LOW: "marca las que estan por encima del resto" se resuelve
+  con la banda de ruido del panel hermano (chip "Caes temprano" solo si la
+  diferencia pasa el margen). Coherente con `metricas.md`; sin cambio.
+
+Checklist: cada criterio tiene test o verificacion (tabla de la
+Implementacion, mas el test de bajas de arriba); el diff no sale de
+`archivos:`; filas nuevas en `docs/metricas.md` (muertes y bajas tempranas
+por spawn, muestra minima); identificadores sin tildes, UI con tildes; sin
+`print` ni `console.log`. Numeros del e2e reproducidos con `seed_demo` por
+los dos subagentes (116 rondas, 6 filas, Bank / Boulevard 20 y 0).
+
+verificar.sh: VERDE (ver el commit de la revision).
+Skills: no aplica.
+OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 1 arreglado con test) · verificación=—
 
 ## Para el humano
 

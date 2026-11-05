@@ -97,6 +97,13 @@ class BajaTempranaTests(TestCase):
         self.assertEqual(f["early_kills_per_round"], 0.2)
         self.assertEqual(datos["spawn_exit_attack"]["early_kills"], 1)
 
+    def test_una_baja_a_los_14_9_cuenta_y_a_los_15_no(self):
+        rondas = zona(5, 0, spawn="Warehouse")
+        for rnd in rondas:
+            make_round_player(rnd, username=RIVAL, is_me=False, team_index=1, side="Defense")
+        make_event(rondas[0], 1, ME, RIVAL, clock=rondas[0].clock_start - 14.9)
+        make_event(rondas[1], 1, ME, RIVAL, clock=rondas[1].clock_start - 15.0)
+        self.assertEqual(fila(salidas()["spawn_exits"], "Warehouse")["early_kills"], 1)
 
     def test_cada_baja_temprana_cae_en_el_spawn_de_su_ronda(self):
         warehouse = zona(5, 0, spawn="Warehouse", index=0)
