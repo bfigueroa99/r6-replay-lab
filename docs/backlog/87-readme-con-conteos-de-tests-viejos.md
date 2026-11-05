@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
-estado: implementado
-candado: revisor 2026-11-05T17:34Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/87-readme-con-conteos-de-tests-viejos
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: docs
 prioridad: 5
 fuente: QA 20261105T1521Z-cGymdxX, deriva de docs sobre dev 85009f6 (fallback sin trabajo: 81, 86 y 84 tenian candado de otras sesiones)
 archivos: README.md
-turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec
+turnos: qa 20261105T1521Z-cGymdxX, arquitecto 20261105T1547Z-cDskDBu, dev 20261105T1706Z-cYDJ3ec, revisor 20261105T1734Z-c34hH6Y
 
 ## PR
 
@@ -101,7 +101,31 @@ linea cambia" se ve en `git diff origin/dev...HEAD -- README.md`.
 Skills: no aplica (docs).
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre adf6332
+
+revisor 20261105T1734Z-c34hH6Y. Dev no se movio desde la implementacion: sin merge.
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; diff de 3 lineas
+de docs, sin eje de intencion ni de seguridad): sin hallazgos. Tabla de
+comandos con sus dos celdas, arbol con la misma columna, CRLF en las 469
+lineas del README.
+
+Criterios, confirmados por el lider:
+
+- [x] `grep -nE "[0-9]+ tests" README.md`: vacio (rc=1).
+- [x] Ninguna otra linea cambia: `git diff --stat origin/dev...HEAD -- . ':(exclude)docs/backlog'`
+      = `README.md | 6 +++---`, 3+/3-, las tres lineas del diseno.
+- [x] `verificar.sh`: VERDE f9964af78 en 100s: 963 tests backend, 199
+      vitest, 64 e2e. Todo en verde.
+
+Sin metricas nuevas, sin codigo, `archivos:` respetado.
+
+Hallazgos: ninguno.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica (docs).
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## QA
 
