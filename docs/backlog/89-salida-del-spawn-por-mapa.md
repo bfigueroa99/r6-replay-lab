@@ -1,6 +1,6 @@
 # 89. Salida del spawn por mapa
 
-estado: en curso 2026-11-05
+estado: revisado (espejo; la ficha vive en su rama)
 candado: -
 rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
