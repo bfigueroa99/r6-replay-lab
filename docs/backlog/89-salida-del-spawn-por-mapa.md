@@ -349,7 +349,7 @@ por spawn, muestra minima); identificadores sin tildes, UI con tildes; sin
 `print` ni `console.log`. Numeros del e2e reproducidos con `seed_demo` por
 los dos subagentes (116 rondas, 6 filas, Bank / Boulevard 20 y 0).
 
-verificar.sh: VERDE (ver el commit de la revision).
+verificar.sh: VERDE bcfe83aa9 (975 tests backend, 203 vitest, 65 e2e).
 Skills: no aplica.
 OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 1 arreglado con test) · verificación=—
 
