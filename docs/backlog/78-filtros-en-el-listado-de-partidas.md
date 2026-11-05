@@ -1,6 +1,6 @@
 # 78. Filtros en el listado de Partidas
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
