@@ -56,16 +56,16 @@ def _apertura(rnd: dict, players: list[dict], events: list[dict]) -> str | None:
     perdio_mi_equipo = equipo_victima == mio
     if not asesino:
         # muerte sin asesino registrado: no inventamos quien fue
-        quien = "Moriste" if victima == yo else f"Murio {victima}"
+        quien = "Moriste" if victima == yo else f"Murió {victima}"
         lado = "tu equipo" if perdio_mi_equipo else "el rival"
-        return f"{quien} a los {cuando} sin asesino registrado, y {lado} arranco con uno menos."
+        return f"{quien} a los {cuando} sin asesino registrado, y {lado} arrancó con uno menos."
 
     if victima == yo:
-        frase = f"A los {cuando} perdiste el primer duelo: te mato {asesino}."
+        frase = f"A los {cuando} perdiste el primer duelo: te mató {asesino}."
     elif perdio_mi_equipo:
-        frase = f"A los {cuando} tu equipo perdio el primer duelo: {asesino} mato a {victima}."
+        frase = f"A los {cuando} tu equipo perdió el primer duelo: {asesino} mató a {victima}."
     else:
-        frase = f"A los {cuando} tu equipo abrio la ronda: {asesino} mato a {victima}."
+        frase = f"A los {cuando} tu equipo abrió la ronda: {asesino} mató a {victima}."
 
     return frase + _trade_de_la_apertura(primera, bajas, perdio_mi_equipo)
 
@@ -77,7 +77,7 @@ def _trade_de_la_apertura(primera: dict, bajas: list[dict], perdio_mi_equipo: bo
     propia es un problema, que el rival no vengue la suya es una ventaja.
     """
     if not primera.get("traded"):
-        return " Nadie la vengo." if perdio_mi_equipo else " El rival no la vengo."
+        return " Nadie la vengó." if perdio_mi_equipo else " El rival no la vengó."
 
     asesino = primera.get("actor")
     for evento in bajas:
@@ -88,8 +88,8 @@ def _trade_de_la_apertura(primera: dict, bajas: list[dict], perdio_mi_equipo: bo
         margen = (primera.get("clock") or 0) - (evento.get("clock") or 0)
         if 0 <= margen <= TRADE_WINDOW:
             quien = evento.get("actor") if perdio_mi_equipo else "El rival"
-            return f" {quien} la vengo {_segundos(margen)} despues."
-    return " Se vengo enseguida."
+            return f" {quien} la vengó {_segundos(margen)} después."
+    return " Se vengó enseguida."
 
 
 def _desventaja(rnd: dict, players: list[dict], events: list[dict]) -> str | None:
@@ -135,7 +135,7 @@ def _desventaja(rnd: dict, players: list[dict], events: list[dict]) -> str | Non
         return None
     duracion = max(float(rnd.get("duration") or 0), 1)
     return (
-        f"De los {_segundos(duracion)} de accion, {_segundos(segundos_abajo)} se jugaron "
+        f"De los {_segundos(duracion)} de acción, {_segundos(segundos_abajo)} se jugaron "
         "con tu equipo en inferioridad."
     )
 
@@ -174,12 +174,12 @@ def _mi_ronda(players: list[dict]) -> str | None:
 def _cierre(rnd: dict) -> str | None:
     """Como termino, sin afirmar lo que el replay no dice."""
     if rnd.get("win_condition") == "KilledOpponents":
-        return "La ronda se cerro por eliminacion."
+        return "La ronda se cerró por eliminación."
     if not rnd.get("win_condition_certain"):
-        texto = "El replay de esta temporada no expone como se cerro la ronda"
+        texto = "El replay de esta temporada no expone cómo se cerró la ronda"
         if rnd.get("possible_plant"):
             reloj = _segundos(rnd.get("clock_end") or 0)
-            texto += f", pero el reloj paro en {reloj}: plant probable"
+            texto += f", pero el reloj paró en {reloj}: plant probable"
         return texto + "."
     return None
 
