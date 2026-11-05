@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-05 14:56 UTC
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -65,7 +65,9 @@ Este PR es el tramo 1. El chip en Partidas y la lista en Datos quedan en la fich
 3. Abrir el detalle de la partida mas reciente, apretar "Excluir de mis números" y ver el aviso "Esta partida no cuenta en tus números.". De vuelta en el Inicio dice "196 rondas en 28 partidas", y Partidas sigue mostrando 29.
 4. Apretar "Volver a contarla": el Inicio vuelve a 203/29.
 
-### Verificar en el PC
+#Salud (revisor 20261105T1455Z-cwDWPd9, sin `implementado` ni `revisado` tomables): dev 85009f6 mezclado sin conflictos en fd3a41f; `verificar.sh`: VERDE fd3a41f9d (974 tests backend, 190 vitest, 62 e2e). Sigue lista para que la mergee el humano.
+
+## Verificar en el PC
 
 `python manage.py backup`, despues `python manage.py migrate`, y `python manage.py showmigrations replays` tiene que mostrar `[X] 0005_match_excluded`. Excluir una custom y comprobar que cambian el K/D, el rating y la cantidad de partidas. Volver a contarla. Correr `import_replays --force` con una partida excluida: la marca tiene que seguir.
 
