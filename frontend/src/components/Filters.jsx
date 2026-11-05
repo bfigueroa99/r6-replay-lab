@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 
 import { useApi } from '../api.js'
 import { opcionesDeMapa } from '../mapas.js'
+import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido } from '../tipoPartida.js'
 
 const RANGO_EXACTO = 'rango'
 
@@ -143,16 +144,18 @@ export default function Filters({
         </>
       ) : null}
 
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={Boolean(value.ranked_only)}
-          onChange={(event) => onChange({ ...value, ranked_only: event.target.checked })}
-        />
-        Solo ranked
+      <label>
+        Tipo
+        <select value={tipoElegido(value)} onChange={(event) => onChange(conTipo(value, event.target.value))}>
+          {opcionesDeTipo(data?.match_types).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </label>
 
-      {Object.values(value).some(Boolean) ? (
+      {hayFiltros(value) ? (
         <button className="btn small" onClick={limpiar}>
           Limpiar
         </button>

@@ -786,3 +786,42 @@ test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
 
   expect(errores).toEqual([])
 })
+
+test('el selector de tipo filtra el Inicio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo siembra todo Ranked y no se toca: el segundo tipo se suma aca
+  let pedidosDeFiltros = 0
+  await page.route('**/api/filters/', async (route) => {
+    pedidosDeFiltros += 1
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
+  })
+  await page.goto('/')
+
+  const subtitulo = page.locator('.page-head p')
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+  await expect(page.getByText('Solo ranked')).toHaveCount(0)
+  const tipo = page.getByLabel('Tipo')
+  await expect(tipo.locator('option')).toHaveText(['Todos', 'Ranked', 'Unranked'])
+
+  const pedido = page.waitForRequest(/\/api\/overview\/\?.*match_type=Ranked/)
+  await tipo.selectOption('Ranked')
+  await pedido
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+
+  await tipo.selectOption('Unranked')
+  await expect(subtitulo).toHaveText('0 rondas con estos filtros')
+  await expect(page.getByText('Ninguna ronda con estos filtros')).toBeVisible()
+  await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+  await expect(tipo).toHaveValue('')
+  // pasar por 0 rondas no vuelve a montar la barra (perderia el rango de
+  // fechas abierto): /api/filters/ se pide una sola vez
+  expect(pedidosDeFiltros).toBe(1)
+
+  expect(errores).toEqual([])
+})
