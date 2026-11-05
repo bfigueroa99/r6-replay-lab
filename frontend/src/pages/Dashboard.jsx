@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import { filasDeAperturasConTrade } from '../aperturasTrade.js'
 import { filasDeRecords } from '../records.js'
 import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import Filters from '../components/Filters.jsx'
@@ -82,6 +83,34 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           value_={total.untraded_death_pct === null ? null : 100 - total.untraded_death_pct}
         />
       </div>
+
+      <Panel
+        title="Aperturas que pesan"
+        hint="Si tu apertura sobrevivió al trade y si tu equipo vengó la que perdiste."
+      >
+        <DataTable
+          columns={[
+            { key: 'label', label: 'Apertura', sortable: false, left: true },
+            { key: 'rondas', label: 'Rondas', render: (row) => (row.rondas === null ? '—' : row.rondas) },
+            {
+              key: 'winrate',
+              label: 'Ganadas',
+              render: (row) =>
+                row.winrate === null ? (
+                  '—'
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                    <Bar value={row.winrate} />
+                    <span style={{ minWidth: 38 }}>{pct(row.winrate)}</span>
+                  </div>
+                ),
+            },
+          ]}
+          rows={filasDeAperturasConTrade(total)}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => row.key}
+        />
+      </Panel>
 
       {overview.data.matches_summary ? <ResumenPartidas s={overview.data.matches_summary} /> : null}
 

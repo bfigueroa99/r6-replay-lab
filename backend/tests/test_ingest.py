@@ -120,6 +120,19 @@ class RealImportTests(TestCase):
             if victim:
                 self.assertTrue(victim.died, f"{event.target_name} deberia estar muerto")
 
+        # la apertura devuelta es la marca `traded` del primer Kill de la ronda
+        for rnd in match.rounds.all():
+            primer_kill = rnd.events.filter(kind="Kill").order_by("order").first()
+            for fila in rnd.players.filter(opening_kill_traded=True):
+                self.assertIsNotNone(primer_kill, f"ronda {rnd.number} sin Kill")
+                self.assertTrue(fila.opening_kill)
+                self.assertTrue(primer_kill.traded)
+                self.assertEqual(primer_kill.actor_name, fila.username)
+            if primer_kill and primer_kill.traded:
+                autor = rnd.players.filter(username=primer_kill.actor_name, opening_kill=True)
+                for fila in autor:
+                    self.assertTrue(fila.opening_kill_traded, f"ronda {rnd.number}")
+
     def test_scan_salta_lo_ya_importado(self):
         scan_and_import(self.root, quiet_seconds=0, limit=1)
         imported = Match.objects.count()
