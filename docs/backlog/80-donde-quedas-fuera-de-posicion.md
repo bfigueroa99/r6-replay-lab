@@ -1,7 +1,7 @@
 # 80. Donde quedas fuera de posicion, por sitio y spawn
 
-estado: implementado
-candado: revisor 2026-11-05 08:05 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/80-donde-quedas-fuera-de-posicion
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S1, del PR #1 (`claude/loop-lwjbgs`, commit 1ffdb89: pedido del usuario "en que partes del mapa suelo dormir"), cerrado sin merge el 2026-11-05; el humano devolvio la idea a `idea`. La rama queda como referencia, no se mergea
 archivos: backend/replays/analytics/aggregates.py (AGGREGATES, derive, positioning), backend/replays/analytics/coach.py (_posicion), backend/replays/views.py (positioning), backend/replays/urls.py, frontend/src/posicion.js, frontend/src/posicion.test.js, frontend/src/pages/Coach.jsx, docs/metricas.md, backend/tests/test_posicion.py, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cT3J25j
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cT3J25j, revisor 20261105T0804Z-cuHheZT
 
 ## PR
 
@@ -364,7 +364,64 @@ Verificacion: verificar.sh VERDE 441bb4d0c (939 tests backend, 177 vitest, 58 e2
 Skills: no aplica (tablas, `DataTable` y señales del Coach ya existen).
 OMC: plan=— · revisión=7 hallazgos (4 arreglados: margen Wald, tests de resto vacio y min_rounds, nota con minimo de la api y tildes, rowKey) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 577cf8a
+
+Revisor 20261105T0804Z-cuHheZT. A ciegas: `omc-code-reviewer` en estandares
+(corrio la suite backend, vitest y comparo `positioning()` sobre seed_demo
+con lo que afirma el e2e: Church 85 % ±17.4 dormidero, Ventilation 25 %
+solido, Valley ruido, Bank A Vault fuera por muestra) y otro en intencion;
+sin `omc-security-reviewer` (solo un GET nuevo). Cada hallazgo confirmado por
+el lider leyendo el codigo.
+
+- [intencion] [HIGH -> MEDIUM] backend/replays/analytics/aggregates.py (`positioning`, agrupado de sitios) (criterio 3)
+  Que pasa: la tabla de sitios junta ataque y defensa y compara contra el
+  resto de todo el historial; un sitio con reparto de lados muy desparejo
+  puede salir `zona-dormidero` por el lado y no por el sitio.
+  Por que baja a MEDIUM: es la decision 2 del Arquitecto, escrita en
+  `## Diseno` y en `## Para el humano` como ajuste reversible (el corte por
+  lado lo da el filtro Lado, y la nota del panel lo dice). La ficha avanza
+  con la variante conservadora (P10); si el humano quiere dos filas por
+  sitio, es tocar el `values()` de `positioning` y el test.
+- [bug] [LOW] backend/replays/analytics/coach.py:574
+  Que pasa: el detalle redondea por separado la diferencia y el resto, y la
+  resta que se ve no cuadra.
+  Como reproducirlo: seed_demo -> "85% ... +34 puntos contra el 52% del
+  resto" (valores reales 33.5 y 51.5).
+  Arreglo sugerido: mostrar `round(pct) - round(resto)` como diferencia, o
+  las dos con un decimal.
+- [estilo] [LOW] backend/replays/analytics/aggregates.py:678
+  Que pasa: `_ruido_combinado` recibe `parte` y no lo usa.
+  Arreglo sugerido: sacarlo de la firma y de la llamada en la linea 704.
+- [estilo] [LOW] backend/replays/analytics/aggregates.py:706
+  Que pasa: `and resto` sobra: `_ruido_combinado` ya devuelve `None` con
+  resto 0.
+  Arreglo sugerido: dejar `if se is not None`.
+- [estilo] [LOW] docs/metricas.md (parrafo de "Dónde quedas fuera de posición")
+  Que pasa: "con uno solo un tercio..." perdio el referente (un solo error
+  estandar).
+  Arreglo sugerido: "con un solo error estandar, un tercio de las zonas
+  saldria marcado por azar".
+- [intencion] [LOW] criterio 2: la tasa del resto vive en `positioning()` y
+  no en `by_site`/`by_spawn`; es la decision 3 del Arquitecto, anotada. El
+  fondo (la zona no se compara consigo misma) tiene test.
+
+Criterios: 1 por `test_fuera_de_posicion_exige_morir_sin_bajas_y_sin_trade`
+y `test_fuera_de_posicion_sale_en_el_csv`; 2 por
+`test_la_zona_se_compara_contra_el_resto_y_no_contra_el_total` y
+`test_el_spawn_se_compara_contra_el_resto_del_ataque`; 3 por el e2e "el Coach
+muestra dónde quedas fuera de posición" (con el MEDIUM de arriba); 4 por los
+tests de señal (dormidero, solida, spawn, sin muestra, ruido); 5 por la fila
+de `metricas.md` y el e2e con la consola limpia. Metrica calculada sobre
+columnas que se guardan al importar; `pydissect/` intacto; sin dependencias;
+sin `print` ni `console.log`.
+
+Verificacion: verificar.sh VERDE 577cf8a4b (939 backend, 177 vitest, 58 e2e).
+
+Veredicto: aprobar -> `revisado`. Sin CRITICAL ni HIGH confirmados; los LOW
+son para el Dev si vuelve a tocar la ficha, y el MEDIUM es la pregunta del
+Arquitecto que ya esta en `## Para el humano`.
+
+OMC: plan=— · revisión=6 hallazgos (HIGH bajado a MEDIUM por decision de diseno anotada; 0 arreglados) · verificación=—
 
 ## QA
 
