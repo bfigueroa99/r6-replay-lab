@@ -1,7 +1,7 @@
 # 74. La version del mapa tambien en el Inicio, Clutch por mapa, Mapas que mejoran y el CSV de partidas
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T02:15Z
 rama: claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas
 tipo: funcionalidad
 epica: temporada-y-modo
