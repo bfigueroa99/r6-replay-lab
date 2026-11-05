@@ -265,7 +265,7 @@ npm run dev     # http://localhost:5173
 | `manage.py export_round <ruta>` | Escupe el JSON crudo del parser para un `.rec` o una carpeta. Para depurar. |
 | `manage.py unknown_ids` | Lista IDs de mapa, operador, modo y tipo de partida que el parser no supo nombrar. `--write` los deja listos en `data/overrides.json`. |
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
-| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada, y los intentos de clutch de partidas importadas antes. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
+| `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada, los intentos de clutch de partidas importadas antes y saca los teamkills de bajas y headshots. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
 | `manage.py test tests` | Corre la suite (419 tests). |
 | `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |
@@ -458,6 +458,9 @@ El trabajo de reverse engineering del formato Dissect es de
 [r6-dissect](https://github.com/redraskal/r6-dissect) (redraskal, licencia MIT).
 `pydissect` es un port a Python de esa logica, con los ajustes necesarios para
 las temporadas nuevas. Si el parser te sirve, el credito es de alla.
+Los IDs de Y10S4 e Y11S1 (Solid Snake, el Fortress rehecho y las dos
+versiones) salen del fork [ImAAhmad/r6-dissect](https://github.com/ImAAhmad/r6-dissect)
+(MIT, commit `1f0cc42`).
 
 Este proyecto no esta afiliado a Ubisoft.
 

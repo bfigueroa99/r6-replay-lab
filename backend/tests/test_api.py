@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from django.test import TestCase
 
 from replays.models import Match, Player
+from replays.recompute import recompute
 
 from .factories import make_event, make_match, make_round, make_round_player
 
@@ -321,3 +322,54 @@ class CarpetaDeReplaysTests(TestCase):
             self.assertFalse(self.client.get("/api/import/status/").json()["replay_dir_exists"])
         with tempfile.TemporaryDirectory() as tmp, self.settings(REPLAY_DIR=tmp):
             self.assertTrue(self.client.get("/api/health/").json()["replay_dir_exists"])
+
+
+class VersionesDeMapaApiTests(TestCase):
+    def setUp(self):
+        for i, map_id in enumerate((2609221242, 418126004176)):
+            match = make_match(map_name="Consulate", map_id=map_id, index=i)
+            make_round_player(make_round(match, 0))
+        make_round_player(make_round(make_match(map_name="Kanal", map_id=1460220617, index=2), 0))
+
+    def test_filters_ofrece_las_versiones_solo_si_hay_dos(self):
+        mapas = {m["map_slug"]: m for m in self.client.get("/api/filters/").json()["maps"]}
+        self.assertEqual(mapas["kanal"]["versions"], [])
+        self.assertEqual(
+            mapas["consulate"]["versions"],
+            [
+                {"map_id": 2609221242, "label": "Consulate (Y7)"},
+                {"map_id": 418126004176, "label": "Consulate (Y10)"},
+            ],
+        )
+        self.assertEqual(mapas["consulate"]["map_name"], "Consulate")
+
+    def test_match_list_filtra_por_map_id(self):
+        self.assertEqual(self.client.get("/api/matches/?map=consulate").json()["total"], 2)
+        data = self.client.get("/api/matches/?map=418126004176").json()
+        self.assertEqual(data["total"], 1)
+        self.assertEqual(data["matches"][0]["played_at"][:13], "2026-09-01T21")
+
+    def test_un_map_raro_no_da_500(self):
+        for valor in ("²", "99999999999999999999999", "-1"):
+            with self.subTest(valor=valor):
+                self.assertEqual(self.client.get(f"/api/matches/?map={valor}").status_code, 200)
+                self.assertEqual(self.client.get(f"/api/overview/?map={valor}").status_code, 200)
+
+
+class PartidaIncompletaApiTests(TestCase):
+    def test_la_ranked_incompleta_sale_del_winrate_de_partidas(self):
+        # importada antes del arreglo como victoria; `recompute` la deja sin resultado
+        incompleta = make_match(index=0, my_score=3, opponent_score=2)
+        ganada = make_match(index=1, my_score=4, opponent_score=1)
+        for partida in (incompleta, ganada):
+            make_round_player(make_round(partida, 0))
+        recompute()
+
+        resumen = self.client.get("/api/overview/").json()["matches_summary"]
+        self.assertEqual(resumen["matches_decided"], 1)
+        self.assertEqual(resumen["match_winrate"], 100)
+
+        filas = self.client.get("/api/matches/").json()["matches"]
+        por_id = {fila["id"]: fila for fila in filas}
+        self.assertEqual(por_id[incompleta.pk]["result"], "incompleta")
+        self.assertEqual(por_id[ganada.pk]["result"], "victoria")

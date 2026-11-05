@@ -164,6 +164,20 @@ class MapRuleTests(TestCase):
         self.assertIsNone(find(payload, "mapa-debil"))
 
 
+class VersionDeMapaRuleTests(TestCase):
+    def test_la_senal_de_peor_mapa_nombra_la_version(self):
+        # el mismo Consulate: la version vieja ganada y el rework perdido
+        viejo = make_match(map_name="Consulate", map_id=2609221242, index=0)
+        for n in range(18):
+            make_round_player(make_round(viejo, n, won=True))
+        nuevo = make_match(map_name="Consulate", map_id=418126004176, index=1)
+        for n in range(18):
+            make_round_player(make_round(nuevo, n, won=False))
+        payload = build_insights()
+        self.assertEqual(find(payload, "mapa-debil")["scope"], "Consulate (Y10)")
+        self.assertEqual(find(payload, "mapa-fuerte")["scope"], "Consulate (Y7)")
+
+
 class OperatorRuleTests(TestCase):
     def setUp(self):
         good = make_match(index=0)

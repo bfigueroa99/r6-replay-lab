@@ -7,8 +7,9 @@ from io import StringIO
 from django.core.management import call_command
 from django.test import TestCase
 
+from pydissect.constants import Y9S4
 from replays.analytics.metrics import analyse_round, trade_window
-from replays.models import Event, RoundPlayer
+from replays.models import Event, Match, RoundPlayer
 from replays.recompute import recompute
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
@@ -156,8 +157,9 @@ class ComandoTests(TestCase):
         make_round_player(rnd, username=ME, kills=0, died=True)
         # como lo deja el import de hoy: el rival arranca solo frente a dos y tras
         # mi muerte quedan 1v1, con clutch_vs ya calculado
+        # y el 1vX: muero yo, queda 1v1 y el amigo mata al rival
         make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False,
-                          clutch_vs=1)
+                          clutch_vs=1, one_vx=1)
         make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True,
                           clutch_vs=2)
         make_event(rnd, 0, "rival", ME, clock=100.0)
@@ -208,9 +210,138 @@ class RecomputeClutchTests(TestCase):
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 0)
 
 
+class RecomputeOneVxTests(TestCase):
+    """Importada antes de la ficha 69: A3 se fue y A4 quedo con 1vX 0."""
+
+    def setUp(self):
+        rnd = make_round(make_match(index=0), 0)
+        # como lo guarda el import; las factories no ponen `won`
+        rnd.teams = [{"name": "YOUR TEAM", "won": True}, {"name": "ENEMY TEAM", "won": False}]
+        rnd.save(update_fields=["teams"])
+        for n in range(5):
+            make_round_player(rnd, username=f"A{n}", is_me=n == 0, team_index=0,
+                              kills=0, died=n < 3)
+            make_round_player(rnd, username=f"B{n}", is_me=False, team_index=1,
+                              kills=0, died=True)
+        eventos = (
+            [(f"A{n}", f"B{n}", "Kill") for n in range(3)]
+            + [("B3", f"A{n}", "Kill") for n in range(3)]
+            + [("A3", "", "PlayerLeave"), ("A4", "B3", "Kill"), ("A4", "B4", "Kill")]
+        )
+        for orden, (actor, target, kind) in enumerate(eventos):
+            make_event(rnd, orden, actor, target, kind=kind, clock=170.0 - orden)
+        # el resto (bajas, trades, clutch_vs) ya al dia: solo cambia el 1vX
+        recompute(window=3.0)
+        RoundPlayer.objects.filter(username="A4").update(one_vx=0)
+
+    def test_recompute_cuenta_el_clutch_con_un_companero_que_se_fue(self):
+        self.assertEqual(recompute(window=3.0).players_changed, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 2)
+
+    def test_recompute_dry_run_cuenta_el_1vx_sin_escribir(self):
+        self.assertEqual(recompute(window=3.0, dry_run=True).players_changed, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 0)
+
+    def test_recompute_de_1vx_es_idempotente(self):
+        recompute(window=3.0)
+        self.assertFalse(recompute(window=3.0).changed)
+        self.assertEqual(RoundPlayer.objects.get(username="A4").one_vx, 2)
+
+
+class RecomputeBajasTests(TestCase):
+    """Lo importado antes de la ficha 67 cuenta los teamkills como bajas."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+        rnd = make_round(self.match, 0)
+        make_round_player(rnd, username=ME, kills=3, headshots=1, died=False)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=0, died=True)
+        for nick in ("r1", "r2"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=1, kills=0, died=True)
+        make_event(rnd, 0, ME, "r1", clock=150.0)
+        make_event(rnd, 1, ME, "amigo", clock=140.0, headshot=True)
+        make_event(rnd, 2, ME, "r2", clock=130.0)
+
+    def _yo(self) -> RoundPlayer:
+        return RoundPlayer.objects.get(username=ME)
+
+    def test_recompute_saca_los_teamkills_de_las_bajas(self):
+        result = recompute(window=3.0)
+        self.assertGreaterEqual(result.players_changed, 1)
+        yo = self._yo()
+        self.assertEqual((yo.kills, yo.headshots), (2, 0))
+
+    def test_recompute_dry_run_cuenta_las_bajas_sin_escribir(self):
+        result = recompute(window=3.0, dry_run=True)
+        self.assertGreaterEqual(result.players_changed, 1)
+        self.assertEqual(self._yo().kills, 3)
+
+    def test_recompute_de_bajas_es_idempotente(self):
+        recompute(window=3.0)
+        self.assertEqual(recompute(window=3.0).players_changed, 0)
+
+    def test_overview_y_scoreboard_cuentan_dos_bajas_con_un_teamkill(self):
+        recompute(window=3.0)
+        overall = self.client.get("/api/overview/").json()["overall"]
+        self.assertEqual(overall["kills"], 2)
+        self.assertEqual((overall["k2"], overall["k3"]), (1, 0))
+
+        # tus numeros jugando con el compañero al que mataste
+        amigo = RoundPlayer.objects.get(username="amigo").player_id
+        self.assertEqual(self.client.get(f"/api/players/{amigo}/").json()["with"]["kills"], 2)
+
+        fila = next(f for f in self.client.get(f"/api/matches/{self.match.id}/").json()["scoreboard"]
+                    if f["username"] == ME)
+        self.assertEqual((fila["kills"], fila["k2"], fila["k3"]), (2, 1, 0))
+
+
 class ApiTests(TestCase):
     def test_la_ventana_se_ve_en_la_api(self):
         self.assertEqual(self.client.get("/api/health/").json()["trade_window"], 3.0)
         self.assertEqual(
             self.client.get("/api/overview/").json()["data_health"]["trade_window"], 3.0
         )
+
+
+class ResultadoDePartidaTests(TestCase):
+    """`recompute` rehace `Match.won` con la regla del tipo de partida."""
+
+    def setUp(self):
+        # importadas antes del arreglo: gano el que tenia mas rondas
+        self.ranked = make_match(index=0, my_score=3, opponent_score=2)
+        self.unranked = make_match(index=1, my_score=3, opponent_score=2, match_type="Unranked")
+        self.cerrada = make_match(index=2, my_score=4, opponent_score=2)
+
+    def test_recompute_deja_sin_resultado_la_ranked_que_no_cierra(self):
+        result = recompute()
+        self.assertEqual(result.matches_changed, 1)
+        self.assertIsNone(Match.objects.get(pk=self.ranked.pk).won)
+        self.assertIs(Match.objects.get(pk=self.unranked.pk).won, True)
+        self.assertIs(Match.objects.get(pk=self.cerrada.pk).won, True)
+
+    def test_recompute_dry_run_cuenta_las_partidas_sin_escribir(self):
+        result = recompute(dry_run=True)
+        self.assertEqual(result.matches_changed, 1)
+        self.assertTrue(result.changed)
+        self.assertIs(Match.objects.get(pk=self.ranked.pk).won, True)
+
+    def test_recompute_no_toca_una_ranked_anterior_a_y9s4(self):
+        # sin marcador por ronda no hay regla: sigue ganando el que tiene mas rondas
+        vieja = make_match(index=3, my_score=3, opponent_score=2, code_version=Y9S4 - 1)
+        recompute()
+        self.assertIs(Match.objects.get(pk=vieja.pk).won, True)
+
+    def test_recompute_de_resultados_es_idempotente(self):
+        recompute()
+        result = recompute()
+        self.assertEqual(result.matches_changed, 0)
+        self.assertFalse(result.changed)
+
+    def test_el_comando_cuenta_las_partidas_que_cambian(self):
+        salida = StringIO()
+        call_command("recompute", "--dry-run", stdout=salida)
+        self.assertIn("1 partidas (resultado)", salida.getvalue())
+        salida = StringIO()
+        call_command("recompute", stdout=salida)
+        call_command("recompute", stdout=salida)
+        self.assertIn("Nada que recalcular", salida.getvalue())

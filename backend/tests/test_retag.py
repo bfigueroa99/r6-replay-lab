@@ -17,8 +17,10 @@ from replays.retag import retag
 
 from .factories import make_match, make_round, make_round_player
 
-MAPA_NUEVO = 398899676157
-OPERADOR_NUEVO = 444310693746
+# IDs sinteticos que ningun catalogo va a usar: los IDs reales de una
+# temporada nueva terminan en las constantes, y ahi le ganan al override.
+MAPA_NUEVO = 999000000001
+OPERADOR_NUEVO = 999000000002
 
 
 class OverridesTestCase(TestCase):
@@ -187,6 +189,66 @@ class RetagModoYTipoTests(OverridesTestCase):
             sorted(Match.objects.values_list("gamemode", flat=True)),
             ["Unknown(0)", "Unknown(999)", "Unknown(abc)"],
         )
+
+
+class RetagCatalogoNuevoTests(OverridesTestCase):
+    """IDs que antes eran desconocidos y ahora estan en las constantes.
+
+    Sin overrides: el nombre tiene que salir del catalogo del parser.
+    """
+
+    FORTRESS_Y10 = 398899676157
+    SOLID_SNAKE = 444310693746
+
+    def setUp(self):
+        super().setUp()
+        match = make_match(
+            map_name=f"Unknown({self.FORTRESS_Y10})", index=0, map_id=self.FORTRESS_Y10
+        )
+        match.map_slug = f"unknown-{self.FORTRESS_Y10}"
+        match.save()
+        rnd = make_round(match, 0)
+        make_round_player(
+            rnd, operator=f"Unknown({self.SOLID_SNAKE})", operator_id=self.SOLID_SNAKE
+        )
+        # lo que dejaba la cabecera cuando traia el rolename
+        make_round_player(
+            rnd,
+            username="Compa",
+            is_me=False,
+            operator="Solidsnake",
+            operator_id=self.SOLID_SNAKE,
+        )
+
+    def test_dry_run_cuenta_mapa_y_operador_sin_tocar_la_base(self):
+        result = retag(dry_run=True)
+
+        self.assertEqual(result.matches, 1)
+        self.assertEqual(result.round_players, 2)
+        self.assertEqual(Match.objects.get().map_name, f"Unknown({self.FORTRESS_Y10})")
+        self.assertEqual(
+            sorted(RoundPlayer.objects.values_list("operator", flat=True)),
+            ["Solidsnake", f"Unknown({self.SOLID_SNAKE})"],
+        )
+
+    def test_retag_pone_el_nombre_del_catalogo(self):
+        retag()
+
+        match = Match.objects.get()
+        self.assertEqual(match.map_name, "Fortress")
+        self.assertEqual(match.map_slug, "fortress")
+        self.assertEqual(
+            list(RoundPlayer.objects.values_list("operator", flat=True)),
+            ["Solid Snake", "Solid Snake"],
+        )
+
+    def test_la_segunda_corrida_no_tiene_nada_que_hacer(self):
+        self.assertTrue(retag().changed)
+        self.assertFalse(retag().changed)
+
+        out = StringIO()
+        call_command("retag", stdout=out)
+        self.assertIn("Nada que reetiquetar", out.getvalue())
 
 
 class RetagCommandTests(OverridesTestCase):

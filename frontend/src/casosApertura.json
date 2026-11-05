@@ -1,0 +1,50 @@
+[
+  {
+    "nombre": "abre tu equipo",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["A2", 0], ["B1", 1], ["B2", 1]],
+    "eventos": [["Kill", "A1", "B1"], ["Kill", "B2", "A2"]],
+    "apertura": 0,
+    "entry": 0
+  },
+  {
+    "nombre": "abre el rival y tu equipo responde",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["A2", 0], ["B1", 1], ["B2", 1]],
+    "eventos": [["Kill", "B1", "A1"], ["Kill", "A2", "B1"]],
+    "apertura": 0,
+    "entry": 1
+  },
+  {
+    "nombre": "un cambio de operador y despues un Death sin autor",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["A2", 0], ["A3", 0], ["B1", 1], ["B2", 1]],
+    "eventos": [["OperatorSwap", "A1", ""], ["Death", "A2", ""], ["Kill", "B1", "A1"], ["Kill", "A3", "B1"]],
+    "apertura": 1,
+    "entry": 3
+  },
+  {
+    "nombre": "teamkill primero",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["A2", 0], ["A3", 0], ["B1", 1]],
+    "eventos": [["Kill", "A1", "A2"], ["Kill", "B1", "A3"]],
+    "apertura": 0,
+    "entry": 0
+  },
+  {
+    "nombre": "abre un nick sin equipo",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["A2", 0], ["B1", 1]],
+    "eventos": [["Kill", "X9", "A1"], ["Kill", "A2", "B1"]],
+    "apertura": 0,
+    "entry": 1
+  },
+  {
+    "nombre": "sin bajas",
+    "mi_equipo": 0,
+    "jugadores": [["A1", 0], ["B1", 1]],
+    "eventos": [["OperatorSwap", "A1", ""]],
+    "apertura": null,
+    "entry": null
+  }
+]

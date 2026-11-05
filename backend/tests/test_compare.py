@@ -18,13 +18,14 @@ def metrica(payload, key):
 
 
 def partida(indice, *, cuando, rondas=6, ganadas=3, kills=1, mapa="Club House",
-            operador="Zofia", lado="Attack"):
+            operador="Zofia", lado="Attack", map_id=0):
     match = make_match(
         index=indice,
         played_at=cuando,
         my_score=ganadas,
         opponent_score=rondas - ganadas,
         map_name=mapa,
+        map_id=map_id,
     )
     for n in range(rondas):
         rnd = make_round(match, n, won=n < ganadas, side=lado)
@@ -191,6 +192,25 @@ class CortesPorMapaYOperadorTests(TestCase):
         partida(3, cuando=AHORA - timedelta(days=1), rondas=12, mapa="Villa")
         d = agg.compare_periods(by="matches", n=2, min_rounds=1)
         self.assertEqual([f["slug"] for f in d["by_map"]], ["bank"])
+
+    def test_progreso_por_mapa_separa_versiones(self):
+        y7, y10 = 2609221242, 418126004176
+        antes, ahora = AHORA - timedelta(days=10), AHORA - timedelta(days=1)
+        partida(0, cuando=antes, rondas=12, ganadas=3, mapa="Consulate", map_id=y7)
+        partida(1, cuando=antes + timedelta(hours=1), rondas=12, ganadas=9, mapa="Consulate", map_id=y10)
+        partida(2, cuando=antes + timedelta(hours=2), rondas=12, mapa="Bank")
+        partida(3, cuando=ahora, rondas=12, ganadas=9, mapa="Consulate", map_id=y7)
+        partida(4, cuando=ahora + timedelta(hours=1), rondas=12, ganadas=3, mapa="Consulate", map_id=y10)
+        partida(5, cuando=ahora + timedelta(hours=2), rondas=12, mapa="Bank")
+        d = agg.compare_periods(by="matches", n=3, min_rounds=1)
+        viejo = fila(d["by_map"], slug="consulate", map_id=y7)
+        nuevo = fila(d["by_map"], slug="consulate", map_id=y10)
+        self.assertEqual(viejo["map"], "Consulate (Y7)")
+        self.assertEqual(nuevo["map"], "Consulate (Y10)")
+        self.assertEqual((viejo["previous_rounds"], viejo["current_rounds"]), (12, 12))
+        self.assertGreater(viejo["delta"], 0)
+        self.assertLess(nuevo["delta"], 0)
+        self.assertEqual(fila(d["by_map"], slug="bank")["map"], "Bank")
 
     def test_un_mapa_que_no_jugaste_antes_no_sale(self):
         partida(0, cuando=AHORA - timedelta(days=10), rondas=12, mapa="Bank")

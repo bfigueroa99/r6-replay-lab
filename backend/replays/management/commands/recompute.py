@@ -1,8 +1,12 @@
-"""Recalcula los trades (con la ventana configurada) y el clutch de lo ya importado.
+"""Recalcula bajas, trades (con la ventana configurada), clutch y 1vX de lo ya importado.
 
 Los trades se guardan calculados al importar, asi que cambiar
 `TRADE_WINDOW_SECONDS` en el `.env` no mueve nada hasta correr esto. Tambien
-llena `clutch_vs` en partidas importadas antes de que existiera:
+llena `clutch_vs` en partidas importadas antes de que existiera y saca los
+teamkills de las bajas y los headshots. Rehace el 1vX, donde quien se fue de
+la partida ya no cuenta como vivo. Rehace tambien el resultado de cada
+partida: la que tiene un marcador que la regla de su tipo no cierra queda
+incompleta:
 
     manage.py recompute --dry-run    # cuanto cambiaria
     manage.py recompute
@@ -19,7 +23,10 @@ from replays.recompute import recompute
 
 
 class Command(BaseCommand):
-    help = "Recalcula trades, muertes sin trade, KST (con la ventana configurada) y clutch_vs."
+    help = (
+        "Recalcula bajas y headshots (sin teamkills), trades, muertes sin trade, "
+        "KST (con la ventana configurada), clutch_vs, 1vX y el resultado de cada partida."
+    )
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
@@ -42,8 +49,9 @@ class Command(BaseCommand):
 
         result = recompute(window=window, dry_run=options["dry_run"])
         resumen = (
-            f"{result.players_changed} filas de jugador (trades o clutch) y "
-            f"{result.events_changed} eventos sobre {result.rounds} rondas"
+            f"{result.players_changed} filas de jugador (bajas, trades o clutch) y "
+            f"{result.events_changed} eventos sobre {result.rounds} rondas, "
+            f"y {result.matches_changed} partidas (resultado)"
         )
 
         if not result.changed:

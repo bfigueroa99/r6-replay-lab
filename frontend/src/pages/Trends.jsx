@@ -56,7 +56,7 @@ function TablaDeCambio({ filas, columna, minRows, csvName }) {
   if (!filas?.length) {
     return <p className="dim">Sin muestra en los dos periodos ({minRows}+ rondas en cada uno).</p>
   }
-  const rows = filas.map((row) => ({ ...row, key: row.slug ?? `${row.operator}-${row.side}` }))
+  const rows = filas.map((row) => ({ ...row, key: row.slug != null ? `${row.slug}-${row.map_id}` : `${row.operator}-${row.side}` }))
   return (
     <DataTable
       columns={[

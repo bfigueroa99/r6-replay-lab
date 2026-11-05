@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from django.test import SimpleTestCase
 
-from replays.analytics.metrics import analyse_round
+from pydissect import stats
+from replays.analytics.metrics import analyse_round, bajas_a_rivales
+
+from .test_player_stats import NOMBRES, LectorFalso, kill
 
 
 def _kill(order: int, actor: str, target: str, clock: float, headshot: bool = False) -> dict:
@@ -179,7 +182,7 @@ def _atacante(username: str) -> dict:
 
 
 def _stats_del_guion(extra_players: list[dict], events: list[dict]) -> list[dict]:
-    """Stats coherentes con el kill feed: `analyse_round` saca `kills` de aca, no de los eventos."""
+    """Stats coherentes con el kill feed (sin headshots: no los mira ningun test de KST)."""
     nombres = ["atk1", "atk2", "def1", "def2", *(p["username"] for p in extra_players)]
     equipo = {"atk1": 0, "atk2": 0, "def1": 1, "def2": 1, **{p["username"]: 0 for p in extra_players}}
     return [
@@ -238,3 +241,61 @@ class WinConditionTests(SimpleTestCase):
         data = _round([_kill(0, "atk1", "def1", 150.0)], won_team=0, clock_end=1.0)
         result = analyse_round(data)
         self.assertFalse(result["possible_plant"])
+
+
+class BajasARivalesTests(SimpleTestCase):
+    """Un teamkill no es una baja (decision del humano, ficha 67)."""
+
+    def _ronda_con_teamkill(self, headshot_al_companero=False):
+        eventos = [
+            _kill(0, "atk1", "def1", 150.0, headshot=True),
+            _kill(1, "atk1", "atk2", 140.0, headshot=headshot_al_companero),
+            _kill(2, "atk1", "def2", 130.0),
+        ]
+        return analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))
+
+    def test_un_teamkill_no_suma_a_las_bajas_del_autor(self):
+        self.assertEqual(self._ronda_con_teamkill()["players"]["atk1"]["kills"], 2)
+
+    def test_un_teamkill_con_headshot_no_suma_headshots(self):
+        atk1 = self._ronda_con_teamkill(headshot_al_companero=True)["players"]["atk1"]
+        self.assertEqual(atk1["headshots"], 1)
+        self.assertLessEqual(atk1["headshots"], atk1["kills"])
+
+    def test_una_ronda_con_solo_un_teamkill_no_da_kst_por_matar(self):
+        eventos = [_kill(0, "atk1", "atk2", 150.0), _kill(1, "def1", "atk1", 100.0)]
+        atk1 = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]["atk1"]
+        self.assertEqual(atk1["kills"], 0)
+        self.assertFalse(atk1["was_traded"])
+        self.assertFalse(atk1["kst"])
+
+    def test_una_baja_a_un_nick_desconocido_sigue_contando(self):
+        eventos = [{"kind": "Kill", "actor": "atk1", "target": ""},
+                   {"kind": "Kill", "actor": "atk1", "target": "fantasma", "headshot": True}]
+        self.assertEqual(bajas_a_rivales(eventos, {"atk1": 0, "def1": 1})["atk1"],
+                         {"kills": 2, "headshots": 1})
+
+    def test_un_suicidio_como_kill_no_es_baja(self):
+        eventos = [_kill(0, "atk1", "atk1", 150.0, headshot=True)]
+        atk1 = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]["atk1"]
+        self.assertEqual((atk1["kills"], atk1["headshots"]), (0, 0))
+
+    def test_un_teamkill_de_apertura_sigue_siendo_apertura(self):
+        """Fuera de alcance de la ficha 67; lo fija para que `metricas.md` no se separe del codigo."""
+        eventos = [_kill(0, "atk1", "atk2", 150.0)]
+        atk1 = analyse_round(_round(eventos, stats=_stats_del_guion([], eventos)))["players"]["atk1"]
+        self.assertEqual((atk1["kills"], atk1["opening_kill"], atk1["entry_kill"]), (0, True, True))
+
+    def test_sin_teamkills_las_bajas_son_las_del_parser(self):
+        """Paridad con `pydissect.stats` sobre el mismo feed: solo los teamkills difieren."""
+        lector = LectorFalso(ganador=0)
+        lector.match_feedback = [
+            kill("A0", "B0", headshot=True), kill("A0", "B1"), kill("B2", "A1", headshot=True),
+            kill("A3", "B2"), kill("B3", "A3"),
+        ]
+        del_parser = {f["username"]: {"kills": f["kills"], "headshots": f["headshots"]}
+                      for f in stats.player_round_stats(lector)}
+        team_of = {nombre: i // 5 for i, nombre in enumerate(NOMBRES)}
+        eventos = [{"kind": "Kill", "actor": u["username"], "target": u["target"],
+                    "headshot": u["headshot"]} for u in lector.match_feedback]
+        self.assertEqual(bajas_a_rivales(eventos, team_of), del_parser)

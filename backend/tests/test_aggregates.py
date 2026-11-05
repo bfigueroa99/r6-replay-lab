@@ -184,3 +184,118 @@ class SynergyTests(TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["username"], "amigo-nuevo")
         self.assertEqual(rows[0]["rounds"], 4)
+
+
+CONSULATE_Y7 = 2609221242
+CONSULATE_Y10 = 418126004176
+
+
+def _rondas(match, ganadas: int, total: int, *, side: str = "Attack", site: str = "1F Lobby",
+            spawn: str = "Garage"):
+    for n in range(total):
+        rnd = make_round(match, n, side=side, won=n < ganadas, site=site)
+        make_round_player(rnd, side=side, spawn=spawn)
+
+
+class VersionesDeMapaTests(TestCase):
+    def setUp(self):
+        y7 = make_match(map_name="Consulate", map_id=CONSULATE_Y7, index=0)
+        _rondas(y7, 3, 4)
+        y10 = make_match(map_name="Consulate", map_id=CONSULATE_Y10, index=1)
+        _rondas(y10, 0, 4)
+
+    def test_by_map_separa_las_versiones_de_un_mapa(self):
+        filas = {r["map"]: r for r in agg.by_map()}
+        self.assertEqual(set(filas), {"Consulate (Y7)", "Consulate (Y10)"})
+        self.assertEqual(filas["Consulate (Y7)"]["attack_winrate"], 75.0)
+        self.assertEqual(filas["Consulate (Y10)"]["attack_winrate"], 0.0)
+        self.assertEqual(filas["Consulate (Y10)"]["map_id"], CONSULATE_Y10)
+        self.assertEqual({r["slug"] for r in filas.values()}, {"consulate"})
+
+    def test_by_map_con_map_id_cero_no_junta_mapas_distintos(self):
+        _rondas(make_match(map_name="Club House", index=2), 1, 2)
+        _rondas(make_match(map_name="Border", index=3), 1, 2)
+        nombres = sorted(r["map"] for r in agg.by_map())
+        self.assertEqual(nombres, ["Border", "Club House", "Consulate (Y10)", "Consulate (Y7)"])
+
+    def test_by_site_separa_el_mismo_sitio_en_dos_versiones(self):
+        filas = {(r["map"], r["site"]): r["rounds"] for r in agg.by_site()}
+        self.assertEqual(
+            filas, {("Consulate (Y7)", "1F Lobby"): 4, ("Consulate (Y10)", "1F Lobby"): 4}
+        )
+
+    def test_by_spawn_separa_por_version(self):
+        filas = {(r["map"], r["spawn"]): r["winrate"] for r in agg.by_spawn()}
+        self.assertEqual(
+            filas, {("Consulate (Y7)", "Garage"): 75.0, ("Consulate (Y10)", "Garage"): 0.0}
+        )
+
+    def test_el_filtro_por_slug_junta_las_versiones(self):
+        self.assertEqual(agg.overview(map="consulate")["overall"]["rounds"], 8)
+        self.assertEqual(len(agg.by_map(map="consulate")), 2)
+
+    def test_el_filtro_por_map_id_elige_una_version(self):
+        filas = agg.by_map(map=str(CONSULATE_Y10))
+        self.assertEqual([r["map"] for r in filas], ["Consulate (Y10)"])
+        self.assertEqual(agg.overview(map=str(CONSULATE_Y7))["overall"]["rounds"], 4)
+
+    def test_clutch_por_sitio_separa_el_mismo_sitio_en_dos_versiones(self):
+        for indice, map_id in ((2, CONSULATE_Y7), (3, CONSULATE_Y10)):
+            match = make_match(map_name="Consulate", map_id=map_id, index=indice)
+            rnd = make_round(match, 0, site="1F Lobby", won=True)
+            make_round_player(rnd, clutch_vs=2)
+        filas = agg.clutch_by_site()
+        mapas = [(f["map"], f["map_id"], f["attempts"]) for f in filas if f["kind"] == "map"]
+        sitios = [(f["map"], f["site"], f["attempts"]) for f in filas if f["kind"] == "site"]
+        self.assertEqual(
+            sorted(mapas), [("Consulate (Y10)", CONSULATE_Y10, 1), ("Consulate (Y7)", CONSULATE_Y7, 1)]
+        )
+        self.assertEqual(
+            sorted(sitios), [("Consulate (Y10)", "1F Lobby", 1), ("Consulate (Y7)", "1F Lobby", 1)]
+        )
+
+    def test_un_id_nombrado_igual_que_una_version_lleva_el_id(self):
+        # un rework que MAPS no conoce y que el usuario llamo "Consulate" en Datos
+        conocido = make_match(map_name="Consulate", map_id=379218689149, index=2)
+        _rondas(conocido, 1, 1)
+        nuevo = make_match(map_name="Consulate", map_id=999, index=3)
+        _rondas(nuevo, 1, 1)
+        nombres = sorted(r["map"] for r in agg.by_map())
+        self.assertEqual(
+            nombres, ["Consulate", "Consulate (Y10)", "Consulate (Y7)", "Consulate (id 999)"]
+        )
+
+
+def _partidas(map_name: str, map_id: int, ganadas: int, total: int, desde: int):
+    for n in range(total):
+        gano = n < ganadas
+        match = make_match(
+            map_name=map_name, map_id=map_id, index=desde + n,
+            my_score=4 if gano else 2, opponent_score=2 if gano else 4,
+        )
+        make_round_player(make_round(match, 0, won=gano))
+
+
+class MejorYPeorMapaPorVersionTests(TestCase):
+    """El Inicio cuenta por version, como Mapas: un rework no suma con el viejo."""
+
+    def test_mejor_y_peor_mapa_separan_las_versiones(self):
+        # juntas, Consulate seria 3/6 = 50 %: mejor Border y peor "Consulate"
+        _partidas("Consulate", CONSULATE_Y7, 3, 3, desde=0)
+        _partidas("Consulate", CONSULATE_Y10, 0, 3, desde=10)
+        _partidas("Border", 0, 2, 3, desde=20)
+        resumen = agg.matches_summary()
+        mejor, peor = resumen["best_map"], resumen["worst_map"]
+        self.assertEqual((mejor["map"], mejor["map_id"], mejor["winrate"]),
+                         ("Consulate (Y7)", CONSULATE_Y7, 100.0))
+        self.assertEqual((peor["map"], peor["map_id"], peor["winrate"]),
+                         ("Consulate (Y10)", CONSULATE_Y10, 0.0))
+        self.assertEqual(mejor["slug"], "consulate")
+
+    def test_una_version_sin_muestra_minima_no_entra(self):
+        self.assertEqual(agg.MIN_PARTIDAS_MAPA, 3)
+        _partidas("Consulate", CONSULATE_Y7, 2, 2, desde=0)
+        _partidas("Consulate", CONSULATE_Y10, 0, 2, desde=10)
+        resumen = agg.matches_summary()
+        self.assertIsNone(resumen["best_map"])
+        self.assertIsNone(resumen["worst_map"])

@@ -1,5 +1,7 @@
 """A cuantas rondas se gana cada tipo de partida, para saber cuando hay match point.
 
+Tambien decide si un marcador final cierra la partida (`resultado`).
+
 Es una regla del juego y no algo que el `.rec` diga, por eso vive aca y no en
 `pydissect/`. No importa Django: las consultas viven en `aggregates.py` y
 leen de aca que marcadores son match point.
@@ -49,6 +51,21 @@ def objetivo(propio: int, ajeno: int, regla: dict) -> int:
 def cierra(propio: int, ajeno: int, regla: dict) -> bool:
     """Si ganar la ronda con este marcador gana la partida."""
     return propio + 1 >= objetivo(propio, ajeno, regla)
+
+
+def resultado(mio: int, suyo: int, regla: dict | None) -> bool | None:
+    """Si gane la partida, o None si el marcador final no la da por terminada.
+
+    Un `.rec` faltante deja un marcador que la regla no cierra (3-2, 4-3 en
+    Ranked): contarlo por quien tiene mas rondas inventaria una victoria o una
+    derrota. Se mira si el que va arriba cerraba ganando su ultima ronda. Sin
+    regla no hay como saberlo, y gana el que tiene mas rondas.
+    """
+    if mio == suyo:
+        return None
+    if regla is not None and not cierra(max(mio, suyo) - 1, min(mio, suyo), regla):
+        return None
+    return mio > suyo
 
 
 def estado(mio: int, suyo: int, regla: dict) -> str:

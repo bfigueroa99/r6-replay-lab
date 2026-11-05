@@ -3,7 +3,7 @@
 Como corre el pack Replica (`.claude/skills/replica-*`, MIT, de
 https://github.com/Jakeschincariol/replica-skill) dentro del loop. Lo usa el
 Investigador cuando le toca la familia 8 (ver su especificacion en
-`SKILL.md`), y se lee de `$EQUIPO_REF` con `git show`, igual que el resto del
+`roles/investigador.md`), y se lee de `$EQUIPO_REF` con `git show`, igual que el resto del
 playbook. Las skills del pack llevan `disable-model-invocation: true`: eso
 solo impide que el modelo las active por su cuenta con la herramienta Skill.
 El rol las lee por su ruta y las sigue con las adaptaciones de este archivo,

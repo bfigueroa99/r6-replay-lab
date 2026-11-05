@@ -14,12 +14,15 @@ import {
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
+import { marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
+import { textoResumenPartida } from '../resumenPartida.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
   const { data, error, loading } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
+  const [copia, setCopia] = useState(null)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -28,6 +31,20 @@ export default function MatchDetail() {
   const { match, rounds, scoreboard, my_totals: mine } = data
   const rachas = textoDeRachas(data.round_streaks)
   const round = rounds[Math.min(selected, rounds.length - 1)]
+
+  async function copiarResumen() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia('error')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(textoResumenPartida(data))
+      setCopia('ok')
+    } catch {
+      setCopia('error')
+    }
+  }
 
   return (
     <>
@@ -43,9 +60,19 @@ export default function MatchDetail() {
           </p>
           {rachas && <p className="note">{rachas}</p>}
         </div>
-        <Link className="btn small" to="/partidas">
-          Volver
-        </Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {copia && (
+            <span className="note">
+              {copia === 'ok' ? 'Copiado' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+            </span>
+          )}
+          <button type="button" className="btn small" onClick={copiarResumen}>
+            Copiar resumen
+          </button>
+          <Link className="btn small" to="/partidas">
+            Volver
+          </Link>
+        </div>
       </div>
 
       {match.warnings?.length ? (
@@ -216,6 +243,7 @@ export default function MatchDetail() {
 
 function Timeline({ round }) {
   const mineTeam = new Set(round.players.filter((p) => p.team_index === myTeam(round)).map((p) => p.username))
+  const marcas = marcasDeApertura(round, myTeam(round))
 
   if (!round.events.length) {
     return <p className="note">Esta ronda no registro eventos en el feed.</p>
@@ -243,6 +271,16 @@ function Timeline({ round }) {
               </>
             )}
             <span className="tags">
+              {event.order === marcas.apertura ? (
+                <span className="chip" title="Primera baja de la ronda">
+                  apertura
+                </span>
+              ) : null}
+              {event.order === marcas.entry ? (
+                <span className="chip" title="Primera baja de tu equipo">
+                  entry
+                </span>
+              ) : null}
               {event.headshot ? <span className="chip">HS</span> : null}
               {event.traded ? <span className="chip">tradeada</span> : null}
             </span>
