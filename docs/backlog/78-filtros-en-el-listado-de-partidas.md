@@ -1,7 +1,7 @@
 # 78. Filtros en el listado de Partidas
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-05 08:05 UTC
 rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
