@@ -883,7 +883,7 @@ test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }
   // la ultima es Tendencias: Limpiar desde ahi vuelve a los numeros
   await page.getByRole('button', { name: 'Limpiar' }).click()
   await expect(page.locator('.page-head p')).toHaveText(
-    'Como se mueven tus numeros en el tiempo y en que momento de la partida te caes.',
+    'Cómo se mueven tus números en el tiempo y en qué momento de la partida te caes.',
   )
   await expect(page.getByLabel('Tipo')).toHaveValue('')
   await expect(page.locator('.empty-state')).toHaveCount(0)
