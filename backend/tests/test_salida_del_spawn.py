@@ -81,7 +81,7 @@ class MuerteTempranaTests(TestCase):
 class BajaTempranaTests(TestCase):
     def test_las_bajas_tempranas_cuentan_solo_rivales(self):
         rondas = zona(5, 0, spawn="Warehouse")
-        for n, rnd in enumerate(rondas):
+        for rnd in rondas:
             make_round_player(rnd, username=RIVAL, is_me=False, team_index=1, side="Defense")
             make_round_player(rnd, username=COMPA, is_me=False, team_index=0)
         # Ronda 0: baja a un rival a los 5 s (cuenta) y teamkill a los 5 s (no).
@@ -96,6 +96,20 @@ class BajaTempranaTests(TestCase):
         self.assertEqual(f["early_kills"], 1)
         self.assertEqual(f["early_kills_per_round"], 0.2)
         self.assertEqual(datos["spawn_exit_attack"]["early_kills"], 1)
+
+
+    def test_cada_baja_temprana_cae_en_el_spawn_de_su_ronda(self):
+        warehouse = zona(5, 0, spawn="Warehouse", index=0)
+        obras = zona(5, 0, spawn="Construction Site", index=1)
+        for rnd in warehouse + obras:
+            make_round_player(rnd, username=RIVAL, is_me=False, team_index=1, side="Defense")
+        for orden, rnd in enumerate(warehouse[:2]):
+            make_event(rnd, orden, ME, RIVAL, clock=rnd.clock_start - 3)
+        make_event(obras[0], 1, ME, RIVAL, clock=obras[0].clock_start - 3)
+        datos = salidas()
+        self.assertEqual(fila(datos["spawn_exits"], "Warehouse")["early_kills"], 2)
+        self.assertEqual(fila(datos["spawn_exits"], "Construction Site")["early_kills"], 1)
+        self.assertEqual(datos["spawn_exit_attack"]["early_kills"], 3)
 
 
 class ContraElRestoTests(TestCase):

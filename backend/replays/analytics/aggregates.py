@@ -785,22 +785,8 @@ def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[di
     mueva las demas.
     """
     ataque = ataque.exclude(spawn="")
-    crudas = ataque.order_by().values(*_MAPA, "spawn").annotate(
-        rounds=Count("id"),
-        early_deaths=Count("id", filter=Q(died=True) & _temprano("death_elapsed")),
-    )
-    filas = _etiquetar([
-        {
-            "slug": c["round__match__map_slug"],
-            "map_id": c["round__match__map_id"],
-            "map_name": c["round__match__map_name"],
-            "spawn": c["spawn"],
-            "rounds": c["rounds"],
-            "early_deaths": c["early_deaths"],
-        }
-        for c in crudas
-    ])
-
+    # Las bajas se agrupan con la misma clave que las filas (mapa entero, con
+    # nombre): si una version tiene dos nombres, cada fila suma solo las suyas.
     bajas: Counter = Counter()
     me_ids = _me_ids()
     if me_ids:
@@ -813,12 +799,27 @@ def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[di
             a_favor.filter(_temprano("elapsed"))
             .annotate(mi_spawn=mi_spawn)
             .order_by()
-            .values("round__match__map_slug", "round__match__map_id", "mi_spawn")
+            .values(*_MAPA, "mi_spawn")
             .annotate(n=Count("id"))
         )
         for t in tempranas:
             if t["mi_spawn"]:
-                bajas[(t["round__match__map_slug"], t["round__match__map_id"], t["mi_spawn"])] += t["n"]
+                bajas[(*(t[c] for c in _MAPA), t["mi_spawn"])] += t["n"]
+
+    crudas = ataque.order_by().values(*_MAPA, "spawn").annotate(
+        rounds=Count("id"),
+        early_deaths=Count("id", filter=Q(died=True) & _temprano("death_elapsed")),
+    )
+    filas = _etiquetar([
+        {
+            **{etiqueta: c[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+            "spawn": c["spawn"],
+            "rounds": c["rounds"],
+            "early_deaths": c["early_deaths"],
+            "early_kills": bajas[(*(c[campo] for campo in _MAPA), c["spawn"])],
+        }
+        for c in crudas
+    ])
 
     total_rondas = sum(f["rounds"] for f in filas)
     total_tempranas = sum(f["early_deaths"] for f in filas)
@@ -831,7 +832,7 @@ def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[di
 
     for f in filas:
         rondas, tempranas_fila = f["rounds"], f["early_deaths"]
-        kills = bajas[(f["slug"], f["map_id"], f["spawn"])]
+        kills = f["early_kills"]
         resto = total_rondas - rondas
         pct = _pct(tempranas_fila, rondas)
         resto_pct = _pct(total_tempranas - tempranas_fila, resto)
@@ -842,7 +843,6 @@ def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[di
         f.update(
             {
                 "early_death_pct": pct,
-                "early_kills": kills,
                 "early_kills_per_round": _ratio(kills, rondas),
                 "rest_rounds": resto,
                 "rest_early_death_pct": resto_pct,
