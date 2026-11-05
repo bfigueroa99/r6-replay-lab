@@ -1,377 +1,96 @@
 # 78. Filtros en el listado de Partidas
 
-estado: revisado
-candado: qa 2026-11-05T12:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/78-filtros-en-el-listado-de-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack
 prioridad: 2
 fuente: ALCANCE.md F16 (del PR #14, cerrado sin merge el 2026-11-05; rama claude/dazzling-einstein-w3qcyq como referencia, no se mergea)
-archivos: backend/replays/models.py (filtro_resultado), backend/replays/analytics/aggregates.py (match_queryset), backend/replays/views.py (match_list), frontend/src/partidas.js, frontend/src/partidas.test.js, frontend/src/components/Filters.jsx, frontend/src/pages/Matches.jsx, backend/tests/test_filtros_de_partidas.py, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cQaYMkM, revisor 20261105T0804Z-cuHheZT
+archivos: backend/replays/models.py (filtro_resultado), backend/replays/analytics/aggregates.py (match_queryset), backend/replays/views.py (match_list), frontend/src/api.js (useApi), frontend/src/partidas.js, frontend/src/partidas.test.js, frontend/src/components/Filters.jsx, frontend/src/pages/Matches.jsx, backend/tests/test_filtros_de_partidas.py, frontend/e2e/humo.spec.js
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn, dev 20261105T0418Z-cQaYMkM, revisor 20261105T0804Z-cuHheZT, qa 20261105T1205Z-cUisFZX, release 20261105T1205Z-cUisFZX
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][fullstack] Filtros en el listado de Partidas`
+
+### Que cambia
+
+La pagina Partidas gana la barra de filtros (mapa, periodo, sesion, tipo) y un selector "Resultado" (Victoria, Derrota, Empate, Incompleta). La lista y el subtitulo ("N partidas con estos filtros.") cuentan solo lo filtrado, y cambiar un filtro vuelve a la primera pagina. De paso, `useApi` ya no deja que una respuesta vieja que llega tarde pise la del filtro nuevo (afectaba a toda pagina con filtros).
+
+### Por que esto y no otra cosa
+
+Ficha 78 (ALCANCE.md F16, idea del PR #14 cerrado). Se reusa la barra compartida de `App` (variante conservadora); Lado, Operador y Sitio no se muestran ni se mandan porque son de ronda. El resultado es local a Partidas. Empate e incompleta siguen a `match_result` caso por caso (el PR #14 los mezclaba con `won=None`).
+
+### Como se probo
+
+- verificar.sh: VERDE 3707572e0 (QA) y sobre el commit de entrega; 936 tests backend, 179 vitest, 58 e2e.
+- Tests nuevos: `test_filtros_de_partidas.py` (cada resultado, coincidencia con `match_result`, empate con `won=True`, resultado desconocido ignorado, paginacion con filtro, `days`, `until` de dia entero y el dia siguiente afuera, fecha con zona, sesion, tipo y solo ranked, lado/operador/sitio ignorados, mapa + resultado); `partidas.test.js` (9); e2e `Partidas filtra por resultado y por mapa` (incluye una respuesta demorada a proposito para el bug de `useApi`).
+- QA: runserver con base vacia y sembrada, curl con bordes (todo 200, conteos exactos), chunk inicial 190.68 -> 190.78 kB, 4 mutaciones (la de `until` sobrevivia: test agregado).
+- OMC: diseno plan=— · revisión=— · verificación=—
+- OMC: implementacion plan=— · revisión=2 hallazgos (1 arreglado) · verificación=—
+- OMC: revision plan=— · revisión=4 hallazgos (1 refutado, 1 arreglado con test del Revisor) · verificación=—
+- OMC: QA plan=— · revisión=— · verificación=PASS
+
+### Riesgos y lo que no entra
+
+Sin migracion, sin `recompute`, sin metrica nueva. Afuera: filtros en la URL (A10), partida anterior/siguiente (F17), orden del lado del servidor, filtros de ronda en Partidas.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py runserver
+```
+Abrir Partidas: la barra no tiene Lado ni Operador. Elegir "Derrota": solo derrotas y el subtitulo con el total filtrado. Ir a "Siguientes" y cambiar el mapa: vuelve a la pagina 1. "Limpiar" deja todo como estaba.
+
+### Para el humano
+
+Aviso, no bloquea: con un Lado elegido en otra pagina, Partidas muestra "Limpiar" aunque no se vea ningun filtro puesto (lo borra en todas las paginas). Si molesta, es pasarle a `Filters` solo los filtros de partida.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
-La pagina Partidas lista todo el historial de a 50 y no filtra nada: para
-encontrar "mis derrotas en Bank de esta semana" hay que recorrerla entera.
-Con filtros de mapa, periodo, tipo y resultado la lista se achica a lo que
-uno busca y el total dice cuantas son.
+Para encontrar "mis derrotas en Bank de esta semana" ya no hay que recorrer el historial entero de a 50: la lista se achica a lo que uno busca y el total dice cuantas son.
 
 ## Criterios de aceptacion
 
-- [ ] `/api/matches/?result=<victoria|derrota|empate|incompleta>` devuelve
-      solo partidas con ese `Match.result`, y `total` cuenta las filtradas
-      (test por cada valor sobre una base con las cuatro). Un valor
-      desconocido da 400 o se ignora, pero nunca 500.
-- [ ] `/api/matches/` acepta `days`, `since`/`until` y `session` con la
-      misma semantica que `_filters` (test: una partida fuera del periodo no
-      sale; una fecha con zona horaria no da 500, como la ficha 33).
-      `map` y `match_type` siguen como hoy.
-- [ ] La paginacion respeta los filtros: con 60 victorias, `offset=50` trae
-      las 10 restantes y no partidas de otro resultado.
-- [ ] `Matches.jsx` muestra la barra de filtros (mapa, periodo, tipo) y un
-      selector de resultado; cambiar un filtro vuelve a la primera pagina y
-      el subtitulo dice "N partidas" con el total filtrado.
-- [ ] e2e: elegir "Derrota" en Partidas deja solo filas con chip de derrota
-      y la consola queda limpia.
+- [x] `result=<victoria|derrota|empate|incompleta>` filtra y `total` cuenta las filtradas; valor desconocido se ignora, nunca 500.
+- [x] `days`, `since`/`until` y `session` con la semantica de `_filters`; fecha con zona no da 500; `map` y `match_type` como antes.
+- [x] La paginacion respeta los filtros.
+- [x] `Matches.jsx` con barra y selector de resultado; cambiar un filtro vuelve a la pagina 1; subtitulo con el total filtrado.
+- [x] e2e: Resultado en Partidas con la consola limpia (seed_demo no tiene derrotas: la fila con chip de derrota la cubre el backend).
 
-## Fuera de alcance
+## Diseno (resumen)
 
-- Filtros por lado, operador o sitio: son de ronda, no de partida.
-- Guardar los filtros en la URL (A10) y partida anterior/siguiente (F17).
-- Ordenar del lado del servidor por columna.
+`filtro_resultado` junto a `match_result` en `models.py`; `match_queryset` junto a `base_queryset` en `aggregates.py`; `match_list` usa los dos. En el frontend, `partidas.js` (logica pura: claves de partida, params, clave de filtros, `offsetVigente` que vuelve a la pagina 1 sin un `useEffect` extra, subtitulo). `Filters.jsx` gana `showSide`, `hayExtra` y `children` con defaults que dejan igual a las demas paginas. El detalle completo esta en `git log` de esta ficha.
 
-## Diseno
+## Implementacion (resumen)
 
-**Implementar despues de que #77 se mergee** (prioriza, no bloquea): la 77
-toca `Filters.jsx` y `humo.spec.js`, y esta ficha usa lo que la 77 agrega
-(`hayFiltros` de `tipoPartida.js` y el selector "Tipo" en lugar de "Solo
-ranked"). Si la 77 no llegara a `dev`, el Dev define `hayFiltros` en
-`partidas.js` con el mismo cuerpo y el selector de tipo queda fuera.
-
-Sin migracion, sin `recompute`, sin metrica nueva: el subtitulo cuenta
-partidas, que ya es un numero que la pagina muestra. No hay fila nueva en
-`docs/metricas.md`. Sin arena (una forma obvia) y sin consenso (no toca
-datos, POST, parser ni Electron).
-
-**Decision de la pregunta del PO: se reusa la barra compartida de `App`.**
-Variante conservadora y coherente con el resto de paginas; la pregunta
-sigue en `## Para el humano`. Partidas manda a la API **solo los filtros que
-son de partida** (mapa, periodo, sesion, tipo): lado, operador y sitio son de
-ronda (fuera de alcance), asi que Partidas los esconde y no los manda aunque
-vengan puestos desde otra pagina. El filtro de resultado es **local** a
-Partidas (no entra al estado de `App`): en el Inicio o el Coach un
-`result=` no significaria nada y prenderia "Limpiar" con un filtro invisible.
-
-**Valor desconocido de `result`: se ignora** (como `days` o una fecha
-invalida en `_filters`), nunca 500.
-
-**Empate e incompleta, exactos.** El PR #14 (`claude/dazzling-einstein-w3qcyq`)
-filtraba "empate" con `won=None`, que tambien trae las incompletas. Aca el
-filtro sigue a `match_result` (`models.py:13`) caso por caso.
-
-### Archivos y por que
-
-1. **`backend/replays/models.py`**, junto a `match_result` (asi las dos
-   reglas se leen y se cambian juntas):
-   - `RESULTADOS = ("victoria", "derrota", "empate", "incompleta")`.
-   - `filtro_resultado(result: str) -> Q | None`, el `Q` sobre `Match` que
-     da cada etiqueta, en el mismo orden de decision que `match_result`:
-     `incompleta` = `Q(won__isnull=True)`; `empate` =
-     `Q(won__isnull=False, my_score=F("opponent_score"))`; `victoria` =
-     `Q(won=True) & ~Q(my_score=F("opponent_score"))`; `derrota` =
-     `Q(won=False) & ~Q(my_score=F("opponent_score"))`; cualquier otro
-     valor -> `None`. Import de `F` y `Q` desde `django.db.models`.
-2. **`backend/replays/analytics/aggregates.py`**, debajo de `base_queryset`:
-   `match_queryset(**filters) -> QuerySet[Match]`, los filtros de la barra
-   aplicados a partidas con la misma lectura que `base_queryset`: `map` con
-   `filtro_mapa(..., prefijo="")`, `match_type`, `ranked_only`
-   (`match_type="Ranked"`), `since`/`until` sobre `played_at`, `session` con
-   `id__in=session_match_ids(...)`. `side`, `operator` y `site` se ignoran;
-   el docstring dice por que (una partida tiene los dos lados y diez
-   operadores) y que existe para que Partidas y el Resumen cuenten las
-   mismas partidas. Va en `aggregates.py` y no en `views.py` para quedar al
-   lado de `base_queryset`: si alguien agrega un filtro a uno, ve el otro.
-3. **`backend/replays/views.py`, `match_list`**: reemplaza los dos `if`
-   (`map`, `match_type`) por
-   `qs = agg.match_queryset(**_filters(request))` y, si
-   `filtro_resultado(request.GET.get("result", ""))` no es `None`,
-   `qs = qs.filter(...)`. `total = qs.count()` ya queda sobre lo filtrado y
-   el slice `offset`/`limit` tambien. El resto de la vista no cambia. El
-   `ordering = ["-played_at"]` del modelo sigue mandando el orden.
-4. **`frontend/src/partidas.js`** (nuevo), logica pura sin React:
-   - `CLAVES_DE_PARTIDA = ['map', 'days', 'since', 'until', 'session', 'match_type', 'ranked_only']`.
-   - `filtrosDePartida(filtros)` -> objeto solo con esas claves (las que
-     esten en `filtros`; `null`/`undefined` -> `{}`).
-   - `OPCIONES_DE_RESULTADO` -> `[{ value: '', label: 'Todos' },
-     { value: 'victoria', label: 'Victoria' }, { value: 'derrota', label:
-     'Derrota' }, { value: 'empate', label: 'Empate' }, { value:
-     'incompleta', label: 'Incompleta' }]`.
-   - `paramsDePartidas(filtros, resultado, offset, limite)` ->
-     `{ ...filtrosDePartida(filtros), result: resultado, limit: limite,
-     offset }` (`qs()` ya saca `''` y `false`).
-   - `claveDeFiltros(filtros, resultado)` -> `qs(filtrosDePartida(filtros)) + '|' + resultado`
-     (usa `qs` de `api.js`).
-   - `offsetVigente(pagina, clave)` -> `pagina.clave === clave ? pagina.offset : 0`.
-     Es lo que hace "cambiar un filtro vuelve a la primera pagina" **sin**
-     un `useEffect` que dispararia una request de mas con el offset viejo.
-   - `subtituloDePartidas(total, filtrado)` -> sin filtros
-     `"29 partidas importadas."` (el texto de hoy); filtrado
-     `"12 partidas con estos filtros."`; singular `"1 partida ..."`.
-5. **`frontend/src/partidas.test.js`** (nuevo, vitest, estilo de
-   `mapas.test.js`):
-   - `filtros de partida dejan afuera lado operador y sitio`
-   - `filtros de partida sin datos dan un objeto vacio`
-   - `los params mandan el resultado y la pagina`
-   - `resultado Todos no viaja en la query` (`qs(paramsDePartidas({}, '', 0, 50))` es `?limit=50&offset=0`)
-   - `cambiar un filtro vuelve a la primera pagina` (`offsetVigente({ clave: 'a', offset: 50 }, 'b') === 0`)
-   - `sin cambiar filtros la pagina se mantiene`
-   - `cambiar el lado no cambia la clave de Partidas` (la clave ignora `side`: no se resetea la pagina por un filtro que Partidas no usa)
-   - `el subtitulo dice importadas sin filtros y con estos filtros con filtros`
-   - `el subtitulo usa singular con una partida`
-6. **`frontend/src/components/Filters.jsx`** (despues de la 77):
-   - prop nueva `showSide = true`; con `false` no se pinta "Lado".
-   - prop nueva `children`, que se pinta dentro de `.filters` justo antes
-     de "Limpiar" (asi el selector de resultado queda en la misma fila).
-   - prop nueva `hayExtra = false`: "Limpiar" se muestra si
-     `hayFiltros(value) || hayExtra`. "Limpiar" sigue llamando
-     `onChange({})`. Defaults que dejan igual a todas las demas paginas.
-7. **`frontend/src/pages/Matches.jsx`**: recibe `filters` y `setFilters`
-   del `context` de `App` (ya llegan: `<Matches {...context} />`).
-   - `const [resultado, setResultado] = useState('')`,
-     `const clave = claveDeFiltros(filters, resultado)`,
-     `const [pagina, setPagina] = useState({ clave, offset: 0 })`,
-     `const offset = offsetVigente(pagina, clave)`; los botones hacen
-     `setPagina({ clave, offset: ... })`.
-   - `useApi('/matches/', paramsDePartidas(filters, resultado, offset, PAGE))`.
-   - `filtrado = hayFiltros(filtrosDePartida(filters)) || Boolean(resultado)`.
-   - Barra: `<Filters value={filters} onChange={cambiarFiltros}
-     showSide={false} showOperator={false} showSession hayExtra={Boolean(resultado)}>`
-     con hijo `<label>Resultado<select value={resultado}
-     onChange={(e) => setResultado(e.target.value)}>` y
-     `OPCIONES_DE_RESULTADO`. `cambiarFiltros(f)` hace `setFilters(f)` y, si
-     `Object.keys(f).length === 0` (es "Limpiar"), tambien
-     `setResultado('')`.
-   - La barra va entre el `page-head` y el `Panel`, como en el Inicio.
-   - Subtitulo: `subtituloDePartidas(data.total, filtrado)`.
-   - Vacio: si `!data?.total` y `filtrado`, se pinta `page-head` (h1
-     "Partidas", subtitulo `0 partidas con estos filtros.`), la barra y
-     `<p className="note">Ninguna partida con estos filtros. Cambia alguno o
-     usa Limpiar.</p>`, sin `Panel`. Sin filtros sigue el `EmptyState` de
-     siempre (base vacia de verdad). Nada de clase `empty-state` en el caso
-     filtrado (el e2e de "todas las paginas cargan" la busca en 0). Mismo
-     criterio que el Inicio de la 77.
-   - `if (loading && !data) return <Loading />` se queda: al cambiar un
-     filtro `data` ya existe y la tabla vieja se ve hasta que llega la nueva,
-     como hoy al paginar.
-8. **`backend/tests/test_filtros_de_partidas.py`** (nuevo), con
-   `factories.make_match` (`won` se pasa explicito; `index` distinto por
-   partida; ninguna necesita rondas salvo donde se diga):
-   - `test_cada_resultado_trae_solo_sus_partidas`: una victoria, una
-     derrota, un empate (`won=False`, 3-3) y una incompleta (`won=None`);
-     para cada valor de `RESULTADOS`, `/api/matches/?result=<v>` da
-     `total == 1` y `matches[0]["result"] == v`.
-   - `test_el_filtro_de_resultado_coincide_con_match_result`: para cada
-     partida de la base anterior, `Match.objects.filter(filtro_resultado(m.result))`
-     la contiene, y ninguna partida cae en dos filtros.
-   - `test_un_resultado_desconocido_se_ignora_y_no_da_500`:
-     `?result=ganada` -> 200 y `total` = todas.
-   - `test_la_paginacion_respeta_el_resultado`: 60 victorias y 5 derrotas;
-     `?result=victoria&limit=50&offset=50` -> `total == 60`, 10 filas, todas
-     `victoria`.
-   - `test_days_deja_afuera_una_partida_vieja`: una partida de hace 2 dias
-     y otra de hace 40 (`datetime.now() - timedelta(...)`); `?days=30` -> 1.
-   - `test_until_sin_hora_incluye_todo_ese_dia`: partida a las 22:00 del
-     2026-09-08; `?until=2026-09-08` la trae y `?since=2026-09-09` no.
-   - `test_una_fecha_con_zona_no_da_500`: `?since=2026-09-08T00:00:00Z`
-     (urlencode del `+` si se usa offset) -> 200.
-   - `test_la_sesion_trae_solo_sus_partidas`: dos grupos de partidas
-     separados por un dia (mas que el corte de sesion); `?session=0` da las
-     del grupo mas reciente, con `total` igual a
-     `len(agg.session_match_ids(0))`.
-   - `test_tipo_y_solo_ranked_filtran_partidas`: una Ranked y una
-     Unranked; `?match_type=Unranked` -> 1 y `?ranked_only=1` -> 1 (la
-     Ranked).
-   - `test_lado_operador_y_sitio_no_filtran_partidas`:
-     `?side=Attack&operator=Ash&site=X` da el mismo `total` que sin nada.
-   - `test_mapa_y_resultado_se_combinan`: victoria en Bank, derrota en
-     Bank, victoria en Border; `?map=bank&result=victoria` -> 1.
-9. **`frontend/e2e/humo.spec.js`**, test nuevo `Partidas filtra por
-   resultado y por mapa`, con `vigilarConsola`. `seed_demo` gana sus 29
-   partidas (comentario de la linea 153), no se toca el seed:
-   - `goto('/partidas')`: subtitulo `29 partidas importadas.`; la barra
-     muestra "Mapa" y "Periodo" y **no** "Lado" ni "Operador"
-     (`getByLabel('Lado')` en 0).
-   - Elegir "Victoria" en `getByLabel('Resultado')` esperando
-     `page.waitForRequest(/\/api\/matches\/\?.*result=victoria/)`:
-     subtitulo `29 partidas con estos filtros.` y toda fila de la tabla
-     tiene `.chip.win`.
-   - Elegir "Derrota": nota "Ninguna partida con estos filtros", la barra
-     sigue visible, `.empty-state` en 0.
-   - "Limpiar": subtitulo vuelve a `29 partidas importadas.` y
-     "Resultado" vuelve a "Todos".
-   - Elegir el primer mapa de `getByLabel('Mapa')` (esperando la request
-     con `map=`): el subtitulo dice `N partidas con estos filtros.` con
-     N < 29 y toda celda de la columna Mapa es la etiqueta elegida.
-   - Consola limpia.
-   El paso "cambiar un filtro vuelve a la primera pagina" no se ve en el
-   seed (29 < 50): lo cubren `partidas.test.js` y el test de paginacion del
-   backend.
-
-### Orden de implementacion
-
-1. `models.py` (`RESULTADOS`, `filtro_resultado`) y
-   `aggregates.match_queryset`, con los tests del backend.
-2. `match_list` usando los dos; correr `manage.py test tests`.
-3. `partidas.js` + `partidas.test.js`.
-4. `Filters.jsx` (props) y `Matches.jsx`; `npm run build`.
-5. e2e; `check.sh` completo con `verificar.sh`.
-
-### Que puede romperse
-
-- **Tests existentes de `/api/matches/`** (`test_api.py`, `test_rating.py`,
-  `test_rachas.py`, `test_mapa_de_la_partida.py`, ...): piden sin filtros o
-  con `map`/`match_type`; el contrato de la respuesta no cambia (mismas
-  claves). Si alguno manda `days` o `since` esperando que se ignore, hoy se
-  ignora y pasaria a filtrar: buscarlo con `grep -n "api/matches/?"
-  backend/tests` antes de cerrar.
-- **e2e de las lineas 434 y 460** (`/api/matches/?limit=200`): sin filtros,
-  no cambian.
-- **Barra compartida**: un `showSide` mal puesto o el `children` fuera de
-  `.filters` cambia las otras paginas; las props nuevas tienen default que
-  deja todo igual. El e2e de "todas las paginas cargan" lo cubre.
-- **Filtros arrastrados desde otra pagina**: con Lado = Ataque elegido en el
-  Inicio, Partidas no lo muestra ni lo manda, y "Limpiar" igual aparece
-  (`hayFiltros(value)` lo ve). Es lo esperado: Limpiar borra tambien lo que
-  Partidas no muestra, como en las demas paginas.
-- **Sesiones**: `session_match_ids` usa todo el historial; un indice fuera
-  de rango da lista vacia -> 0 partidas, no 500.
-
-### Verificacion manual
-
-`seed_demo`, `runserver`, abrir Partidas: barra sin Lado ni Operador; elegir
-Victoria (29), Derrota (nota sin tabla), Limpiar; elegir un mapa y un
-periodo de 7 dias; elegir Lado = Ataque en el Inicio y volver: Partidas
-sigue con 29 y aparece "Limpiar". En la base real del PC (donde hay
-derrotas y mas de 50 partidas): elegir Derrota, ir a "Siguientes", cambiar
-el mapa y ver que vuelve a 1–N.
-
-Skills: no aplica (la barra, la tabla y el filtro ya existen en el repo; no
-es un dominio nuevo).
-OMC: plan=— · revisión=— · verificación=— (ficha chica de una forma obvia: sin consenso)
-
-## Implementacion
-
-(dev 20261105T0418Z-cQaYMkM)
-
-Quedo el diseno completo, en el orden del diseno:
-
-- `models.py`: `RESULTADOS` y `filtro_resultado` junto a `match_result`, con el
-  mismo orden de decision (incompleta por `won=None` antes que empate).
-- `aggregates.match_queryset`, debajo de `base_queryset`; ignora lado,
-  operador y sitio. `match_list` lo usa con `_filters(request)` y suma el
-  `filtro_resultado`; un `result` desconocido se ignora.
-- `frontend/src/partidas.js` (+ `partidas.test.js`, 9 tests con los nombres
-  del diseno). `Filters.jsx` gana `showSide`, `hayExtra` y `children`, con
-  defaults que dejan igual a las demas paginas. `Matches.jsx` con la barra
-  sin Lado ni Operador, con Sesion, el selector Resultado local, la pagina
-  derivada de la clave de filtros y la nota "Ninguna partida con estos
-  filtros" sin `Panel` ni `.empty-state`.
-- `backend/tests/test_filtros_de_partidas.py`: los 11 tests del diseno mas
-  `test_match_queryset_filtra_el_mapa_e_ignora_el_lado`.
-- e2e `Partidas filtra por resultado y por mapa` en `humo.spec.js`.
-
-**Desvio: arreglo en `useApi` (`frontend/src/api.js`).** El primer `check.sh`
-dio rojo en el e2e nuevo: con "Derrota" elegida la tabla seguia mostrando
-las 29 victorias. La traza mostro que la API respondio bien (`total: 0`);
-el problema era `useApi`, que compartia un solo `alive` (useRef) entre
-requests: si la respuesta de "Victoria" llegaba despues de la de "Derrota",
-veia la bandera prendida por la request nueva y pisaba sus datos. Es un bug
-previo que afecta a toda pagina que cambie filtros rapido (Inicio, Coach,
-etc.). Ahora cada efecto tiene su propia bandera `vigente`. El e2e suma un
-paso que demora la respuesta de "Victoria" con `page.route` hasta que
-"Derrota" ya respondio: con el `api.js` de `origin/dev` falla
-(`humo.spec.js:896`, la nota no aparece) y con el arreglo pasa. Los pasos
-del e2e esperan la respuesta (`waitForResponse`) y no solo la request.
-
-Revision ciega (`omc-code-reviewer`, revision.md): aprobar, 2 LOW.
-- Docstring de `match_queryset` prometia el mismo conteo que el Resumen: no es
-  cierto con operador o sitio puestos. Corregido.
-- "Limpiar" aparece en Partidas si viene un Lado puesto desde otra pagina,
-  con el subtitulo "importadas": no se cambio, es lo que el diseno decide
-  ("Filtros arrastrados desde otra pagina", Limpiar borra tambien lo que
-  Partidas no muestra). Queda para el Revisor/QA si lo ven confuso.
-
-Sin migracion, sin `recompute`, sin fila en `metricas.md` (cuenta partidas).
-`grep "api/matches/?" backend/tests`: ningun test existente manda `days` ni
-`since`.
-
-Verificacion: verificar.sh VERDE 0d12c3602 (934 tests backend, 179 vitest, 58 e2e).
-
-Skills: no aplica (dominio que ya existe en el repo).
-OMC: plan=— · revisión=2 hallazgos (1 arreglado) · verificación=—
+dev 20261105T0418Z-cQaYMkM. Diseno completo. Desvio: arreglo en `useApi` (bandera `vigente` por efecto en vez de un `alive` compartido); el e2e lo caza con una respuesta demorada (falla con el `api.js` de dev, pasa con el arreglo).
 
 ## Revision 2026-11-05 sobre e5e4aa5
 
-Revisor 20261105T0804Z-cuHheZT. A ciegas: `omc-code-reviewer` en estandares
-y otro en intencion (diff de mas de 150 lineas); sin `omc-security-reviewer`
-(no hay POST nuevo, ni red, ni `.rec`, ni rutas de archivos). Cada hallazgo
-confirmado o refutado por el lider.
+Revisor 20261105T0804Z-cuHheZT. Veredicto: aprobar. Corregido: test del empate con `won=True` (agregado por el Revisor). LOW sin cambio: "Limpiar" con filtro invisible (aviso en el PR) y el e2e sin fila de derrota.
 
-- [test] [MEDIUM -> refutado] frontend/e2e/humo.spec.js:893-897
-  Que pasa: el revisor temia que el e2e de la respuesta tardia pasara con el
-  bug de `useApi` presente.
-  Por que no es cierto: con `frontend/src/api.js` de 0d12c36^ (la bandera
-  `alive` compartida) y el build rehecho, "Partidas filtra por resultado y
-  por mapa" falla 3 de 3 en la linea 896; con el arreglo pasa. El test caza
-  el bug.
-- [test] [LOW] backend/tests/test_filtros_de_partidas.py:28
-  Que pasa: el fixture del empate trae solo `won=False`; un
-  `filtro_resultado("empate")` reescrito como `Q(won=False) & empatada`
-  pasaba los tres tests.
-  Arreglo: agregado por el Revisor
-  `test_un_empate_con_won_true_sale_como_empate_y_no_como_victoria` (pasa).
-- [bug] [LOW] frontend/src/components/Filters.jsx:166
-  Que pasa: en Partidas aparece "Limpiar" sin ningun filtro visible puesto.
-  Como reproducirlo: elegir Lado = Ataque en el Coach y abrir Partidas: el
-  subtitulo dice "29 partidas importadas." y el boton esta; apretarlo borra
-  el lado en todas las paginas.
-  Arreglo sugerido: que Partidas le pase a `Filters` si hay filtros visibles,
-  calculado con `filtrosDePartida(filters)`.
-- [test] [LOW] frontend/e2e/humo.spec.js:272-276 (criterio 5)
-  Que pasa: con "Derrota" el e2e no ve ninguna fila (seed_demo gana sus 29
-  partidas); el chip de derrota y el filtro los cubre el backend
-  (`test_cada_resultado_trae_solo_sus_partidas`), el chip `.chip.win` el e2e.
-  Arreglo sugerido: si se vuelve a tocar el test, `page.route` con una fila
-  `result: 'derrota'`; no bloquea.
+## QA 2026-11-05 sobre 3707572
 
-Criterios: 1, 2 y 3 cubiertos por `tests/test_filtros_de_partidas.py`; 4 por
-`src/partidas.test.js` (offset y subtitulo) y el e2e (barra sin Lado ni
-Operador); 5 por el e2e con la consola limpia (ver el LOW de arriba). Sin
-archivos fuera de `archivos:` sin explicar, sin numero nuevo (no pide fila en
-`metricas.md`), sin `print` ni `console.log`, identificadores sin tildes.
+QA 20261105T1205Z-cUisFZX. Base: `tests/factories.py` en un script del scratchpad (65 partidas: 56 victorias, 1 derrota, 7 empates incluido un 3-3 con `won=True`, 1 incompleta, 55 en enero para paginar).
 
-Verificacion: verificar.sh VERDE e5e4aa569 (934 backend, 179 vitest, 58 e2e)
-antes del test nuevo y VERDE 3af5b042a (935 backend, 179 vitest, 58 e2e) con el.
+- `verificar.sh` -> VERDE 3707572e0 (935 backend, 179 vitest, 58 e2e).
+- Base vacia, `SQLITE_PATH=<tmp> python3 manage.py runserver 8781`: `curl /api/matches/?result=derrota`, `?days=foo`, `?offset=-1`, `?limit=-5`, `?session=99` -> 200, total 0.
+- Base sembrada: `?result=victoria` 56 / `derrota` 1 / `empate` 7 / `incompleta` 1, cada uno solo con su etiqueta; `?result=ganada`, `?result=`, `?result=VICTORIA` -> 65 (ignorado); `?result=victoria&offset=50&limit=50` -> total 56, 6 filas victoria; `?days=30` 3; `?days=foo`, `?days=99999999999`, `?until=foo` ignorados; `?since=2026-09-08T00:00:00Z` y `%2B02:00` -> 200; `?until=2026-01-01` 24 (dia entero); `?session=-1|abc|999` -> 0 sin 500; `?map=bank&result=victoria` 1; `?side=Attack&operator=Ash&site=X` 65. `/api/matches/1/` y `/api/export/` 200.
+- Chunk inicial (`npx vite build`): dev 190.68 kB, rama 190.78 kB.
+- Mutaciones: empate sin `won__isnull=False` -> caen 2; `offsetVigente` sin reset -> cae el vitest; ignorar `until` en `match_queryset` -> **sobrevivia**: agregado `test_until_deja_afuera_una_partida_del_dia_siguiente`, que cae con la mutacion y pasa sin ella.
+- `omc-verifier`: PASS (criterio 5 PARTIAL por el seed sin derrotas, cubierto en backend).
 
-Veredicto: aprobar -> `revisado`. Los LOW quedan para el Dev si vuelve a
-tocar la ficha; ninguno bloquea.
+Veredicto: `aprobado`.
 
-OMC: plan=— · revisión=4 hallazgos (1 refutado, 1 arreglado con test del Revisor) · verificación=—
-
-## QA
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
-- (po) Si la barra compartida de `App` se reusa en Partidas, los filtros
-  elegidos en Partidas siguen puestos al volver al Inicio, como en el resto de
-  paginas. Variante conservadora: reusarla (coherente). Si preferis que
-  Partidas tenga sus propios filtros, decilo en la ficha.
-- (arquitecto) Disenado con la variante conservadora: barra compartida,
-  sin Lado ni Operador en Partidas (son de ronda), y el filtro de resultado
-  local a Partidas. Cambiarlo despues es tocar solo `Matches.jsx`.
+- (po/arquitecto, aviso) Partidas reusa la barra compartida de `App`: los filtros elegidos ahi siguen puestos al volver al Inicio. Si preferis filtros propios de Partidas, es tocar solo `Matches.jsx`.
