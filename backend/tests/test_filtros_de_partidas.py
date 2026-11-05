@@ -89,6 +89,15 @@ class FiltrosDeLaBarraTests(TestCase):
         self.assertEqual(self.client.get("/api/matches/?until=2026-09-08").json()["total"], 1)
         self.assertEqual(self.client.get("/api/matches/?since=2026-09-09").json()["total"], 0)
 
+    def test_until_deja_afuera_una_partida_del_dia_siguiente(self):
+        # La QA lo agrego: sin el, ignorar `until` en `match_queryset` pasaba
+        # toda la suite (el test de arriba solo mira la partida de adentro).
+        make_match(index=0, played_at=datetime(2026, 9, 8, 22, 0))
+        make_match(index=1, played_at=datetime(2026, 9, 9, 0, 30))
+        respuesta = self.client.get("/api/matches/?since=2026-09-08&until=2026-09-08").json()
+        self.assertEqual(respuesta["total"], 1)
+        self.assertEqual(respuesta["matches"][0]["played_at"][:10], "2026-09-08")
+
     def test_una_fecha_con_zona_no_da_500(self):
         make_match(index=0, played_at=datetime(2026, 9, 8, 22, 0))
         for consulta in ("since=2026-09-08T00:00:00Z", "since=2026-09-08T00:00:00%2B02:00"):
