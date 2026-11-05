@@ -1,7 +1,7 @@
 # 82. Una partida sin rondas rompe el detalle de partida
 
-estado: revisado
-candado: qa 2026-11-05T14:09Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/82-partida-sin-rondas-rompe-el-detalle
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: QA 20261105T0256Z-cFRtPBc de la ficha 75 (anotado alli como "ficha 81"; el 81 lo tomo otra sesion a la vez). En dev 7a87ddc, `frontend/src/pages/MatchDetail.jsx:33`: `const round = rounds[Math.min(selected, rounds.length - 1)]` da `rounds[-1]` = `undefined` con 0 rondas, y `round.label` (`:124`) tira `TypeError`
 archivos: frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, frontend/e2e/partida-sin-rondas.json, backend/tests/test_partida_sin_rondas.py
-turnos: qa 20261105T0256Z-cFRtPBc, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1330Z-c4QLGh8, revisor 20261105T1358Z-caeHwMj
+turnos: qa 20261105T0256Z-cFRtPBc, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1330Z-c4QLGh8, revisor 20261105T1358Z-caeHwMj, qa 20261105T1358Z-cxcyM5F
 
 ## PR
 
@@ -223,7 +223,40 @@ Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre b7e2cbe
+
+QA 20261105T1358Z-cxcyM5F. Rama fusionada con dev a9f8a28 (entro la 85; sin
+conflicto) antes de probar. Scripts en el scratchpad; base aparte con
+`SQLITE_PATH`.
+
+- `verificar.sh` (check.sh completo): VERDE b7e2cbe15 en 106 s, 954 tests
+  backend, 190 vitest, 61 e2e.
+- Criterio 1: base con `factories.py` (2 partidas con rondas y
+  `make_match(map_name='Oregon', index=9, my_score=0, opponent_score=0)` sin
+  rondas, id 3), `runserver 127.0.0.1:8786`; `curl /api/matches/3/` -> 200
+  JSON con `rounds: []`. Cumple.
+- Criterio 2: Playwright en `/partidas/3`: `h1` "Oregon · 0-0 empate", el
+  aviso "Esta partida no tiene rondas importadas." una vez, paneles Rondas,
+  Matriz de duelos, Trades por equipo y Scoreboard; "Copiar resumen" copia
+  "Oregon · 0-0 · empate / 2026-09-02 05:00 · Ranked / Tú: 0 bajas / 0
+  muertes · K/D — ...". Consola sin errores ni warnings. Cumple.
+- Criterio 3: `/partidas/1` (con rondas) igual que siempre, sin aviso, con
+  sus pestañas; `/partidas` lista las 3. e2e del detalle en verde. Cumple.
+- Criterio 4 y mutaciones (restaurado despues, `git status` limpio):
+  (1) sin `round_streaks` en `partida-sin-rondas.json` ->
+  `manage.py test tests.test_partida_sin_rondas` FAILED; (2) otro texto de
+  aviso + build -> `E2E_CHROMIUM=/opt/pw-browsers/chromium npx playwright
+  test e2e/humo.spec.js -g "sin rondas muestra"` falla en `humo.spec.js:415`;
+  (3) `MatchDetail.jsx` de dev -> falla en `humo.spec.js:411` (pagina en
+  blanco). Restaurado: 1 passed. Cumple.
+- Chunk inicial igual (191 207 B); `MatchDetail` lazy 14 028 -> 14 178 B.
+- Bordes vecinos: `/api/matches/999999/` 404 HTML de Django y
+  `/api/matches/foo/` 200 HTML del SPA: fuera de alcance, es la ficha 84.
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 4 criterios VERIFIED, 0 bloqueantes)
 
 ## Verificar en el PC
 
