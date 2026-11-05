@@ -221,9 +221,8 @@ OMC: plan=APPROVE · revisión=— · verificación=—
   propio equipo venga queda "devuelto" (coherente con la regla, raro de leer).
 - 2026-11-05 (humano, respondido en su sesion; lo anota po 20261105T0230Z-c8Ahepa):
   **respondida.** "Apertura devuelta" = (a), el trade del evento, lo ya
-  disenado. No cambia nada del diseno. (Esta copia es el espejo de `backlog`;
-  la ficha manda en su rama, donde trabaja otra sesion: el PO no toca esa rama
-  ni su candado. El siguiente rol que la edite copia esta linea alla.)
+  disenado. No cambia nada del diseno. (Copiada tambien a la ficha de su
+  rama, commit 7e6415c, solo docs.)
 
 (Si la migracion o `recompute` pesan: la ficha toca columnas de
 `RoundPlayer` como la 55. Verificar `recompute` en el PC con la base real.)
