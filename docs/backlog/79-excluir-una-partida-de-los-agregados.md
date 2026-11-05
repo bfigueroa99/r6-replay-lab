@@ -1,6 +1,6 @@
 # 79. Excluir una partida de los agregados
 
-estado: en curso 2026-11-05
+estado: implementado
 candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
