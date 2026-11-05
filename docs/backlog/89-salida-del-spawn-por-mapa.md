@@ -1,7 +1,7 @@
 # 89. Salida del spawn por mapa
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T18:52Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
 epica: posicionamiento
@@ -266,7 +266,51 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(Dev)
+(dev 20261105T1851Z-cBJfgUn)
+
+Quedo el diseno completo, sin desvios de contrato:
+
+- `aggregates.py`: `SALIDA_SPAWN_SEGUNDOS = 15`, `_temprano(campo)` (0 y
+  `None` no cuentan), `spawn_exits(ataque, min_rounds)` que devuelve
+  `(filas, total)`, y `positioning()` suma `spawn_exits`,
+  `spawn_exit_attack` y `spawn_exit_seconds`. El calculo de margen y
+  veredicto se extrajo a `_margen_y_veredicto`, que tambien usa
+  `_contra_el_resto` sin cambiar ninguna clave (los 15 tests de
+  `test_posicion.py` siguen verdes).
+- Desvio menor: las bajas tempranas se agrupan con la misma clave que las
+  filas (`_MAPA` entero, con `map_name`, mas tu spawn), no solo por
+  `(slug, map_id, spawn)`. Asi, si una version de mapa tiene dos nombres,
+  cada fila suma solo sus bajas y la suma cuadra con el total (hallazgo LOW
+  del revisor ciego).
+- Frontend: `VEREDICTOS_SALIDA`, `etiquetaSalida`, `claseSalida` y
+  `textoSinSalidas` en `posicion.js`; `PanelSalidaSpawn` en `Coach.jsx`
+  debajo de `PanelPosicion`, con el mismo `useApi('/positioning/')`. La nota
+  del ataque entero lleva la clase `salida-ataque` para el e2e.
+- `metricas.md`: filas "Muertes tempranas por spawn" y "Bajas tempranas por
+  spawn" bajo "Fuera de posición", y "Salida del spawn" en `## Muestra minima`.
+
+Tests (criterio -> test):
+- 14.9 s cuenta, 15.0 no: `test_una_muerte_a_los_14_9_cuenta_y_a_los_15_no`.
+- Muerte sin reloj (`None` y `0.0`): `test_una_muerte_sin_reloj_no_cuenta_ni_rompe_la_fila`.
+- Defensa y sin spawn afuera: `test_las_rondas_de_defensa_y_sin_spawn_no_cuentan`.
+- Muestra minima (y total antes del minimo): `test_un_spawn_con_menos_rondas_que_el_minimo_no_sale`.
+- Solo rivales, ventana y reloj 0: `test_las_bajas_tempranas_cuentan_solo_rivales`.
+- Cada baja en su spawn: `test_cada_baja_temprana_cae_en_el_spawn_de_su_ronda`.
+- Contra el resto del ataque y orden: `test_el_spawn_se_compara_contra_el_resto_del_ataque`,
+  `test_un_solo_spawn_no_tiene_resto_y_es_ruido`, `test_la_fila_lleva_la_etiqueta_del_mapa`.
+- Filtros: `test_respeta_el_filtro_de_mapa`, `test_con_filtro_de_defensa_no_hay_salidas`.
+- Vitest (`posicion.test.js`): etiquetas, clases y los dos textos de vacio.
+- e2e: `el Coach muestra la salida del spawn` (6 filas, Bank / Boulevard con
+  20 rondas y 0 tempranas, "en el 0% de las rondas (0 de 116)").
+
+No quedo: nada del alcance. Limitacion conocida (LOW del revisor, aceptada):
+el e2e solo ve el panel neutro porque `seed_demo` no tiene muertes antes de
+los 35 s; los chips con señal los cubren backend y vitest. El umbral de 15 s
+sigue a calibrar con la base real (ver Diseno).
+
+verificar.sh: VERDE 6be48daed (974 tests backend, 203 vitest, 65 e2e).
+Skills: no aplica (el diseno ya resolvia el dominio).
+OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Para el humano
 
