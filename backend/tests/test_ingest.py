@@ -124,6 +124,7 @@ class RealImportTests(TestCase):
         for rnd in match.rounds.all():
             primer_kill = rnd.events.filter(kind="Kill").order_by("order").first()
             for fila in rnd.players.filter(opening_kill_traded=True):
+                self.assertIsNotNone(primer_kill, f"ronda {rnd.number} sin Kill")
                 self.assertTrue(fila.opening_kill)
                 self.assertTrue(primer_kill.traded)
                 self.assertEqual(primer_kill.actor_name, fila.username)
