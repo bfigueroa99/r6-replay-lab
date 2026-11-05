@@ -1,15 +1,15 @@
 # 89. Salida del spawn por mapa
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/89-salida-del-spawn-por-mapa
 tipo: funcionalidad
 epica: posicionamiento
 area: fullstack
 prioridad: 2
 fuente: S2 de ALCANCE.md (idea del PR #22 que el humano cerro sin merge el 2026-11-05, rama `ccr-ec8265ab-4qn7k2`, commit c994090); `ROTACION` de estado.sh marca `posicionamiento` como epica sin entrega
 archivos: backend/replays/analytics/aggregates.py (spawn_exits, positioning), backend/tests/test_salida_del_spawn.py, frontend/src/posicion.js, frontend/src/posicion.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1825Z-cVr9Dsg, dev 20261105T1851Z-cBJfgUn
 
 ## PR
 
