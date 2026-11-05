@@ -1,0 +1,69 @@
+{
+  "rounds": [],
+  "round_streaks": {
+    "wins": null,
+    "losses": null
+  },
+  "scoreboard": [],
+  "team_trades": {
+    "mine": {
+      "deaths": 0,
+      "traded_deaths": 0,
+      "untraded_deaths": 0,
+      "trade_kills": 0,
+      "untraded_pct": null
+    },
+    "rival": {
+      "deaths": 0,
+      "traded_deaths": 0,
+      "untraded_deaths": 0,
+      "trade_kills": 0,
+      "untraded_pct": null
+    }
+  },
+  "my_totals": {
+    "rounds": 0,
+    "rounds_won": 0,
+    "deaths": 0,
+    "opening_kills": 0,
+    "opening_deaths": 0,
+    "entry_kills": 0,
+    "untraded_deaths": 0,
+    "kst_rounds": 0,
+    "clutch_rounds": 0,
+    "caught_out_rounds": 0,
+    "k2": 0,
+    "k3": 0,
+    "k4": 0,
+    "aces": 0,
+    "multikill_rounds": 0,
+    "triple_plus_rounds": 0,
+    "won_after_opening_kill": 0,
+    "won_after_opening_death": 0,
+    "avg_death_elapsed": null,
+    "rating_points": null,
+    "matches": 0,
+    "kills": 0,
+    "headshots": 0,
+    "trade_kills": 0,
+    "survived": 0,
+    "traded": 0,
+    "winrate": null,
+    "kd": null,
+    "kpr": null,
+    "hs_pct": null,
+    "survival_pct": null,
+    "opening_duels": 0,
+    "opening_winrate": null,
+    "opening_duel_rate": null,
+    "kst_pct": null,
+    "untraded_death_pct": null,
+    "traded_pct": null,
+    "multikill_pct": null,
+    "clutch_pct": null,
+    "caught_out_pct": null,
+    "winrate_after_opening_kill": null,
+    "winrate_after_opening_death": null,
+    "rating": null
+  }
+}
