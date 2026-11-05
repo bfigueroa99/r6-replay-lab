@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05T17:45Z
 rama: claude/equipo-dev/87-readme-con-conteos-de-tests-viejos
 tipo: bug
 epica: -
