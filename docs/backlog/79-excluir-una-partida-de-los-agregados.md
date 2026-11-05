@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
-estado: revisado
-candado: qa 2026-11-05T13:59Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md G2; decision del humano del 2026-11-05 (POST nuevo permitido, local y con application/json, entra a la lista de CLAUDE.md al disenarse)
 archivos: backend/replays/models.py, backend/replays/migrations/0005_match_excluded.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/replays/ingest.py (comentario), backend/tests/factories.py, backend/tests/test_excluir_partida.py, frontend/src/pages/MatchDetail.jsx, frontend/e2e/partidas-excluidas.spec.js, CLAUDE.md, docs/metricas.md
-turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 20261105T1303Z-ciG2Prg, revisor 20261105T1330Z-cTQKqvr
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 20261105T1303Z-ciG2Prg, revisor 20261105T1330Z-cTQKqvr, qa 20261105T1358Z-ckVhKLL
 
 ## PR
 
@@ -596,11 +596,85 @@ Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=4 hallazgos (0 arreglados; 1 MEDIUM, 3 LOW) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre 19ca3b5
+
+QA 20261105T1358Z-ckVhKLL. Se probo el sistema andando, no se releyo el diff. Las bases y los scripts estan en el scratchpad (`qa79/`). Ningun `.rec` ni `.sqlite3` entro al repo. Los servidores se bajaron al terminar.
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  dio VERDE 19ca3b5 (973 tests backend, 186 vitest y 60 e2e, con
+  `partidas-excluidas.spec.js` incluido).
+- **Migracion sobre el esquema de dev.** Pasos:
+  1. Worktree de `origin/dev`: `migrate`, `seed_demo` y `recompute` sobre una
+     base aparte (`DATA_DIR`/`SQLITE_PATH` en el scratchpad), con 29 partidas
+     y 203 rondas.
+  2. Snapshot por `runserver` + `curl` de overview, trends, coach, sessions,
+     operators, teammates, duels, filters, `matches/?limit=100` y
+     `export/?table=matches`.
+  3. Con la rama, `migrate` aplico `0005_match_excluded... OK`. Las 10
+     respuestas salieron iguales a las de dev, sin contar el campo nuevo
+     `excluded`.
+  4. `recompute` respondio "Nada que recalcular", y las 10 siguieron iguales.
+- **El POST, con `curl` sobre `runserver`.**
+  - GET, PUT y DELETE dan 405.
+  - form-data y `text/plain` dan 415.
+  - Las partidas 99999 y 0 dan 404. Sin JSON, la 99999 da 415, porque el
+    chequeo de JSON va antes que el 404.
+  - Cuerpo vacio, `{}`, `1`, `"true"`, `null`, `[true]`, JSON roto y bytes
+    que no son UTF-8 dan 400.
+  - `application/json; charset=utf-8` da 200.
+  - Con campos extra (`won`, `id`) responde 200 y solo toca `excluded`.
+  - Repetir el POST da la misma respuesta.
+- **Flujo con la base sembrada.** Al excluir la partida 29:
+  - `overview.overall` baja de 203 rondas, 29 partidas y 99 bajas a 196, 28
+    y 94.
+  - `/api/matches/` sigue dando `total` 29, con la 29 en `excluded: true`.
+  - El detalle de la 29 mantiene las mismas claves, sus 7 rondas y los mismos
+    `my_totals`.
+  - `/api/health/` sigue contando todas.
+  - Lo que se mueve, tal como dice el diseno y lo documenta `metricas.md`:
+    `my_rating` de las otras filas (por el baseline contable), un sitio que
+    solo tenia la 29 sale de `filters`, y los indices de `sessions` se
+    corren.
+  - Al volver a incluirla, las 10 rutas quedan identicas al snapshot previo.
+- **Base vacia.** Las 11 rutas GET dan 200, y el POST a la 1 da 404.
+- **Base de `factories.py`.** Lleva `build_dataset` (6 partidas), una Custom
+  de una ronda sin bajas en Bank (`map_id` 777) y un nick repetido, "rival",
+  con otro `profile_id`.
+  - Al excluir la Custom, `filters.match_types` queda en `['Ranked']`;
+    `overview?match_type=Custom` da 0 rondas y 0 partidas; y
+    `matches/?match_type=Custom` da `total` 1, o sea, sigue listada.
+  - Estos parametros dan 200: `until=foo`, `days=-1`, `session=0`,
+    `session=99`, `page=-1`, `map=bank` y `side=Attack`, mas duels y export
+    con Custom y el detalle de la partida excluida.
+  - Con todas excluidas, todas las rutas dan 200. El overview da 0 y
+    `rating` None; el listado muestra las 7 filas con `my_rating` None;
+    health sigue en 7/37; `filters` queda vacio, y `players/2` y `players/3`
+    dan 200.
+- **Bundle.** Se corrio `vite build` de dev y de la rama: el chunk inicial
+  `index-*.js` pesa 190.71 kB en las dos (0 %). `MatchDetail` pasa de 13.99 a
+  14.52 kB y se carga diferido.
+- **Mutaciones**, cada una revertida con `git checkout -- replays/` y medida
+  con `manage.py test tests.test_excluir_partida`. Las cuatro caen:
+  - M1: `match_exclude` sin `_es_json` hace fallar `test_sin_json_da_415`.
+  - M2: `"excluded": False` en los `defaults` de `ingest` hace fallar
+    `test_reimportar_con_force_no_pierde_la_marca`.
+  - M3: `_opciones_de_mapa` sobre `Match.objects` hace fallar
+    `test_cada_get_agregado_da_lo_mismo_que_sin_la_partida`.
+  - M4: el detalle sobre `rondas_contables` hace fallar
+    `test_el_detalle_de_una_excluida_sigue_completo`.
+
+**Fuera de la ficha (dev).** Sobre una base de `seed_demo`, el primer
+`recompute` actualiza 981 filas de jugador y 13 eventos: `seed_demo` no deja
+los trades y clutch al dia. Pasa igual en dev y no afecta al e2e, que no
+corre `recompute`. Es una idea para una ficha de deuda.
+
+Veredicto: los 6 criterios se cumplen y no hay hallazgos. La ficha pasa a `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 6/6 VERIFIED, 0 bloqueos)
 
 ## Verificar en el PC
 
-(Trae migracion: `manage.py backup` y `migrate` en el PC.)
+(Trae migracion.) En el PC, desde `backend/`: `python manage.py backup`, `python manage.py migrate`, `python manage.py showmigrations replays` (debe marcar `[X] 0005_match_excluded`) y despues los pasos 3 a 6 de "Verificacion manual en el PC" del diseno. Para volver: `python manage.py migrate replays 0004` o restaurar la copia.
 
 ## Para el humano
 
