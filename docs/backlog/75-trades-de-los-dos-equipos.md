@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
-estado: revisado
-candado: qa 2026-11-05 02:57
+estado: aprobado
+candado: release 2026-11-05 03:03
 rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: idea R2 de `ALCANCE.md`; fila `should` "Duelos limpios contra trades que se escapan, por equipo, en la partida" de `docs/backlog/replica/features.csv` (clone `partial`), de [r6-replay.com](https://r6-replay.com/) ("Know which duels your team wins clean and where trades slip through."). En `dev` bcdbdf5 `match_detail` (`replays/views.py:462`) ya devuelve `trade_kills`, `was_traded` y `untraded_death` por jugador y ronda, y el scoreboard (`views.py:576-593`, `MatchDetail.jsx:222-223`) los suma por jugador; nada los suma por equipo
 archivos: backend/replays/views.py, backend/tests/test_trades_por_equipo.py, frontend/src/tradesEquipo.js, frontend/src/tradesEquipo.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j, revisor 20261105T0247Z-cQMp2TZ
+turnos: po 20261104T1206Z-c8cAo8L, arquitecto 20261104T1604Z-cAKAGx1, dev 20261105T0215Z-cVoFB5j, revisor 20261105T0247Z-cQMp2TZ, qa 20261105T0256Z-cFRtPBc
 
 ## PR
 
@@ -165,7 +165,22 @@ Veredicto: aprobar.
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (1 arreglado con test) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre 5e4c0ab
+
+QA 20261105T0256Z-cFRtPBc. Rama ya fusionada con dev 2da1b7d. Scripts temporales en el scratchpad; ningun `.rec` ni `.sqlite3` al repo.
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s -- --de-nuevo` -> `VERDE 5e4c0ab3d en 116s: 895 tests backend, 159 vitest, 55 e2e`.
+- Base vacia (`SQLITE_PATH=<tmp> manage.py migrate`, `runserver`): `/api/matches/` 200, `/api/matches/1/` y `/0/` 404. `/api/matches/-1/` y `/foo/` dan 200 `text/html` (catch-all del SPA, la ruta es `<int:pk>`): preexistente, no es de esta ficha.
+- `seed_demo` (29 partidas): script que suma las filas de `scoreboard` por equipo (`deaths`, `untraded_deaths`, `trade_kills`) y las compara con `team_trades`: coinciden en las 29 y en los dos equipos (criterio 2). `tradeadas + sin trade != muertes` en `seed_demo` (ej. tu equipo 19/0/7, rival 11/0/0) porque el seed solo escribe `was_traded`/`untraded_death` en tu fila; el import real (`metrics.annotate_trades`) lo escribe para todos. La vista suma lo guardado (criterio 3); el panel de la demo muestra 0 % sin trade al rival.
+- Bordes con `tests/factories.py`: partida de un solo jugador (ronda sin bajas y ronda muerto sin trade) -> tu equipo 1/0/1/0, 100.0 %; rival en ceros con `untraded_pct: null`. Partida sin muertes -> los dos `null`. Partida sin rondas -> ceros y `null`, 200.
+- UI (Playwright sobre `runserver`): `/partidas/32` y `/33` muestran el panel con dos filas, `—` en el % nulo y la nota "Tu equipo dejó 1 muerte sin trade; el rival, 0.", consola limpia. `/partidas/34` (0 rondas) rompe con `TypeError ... reading 'label'` en `MatchDetail.jsx:33` (`rounds[Math.min(selected, rounds.length - 1)]`): codigo que ya esta en dev, fuera de esta ficha; queda como ficha bug aparte.
+- Chunk inicial (`vite build`): dev `index` 188.91 kB, rama 188967 B (+57 B). `MatchDetail` (lazy) 12.12 -> 14.03 kB.
+- Mutaciones (`manage.py test tests.test_trades_por_equipo`): sin el filtro `died` en tradeadas cae `test_traded_sin_muerte_no_descuadra`; equipo fijo de la partida cae `test_trades_por_equipo_usa_el_equipo_de_cada_ronda`; recalcular sin trade desde `died`/`was_traded` cae `test_suma_untraded_death_tal_cual_lo_guardo_el_import`; `untraded_deaths: 'mas'` en `tradesEquipo.js` hace caer 2 vitest. Codigo restaurado.
+
+Criterios 1 a 5: cumplidos. Veredicto: aprobado.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
