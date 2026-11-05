@@ -259,6 +259,9 @@ OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
   jugadores. Si preferis la letra, es una linea de `annotate_trades` y un
   test; no hace falta frenar la ficha. Tambien: un teamkill de apertura que tu
   propio equipo venga queda "devuelto" (coherente con la regla, raro de leer).
+- 2026-11-05 (humano, respondido en su sesion; lo anota po 20261105T0230Z-c8Ahepa):
+  **respondida.** "Apertura devuelta" = (a), el trade del evento, lo ya
+  disenado. No cambia nada del diseno ni de la implementacion.
 
 (Si la migracion o `recompute` pesan: la ficha toca columnas de
 `RoundPlayer` como la 55. Verificar `recompute` en el PC con la base real.)
