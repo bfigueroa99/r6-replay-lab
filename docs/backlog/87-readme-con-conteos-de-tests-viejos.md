@@ -1,7 +1,7 @@
 # 87. El README dice que la suite tiene 419 tests y vitest 65
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 17:07 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/87-readme-con-conteos-de-tests-viejos
 tipo: bug
 epica: -
@@ -80,6 +80,26 @@ Skills: no aplica (docs, ningun dominio nuevo).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1706Z-cYDJ3ec, sobre dev 67c23f7 menos este commit; base origin/dev al reclamar.)
+
+Las tres lineas del diseno, tal cual: `README.md:270` dice "Corre la suite
+completa.", y `README.md:430`/`431` quedan "tests (parser, metricas,
+agregados, coach, API)" y "(tests con vitest)" sin cambiar la columna del
+arbol. Sin desvios.
+
+- `grep -nE "[0-9]+ tests" README.md`: vacio (rc=1).
+- `git diff --stat origin/dev...HEAD -- README.md`: 1 archivo, 3+/3-. CRLF
+  intacto (el README esta en CRLF y las lineas editadas siguen en `\r\n`).
+- `verificar.sh`: VERDE 67c23f7dc en 155s: 963 tests backend, 199 vitest,
+  64 e2e. Todo en verde. (Ya no son 954/190/61 como en la repro: justo lo
+  que esta ficha evita fijar en el README.)
+
+Tests: ninguno nuevo (docs). Para el Revisor: el criterio "ninguna otra
+linea cambia" se ve en `git diff origin/dev...HEAD -- README.md`.
+
+Skills: no aplica (docs).
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## Revision
 
