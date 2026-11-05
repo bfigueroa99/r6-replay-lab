@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-05 13:45 UTC por dev (sesion 20261105T1331Z-c7xSRnu; motivo: pedido)
+actualizado: 2026-11-05 13:45 UTC por dev (sesion 20261105T1330Z-c4QLGh8; motivo: pedido)
 playbook: origin/dev@696c79d
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-05T06:15Z) | 12 de 42 en 7 dias
 pausa: no
@@ -17,9 +17,11 @@ pausa: no
 La 78 entro a dev por [PR #78](https://github.com/bfigueroa99/r6-replay-lab/pull/78) y la 80 por [PR #79](https://github.com/bfigueroa99/r6-replay-lab/pull/79) (dev 696c79d).
 
 COLA=4/4  TOTAL=4/6
-RESUMEN propuesto=1 disenado=2 en_curso=1 huerfanas=0 implementado=1 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=2 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=0 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=84 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
 
 ## Orden de merge sugerido
+
+82 (dev c4QLGh8) no choca con dev, 79 ni 85; **choca con la 81** (`git merge-tree` salida 1: las dos tocan `MatchDetail.jsx` y `humo.spec.js`). La que mergea segunda resuelve con P3.
 
 81 (13:45, dev c7xSRnu): `git merge-tree` limpio contra 79, 82 y 85; cambios de una palabra, cualquier orden. 79 y 85 no se pisan (`git merge-tree` limpio: la 85 toca solo `frontend/src` de Coach, Operadores, Compañeros, Duelos, Tendencias, `ui.jsx`, `tipoPartida.js` y `humo.spec.js`; la 79 toca `MatchDetail.jsx` y el backend). Cualquier orden. Papel (sin rama todavia): la 83 se implementa despues de la 79 (usa su columna y su e2e); 81, 82 y 83 comparten `MatchDetail.jsx`, `Datos.jsx` y `Matches.jsx` con la 79 y entre si, con cambios de pocas lineas: el que mergea segundo resuelve con P3.
 
@@ -39,7 +41,7 @@ RESUMEN propuesto=1 disenado=2 en_curso=1 huerfanas=0 implementado=1 revisado=1 
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | implementado (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
 | 81-textos-de-la-ui-sin-tildes | implementado (rama de trabajo, dev c7xSRnu) | bug | - | 4 | frontend | - |
-| 82-partida-sin-rondas-rompe-el-detalle | en curso, dev de otra sesion (guarda en `MatchDetail.jsx`, JSON compartido backend/e2e) | bug | - | 3 | frontend | - |
+| 82-partida-sin-rondas-rompe-el-detalle | implementado (rama de trabajo) | bug | - | 3 | frontend | - |
 | 84-enlace-a-partida-inexistente-culpa-a-django | propuesto | bug | - | 4 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
