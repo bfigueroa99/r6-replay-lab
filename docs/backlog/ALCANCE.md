@@ -72,7 +72,7 @@ Reconciliado el 2026-11-05 (sesion 20261105T0230Z-c8Ahepa) contra `dev` 2da1b7d:
 A8 (74) en dev; respuestas del humano del 2026-11-05: E2, F2 y G2 pasan de
 `decision` a `idea` (POST permitidos) y las ideas de los PRs cerrados vuelven
 como A10, E14, F15, F16, F17, S1 y S2 (epica nueva `posicionamiento`).
-A1 -> ficha 77, F16 -> ficha 78, G2 -> ficha 79.
+A1 -> ficha 77, F16 -> ficha 78, G2 -> ficha 79, S1 -> ficha 80.
 
 ## Epicas
 
@@ -297,7 +297,7 @@ del Coach; una pagina nueva "Posicionamiento" se pregunta en la ficha.
 
 | id | idea | que gana quien usa la app | datos | tam | estado |
 |---|---|---|---|---|---|
-| S1 | Donde quedas fuera de posicion | Por sitio (defensa) y spawn (ataque), las rondas en que moriste sin bajas y sin que nadie te vengara, contra el resto de tu historial y no contra el total; señales `zona-dormidero` y `zona-solida` del Coach. Es lo que pedia "en que partes del mapa suelo dormir" al nivel que el formato permite. Salio del PR #1 (`claude/loop-lwjbgs`, commit 1ffdb89) | `RoundPlayer.site`, `spawn`, `kills`, `died`, `was_traded`; `by_site` y `by_spawn` de `aggregates.py` | M | idea |
+| S1 | Donde quedas fuera de posicion | Por sitio (defensa) y spawn (ataque), las rondas en que moriste sin bajas y sin que nadie te vengara, contra el resto de tu historial y no contra el total; señales `zona-dormidero` y `zona-solida` del Coach. Es lo que pedia "en que partes del mapa suelo dormir" al nivel que el formato permite. Salio del PR #1 (`claude/loop-lwjbgs`, commit 1ffdb89) | `RoundPlayer.site`, `spawn`, `kills`, `died`, `was_traded`; `by_site` y `by_spawn` de `aggregates.py` | M | ficha 80 |
 | S2 | Salida del spawn por mapa | Rondas de ataque en que mueres en los primeros 15 s de accion, por mapa y lado, con tus bajas en esa ventana y un enlace por mapa a la biblioteca de spawn peeks de peekabooR6 que abre el navegador (como los de stats.cc: la app no le pide nada). Cubre las muertes tempranas por spawn de R6 Analyst y los runouts que pide la comunidad. Salio del PR #22 (`ccr-ec8265ab-4qn7k2`, commit c994090) | `RoundPlayer.death_elapsed`, `spawn`, `side` y las bajas por tiempo de `Event`; enlace estatico en `externo/enlaces.py` | M | idea |
 
 ### deuda-y-tests: no son funcionalidad
