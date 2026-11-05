@@ -1,7 +1,7 @@
 # 76. Aperturas que pesan: las que no te devolvieron y las que nadie vengo
 
-estado: revisado
-candado: qa 2026-11-05T02:57Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/76-aperturas-sin-trade
 tipo: funcionalidad
 epica: impacto
@@ -278,9 +278,55 @@ Veredicto: **aprobar** -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado con tests) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre c4c687f
+
+QA 20261105T0256Z-c25s1Gw. Rama ya fusionada con `origin/dev` 2da1b7d. `S` = scratchpad de la sesion;
+`SQLITE_PATH` y `R6_ENV_FILE` apuntan ahi (nada de `.sqlite3` ni `.env` al repo).
+
+- **check.sh completo:** `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE c4c687fe6 en 112s: 909 tests backend, 156 vitest, 55 e2e. Todo en verde.`
+- **Migracion sobre esquema de dev:** `git worktree add $S/wt-dev origin/dev`; ahi
+  `manage.py migrate`, `seed_demo` (29 partidas) y una siembra con `tests/factories.py`
+  (`$S/sembrar_76.py`: apertura tradeada por eventos, apertura limpia, apertura perdida
+  vengada, ronda sin bajas). En la rama, `manage.py migrate` -> `Applying
+  replays.0004_roundplayer_opening_kill_traded... OK` en 0,39 s; marca 1 fila (la ronda
+  tradeada, `BearF99`). Copia + `manage.py recompute` (988 filas: `seed_demo` no cuadra
+  con sus eventos, ya conocido) y `recompute --dry-run` -> "Nada que recalcular".
+  `opening_kill_traded` migracion vs recompute: **0 de 1330 filas difieren**;
+  `opening_kill_traded=1 AND opening_kill=0`: 0 filas. Nota: `recompute --dry-run` antes de
+  `migrate` falla con `no such column` (como cualquier columna nueva: migrar primero).
+- **API** (`runserver` con base vacia y con la sembrada; `curl /api/overview/<q>`): `""`,
+  `?until=foo`, `?page=-1`, `?side=`, `?side=Attack`, `?side=Defense`, `?map=Border`,
+  `?map=border`, `?map=0`, `?map=NoExiste`, `?days=99999999999`, `?since=2026-13-40`,
+  `?match_type=Ranked`, `?operator=Zofia`, `?site=`, `?map=border&side=Attack`: todos 200,
+  logs sin Traceback. Vacia: 4 conteos en 0 y 4 winrates `null`. Sembrada sin filtro:
+  limpias 16 + devueltas 1 = `opening_kills` 17; vengadas 1 + sin vengar 27 =
+  `opening_deaths` 28; winrates 62,5 / 100 / 0 / 48,1. Attack 9+1=10 y 1+13=14; Defense
+  7+0=7 con `winrate_opening_kill_traded: null`. La suma cierra en los 16 casos.
+- **UI** (Chromium con playwright sobre la base sembrada): panel *Aperturas que pesan*
+  debajo de la grilla, tabla Ganada limpia 16 63 % / Ganada devuelta 1 100 % / Perdida
+  vengada 1 0 % / Perdida sin vengar 27 48 %; consola limpia. Base vacia: el EmptyState de
+  siempre (`Dashboard.jsx:34`), sin panel.
+- **Bundle:** chunk inicial de `vite build` 188,91 kB (dev) -> 190,12 kB (+0,6 %).
+- **Mutaciones** (`manage.py test tests.test_aperturas_trade`): quitar la marca en
+  `annotate_trades` -> 8 fallas; quitar `opening_kill` del dict de `recompute` -> 4
+  fallas; `won=False` en `won_opening_kill_traded` -> 1 falla; vitest con la clave de
+  winrate de *Perdida vengada* cambiada -> 1 falla. Sobrevive quitar `autor == username`
+  en la migracion: casi equivalente (solo son candidatas las filas `opening_kill=True` y
+  el autor del primer Kill es ese jugador salvo datos incoherentes). LOW, sin cambio.
+- **omc-verifier:** PASS, los 5 criterios VERIFIED.
+
+Veredicto: **aprobado**.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
+
+Base real, en `backend/`: respaldo desde Ajustes; `python manage.py recompute --dry-run`
+(anotar N); `python manage.py migrate` (anotar cuanto tarda); `python manage.py recompute
+--dry-run` otra vez (si el primero dio 0, tiene que dar 0). En el Inicio, limpias +
+devueltas == aperturas ganadas y vengadas + sin vengar == perdidas, con y sin filtro de lado.
 
 ## Pendiente
 
