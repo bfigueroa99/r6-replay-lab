@@ -28,6 +28,9 @@ export default function Filters({
   showOperator = true,
   showSite = false,
   showSession = false,
+  showSide = true,
+  hayExtra = false,
+  children = null,
 }) {
   const { data } = useApi('/filters/')
   const set = (key) => (event) => onChange({ ...value, [key]: event.target.value })
@@ -54,14 +57,16 @@ export default function Filters({
 
   return (
     <div className="filters">
-      <label>
-        Lado
-        <select value={value.side || ''} onChange={set('side')}>
-          <option value="">Ataque y defensa</option>
-          <option value="Attack">Solo ataque</option>
-          <option value="Defense">Solo defensa</option>
-        </select>
-      </label>
+      {showSide ? (
+        <label>
+          Lado
+          <select value={value.side || ''} onChange={set('side')}>
+            <option value="">Ataque y defensa</option>
+            <option value="Attack">Solo ataque</option>
+            <option value="Defense">Solo defensa</option>
+          </select>
+        </label>
+      ) : null}
 
       <label>
         Mapa
@@ -155,7 +160,10 @@ export default function Filters({
         </select>
       </label>
 
-      {hayFiltros(value) ? (
+      {/* filtros propios de una pagina (el resultado en Partidas), en la misma fila */}
+      {children}
+
+      {hayFiltros(value) || hayExtra ? (
         <button className="btn small" onClick={limpiar}>
           Limpiar
         </button>

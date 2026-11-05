@@ -83,6 +83,32 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
     return qs
 
 
+def match_queryset(**filters) -> QuerySet[Match]:
+    """Partidas con los filtros de la barra, leidos igual que en `base_queryset`.
+
+    Esta al lado de `base_queryset` para que un filtro nuevo de la barra entre
+    a los dos. `side`, `operator` y `site` se ignoran a proposito: una partida
+    tiene los dos lados, diez operadores y varios sitios, asi que no hay una
+    partida "de ataque" que filtrar. Por eso, con esos filtros puestos, el
+    conteo no coincide con el del Resumen, que cuenta partidas con rondas que
+    los cumplen.
+    """
+    qs = Match.objects.all()
+    if filters.get("map"):
+        qs = qs.filter(**filtro_mapa(filters["map"], prefijo=""))
+    if filters.get("match_type"):
+        qs = qs.filter(match_type=filters["match_type"])
+    if filters.get("ranked_only"):
+        qs = qs.filter(match_type="Ranked")
+    if filters.get("since"):
+        qs = qs.filter(played_at__gte=filters["since"])
+    if filters.get("until"):
+        qs = qs.filter(played_at__lte=filters["until"])
+    if filters.get("session") not in (None, ""):
+        qs = qs.filter(id__in=session_match_ids(filters["session"]))
+    return qs
+
+
 # --------------------------------------------------------------------- helpers
 
 # --------------------------------------------------------------------- rating
