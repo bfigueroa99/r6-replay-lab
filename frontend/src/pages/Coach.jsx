@@ -76,9 +76,9 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
       <PanelPosicion {...posicion} />
 
       <p className="note">
-        Las reglas exigen una muestra minima antes de opinar (20 rondas en general, 8-15 por
-        mapa/sitio/operador, 5 por zona en la tabla de posición), asi que si algo no aparece es porque todavia no hay datos para
-        afirmarlo.
+        Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
+        mapa/sitio/operador, {posicion.data?.min_rounds ?? 5} por zona en la tabla de posición),
+        así que si algo no aparece es porque todavía no hay datos para afirmarlo.
       </p>
     </>
   )
@@ -139,7 +139,7 @@ function PanelPosicion({ data, error, loading }) {
               <DataTable
                 columns={columnasDeZona('site', 'Sitio')}
                 rows={data.sites}
-                rowKey={(row) => `${row.slug}-${row.map_id}-${row.site}`}
+                rowKey={(row) => `${row.map}-${row.map_id}-${row.site}`}
                 initialSort={ORDEN_ZONAS}
                 csvName="fuera-de-posicion-sitios"
                 empty="Ningún sitio con muestra suficiente."
@@ -148,7 +148,7 @@ function PanelPosicion({ data, error, loading }) {
               <DataTable
                 columns={columnasDeZona('spawn', 'Spawn')}
                 rows={data.spawns}
-                rowKey={(row) => `${row.slug}-${row.map_id}-${row.spawn}`}
+                rowKey={(row) => `${row.map}-${row.map_id}-${row.spawn}`}
                 initialSort={ORDEN_ZONAS}
                 csvName="fuera-de-posicion-spawns"
                 empty="Ningún spawn de ataque con muestra suficiente."

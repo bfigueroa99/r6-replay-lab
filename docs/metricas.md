@@ -303,7 +303,8 @@ ataque, y en ataque se queda fuera de posición mas seguido: contra todo, el
 spawn saldria marcado por el lado). No se compara contra el total porque la
 zona esta dentro de el. El veredicto (*Te agarran más*, *Te sostienes*) solo
 habla si la diferencia pasa el **margen**, dos errores estandar de la
-diferencia entre las dos proporciones: con una fila por sitio y spawn (20 o mas
+diferencia, calculados con la proporcion combinada (zona + resto: con la de cada
+muestra, una zona en 0 % o 100 % tendria margen casi nulo). Con una fila por sitio y spawn (20 o mas
 en un historial real), con uno solo un tercio de las zonas saldria marcado por
 azar. El filtro Lado deja el resto del mismo lado.
 

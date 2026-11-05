@@ -43,10 +43,10 @@ class MetricaFueraDePosicionTests(TestCase):
     def test_fuera_de_posicion_exige_morir_sin_bajas_y_sin_trade(self):
         match = make_match()
         casos = (
-            dict(kills=0, died=True, was_traded=False),  # fuera de posicion
-            dict(kills=1, died=True, was_traded=False),  # murio peleando
-            dict(kills=0, died=True, was_traded=True),  # lo vengaron
-            dict(kills=0, died=False),  # sobrevivio
+            {"kills": 0, "died": True, "was_traded": False},  # fuera de posicion
+            {"kills": 1, "died": True, "was_traded": False},  # murio peleando
+            {"kills": 0, "died": True, "was_traded": True},  # lo vengaron
+            {"kills": 0, "died": False},  # sobrevivio
         )
         for n, caso in enumerate(casos):
             make_round_player(make_round(match, n), **caso)
@@ -89,10 +89,10 @@ class PosicionPorZonaTests(TestCase):
         zona(10, 6, site=SITIO_A, index=0)
         zona(10, 4, site=SITIO_B, index=1)
         a = fila(agg.positioning()["sites"], "site", SITIO_A)
-        # se = sqrt(.6*.4/10 + .4*.6/10) = 21.9 puntos; margen = 2 x 21.9
-        se = round(math.sqrt(0.6 * 0.4 / 10 + 0.4 * 0.6 / 10) * 100, 1)
+        # Proporcion combinada 10/20: se = sqrt(.5*.5*(1/10 + 1/10)) = 22.4 puntos.
+        se = round(math.sqrt(0.5 * 0.5 * (1 / 10 + 1 / 10)) * 100, 1)
         self.assertEqual(a["margin"], round(2 * se, 1))
-        self.assertEqual(a["margin"], 43.8)
+        self.assertEqual(a["margin"], 44.8)
         self.assertEqual(a["caught_out_delta"], 20.0)
         self.assertEqual(a["verdict"], "ruido")
 
@@ -102,11 +102,36 @@ class PosicionPorZonaTests(TestCase):
         sitios = agg.positioning()["sites"]
         a = fila(sitios, "site", SITIO_A)
         b = fila(sitios, "site", SITIO_B)
-        self.assertEqual(a["margin"], 25.2)  # 2 x sqrt(.8*.2/20 + .2*.8/20)
+        self.assertEqual(a["margin"], 31.6)  # 2 x sqrt(.5*.5*(1/20 + 1/20))
         self.assertEqual(a["verdict"], "dormidero")
         self.assertEqual(b["verdict"], "solido")
         # Mayor diferencia primero.
         self.assertEqual([f["site"] for f in sitios], [SITIO_A, SITIO_B])
+
+    def test_una_zona_chica_en_cero_no_tiene_veredicto_por_azar(self):
+        # 0 de 5 contra un resto del 30 %: pasa por azar 1 de cada 6 veces.
+        # Con la varianza de Wald el margen seria 6.5 y saldria "solido".
+        zona(5, 0, site=SITIO_A, index=0)
+        zona(200, 60, site=SITIO_B, index=1)
+        a = fila(agg.positioning()["sites"], "site", SITIO_A)
+        self.assertEqual(a["caught_out_delta"], -30.0)
+        self.assertEqual(a["margin"], 41.2)
+        self.assertEqual(a["verdict"], "ruido")
+
+    def test_con_una_sola_zona_el_veredicto_es_ruido(self):
+        zona(20, 20, site=SITIO_A)
+        a = fila(agg.positioning()["sites"], "site", SITIO_A)
+        self.assertEqual(a["rest_rounds"], 0)
+        self.assertIsNone(a["rest_caught_out_pct"])
+        self.assertIsNone(a["margin"])
+        self.assertEqual(a["verdict"], "ruido")
+
+    def test_la_vista_respeta_min_rounds(self):
+        zona(10, 5, site=SITIO_A, index=0)
+        zona(14, 5, site=SITIO_B, index=1)
+        datos = self.client.get("/api/positioning/?min_rounds=12").json()
+        self.assertEqual([f["site"] for f in datos["sites"]], [SITIO_B])
+        self.assertEqual(datos["min_rounds"], 12)
 
     def test_una_zona_bajo_el_minimo_no_sale(self):
         zona(10, 5, site=SITIO_A, index=0)

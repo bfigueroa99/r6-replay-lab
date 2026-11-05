@@ -840,7 +840,7 @@ test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
   const church = sitios.locator('tr', { has: page.getByRole('cell', { name: 'B Church, B Arsenal Room' }) })
   await expect(church.locator('td').nth(3)).toHaveText('85%')
   await expect(church.locator('td').nth(5)).toHaveText('+33.5')
-  await expect(church.locator('td').nth(6)).toHaveText('±13.8')
+  await expect(church.locator('td').nth(6)).toHaveText('±17.4')
   await expect(church.locator('td').nth(7)).toHaveText('Te agarran más')
   const ventilation = sitios.locator('tr', { has: page.getByRole('cell', { name: 'A Ventilation, A Workshop' }) })
   await expect(ventilation.locator('td').nth(3)).toHaveText('25%')

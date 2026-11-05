@@ -675,6 +675,21 @@ def _totales_de_posicion(qs: QuerySet[RoundPlayer]) -> dict:
     }
 
 
+def _ruido_combinado(parte: int, n: int, parte_total: int, n_total: int) -> float | None:
+    """Error estandar de la diferencia zona - resto, con la proporcion combinada.
+
+    No se usa `_ruido` (Wald, una varianza por muestra): con una zona en 0 % o
+    100 % su varianza es cero, el margen se achica a casi nada y una zona de 5
+    rondas sale con veredicto por azar. Con la proporcion de zona + resto (el
+    total) el margen no colapsa en los bordes.
+    """
+    resto = n_total - n
+    if not n or not resto:
+        return None
+    p = parte_total / n_total
+    return round(math.sqrt(p * (1 - p) * (1 / n + 1 / resto)) * 100, 1)
+
+
 def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
     """Compara cada zona contra el resto del historial, no contra el total.
 
@@ -686,8 +701,9 @@ def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
         resto = total["rounds"] - rondas
         resto_pct = _pct(total["caught_out_rounds"] - fila["caught_out_rounds"], resto)
         delta = _delta(fila["caught_out_pct"], resto_pct)
-        se = _ruido(fila["caught_out_pct"], rondas, resto_pct, resto)
-        margen = round(POSICION_BANDAS * se, 1) if se is not None else None
+        se = _ruido_combinado(fila["caught_out_rounds"], rondas,
+                              total["caught_out_rounds"], total["rounds"])
+        margen = round(POSICION_BANDAS * se, 1) if (se is not None and resto) else None
         if delta is None or margen is None:
             veredicto = "ruido"
         elif delta > margen:
