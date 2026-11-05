@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: revisado
-candado: qa 2026-11-05 15:21 UTC
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ
 
 ## PR
 
@@ -331,7 +331,52 @@ la ficha.
 
 OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados; el Revisor no arregla) · verificación=—
 
-## QA
+## QA 2026-11-05 sobre d45abbb
+
+(qa 20261105T1521Z-cEexMKJ; rama al dia con dev 85009f6. Base sintetica en
+el scratchpad, nunca `.rec` ni `.sqlite3` al repo.)
+
+Evidencia por criterio:
+
+1. Textos del repro con tilde: cubierto. Los tres greps de "Verificacion del
+   barrido" sobre `frontend/src` dan 0 lineas. Recorrido en Chromium de 15
+   rutas (`/`, `/coach`, `/operadores`, `/companeros`, `/duelos`,
+   `/tendencias`, `/partidas`, `/partidas/1`, `/partidas/5`, `/jugadores/1`,
+   `/ruleta`, `/datos`, `/ajustes`, `/no-existe`, `/partidas/99999`) con
+   `runserver` sobre base vacia y sobre base de `seed_demo`, filtrando
+   `body.innerText` por ~40 palabras que suelen llevar tilde: no queda ninguna
+   de la tabla. Consola: solo los 404 esperados de partidas inexistentes.
+2. Barrido de las demas cadenas visibles: **falla**. Quedan dos textos
+   sueltos que se pintan (no son `label` de columna ni CSV, asi que la
+   excepcion conservadora del Dev no los cubre):
+   - `frontend/src/pages/Dashboard.jsx:77` `sub="referencia solida: 0.8"`
+     (Stat "Kills por ronda" de Inicio) -> "referencia sólida: 0.8". Lo
+     encontro `omc-verifier`; no estaba en la tabla ni en ninguna revision.
+   - `frontend/src/pages/MatchDetail.jsx:309` "Esta ronda no registro eventos
+     en el feed." -> "registró" (el LOW de la segunda revision).
+   Repro: `git grep -nE "referencia solida|no registro eventos" origin/claude/equipo-dev/81-textos-de-la-ui-sin-tildes -- frontend/src`
+   devuelve esas dos lineas. Un barrido mas ancho (solida, rapida, ultima,
+   unica, facil, posicion, duracion, tambien, ademas, atras, ... en cadenas,
+   fuera de comentarios) no encontro otras: el resto son imports, `csvName`
+   e identificadores.
+3. Ningun test afirma el texto viejo: cubierto. Mutacion: con "Esa pagina no
+   existe" (`App.jsx`) y "mato a" / "murio" (`MatchDetail.jsx`) de vuelta sin
+   tilde, `vite build` y
+   `E2E_CHROMIUM=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome npx playwright test -g "timeline marca la apertura|ruta que no existe"`:
+   2 failed; restaurado: 2 passed.
+4. Build y `check.sh`: cubierto. `verificar.sh`: VERDE d45abbbbd (954 tests
+   backend, 190 vitest, 61 e2e). Chunk inicial de `vite build`: dev
+   191.14 kB -> rama 191.23 kB (+0.05 %).
+
+Fuera de alcance, para otra ficha: la narrativa de la partida que arma el
+backend (`backend/replays/analytics/narrative.py:64,80,91`) dice "te mato X.
+Nadie la vengo. ... la vengo 3s despues", visible en el detalle de cada
+partida.
+
+Veredicto: `con hallazgos`. Arreglo: las dos tildes de arriba (y nada mas);
+ningun test las afirma.
+
+OMC: plan=— · revisión=— · verificación=INCOMPLETE (criterio 2 PARTIAL: `Dashboard.jsx:77`)
 
 ## Verificar en el PC
 
