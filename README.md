@@ -267,7 +267,7 @@ npm run dev     # http://localhost:5173
 | `manage.py retag` | Re-aplica `overrides.json` sobre lo ya importado, sin reparsear los `.rec`. `--dry-run` muestra que cambiaria. |
 | `manage.py recompute` | Recalcula trades, muertes sin trade y KST con la ventana configurada, los intentos de clutch de partidas importadas antes y saca los teamkills de bajas y headshots. `--window N` la fuerza, `--dry-run` muestra que cambiaria. |
 | `manage.py backup` | Copia la base a `data/backups/` con fecha. `--keep N` cuantas conservar, `--list` las muestra. |
-| `manage.py test tests` | Corre la suite (419 tests). |
+| `manage.py test tests` | Corre la suite completa. |
 | `python serve.py` | Lo que corre el `.exe`: migra, copia la base si toca, vigila la carpeta y sirve la app. |
 
 ### Sacar los datos
@@ -427,8 +427,8 @@ backend/
       coach.py          motor de insights
       narrative.py      resumen en palabras de cada ronda
     views.py, urls.py   API JSON
-  tests/                419 tests (parser, metricas, agregados, coach, API)
-frontend/               React + Vite + recharts (65 tests con vitest)
+  tests/                tests (parser, metricas, agregados, coach, API)
+frontend/               React + Vite + recharts (tests con vitest)
   components/           tabla, filtros, graficos, helpers de formato
   pages/                una por ruta, cada una en su propio chunk
   electron/             app de escritorio (proceso principal y preload)
