@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
-import { vistaDuelos } from '../tipoPartida.js'
+import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
@@ -49,8 +49,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
     return (
       <SinRondasFiltradas
         titulo="Duelos"
-        subtitulo="0 duelos con estos filtros"
-        nota="Hay rondas con estos filtros, pero en ninguna mataste a un rival ni te mató uno. Cambia algún filtro o usa Limpiar."
+        {...textosSinDuelos(filters)}
         filtros={<Filters value={filters} onChange={setFilters} />}
       />
     )

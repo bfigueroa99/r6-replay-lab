@@ -915,9 +915,17 @@ test('Duelos con rondas pero sin duelos dice 0 duelos y no 0 rondas', async ({ p
   )
   await page.goto('/duelos')
   await expect(page.locator('h1')).toHaveText('Duelos')
+  // sin filtros puestos no hay "estos filtros" ni Limpiar del que hablar
+  await expect(page.locator('.page-head p')).toHaveText('0 duelos')
+  await expect(page.getByText('Hay rondas importadas, pero en ninguna mataste a un rival')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  // con un filtro la barra se queda y el texto habla de el
+  await page.getByLabel('Lado').selectOption({ index: 1 })
   await expect(page.locator('.page-head p')).toHaveText('0 duelos con estos filtros')
   await expect(page.getByText('Hay rondas con estos filtros, pero en ninguna mataste a un rival')).toBeVisible()
   await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Limpiar' })).toBeVisible()
   await expect(page.locator('.empty-state')).toHaveCount(0)
   expect(errores).toEqual([])
 })

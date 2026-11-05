@@ -59,3 +59,17 @@ export function vistaDuelos({ rondas, duelos, filtros, cargando }) {
   if (!rondas) return vistaSinRondas({ vacio: true, filtros, cargando })
   return duelos ? null : 'sin-duelos'
 }
+
+/** Sin filtros puestos no hay "estos filtros" ni boton Limpiar del que hablar. */
+export function textosSinDuelos(filtros) {
+  if (hayFiltros(filtros)) {
+    return {
+      subtitulo: '0 duelos con estos filtros',
+      nota: 'Hay rondas con estos filtros, pero en ninguna mataste a un rival ni te mató uno. Cambia algún filtro o usa Limpiar.',
+    }
+  }
+  return {
+    subtitulo: '0 duelos',
+    nota: 'Hay rondas importadas, pero en ninguna mataste a un rival ni te mató uno.',
+  }
+}

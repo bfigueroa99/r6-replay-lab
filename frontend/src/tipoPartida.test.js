@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { qs } from './api.js'
-import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido, vistaDuelos, vistaSinRondas } from './tipoPartida.js'
+import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido, textosSinDuelos, vistaDuelos, vistaSinRondas } from './tipoPartida.js'
 
 describe('opcionesDeTipo', () => {
   it('opciones de tipo arrancan con Todos y siguen el orden de la API', () => {
@@ -105,5 +105,19 @@ describe('vistaDuelos (ficha 86)', () => {
 
   it('sin rondas mientras carga es filtrado', () => {
     expect(vistaDuelos({ rondas: 0, duelos: 0, filtros: {}, cargando: true })).toBe('filtrado')
+  })
+})
+
+describe('textosSinDuelos (ficha 86)', () => {
+  it('con filtros habla de los filtros y de Limpiar', () => {
+    const t = textosSinDuelos({ map: 'bank' })
+    expect(t.subtitulo).toBe('0 duelos con estos filtros')
+    expect(t.nota).toContain('usa Limpiar')
+  })
+
+  it('sin filtros no menciona filtros ni Limpiar', () => {
+    const t = textosSinDuelos({})
+    expect(t.subtitulo).toBe('0 duelos')
+    expect(t.nota).not.toMatch(/filtro|Limpiar/)
   })
 })
