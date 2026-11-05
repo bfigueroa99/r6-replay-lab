@@ -1,7 +1,7 @@
 # 82. Una partida sin rondas rompe el detalle de partida
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 13:31 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/82-partida-sin-rondas-rompe-el-detalle
 tipo: bug
 epica: -
@@ -145,6 +145,40 @@ Arena: no (una sola forma obvia).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1330Z-c4QLGh8, sobre dev 696c79d.)
+
+Quedo el diseno completo, sin desvios:
+
+- `MatchDetail.jsx`: `round` es `null` sin rondas y el panel "Rondas" muestra
+  "Esta partida no tiene rondas importadas." (sin `hint`). Cabecera, KPIs,
+  matriz, trades y scoreboard no necesitaron guarda: el e2e los renderiza
+  con la consola limpia.
+- `frontend/e2e/partida-sin-rondas.json`: generado con `make_match()` y
+  `json.dumps(indent=2, ensure_ascii=False)` de la respuesta sin `match`.
+- `backend/tests/test_partida_sin_rondas.py`:
+  `test_el_detalle_de_una_partida_sin_rondas_responde_200` (200, `rounds: []`
+  y cuerpo igual al JSON del e2e).
+- e2e `una partida sin rondas muestra su cabecera y un aviso` en
+  `humo.spec.js`. Unico ajuste: `.round-tab` se cuenta dentro del panel
+  "Rondas", porque la matriz de duelos usa la misma clase (con la cuenta
+  global daba 2).
+
+Test rojo antes del arreglo: `npx playwright test e2e/humo.spec.js -g "sin rondas"`
+fallo con `expect(locator('h1')).toContainText("Bank")` / `element(s) not found`
+(pagina en blanco por el `TypeError`). Despues del arreglo, `1 passed`.
+
+Criterios: repro (backend 200 con `rounds: []`) -> test de backend; cabecera y
+aviso sin errores de consola -> e2e nuevo; partida con rondas igual -> e2e del
+detalle existentes en verde; test que lo cubre -> e2e con ruta interceptada.
+
+Nota para quien corra el e2e en la nube: el Chromium del entorno se pasa con
+`E2E_CHROMIUM=/opt/pw-browsers/chromium` (lo usa `playwright.config.js`).
+
+Skills: no aplica (patrones del repo).
+Arena: no.
+
+OMC: plan=— · revisión=1 hallazgo LOW (1 arreglado: comentario del e2e decia "lo genera") · verificación=—
 
 ## Revision
 

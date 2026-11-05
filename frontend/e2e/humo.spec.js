@@ -5,8 +5,8 @@ import { expect, test } from '@playwright/test'
 import { vigilarConsola } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
-// Lo genera y lo afirma backend/tests/test_partida_sin_rondas.py: es la forma real
-// del detalle sin rondas. Con fs y no con import attributes: el Node del PC puede ser otro
+// backend/tests/test_partida_sin_rondas.py afirma que es la forma real del detalle sin
+// rondas; si falla, se regenera con json.dumps(indent=2, ensure_ascii=False) de esa respuesta. Con fs y no con import attributes: el Node del PC puede ser otro
 const SIN_RONDAS = JSON.parse(
   fs.readFileSync(new URL('./partida-sin-rondas.json', import.meta.url), 'utf8'),
 )
