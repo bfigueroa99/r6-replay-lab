@@ -1,8 +1,8 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
-estado: disenado
+estado: en curso 2026-11-05
 candado: -
-rama: -
+rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
 area: frontend
