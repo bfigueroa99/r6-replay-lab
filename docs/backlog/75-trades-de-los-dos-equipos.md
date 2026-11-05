@@ -1,7 +1,7 @@
 # 75. Trades de los dos equipos en el detalle de partida
 
 estado: revisado
-candado: -
+candado: qa 2026-11-05 02:57
 rama: claude/equipo-dev/75-trades-de-los-dos-equipos
 tipo: funcionalidad
 epica: paridad-referencia
