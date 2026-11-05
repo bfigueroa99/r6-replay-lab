@@ -1,7 +1,7 @@
 # 82. Una partida sin rondas rompe el detalle de partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T13:03Z
 rama: -
 tipo: bug
 epica: -

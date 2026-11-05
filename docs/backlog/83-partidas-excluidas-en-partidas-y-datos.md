@@ -1,7 +1,7 @@
 # 83. Partidas excluidas a la vista en Partidas y en Datos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T13:03Z
 rama: -
 tipo: funcionalidad
 epica: datos
