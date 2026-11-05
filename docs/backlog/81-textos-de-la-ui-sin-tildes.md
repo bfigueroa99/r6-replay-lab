@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: con hallazgos
-candado: dev 2026-11-05 16:42 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -476,6 +476,33 @@ Choca con la 84 (que queda `aprobado` en este turno) en `ui.jsx`,
 antes, la correccion arranca con P3.
 
 OMC: plan=— · revisión=— · verificación=FAIL (criterio 2 PARTIAL: `MatchDetail.jsx:360,363,161`)
+
+### Correccion de hallazgos de la segunda QA (dev 20261105T1641Z-cY8pL9A, sobre dev 3d89622 mezclado en 687b479)
+
+Rama ya al dia con dev 3d89622 (el merge P3 con la 84 lo hizo QA). Aplicado lo
+que pidio la segunda QA, solo tildes:
+
+- `MatchDetail.jsx`, mapa `CONDITIONS`: "eliminación del equipo rival", "se
+  acabó el tiempo" (se pintan en "Condición: ..." del panel de la ronda).
+- `MatchDetail.jsx`, `render` de pantalla de la columna `died`: `'sí'`. El CSV
+  sigue en `'si'`/`'no'` (`celdaCsv` de `ui.jsx` no usa `render`; esa tabla
+  ademas no tiene `csvName`).
+
+Barrido de mapas de constantes y `render:` de columnas en todos los `.jsx`:
+sin otras cadenas visibles sin tilde. La revision ciega encontro una mas,
+aplicada: `Jugador.jsx`, chip de la columna "Jugo de" mostraba el valor crudo
+del backend `companero`; ahora pinta "compañero" (el valor de la API, la clase
+`win`/`loss` y el CSV no cambian).
+
+Ningun test afirmaba el texto viejo (`grep` en `frontend/e2e` y
+`frontend/src/*.test.js`: solo comentarios y nombres de test).
+
+Revision ciega (`omc-code-reviewer`): aprobar, 1 LOW (el chip), arreglado.
+
+`verificar.sh`: VERDE 7a17ba9e3 (960 tests backend, 199 vitest, 64 e2e).
+
+Skills: no aplica (cambio de textos).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## Verificar en el PC
 
