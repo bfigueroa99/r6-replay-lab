@@ -1,7 +1,7 @@
 # 86. Duelos dice "0 rondas con estos filtros" con un filtro que tiene rondas pero ningun duelo
 
-estado: implementado
-candado: revisor 2026-11-05 14:56 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: hallazgo MEDIUM del Revisor de la 85 (`Duelos.jsx:43`), reproducido por la QA 20261105T1358Z-cxcyM5F en la app real
 archivos: backend/replays/views.py, backend/tests/test_duels.py, frontend/src/tipoPartida.js, frontend/src/tipoPartida.test.js, frontend/src/components/ui.jsx, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T1358Z-cxcyM5F, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1429Z-chSa5eY
+turnos: qa 20261105T1358Z-cxcyM5F, arquitecto 20261105T1429Z-c7UZ3T6, dev 20261105T1429Z-chSa5eY, revisor 20261105T1455Z-caYiimg
 
 ## PR
 
@@ -166,6 +166,50 @@ Anotado sin arreglar (LOW de la revision, fuera de alcance):
 Skills: no aplica (un texto y un conteo que el repo ya resuelve en la 85).
 OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
+## Revision 2026-11-05 sobre 61625a8
+
+(revisor 20261105T1455Z-caYiimg; rama al dia con dev 85009f6.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; vista GET, sin
+POST ni red: sin eje de seguridad). Confirmado por el Revisor:
+
+- `rounds` de `/api/duels/` (`agg.base_queryset(**filters).count()`) cuenta
+  lo mismo que `rounds` del Resumen (`totals()` hace `Count("id")` sobre el
+  mismo `base_queryset`, filas `is_me`).
+- `vistaDuelos` mantiene los casos de la 85: error primero, `Loading` sin
+  datos, 0 rondas -> `importar`/`filtrado`, `rounds` ausente cae en `!rondas`
+  sin romper.
+- Los tests fallan con el bug: backend `KeyError: 'rounds'`; vitest importa
+  funciones que no existian; el e2e, sin filtros y 0 duelos, veia
+  `EmptyState`. El e2e espera la respuesta `side=Attack` antes de afirmar
+  (ninguna otra request lleva ese parametro), sin ruta en vuelo al terminar.
+- Sin dependencia, POST ni numero nuevo en la UI (sin fila en
+  `metricas.md`, correcto); comentarios sin tildes, textos de UI con tildes.
+
+Criterios: 1 cubierto (e2e `Duelos con rondas pero sin duelos dice 0 duelos
+y no 0 rondas`, vitest `vistaDuelos`/`textosSinDuelos`, test backend); 2
+cubierto (e2e de la 85 sin tocar, verde); 3 cubierto (vitest `sin rondas ni
+filtros es importar`). `verificar.sh`: VERDE d75692b61 (955 tests backend,
+197 vitest, 62 e2e).
+
+Hallazgos:
+
+- [bug] LOW `frontend/src/pages/Duelos.jsx:43-54`
+  Que pasa: mientras carga la respuesta de un filtro nuevo, la vista se
+  calcula con los datos viejos y los textos con los filtros nuevos.
+  Como reproducirlo: en la vista `sin-duelos` sin filtros, elegir un tipo
+  sin partidas: hasta que llega la respuesta se lee "Hay rondas con estos
+  filtros" y despues cambia a "0 rondas con estos filtros". Transitorio
+  (el comentario del e2e lo reconoce).
+  Arreglo sugerido: con `loading` y vista `sin-duelos`, usar el texto
+  neutro de `filtrado`; o dejarlo. No bloquea.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados; el Revisor no arregla) · verificación=—
+
 ## QA
 
 ## Para el humano
+
+- 2026-11-05 (revisor 20261105T1455Z-caYiimg): LOW sin arreglar, no bloquea: mientras carga un filtro nuevo, la vista `sin-duelos` puede decir un instante "Hay rondas con estos filtros" antes de pasar a "0 rondas".
