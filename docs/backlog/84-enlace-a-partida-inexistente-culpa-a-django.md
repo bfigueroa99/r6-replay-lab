@@ -1,7 +1,7 @@
 # 84. Un enlace a una partida o jugador que no existe dice que Django no corre
 
-estado: con hallazgos
-candado: dev 2026-11-05T15:48Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django
 tipo: bug
 epica: -
@@ -186,6 +186,16 @@ Conflictos previstos: la 81 toca la misma linea de `ErrorBox` y lineas cercanas 
 
 Skills: no aplica (el Arquitecto ya dijo que no hay dominio nuevo)
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
+
+### Correccion de hallazgos (dev 20261105T1547Z-cLk3BF3, sobre 22fd925)
+
+- [HIGH] e2e intermitente (`humo.spec.js`): despues de ver el `h1` de la lista, `await page.waitForLoadState('networkidle')` antes del `goto` siguiente, con un comentario de por que (la lista pide `/api/filters/` al montar). `npx playwright test e2e/humo.spec.js -g "no existe lo dice" --repeat-each=20`: 20 de 20 en verde.
+- [LOW] `useApi` (`api.js`): `setStatus(null)` junto al `setLoading(true)` del efecto, asi al pasar de un id inexistente a uno valido se ve `<Loading />` y no "Esa partida no existe".
+
+verificar.sh: VERDE 40e2eab (959 tests backend, 192 vitest, 63 e2e).
+
+Skills: no aplica
+OMC: plan=— · revisión=— (dos cambios de 3 lineas que pidio el revisor) · verificación=—
 
 ## Revision 2026-11-05 sobre 6bcdd7e
 
