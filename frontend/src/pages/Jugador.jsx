@@ -120,7 +120,7 @@ export default function Jugador() {
               <div className="value">{duels.kills}</div>
             </div>
             <div className="stat">
-              <div className="label">Te gano</div>
+              <div className="label">Te ganó</div>
               <div className="value">{duels.deaths}</div>
             </div>
             <div className={`stat ${duels.balance > 0 ? 'good' : duels.balance < 0 ? 'bad' : ''}`}>

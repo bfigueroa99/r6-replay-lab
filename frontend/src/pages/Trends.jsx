@@ -38,8 +38,8 @@ const VENTANAS = [
   { by: 'matches', n: 5, label: '5 partidas' },
   { by: 'matches', n: 10, label: '10 partidas' },
   { by: 'matches', n: 20, label: '20 partidas' },
-  { by: 'days', n: 7, label: '7 dias' },
-  { by: 'days', n: 30, label: '30 dias' },
+  { by: 'days', n: 7, label: '7 días' },
+  { by: 'days', n: 30, label: '30 días' },
 ]
 
 /** Flecha con color segun si la metrica mejoro, empeoro o no se movio. */
@@ -945,7 +945,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
 
       <Panel
         title="Por número de ronda"
-        hint="Si el winrate cae en las rondas finales, el problema es de decisiones bajo presion, no de aim."
+        hint="Si el winrate cae en las rondas finales, el problema es de decisiones bajo presión, no de aim."
       >
         <div style={{ height: 220 }}>
           <ResponsiveContainer>

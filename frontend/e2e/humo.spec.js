@@ -436,7 +436,7 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   for (let i = 0; i < total; i++) {
     await pestanas.nth(i).click()
     await expect(pestanas.nth(i)).toHaveClass(/active/)
-    const bajas = panel.locator('.timeline li', { hasText: /mato a|murio/ })
+    const bajas = panel.locator('.timeline li', { hasText: /mató a|murió/ })
     if ((await bajas.count()) === 0) continue
     const apertura = panel.locator('.timeline .chip', { hasText: /^apertura$/ })
     const entry = panel.locator('.timeline .chip', { hasText: /^entry$/ })

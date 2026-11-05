@@ -129,7 +129,7 @@ export default function MatchDetail() {
               </h3>
               <p className="note" style={{ marginTop: 0 }}>
                 Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
-                {round.score_after?.join('-')} · duro {Math.round(round.duration)}s
+                {round.score_after?.join('-')} · duró {Math.round(round.duration)}s
                 <br />
                 Condición: {translateCondition(round.win_condition)}
                 {round.win_condition_certain ? '' : ' (inferida)'}
@@ -319,11 +319,11 @@ function Timeline({ round }) {
             <span className="clock">{event.clock_raw || '—'}</span>
             {event.kind === 'Kill' ? (
               <>
-                <span className="who">{event.actor}</span> mato a <span className="who">{event.target}</span>
+                <span className="who">{event.actor}</span> mató a <span className="who">{event.target}</span>
               </>
             ) : event.kind === 'Death' ? (
               <>
-                <span className="who">{event.actor}</span> murio
+                <span className="who">{event.actor}</span> murió
               </>
             ) : (
               <>
