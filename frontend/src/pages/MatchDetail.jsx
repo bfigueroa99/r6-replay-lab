@@ -316,7 +316,6 @@ function FasesDeLaRonda({ phases }) {
     return <p className="note">Esta partida no tiene bajas con reloj entre equipos.</p>
   }
   const nota = notaDeFases(phases)
-  // La celda del equipo que saco mas bajas en esa fase va resaltada
   const resaltar = (lado) => (row) =>
     row.mejor === lado ? <span className="chip win">{row[lado]}</span> : row[lado]
   return (

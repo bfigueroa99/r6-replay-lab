@@ -1,7 +1,7 @@
 # 91. Fases de la ronda en el detalle de partida
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 18:52Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/91-fases-de-la-ronda-en-la-partida
 tipo: funcionalidad
 epica: paridad-referencia
@@ -254,4 +254,40 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(Dev)
+(dev 20261105T1851Z-cz3m6mE)
+
+Quedo el diseno completo, sin desvios de fondo:
+
+- `aggregates.py`: `FASE_MEDIA` (= `APERTURA_TEMPRANA`, 30), `FASE_TARDIA`
+  (120), `FASES` y `fases_de_partida(rondas, my_team_index)`, pura, al lado
+  de `opening_timing`. `match_detail` la expone como `phases`.
+- `frontend/e2e/partida-sin-rondas.json`: suma `phases` (tres filas en cero),
+  regenerado con la propia funcion.
+- `fasesRonda.js` (`filasDeFases`, `hayBajas`, `notaDeFases`) + vitest;
+  panel "Fases de la ronda" en `MatchDetail` despues de "Trades por equipo",
+  con la celda del equipo que saco mas bajas resaltada como en trades.
+- e2e: test nuevo "el detalle de una partida muestra las fases de la ronda"
+  (3 filas, celdas contra `/api/matches/<id>/`, Temprano en 0 y 0 por el
+  seed) y el caso de partida sin rondas ahora afirma el texto sin bajas.
+- `metricas.md`: fila en `## Trades`, debajo de "Trades por equipo".
+
+Desvios menores: un test extra por criterio (`test_las_muertes_sin_autor_no_son_bajas_de_nadie`,
+`test_un_empate_en_la_fase_no_cuenta_para_ningun_lado`,
+`test_sin_rondas_la_funcion_devuelve_tres_filas`); la nota debajo de la tabla
+distingue singular y plural. Los teamkills se devuelven (`teamkills`) pero no
+van a la nota: ya tienen su metrica aparte.
+
+Criterios -> tests (`backend/tests/test_fases_de_la_ronda.py`):
+cortes 29.9/30/119.9/120 -> `test_los_cortes_de_las_fases_caen_donde_dicen`;
+reparto y teamkills -> `test_las_bajas_se_reparten_entre_tu_equipo_y_el_rival`,
+`test_un_teamkill_no_suma_a_ningun_equipo`; rondas dominadas ->
+`test_rondas_dominadas_y_ganadas_por_fase`,
+`test_una_ronda_sin_resultado_no_entra_al_denominador`; autor sin fila ->
+`test_una_baja_de_un_jugador_sin_fila_no_suma_ni_rompe`; panel y partida sin
+bajas -> e2e de humo y `test_partida_sin_bajas_trae_tres_fases_en_cero`;
+equipo por ronda -> `test_tu_equipo_se_lee_por_ronda`.
+
+Verificacion manual (PC): la del diseno, sobre una partida real.
+
+Skills: no aplica (el diseno lo resolvia; sin dominio nuevo).
+OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados: frase de metricas.md y un comentario que repetia el codigo) · verificación=—
