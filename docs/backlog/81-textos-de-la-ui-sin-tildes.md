@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: implementado
-candado: revisor 2026-11-05T16:06Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj, dev 20261105T1429Z-cps2PzJ, revisor 20261105T1455Z-caYiimg, qa 20261105T1521Z-cEexMKJ, dev 20261105T1547Z-ck9KQiv, revisor 20261105T1605Z-csxB8d1
 
 ## PR
 
@@ -397,6 +397,34 @@ Revision ciega (`omc-code-reviewer`): aprobar, 0 hallazgos.
 
 Skills: no aplica (cambio de textos).
 OMC: plan=— · revisión=0 hallazgos · verificación=—
+
+## Revision 2026-11-05 sobre 9f5cabc (tercera pasada)
+
+(revisor 20261105T1605Z-csxB8d1; rama al dia con dev 0861b0b.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; un solo tema,
+solo cadenas, sin eje de intencion ni seguridad): aprobar, 0 hallazgos sobre
+las lineas tocadas. Tildes agregadas correctas (interrogativos indirectos,
+preteritos, "tú" tonico; "solo" sin tilde); ningun `value`, `key` de estado,
+`csvName` ni ruta cambio; los cinco asserts de `humo.spec.js` coinciden con el
+texto nuevo y ningun e2e ni vitest busca un texto viejo.
+
+Confirmado por el Revisor: los dos textos que pidio QA quedaron con tilde
+(`git grep -nE "referencia solida|no registro eventos" -- frontend/src` vacio).
+El delta desde la QA son esas dos lineas.
+
+Criterios: 1 cubierto (tabla del diseno, greps del barrido vacios); 2
+cubierto salvo las cabeceras de columna/CSV que el Dev dejo a proposito; 3
+cubierto; 4 `verificar.sh`: VERDE 9f5cabc87 (955 tests backend, 197 vitest,
+62 e2e).
+
+Hallazgos: solo los LOW ya conocidos (`label: 'Duro'` en `Trends.jsx`,
+`'Cuando'` en seis tablas), que el ciego volvio a marcar; son cabecera del CSV
+y ya estan en `## Para el humano`. Tercera pasada con solo LOW: `revisado`.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=2 hallazgos LOW ya conocidos (0 arreglados; el Revisor no arregla) · verificación=—
 
 ## Verificar en el PC
 
