@@ -1,7 +1,7 @@
 # 86. Duelos dice "0 rondas con estos filtros" con un filtro que tiene rondas pero ningun duelo
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05T14:33Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos
 tipo: bug
 epica: -
@@ -131,6 +131,40 @@ Skills: no aplica (sin dominio nuevo: un texto y un conteo que el repo ya resuel
 OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1429Z-chSa5eY, sobre dev 85009f6.)
+
+Quedo el diseno entero:
+
+- `views.py` (`duels`): `"rounds": agg.base_queryset(**filters).count()` al nivel de `totals`, fuera de `duel_totals` (lo comparte el coach).
+- `tipoPartida.js`: `vistaDuelos` como la pide el diseno, y ademas `textosSinDuelos(filtros)` (ver desvios).
+- `ui.jsx`: `SinRondasFiltradas` con `subtitulo` y `nota` opcionales; el default es el texto de hoy, las demas paginas no cambian.
+- `Duelos.jsx`: `vistaDuelos` en lugar de `vistaSinRondas`; `'sin-duelos'` pinta `SinRondasFiltradas` con la misma barra.
+
+Test que falla primero (bug): `python manage.py test tests.test_duels.RondasSinDuelosTests` -> `KeyError: 'rounds'` antes del arreglo; `npx vitest run src/tipoPartida.test.js` -> 5 failed (`vistaDuelos` no existia). Despues, verdes los dos.
+
+Tests por criterio:
+
+- Criterio 1 (rondas y 0 duelos -> "0 duelos", nunca "0 rondas"): `test_la_api_de_duelos_cuenta_las_rondas_aunque_no_haya_duelos` (backend), `vistaDuelos (ficha 86)` (5 vitest), `textosSinDuelos (ficha 86)` (2 vitest) y el e2e `Duelos con rondas pero sin duelos dice 0 duelos y no 0 rondas` (`page.route` vacia los duelos de la respuesta real y deja `rounds`; sin filtros y con Lado = ataque, barra y Limpiar visibles, sin `.empty-state`, consola limpia). Sobre dev ese e2e cae: sin filtros, `vistaSinRondas` daba `'importar'` y se veia el EmptyState.
+- Criterio 2 (0 rondas -> "0 rondas con estos filtros"): el e2e de la 85 (`un filtro sin rondas deja la barra en todas las páginas`) sin tocar, verde; vitest `sin rondas y con filtros es filtrado`.
+- Criterio 3 (base vacia sin filtros -> EmptyState): vitest `sin rondas ni filtros es importar`.
+
+Desvios del diseno:
+
+- Sin filtros puestos, la vista `sin-duelos` dice "0 duelos" y "Hay rondas importadas, pero en ninguna mataste a un rival ni te mató uno." en vez de "con estos filtros ... usa Limpiar", porque sin filtros Limpiar no se dibuja (`Filters.jsx`). Lo marco la revision ciega (LOW). Con filtros, el texto es el del diseno. Los textos salen de `textosSinDuelos`, que es logica pura y lleva vitest.
+- El e2e espera la respuesta filtrada (`waitForResponse`, `side=Attack`) antes de afirmar. Sin esa espera el test terminaba con la ruta interceptada todavia en vuelo y `route.fetch` fallaba (lo vio la primera corrida de `check.sh`).
+
+Anotado sin arreglar (LOW de la revision, fuera de alcance):
+
+- `rounds` repite `faced.base.rounds`; se deja la cuenta explicita, como pide el diseno.
+- En la vista `sin-duelos` tampoco se ven `faced` ni `rivals`, que podrian traer datos. Ya pasaba antes; si vale la pena mostrarlos, va en otra ficha.
+
+`docs/metricas.md`: sin fila, porque no hay numero nuevo en la UI.
+
+`verificar.sh`: VERDE af11d395c (955 tests backend, 197 vitest, 62 e2e).
+
+Skills: no aplica (un texto y un conteo que el repo ya resuelve en la 85).
+OMC: plan=— · revisión=3 hallazgos (1 arreglado) · verificación=—
 
 ## QA
 
