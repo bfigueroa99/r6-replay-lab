@@ -58,9 +58,30 @@ def filtro_mapa(valor: str, prefijo: str = "round__match__") -> dict:
     return {f"{prefijo}map_slug": valor}
 
 
+def rondas_contables() -> QuerySet[RoundPlayer]:
+    """Tus rondas que cuentan: sin las de partidas excluidas. Raiz de todo agregado."""
+    return RoundPlayer.objects.filter(is_me=True, round__match__excluded=False)
+
+
+def partidas_contables(*, incluir_excluidas: bool = False) -> QuerySet[Match]:
+    """Unica raiz de Match en los agregados. `incluir_excluidas` es para lo que
+    muestra partidas (listado, detalle), nunca para un numero."""
+    return Match.objects.all() if incluir_excluidas else Match.objects.filter(excluded=False)
+
+
+def _mia_en_la_ronda() -> QuerySet[RoundPlayer]:
+    """Tu fila de una ronda, para correlacionar con OuterRef("round_id").
+
+    Solo vale dentro de una consulta cuya ronda externa ya sale de
+    `base_queryset`/`rondas_contables`: por eso no filtra excluidas, y asi el
+    join round->match no se repite por cada evento en los duelos.
+    """
+    return RoundPlayer.objects.filter(is_me=True)
+
+
 def base_queryset(**filters) -> QuerySet[RoundPlayer]:
-    """Rondas del jugador principal, con los filtros de la request aplicados."""
-    qs = RoundPlayer.objects.filter(is_me=True).select_related("round", "round__match")
+    """Rondas del jugador principal que cuentan, con los filtros de la request aplicados."""
+    qs = rondas_contables().select_related("round", "round__match")
 
     if filters.get("side"):
         qs = qs.filter(side=filters["side"])
@@ -93,7 +114,8 @@ def match_queryset(**filters) -> QuerySet[Match]:
     conteo no coincide con el del Resumen, que cuenta partidas con rondas que
     los cumplen.
     """
-    qs = Match.objects.all()
+    # El listado muestra las excluidas: siguen siendo tus partidas.
+    qs = partidas_contables(incluir_excluidas=True)
     if filters.get("map"):
         qs = qs.filter(**filtro_mapa(filters["map"], prefijo=""))
     if filters.get("match_type"):
@@ -160,13 +182,13 @@ def rating_points_expr():
 
 
 def rating_baseline() -> float | None:
-    """Los puntos promedio del jugador en **todo** su historial: el 1.00.
+    """Los puntos promedio del jugador en **todo** su historial que cuenta: el 1.00.
 
     Va sin filtros a proposito. Si el promedio se recalculara con cada filtro,
     el rating de un mapa y el de un operador no serian comparables entre si, que
     es justamente para lo unico que sirve este numero.
     """
-    promedio = RoundPlayer.objects.filter(is_me=True).aggregate(v=Avg(rating_points_expr()))
+    promedio = rondas_contables().aggregate(v=Avg(rating_points_expr()))
     return promedio["v"] or None
 
 
@@ -574,7 +596,9 @@ def etiquetas_de_version(filas) -> dict[tuple[str, int], str]:
     return etiquetas
 
 
-def etiquetas_de_mapas(slugs: Iterable[str] | None = None) -> dict[tuple[str, int], str]:
+def etiquetas_de_mapas(
+    slugs: Iterable[str] | None = None, *, incluir_excluidas: bool = False
+) -> dict[tuple[str, int], str]:
     """Etiqueta de cada `(map_slug, map_id)` guardado, la misma que usa Mapas.
 
     Mira todas las partidas del slug y no solo la fila pedida: el "(id N)" de
@@ -582,8 +606,11 @@ def etiquetas_de_mapas(slugs: Iterable[str] | None = None) -> dict[tuple[str, in
     mismo nombre, y una pagina del listado puede tener una sin la otra.
     Acotar por slug no cambia ninguna etiqueta, porque se desambigua dentro
     del slug; solo evita leer los mapas que la pagina no muestra.
+    `incluir_excluidas` es para el listado y el detalle, que las muestran.
     """
-    qs = Match.objects.values("map_slug", "map_name", "map_id")
+    qs = partidas_contables(incluir_excluidas=incluir_excluidas).values(
+        "map_slug", "map_name", "map_id"
+    )
     if slugs is not None:
         qs = qs.filter(map_slug__in=list(slugs))
     return etiquetas_de_version(qs.distinct().order_by("map_name", "map_id"))
@@ -1044,8 +1071,8 @@ def comebacks(**filters) -> dict:
         )
     }
     filas = (
-        RoundPlayer.objects.filter(is_me=True, round__match_id__in=ids,
-                                   round__match__code_version__gte=Y9S4)
+        rondas_contables().filter(round__match_id__in=ids,
+                                  round__match__code_version__gte=Y9S4)
         .values("round__match_id", "round__number", "round__overtime_number",
                 "round__my_side", "round__score_before", "team_index")
         .order_by("round__match_id", "round__number", "id")
@@ -1166,7 +1193,7 @@ def by_margin(**filters) -> dict:
         n = len(por_tramo[tramo])
         # Todas tus rondas de esas partidas, sin recortar por operador o
         # sitio: la partida se lee entera.
-        t = totals(RoundPlayer.objects.filter(is_me=True, round__match_id__in=por_tramo[tramo]),
+        t = totals(rondas_contables().filter(round__match_id__in=por_tramo[tramo]),
                    baseline)
         filas.append({
             "margin": tramo,
@@ -1206,7 +1233,7 @@ def matches_summary(**filters) -> dict:
     ganadas = sum(1 for p in partidas if p["won"] is True)
     perdidas = sum(1 for p in partidas if p["won"] is False)
     decididas = ganadas + perdidas
-    rondas = RoundPlayer.objects.filter(is_me=True, round__match_id__in=ids).count()
+    rondas = rondas_contables().filter(round__match_id__in=ids).count()
 
     # Por version (`slug`, `map_id`), como la pagina Mapas: un rework es otro
     # layout. Un renombre dentro de la misma version no la parte, y como las
@@ -1554,8 +1581,10 @@ def by_stack(**filters) -> dict:
     """
     # Sin filtros y correlacionada, como `teammate_synergy` (tope de
     # parametros de SQLite con un IN de round_ids).
-    mia = RoundPlayer.objects.filter(
-        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    # rondas_contables y no _mia_en_la_ronda: `companeros` no esta acotada a
+    # rondas contables, y los habituales se cuentan sin filtros.
+    mia = rondas_contables().filter(
+        round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
     )
     companeros = RoundPlayer.objects.filter(is_me=False).filter(Exists(mia))
     # El nombre sale de Player: un cambio de nick no parte al habitual.
@@ -1917,10 +1946,14 @@ def _sessions_raw() -> list[dict]:
     Una sesion se corta cuando pasan mas de `SESSION_GAP_MINUTES` sin jugar. Se
     calcula sobre **todas** las partidas y no sobre las filtradas: si filtras por
     mapa, esa partida sigue siendo la tercera de su noche.
+
+    Las excluidas si quedan afuera, como si no estuvieran importadas: no ocupan
+    posicion ni unen dos bloques, asi que excluir la que los juntaba parte la
+    sesion en dos.
     """
     gap = timedelta(minutes=settings.SESSION_GAP_MINUTES)
     sesiones: list[dict] = []
-    for match_id, played_at in Match.objects.order_by("played_at").values_list(
+    for match_id, played_at in partidas_contables().order_by("played_at").values_list(
         "id", "played_at"
     ):
         if not sesiones or played_at - sesiones[-1]["end"] > gap:
@@ -2053,7 +2086,7 @@ def by_session_position(max_position: int = 5, **filters) -> list[dict]:
 
 #: El equipo del jugador en la ronda del evento.
 _MI_EQUIPO = Subquery(
-    RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values("team_index")[:1]
+    _mia_en_la_ronda().filter(round_id=OuterRef("round_id")).values("team_index")[:1]
 )
 
 #: Primer evento de baja de la ronda: el que define el duelo de apertura.
@@ -2763,9 +2796,7 @@ def kills_by_time(bucket: int = DEATH_BUCKET, cap: int = DEATH_CAP, **filters) -
     crudas = (
         a_favor.annotate(
             mi_lado=Subquery(
-                RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values(
-                    "side"
-                )[:1]
+                _mia_en_la_ronda().filter(round_id=OuterRef("round_id")).values("side")[:1]
             ),
             tramo=ExpressionWrapper(
                 Floor(F("elapsed") / bucket) * bucket, output_field=IntegerField()

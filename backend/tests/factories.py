@@ -31,6 +31,7 @@ def make_match(
     index: int = 0,
     map_id: int = 0,
     code_version: int = Y9S4,
+    excluded: bool = False,
 ) -> Match:
     played_at = played_at or datetime(2026, 9, 1, 20, 0) + timedelta(hours=index)
     return Match.objects.create(
@@ -46,6 +47,7 @@ def make_match(
         my_team_index=0,
         my_score=my_score,
         opponent_score=opponent_score,
+        excluded=excluded,
         won=my_score > opponent_score,
         code_version=code_version,
     )

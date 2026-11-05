@@ -4,6 +4,18 @@ Todas se calculan en `backend/replays/analytics/metrics.py` (por ronda, al
 importar) y se agregan en `aggregates.py`. Si un numero de la UI no te cuadra,
 aca esta la definicion exacta.
 
+**Partidas excluidas.** Una partida marcada con "Excluir de mis números" (en su
+detalle) no cuenta en ninguna metrica de este documento ni en los CSV de
+agregados (incluido el "por partida"): ni en el 1.00 del rating, ni en los
+companeros habituales, ni en las sesiones, ni en las opciones de los filtros.
+Es como si no estuviera importada. Sigue en la pagina Partidas (y en el CSV que
+baja su boton), en su detalle y en el conteo de importadas; un clic la vuelve a
+contar y nada se borra. Dos efectos a la vista: su detalle y su fila en
+Partidas miden el rating contra el 1.00 de las que cuentan, y si era la unica
+partida de una version de mapa, los agregados muestran el mapa sin "(id N)"
+mientras Partidas y el detalle lo siguen desambiguando (y esa version sale del
+selector de filtros).
+
 ## Base
 
 | Metrica | Definicion |
@@ -116,6 +128,8 @@ Una **sesion** es un bloque de juego seguido: se corta cuando pasan mas de
 `SESSION_GAP_MINUTES` (120 por defecto) sin empezar una partida. El corte se
 calcula sobre **todo** el historial, no sobre lo filtrado: si filtras por mapa,
 esa partida sigue siendo la tercera de su noche.
+Las partidas excluidas no entran al corte: no ocupan posicion y no unen dos
+bloques, asi que excluir la que los juntaba parte la sesion en dos.
 
 | Metrica | Definicion |
 |---|---|
