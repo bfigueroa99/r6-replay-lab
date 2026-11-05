@@ -232,6 +232,12 @@ Arena: no (una sola forma obvia: la lista va en el inventario que Datos ya lee).
 
 OMC: plan=— · revisión=— · verificación=—
 
+Revalidado por arquitecto 20261105T1547Z-cDskDBu contra dev 0861b0b: sigue
+valido. Unico ajuste: `import_status` esta ahora en `views.py:834` (la 86,
+PR #83, sumo 3 lineas en `duels`); `Matches.jsx:92` y `celdaCsv`
+(`ui.jsx:85`) sin cambios. La 79 sigue sin mergear (espera al humano por
+`CLAUDE.md`) y su rama mergea limpio contra dev: el orden se mantiene.
+
 ## Implementacion
 
 ## Revision
