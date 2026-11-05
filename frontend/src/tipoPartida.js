@@ -38,3 +38,15 @@ export function conTipo(filtros, tipo) {
 export function hayFiltros(filtros) {
   return Object.values(filtros || {}).some(Boolean)
 }
+
+/**
+ * Que mostrar cuando una pagina se queda sin rondas: `null` si hay, `'filtrado'`
+ * si los filtros (compartidos entre paginas) dejan 0, `'importar'` si la base
+ * esta vacia de verdad. Mientras carga la respuesta nueva se queda en
+ * `'filtrado'`: al limpiar, la respuesta vieja de 0 rondas sigue en pantalla
+ * hasta que llega la otra, y pasar por el EmptyState desmontaria la barra.
+ */
+export function vistaSinRondas({ vacio, filtros, cargando }) {
+  if (!vacio) return null
+  return hayFiltros(filtros) || cargando ? 'filtrado' : 'importar'
+}

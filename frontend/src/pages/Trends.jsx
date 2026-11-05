@@ -15,8 +15,9 @@ import {
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { vistaSinRondas } from '../tipoPartida.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -233,7 +234,11 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
-  if (!data?.by_match?.length) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaSinRondas({ vacio: !data?.by_match?.length, filtros: filters, cargando: loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Tendencias" filtros={<Filters value={filters} onChange={setFilters} showSession />} />
+  }
 
   const byDay = data.by_day.map((row) => ({ ...row, dia: row.day.slice(5) }))
   const byMatch = data.by_match.map((row, i) => ({
