@@ -76,6 +76,7 @@ def build_insights(**filters) -> dict:
     insights += _sites(overall, **filters)
     insights += _operators(overall, **filters)
     insights += _spawns(overall, **filters)
+    insights += _posicion(**filters)
     insights += _round_flow(**filters)
     insights += _sesiones(**filters)
     insights += _momento_de_la_muerte(**filters)
@@ -544,6 +545,64 @@ def _spawns(overall, **filters) -> list[dict]:
             scope=f"{worst['map']} · {worst['spawn']}",
         )
     ]
+
+
+#: Muestra minima de una zona para la señal del Coach, igual que sitio y spawn.
+POSICION_MIN_RONDAS_COACH = 8
+
+
+def _posicion(**filters) -> list[dict]:
+    """Solo redacta el veredicto que ya trae `positioning`: la regla vive alla."""
+    datos = agg.positioning(min_rounds=POSICION_MIN_RONDAS_COACH, **filters)
+    zonas = []
+    for fila in datos["sites"]:
+        zonas.append((fila, f"{fila['site']} ({fila['map']})",
+                      f"{fila['map']} · {fila['site']}", "resto de tu historial"))
+    for fila in datos["spawns"]:
+        zonas.append((fila, f"el spawn {fila['spawn']} ({fila['map']})",
+                      f"{fila['map']} · {fila['spawn']} (ataque)", "resto de tu ataque"))
+    out = []
+    dormideros = [z for z in zonas if z[0]["verdict"] == "dormidero"]
+    if dormideros:
+        fila, zona, alcance, resto = max(dormideros, key=lambda z: z[0]["caught_out_delta"])
+        out.append(
+            _insight(
+                "zona-dormidero",
+                "media",
+                f"En {zona} te agarran fuera de posición el "
+                f"{fila['caught_out_pct']:.0f}% de las rondas",
+                f"{fila['rounds']} rondas ahí, {fila['caught_out_delta']:+.0f} puntos contra el "
+                f"{fila['rest_caught_out_pct']:.0f}% del {resto} "
+                f"(margen ±{fila['margin']:.0f}).",
+                "Cambia dónde tomas el primer duelo en esa zona y juega más cerca de un "
+                "compañero: morir sin aportar y sin que nadie te vengue es la muerte más cara.",
+                metric="caught_out_pct",
+                value=fila["caught_out_pct"],
+                baseline=fila["rest_caught_out_pct"],
+                sample=fila["rounds"],
+                scope=alcance,
+            )
+        )
+    solidas = [z for z in zonas if z[0]["verdict"] == "solido"]
+    if solidas:
+        fila, zona, alcance, resto = min(solidas, key=lambda z: z[0]["caught_out_delta"])
+        out.append(
+            _insight(
+                "zona-solida",
+                "positivo",
+                f"En {zona} te sostienes",
+                f"{fila['rounds']} rondas con {fila['caught_out_pct']:.0f}% fuera de posición, "
+                f"{abs(fila['caught_out_delta']):.0f} puntos bajo el {resto}.",
+                "Fíjate qué haces distinto ahí (desde dónde miras, con quién juegas) y "
+                "llévatelo a las zonas que te cuestan.",
+                metric="caught_out_pct",
+                value=fila["caught_out_pct"],
+                baseline=fila["rest_caught_out_pct"],
+                sample=fila["rounds"],
+                scope=alcance,
+            )
+        )
+    return out
 
 
 def _round_flow(**filters) -> list[dict]:

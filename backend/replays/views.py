@@ -217,6 +217,13 @@ def coach(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def positioning(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.positioning(
+        min_rounds=_min_rounds(request, agg.POSICION_MIN_RONDAS), **_filters(request)
+    ))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
