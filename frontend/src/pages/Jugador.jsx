@@ -215,7 +215,7 @@ export default function Jugador() {
               label: 'Jugo de',
               render: (row) => (
                 <span className={`chip ${row.role === 'companero' ? 'win' : 'loss'}`}>
-                  {row.role}
+                  {row.role === 'companero' ? 'compañero' : row.role}
                 </span>
               ),
             },
