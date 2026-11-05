@@ -75,6 +75,21 @@ otras funciones del mismo archivo, asi que el choque, si aparece, es de
 contexto. Ninguna rama abierta agrega migracion: la de la 79 es la `0005`. Si
 otra rama mergea una `0005` antes, esta renumera (P3).
 
+**Con la 78 en dev.** La 78 agrega `match_queryset(**filters)` en
+`aggregates.py`, debajo de `base_queryset`, y `match_list` pasa a usarlo. En
+ese caso:
+
+- `match_queryset` arranca de `partidas_contables(incluir_excluidas=True)` en
+  vez de `Match.objects`. El listado muestra las excluidas, y asi tambien pasa
+  la guardia `test_las_partidas_salen_de_partidas_contables`.
+- Su filtro `session` usa `session_match_ids`, que con esta ficha ya no
+  incluye excluidas. Por eso Partidas filtrada por sesion no muestra la
+  excluida, igual que el Inicio con ese mismo filtro. Es coherente y no se
+  cambia.
+- Con la 78 en dev, el cambio de `match_list` de abajo se aplica sobre su
+  version: el campo `excluded` en la fila y `incluir_excluidas=True` en
+  `etiquetas_de_mapas`.
+
 ### Decision: una sola raiz para lo que cuenta (opcion B)
 
 - **(A)** Filtro en `base_queryset` mas parches sueltos. Se descarta: la
