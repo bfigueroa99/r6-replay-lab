@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: con hallazgos
-candado: dev 2026-11-05T15:48Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -378,10 +378,30 @@ ningun test las afirma.
 
 OMC: plan=— · revisión=— · verificación=INCOMPLETE (criterio 2 PARTIAL: `Dashboard.jsx:77`)
 
+### Correccion de hallazgos de QA (dev 20261105T1547Z-ck9KQiv, sobre dev 0861b0b mezclado)
+
+Rama mezclada con dev 0861b0b (sin conflictos; trae la 86, cuyos textos ya
+llevan tilde). Aplicadas las dos tildes que pidio QA, y nada mas:
+
+- `Dashboard.jsx:77`: `sub="referencia sólida: 0.8"`.
+- `MatchDetail.jsx:309`: "Esta ronda no registró eventos en el feed." (cierra
+  tambien el LOW de la segunda revision).
+
+Ningun test afirmaba el texto viejo (`grep` en `frontend/e2e`,
+`frontend/src/*.test.js` y `backend/tests`). La narrativa del backend
+(`narrative.py`) sigue fuera de alcance: es la ficha 88.
+
+Revision ciega (`omc-code-reviewer`): aprobar, 0 hallazgos.
+
+`verificar.sh`: VERDE f40f33f9d (955 tests backend, 197 vitest, 62 e2e).
+
+Skills: no aplica (cambio de textos).
+OMC: plan=— · revisión=0 hallazgos · verificación=—
+
 ## Verificar en el PC
 
 ## Pendiente
 
 ## Para el humano
 
-- 2026-11-05 (revisor 20261105T1455Z-caYiimg): LOW sin arreglar, no bloquean: `MatchDetail.jsx:309` "no registro eventos" -> "registró"; cabeceras `'Jugo de'`, `'Metrica'` (junto a `'Cuando'`, `'Duro'`, `'Murio'`) quedan sin tilde porque son tambien cabecera del CSV: decidir en una ficha de cabeceras de CSV.
+- 2026-11-05 (revisor 20261105T1455Z-caYiimg): LOW sin arreglar, no bloquean (el de `MatchDetail.jsx:309` ya quedo arreglado en la correccion de QA): cabeceras `'Jugo de'`, `'Metrica'` (junto a `'Cuando'`, `'Duro'`, `'Murio'`) quedan sin tilde porque son tambien cabecera del CSV: decidir en una ficha de cabeceras de CSV.
