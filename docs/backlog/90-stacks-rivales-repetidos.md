@@ -1,7 +1,7 @@
 # 90. Stacks rivales repetidos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T19:20Z
 rama: -
 tipo: funcionalidad
 epica: rivales
