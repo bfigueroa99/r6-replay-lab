@@ -592,7 +592,7 @@ def match_exclude(request: HttpRequest, pk: int) -> JsonResponse:
     if not _es_json(request):
         return _ok({"error": "se esperaba application/json"}, status=415)
     if not Match.objects.filter(pk=pk).exists():
-        raise Http404("partida no encontrada")
+        return _ok({"error": "partida no encontrada"}, status=404)
     try:
         body = json.loads(request.body or b"{}")
     except (ValueError, UnicodeDecodeError):
