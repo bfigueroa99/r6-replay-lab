@@ -15,6 +15,8 @@ turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 202611
 
 Titulo: `[equipo-dev][backend] Excluir una partida de tus números`
 
+PR: https://github.com/bfigueroa99/r6-replay-lab/pull/81 (contra `dev`; lo mergea el humano porque toca `CLAUDE.md`)
+
 ### Que cambia
 
 En el detalle de una partida aparece el boton "Excluir de mis números". Sirve para una custom, una partida con desconexion o una de calentamiento. Una partida excluida no cuenta en ningun agregado: Inicio, Coach, Operadores, Compañeros, Tendencias, Duelos, sesiones, filtros, el 1.00 del rating ni los CSV de agregados. Sigue apareciendo en Partidas, en su detalle y en el inventario. Un clic en "Volver a contarla" la devuelve, y nada se borra.
