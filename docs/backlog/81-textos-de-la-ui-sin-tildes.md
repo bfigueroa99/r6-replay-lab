@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: en curso 2026-11-05
-candado: dev 2026-11-05 13:31 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -182,6 +182,33 @@ Arena: no (una sola forma obvia).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261105T1331Z-c7xSRnu, sobre dev 696c79d.)
+
+Quedo: la tabla del diseno aplicada entera (59 filas, 13 archivos de
+`frontend/src`) y los tres textos de `frontend/e2e/humo.spec.js` (676, 709,
+719) al texto nuevo. Los tres greps de "Verificacion del barrido" salen
+vacios. Identificadores (`etiquetaSesion`, `EvolucionChart`,
+`etiquetaImportacion`), claves, rutas, `csvName` y comentarios sin tocar.
+
+Desvios (misma regla del diseno: otra palabra sin tilde en una cadena ya
+tocada o vecina, solo tildes):
+
+- `Matches.jsx` y `Operators.jsx`, help de Rating: "la formula" -> "la fórmula".
+- `Dashboard.jsx`, lista de salud: "plant probable segun el reloj" -> "según".
+- `Duelos.jsx`, hint "Por rival": "anecdota y no patron" -> "anécdota y no patrón".
+- `Teammates.jsx:370`: "quedandote" -> "quedándote" (lo marco la revision ciega).
+
+No quedo: nada de la ficha. Un barrido extra de palabras comunes (tambien,
+numero, despues, segun, sesion, version, ...) fuera de comentarios solo
+encontro identificadores.
+
+Tests: sin tests nuevos (texto); el e2e recorre cada pantalla con la consola
+vigilada. `verificar.sh`: VERDE ebb00f844 (953 tests backend, 186 vitest,
+59 e2e).
+
+Skills: no aplica (cambio de textos).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## Revision
 
