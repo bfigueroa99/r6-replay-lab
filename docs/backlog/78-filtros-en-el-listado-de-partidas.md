@@ -1,7 +1,7 @@
 # 78. Filtros en el listado de Partidas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-05T03:49Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 2
 fuente: ALCANCE.md F16 (del PR #14, cerrado sin merge el 2026-11-05; rama claude/dazzling-einstein-w3qcyq como referencia, no se mergea)
 archivos: backend/replays/views.py (match_list), frontend/src/pages/Matches.jsx, backend/tests, frontend/e2e/humo.spec.js
-turnos: po 20261105T0230Z-c8Ahepa
+turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cfLc9Nn
 
 ## PR
 
