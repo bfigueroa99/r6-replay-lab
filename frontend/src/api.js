@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const BASE = '/api'
 
@@ -50,24 +50,26 @@ export function useApi(path, params, deps = []) {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [nonce, setNonce] = useState(0)
-  const alive = useRef(true)
 
   const serialized = qs(params)
 
   useEffect(() => {
-    alive.current = true
+    // una bandera por request y no una compartida: con una sola, al cambiar
+    // rapido de filtro la respuesta vieja que llega tarde ve la bandera ya
+    // prendida por la request nueva y pisa sus datos
+    let vigente = true
     setLoading(true)
     get(path, params)
       .then((payload) => {
-        if (alive.current) {
+        if (vigente) {
           setData(payload)
           setError(null)
         }
       })
-      .catch((err) => alive.current && setError(err.message))
-      .finally(() => alive.current && setLoading(false))
+      .catch((err) => vigente && setError(err.message))
+      .finally(() => vigente && setLoading(false))
     return () => {
-      alive.current = false
+      vigente = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, serialized, nonce, ...deps])
