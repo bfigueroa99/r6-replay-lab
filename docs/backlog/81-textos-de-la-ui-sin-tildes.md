@@ -1,7 +1,7 @@
 # 81. Textos de la UI sin tildes en Inicio, Tendencias y otras pantallas
 
-estado: implementado
-candado: revisor 2026-11-05T14:03Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/81-textos-de-la-ui-sin-tildes
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 4
 fuente: QA 20261105T0256Z-cYSSB7z, deriva de docs sobre dev 2da1b7d. `CLAUDE.md` (Estilo): "Los textos que ve el usuario en la UI si llevan tildes y ñ". Varios titulos y hints de `Panel` no las llevan
 archivos: frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/src/components/ui.jsx, frontend/src/pages/Coach.jsx, frontend/src/pages/Dashboard.jsx, frontend/src/pages/Datos.jsx, frontend/src/pages/Duelos.jsx, frontend/src/pages/Jugador.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/pages/Matches.jsx, frontend/src/pages/Operators.jsx, frontend/src/pages/Teammates.jsx, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js
-turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu
+turnos: qa 20261105T0256Z-cYSSB7z, arquitecto 20261105T1303Z-cfek47z, dev 20261105T1331Z-c7xSRnu, revisor 20261105T1358Z-caeHwMj
 
 ## PR
 
@@ -210,7 +210,56 @@ vigilada. `verificar.sh`: VERDE ebb00f844 (953 tests backend, 186 vitest,
 Skills: no aplica (cambio de textos).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-05 sobre 9461e04
+
+(revisor 20261105T1358Z-caeHwMj; rama al dia con dev 696c79d.)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; diff de un solo
+tema, solo cadenas). Ningun texto cambiado es clave: `csvName`, `label` de
+columnas (cabecera del CSV) e identificadores siguen igual; los tres textos
+que afirma el e2e se actualizaron; sin tildes en comentarios ni
+identificadores; sin `console.log`. `verificar.sh`: VERDE 94f3c93 (953 tests
+backend, 186 vitest, 59 e2e).
+
+Hallazgos (confirmados por el Revisor con `grep` sobre la rama):
+
+- [bug] MEDIUM criterio 2 sin cumplir: el barrido dejo textos visibles sin
+  tilde.
+  Que pasa: quedan cadenas que se pintan, fuera de la tabla del diseno, que
+  el criterio "no deja otras sin tilde" cubre.
+  Como reproducirlo o por que es cierto: `grep -nE "Ultimos|'7 dias'|'30 dias'|> mato a|> murio|Te gano|presion|Que hacer|Apoyate|· duro |'Duro'" frontend/src -r`
+  sobre la rama devuelve:
+  - `components/Filters.jsx:11-13`: "Ultimos 7 dias" / "30" / "90" (selector
+    de periodo de casi todas las paginas) -> "Últimos 7 días", etc.
+  - `pages/Trends.jsx:40-41`: `label: '7 dias'`, `'30 dias'` (se pinta en
+    "Últimas {v.label}") -> "7 días", "30 días".
+  - `pages/MatchDetail.jsx:313` "mato a" y `:317` "murio" (cada evento de la
+    timeline) -> "mató a", "murió". **Ojo:** el e2e `el timeline marca la
+    apertura de cada ronda` (`e2e/humo.spec.js`, `hasText: /mato a|murio/`)
+    las busca: hay que cambiar la regex a `/mató a|murió/` en el mismo commit.
+  - `pages/MatchDetail.jsx:130` "duro {n}s" -> "duró".
+  - `pages/Jugador.jsx:123` "Te gano" -> "Te ganó".
+  - `pages/Coach.jsx:19` "Apoyate en esto" -> "Apóyate"; `:56` "Que hacer:"
+    -> "Qué hacer:".
+  - `pages/Trends.jsx:943` "bajo presion" -> "presión".
+  Arreglo sugerido: aplicar esas tildes (solo tildes) y el ajuste de la regex
+  del e2e; repetir el barrido con verbos en preterito (`-o\b` agudos:
+  mato, murio, gano, quedo, duro) que el grep del diseno no miraba.
+
+- [estilo] LOW `label: 'Cuando'` (Dashboard.jsx:192, Matches.jsx:91,
+  Jugador.jsx:205, Teammates.jsx:351, Trends.jsx:470, Datos.jsx:253) y
+  `label: 'Duro'` (Trends.jsx:474).
+  Que pasa: cabeceras de columna sin tilde ("Cuándo", "Duró").
+  Por que es cierto: son interrogativo / preterito visibles; pero el `label`
+  es tambien la cabecera del CSV descargado, que "Fuera de alcance" deja
+  quieto implicitamente (claves y CSV).
+  Arreglo sugerido: decision del Dev; la variante conservadora es dejarlas y
+  anotarlo en `## Implementacion`. No bloquea.
+
+Veredicto: corregir -> `con hallazgos` (el MEDIUM deja el criterio 2 sin
+cumplir; es la razon de ser de la ficha).
+
+OMC: plan=— · revisión=2 hallazgos (0 arreglados; el Revisor no arregla) · verificación=—
 
 ## QA
 
