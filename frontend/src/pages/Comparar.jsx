@@ -7,24 +7,11 @@ import { filasDeComparacion, opcionesParaComparar } from '../compararPartidas.js
 
 export default function Comparar() {
   const { a, b } = useParams()
-  // sin la key, al cambiar B se veria la comparacion vieja mientras carga la nueva
-  return <Comparacion key={`${a}-${b || ''}`} a={a} b={b} />
+  // la key es solo A: cambiar B desde el selector no vuelve a pedir A ni el listado
+  return <Pagina key={a} a={a} b={b} />
 }
 
-function Comparacion({ a, b }) {
-  return b ? <ConB a={a} b={b} /> : <Pagina a={a} />
-}
-
-// B va en su propio componente: sin B no hay nada que pedir y useApi no tiene modo apagado
-function ConB({ a, b }) {
-  const partidaB = useApi(`/matches/${b}/`)
-  if (partidaB.status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
-  if (partidaB.error) return <ErrorBox error={partidaB.error} />
-  if (!partidaB.data) return <Loading />
-  return <Pagina a={a} b={b} datosB={partidaB.data} />
-}
-
-function Pagina({ a, b, datosB }) {
+function Pagina({ a, b }) {
   const navigate = useNavigate()
   const partidaA = useApi(`/matches/${a}/`)
   // el listado lo pide solo quien compara, no cada visita al detalle; 200 es el tope de match_list
@@ -36,7 +23,6 @@ function Pagina({ a, b, datosB }) {
 
   const actual = partidaA.data.match
   const { mismoMapa, otras } = opcionesParaComparar(listado.data?.matches, actual)
-  const filas = b ? filasDeComparacion(partidaA.data, datosB) : []
 
   return (
     <>
@@ -91,33 +77,46 @@ function Pagina({ a, b, datosB }) {
       {listado.error ? <ErrorBox error={listado.error} /> : null}
 
       {b ? (
-        <Panel title="Lado a lado" hint="La diferencia se lee desde A: verde si A sale mejor, rojo si sale mejor B.">
-          <div className="table-wrap">
-            <table className="comparar">
-              <thead>
-                <tr>
-                  <th scope="col" className="plain" />
-                  <th scope="col" className="plain">Partida A</th>
-                  <th scope="col" className="plain">Partida B</th>
-                  <th scope="col" className="plain">Diferencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.map((f) => (
-                  <tr key={f.clave}>
-                    <th scope="row" className="plain">{f.etiqueta}</th>
-                    <td>{f.a}</td>
-                    <td>{f.b}</td>
-                    <td className={`comparar-dif${f.mejor ? ` mejor-${f.mejor}` : ''}`}>{f.diferencia}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
+        // con key: sin ella, al cambiar B se veria la comparacion vieja mientras carga la nueva
+        <ConB key={b} b={b} datosA={partidaA.data} />
       ) : (
         <p className="note">Elegí la partida con la que comparar.</p>
       )}
     </>
+  )
+}
+
+function ConB({ b, datosA }) {
+  const partidaB = useApi(`/matches/${b}/`)
+  if (partidaB.status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
+  if (partidaB.error) return <ErrorBox error={partidaB.error} />
+  if (!partidaB.data) return <Loading />
+  const filas = filasDeComparacion(datosA, partidaB.data)
+
+  return (
+    <Panel title="Lado a lado" hint="La diferencia se lee desde A: verde si A sale mejor, rojo si sale mejor B.">
+      <div className="table-wrap">
+        <table className="comparar">
+          <thead>
+            <tr>
+              <th scope="col" className="plain" />
+              <th scope="col" className="plain">Partida A</th>
+              <th scope="col" className="plain">Partida B</th>
+              <th scope="col" className="plain">Diferencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((f) => (
+              <tr key={f.clave}>
+                <th scope="row" className="plain">{f.etiqueta}</th>
+                <td>{f.a}</td>
+                <td>{f.b}</td>
+                <td className={`comparar-dif${f.mejor ? ` mejor-${f.mejor}` : ''}`}>{f.diferencia}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
   )
 }

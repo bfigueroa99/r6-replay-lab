@@ -57,7 +57,7 @@ describe('filasDeComparacion', () => {
       partida({ my_totals: totales({ kst_pct: 82, rating: 1.35 }) }),
       partida({ my_totals: totales({ kst_pct: 70, rating: 1.2 }) }),
     )
-    expect(fila(filas, 'kst_pct')).toMatchObject({ a: '82%', b: '70%', diferencia: '+12', mejor: 'a' })
+    expect(fila(filas, 'kst_pct')).toMatchObject({ a: '82%', b: '70%', diferencia: '+12 pts', mejor: 'a' })
     expect(fila(filas, 'rating')).toMatchObject({ a: '1.35', b: '1.20', diferencia: '+0.15', mejor: 'a' })
   })
 
@@ -69,7 +69,7 @@ describe('filasDeComparacion', () => {
     })
     const b = partida({ rounds: [true, true, true].map((w) => ronda('Attack', w)), my_totals: totales() })
     const ataque = fila(filasDeComparacion(a, b), 'Attack')
-    expect(ataque).toMatchObject({ a: '4 de 6', b: '3 de 3', diferencia: '-33', mejor: 'b' })
+    expect(ataque).toMatchObject({ a: '4 de 6', b: '3 de 3', diferencia: '-33 pts', mejor: 'b' })
   })
 
   it('una ronda sin ganador cuenta en el total y no en las ganadas', () => {
@@ -136,5 +136,12 @@ describe('opcionesParaComparar', () => {
     const { mismoMapa, otras } = opcionesParaComparar(matches, { id: '1', map: 'Consulate (Y10)' })
     expect(mismoMapa).toEqual([{ id: 3, texto: '2026-11-03 10:00 · Consulate (Y10) · 4-2 · Victoria' }])
     expect(otras.map((o) => o.id)).toEqual([2, 4])
+  })
+
+  it('sin partida actual o con solo ella en el listado no rompe', () => {
+    const matches = [{ id: 1, map: 'Bank', played_at: '2026-11-01T10:00:00', score: '4-0', result: 'Victoria' }]
+    expect(opcionesParaComparar(matches, { id: 1, map: 'Bank' })).toEqual({ mismoMapa: [], otras: [] })
+    expect(opcionesParaComparar(matches, undefined).otras.map((o) => o.id)).toEqual([1])
+    expect(opcionesParaComparar(undefined, { id: 1 })).toEqual({ mismoMapa: [], otras: [] })
   })
 })

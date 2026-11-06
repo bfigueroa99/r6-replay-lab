@@ -75,7 +75,7 @@ function filaTexto(clave, etiqueta, a, b) {
   return { clave, etiqueta, a, b, diferencia: '', mejor: null }
 }
 
-function filaNumerica(clave, etiqueta, va, vb, formato, decimales) {
+function filaNumerica(clave, etiqueta, va, vb, formato, decimales, unidad = '') {
   if (!esNumero(va) || !esNumero(vb)) {
     return {
       clave,
@@ -94,7 +94,7 @@ function filaNumerica(clave, etiqueta, va, vb, formato, decimales) {
     etiqueta,
     a: formato(va),
     b: formato(vb),
-    diferencia: conSigno(ra - rb, decimales),
+    diferencia: conSigno(ra - rb, decimales) + unidad,
     mejor: quienMejor(clave, ra, rb),
   }
 }
@@ -110,7 +110,8 @@ function filaLado(clave, etiqueta, la, lb) {
   const texto = (l) => (l.total ? `${l.won} de ${l.total}` : GUION)
   // el winrate del lado y no el conteo: 4 de 6 no es mejor que 3 de 3
   const wr = (l) => (l.total ? (100 * l.won) / l.total : null)
-  const fila = filaNumerica(clave, etiqueta, wr(la), wr(lb), () => '', 0)
+  // con la unidad: un -33 al lado de 4 de 6 se leeria como resta de rondas
+  const fila = filaNumerica(clave, etiqueta, wr(la), wr(lb), () => '', 0, ' pts')
   return { ...fila, a: texto(la), b: texto(lb) }
 }
 
@@ -137,7 +138,7 @@ export function filasDeComparacion(a, b) {
     const va = ta ? ta[clave] : null
     const vb = tb ? tb[clave] : null
     if (clave === 'kst_pct') {
-      filas.push(filaNumerica(clave, etiqueta, va, vb, (v) => `${Math.round(v)}%`, 0))
+      filas.push(filaNumerica(clave, etiqueta, va, vb, (v) => `${Math.round(v)}%`, 0, ' pts'))
     } else if (clave === 'rating') {
       filas.push(filaNumerica(clave, etiqueta, va, vb, (v) => v.toFixed(2), 2))
     } else {
