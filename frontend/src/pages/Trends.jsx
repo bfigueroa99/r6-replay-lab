@@ -18,6 +18,7 @@ import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { vistaSinRondas } from '../tipoPartida.js'
+import { textoResumenSesion } from '../resumenSesion.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -230,6 +231,23 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
   const sesiones = useApi('/sessions/', filters)
   const [ventana, setVentana] = useState(1)
+  // { start, ok }: que sesion se copio y si el navegador dejo; el aviso nombra la
+  // sesion porque queda a la vista aunque cambien los filtros o el orden
+  const [copia, setCopia] = useState(null)
+
+  async function copiarSesion(sesion) {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia({ start: sesion.start, ok: false })
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(textoResumenSesion(sesion))
+      setCopia({ start: sesion.start, ok: true })
+    } catch {
+      setCopia({ start: sesion.start, ok: false })
+    }
+  }
   const rango = VENTANAS[ventana]
   const progreso = useApi('/compare/', { ...filters, by: rango.by, n: rango.n })
 
@@ -470,6 +488,13 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
 
       {sesiones.data?.sessions?.length ? (
         <Panel title="Sesiones" hint="Cada bloque de juego, de la más reciente hacia atrás.">
+          {copia && (
+            <p className="note" role="status">
+              {copia.ok
+                ? `Sesión copiada (${copia.start.slice(5, 16).replace('T', ' ')})`
+                : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+            </p>
+          )}
           <DataTable
             columns={[
               {
@@ -478,6 +503,14 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                 render: (row) => row.start.slice(5, 16).replace('T', ' '),
               },
               { key: 'matches', label: 'Partidas' },
+              {
+                key: 'wins',
+                label: 'Resultado',
+                sortable: false,
+                help: 'Partidas ganadas y perdidas. Las que no tienen resultado no son ni una ni otra.',
+                render: (row) => `${row.wins}G ${row.losses}P`,
+                csv: (row) => `${row.wins}-${row.losses}`,
+              },
               { key: 'hours', label: 'Duro', render: (row) => `${row.hours}h` },
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
@@ -485,6 +518,17 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
+              {
+                key: 'copiar',
+                label: '',
+                sortable: false,
+                csv: false,
+                render: (row) => (
+                  <button type="button" className="btn small" onClick={() => copiarSesion(row)}>
+                    Copiar
+                  </button>
+                ),
+              },
             ]}
             rows={sesiones.data.sessions}
             initialSort={{ key: 'start', dir: 'desc' }}

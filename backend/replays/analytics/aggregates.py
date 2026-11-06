@@ -2334,24 +2334,77 @@ def _por_partida(**filters) -> dict[int, dict]:
     }
 
 
+def _extremos_de_sesion(ids: list[int], por_partida: dict[int, dict], info: dict[int, dict],
+                        etiquetas: dict[tuple[str, int], str],
+                        baseline: float | None) -> tuple[dict | None, dict | None]:
+    """Mejor y peor partida de una sesion por el rating de tus rondas en ella.
+
+    Con una sola partida no hay extremos: "mejor" y "peor" serian la misma.
+    """
+    candidatas = []
+    for mid in ids:
+        # Copia: `derive` hace pop de los alias y la fila de `por_partida` es compartida.
+        rating = derive(dict(por_partida[mid]), baseline)["rating"]
+        if rating is not None:
+            candidatas.append((rating, info[mid]))
+    if len(candidatas) < 2:
+        return None, None
+    # Empate: gana la jugada antes, asi el resultado no depende del orden de la query.
+    candidatas.sort(key=lambda c: (c[1]["played_at"], c[1]["id"]))
+    mejor = max(candidatas, key=lambda c: c[0])
+    peor = min(candidatas, key=lambda c: c[0])
+
+    def resumen(rating, m):
+        return {
+            "id": m["id"],
+            "map": etiquetas.get((m["map_slug"], m["map_id"]), m["map_name"]),
+            "score": f"{m['my_score']}-{m['opponent_score']}",
+            "won": m["won"],
+            "rating": round(rating, 2),
+        }
+
+    # Todas con el mismo rating: no hay una peor que senalar (igual que el peor
+    # mapa de `matches_summary`).
+    return resumen(*mejor), (resumen(*peor) if peor[0] != mejor[0] else None)
+
+
 def sessions(limit: int = 30, **filters) -> list[dict]:
     """Resumen de cada sesion de juego, de la mas reciente hacia atras."""
     por_partida = _por_partida(**filters)
+    baseline = rating_baseline()  # una vez por request, no una por sesion
+    info = {
+        m["id"]: m
+        for m in Match.objects.filter(id__in=list(por_partida)).values(
+            "id", "map_slug", "map_id", "map_name", "my_score", "opponent_score", "won",
+            "played_at",
+        )
+    }
+    etiquetas = etiquetas_de_mapas({m["map_slug"] for m in info.values()})
     salida = []
     for sesion in _sessions_raw()[:limit]:
-        filas = [por_partida[mid] for mid in sesion["match_ids"] if mid in por_partida]
-        if not filas:
+        ids = [mid for mid in sesion["match_ids"] if mid in por_partida]
+        if not ids:
             continue
-        fila = _fold(filas)
+        fila = _fold([por_partida[mid] for mid in ids], baseline)
+        # `won=None` (partida sin cerrar, ficha 68) no es ni ganada ni perdida.
+        wins = sum(1 for mid in ids if info[mid]["won"] is True)
+        losses = sum(1 for mid in ids if info[mid]["won"] is False)
+        mejor, peor = _extremos_de_sesion(ids, por_partida, info, etiquetas, baseline)
         fila.update(
             {
                 "index": sesion["index"],
                 "start": sesion["start"].isoformat(),
                 "end": sesion["end"].isoformat(),
-                "matches": len(filas),
+                "matches": len(ids),
                 "hours": round(
                     (sesion["end"] - sesion["start"]).total_seconds() / 3600, 1
                 ),
+                "wins": wins,
+                "losses": losses,
+                "decided": wins + losses,
+                "undecided": len(ids) - wins - losses,
+                "best_match": mejor,
+                "worst_match": peor,
             }
         )
         salida.append(fila)
