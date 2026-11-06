@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06 01:11 UTC
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
