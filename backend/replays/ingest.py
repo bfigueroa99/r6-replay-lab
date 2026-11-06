@@ -153,6 +153,8 @@ def _import(folder: Path, *, force: bool) -> ImportResult:
     code_version = first.get("codeVersion", 0)
 
     with transaction.atomic():
+        # `defaults` no lleva `excluded`: una reimportacion no puede devolver a
+        # tus numeros una partida que sacaste.
         match, created = Match.objects.update_or_create(
             match_id=match_id,
             defaults={

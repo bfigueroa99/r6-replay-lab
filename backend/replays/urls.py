@@ -24,6 +24,7 @@ urlpatterns = [
     path("players/<int:pk>/ubisoft/", views.player_ubisoft, name="player-ubisoft"),
     path("matches/", views.match_list, name="match-list"),
     path("matches/<int:pk>/", views.match_detail, name="match-detail"),
+    path("matches/<int:pk>/exclude/", views.match_exclude, name="match-exclude"),
     path("export/", views.export_table, name="export"),
     path("unknown/", views.unknown, name="unknown"),
     path("overrides/", views.save_overrides, name="overrides"),

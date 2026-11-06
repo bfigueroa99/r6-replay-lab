@@ -87,6 +87,8 @@ class Match(models.Model):
     opponent_score = models.IntegerField(default=0)
     # None cuando la partida quedo incompleta (replays faltantes)
     won = models.BooleanField(null=True, blank=True)
+    # fuera de todo agregado; la partida se sigue mostrando
+    excluded = models.BooleanField(default=False)
 
     parsed_at = models.DateTimeField(auto_now=True)
     parser_version = models.CharField(max_length=16, blank=True)
