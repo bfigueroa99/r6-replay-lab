@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: implementado
-candado: revisor 2026-11-06 01:11 UTC
+estado: revisado
+candado: -
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: D9 de ALCANCE.md (idea del arquitecto 20261105T1920Z-cAaALb8 al disenar la 90); tramo siguiente de la ficha 90
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/stacksRivales.js, frontend/src/stacksRivales.test.js, frontend/src/pages/MatchDetail.jsx, backend/tests/test_stacks_rivales.py, frontend/e2e/stacks-rivales.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA, revisor 20261106T0109Z-cSomhFc
 
 ## PR
 
@@ -239,6 +239,39 @@ Skills: no aplica (lo dice el diseno).
 OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
 
 ## Revision
+
+## Revision 2026-11-06 sobre bd23b14
+
+(Revisor 20261106T0109Z-cSomhFc.) Dos ejes a ciegas (`omc-code-reviewer` con `revision.md`
+sobre el diff sin `docs/backlog`, y eje de intencion contra Que gana,
+Criterios y Fuera de alcance). Los dos: aprobar, sin CRITICAL ni HIGH.
+
+Criterios: los seis cubiertos (los tests que lista Implementacion; el e2e
+`stacks-rivales.spec.js` con 29 partidas, récord 29-0, corrio verde en
+`check.sh`). Nada fuera de `archivos:` salvo `styles.css` y el fixture
+`partida-sin-rondas.json`, explicados en Implementacion. Fila nueva en
+`metricas.md`. Sin tildes en identificadores, UI con tildes, sin `console.log`.
+
+Hallazgos confirmados, ninguno bloquea:
+- [test] LOW `backend/tests/test_stacks_rivales.py` (`test_el_detalle_no_aplica_los_filtros`):
+  el assert por la vista con `?map=` no puede fallar porque `match_detail`
+  no lee `request.GET`; lo que prueba de verdad es la comparacion contra
+  `rival_stacks(map=...)`. Arreglo: dejar un comentario de que la parte de la
+  vista solo fija el contrato de la URL.
+- [test] LOW `frontend/src/pages/MatchDetail.jsx` (`StacksRivales`): el
+  `return null` sin grupos no tiene un assert explicito. Arreglo: en el e2e de
+  la partida sin rondas, `expect(page.locator('.stacks-rivales')).toHaveCount(0)`.
+- [rendimiento] MEDIUM sin confirmar: cada GET del detalle recorre los stacks
+  de todo el historial (como Duelos) para quedarse con los de una partida. No
+  medido con una base grande; el diseno lo asume. Si molesta, generar solo
+  los subgrupos de los rivales de esta partida y contar su soporte.
+- Ubicacion "sobre el scoreboard": el aviso va entre las kpis y Rondas, como
+  fija el Diseno (paso de ubicacion). No es hallazgo.
+
+Veredicto: aprobar -> `revisado`. VERDE 2e576df13 (1005 tests backend, 216
+vitest, 68 e2e).
+
+OMC: plan=— · revisión=3 hallazgos (0 arreglados; 2 LOW, 1 MEDIUM sin confirmar) · verificación=—
 
 ## QA
 
