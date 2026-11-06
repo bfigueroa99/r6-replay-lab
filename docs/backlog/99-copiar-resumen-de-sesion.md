@@ -1,7 +1,7 @@
 # 99. Copiar el resumen de una sesion
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 03:46 UTC
 rama: -
 tipo: funcionalidad
 epica: exportar

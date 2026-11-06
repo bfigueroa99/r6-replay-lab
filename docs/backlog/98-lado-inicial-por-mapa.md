@@ -1,7 +1,7 @@
 # 98. Lado inicial por mapa
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 03:46 UTC
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
