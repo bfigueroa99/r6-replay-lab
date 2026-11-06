@@ -1,8 +1,8 @@
 # 97. Clutches silenciosos
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/97-clutches-silenciosos
 tipo: funcionalidad
 epica: impacto
 area: fullstack
