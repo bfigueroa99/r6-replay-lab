@@ -83,6 +83,15 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 | **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
 | **Primera ronda de cada lado** | Ronda 1: tu ronda sin prorroga de numero mas bajo de la partida. Primera tras el cambio: la ronda sin prorroga de numero mas bajo cuyo lado no es el inicial (una partida que nunca cambio de lado no tiene). Resto: tus demas rondas sin prorroga con lado. La prorroga no entra en ninguna fila. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia cual es la primera. Si faltan los `.rec` del arranque, la primera ronda que quedo se lee como "Ronda 1"; si falta el de la primera ronda del otro lado, la siguiente se lee como "Primera tras el cambio". |
 
+## Modo de juego
+
+En Tendencias, y como filtro "Modo" de la barra cuando la base tiene mas de un
+modo.
+
+| Metrica | Definicion |
+|---|---|
+| **Por modo** | Tus partidas agrupadas por el modo de la cabecera del `.rec` (Bomba, Rehén, Área segura, Bomba rápida; un id que el parser no conoce sale como `Unknown(<id>)`, y una partida sin modo como "Sin modo"). Partidas = partidas con alguna ronda tuya que pasa los filtros. Ganadas = partidas ganadas sobre las que tienen resultado; se lee de la partida entera, como "Lado inicial". Rondas ganadas, K/D y rating: las de siempre sobre las rondas de ese modo. |
+
 ## Contexto de la ronda
 
 En Tendencias, cada ronda se corta tambien por lo que paso antes de ella en la

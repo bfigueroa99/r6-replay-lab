@@ -56,7 +56,7 @@ def _fecha(valor: str, *, fin_del_dia: bool = False) -> datetime | None:
 
 def _filters(request: HttpRequest) -> dict:
     out: dict = {}
-    for key in ("side", "map", "operator", "site", "match_type"):
+    for key in ("side", "map", "operator", "site", "match_type", "gamemode"):
         value = request.GET.get(key)
         if value:
             out[key] = value
@@ -192,6 +192,9 @@ def filter_options(request: HttpRequest) -> JsonResponse:
             "match_types": sorted(
                 {m for m in Match.objects.values_list("match_type", flat=True).distinct() if m}
             ),
+            "gamemodes": sorted(
+                {g for g in Match.objects.values_list("gamemode", flat=True).distinct() if g}
+            ),
             "sides": ["Attack", "Defense"],
             "sessions": agg.session_options(),
         }
@@ -280,6 +283,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "round_endings": agg.round_endings(**filters),
             "by_round_length": agg.by_round_length(**filters),
             "by_start_side": agg.by_start_side(**filters),
+            "by_gamemode": agg.by_gamemode(**filters),
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),

@@ -18,6 +18,7 @@ import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { vistaSinRondas } from '../tipoPartida.js'
+import { filasPorModo, hayVariosModos } from '../modoDeJuego.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -279,6 +280,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const filasMargen = filasDeMargen(margen)
   const duracion = data.by_round_length
   const porHora = data.by_hour ?? []
+  const porModo = filasPorModo(data.by_gamemode)
   const porDia = data.by_weekday ?? []
   const matas = data.kills_by_time || []
   const muertes = data.deaths_by_time || []
@@ -902,6 +904,34 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               {duracion.rounds_unknown_clock} {duracion.rounds_unknown_clock === 1 ? 'ronda sin reloj quedó' : 'rondas sin reloj quedaron'} fuera.
             </p>
           ) : null}
+        </Panel>
+      ) : null}
+
+      {hayVariosModos(porModo) ? (
+        <Panel
+          title="Por modo"
+          hint="Partidas, rondas y rendimiento en cada modo de juego. Las partidas sin resultado no entran en Ganadas."
+        >
+          <DataTable
+            columns={[
+              { key: 'modo', label: 'Modo', left: true },
+              { key: 'matches', label: 'Partidas' },
+              {
+                key: 'match_winrate',
+                label: 'Ganadas',
+                digits: 0,
+                suffix: '%',
+                help: 'Partidas ganadas sobre las que tienen resultado.',
+              },
+              { key: 'winrate', label: 'Rondas ganadas', digits: 0, suffix: '%' },
+              { key: 'kd', label: 'K/D', digits: 2 },
+              { key: 'rating', label: 'Rating', digits: 2 },
+            ]}
+            rows={porModo}
+            initialSort={{ key: 'matches', dir: 'desc' }}
+            rowKey={(r) => r.gamemode || 'sin-modo'}
+            csvName="por-modo"
+          />
         </Panel>
       ) : null}
 

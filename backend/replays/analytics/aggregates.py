@@ -41,7 +41,7 @@ from .metrics import trade_window
 # --------------------------------------------------------------------- filtros
 
 FILTER_KEYS = (
-    "side", "map", "operator", "site", "match_type", "since", "until", "ranked_only", "session",
+    "side", "map", "operator", "site", "match_type", "gamemode", "since", "until", "ranked_only", "session",
 )
 
 
@@ -73,6 +73,8 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
         qs = qs.filter(round__site=filters["site"])
     if filters.get("match_type"):
         qs = qs.filter(round__match__match_type=filters["match_type"])
+    if filters.get("gamemode"):
+        qs = qs.filter(round__match__gamemode=filters["gamemode"])
     if filters.get("ranked_only"):
         qs = qs.filter(round__match__match_type="Ranked")
     if filters.get("since"):
@@ -99,6 +101,8 @@ def match_queryset(**filters) -> QuerySet[Match]:
         qs = qs.filter(**filtro_mapa(filters["map"], prefijo=""))
     if filters.get("match_type"):
         qs = qs.filter(match_type=filters["match_type"])
+    if filters.get("gamemode"):
+        qs = qs.filter(gamemode=filters["gamemode"])
     if filters.get("ranked_only"):
         qs = qs.filter(match_type="Ranked")
     if filters.get("since"):
@@ -1669,6 +1673,44 @@ def by_start_side(**filters) -> list[dict]:
                 "winrate": _pct(wins, n_decididas),
             }
         )
+    return filas
+
+
+def by_gamemode(**filters) -> list[dict]:
+    """Tus partidas agrupadas por el modo de juego de la cabecera del `.rec`.
+
+    El modo es de la partida: con filtro de lado, el winrate de partida sigue
+    siendo el de la partida entera, como `by_start_side`. Una partida sin modo
+    (cabeceras viejas) queda en su propia fila con `gamemode` vacio.
+    """
+    por_partida = _por_partida(**filters)
+    datos = {
+        mid: (modo, won)
+        for mid, modo, won in Match.objects.filter(id__in=list(por_partida))
+        .values_list("id", "gamemode", "won")
+    }
+    baseline = rating_baseline()
+    grupos: dict[str, list[int]] = {}
+    for mid in por_partida:
+        grupos.setdefault(datos.get(mid, ("", None))[0] or "", []).append(mid)
+
+    filas = []
+    for modo, mids in grupos.items():
+        t = _fold([por_partida[m] for m in mids], baseline)
+        decididas = [datos[m][1] for m in mids if datos.get(m, ("", None))[1] is not None]
+        filas.append({
+            "gamemode": modo,
+            "matches": len(mids),
+            "matches_decided": len(decididas),
+            "matches_won": sum(decididas),
+            "match_winrate": _pct(sum(decididas), len(decididas)),
+            "rounds": t["rounds"] or 0,
+            "rounds_won": t["rounds_won"] or 0,
+            "winrate": t["winrate"],
+            "kd": t["kd"],
+            "rating": t["rating"],
+        })
+    filas.sort(key=lambda f: (-f["matches"], f["gamemode"]))
     return filas
 
 
