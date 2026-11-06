@@ -108,3 +108,13 @@ class ModoDeJuegoTests(TestCase):
         _partida(3, "", [True])
         filas = agg.by_gamemode()
         self.assertEqual([f["gamemode"] for f in filas], ["Bomb", "", "Hostage"])
+
+    def test_por_modo_con_filtro_de_lado_cuenta_ganada_la_partida_que_perdio_su_defensa(self):
+        # Gana 2-1 pero pierde su unica ronda de defensa: leyendo las rondas
+        # filtradas contaria como perdida; el resultado es el de la partida.
+        _partida(3, "SecureArea", [True, False, True])
+        area = {f["gamemode"]: f for f in agg.by_gamemode(side="Defense")}["SecureArea"]
+        self.assertEqual(area["rounds"], 1)
+        self.assertEqual(area["rounds_won"], 0)
+        self.assertEqual(area["matches_won"], 1)
+        self.assertEqual(area["match_winrate"], 100.0)
