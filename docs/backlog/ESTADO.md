@@ -77,7 +77,7 @@ Proximo: Papel en tope de disenado: 83 (espera la 79, PR #81 del humano), 92 y 9
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`).
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
-- Rutina: 3 disparos sin rastro en 48 h (~11-05T06:15Z ~11-05T17:06Z ~11-05T21:02Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
+- Rutina: 2 disparos sin rastro en 48 h (~11-05T17:19Z ~11-05T21:28Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.)
 
 ## Para el equipo
