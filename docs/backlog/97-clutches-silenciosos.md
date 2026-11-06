@@ -1,7 +1,7 @@
 # 97. Clutches silenciosos
 
-estado: revisado
-candado: qa 2026-11-06T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/97-clutches-silenciosos
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: K11 de ALCANCE.md; [Siege.GG, rating rebalance](https://siege.gg/blog/946-player-rating-rebalance) (2026-08-11: "It also allows for 'quiet' clutches to have an impact on rating"); investigador 2026-11-03
 archivos: backend/replays/analytics/metrics.py, backend/replays/models.py, backend/replays/migrations/0005_roundplayer_clutch_kills.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/test_clutch.py, backend/tests/test_recompute.py, backend/tests/test_seed_demo.py, frontend/src/clutchSilencioso.js, frontend/src/clutchSilencioso.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0319Z-csweoG8, revisor 20261106T0345Z-cTsg2Tv
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0319Z-csweoG8, revisor 20261106T0345Z-cTsg2Tv, qa 20261106T0404Z-ckvVNri
 
 ## PR
 
@@ -26,7 +26,7 @@ escondiendote.
 
 ## Criterios de aceptacion
 
-- [ ] Al importar, cada `RoundPlayer` con `clutch_vs > 0` guarda cuantas
+- [x] Al importar, cada `RoundPlayer` con `clutch_vs > 0` guarda cuantas
       bajas hizo desde el instante en que quedo como unico vivo de su equipo
       (columna nueva, p. ej. `clutch_kills`, calculada en
       `analytics/metrics.py` con la misma recorrida del feed que
@@ -34,18 +34,18 @@ escondiendote.
       ficha 67). `recompute` la llena en la base existente. Tests de
       `metrics.py`: un 1v2 ganado con dos bajas da 2, un 1v1 ganado por
       tiempo da 0, una baja hecha antes de quedar solo no cuenta.
-- [ ] La API que ya sirve `clutch_conversion` agrega, por cada fila 1vX y
+- [x] La API que ya sirve `clutch_conversion` agrega, por cada fila 1vX y
       por lado, los ganados silenciosos (ganados con `clutch_kills = 0`) y
       el total de ganados silenciosos por condicion de victoria
       (`Round.win_condition`, con las inferidas del reloj marcadas aparte,
       como dice `docs/formato-rec.md`). Test de Django con datos sinteticos.
-- [ ] La tabla de clutches de `Teammates.jsx` muestra la columna
+- [x] La tabla de clutches de `Teammates.jsx` muestra la columna
       "Silenciosos" (cantidad y % de los ganados) y una nota con el reparto
       por condicion de victoria; con muestra chica se marca como las otras
       filas.
-- [ ] `docs/metricas.md` tiene la fila de "Clutch silencioso" con su
+- [x] `docs/metricas.md` tiene la fila de "Clutch silencioso" con su
       definicion exacta (que cuenta como baja, desde que instante).
-- [ ] El e2e ve la columna en la pagina de Compañeros con los datos de
+- [x] El e2e ve la columna en la pagina de Compañeros con los datos de
       `seed_demo` sin errores en la consola (si `seed_demo` necesita un
       clutch silencioso, se agrega y se ajustan los numeros que afirme el e2e).
 
@@ -53,57 +53,7 @@ escondiendote.
 
 - Tocar el Rating: la Siege.GG premia el clutch silencioso, pero cambiar la
   formula del Rating que ya se muestra es una decision del humano (P10). Si
-  el diseno lo cree util, va a `## Revision 2026-11-06 sobre c3c753c
-
-(Revisor 20261106T0345Z-cTsg2Tv. Revision a ciegas en dos ejes, receta 2 de
-OMC: dos `omc-code-reviewer` en paralelo, estandares e intencion; los dos
-"aprobar". Cada hallazgo de abajo lo confirme en el codigo.)
-
-Partida en verde: `verificar.sh` VERDE 1995ec0 (1069 tests backend, 257
-vitest, 76 e2e); dev no se movio desde la implementacion.
-
-Hallazgos:
-
-- [intencion] MEDIUM `frontend/src/pages/Teammates.jsx:54-58, 264-281`
-  Que pasa: la API manda `attack.silent` y `defense.silent` por fila
-  (criterio 2), pero la pagina no los muestra ni los exporta en el CSV; el
-  reparto por lado de los silenciosos solo se ve cambiando el filtro de lado
-  de la barra. Arreglo sugerido: aplanar `attack_silent`/`defense_silent` en
-  el `map` y mostrarlos en el `title` de la celda o en el CSV, o decir en el
-  hint que el lado sale con el filtro. No bloquea: el criterio 3 pide
-  cantidad y % de los ganados, y eso esta.
-- [estilo] LOW `frontend/src/clutchSilencioso.test.js:1`
-  Que pasa: el comentario de cabecera dice "Compañeros" con ñ (CLAUDE.md:
-  comentarios sin tildes ni ñ). Arreglo: "Companeros".
-- [estilo] LOW `frontend/src/pages/Teammates.jsx:289`
-  Que pasa: `notaSilenciosos(data?.clutch_silent)` se llama dos veces en el
-  mismo render. Arreglo: una constante junto a `conversion`.
-
-Notas sin hallazgo: el `*` de Silenciosos corta sobre ganados y no sobre
-intentos como sitio y operador; es deliberado y esta documentado en el
-comentario, en `metricas.md` y en el `title`. La ronda 153 del seed (ataque
-ganado `ObjectiveOrTime` con `possible_plant=False`) no la produciria el
-import real; es deliberada y comentada para no mover los tests de plant.
-
-Criterios: 1 (`ClutchKillsTests`, `ImportClutchTests`,
-`MigracionClutchKillsTests`, `RecomputeClutchKillsTests`), 2
-(`ConversionTests`, `ClutchSilenciosoTests`), 3 (columna, `*`, nota; e2e y
-vitest), 4 (fila "Clutch silencioso" en `metricas.md`) y 5 (seed + e2e de
-Compañeros) cubiertos. El diff no sale de `archivos:` (el factory
-`make_round_player` esta explicado en Implementacion). Sin `print` ni
-`console.log`; identificadores sin tildes, UI con tildes.
-
-Seguridad: no se sumo `omc-security-reviewer`; el unico cambio en
-`ingest.py` es asignar `clutch_kills=m["clutch_kills"]` al crear el
-`RoundPlayer`, sin lectura nueva del `.rec`.
-
-Veredicto: aprobar -> `revisado`. Los tres hallazgos los puede tomar el Dev
-si vuelve la ficha; no frenan la QA.
-
-Skills: no aplica.
-OMC: plan=— · revisión=3 hallazgos (0 arreglados: 1 MEDIUM, 2 LOW, ninguno bloquea) · verificación=—
-
-## Para el humano` como pregunta.
+  el diseno lo cree util, va a `## Para el humano` como pregunta.
 - Señal del Coach sobre clutches (es K9, otra idea).
 - Clutches perdidos: un 1vX perdido sin bajas no es "silencioso", es perdido.
 
@@ -460,6 +410,124 @@ Verificacion: `verificar.sh` VERDE d2809d2 (1069 tests backend, 257 vitest, 76 e
 Skills: no aplica (el diseno resolvia todo; ningun dominio nuevo).
 Arena: no (sin puntos abiertos).
 OMC: plan=— · revisión=4 hallazgos (4 arreglados o documentados) · verificación=—
+
+## Revision 2026-11-06 sobre c3c753c
+
+(Revisor 20261106T0345Z-cTsg2Tv. Revision a ciegas en dos ejes, receta 2 de
+OMC: dos `omc-code-reviewer` en paralelo, estandares e intencion; los dos
+"aprobar". Cada hallazgo de abajo lo confirme en el codigo.)
+
+Partida en verde: `verificar.sh` VERDE 1995ec0 (1069 tests backend, 257
+vitest, 76 e2e); dev no se movio desde la implementacion.
+
+Hallazgos:
+
+- [intencion] MEDIUM `frontend/src/pages/Teammates.jsx:54-58, 264-281`
+  Que pasa: la API manda `attack.silent` y `defense.silent` por fila
+  (criterio 2), pero la pagina no los muestra ni los exporta en el CSV; el
+  reparto por lado de los silenciosos solo se ve cambiando el filtro de lado
+  de la barra. Arreglo sugerido: aplanar `attack_silent`/`defense_silent` en
+  el `map` y mostrarlos en el `title` de la celda o en el CSV, o decir en el
+  hint que el lado sale con el filtro. No bloquea: el criterio 3 pide
+  cantidad y % de los ganados, y eso esta.
+- [estilo] LOW `frontend/src/clutchSilencioso.test.js:1`
+  Que pasa: el comentario de cabecera dice "Compañeros" con ñ (CLAUDE.md:
+  comentarios sin tildes ni ñ). Arreglo: "Companeros".
+- [estilo] LOW `frontend/src/pages/Teammates.jsx:289`
+  Que pasa: `notaSilenciosos(data?.clutch_silent)` se llama dos veces en el
+  mismo render. Arreglo: una constante junto a `conversion`.
+
+Notas sin hallazgo: el `*` de Silenciosos corta sobre ganados y no sobre
+intentos como sitio y operador; es deliberado y esta documentado en el
+comentario, en `metricas.md` y en el `title`. La ronda 153 del seed (ataque
+ganado `ObjectiveOrTime` con `possible_plant=False`) no la produciria el
+import real; es deliberada y comentada para no mover los tests de plant.
+
+Criterios: 1 (`ClutchKillsTests`, `ImportClutchTests`,
+`MigracionClutchKillsTests`, `RecomputeClutchKillsTests`), 2
+(`ConversionTests`, `ClutchSilenciosoTests`), 3 (columna, `*`, nota; e2e y
+vitest), 4 (fila "Clutch silencioso" en `metricas.md`) y 5 (seed + e2e de
+Compañeros) cubiertos. El diff no sale de `archivos:` (el factory
+`make_round_player` esta explicado en Implementacion). Sin `print` ni
+`console.log`; identificadores sin tildes, UI con tildes.
+
+Seguridad: no se sumo `omc-security-reviewer`; el unico cambio en
+`ingest.py` es asignar `clutch_kills=m["clutch_kills"]` al crear el
+`RoundPlayer`, sin lectura nueva del `.rec`.
+
+Veredicto: aprobar -> `revisado`. Los tres hallazgos los puede tomar el Dev
+si vuelve la ficha; no frenan la QA.
+
+Skills: no aplica.
+OMC: plan=— · revisión=3 hallazgos (0 arreglados: 1 MEDIUM, 2 LOW, ninguno bloquea) · verificación=—
+
+## QA 2026-11-06 sobre 8515aed
+
+(QA 20261106T0404Z-ckvVNri. Ejercite el sistema: base sintetica con feed real, runserver,
+migracion desde el esquema de dev, seed, build y mutaciones. Los comandos usan
+una base temporal: `S=<scratchpad>; export R6_ENV_FILE=$S/.env SQLITE_PATH=$S/x.sqlite3`
+desde `backend/`; el script de siembra, `sembrar.py`, usa `tests/factories.py`
+con 6 rondas de un 1vX cada una y su feed de `Event`.)
+
+- **check.sh**: `verificar.sh` -> `VERDE 8515aedfb en 136s: 1069 tests backend, 257 vitest, 76 e2e. Todo en verde.`
+- **Criterio 1 (import, recompute, regla)**: base sintetica sembrada con
+  `clutch_kills` a mano = `[(1,vs2,k2), (2,vs1,k0), (3,vs2,k0), (4,vs2,k0 perdido), (5,vs2,k0 sin ganador), (6,vs2,k1)]`
+  (ronda 2: la baja antes de quedar solo no cuenta; ronda 6: baja a nick
+  desconocido cuenta, suicidio del rival no). `manage.py recompute` deja los
+  mismos valores y el segundo `recompute --dry-run` dice "Nada que recalcular
+  ... las 6 rondas ya estan al dia" (idempotente).
+- **Migracion 0005**: base con el esquema de `origin/dev` (worktree, hasta
+  `0004`) y la misma siembra sin `clutch_kills`; `migrate` en la rama:
+  `Applying replays.0005_roundplayer_clutch_kills... OK` y deja
+  `[(1,2,2), (2,1,0), (3,2,0), (4,2,0), (5,2,0), (6,2,1)]`, lo mismo que el
+  feed. `seed_demo` de dev migrado: `recompute --dry-run` -> 981 filas antes
+  y despues, igual que en dev (el seed escribe `clutch_vs` a mano).
+  `makemigrations --check --dry-run` -> "No changes detected".
+- **Criterio 2 (API)**: `runserver` sobre la base sintetica, `curl /api/teammates/?<q>`
+  con `""`, `side=Attack`, `side=Defense`, `until=foo`, `page=-1`, `map=`,
+  `side=`, `map=Inexistente`, `days=99999999`, `side=Nada`: todos 200, log sin
+  Traceback. Sin filtro: `clutch_silent={won:4, silent:2, silent_pct:50.0, by_condition:{elimination:0, other:1, unknown:1}}`,
+  filas `1v1` (1 intento, 1 ganado, 1 silencioso, 100 %, `*`, `attack.silent=1`)
+  y `1v2` (4, 3, 1, 33.3 %, `*`, `defense.silent=1`): el perdido y el sin
+  ganador no son silenciosos. `side=Attack` -> won 1, other 1;
+  `side=Defense` -> won 3, unknown 1. `map=Inexistente` / `side=Nada` ->
+  ceros, `silent_pct: null`, conversion `[]`. Base vacia: lo mismo, 200.
+- **Seed**: en la rama, `clutch_silent = {won:2, silent:1, silent_pct:50.0, by_condition:{elimination:0, other:1, unknown:0}}`
+  y `[("1v1",1), ("1v2",0)]`, lo que pide el diseno.
+- **Criterios 3 y 5 (UI, e2e)**: el e2e de Compañeros (dentro de los 76 en
+  verde) afirma la celda `1 (50%)` y la nota. `vite build`: chunk inicial
+  `index` 194.59 kB (gzip 63.91) en dev y en la rama, sin crecer;
+  `Teammates` 11.53 kB.
+- **Criterio 4**: fila "Clutch silencioso" en `docs/metricas.md`.
+- **Mutaciones** (arbol restaurado, `git status` limpio): M1 `clutch_kills`
+  cuenta desde el inicio del feed -> 5 FAIL en `tests.test_clutch` (incluida
+  `test_una_baja_antes_de_quedar_solo_no_cuenta`); M2 silencioso sin exigir
+  ganado -> 4 FAIL (`test_un_clutch_perdido_sin_bajas_no_es_silencioso`...);
+  M3 muestra chica con `<=` -> FAIL `test_cuatro_ganados_son_muestra_chica_y_cinco_no`;
+  M4 `celdaSilenciosos` sin guion -> vitest FAIL "da guion sin ganados".
+- Ficha: la seccion `## Revision` habia quedado pegada dentro de "Fuera de
+  alcance"; la movi despues de `## Implementacion` sin cambiar su texto.
+
+Los tres hallazgos no bloqueantes de la revision siguen abiertos (lado de
+los silenciosos sin mostrar, comentario con ñ, `notaSilenciosos` doble):
+cosmeticos, para una ficha chica si se quiere.
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 5 de 5 VERIFIED, 0 bloqueantes)
+
+## Verificar en el PC
+
+```powershell
+cd backend; python manage.py backup
+python manage.py migrate                 # aplica 0005_roundplayer_clutch_kills
+python manage.py recompute --dry-run     # no deberia sumar filas por clutch_kills respecto de antes
+```
+
+Despues, en Compañeros: Silenciosos con numeros creibles (no 100 % en todas
+las filas); abrir una ronda contada como silenciosa y ver en el feed que no
+hubo bajas tuyas despues de caer tu ultimo compañero.
 
 ## Para el humano
 
