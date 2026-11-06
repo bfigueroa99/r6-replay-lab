@@ -1,6 +1,6 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-06T02:52Z
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: O1 de ALCANCE.md; `replica/features.csv` "Delta de win rate de un operador contra la base, por mapa y sitio" (must, partial: la ficha 65 da el delta contra tu lado, falta el corte por mapa y sitio); [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_operador_por_sitio.py, frontend/src/operadorSitio.js, frontend/src/operadorSitio.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0135Z-cYfUHhx, revisor 20261106T0200Z-cC8Xgpa, dev 20261106T0228Z-c6PJnck, revisor 20261106T0228Z-cgEzFUY
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0135Z-cYfUHhx, revisor 20261106T0200Z-cC8Xgpa, dev 20261106T0228Z-c6PJnck, revisor 20261106T0228Z-cgEzFUY, qa 20261106T0252Z-c2pqRwT
 
 ## PR
 
@@ -397,7 +397,72 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=3 hallazgos (1 cubierto con test, 1 LOW al humano, 1 descartado) · verificación=—
 
-## QA
+## QA 2026-11-06 sobre 5898350
+
+(qa 20261106T0252Z-c2pqRwT)
+
+Repetible desde `backend/` con `S` = un directorio temporal; el script de
+siembra (`sembrar.py`, factories de `tests/`) esta copiado abajo.
+
+- **check.sh**: `verificar.sh` -> `VERDE 5898350c0 en 126s: 1030 tests
+  backend, 227 vitest, 69 e2e. Todo en verde.` (rama ya contiene
+  `origin/dev` 8f3fb74; `merge-tree` sin conflicto).
+- **Base vacia** (`DATA_DIR=$S/vacia migrate; runserver`):
+  `curl /api/operators/sites/` -> 200 `{"rows": [], "min_rounds": 10,
+  "bands": 2}`; `/operadores` muestra el estado vacio de siempre ("Todavía
+  no hay replays importados"), sin panel nuevo, consola limpia.
+- **Base sembrada** (`manage.py shell < sembrar.py`): Club House A ataque
+  con Ash 20 (18 ganadas) + 5 rondas sin ganador, Zofia 20 (6), Sledge 12
+  (7); 10 rondas de Ash sin sitio; 10 sin operador; un compañero
+  (`is_me=False`, Thermite) en cada ronda; Jager 15 (12) y Mute 15 (3) en
+  defensa; Consulate Y7 (Unranked) Ash 12/12 y Zofia 12/0; Consulate Y10
+  (octubre) Ash 11/11 y Zofia 11/1. `curl /api/operators/sites/` da 9
+  filas y cuadran a mano: Ash Club House `rounds=20` (las 5 sin ganador
+  fuera), `rest_rounds=32` (Zofia 20 + Sledge 12; el compañero, la tanda
+  sin sitio y la sin operador no entran), `rest_winrate=40.6` (13/32),
+  delta +49.4, margen 28.0, `rinde`; Sledge -1.7 `ruido`; Consulate Y7 y
+  Y10 en filas separadas con etiqueta de version; orden por |delta|
+  (100, 100, 90.9, 90.9, 60, 60, 49.4, 48.1, 1.7).
+- **Parametros borde** (todos 200, sin traza): `min_rounds=0` y `=-3` ->
+  minimo 1; `=foo` -> 10; `=99999` -> 10000 y 0 filas; `=12` -> 7 filas;
+  `operator=Ash` -> 3 filas de Ash con `rest_rounds` de los demas;
+  `operator=Nadie` -> 0; `operator=` -> 9; `side=Defense` -> Jager y
+  Mute; `side=foo` -> 0; `map=consulate` -> 4; `map=418126004176` -> 2
+  de Y10 con `map` = "Consulate (Y10)"; `map=99999999999999999999` y
+  `map=%C2%B2` -> 0; `match_type=Unranked` -> 2 de Y7; `since=2026-10-01`
+  -> 2; `until=2026-09-02` -> 7; `until=foo`, `since=foo`, `page=-1`,
+  `days=999999999999` -> 9 (ignorados); `days=-1`, `session=-1`,
+  `session=foo` -> 0, igual que `/api/operators/` con los mismos
+  parametros (comportamiento previo, no de esta ficha); `session=0` -> 2.
+  `POST` -> 403 (CSRF de runserver; el test da 405), sin barra -> 404.
+  Vecinos `/api/operators/` y `/api/operators/catalog/` -> 200.
+- **UI** (Playwright sobre runserver sembrado): panel "Por sitio" con las 9
+  filas en el orden del backend ("Te rinde"/"Te hunde"/"Sin señal", ±
+  margen); barra Lado = Solo defensa -> 2 filas (request
+  `?side=Defense`); Mapa = Consulate (Y10) -> 2 filas (`?map=418126004176`);
+  Tipo = Unranked -> 2 filas; Solo defensa + Unranked -> la pagina muestra
+  "0 rondas con estos filtros" (la decide `/operators/`, el panel no la
+  pisa); clic en la cabecera Operador reordena. Consola limpia en todo.
+- **Chunk inicial**: `vite build` de `origin/dev` `index-*.js` 192.50 kB,
+  de la rama 192.63 kB (+0.07 %); `Operators-*.js` 2.89 -> 4.81 kB (lazy).
+- **Mutantes** sobre `aggregates.py`, `manage.py test
+  tests.test_operador_por_sitio`:
+  - resto = total del sitio -> 5 FAIL (incluido
+    `test_compara_contra_el_resto_y_no_contra_el_total`);
+  - sin `.filter(round__my_team_won__isnull=False)` -> FAIL
+    `test_las_rondas_sin_ganador_no_cuentan`;
+  - `base_queryset(**filters)` (el operador recorta la base) -> FAIL
+    `test_el_filtro_de_operador_no_vacia_el_resto`;
+  - minimo solo del operador -> FAIL
+    `test_sin_muestra_del_operador_o_del_resto_no_hay_fila`.
+  Codigo restaurado, `git status` limpio.
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hay `## Verificar
+  en el PC` obligatorio. El umbral 10 sigue calibrado solo con datos
+  sinteticos (ya anotado en `### Umbral` del diseno).
+
+Veredicto: los seis criterios con evidencia -> `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS (6 de 6 criterios VERIFIED; gap de "hunde" con numeros fijos cerrado: `test_un_operador_que_gana_mas_que_el_resto_del_sitio_rinde` afirma `zofia["verdict"] == "hunde"`)
 
 ## Pendiente
 
