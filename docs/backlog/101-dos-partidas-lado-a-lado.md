@@ -1,8 +1,8 @@
 # 101. Dos partidas lado a lado
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
 epica: paridad-referencia
 area: frontend
