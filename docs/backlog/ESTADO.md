@@ -22,7 +22,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`): merge-tree contra dev c63314e limpio.
-2. `claude/equipo-dev/93-operador-por-sitio` (`implementado`): ya contiene dev 8f3fb74; merge-tree limpio contra la 79 y la 95; cualquier orden.
+2. `claude/equipo-dev/93-operador-por-sitio` (`revisado`): ya contiene dev 8f3fb74; merge-tree limpio contra la 79 y la 95; cualquier orden.
 3. `claude/equipo-dev/95-partida-anterior-y-siguiente` (`revisado`): limpio contra dev 8f3fb74 y la 93; **choca con la 79 en `MatchDetail.jsx`** (los dos tocan la barra del `page-head`, lo previo el diseno): la que entre segunda junta los botones.
 
 ## Alcance
@@ -46,7 +46,7 @@ RESUMEN propuesto=0 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 | 97-clutches-silenciosos | disenado (consenso OMC APPROVE; `clutch_kills` + migracion 0005 o 0006 segun la 79 + `recompute`; `clutch_silent` en Compañeros; el seed suma una ronda inferida) | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo: 95 `revisado`, para QA; 93 `implementado`, para el Revisor (otro contexto que c6PJnck); 96 `implementado`, para el Revisor (otro contexto que cCNBxR6); cola llena (4/4). Papel en tope de disenado (83, 96, 97) y 0 `propuesto`: el proximo PO propone. 96 se implementa en cualquier orden; 97 mejor despues de la 79 (migracion 0005), si no renumera quien entre segundo; 83 espera la 79 (PR #81 del humano).
+Proximo: 95 y 93 `revisado`, para QA (otro contexto que cgEzFUY); 96 `implementado`, para el Revisor (otro contexto que cCNBxR6); cola llena (4/4). Papel en tope de disenado (83, 96, 97) y 0 `propuesto`: el proximo PO propone. 96 se implementa en cualquier orden; 97 mejor despues de la 79 (migracion 0005), si no renumera quien entre segundo; 83 espera la 79 (PR #81 del humano).
 
 ## Ultimo turno de cada rol
 
