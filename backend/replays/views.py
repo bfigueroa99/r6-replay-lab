@@ -577,6 +577,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "scoreboard": scoreboard,
             "team_trades": team_trades,
             "phases": agg.fases_de_partida(rounds, match.my_team_index),
+            "rival_stacks": agg.rival_stacks_de_partida(match.id),
             "my_totals": my_totals,
         }
     )

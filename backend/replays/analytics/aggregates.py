@@ -1380,6 +1380,31 @@ def by_margin(**filters) -> dict:
 MIN_PARTIDAS_MAPA = 3
 
 
+def racha_actual_de_partidas(partidas: list[dict]) -> dict | None:
+    """Partidas seguidas con el mismo resultado, contando hacia atras desde la ultima.
+
+    `partidas` llega en orden cronologico (`played_at`, `id`). Las de `won`
+    nulo (empate o incompleta, ficha 68) se saltan sin cortar: no son un
+    resultado, y un `.rec` faltante no deberia romperte la racha.
+    """
+    racha: list[dict] = []
+    for p in reversed(partidas):
+        if p["won"] is None:
+            continue
+        if racha and p["won"] != racha[0]["won"]:
+            break
+        racha.append(p)
+    if not racha:
+        return None
+    racha.reverse()
+    return {
+        "result": "win" if racha[0]["won"] else "loss",
+        "length": len(racha),
+        "since": racha[0]["played_at"].isoformat(),
+        "match_ids": [p["id"] for p in racha],
+    }
+
+
 def matches_summary(**filters) -> dict:
     """Tus partidas en una linea: ganadas, rondas por partida y mejor y peor mapa.
 
@@ -1441,6 +1466,7 @@ def matches_summary(**filters) -> dict:
         "min_matches_map": MIN_PARTIDAS_MAPA,
         "best_map": mejor,
         "worst_map": peor,
+        "current_streak": racha_actual_de_partidas(partidas),
     }
 
 
@@ -2513,6 +2539,27 @@ def rival_stacks(min_matches: int = 2, **filters) -> list[dict]:
     grupo mas grande: si A, B y C se repiten juntos, A+B no sale aparte salvo
     que sume alguna partida propia.
     """
+    return _filas_de_stacks(_stacks_rivales(min_matches, **filters))
+
+
+def rival_stacks_de_partida(match_id: int, min_matches: int = 2) -> list[dict]:
+    """Los stacks rivales repetidos que jugaron en esta partida.
+
+    Sin filtros: el aviso del detalle habla de todo tu historial contra ese
+    grupo, no de lo que la pagina anterior tenia filtrado. La maximalidad de
+    Duelos es por conjunto de partidas, y aca no alcanza: si A+B se repite en
+    3 partidas y A+B+C en 2, las dos filas existen, pero en una partida donde
+    estuvieron los tres decir tambien "A y B" es repetir lo mismo. Se queda el
+    grupo mas grande que aplica a esta partida; el record sale de la misma
+    funcion que la fila de Duelos, asi los numeros coinciden.
+    """
+    pares = [(ids, g) for ids, g in _stacks_rivales(min_matches) if match_id in ids]
+    pares = [(ids, g) for ids, g in pares if not any(g < otro for _, otro in pares)]
+    return _filas_de_stacks(pares)
+
+
+def _stacks_rivales(min_matches: int, **filters) -> list[tuple[frozenset[int], frozenset[int]]]:
+    """Pares (partidas, grupo) de los stacks rivales, ya sin grupos redundantes."""
     me_ids = _me_ids()
     if not me_ids:
         return []
@@ -2536,6 +2583,11 @@ def rival_stacks(min_matches: int = 2, **filters) -> list[dict]:
         for grupo in grupos
         if not any(grupo < otro for otro in grupos)
     ]
+    return mejor
+
+
+def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list[dict]:
+    """Nicks y record de cada grupo, en el orden de la tabla de Duelos."""
     if not mejor:
         return []
 

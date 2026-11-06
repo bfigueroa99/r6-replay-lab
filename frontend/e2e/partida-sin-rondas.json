@@ -70,6 +70,7 @@
     "unknown_team_kills": 0,
     "teamkills": 0
   },
+  "rival_stacks": [],
   "my_totals": {
     "rounds": 0,
     "rounds_won": 0,

@@ -621,6 +621,8 @@ test('el Resumen muestra tus partidas', async ({ page }) => {
   await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
   await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
   await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
+  // Todas ganadas desde la primera, INICIO de seed_demo
+  await expect(page.locator('.racha-actual')).toHaveText('Racha actual: 29 victorias seguidas desde 2026-08-01')
 
   expect(errores).toEqual([])
 })

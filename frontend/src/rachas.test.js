@@ -1,8 +1,8 @@
-/** Tests del texto de las rachas de rondas del detalle de partida. */
+/** Tests del texto de las rachas: rondas del detalle de partida y partidas del Inicio. */
 
 import { describe, expect, it } from 'vitest'
 
-import { textoDeRachas } from './rachas.js'
+import { textoDeRachas, textoRachaActual } from './rachas.js'
 
 describe('textoDeRachas', () => {
   it('junta las dos rachas', () => {
@@ -29,5 +29,32 @@ describe('textoDeRachas', () => {
   it('sin rachas devuelve vacio', () => {
     expect(textoDeRachas({ wins: null, losses: null })).toBe('')
     expect(textoDeRachas(undefined)).toBe('')
+  })
+})
+
+describe('textoRachaActual', () => {
+  it('la racha actual nula no da texto', () => {
+    expect(textoRachaActual(null)).toBe('')
+    expect(textoRachaActual(undefined)).toBe('')
+  })
+
+  it('una victoria va en singular sin seguidas', () => {
+    const racha = { result: 'win', length: 1, since: '2026-11-05T20:00:00' }
+    expect(textoRachaActual(racha)).toBe('Racha actual: 1 victoria (2026-11-05)')
+  })
+
+  it('una derrota va en singular sin seguidas', () => {
+    const racha = { result: 'loss', length: 1, since: '2026-11-05T20:00:00' }
+    expect(textoRachaActual(racha)).toBe('Racha actual: 1 derrota (2026-11-05)')
+  })
+
+  it('varias derrotas van en plural con desde', () => {
+    const racha = { result: 'loss', length: 2, since: '2026-11-04T21:30:00' }
+    expect(textoRachaActual(racha)).toBe('Racha actual: 2 derrotas seguidas desde 2026-11-04')
+  })
+
+  it('varias victorias van en plural con desde', () => {
+    const racha = { result: 'win', length: 29, since: '2026-08-01T20:00:00' }
+    expect(textoRachaActual(racha)).toBe('Racha actual: 29 victorias seguidas desde 2026-08-01')
   })
 })
