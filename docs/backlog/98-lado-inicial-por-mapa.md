@@ -1,7 +1,7 @@
 # 98. Lado inicial por mapa
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06 04:11 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/98-lado-inicial-por-mapa
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -195,3 +195,57 @@ estandar con la proporcion de los dos lados juntos; dentro del margen es
 ruido.
 
 OMC: plan=— · revisión=— · verificación=—
+
+## Implementacion
+
+dev 20261106T0411Z-cHA9KBb. Quedo el diseno completo, en su orden:
+
+- `aggregates.py`: `MIN_PARTIDAS_LADO_INICIAL = MIN_PARTIDAS_MAPA` (3),
+  `_celda_lado_inicial` y `by_start_side_map`, agrupado en Python por
+  `(map_slug, map_id)` con `etiquetas_de_mapas`. Banda con
+  `_margen_y_veredicto` (proporcion combinada), no `_ruido`, como pide el
+  diseno. Con un lado bajo el minimo, `delta`, `margin` y `verdict` en `None`.
+  Orden `matches` desc y `map` asc. `by_start_side` no cambia.
+- `views.trends`: `by_start_side_map` debajo de `by_start_side`.
+- `frontend/src/ladoInicialMapa.js` (puro): `filasLadoInicialMapa`,
+  `textoVeredicto`, `MIN_PARTIDAS_LADO = 3`. La fila aplanada trae tambien
+  `veredicto` (el texto) para que el CSV lo baje igual que la tabla.
+- `Trends.jsx`: `<h3>` "Lado inicial por mapa" y `DataTable` debajo de "Según
+  el lado con que arrancas", con la nota del minimo; sin filas, "Todavía no
+  hay partidas con lado inicial conocido.".
+- `docs/metricas.md`: fila **Lado inicial por mapa** debajo de **Lado inicial**.
+
+Tests (cada criterio con nombre):
+
+- Criterio 1: `test_lado_inicial_por_mapa_cuenta_cada_mapa_por_separado`
+  (minimo parcheado a 1 para ver 50/100/0 y con el real todo `None`).
+- Criterio 2: `test_un_lado_bajo_el_minimo_no_da_porcentaje_ni_veredicto`,
+  `test_una_diferencia_grande_con_muestra_da_veredicto` (8 y 8 -> "ataque"),
+  `test_una_diferencia_chica_con_poca_muestra_es_ruido` (3-1 contra 2-2).
+- `won=None`: `test_partida_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje`.
+- Criterio 3: `test_el_filtro_de_lado_no_cambia_el_lado_inicial_por_mapa` y
+  `test_el_filtro_de_mapa_de_la_api_deja_solo_ese_mapa`.
+- Versiones: `test_las_versiones_de_un_mapa_van_en_filas_distintas`.
+- Vacio: `test_trends_sin_datos_devuelve_las_filas_vacias_sin_500` suma
+  `by_start_side_map == []`.
+- Criterio 4: vitest `ladoInicialMapa.test.js` (5) y el e2e `'Tendencias
+  muestra la tabla por mitad'` (tabla, celda `Bank`, "Poca muestra").
+- Criterio 5: fila en `metricas.md`.
+
+Desvios del diseno:
+
+- Los dos porcentajes ("Ganadas en ataque/defensa") van con 1 decimal y no
+  con 0: con 0 la resta visible no cuadraba con la Diferencia (67 % - 33 % =
+  "33.4 pts"). Hallazgo LOW de la revision ciega.
+- El test de paridad de la constante del frontend se llama "un lado necesita
+  tres partidas con resultado": no puede verificar el backend y no lo promete.
+- Test extra de ruido separado del de veredicto (el diseno los juntaba en uno).
+
+Sin migracion ni `recompute`. Verificacion manual de la ficha (runserver) no
+corrida aparte: el e2e la cubre sobre `seed_demo`.
+
+verificar.sh: VERDE 9b16f4a27 (1044 tests backend, 256 vitest, 76 e2e).
+
+Skills: no aplica (lo resolvio el diseno; tabla con el `DataTable` de siempre).
+
+OMC: plan=— · revisión=3 hallazgos LOW (3 arreglados) · verificación=—
