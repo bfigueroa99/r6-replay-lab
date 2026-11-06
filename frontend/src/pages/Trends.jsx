@@ -18,10 +18,10 @@ import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { vistaSinRondas } from '../tipoPartida.js'
-import { filasPorModo, hayVariosModos } from '../modoDeJuego.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
+import { filasPorModo, hayVariosModos } from '../modoDeJuego.js'
 import { MIN_PARTIDAS_LADO, filasLadoInicialMapa } from '../ladoInicialMapa.js'
 import {
   celdasConPocaMuestra,
