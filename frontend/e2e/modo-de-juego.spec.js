@@ -19,7 +19,7 @@ test('con un solo modo la barra no muestra el selector', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('.page-head p')).toHaveText(/rondas analizadas/)
   await expect(page.getByLabel('Tipo')).toBeVisible()
-  await expect(page.getByLabel('Modo', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('combobox', { name: 'Modo', exact: true })).toHaveCount(0)
   expect(errores).toEqual([])
 })
 
@@ -31,7 +31,7 @@ test('el selector de modo filtra y Limpiar lo saca', async ({ page }) => {
   const subtitulo = page.locator('.page-head p')
   await expect(subtitulo).toHaveText(/rondas analizadas/)
   const sinFiltro = await subtitulo.textContent()
-  const modo = page.getByLabel('Modo', { exact: true })
+  const modo = page.getByRole('combobox', { name: 'Modo', exact: true })
   await expect(modo.locator('option')).toHaveText(['Todos', 'Bomba', 'Rehén'])
 
   const pedido = page.waitForRequest(/\/api\/overview\/\?.*gamemode=Hostage/)
@@ -50,7 +50,7 @@ test('el selector de modo filtra y Limpiar lo saca', async ({ page }) => {
 test('un enlace con modo muestra el selector aunque la base tenga uno solo', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/?gamemode=Hostage')
-  await expect(page.getByLabel('Modo', { exact: true })).toHaveValue('Hostage')
+  await expect(page.getByRole('combobox', { name: 'Modo', exact: true })).toHaveValue('Hostage')
   await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
   expect(errores).toEqual([])
 })
@@ -60,7 +60,7 @@ test('Partidas manda el modo al listado', async ({ page }) => {
   const pedido = page.waitForRequest(/\/api\/matches\/\?.*gamemode=Hostage/)
   await page.goto('/partidas?gamemode=Hostage')
   await pedido
-  await expect(page.getByLabel('Modo', { exact: true })).toHaveValue('Hostage')
+  await expect(page.getByRole('combobox', { name: 'Modo', exact: true })).toHaveValue('Hostage')
   await expect(page.locator('table tbody a[href^="/partidas/"]')).toHaveCount(0)
   expect(errores).toEqual([])
 })
