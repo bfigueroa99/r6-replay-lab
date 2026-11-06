@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, pct } from '../components/ui.jsx'
+import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
+import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
@@ -39,17 +40,31 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   if (loading && !data) return <Loading />
 
   const totals = data?.totals
-  if (!totals?.duels) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaDuelos({ rondas: data?.rounds, duelos: totals?.duels, filtros: filters, cargando: loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Duelos" filtros={<Filters value={filters} onChange={setFilters} />} />
+  }
+  if (vista === 'sin-duelos') {
+    return (
+      <SinRondasFiltradas
+        titulo="Duelos"
+        {...textosSinDuelos(filters)}
+        filtros={<Filters value={filters} onChange={setFilters} />}
+      />
+    )
+  }
 
   const base = totals.winrate
   const nemesis = data.nemesis || []
   const operators = data.operators || []
   const faced = data.faced || { base: {}, operators: [] }
   const rivals = data.rivals ?? []
+  const stacks = data.rival_stacks ?? []
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      Muestra minima
+      Muestra mínima
       <select value={minDuels} onChange={(e) => setMinDuels(Number(e.target.value))}>
         {MUESTRAS.map((m) => (
           <option key={m.value} value={m.value}>
@@ -77,7 +92,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
         <div>
           <h1>Duelos</h1>
           <p>
-            Quien te mata y a quien matas. Sale del kill feed, no de un scoreboard: son duelos
+            Quién te mata y a quién matas. Sale del kill feed, no de un scoreboard: son duelos
             reales, uno contra uno.
           </p>
         </div>
@@ -103,9 +118,9 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       <Panel
         title="Por operador rival"
         hint={
-          'Con que operador te estaban matando. El operador sale del scoreboard de esa ronda, ' +
+          'Con qué operador te estaban matando. El operador sale del scoreboard de esa ronda, ' +
           'porque el kill feed del .rec no lo trae en el evento. Un porcentaje muy bajo suele ' +
-          'ser utilidad que no estas limpiando, no punteria.'
+          'ser utilidad que no estás limpiando, no puntería.'
         }
         right={selector}
       >
@@ -122,7 +137,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           initialSort={{ key: 'duels', dir: 'desc' }}
           rowKey={(row) => row.operator}
           csvName="duelos-por-operador"
-          empty={`Ningun operador llega a ${minDuels} duelos con estos filtros.`}
+          empty={`Ningún operador llega a ${minDuels} duelos con estos filtros.`}
         />
       </Panel>
 
@@ -167,8 +182,8 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       <Panel
         title="Por rival"
         hint={
-          'Agrupado por persona (profileID), asi que un cambio de nick no parte la fila. En ' +
-          'ranked solo casi nadie se repite: con pocos duelos esto es anecdota y no patron, y ' +
+          'Agrupado por persona (profileID), así que un cambio de nick no parte la fila. En ' +
+          'ranked solo casi nadie se repite: con pocos duelos esto es anécdota y no patrón, y ' +
           'por eso el coach solo opina desde 8 duelos contra la misma persona.'
         }
       >
@@ -249,6 +264,58 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.player_id}
           csvName="rivales-repetidos"
           empty="Nadie te tocó de rival en 2 o más partidas con estos filtros."
+        />
+      </Panel>
+
+      <Panel
+        title="Stacks rivales que se repiten"
+        hint={
+          'Grupos de 2 o más rivales que te tocaron juntos en el equipo contrario en 2 o más ' +
+          'partidas. Si el grupo entero se repite, sale una sola fila con todos; un grupo más ' +
+          'chico sale aparte solo si suma partidas propias. El replay no trae nombres de ' +
+          'equipo: es solo coincidencia de personas.'
+        }
+      >
+        <DataTable
+          columns={[
+            {
+              key: 'players',
+              label: 'Rivales',
+              left: true,
+              sortable: false,
+              render: (row) =>
+                row.players.map((p, i) => (
+                  <React.Fragment key={p.player_id}>
+                    {i > 0 && ' · '}
+                    <Link to={`/jugadores/${p.player_id}`}>{p.username}</Link>
+                  </React.Fragment>
+                )),
+              // sin esto la celda sale vacia en el CSV: `players` es una lista
+              csv: (row) => row.players.map((p) => p.username).join(' + '),
+            },
+            { key: 'size', label: 'Juntos' },
+            { key: 'matches', label: 'Partidas' },
+            { key: 'wins', label: 'Ganadas' },
+            { key: 'losses', label: 'Perdidas' },
+            {
+              key: 'record',
+              label: 'Récord',
+              sortable: false,
+              render: (row) => `${row.wins}-${row.losses}`,
+              csv: (row) => `${row.wins}-${row.losses}`,
+            },
+            {
+              key: 'winrate',
+              label: 'Winrate',
+              help: 'Sobre las partidas con resultado: las que no lo tienen cuentan en Partidas y no acá.',
+              render: (row) => pct(row.winrate),
+            },
+          ]}
+          rows={stacks}
+          initialSort={{ key: 'matches', dir: 'desc' }}
+          rowKey={(row) => row.players.map((p) => p.player_id).join('-')}
+          csvName="stacks-rivales"
+          empty="Ningún grupo de rivales se repitió en 2 o más partidas con estos filtros."
         />
       </Panel>
     </>

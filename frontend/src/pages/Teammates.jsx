@@ -11,13 +11,16 @@ import {
   Loading,
   Panel,
   SideChip,
+  SinRondasFiltradas,
   Stat,
   fmt,
   pct,
 } from '../components/ui.jsx'
+import { vistaSinRondas } from '../tipoPartida.js'
 import { filasDeGrupo, textoHabituales } from '../grupo.js'
 import { MUESTRA_PARTIDAS } from '../margen.js'
 import { filasConPocaMuestra } from '../muestra.js'
+import { celdaSilenciosos, notaSilenciosos } from '../clutchSilencioso.js'
 
 const SAMPLES = [
   { value: 5, label: '5+ rondas' },
@@ -35,7 +38,11 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   if (loading && !data) return <Loading />
 
   const base = overview.data?.overall
-  if (base && !base.rounds) return <EmptyState onImport={runImport} importing={importing} />
+  const vista = vistaSinRondas({ vacio: Boolean(base) && !base.rounds, filtros: filters, cargando: loading || overview.loading })
+  if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
+  if (vista === 'filtrado') {
+    return <SinRondasFiltradas titulo="Compañeros" filtros={<Filters value={filters} onChange={setFilters} />} />
+  }
 
   const baseline = base?.winrate ?? null
   const rows = (data?.synergy || []).map((row) => ({
@@ -65,7 +72,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
         <div>
           <h1>Compañeros</h1>
           <p>
-            Con quien ganas y con quien no. Solo cuentan las rondas que jugaron en tu equipo
+            Con quién ganas y con quién no. Solo cuentan las rondas que jugaron en tu equipo
             {baseline === null ? '' : `, contra tu ${baseline.toFixed(0)}% general`}.
           </p>
         </div>
@@ -75,10 +82,10 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Sinergia"
-        hint="El winrate de un compañero es el de las rondas compartidas, no el suyo aparte. Con pocas rondas es varianza: sube la muestra minima antes de sacar conclusiones."
+        hint="El winrate de un compañero es el de las rondas compartidas, no el suyo aparte. Con pocas rondas es varianza: sube la muestra mínima antes de sacar conclusiones."
         right={
           <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            Muestra minima
+            Muestra mínima
             <select value={minRounds} onChange={(e) => setMinRounds(Number(e.target.value))}>
               {SAMPLES.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -244,7 +251,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Clutches"
-        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda."
+        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda. Silenciosos son los ganados sin bajas tuyas desde que quedaste solo."
       >
         <h3>Conversión por rivales</h3>
         <DataTable
@@ -255,6 +262,23 @@ export default function Teammates({ filters, setFilters, runImport, importing })
             { key: 'pct', label: 'Conversión', render: (row) => pct(row.pct) },
             { key: 'attack_pct', label: 'Ataque', render: (row) => pct(row.attack_pct) },
             { key: 'defense_pct', label: 'Defensa', render: (row) => pct(row.defense_pct) },
+            // al final: los e2e afirman el principio de cada fila
+            {
+              key: 'silent',
+              label: 'Silenciosos',
+              help: 'Clutches ganados sin ninguna baja tuya desde que quedaste solo. Un * marca menos de 5 ganados: con tan poca muestra el % todavía no dice mucho.',
+              csv: (row) => row.silent,
+              render: (row) => (
+                <>
+                  {celdaSilenciosos(row)}
+                  {row.silent_low_sample ? (
+                    <span className="dim muestra-chica" title="Menos de 5 ganados">
+                      *
+                    </span>
+                  ) : null}
+                </>
+              ),
+            },
           ]}
           rows={conversion}
           initialSort={{ key: 'vs', dir: 'asc' }}
@@ -262,6 +286,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           csvName="clutch-conversion"
           empty="Todavía no quedaste último en ninguna ronda."
         />
+        {notaSilenciosos(data?.clutch_silent) ? <p className="note">{notaSilenciosos(data?.clutch_silent)}</p> : null}
         <h3>Clutch por mapa y sitio</h3>
         <DataTable
           columns={[
@@ -367,7 +392,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           initialSort={{ key: 'played_at', dir: 'desc' }}
           rowKey={(row) => `${row.match_id}-${row.round}`}
           csvName="clutches"
-          empty="Todavia no ganaste ninguna ronda quedandote solo."
+          empty="Todavía no ganaste ninguna ronda quedándote solo."
         />
       </Panel>
     </>

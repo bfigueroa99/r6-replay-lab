@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const BASE = '/api'
 
@@ -15,7 +15,11 @@ export function qs(params = {}) {
 export async function get(path, params) {
   const response = await fetch(`${BASE}${path}${qs(params)}`)
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} en ${path}`)
+    // el status viaja aparte para que la pagina distinga "no existe" (404) de
+    // la API caida, que llega como TypeError del fetch y sin status
+    const error = new Error(`${response.status} ${response.statusText} en ${path}`)
+    error.status = response.status
+    throw error
   }
   return response.json()
 }
@@ -44,34 +48,46 @@ export async function post(path, params, body = {}) {
   return response.json()
 }
 
-/** Hook de lectura: devuelve { data, error, loading, reload }. */
+/** Hook de lectura: devuelve { data, error, status, loading, reload }. */
 export function useApi(path, params, deps = []) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
+  const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [nonce, setNonce] = useState(0)
-  const alive = useRef(true)
 
   const serialized = qs(params)
 
   useEffect(() => {
-    alive.current = true
+    // una bandera por request y no una compartida: con una sola, al cambiar
+    // rapido de filtro la respuesta vieja que llega tarde ve la bandera ya
+    // prendida por la request nueva y pisa sus datos
+    let vigente = true
     setLoading(true)
+    // un 404 del path anterior haria que la pagina diga "no existe" mientras
+    // carga el nuevo
+    setStatus(null)
     get(path, params)
       .then((payload) => {
-        if (alive.current) {
+        if (vigente) {
           setData(payload)
           setError(null)
+          setStatus(null)
         }
       })
-      .catch((err) => alive.current && setError(err.message))
-      .finally(() => alive.current && setLoading(false))
+      .catch((err) => {
+        if (vigente) {
+          setError(err.message)
+          setStatus(err.status ?? null)
+        }
+      })
+      .finally(() => vigente && setLoading(false))
     return () => {
-      alive.current = false
+      vigente = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, serialized, nonce, ...deps])
 
   const reload = useCallback(() => setNonce((n) => n + 1), [])
-  return { data, error, loading, reload }
+  return { data, error, status, loading, reload }
 }

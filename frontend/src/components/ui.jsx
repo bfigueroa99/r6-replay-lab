@@ -238,8 +238,44 @@ export function ErrorBox({ error }) {
     <div className="error">
       <b>No pude leer la API.</b> {String(error)}
       <br />
-      <span className="note">Revisa que Django este corriendo en el puerto 8000.</span>
+      <span className="note">Revisa que Django esté corriendo.</span>
     </div>
+  )
+}
+
+/** Un enlace a algo que no esta en la base: no es la API caida, y no hay que culparla. */
+export function NoExiste({ titulo, a, texto }) {
+  return (
+    <div className="empty-state">
+      <h2>{titulo}</h2>
+      <Link className="btn" to={a}>
+        {texto}
+      </Link>
+    </div>
+  )
+}
+
+/**
+ * Pagina sin rondas por culpa de los filtros: la barra se queda para poder
+ * apretar Limpiar. Recibe la barra armada porque cada pagina la configura distinto.
+ */
+export function SinRondasFiltradas({
+  titulo,
+  filtros,
+  subtitulo = '0 rondas con estos filtros',
+  nota = 'Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.',
+}) {
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>{titulo}</h1>
+          <p>{subtitulo}</p>
+        </div>
+      </div>
+      {filtros}
+      <p className="note">{nota}</p>
+    </>
   )
 }
 

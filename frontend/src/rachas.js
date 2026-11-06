@@ -16,3 +16,15 @@ export function textoDeRachas(rachas) {
   ].filter(Boolean)
   return partes.length ? `Racha: ${partes.join(' · ')}` : ''
 }
+
+/**
+ * "Racha actual: 3 victorias seguidas desde 2026-11-05" para el Inicio; ''
+ * sin racha. Con una sola partida no hay "seguidas" que decir.
+ */
+export function textoRachaActual(racha) {
+  if (!racha) return ''
+  const ganada = racha.result === 'win'
+  const fecha = racha.since.slice(0, 10)
+  if (racha.length === 1) return `Racha actual: 1 ${ganada ? 'victoria' : 'derrota'} (${fecha})`
+  return `Racha actual: ${racha.length} ${ganada ? 'victorias' : 'derrotas'} seguidas desde ${fecha}`
+}

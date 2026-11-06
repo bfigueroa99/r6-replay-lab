@@ -2,9 +2,12 @@ import React, { Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import { filasDeAperturasConTrade } from '../aperturasTrade.js'
 import { filasDeRecords } from '../records.js'
 import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import Filters from '../components/Filters.jsx'
+import { hayFiltros } from '../tipoPartida.js'
+import { textoRachaActual } from '../rachas.js'
 import {
   Bar,
   DataTable,
@@ -30,11 +33,18 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
   if (overview.loading && !overview.data) return <Loading />
 
   const total = overview.data?.overall
-  if (!total || !total.rounds) {
+  // con filtros puestos y 0 rondas la base no esta vacia: el EmptyState
+  // escondia la barra y no habia forma de apretar Limpiar. Se mira tambien
+  // los filtros que devolvio la API: al limpiar, la respuesta filtrada de 0
+  // rondas sigue en pantalla hasta que llega la nueva, y pintar el EmptyState
+  // en ese instante volvia a montar la barra
+  const vacio = !total || !total.rounds
+  if (vacio && !hayFiltros(filters) && !hayFiltros(overview.data?.filters)) {
     return <EmptyState onImport={runImport} importing={importing} />
   }
 
   const { attack, defense, recent_form: form, data_health: health } = overview.data
+  const racha = textoRachaActual(overview.data.matches_summary?.current_streak)
   const records = filasDeRecords(overview.data.records)
   const topInsights = (coach.data?.insights || []).filter((i) => i.severity !== 'positivo').slice(0, 3)
   const series = (trends.data?.by_match || []).map((row, i) => ({
@@ -49,17 +59,24 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         <div>
           <h1>Resumen</h1>
           <p>
-            {total.matches} partidas · {total.rounds} rondas analizadas
+            {vacio ? '0 rondas con estos filtros' : `${total.matches} partidas · ${total.rounds} rondas analizadas`}
           </p>
         </div>
       </div>
 
       <Filters value={filters} onChange={setFilters} />
 
+      {/* un solo arbol para los dos casos: la barra no se vuelve a montar al
+          pasar por 0 rondas y no pierde el rango de fechas abierto */}
+      {vacio ? (
+        <p className="note">Ninguna ronda con estos filtros. Cambia alguno o usa Limpiar.</p>
+      ) : (
+      <>
+
       <div className="kpis" style={{ marginBottom: 18 }}>
         <Stat3 label="Rondas ganadas" value={pct(total.winrate)} sub={`${total.rounds_won} de ${total.rounds}`} value_={total.winrate} />
         <Stat3 label="K/D" value={ratio(total.kd)} sub={`${total.kills} bajas · ${total.deaths} muertes`} value_={total.kd === null ? null : total.kd * 50} />
-        <Stat3 label="Kills por ronda" value={ratio(total.kpr)} sub="referencia solida: 0.8" value_={total.kpr === null ? null : total.kpr * 60} />
+        <Stat3 label="Kills por ronda" value={ratio(total.kpr)} sub="referencia sólida: 0.8" value_={total.kpr === null ? null : total.kpr * 60} />
         <Stat3 label="Headshots" value={pct(total.hs_pct)} sub={`${total.headshots} de ${total.kills}`} value_={total.hs_pct} />
         <Stat3
           label="Duelos de apertura"
@@ -82,6 +99,34 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           value_={total.untraded_death_pct === null ? null : 100 - total.untraded_death_pct}
         />
       </div>
+
+      <Panel
+        title="Aperturas que pesan"
+        hint="Si tu apertura sobrevivió al trade y si tu equipo vengó la que perdiste."
+      >
+        <DataTable
+          columns={[
+            { key: 'label', label: 'Apertura', sortable: false, left: true },
+            { key: 'rondas', label: 'Rondas', render: (row) => (row.rondas === null ? '—' : row.rondas) },
+            {
+              key: 'winrate',
+              label: 'Ganadas',
+              render: (row) =>
+                row.winrate === null ? (
+                  '—'
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                    <Bar value={row.winrate} />
+                    <span style={{ minWidth: 38 }}>{pct(row.winrate)}</span>
+                  </div>
+                ),
+            },
+          ]}
+          rows={filasDeAperturasConTrade(total)}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => row.key}
+        />
+      </Panel>
 
       {overview.data.matches_summary ? <ResumenPartidas s={overview.data.matches_summary} /> : null}
 
@@ -119,7 +164,8 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
           />
         </Panel>
 
-        <Panel title="Ultimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
+        <Panel title="Últimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
+          {racha && <p className="note racha-actual" style={{ margin: '0 0 8px' }}>{racha}</p>}
           <div className="form-row" style={{ marginBottom: 12 }}>
             {form.map((match) => (
               <Link
@@ -143,7 +189,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
               { key: 'kills', label: 'K' },
               { key: 'deaths', label: 'D' },
               { key: 'kd', label: 'K/D', digits: 2 },
-              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda tipica.' },
+              { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
               {
                 key: 'played_at',
                 label: 'Cuando',
@@ -183,15 +229,15 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       ) : null}
 
       {series.length > 2 ? (
-        <Panel title="Evolucion por partida" hint="Rondas ganadas y kills por ronda, en orden cronologico.">
-          <Suspense fallback={<Loading>Cargando grafico...</Loading>}>
+        <Panel title="Evolución por partida" hint="Rondas ganadas y kills por ronda, en orden cronológico.">
+          <Suspense fallback={<Loading>Cargando gráfico...</Loading>}>
             <EvolucionChart series={series} />
           </Suspense>
         </Panel>
       ) : null}
 
       {topInsights.length ? (
-        <Panel title="Lo que hay que corregir" right={<Link className="btn small" to="/coach">Ver todo el analisis</Link>}>
+        <Panel title="Lo que hay que corregir" right={<Link className="btn small" to="/coach">Ver todo el análisis</Link>}>
           {topInsights.map((insight) => (
             <div key={insight.key} className={`insight ${insight.severity}`}>
               <h3>{insight.title}</h3>
@@ -203,26 +249,28 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       ) : null}
 
       {health ? (
-        <Panel title="Que tan completa esta la data" hint="Lo que el formato .rec entrega y lo que hay que inferir.">
+        <Panel title="Qué tan completa está la data" hint="Lo que el formato .rec entrega y lo que hay que inferir.">
           <ul className="note" style={{ margin: 0, paddingLeft: 18 }}>
             <li>{health.rounds} rondas tuyas importadas de {health.matches} partidas.</li>
             <li>
-              {health.rounds_uncertain_win_condition} rondas donde la condicion de victoria se
+              {health.rounds_uncertain_win_condition} rondas donde la condición de victoria se
               infiere (el replay ya no expone los eventos del defuser).
             </li>
-            <li>{health.rounds_possible_plant} rondas con plant probable segun el reloj.</li>
+            <li>{health.rounds_possible_plant} rondas con plant probable según el reloj.</li>
             <li>
               Trades calculados con una ventana de <b>{fmt(health.trade_window, 0)}s</b>. Se cambia
-              en el <code>.env</code> con <code>TRADE_WINDOW_SECONDS</code>, y despues hay que
+              en el <code>.env</code> con <code>TRADE_WINDOW_SECONDS</code>, y después hay que
               correr <code>manage.py recompute</code>.
             </li>
             {health.rounds_without_site ? <li>{health.rounds_without_site} rondas sin sitio detectado.</li> : null}
             {!health.assists_available ? (
-              <li>Asistencias no disponibles en esta version del juego.</li>
+              <li>Asistencias no disponibles en esta versión del juego.</li>
             ) : null}
           </ul>
         </Panel>
       ) : null}
+      </>
+      )}
     </>
   )
 }

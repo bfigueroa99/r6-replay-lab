@@ -159,9 +159,9 @@ class ComandoTests(TestCase):
         # mi muerte quedan 1v1, con clutch_vs ya calculado
         # y el 1vX: muero yo, queda 1v1 y el amigo mata al rival
         make_round_player(rnd, username="amigo", is_me=False, team_index=0, kills=1, died=False,
-                          clutch_vs=1, one_vx=1)
+                          clutch_vs=1, clutch_kills=1, one_vx=1)
         make_round_player(rnd, username="rival", is_me=False, team_index=1, kills=1, died=True,
-                          clutch_vs=2)
+                          clutch_vs=2, clutch_kills=1)
         make_event(rnd, 0, "rival", ME, clock=100.0)
         make_event(rnd, 1, "amigo", "rival", clock=94.0)
 
@@ -208,6 +208,44 @@ class RecomputeClutchTests(TestCase):
     def test_dry_run_no_escribe_clutch_vs(self):
         self.assertTrue(recompute(window=3.0, dry_run=True).changed)
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 0)
+
+
+class RecomputeClutchKillsTests(TestCase):
+    """Importada antes de la columna: clutch_kills quedo en 0 aunque peleo el clutch."""
+
+    def setUp(self):
+        rnd = make_round(make_match(index=0), 0)
+        make_round_player(rnd, username=ME, kills=2, died=False, team_index=0)
+        make_round_player(rnd, username="a1", is_me=False, team_index=0, kills=0, died=True)
+        for nick in ("r1", "r2"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=1, kills=0, died=True)
+        make_event(rnd, 0, "r1", "a1", clock=120.0)
+        make_event(rnd, 1, ME, "r1", clock=110.0)
+        make_event(rnd, 2, ME, "r2", clock=100.0)
+        # el resto ya al dia: solo falta clutch_kills
+        recompute(window=3.0)
+        RoundPlayer.objects.filter(username=ME).update(clutch_kills=0)
+
+    def test_recompute_llena_clutch_kills_de_una_partida_vieja(self):
+        self.assertEqual(recompute(window=3.0).players_changed, 1)
+        yo = RoundPlayer.objects.get(username=ME)
+        self.assertEqual((yo.clutch_vs, yo.clutch_kills), (2, 2))
+
+    def test_dry_run_no_escribe_clutch_kills(self):
+        self.assertEqual(recompute(window=3.0, dry_run=True).players_changed, 1)
+        self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_kills, 0)
+
+    def test_recompute_de_clutch_kills_es_idempotente(self):
+        recompute(window=3.0)
+        self.assertFalse(recompute(window=3.0).changed)
+        self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_kills, 2)
+
+    def test_recompute_con_un_jugador_que_nunca_quedo_solo_no_revienta(self):
+        # a1 nunca quedo solo (cae primero) y tiene que estar en el calculo; r2 quedo
+        # solo al caer r1 pero no mato a nadie
+        recompute(window=3.0)
+        self.assertEqual(RoundPlayer.objects.get(username="a1").clutch_kills, 0)
+        self.assertEqual(RoundPlayer.objects.get(username="r2").clutch_kills, 0)
 
 
 class RecomputeOneVxTests(TestCase):

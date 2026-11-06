@@ -8,7 +8,13 @@ from django.apps import apps
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
-from replays.analytics.metrics import analyse_round, clutch_vs, equipo_ganador, one_vx
+from replays.analytics.metrics import (
+    analyse_round,
+    clutch_kills,
+    clutch_vs,
+    equipo_ganador,
+    one_vx,
+)
 from replays.models import RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
@@ -87,6 +93,65 @@ class ClutchVsTests(TestCase):
     def test_solo_desde_el_inicio_y_caer_primero_es_un_intento_perdido(self):
         equipos = {"yo": 0, "r1": 1, "r2": 1, "r3": 1}
         self.assertEqual(clutch_vs([kill("r1", "yo")], equipos)["yo"], 3)
+
+
+class ClutchKillsTests(TestCase):
+    def test_un_1v2_ganado_con_dos_bajas_da_2(self):
+        feed = [kill("yo", "r3"), kill("r1", "a1"), kill("r2", "a2"), kill("yo", "r1"), kill("yo", "r2")]
+        self.assertEqual(clutch_vs(feed, EQUIPOS)["yo"], 2)
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 2)
+
+    def test_un_1v1_ganado_por_tiempo_da_0(self):
+        equipos = {"yo": 0, "a1": 0, "r1": 1}
+        feed = [kill("r1", "a1")]
+        self.assertEqual(clutch_vs(feed, equipos)["yo"], 1)
+        self.assertEqual(clutch_kills(feed, equipos)["yo"], 0)
+
+    def test_una_baja_antes_de_quedar_solo_no_cuenta(self):
+        feed = [kill("yo", "r3"), kill("r1", "a1"), kill("r2", "a2")]
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 0)
+
+    def test_un_suicidio_despues_de_quedar_solo_no_cuenta(self):
+        feed = [kill("r1", "a1"), kill("r2", "a2"), kill("yo", "yo")]
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 0)
+
+    def test_quien_arranca_solo_cuenta_desde_el_primer_evento(self):
+        equipos = {"yo": 0, "r1": 1, "r2": 1}
+        self.assertEqual(clutch_kills([kill("yo", "r1")], equipos)["yo"], 1)
+
+    def test_una_baja_a_un_nick_desconocido_cuenta(self):
+        feed = [kill("r1", "a1"), kill("r2", "a2"), kill("yo", "zz")]
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 1)
+
+    def test_un_autor_desconocido_no_le_suma_a_nadie(self):
+        feed = [kill("r1", "a1"), kill("r2", "a2"), kill("zz", "r1")]
+        valores = clutch_kills(feed, EQUIPOS)
+        self.assertEqual(valores["yo"], 0)
+        self.assertNotIn("zz", valores)
+
+    def test_sin_clutch_da_cero_a_todos(self):
+        valores = clutch_kills([kill("yo", "r1")], EQUIPOS)
+        self.assertEqual(con_valor(valores), {})
+
+    def test_quien_nunca_quedo_solo_da_cero_y_esta_en_el_dict(self):
+        valores = clutch_kills([kill("r1", "a1"), kill("r2", "a2"), kill("yo", "r1")], EQUIPOS)
+        self.assertEqual(set(valores), set(EQUIPOS))
+        self.assertEqual(con_valor(valores), {"yo": 1})
+
+    def test_un_rival_que_se_va_no_es_una_baja(self):
+        feed = [kill("r1", "a1"), kill("r2", "a2"), leave("r1")]
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 0)
+
+    def test_el_atacante_que_muere_tras_quedar_solo_y_gana_da_cero(self):
+        # planto, cayo y la defensa no desactivo: el clutch se gano sin bajas
+        feed = [kill("r1", "a1"), kill("r2", "a2"), kill("r1", "yo")]
+        self.assertEqual(clutch_vs(feed, EQUIPOS)["yo"], 3)
+        self.assertEqual(clutch_kills(feed, EQUIPOS)["yo"], 0)
+
+    def test_clutch_vs_devuelve_lo_mismo_que_antes(self):
+        feed = escenario_companero_que_se_fue()
+        self.assertEqual(con_valor(clutch_vs(feed, CINCO)), {"A4": 2, "B4": 1})
+        self.assertEqual(con_valor(clutch_kills(feed, CINCO)), {"A4": 2})
 
 
 class OneVxTests(TestCase):
@@ -175,6 +240,22 @@ class ImportClutchTests(TestCase):
         self.assertTrue(yo["won"])
 
 
+    def test_el_import_guarda_las_bajas_desde_que_quedo_solo(self):
+        data = round_data(ganamos=True, rivales=2)
+        data["matchFeedback"] += [
+            {"type": {"name": "Kill"}, "username": "yo", "target": "r1", "timeInSeconds": 90.0},
+            {"type": {"name": "Kill"}, "username": "yo", "target": "r2", "timeInSeconds": 80.0},
+        ]
+        yo = analyse_round(data)["players"]["yo"]
+        self.assertEqual(yo["clutch_vs"], 2)
+        # la baja a r3 fue antes de quedar solo
+        self.assertEqual(yo["clutch_kills"], 2)
+
+    def test_el_import_de_un_clutch_ganado_sin_bajas_da_cero(self):
+        jugadores = analyse_round(round_data(ganamos=True, rivales=2))["players"]
+        self.assertEqual(jugadores["yo"]["clutch_kills"], 0)
+        self.assertEqual(jugadores["r1"]["clutch_kills"], 0)
+
     def test_el_import_cuenta_el_clutch_con_un_companero_que_se_fue(self):
         feed = [
             {"type": {"name": e["kind"]}, "username": e["actor"], "target": e["target"],
@@ -193,9 +274,9 @@ class ImportClutchTests(TestCase):
 
 
 class ConversionTests(TestCase):
-    def _ronda(self, indice: int, *, vs: int, won: bool, side: str = "Attack"):
+    def _ronda(self, indice: int, *, vs: int, won: bool, side: str = "Attack", kills_solo: int = 0):
         rnd = make_round(make_match(index=indice), 0, side=side, won=won)
-        make_round_player(rnd, clutch_vs=vs, won=won, side=side)
+        make_round_player(rnd, clutch_vs=vs, clutch_kills=kills_solo, won=won, side=side)
 
     def test_una_fila_por_x_con_intentos_y_ganados(self):
         self._ronda(0, vs=1, won=True)
@@ -212,8 +293,8 @@ class ConversionTests(TestCase):
         self._ronda(1, vs=2, won=False, side="Defense")
         self._ronda(2, vs=2, won=False, side="Defense")
         fila = agg.clutch_conversion()[0]
-        self.assertEqual(fila["attack"], {"attempts": 1, "won": 1, "pct": 100.0})
-        self.assertEqual(fila["defense"], {"attempts": 2, "won": 0, "pct": 0.0})
+        self.assertEqual(fila["attack"], {"attempts": 1, "won": 1, "silent": 1, "pct": 100.0})
+        self.assertEqual(fila["defense"], {"attempts": 2, "won": 0, "silent": 0, "pct": 0.0})
         solo_defensa = agg.clutch_conversion(side="Defense")[0]
         self.assertEqual(solo_defensa["attempts"], 2)
         self.assertIsNone(solo_defensa["attack"]["pct"])
@@ -246,6 +327,97 @@ class ConversionTests(TestCase):
         self.assertEqual([(f["label"], f["attempts"]) for f in filas], [("1v2", 1)])
 
 
+    def test_la_fila_cuenta_los_ganados_silenciosos_por_lado(self):
+        self._ronda(0, vs=1, won=True, side="Attack")
+        self._ronda(1, vs=1, won=True, side="Attack", kills_solo=2)
+        self._ronda(2, vs=1, won=True, side="Defense")
+        self._ronda(3, vs=1, won=False, side="Defense")
+        fila = agg.clutch_conversion()[0]
+        self.assertEqual((fila["silent"], fila["silent_pct"]), (2, 66.7))
+        self.assertEqual((fila["attack"]["silent"], fila["defense"]["silent"]), (1, 1))
+
+    def test_un_clutch_perdido_sin_bajas_no_es_silencioso(self):
+        self._ronda(0, vs=2, won=False)
+        fila = agg.clutch_conversion()[0]
+        self.assertEqual(fila["silent"], 0)
+        self.assertFalse(fila["silent_low_sample"])
+
+    def test_cuatro_ganados_son_muestra_chica_y_cinco_no(self):
+        for i in range(4):
+            self._ronda(i, vs=1, won=True)
+        self._ronda(10, vs=1, won=False)
+        self.assertTrue(agg.clutch_conversion()[0]["silent_low_sample"])
+        self._ronda(4, vs=1, won=True)
+        self.assertFalse(agg.clutch_conversion()[0]["silent_low_sample"])
+
+    def test_sin_ganados_el_pct_de_silenciosos_es_none(self):
+        self._ronda(0, vs=3, won=False)
+        self.assertIsNone(agg.clutch_conversion()[0]["silent_pct"])
+
+    def test_los_silenciosos_de_las_filas_suman_lo_mismo_que_clutch_silent(self):
+        self._ronda(0, vs=1, won=True, side="Attack")
+        self._ronda(1, vs=2, won=True, side="Defense")
+        self._ronda(2, vs=2, won=True, side="Attack", kills_solo=1)
+        self._ronda(3, vs=3, won=False, side="Attack")
+        rnd = make_round(make_match(index=4), 0)
+        rnd.my_team_won = None
+        rnd.save(update_fields=["my_team_won"])
+        make_round_player(rnd, clutch_vs=1, won=False)
+        for filtros in ({}, {"side": "Attack"}):
+            filas = agg.clutch_conversion(**filtros)
+            resumen = agg.clutch_silent(**filtros)
+            self.assertEqual(sum(f["silent"] for f in filas), resumen["silent"])
+            self.assertEqual(sum(f["won"] for f in filas), resumen["won"])
+
+
+class ClutchSilenciosoTests(TestCase):
+    def _ronda(self, indice: int, *, condicion: str, won: bool | None = True,
+               side: str = "Attack", kills_solo: int = 0):
+        rnd = make_round(make_match(index=indice), 0, side=side, won=bool(won))
+        rnd.win_condition = condicion
+        rnd.my_team_won = won
+        rnd.save(update_fields=["win_condition", "my_team_won"])
+        make_round_player(rnd, clutch_vs=1, clutch_kills=kills_solo, won=bool(won), side=side)
+
+    def test_reparte_los_silenciosos_por_condicion_de_victoria(self):
+        self._ronda(0, condicion="KilledOpponents")
+        self._ronda(1, condicion="ObjectiveOrTime")
+        self._ronda(2, condicion="ObjectiveOrTime")
+        self._ronda(3, condicion="")
+        self._ronda(4, condicion="KilledOpponents", kills_solo=1)
+        self.assertEqual(
+            agg.clutch_silent(),
+            {"won": 5, "silent": 4, "silent_pct": 80.0,
+             "by_condition": {"elimination": 1, "other": 2, "unknown": 1}},
+        )
+
+    def test_una_ronda_sin_ganador_no_cuenta(self):
+        self._ronda(0, condicion="KilledOpponents", won=None)
+        self._ronda(1, condicion="KilledOpponents", won=False)
+        self.assertEqual((agg.clutch_silent()["won"], agg.clutch_silent()["silent"]), (0, 0))
+
+    def test_respeta_el_filtro_de_lado(self):
+        self._ronda(0, condicion="ObjectiveOrTime", side="Attack")
+        self._ronda(1, condicion="KilledOpponents", side="Defense")
+        resumen = agg.clutch_silent(side="Defense")
+        self.assertEqual(resumen["silent"], 1)
+        self.assertEqual(resumen["by_condition"], {"elimination": 1, "other": 0, "unknown": 0})
+
+    def test_con_base_vacia_da_ceros(self):
+        self.assertEqual(
+            agg.clutch_silent(),
+            {"won": 0, "silent": 0, "silent_pct": None,
+             "by_condition": {"elimination": 0, "other": 0, "unknown": 0}},
+        )
+
+    def test_la_api_de_companeros_trae_clutch_silent(self):
+        self._ronda(0, condicion="ObjectiveOrTime", side="Attack")
+        self._ronda(1, condicion="KilledOpponents", side="Defense")
+        resumen = self.client.get("/api/teammates/?side=Attack").json()["clutch_silent"]
+        self.assertEqual(resumen["silent"], 1)
+        self.assertEqual(resumen["by_condition"]["other"], 1)
+
+
 class MigracionTests(TestCase):
     def test_la_migracion_llena_lo_ya_importado(self):
         llenar = import_module("replays.migrations.0003_roundplayer_clutch_vs").llenar
@@ -263,6 +435,41 @@ class MigracionTests(TestCase):
 
         self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_vs, 2)
         self.assertEqual(RoundPlayer.objects.get(username="r1").clutch_vs, 0)
+
+
+class MigracionClutchKillsTests(TestCase):
+    def setUp(self):
+        self.llenar = import_module("replays.migrations.0005_roundplayer_clutch_kills").llenar
+
+    def test_la_migracion_llena_clutch_kills_de_lo_ya_importado(self):
+        rnd = make_round(make_match(index=0), 0)
+        make_round_player(rnd, username=ME, team_index=0, clutch_vs=2)
+        make_round_player(rnd, username="a1", is_me=False, team_index=0)
+        for nick in ("r1", "r2"):
+            make_round_player(rnd, username=nick, is_me=False, team_index=1)
+        make_event(rnd, 0, ME, "r2", clock=130.0)
+        make_event(rnd, 1, "r1", "a1", clock=120.0)
+        make_event(rnd, 2, ME, "r1", clock=100.0)
+        # ronda sin jugadores: no tiene que tumbar la migracion
+        make_round(make_match(index=1), 0)
+
+        self.llenar(apps, None)
+
+        # la baja a r2 fue antes de quedar solo; r1 quedo solo al caer r2 y mato a a1
+        self.assertEqual(RoundPlayer.objects.get(username=ME).clutch_kills, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="r1").clutch_kills, 1)
+        self.assertEqual(RoundPlayer.objects.get(username="a1").clutch_kills, 0)
+
+    def test_la_migracion_no_toca_rondas_sin_intento(self):
+        rnd = make_round(make_match(index=0), 0)
+        jugador = make_round_player(rnd, username=ME, team_index=0, clutch_vs=0)
+        make_round_player(rnd, username="r1", is_me=False, team_index=1)
+        make_event(rnd, 0, ME, "r1", clock=130.0)
+        RoundPlayer.objects.filter(id=jugador.id).update(clutch_kills=7)
+
+        self.llenar(apps, None)
+
+        self.assertEqual(RoundPlayer.objects.get(id=jugador.id).clutch_kills, 7)
 
 
 class ClutchPorSitioTests(TestCase):

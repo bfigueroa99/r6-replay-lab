@@ -8,7 +8,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Avg, Count, Q, Sum
-from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -24,7 +24,7 @@ from .analytics.coach import build_insights
 from .analytics.narrative import describe_round
 from .backup import backup_database
 from .ingest import find_match_folders, import_job, start_import
-from .models import ImportLog, Match, Player, Round, RoundPlayer
+from .models import ImportLog, Match, Player, Round, RoundPlayer, filtro_resultado
 from .retag import retag
 
 # --------------------------------------------------------------------- helpers
@@ -217,9 +217,23 @@ def coach(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def positioning(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.positioning(
+        min_rounds=_min_rounds(request, agg.POSICION_MIN_RONDAS), **_filters(request)
+    ))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
+
+
+@require_GET
+def operators_by_site(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_by_site(
+        min_rounds=_min_rounds(request, agg.OPERADOR_SITIO_MIN_RONDAS), **_filters(request)
+    ))
 
 
 def _catalogo_operadores() -> list[dict]:
@@ -284,6 +298,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "synergy": agg.teammate_synergy(min_rounds=_min_rounds(request, 10), **filters),
             "clutches": agg.clutch_detail(**filters),
             "clutch_conversion": agg.clutch_conversion(**filters),
+            "clutch_silent": agg.clutch_silent(**filters),
             "clutch_by_site": agg.clutch_by_site(**filters),
             "clutch_by_operator": agg.clutch_by_operator(**filters),
             "first_down": agg.first_teammate_death(**filters),
@@ -298,7 +313,7 @@ def player_detail(request: HttpRequest, pk: int) -> JsonResponse:
     """Perfil de un companero o rival dentro de tus partidas."""
     payload = agg.player_profile(pk, **_filters(request))
     if payload is None:
-        raise Http404("jugador no encontrado")
+        return _ok({"error": "jugador no encontrado"}, status=404)
     payload["externo"] = perfil_externo.resumen(Player.objects.get(pk=pk))
     return _ok(payload)
 
@@ -317,7 +332,7 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
         return _ok({"error": "se esperaba application/json"}, status=415)
     player = Player.objects.filter(pk=pk).first()
     if player is None:
-        raise Http404("jugador no encontrado")
+        return _ok({"error": "jugador no encontrado"}, status=404)
     if not perfil_externo.configurado():
         return _ok(
             {"error": "Falta configurar UBI_EMAIL y UBI_PASSWORD en el .env."}, status=400
@@ -370,19 +385,21 @@ def duels(request: HttpRequest) -> JsonResponse:
     """Duelos: contra quien y contra que operadores ganas y pierdes."""
     filters = _filters(request)
     min_duels = _int_param(request, "min_duels", 3, minimum=1, maximum=1000)
+    min_matches = _int_param(request, "min_matches", 2, minimum=1, maximum=1000)
     return _ok(
         {
             "totals": agg.duel_totals(**filters),
+            # Fuera de `totals` porque ese dict lo comparte el coach; sin las
+            # rondas la pagina no distingue "filtro vacio" de "rondas sin duelos".
+            "rounds": agg.base_queryset(**filters).count(),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
                 **filters,
             ),
-            "rivals": agg.repeated_rivals(
-                min_matches=_int_param(request, "min_matches", 2, minimum=1, maximum=1000),
-                **filters,
-            ),
+            "rivals": agg.repeated_rivals(min_matches=min_matches, **filters),
+            "rival_stacks": agg.rival_stacks(min_matches=min_matches, **filters),
         }
     )
 
@@ -395,11 +412,15 @@ def match_list(request: HttpRequest) -> JsonResponse:
     limit = _int_param(request, "limit", 50, minimum=1, maximum=200)
     offset = _int_param(request, "offset", 0, minimum=0, maximum=1_000_000)
 
-    qs = Match.objects.all()
-    if request.GET.get("map"):
-        qs = qs.filter(**agg.filtro_mapa(request.GET["map"], prefijo=""))
-    if request.GET.get("match_type"):
-        qs = qs.filter(match_type=request.GET["match_type"])
+    qs = agg.match_queryset(**_filters(request))
+    resultado = filtro_resultado(request.GET.get("result", ""))
+    if resultado is not None:
+        qs = qs.filter(resultado)
+    # el orden del modelo no desempata partidas con la misma fecha; el detalle
+    # navega con (played_at, id) y el listado tiene que mostrar el mismo orden.
+    # Va aca y no en match_queryset: otros lo agregan con values().annotate() y
+    # un order_by explicito entraria al GROUP BY
+    qs = qs.order_by("-played_at", "-id")
     total = qs.count()
     page = list(qs[offset : offset + limit])
 
@@ -462,8 +483,26 @@ def match_list(request: HttpRequest) -> JsonResponse:
 def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
     try:
         match = Match.objects.get(pk=pk)
-    except Match.DoesNotExist as exc:
-        raise Http404("partida no encontrada") from exc
+    except Match.DoesNotExist:
+        return _ok({"error": "partida no encontrada"}, status=404)
+
+    # historial completo, sin filtros y con las excluidas: navegar no es agregar
+    anterior = (
+        Match.objects.filter(
+            Q(played_at__lt=match.played_at) | Q(played_at=match.played_at, id__lt=match.id)
+        )
+        .order_by("-played_at", "-id")
+        .values_list("id", flat=True)
+        .first()
+    )
+    siguiente = (
+        Match.objects.filter(
+            Q(played_at__gt=match.played_at) | Q(played_at=match.played_at, id__gt=match.id)
+        )
+        .order_by("played_at", "id")
+        .values_list("id", flat=True)
+        .first()
+    )
 
     rounds = []
     for rnd in match.rounds.prefetch_related("players__player", "events").all():
@@ -534,6 +573,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
 
     rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
+    team_trades = _trades_por_equipo(rounds, match.my_team_index)
     my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
     etiquetas = agg.etiquetas_de_mapas({match.map_slug})
 
@@ -548,6 +588,8 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,
+                "prev_id": anterior,
+                "next_id": siguiente,
                 "score": f"{match.my_score}-{match.opponent_score}",
                 "my_score": match.my_score,
                 "opponent_score": match.opponent_score,
@@ -559,6 +601,9 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "rounds": rounds,
             "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
+            "team_trades": team_trades,
+            "phases": agg.fases_de_partida(rounds, match.my_team_index),
+            "rival_stacks": agg.rival_stacks_de_partida(match.id),
             "my_totals": my_totals,
         }
     )
@@ -568,6 +613,41 @@ def _racha_con_etiqueta(racha: dict | None) -> dict | None:
     if racha is None:
         return None
     return {"length": racha["length"], "from_round_label": f"R{racha['from_number'] + 1}"}
+
+
+def _trades_por_equipo(rounds: list[dict], my_team_index: int) -> dict:
+    """Muertes tradeadas y sin trade de cada equipo, sumando lo que dejo el import.
+
+    Recorre las rondas ya armadas para la respuesta: cero queries y nada se
+    recalcula, asi cuadra con las columnas *Trades* y *Sin trade* del
+    scoreboard. "Tu equipo" se resuelve por ronda (el `team_index` de tu
+    fila) porque el indice no esta garantizado fijo en toda la partida; sin tu
+    fila en la ronda, vale el de la partida.
+    """
+    totales = {
+        lado: {"deaths": 0, "traded_deaths": 0, "untraded_deaths": 0, "trade_kills": 0}
+        for lado in ("mine", "rival")
+    }
+    for ronda in rounds:
+        jugadores = ronda["players"]
+        yo = next((p for p in jugadores if p["is_me"]), None)
+        mio = yo["team_index"] if yo else my_team_index
+        for p in jugadores:
+            t = totales["mine" if p["team_index"] == mio else "rival"]
+            if p["died"]:
+                t["deaths"] += 1
+                # Filtrado por `died`: una fila rara con `was_traded` sin
+                # muerte no puede descuadrar tradeadas + sin trade == muertes.
+                if p["was_traded"]:
+                    t["traded_deaths"] += 1
+            if p["untraded_death"]:
+                t["untraded_deaths"] += 1
+            t["trade_kills"] += p["trade_kills"] or 0
+    for t in totales.values():
+        t["untraded_pct"] = (
+            round(t["untraded_deaths"] / t["deaths"] * 100, 1) if t["deaths"] else None
+        )
+    return totales
 
 
 def _match_scoreboard(match: Match) -> list[dict]:

@@ -416,6 +416,7 @@ td.dim { color: var(--muted); }
 }
 .loading { color: var(--muted); padding: 24px 0; }
 .note { color: var(--muted); font-size: 12px; }
+.stacks-rivales { margin-bottom: 18px; font-size: 13px; }
 
 @media (max-width: 700px) {
   main { padding: 12px; }

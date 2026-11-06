@@ -38,7 +38,36 @@ class EmptyApiTests(TestCase):
                 self.assertIsInstance(json.loads(response.content), dict)
 
     def test_partida_inexistente_da_404(self):
-        self.assertEqual(self.client.get("/api/matches/999/").status_code, 404)
+        response = self.client.get("/api/matches/999/")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("error", response.json())
+
+    def test_una_ruta_desconocida_de_la_api_da_404_json(self):
+        # sin esto el atrapa-todo de la SPA devolvia el index.html con 200
+        for url in ("/api/nada/", "/api/nada"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response["Content-Type"], "application/json")
+                self.assertIn("error", response.json())
+
+    def test_un_post_a_una_ruta_desconocida_de_la_api_da_404_json(self):
+        cliente = self.client_class(enforce_csrf_checks=True)
+        response = cliente.post("/api/nada/", data="{}", content_type="application/json")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    def test_una_partida_con_id_no_numerico_da_404_json(self):
+        response = self.client.get("/api/matches/abc/")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertIn("error", response.json())
+
+    def test_fuera_de_la_api_se_sigue_sirviendo_la_spa(self):
+        response = self.client.get("/partidas/999999")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/html"))
 
     def test_teammates_trae_by_stack_con_base_vacia(self):
         datos = self.client.get("/api/teammates/").json()["by_stack"]

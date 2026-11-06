@@ -65,8 +65,8 @@ class AperturaTests(TestCase):
             [baja("rival", YO, clock=160.0, elapsed=20.0)],
         )
         frases = describe_round(r)
-        self.assertIn("perdiste el primer duelo: te mato rival", frases[0])
-        self.assertIn("Nadie la vengo", frases[0])
+        self.assertIn("perdiste el primer duelo: te mató rival", frases[0])
+        self.assertIn("Nadie la vengó", frases[0])
 
     def test_ganar_el_primer_duelo_lo_dice_del_otro_lado(self):
         """Que el rival no vengue su muerte es una ventaja, no un reproche."""
@@ -74,7 +74,7 @@ class AperturaTests(TestCase):
             [jugador(YO, yo=True, kills=1), jugador("rival", equipo=1, died=True, survived=False)],
             [baja(YO, "rival", clock=160.0, elapsed=20.0)],
         )
-        self.assertIn("El rival no la vengo", describe_round(r)[0])
+        self.assertIn("El rival no la vengó", describe_round(r)[0])
 
     def test_el_trade_trae_el_margen(self):
         r = ronda(
@@ -85,7 +85,7 @@ class AperturaTests(TestCase):
                 baja("amigo", "rival", clock=158.0, elapsed=22.0),
             ],
         )
-        self.assertIn("amigo la vengo 2s despues", describe_round(r)[0])
+        self.assertIn("amigo la vengó 2s después", describe_round(r)[0])
 
     def test_muerte_sin_asesino_no_inventa_uno(self):
         r = ronda(
@@ -158,11 +158,11 @@ class MiRondaTests(TestCase):
 class CierreTests(TestCase):
     def test_eliminacion(self):
         r = ronda([jugador(YO, yo=True)], [])
-        self.assertIn("La ronda se cerro por eliminacion.", describe_round(r))
+        self.assertIn("La ronda se cerró por eliminación.", describe_round(r))
 
     def test_condicion_incierta_lo_dice(self):
         r = ronda([jugador(YO, yo=True)], [], win_condition="", win_condition_certain=False)
-        self.assertIn("no expone como se cerro", describe_round(r)[-1])
+        self.assertIn("no expone cómo se cerró", describe_round(r)[-1])
 
     def test_plant_probable_se_marca_como_probable(self):
         r = ronda(

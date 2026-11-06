@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.db import models
+from django.db.models import F, Q
 
 ATTACK = "Attack"
 DEFENSE = "Defense"
@@ -18,6 +19,29 @@ def match_result(won: bool | None, my_score: int, opponent_score: int) -> str:
     if my_score == opponent_score:
         return "empate"
     return "victoria" if won else "derrota"
+
+
+RESULTADOS = ("victoria", "derrota", "empate", "incompleta")
+
+
+def filtro_resultado(result: str) -> Q | None:
+    """El `Q` sobre `Match` que da cada etiqueta de `match_result`.
+
+    Sigue el mismo orden de decision: `won=None` es incompleta aunque el
+    marcador este igualado, y un empate gana sobre `won`. Filtrar el empate
+    por `won=None` mezclaria las incompletas. Un valor desconocido da `None`
+    y la vista lo ignora, como cualquier otro filtro invalido.
+    """
+    empatada = Q(my_score=F("opponent_score"))
+    if result == "incompleta":
+        return Q(won__isnull=True)
+    if result == "empate":
+        return Q(won__isnull=False) & empatada
+    if result == "victoria":
+        return Q(won=True) & ~empatada
+    if result == "derrota":
+        return Q(won=False) & ~empatada
+    return None
 
 
 class Player(models.Model):
@@ -140,10 +164,17 @@ class RoundPlayer(models.Model):
     one_vx = models.IntegerField(default=0)
     # rivales vivos cuando quedaste solo, ganes o pierdas; 0 si nunca
     clutch_vs = models.IntegerField(default=0)
+    # bajas a rivales desde que quedaste solo; 0 si nunca. Un 0 en un clutch
+    # ganado se lee como "silencioso", por eso la migracion 0005 llena lo ya
+    # importado en vez de confiar en el default
+    clutch_kills = models.IntegerField(default=0)
 
     # --- metricas derivadas
     opening_kill = models.BooleanField(default=False)
     opening_death = models.BooleanField(default=False)
+    # columna y no consulta: el Inicio separa aperturas limpias de devueltas sin
+    # una subconsulta por fila, y queda igual a la marca `traded` del timeline
+    opening_kill_traded = models.BooleanField(default=False)
     entry_kill = models.BooleanField(default=False)
     trade_kills = models.IntegerField(default=0)
     was_traded = models.BooleanField(default=False)

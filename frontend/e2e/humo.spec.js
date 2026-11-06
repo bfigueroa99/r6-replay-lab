@@ -5,6 +5,12 @@ import { expect, test } from '@playwright/test'
 import { vigilarConsola } from './consola.js'
 import { BASE_URL } from './entorno.js'
 
+// backend/tests/test_partida_sin_rondas.py afirma que es la forma real del detalle sin
+// rondas; si falla, se regenera con json.dumps(indent=2, ensure_ascii=False) de esa respuesta. Con fs y no con import attributes: el Node del PC puede ser otro
+const SIN_RONDAS = JSON.parse(
+  fs.readFileSync(new URL('./partida-sin-rondas.json', import.meta.url), 'utf8'),
+)
+
 /** Ruta -> el h1 que tiene que aparecer. Las del menu, menos la Ruleta (tiene su spec). */
 const PAGINAS = [
   ['/', 'Resumen'],
@@ -91,6 +97,60 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   const ash = panel.locator('tr', { has: page.getByRole('cell', { name: 'Ash', exact: true }) })
   await expect(ash.locator('td').nth(3)).toHaveText('34%')
   await expect(ash.locator('td').nth(5)).toHaveText('0')
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra el operador por sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: el maximo es 8 rondas de un operador en un sitio, menos que el
+  // minimo de 10, asi que el panel dice por que esta vacio
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Por sitio', exact: true }) })
+  await expect(panel).toContainText('Ningún operador llega a 10 rondas en un sitio')
+
+  // con el minimo bajo hay filas; todo el ataque del seed se gana y toda la
+  // defensa se pierde, asi que ningun operador se separa del resto
+  const resp = await page.request.get('/api/operators/sites/?min_rounds=5')
+  expect(resp.ok()).toBe(true)
+  const datos = await resp.json()
+  expect(datos.rows.length).toBeGreaterThan(0)
+  for (const fila of datos.rows) {
+    expect(fila.verdict).toBe('ruido')
+    expect(fila.winrate_delta).toBe(0)
+  }
+
+  // la tabla tambien se renderiza: misma request con el minimo bajo
+  await page.route('**/api/operators/sites/**', async (route) => {
+    const url = new URL(route.request().url())
+    url.searchParams.set('min_rounds', '5')
+    await route.fulfill({ response: await route.fetch({ url: url.toString() }) })
+  })
+  await page.reload()
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(datos.rows.length)
+  await expect(filas.first()).toContainText('Sin señal')
+  await expect(panel.locator('th', { hasText: 'Veredicto' })).toBeVisible()
+
+  // el seed no tiene deltas distintos de 0: dos filas fijas prueban que la
+  // tabla sale en el orden del backend (|delta|) y no ordenada por mapa
+  const fila = (map, operator, delta, verdict) => ({
+    map, slug: map.toLowerCase(), map_id: 0, site: 'A Sitio', side: 'Attack', operator,
+    rounds: 20, rounds_won: 10, winrate: 50, rest_rounds: 20, rest_winrate: 50 - delta,
+    winrate_delta: delta, margin: 10, verdict,
+  })
+  await page.unroute('**/api/operators/sites/**')
+  await page.route('**/api/operators/sites/**', (route) =>
+    route.fulfill({
+      json: { rows: [fila('Bank', 'Ash', -30, 'hunde'), fila('Oregon', 'Zofia', 5, 'ruido')], min_rounds: 10, bands: 2 },
+    }),
+  )
+  await page.reload()
+  await expect(filas).toHaveCount(2)
+  await expect(filas.first()).toContainText('Bank')
+  await expect(filas.first()).toContainText('Te hunde')
+  await expect(filas.nth(1)).toContainText('Oregon')
 
   expect(errores).toEqual([])
 })
@@ -190,7 +250,8 @@ test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   await expect(panel).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Ataque', exact: true })).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Defensa', exact: true })).toBeVisible()
-  // seed_demo cierra todo por eliminacion: los numeros los afirman los tests de backend
+  // seed_demo cierra todo por eliminacion salvo una ronda de Bank en ataque (el clutch
+  // silencioso, cierre inferido): los numeros los afirman los tests de backend
 
   expect(errores).toEqual([])
 })
@@ -361,6 +422,99 @@ test('el detalle de una partida muestra la matriz de duelos', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('el detalle de una partida muestra los trades por equipo', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Trades por equipo', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(2)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Tu equipo')
+  await expect(filas.nth(1).locator('td').first()).toHaveText('Rival')
+
+  // Los numeros salen de la misma respuesta que pinta la pagina: la tabla
+  // tiene que mostrar las muertes y las sin trade de cada equipo tal cual.
+  const id = page.url().match(/\/partidas\/(\d+)$/)[1]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  for (const [i, lado] of [[0, 'mine'], [1, 'rival']]) {
+    const celdas = filas.nth(i).locator('td')
+    await expect(celdas.nth(1)).toHaveText(String(detalle.team_trades[lado].deaths))
+    await expect(celdas.nth(3)).toHaveText(String(detalle.team_trades[lado].untraded_deaths))
+  }
+  await expect(panel.getByText(/^Tu equipo dejó \d+ muertes? sin trade; el rival, \d+\.$/)).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('el detalle de una partida muestra las fases de la ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Temprano (<30 s)')
+  await expect(filas.nth(2).locator('td').first()).toHaveText('Tarde (120 s o más)')
+
+  // Las bajas de cada fase son las de la misma respuesta que pinta la pagina
+  const id = page.url().match(/\/partidas\/(\d+)$/)[1]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  for (let i = 0; i < 3; i++) {
+    const celdas = filas.nth(i).locator('td')
+    await expect(celdas.nth(1)).toHaveText(String(detalle.phases.rows[i].mine))
+    await expect(celdas.nth(2)).toHaveText(String(detalle.phases.rows[i].rival))
+  }
+  // seed_demo no tiene bajas antes de los 30 s: temprano queda en cero en toda partida
+  await expect(filas.nth(0).locator('td').nth(1)).toHaveText('0')
+  await expect(filas.nth(0).locator('td').nth(2)).toHaveText('0')
+  // Numeros fijos de seed_demo (la partida mas nueva, demo-28 en Bank): sin
+  // ellos un backend que devolviera ceros pasaria la comparacion de arriba.
+  for (const [i, mias, rivales] of [[1, '4', '2'], [2, '1', '3']]) {
+    await expect(filas.nth(i).locator('td').nth(1)).toHaveText(mias)
+    await expect(filas.nth(i).locator('td').nth(2)).toHaveText(rivales)
+  }
+
+  expect(errores).toEqual([])
+})
+
+test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene partidas sin rondas: se toma una y se le vacia el detalle
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id, map } = matches[0]
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, ...SIN_RONDAS } })
+  })
+  await page.goto(`/partidas/${id}`)
+
+  await expect(page.locator('h1')).toContainText(map)
+  const rondas = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  await expect(rondas).toContainText('Esta partida no tiene rondas importadas.')
+  // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
+  await expect(rondas.locator('.round-tab')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Scoreboard de la partida', exact: true })).toBeVisible()
+  const fases = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(fases).toContainText('Esta partida no tiene bajas con reloj entre equipos.')
+
+  expect(errores).toEqual([])
+})
+
 test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
@@ -377,7 +531,7 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   for (let i = 0; i < total; i++) {
     await pestanas.nth(i).click()
     await expect(pestanas.nth(i)).toHaveClass(/active/)
-    const bajas = panel.locator('.timeline li', { hasText: /mato a|murio/ })
+    const bajas = panel.locator('.timeline li', { hasText: /mató a|murió/ })
     if ((await bajas.count()) === 0) continue
     const apertura = panel.locator('.timeline .chip', { hasText: /^apertura$/ })
     const entry = panel.locator('.timeline .chip', { hasText: /^entry$/ })
@@ -452,6 +606,27 @@ test('el Resumen muestra tus multikills', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Resumen muestra las aperturas que pesan', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const respuesta = page.waitForResponse((r) => r.url().includes('/api/overview/'))
+  await page.goto('/')
+  const total = (await (await respuesta).json()).overall
+
+  // seed_demo: ninguna apertura ganada queda tradeada ni ninguna perdida vengada
+  const panel = page.locator('.panel', { has: page.locator('h2', { hasText: 'Aperturas que pesan' }) })
+  await expect(panel).toBeVisible()
+  const fila = (nombre) => panel.locator('tbody tr', { has: page.locator('td', { hasText: nombre }) })
+  await expect(fila(/^Ganada limpia$/).locator('td').nth(1)).toHaveText(String(total.opening_kills))
+  await expect(fila(/^Ganada devuelta$/).locator('td').nth(1)).toHaveText('0')
+  await expect(fila(/^Ganada devuelta$/).locator('td').nth(2)).toHaveText('—')
+  await expect(fila(/^Perdida vengada$/).locator('td').nth(2)).toHaveText('—')
+  await expect(fila(/^Perdida sin vengar$/).locator('td').nth(1)).toHaveText(String(total.opening_deaths))
+  expect(total.opening_kills).toBeGreaterThan(0)
+  expect(total.opening_deaths).toBeGreaterThan(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el Resumen muestra tus partidas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/')
@@ -466,6 +641,8 @@ test('el Resumen muestra tus partidas', async ({ page }) => {
   await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
   await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
   await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
+  // Todas ganadas desde la primera, INICIO de seed_demo
+  await expect(page.locator('.racha-actual')).toHaveText('Racha actual: 29 victorias seguidas desde 2026-08-01')
 
   expect(errores).toEqual([])
 })
@@ -508,6 +685,12 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   const conversion = panel.locator('table').first()
   await expect(conversion.getByRole('row', { name: /^1v1 2 2 100%/ })).toBeVisible()
   await expect(conversion.getByRole('row', { name: /^1v2 8 0 0%/ })).toBeVisible()
+  // uno de los dos ganados (Bank) fue sin bajas desde que quedaste solo
+  await expect(conversion.getByRole('cell', { name: 'Silenciosos', exact: true })).toBeVisible()
+  const fila1v1 = conversion.getByRole('row', { name: /^1v1 2 2 100%/ })
+  await expect(fila1v1.getByRole('cell', { name: /1 \(50%\)/ })).toBeVisible()
+  await expect(panel.getByText(/De tus 2 clutches ganados, 1 fue silencioso/)).toBeVisible()
+  await expect(panel.getByText(/0 por eliminación, 1 sin eliminación/)).toBeVisible()
 
   expect(errores).toEqual([])
 })
@@ -623,7 +806,7 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {
-    has: page.getByRole('heading', { name: 'Sus numeros', exact: true }),
+    has: page.getByRole('heading', { name: 'Sus números', exact: true }),
   })
   await expect(numeros).toContainText('14×2K')
 
@@ -656,7 +839,7 @@ test('los POST de la UI mandan JSON', async ({ page }) => {
 
   await page.goto('/')
   await page.locator('.topbar').getByRole('button', { name: 'Importar replays' }).click()
-  await expect(page.getByText('No habia partidas nuevas para importar.')).toBeVisible()
+  await expect(page.getByText('No había partidas nuevas para importar.')).toBeVisible()
   expect(tipo).toContain('application/json')
 
   expect(errores).toEqual([])
@@ -666,7 +849,7 @@ test('una ruta que no existe no rompe la app', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/no-existe')
 
-  await expect(page.getByText('Esa pagina no existe')).toBeVisible()
+  await expect(page.getByText('Esa página no existe')).toBeVisible()
   await page.getByRole('link', { name: 'Volver al resumen' }).click()
   await expect(page.locator('h1')).toHaveText('Resumen')
 
@@ -735,4 +918,295 @@ test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Guardar y reetiquetar (1)' })).toBeEnabled()
 
   expect(errores).toEqual([])
+})
+
+test('el selector de tipo filtra el Inicio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo siembra todo Ranked y no se toca: el segundo tipo se suma aca
+  let pedidosDeFiltros = 0
+  await page.route('**/api/filters/', async (route) => {
+    pedidosDeFiltros += 1
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
+  })
+  await page.goto('/')
+
+  const subtitulo = page.locator('.page-head p')
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+  await expect(page.getByText('Solo ranked')).toHaveCount(0)
+  const tipo = page.getByLabel('Tipo')
+  await expect(tipo.locator('option')).toHaveText(['Todos', 'Ranked', 'Unranked'])
+
+  const pedido = page.waitForRequest(/\/api\/overview\/\?.*match_type=Ranked/)
+  await tipo.selectOption('Ranked')
+  await pedido
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+
+  await tipo.selectOption('Unranked')
+  await expect(subtitulo).toHaveText('0 rondas con estos filtros')
+  await expect(page.getByText('Ninguna ronda con estos filtros')).toBeVisible()
+  await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(subtitulo).toHaveText('29 partidas · 203 rondas analizadas')
+  await expect(tipo).toHaveValue('')
+  // pasar por 0 rondas no vuelve a montar la barra (perderia el rango de
+  // fechas abierto): /api/filters/ se pide una sola vez
+  expect(pedidosDeFiltros).toBe(1)
+
+  expect(errores).toEqual([])
+})
+
+test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // ficha 85: los filtros viven en App y se comparten. seed_demo es todo
+  // Ranked: un tipo sin partidas deja 0 rondas en todas las paginas
+  await page.route('**/api/filters/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    await route.fulfill({ response: respuesta, json: { ...json, match_types: [...json.match_types, 'Unranked'] } })
+  })
+  await page.goto('/')
+  await page.getByLabel('Tipo').selectOption('Unranked')
+  await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+
+  const nav = page.locator('nav')
+  for (const [ruta, titulo] of PAGINAS.slice(1, 6)) {
+    // por el menu; su href lleva los filtros en la query (ficha 96)
+    await nav.locator(`a[href^="${ruta}"]`).click()
+    await expect(page.locator('h1')).toHaveText(titulo)
+    await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
+    await expect(page.locator('.filters')).toBeVisible()
+    await expect(page.getByLabel('Tipo')).toHaveValue('Unranked')
+    await expect(page.locator('.empty-state')).toHaveCount(0)
+  }
+
+  // la ultima es Tendencias: Limpiar desde ahi vuelve a los numeros
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(page.locator('.page-head p')).toHaveText(
+    'Cómo se mueven tus números en el tiempo y en qué momento de la partida te caes.',
+  )
+  await expect(page.getByLabel('Tipo')).toHaveValue('')
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
+test('Duelos con rondas pero sin duelos dice 0 duelos y no 0 rondas', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // ficha 86: seed_demo no tiene un filtro con rondas y sin duelos; se vacian
+  // los duelos de la respuesta real y se dejan sus rondas tal cual
+  await page.route(
+    (url) => url.pathname === '/api/duels/',
+    async (route) => {
+      const respuesta = await route.fetch()
+      const json = await respuesta.json()
+      expect(json.rounds).toBeGreaterThan(0)
+      await route.fulfill({
+        response: respuesta,
+        json: {
+          ...json,
+          totals: { kills: 0, deaths: 0, duels: 0, winrate: null },
+          nemesis: [],
+          operators: [],
+          rivals: [],
+        },
+      })
+    },
+  )
+  await page.goto('/duelos')
+  await expect(page.locator('h1')).toHaveText('Duelos')
+  // sin filtros puestos no hay "estos filtros" ni Limpiar del que hablar
+  await expect(page.locator('.page-head p')).toHaveText('0 duelos')
+  await expect(page.getByText('Hay rondas importadas, pero en ninguna mataste a un rival')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  // con un filtro la barra se queda y el texto habla de el
+  // se espera la respuesta filtrada: con la vieja en pantalla el texto ya
+  // cambia, y el test terminaria con la ruta interceptada en vuelo
+  const filtrada = page.waitForResponse((r) => new URL(r.url()).searchParams.get('side') === 'Attack')
+  await page.getByLabel('Lado').selectOption({ index: 1 })
+  await filtrada
+  await expect(page.locator('.page-head p')).toHaveText('0 duelos con estos filtros')
+  await expect(page.getByText('Hay rondas con estos filtros, pero en ninguna mataste a un rival')).toBeVisible()
+  await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Limpiar' })).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+  expect(errores).toEqual([])
+})
+
+test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Dónde quedas fuera de posición' }),
+  })
+  await expect(panel.getByText('El .rec no trae coordenadas')).toBeVisible()
+  // Columnas: mapa, zona, rondas, fuera de posicion, resto, diferencia, margen, veredicto.
+  // Numeros de seed_demo: 203 rondas, 118 fuera de posicion; 116 de ataque con 66.
+  const sitios = panel.locator('h3:text-is("Sitios") + .table-wrap')
+  const church = sitios.locator('tr', { has: page.getByRole('cell', { name: 'B Church, B Arsenal Room' }) })
+  await expect(church.locator('td').nth(3)).toHaveText('85%')
+  await expect(church.locator('td').nth(5)).toHaveText('+33.5')
+  await expect(church.locator('td').nth(6)).toHaveText('±17.4')
+  await expect(church.locator('td').nth(7)).toHaveText('Te agarran más')
+  const ventilation = sitios.locator('tr', { has: page.getByRole('cell', { name: 'A Ventilation, A Workshop' }) })
+  await expect(ventilation.locator('td').nth(3)).toHaveText('25%')
+  await expect(ventilation.locator('td').nth(7)).toHaveText('Te sostienes')
+  // Bank A Vault tiene 4 rondas: bajo el minimo de 5.
+  await expect(sitios.getByRole('cell', { name: 'A Vault, A Gold Partition' })).toHaveCount(0)
+
+  const spawns = panel.locator('h3:text-is("Spawns de ataque") + .table-wrap')
+  const warehouse = spawns.locator('tr', { has: page.getByRole('cell', { name: 'Warehouse', exact: true }) })
+  await expect(warehouse.locator('td').nth(3)).toHaveText('80%')
+  await expect(warehouse.locator('td').nth(7)).toHaveText('Te agarran más')
+  // Con un error estandar seria solido; con dos es ruido.
+  const valley = spawns.locator('tr', { has: page.getByRole('cell', { name: 'Valley', exact: true }) })
+  await expect(valley.locator('td').nth(7)).toHaveText('Sin señal')
+
+  await expect(
+    page.getByRole('heading', {
+      name: 'En B Church, B Arsenal Room (Club House) te agarran fuera de posición el 85% de las rondas',
+    }),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'En A Ventilation, A Workshop (Border) te sostienes' })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('el Coach muestra la salida del spawn', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Salida del spawn' }),
+  })
+  // seed_demo no tiene bajas antes de los 30 s: 116 rondas de ataque con spawn
+  // en seis spawns (cinco de 20 y East Alley con 16), ninguna muerte temprana.
+  await expect(panel.locator('.salida-ataque')).toContainText('en el 0% de las rondas (0 de 116)')
+  await expect(panel.locator('tbody tr')).toHaveCount(6)
+  // Columnas: mapa, spawn, rondas, mueres temprano, %, resto, diferencia, margen, bajas, veredicto.
+  const boulevard = panel.locator('tr', {
+    has: page.getByRole('cell', { name: 'Boulevard', exact: true }),
+  })
+  await expect(boulevard.locator('td').nth(0)).toHaveText('Bank')
+  await expect(boulevard.locator('td').nth(2)).toHaveText('20')
+  await expect(boulevard.locator('td').nth(3)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(8)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(9)).toHaveText('Sin señal')
+
+  expect(errores).toEqual([])
+})
+
+test('Partidas filtra por resultado y por mapa', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+
+  // seed_demo gana sus 29 partidas: "Victoria" las trae todas y "Derrota" ninguna
+  const subtitulo = page.locator('.page-head p')
+  await expect(subtitulo).toHaveText('29 partidas importadas.')
+  await expect(page.getByLabel('Mapa')).toBeVisible()
+  await expect(page.getByLabel('Periodo')).toBeVisible()
+  await expect(page.getByLabel('Lado')).toHaveCount(0)
+  await expect(page.getByLabel('Operador')).toHaveCount(0)
+
+  const resultado = page.getByLabel('Resultado')
+  let respuesta = page.waitForResponse(/\/api\/matches\/\?.*result=victoria/)
+  await resultado.selectOption('victoria')
+  await respuesta
+  await expect(subtitulo).toHaveText('29 partidas con estos filtros.')
+  const filas = page.locator('table tbody tr')
+  await expect(filas).toHaveCount(29)
+  await expect(filas.filter({ hasNot: page.locator('.chip.win') })).toHaveCount(0)
+
+  await resultado.selectOption('derrota')
+  await expect(subtitulo).toHaveText('0 partidas con estos filtros.')
+  await expect(page.getByText('Ninguna partida con estos filtros')).toBeVisible()
+  await expect(page.locator('.filters')).toBeVisible()
+  await expect(page.locator('.empty-state')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(subtitulo).toHaveText('29 partidas importadas.')
+  await expect(resultado).toHaveValue('')
+
+  const mapa = page.getByLabel('Mapa')
+  const opcion = mapa.locator('option').nth(1)
+  const valor = await opcion.getAttribute('value')
+  const etiqueta = (await opcion.textContent()).trim()
+  respuesta = page.waitForResponse(/\/api\/matches\/\?.*map=/)
+  await mapa.selectOption(valor)
+  await respuesta
+  await expect(subtitulo).toHaveText(/^\d+ partidas? con estos filtros\.$/)
+  const n = Number((await subtitulo.textContent()).split(' ')[0])
+  expect(n).toBeGreaterThan(0)
+  expect(n).toBeLessThan(29)
+  await expect(filas).toHaveCount(n)
+  // la columna Mapa es la segunda
+  for (const celda of await filas.locator('td:nth-child(2)').allTextContents()) {
+    expect(celda.trim()).toBe(etiqueta)
+  }
+
+  await page.getByRole('button', { name: 'Limpiar' }).click()
+  await expect(subtitulo).toHaveText('29 partidas importadas.')
+
+  // una respuesta vieja que llega tarde no pisa la del filtro nuevo: la de
+  // "Victoria" se demora hasta que "Derrota" ya respondio
+  let soltarVictoria
+  const victoriaDemorada = new Promise((resolve) => (soltarVictoria = resolve))
+  await page.route(/\/api\/matches\/\?.*result=victoria/, async (route) => {
+    await victoriaDemorada
+    await route.continue()
+  })
+  await resultado.selectOption('victoria')
+  respuesta = page.waitForResponse(/\/api\/matches\/\?.*result=derrota/)
+  await resultado.selectOption('derrota')
+  await respuesta
+  await expect(subtitulo).toHaveText('0 partidas con estos filtros.')
+  const tarde = page.waitForResponse(/\/api\/matches\/\?.*result=victoria/)
+  soltarVictoria()
+  await tarde
+  await expect(page.getByText('Ninguna partida con estos filtros')).toBeVisible()
+  await expect(page.locator('table tbody tr')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
+test('una partida o un jugador que no existe lo dice sin culpar a Django', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const casos = [
+    ['/partidas/999999', 'Esa partida no existe', 'Partidas'],
+    ['/partidas/abc', 'Esa partida no existe', 'Partidas'],
+    ['/jugadores/999999', 'Ese jugador no existe', 'Compañeros'],
+    ['/jugadores/abc', 'Ese jugador no existe', 'Compañeros'],
+  ]
+  for (const [ruta, titulo, lista] of casos) {
+    await page.goto(ruta)
+    await expect(page.locator('main h2')).toHaveText(titulo)
+    await expect(page.getByText('Django')).toHaveCount(0)
+    await page.locator('.empty-state a.btn').click()
+    await expect(page.locator('h1')).toHaveText(lista)
+    // la lista pide /api/filters/ al montar; sin esperarla, el goto de la
+    // vuelta siguiente la corta en vuelo y la consola anota un ERR_ABORTED
+    await page.waitForLoadState('networkidle')
+  }
+
+  // Chromium loguea cada 404 como "Failed to load resource" sin la URL en el
+  // texto; se esperan exactamente los cuatro de los casos, asi un 404 de otra
+  // cosa en estas paginas sigue haciendo fallar la prueba
+  const de404 = errores.filter((e) => e.includes('status of 404'))
+  expect(de404).toHaveLength(casos.length)
+  expect(errores.filter((e) => !e.includes('status of 404'))).toEqual([])
+})
+
+test('con la API caida el aviso sigue culpando a Django', async ({ page }) => {
+  // el abort es a proposito y ensucia la consola: este test no la mira
+  await page.route('**/api/matches/**', (route) => route.abort())
+  await page.goto('/partidas/1')
+  const aviso = page.locator('.error')
+  await expect(aviso).toContainText('No pude leer la API')
+  await expect(aviso).toContainText('Revisa que Django esté corriendo.')
+  await expect(aviso).not.toContainText('8000')
 })
