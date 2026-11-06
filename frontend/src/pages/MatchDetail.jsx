@@ -20,6 +20,7 @@ import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
+import { separadorAntes, textoStackRival } from '../stacksRivales.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -104,6 +105,8 @@ export default function MatchDetail() {
           sub={`${pct(mine.untraded_death_pct)} de tus muertes`}
         />
       </div>
+
+      <StacksRivales stacks={data.rival_stacks} />
 
       {round ? (
         <Panel title="Rondas" hint="Clic en una ronda para ver su timeline.">
@@ -265,6 +268,26 @@ export default function MatchDetail() {
         />
       </Panel>
     </>
+  )
+}
+
+function StacksRivales({ stacks }) {
+  // Sin grupos no se muestra nada: un panel vacio en cada partida contra desconocidos seria ruido
+  if (!stacks?.length) return null
+  return (
+    <div className="note stacks-rivales">
+      {stacks.map((grupo) => (
+        <div key={grupo.players.map((j) => j.player_id).join('-')}>
+          {grupo.players.map((j, i) => (
+            <React.Fragment key={j.player_id}>
+              {separadorAntes(i, grupo.players.length)}
+              <Link to={`/jugadores/${j.player_id}`}>{j.username}</Link>
+            </React.Fragment>
+          ))}{' '}
+          {textoStackRival(grupo)} · <Link to="/duelos">Ver en Duelos</Link>
+        </div>
+      ))}
+    </div>
   )
 }
 

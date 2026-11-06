@@ -24,3 +24,21 @@ test('Duelos muestra el stack rival del seed con su récord', async ({ page }) =
 
   expect(errores).toEqual([])
 })
+
+test('el detalle de la partida avisa del stack rival repetido', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const aviso = page.locator('.stacks-rivales')
+  await expect(aviso).toBeVisible()
+  await expect(aviso.getByRole('link')).toHaveText(['Kaid_', 'Mozzie99', 'Thorn.exe', 'Ver en Duelos'])
+  await expect(aviso).toContainText('Kaid_, Mozzie99 y Thorn.exe ya te tocaron juntos en 29 partidas, récord 29-0')
+  await expect(aviso.getByRole('link', { name: 'Kaid_' })).toHaveAttribute('href', /\/jugadores\/\d+$/)
+
+  await aviso.getByRole('link', { name: 'Ver en Duelos' }).click()
+  await expect(page).toHaveURL(/\/duelos$/)
+
+  expect(errores).toEqual([])
+})
