@@ -663,6 +663,84 @@ def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
     return rows
 
 
+#: Rondas minimas del operador en un sitio, y del resto de tus operadores ahi,
+#: para que la fila salga: con menos, la banda de ruido se come cualquier
+#: diferencia y la tabla seria una lista de casualidades.
+OPERADOR_SITIO_MIN_RONDAS = 10
+
+
+def operator_by_site(min_rounds: int = OPERADOR_SITIO_MIN_RONDAS, **filters) -> dict:
+    """Winrate con cada operador en un sitio contra el resto de tus operadores ahi.
+
+    El resto es mismo mapa (por version), sitio y lado con otro operador; no
+    el total del sitio, que contiene al operador (mismo motivo que
+    `_contra_el_resto`). El filtro `operator` no entra a la base: dejaria el
+    resto vacio. Recorta las filas al final.
+
+    Solo cuentan rondas con ganador: una sin ganador no es derrota, asi que se
+    lee `round__my_team_won` y no `won`, que la cuenta como perdida.
+    """
+    operador = filters.get("operator")
+    base = {k: v for k, v in filters.items() if k != "operator"}
+    qs = (
+        base_queryset(**base)
+        .exclude(operator="")
+        .exclude(round__site="")
+        .exclude(side="")
+        .filter(round__my_team_won__isnull=False)
+    )
+    crudas = list(
+        qs.order_by()
+        .values(*_MAPA, "round__site", "side", "operator")
+        .annotate(rounds=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+    # El total del sitio se suma antes del minimo: ocultar una fila no mueve
+    # el resto de las demas.
+    def clave(c: dict) -> tuple:
+        return (*(c[campo] for campo in _MAPA), c["round__site"], c["side"])
+
+    totales: dict[tuple, list[int]] = {}
+    for c in crudas:
+        total = totales.setdefault(clave(c), [0, 0])
+        total[0] += c["rounds"]
+        total[1] += c["won"]
+
+    filas = []
+    for c in crudas:
+        total_rondas, total_ganadas = totales[clave(c)]
+        rondas, ganadas = c["rounds"], c["won"]
+        resto, resto_ganadas = total_rondas - rondas, total_ganadas - ganadas
+        if rondas < min_rounds or resto < min_rounds:
+            continue
+        if operador and c["operator"] != operador:
+            continue
+        winrate = _pct(ganadas, rondas)
+        resto_winrate = _pct(resto_ganadas, resto)
+        delta = _delta(winrate, resto_winrate)
+        margen, veredicto = _margen_y_veredicto(
+            delta, ganadas, rondas, total_ganadas, total_rondas, ("rinde", "hunde"),
+        )
+        filas.append({
+            **{etiqueta: c[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+            "site": c["round__site"],
+            "side": c["side"],
+            "operator": c["operator"],
+            "rounds": rondas,
+            "rounds_won": ganadas,
+            "winrate": winrate,
+            "rest_rounds": resto,
+            "rest_winrate": resto_winrate,
+            "winrate_delta": delta,
+            "margin": margen,
+            "verdict": veredicto,
+        })
+    filas = _etiquetar(filas)
+    filas.sort(key=lambda f: (
+        f["winrate_delta"] is None, -abs(f["winrate_delta"] or 0), -f["rounds"], f["operator"],
+    ))
+    return {"rows": filas, "min_rounds": min_rounds, "bands": POSICION_BANDAS}
+
+
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     """Solo tiene sentido en ataque: el spawn es la posicion de inicio."""
     qs = base_queryset(**filters).filter(side="Attack").exclude(spawn="")
@@ -725,7 +803,7 @@ def _ruido_combinado(parte: int, n: int, parte_total: int, n_total: int) -> floa
 
 def _margen_y_veredicto(delta: float | None, parte: int, n: int, parte_total: int,
                         n_total: int, nombres: tuple[str, str]) -> tuple[float | None, str]:
-    """Margen de ruido de la zona y su veredicto: `nombres` es (peor, mejor)."""
+    """Margen de ruido de la zona y su veredicto: `nombres` es (delta positivo, delta negativo)."""
     se = _ruido_combinado(parte, n, parte_total, n_total)
     margen = round(POSICION_BANDAS * se, 1) if se is not None else None
     if delta is None or margen is None:

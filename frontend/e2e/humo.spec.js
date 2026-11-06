@@ -101,6 +101,60 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra el operador por sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: el maximo es 8 rondas de un operador en un sitio, menos que el
+  // minimo de 10, asi que el panel dice por que esta vacio
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Por sitio', exact: true }) })
+  await expect(panel).toContainText('Ningún operador llega a 10 rondas en un sitio')
+
+  // con el minimo bajo hay filas; todo el ataque del seed se gana y toda la
+  // defensa se pierde, asi que ningun operador se separa del resto
+  const resp = await page.request.get('/api/operators/sites/?min_rounds=5')
+  expect(resp.ok()).toBe(true)
+  const datos = await resp.json()
+  expect(datos.rows.length).toBeGreaterThan(0)
+  for (const fila of datos.rows) {
+    expect(fila.verdict).toBe('ruido')
+    expect(fila.winrate_delta).toBe(0)
+  }
+
+  // la tabla tambien se renderiza: misma request con el minimo bajo
+  await page.route('**/api/operators/sites/**', async (route) => {
+    const url = new URL(route.request().url())
+    url.searchParams.set('min_rounds', '5')
+    await route.fulfill({ response: await route.fetch({ url: url.toString() }) })
+  })
+  await page.reload()
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(datos.rows.length)
+  await expect(filas.first()).toContainText('Sin señal')
+  await expect(panel.locator('th', { hasText: 'Veredicto' })).toBeVisible()
+
+  // el seed no tiene deltas distintos de 0: dos filas fijas prueban que la
+  // tabla sale en el orden del backend (|delta|) y no ordenada por mapa
+  const fila = (map, operator, delta, verdict) => ({
+    map, slug: map.toLowerCase(), map_id: 0, site: 'A Sitio', side: 'Attack', operator,
+    rounds: 20, rounds_won: 10, winrate: 50, rest_rounds: 20, rest_winrate: 50 - delta,
+    winrate_delta: delta, margin: 10, verdict,
+  })
+  await page.unroute('**/api/operators/sites/**')
+  await page.route('**/api/operators/sites/**', (route) =>
+    route.fulfill({
+      json: { rows: [fila('Bank', 'Ash', -30, 'hunde'), fila('Oregon', 'Zofia', 5, 'ruido')], min_rounds: 10, bands: 2 },
+    }),
+  )
+  await page.reload()
+  await expect(filas).toHaveCount(2)
+  await expect(filas.first()).toContainText('Bank')
+  await expect(filas.first()).toContainText('Te hunde')
+  await expect(filas.nth(1)).toContainText('Oregon')
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

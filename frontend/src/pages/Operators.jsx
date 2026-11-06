@@ -13,6 +13,8 @@ import {
   SinRondasFiltradas,
   pct,
 } from '../components/ui.jsx'
+import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
+import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Operators({ filters, setFilters, runImport, importing }) {
@@ -60,6 +62,8 @@ export default function Operators({ filters, setFilters, runImport, importing })
           <Table rows={rows} nombre="operadores" />
         </Panel>
       ) : null}
+
+      <PorSitio filters={filters} />
     </>
   )
 }
@@ -107,6 +111,65 @@ function Table({ rows, nombre }) {
       initialSort={{ key: 'rounds', dir: 'desc' }}
       rowKey={(row) => `${row.operator}-${row.side}`}
       csvName={nombre}
+    />
+  )
+}
+
+// Request aparte: un error o una tabla vacia aca no tumba la pagina, y la
+// vista vacia la sigue decidiendo `/operators/`.
+function PorSitio({ filters }) {
+  const { data, error, loading } = useApi('/operators/sites/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else if (!data?.rows?.length) cuerpo = <p className="note">{textoSinFilas(data)}</p>
+  else cuerpo = <TablaPorSitio rows={data.rows} />
+  return (
+    <Panel
+      title="Por sitio"
+      hint="Winrate con el operador en ese sitio contra el resto de tus operadores ahí (mismo mapa, sitio y lado)."
+    >
+      {cuerpo}
+    </Panel>
+  )
+}
+
+function TablaPorSitio({ rows }) {
+  return (
+    <DataTable
+      columns={[
+        { key: 'map', label: 'Mapa', left: true },
+        { key: 'site', label: 'Sitio', left: true },
+        { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
+        { key: 'operator', label: 'Operador', left: true },
+        { key: 'rounds', label: 'Rondas' },
+        { key: 'winrate', label: 'Ganadas', render: (row) => pct(row.winrate) },
+        {
+          key: 'rest_winrate',
+          label: 'Resto',
+          help: 'Winrate con tus otros operadores en el mismo mapa, sitio y lado. Pasa el cursor por la celda para ver cuántas rondas son.',
+          render: (row) => <span title={`${row.rest_rounds} rondas`}>{pct(row.rest_winrate)}</span>,
+        },
+        { key: 'winrate_delta', label: 'Diferencia', render: (row) => conSigno(row.winrate_delta) },
+        {
+          key: 'margin',
+          label: 'Margen',
+          dim: true,
+          help: 'Dos errores estándar de la diferencia. Con muchas filas, una diferencia menor que esto sale sola por azar.',
+          render: (row) => comoMargen(row.margin),
+        },
+        {
+          key: 'verdict',
+          label: 'Veredicto',
+          sortable: false,
+          csv: (row) => etiquetaSitio(row.verdict),
+          render: (row) => <span className={`chip ${claseSitio(row.verdict)}`.trim()}>{etiquetaSitio(row.verdict)}</span>,
+        },
+      ]}
+      rows={conOrdenDelBackend(rows)}
+      initialSort={{ key: 'orden', dir: 'asc' }}
+      rowKey={(row) => `${row.slug}-${row.map_id}-${row.site}-${row.side}-${row.operator}`}
+      csvName="operadores-por-sitio"
     />
   )
 }
