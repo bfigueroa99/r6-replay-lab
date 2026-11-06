@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T00:42Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
@@ -165,6 +165,39 @@ mapa la cambia.
 OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261106T0041Z-cJuLRWM, sobre `origin/dev@c63314e`)
+
+Quedo el diseno completo, sin desvios:
+
+- `aggregates.py`: `racha_actual_de_partidas(partidas)` (pura) y la clave
+  `current_streak` en `matches_summary`. Las `won=None` se saltan sin cortar.
+- `rachas.js`: `textoRachaActual`; `Dashboard.jsx`: `.racha-actual` arriba de
+  la forma reciente en Últimas partidas, nada con `current_streak: null`.
+- `docs/metricas.md`: fila **Racha actual de partidas** en `## Base`.
+
+Criterios -> tests:
+- clave y forma, `null` sin decididas: `test_sin_partidas_la_racha_es_nula`,
+  `test_solo_partidas_sin_resultado_dan_nula`,
+  `test_tres_ganadas_al_final_dan_racha_de_tres` (since y match_ids),
+  `test_cuenta_desde_la_ultima_y_corta_en_el_otro_resultado` (pura).
+- `won=None` no corta ni suma: `test_una_partida_sin_resultado_no_corta_ni_suma`,
+  `test_las_sin_resultado_no_entran_en_los_ids`.
+- filtro (sin lado): `test_el_filtro_de_mapa_cambia_la_racha`,
+  `test_el_filtro_de_lado_no_parte_la_partida` (la perdida solo tiene rondas
+  en defensa: con lado aplicado daria victoria).
+- API: `test_la_api_del_resumen_trae_la_racha`; ademas
+  `test_la_ultima_perdida_da_racha_de_una_derrota`.
+- singular/plural: vitest `una victoria va en singular sin seguidas`,
+  `una derrota va en singular sin seguidas`, `varias derrotas van en plural con desde`,
+  `varias victorias van en plural con desde`, `la racha actual nula no da texto`.
+- e2e: `el Resumen muestra tus partidas` (humo.spec.js) espera
+  "Racha actual: 29 victorias seguidas desde 2026-08-01".
+
+Verificacion: verificar.sh VERDE 692b47fb3 (1011 tests backend, 215 vitest, 67 e2e).
+
+Skills: no aplica (diseno sin dominio nuevo).
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## Revision
 
