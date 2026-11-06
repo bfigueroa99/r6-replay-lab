@@ -101,6 +101,29 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra el operador por sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: el maximo es 8 rondas de un operador en un sitio, menos que el
+  // minimo de 10, asi que el panel dice por que esta vacio
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Por sitio', exact: true }) })
+  await expect(panel).toContainText('Ningún operador llega a 10 rondas en un sitio')
+
+  // con el minimo bajo hay filas; todo el ataque del seed se gana y toda la
+  // defensa se pierde, asi que ningun operador se separa del resto
+  const resp = await page.request.get('/api/operators/sites/?min_rounds=5')
+  expect(resp.ok()).toBe(true)
+  const datos = await resp.json()
+  expect(datos.rows.length).toBeGreaterThan(0)
+  for (const fila of datos.rows) {
+    expect(fila.verdict).toBe('ruido')
+    expect(fila.winrate_delta).toBe(0)
+  }
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

@@ -229,6 +229,13 @@ def operators(request: HttpRequest) -> JsonResponse:
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
 
 
+@require_GET
+def operators_by_site(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_by_site(
+        min_rounds=_min_rounds(request, agg.OPERADOR_SITIO_MIN_RONDAS), **_filters(request)
+    ))
+
+
 def _catalogo_operadores() -> list[dict]:
     """Todos los operadores conocidos con su lado, para la ruleta.
 

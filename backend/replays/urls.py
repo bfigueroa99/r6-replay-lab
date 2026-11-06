@@ -14,6 +14,7 @@ urlpatterns = [
     path("positioning/", views.positioning, name="positioning"),
     path("operators/", views.operators, name="operators"),
     path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
+    path("operators/sites/", views.operators_by_site, name="operators-by-site"),
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),
     path("duels/", views.duels, name="duels"),
