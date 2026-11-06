@@ -1,9 +1,9 @@
 """Recalculo de bajas, trades, clutch y 1vX sobre lo ya importado, sin reparsear los replays.
 
 Los trades se guardan calculados al importar, asi que cambiar
-`TRADE_WINDOW_SECONDS` no mueve nada por si solo. `clutch_vs` tambien se
-rehace aca: las partidas importadas antes de que existiera la columna la
-tienen en 0. `one_vx` se rehace porque quien se fue (`PlayerLeave`) ya no
+`TRADE_WINDOW_SECONDS` no mueve nada por si solo. `clutch_vs` y `clutch_kills`
+tambien se rehacen aca: las partidas importadas antes de que existieran las
+columnas las tienen en 0. `one_vx` se rehace porque quien se fue (`PlayerLeave`) ya no
 cuenta como vivo (ficha 69); `Round.teams` guarda quien gano. Todo lo que hace falta para
 rehacer el calculo esta en la base: los eventos con su reloj y los jugadores con
 su equipo. No hay que abrir un solo `.rec`.
@@ -14,7 +14,7 @@ marcador que la regla no cierra. Marcador, tipo y version estan en `Match`.
 
 Las reglas no se reimplementan aca: se llama a las mismas
 `metrics.bajas_a_rivales`, `metrics.annotate_trades` (tambien marca la
-apertura devuelta), `metrics.clutch_vs`, `metrics.one_vx` y
+apertura devuelta), `metrics.clutch_vs`, `metrics.clutch_kills`, `metrics.one_vx` y
 `reglas_partida.resultado` que usa el import. Duplicarlas significaria
 numeros distintos segun por donde pasaste.
 """
@@ -29,6 +29,7 @@ from .analytics.metrics import (
     KILL,
     annotate_trades,
     bajas_a_rivales,
+    clutch_kills,
     clutch_vs,
     equipo_ganador,
     one_vx,
@@ -41,7 +42,7 @@ from .models import Event, Match, Round, RoundPlayer
 #: apertura devuelta) y el clutch.
 CAMPOS = (
     "kills", "headshots", "was_traded", "trade_kills", "untraded_death", "kst", "clutch_vs",
-    "one_vx", "opening_kill_traded",
+    "one_vx", "opening_kill_traded", "clutch_kills",
 )
 
 
@@ -93,6 +94,8 @@ def _recompute_round(rnd: Round, window: float, dry_run: bool) -> tuple[int, int
     clutch = clutch_vs(planos, team_of)
     for nick, vs in clutch.items():
         metrics[nick]["clutch_vs"] = vs
+    for nick, k in clutch_kills(planos, team_of).items():
+        metrics[nick]["clutch_kills"] = k
     for nick, vx in one_vx(planos, team_of, equipo_ganador(rnd.teams)).items():
         metrics[nick]["one_vx"] = vx
 
@@ -138,7 +141,7 @@ def _recompute_resultados(dry_run: bool) -> int:
 
 
 def recompute(*, window: float | None = None, dry_run: bool = False) -> RecomputeResult:
-    """Rehace las bajas, los trades, `clutch_vs` y `one_vx` de todas las rondas importadas.
+    """Rehace bajas, trades, `clutch_vs`, `clutch_kills` y `one_vx` de las rondas importadas.
 
     Tambien saca los teamkills de `kills` y `headshots` y rehace `Match.won`.
     """
