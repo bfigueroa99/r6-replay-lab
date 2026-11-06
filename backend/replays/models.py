@@ -164,6 +164,10 @@ class RoundPlayer(models.Model):
     one_vx = models.IntegerField(default=0)
     # rivales vivos cuando quedaste solo, ganes o pierdas; 0 si nunca
     clutch_vs = models.IntegerField(default=0)
+    # bajas a rivales desde que quedaste solo; 0 si nunca. Un 0 en un clutch
+    # ganado se lee como "silencioso", por eso la migracion 0005 llena lo ya
+    # importado en vez de confiar en el default
+    clutch_kills = models.IntegerField(default=0)
 
     # --- metricas derivadas
     opening_kill = models.BooleanField(default=False)
