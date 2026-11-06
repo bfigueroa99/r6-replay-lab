@@ -606,10 +606,12 @@ test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   // La tabla abre ordenada por fecha desc: la primera fila es la sesion mas reciente
   await expect(panel.locator('tbody tr').first()).toContainText('1G 0P')
   await panel.getByRole('button', { name: 'Copiar' }).first().click()
-  await expect(panel.getByText('Sesión copiada', { exact: true })).toBeVisible()
+  await expect(panel.getByText(`Sesión copiada (${sesion.start.slice(5, 16).replace('T', ' ')})`, { exact: true })).toBeVisible()
   const texto = await page.evaluate(() => navigator.clipboard.readText())
   expect(texto.startsWith(`Sesión del ${sesion.start.slice(0, 16).replace('T', ' ')}`)).toBe(true)
   expect(texto).toContain('1 partida: 1G 0P')
+  // seed_demo: cada sesion es una partida, asi que no hay extremos que nombrar
+  expect(texto).not.toContain('Mejor partida')
 
   expect(errores).toEqual([])
 })

@@ -230,20 +230,21 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/trends/', { ...filters, limit: 60 })
   const sesiones = useApi('/sessions/', filters)
   const [ventana, setVentana] = useState(1)
-  // { index, ok }: que sesion se copio y si el navegador dejo
+  // { start, ok }: que sesion se copio y si el navegador dejo; el aviso nombra la
+  // sesion porque queda a la vista aunque cambien los filtros o el orden
   const [copia, setCopia] = useState(null)
 
   async function copiarSesion(sesion) {
     // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
     if (!navigator.clipboard?.writeText) {
-      setCopia({ index: sesion.index, ok: false })
+      setCopia({ start: sesion.start, ok: false })
       return
     }
     try {
       await navigator.clipboard.writeText(textoResumenSesion(sesion))
-      setCopia({ index: sesion.index, ok: true })
+      setCopia({ start: sesion.start, ok: true })
     } catch {
-      setCopia({ index: sesion.index, ok: false })
+      setCopia({ start: sesion.start, ok: false })
     }
   }
   const rango = VENTANAS[ventana]
@@ -487,7 +488,9 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         <Panel title="Sesiones" hint="Cada bloque de juego, de la más reciente hacia atrás.">
           {copia && (
             <p className="note" role="status">
-              {copia.ok ? 'Sesión copiada' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+              {copia.ok
+                ? `Sesión copiada (${copia.start.slice(5, 16).replace('T', ' ')})`
+                : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
             </p>
           )}
           <DataTable

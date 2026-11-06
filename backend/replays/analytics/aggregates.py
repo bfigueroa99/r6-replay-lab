@@ -2222,7 +2222,7 @@ def _extremos_de_sesion(ids: list[int], por_partida: dict[int, dict], info: dict
     """
     candidatas = []
     for mid in ids:
-        # Copia: `derive` hace pop de los alias y la misma fila despues va a `_fold`.
+        # Copia: `derive` hace pop de los alias y la fila de `por_partida` es compartida.
         rating = derive(dict(por_partida[mid]), baseline)["rating"]
         if rating is not None:
             candidatas.append((rating, info[mid]))
