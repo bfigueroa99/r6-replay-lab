@@ -238,8 +238,6 @@ verificar.sh: VERDE f14af40eb (1005 tests backend, 216 vitest, 68 e2e).
 Skills: no aplica (lo dice el diseno). 
 OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
 
-## Revision
-
 ## Revision 2026-11-06 sobre bd23b14
 
 (Revisor 20261106T0109Z-cSomhFc.) Dos ejes a ciegas (`omc-code-reviewer` con `revision.md`
