@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
-estado: implementado
-candado: revisor 2026-11-06T01:09Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: E14 de ALCANCE.md (salio del PR #14, cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sirve de referencia)
 archivos: backend/replays/analytics/aggregates.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/pages/Dashboard.jsx, backend/tests/test_racha_actual.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM, revisor 20261106T0109Z-cGwrEvi
 
 ## PR
 
@@ -206,3 +206,40 @@ OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 ## Pendiente
 
 ## Para el humano
+
+## Revision 2026-11-06 sobre 24c968d
+
+(revisor 20261106T0109Z-cGwrEvi, diff `origin/dev...24c968d`, dev sin moverse desde `c63314e`)
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares; diff de 184 lineas
+y un solo tema, sin eje de intencion ni de seguridad: no toca POST, `.rec`,
+rutas ni dependencias): sin hallazgos.
+
+Confirmado por el lider:
+- `racha_actual_de_partidas` recibe las filas de `matches_summary`, que ya
+  vienen con `order_by("played_at", "id")` y sin el lado (`filtros` sin
+  `side`): orden y filtro como pide la ficha.
+- `won=None` se salta con `continue` antes de comparar: no corta ni suma.
+  Lo prueban `test_una_partida_sin_resultado_no_corta_ni_suma` (G, None, G da
+  2: daria 1 si cortara y 3 si sumara) y `test_las_sin_resultado_no_entran_en_los_ids`.
+- Filtro de mapa (`test_el_filtro_de_mapa_cambia_la_racha`, 1 sin filtro y 2
+  con filtro) y de lado (`test_el_filtro_de_lado_no_parte_la_partida`: la
+  perdida solo tiene rondas de defensa, con el lado aplicado daria victoria).
+- Singular y plural: cuatro casos en vitest, mas el nulo.
+- UI: `.racha-actual` solo con texto no vacio; con `current_streak: null`
+  `textoRachaActual` da `''` y no se renderiza nada. Texto con tildes
+  ("Últimas partidas" ya existia), identificadores sin tildes, sin
+  `console.log` ni `print`.
+- e2e: "29 victorias seguidas desde 2026-08-01" sale de `seed_demo` (29
+  partidas ganadas desde `INICIO`).
+- Fila **Racha actual de partidas** en `docs/metricas.md`, `## Base`.
+- El diff no sale de `archivos:` (`views.py` no se toco, como decia el diseno).
+
+Criterios de aceptacion: los seis cubiertos por tests (mapeo en
+`## Implementacion`, comprobado).
+
+Verificacion: verificar.sh VERDE 6f70db827 (1011 tests backend, 215 vitest, 67 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
