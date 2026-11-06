@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T01:35Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -219,6 +219,63 @@ lo toca la 94. Sin migracion. Prioriza, no bloquea.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261106T0135Z-cYfUHhx)
+
+Quedo el diseno completo, en su orden:
+
+- `aggregates.py`: `OPERADOR_SITIO_MIN_RONDAS = 10` y `operator_by_site()`
+  junto a `by_operator`. Una consulta agrupada por mapa (version), sitio,
+  lado y operador; los totales del sitio se suman en Python antes del minimo;
+  resto = total - operador; `_margen_y_veredicto(..., ("rinde", "hunde"))`.
+  Docstring de `_margen_y_veredicto` corregido a "(delta positivo, delta
+  negativo)", sin tocar la logica.
+- `views.py` + `urls.py`: `GET /api/operators/sites/` (`?min_rounds=`).
+- `tests/test_operador_por_sitio.py`: 13 tests. Cada criterio:
+  - rinde / hunde: `test_un_operador_que_gana_mas_que_el_resto_del_sitio_rinde`
+    (Ash 20/20 vs Zofia 4/20, delta +80 / -80, orden por |delta|);
+  - ruido: `test_una_diferencia_chica_es_ruido` (11/20 vs 10/20);
+  - resto y no total: `test_compara_contra_el_resto_y_no_contra_el_total`
+    (35 % y no 50 %);
+  - minimo: `test_sin_muestra_del_operador_o_del_resto_no_hay_fila` (con 9
+    del operador o 9 del resto no hay fila; `?min_rounds=5` las trae);
+  - rondas sin ganador: `test_las_rondas_sin_ganador_no_cuentan`;
+  - sin sitio, lado u operador: `test_rondas_sin_sitio_lado_u_operador_quedan_fuera`
+    (verificado con un mutante: sin el `exclude(side="")` falla);
+  - resto = mismo mapa, sitio y lado: `test_otro_lado_u_otro_sitio_no_es_el_resto`;
+  - versiones: `test_las_versiones_de_un_mapa_van_separadas` (Consulate Y7/Y10);
+  - filtros: `test_el_filtro_de_operador_no_vacia_el_resto`,
+    `test_respeta_el_filtro_de_lado`, `test_respeta_el_filtro_de_mapa`;
+  - `test_sin_rondas_devuelve_lista_vacia`, `test_solo_acepta_get`.
+- `frontend/src/operadorSitio.js` + vitest (5 tests): etiquetas, clases y
+  `textoSinFilas` con el minimo de la api (10 por defecto). Reusa `conSigno`
+  y `comoMargen` de `posicion.js`.
+- `Operators.jsx`: componente `PorSitio` con su propio `useApi`, panel "Por
+  sitio" al final de la pagina; error y vacio quedan dentro del panel.
+- `docs/metricas.md`: fila **Operador por sitio** en `## Cortes`, debajo de
+  **vs. tu lado**.
+- e2e `Operadores muestra el operador por sitio` en `humo.spec.js`: texto
+  vacio con el seed, la api con `min_rounds=5` da todo `ruido` y delta 0, y
+  ademas (desvio, ver abajo) la tabla renderizada.
+
+Desvios del diseno:
+
+- El e2e suma un paso: intercepta `/api/operators/sites/` con `page.route`
+  y le pone `min_rounds=5`, recarga y comprueba que la tabla tiene tantas
+  filas como la api y que dice "Sin señal". Sin eso el e2e nunca renderizaba
+  `TablaPorSitio` (lo marco el revisor ciego). `seed_demo` no se toco.
+- Test extra de filtro de mapa y de 405 al POST.
+- La celda Resto muestra las rondas del resto en el `title` (tooltip), no en
+  una columna aparte.
+
+No quedo nada sin hacer. Revision ciega `omc-code-reviewer` (revision.md):
+aprobar, con 2 hallazgos (MEDIUM: el e2e no renderizaba la tabla; LOW: el
+`exclude(side="")` sin test), los dos corregidos.
+
+verificar.sh: VERDE 7086bcc74 (1013 tests backend, 215 vitest, 68 e2e).
+
+Skills: no aplica (patron del repo, ningun dominio nuevo).
+OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
 ## Revision
 
