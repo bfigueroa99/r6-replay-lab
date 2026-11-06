@@ -1,7 +1,8 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react'
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 
 import { get, post, useApi } from './api.js'
+import { conFiltros, filtrosDeUrl, mismosFiltros, queryDeFiltros, usaFiltros } from './filtrosUrl.js'
 import { avisoAutomatico, etiquetaImportacion } from './importacion.js'
 import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
@@ -43,7 +44,16 @@ const IDLE_MS = 10_000
 const espera = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export default function App() {
-  const [filters, setFilters] = useState({})
+  const location = useLocation()
+  const navigate = useNavigate()
+  const navigationType = useNavigationType()
+  // perezoso y no en un efecto: Filters decide si abre el rango de fechas al
+  // montarse y las paginas piden a la API en el primer render
+  const [filters, setFilters] = useState(() =>
+    usaFiltros(location.pathname) ? filtrosDeUrl(location.search) : {},
+  )
+  const filtrosActuales = useRef(filters)
+  filtrosActuales.current = filters
   const [importing, setImporting] = useState(false)
   const [progreso, setProgreso] = useState(null)
   const [flash, setFlash] = useState(null)
@@ -104,7 +114,7 @@ export default function App() {
           ? `Error al importar: ${job.error}`
           : ok
             ? `Importadas ${ok} partida(s).` + (job.errors ? ` ${job.errors} con error.` : '')
-            : 'No habia partidas nuevas para importar.' +
+            : 'No había partidas nuevas para importar.' +
               (job.errors ? ` ${job.errors} con error.` : ''),
       )
       health.reload()
@@ -116,10 +126,37 @@ export default function App() {
     }
   }, [health])
 
+  // replace siempre: cada cambio de select no tiene que ser una entrada de historial
+  const cambiarFiltros = useCallback(
+    (nuevos) => {
+      setFilters(nuevos)
+      if (usaFiltros(location.pathname)) navigate(conFiltros(location.pathname, nuevos), { replace: true })
+    },
+    [location.pathname, navigate],
+  )
+
+  // La URL manda cuando la trae el navegador (carga, recarga, Atras, URL
+  // pegada) o cuando viene con filtros; un Link interno sin query ("Ver en
+  // Duelos") hereda los del estado, que es lo que mantiene los filtros al
+  // cambiar de pagina. Solo se navega si la query difiere: sin eso, bucle.
+  useEffect(() => {
+    if (!usaFiltros(location.pathname)) return
+    const actual = location.search.replace(/^\?/, '')
+    const desdeUrl = filtrosDeUrl(actual)
+    const canonica = queryDeFiltros(desdeUrl)
+    if (navigationType === 'POP' || canonica !== '' || actual !== '') {
+      if (!mismosFiltros(desdeUrl, filtrosActuales.current)) setFilters(desdeUrl)
+      // ?days=abc&x=1: la barra de direcciones no puede decir algo que la pagina no hace
+      if (canonica !== actual) navigate(conFiltros(location.pathname, desdeUrl), { replace: true })
+    } else if (queryDeFiltros(filtrosActuales.current) !== '') {
+      navigate(conFiltros(location.pathname, filtrosActuales.current), { replace: true })
+    }
+  }, [location.pathname, location.search, navigationType, navigate])
+
   const enCurso = importing ? progreso : auto
   const etiquetaImport = etiquetaImportacion(enCurso, importing)
 
-  const context = { filters, setFilters, runImport, importing, health: health.data }
+  const context = { filters, setFilters: cambiarFiltros, runImport, importing, health: health.data }
 
   return (
     <div className="app">
@@ -129,7 +166,11 @@ export default function App() {
         </div>
         <nav className="nav">
           {LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.to === '/'}>
+            <NavLink
+              key={link.to}
+              to={usaFiltros(link.to) ? conFiltros(link.to, filters) : link.to}
+              end={link.to === '/'}
+            >
               {link.label}
             </NavLink>
           ))}
@@ -184,7 +225,7 @@ export default function App() {
             path="*"
             element={
               <div className="empty-state">
-                <h2>Esa pagina no existe</h2>
+                <h2>Esa página no existe</h2>
                 <NavLink className="btn" to="/">
                   Volver al resumen
                 </NavLink>

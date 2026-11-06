@@ -49,7 +49,7 @@ class PorPartidasTests(TestCase):
         d = agg.compare_periods(by="matches", n=4, min_rounds=1)
         self.assertEqual(d["current"]["rounds"], 24)
         self.assertEqual(d["previous"]["rounds"], 24)
-        self.assertEqual(d["current"]["label"], "Ultimas 4 partidas")
+        self.assertEqual(d["current"]["label"], "Últimas 4 partidas")
 
     def test_calcula_el_delta_en_la_direccion_correcta(self):
         d = agg.compare_periods(by="matches", n=4, min_rounds=1)
@@ -123,7 +123,7 @@ class PorDiasTests(TestCase):
         d = agg.compare_periods(by="days", n=10, min_rounds=1)
         self.assertEqual(d["current"]["rounds"], 6)
         self.assertEqual(d["previous"]["rounds"], 0)
-        self.assertEqual(d["current"]["label"], "Ultimos 10 dias")
+        self.assertEqual(d["current"]["label"], "Últimos 10 días")
 
     def test_una_ventana_larga_agarra_las_dos(self):
         """Con 30, el periodo anterior llega a los 60 dias y la alcanza."""

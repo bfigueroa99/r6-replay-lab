@@ -101,6 +101,60 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra el operador por sitio', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: el maximo es 8 rondas de un operador en un sitio, menos que el
+  // minimo de 10, asi que el panel dice por que esta vacio
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Por sitio', exact: true }) })
+  await expect(panel).toContainText('Ningún operador llega a 10 rondas en un sitio')
+
+  // con el minimo bajo hay filas; todo el ataque del seed se gana y toda la
+  // defensa se pierde, asi que ningun operador se separa del resto
+  const resp = await page.request.get('/api/operators/sites/?min_rounds=5')
+  expect(resp.ok()).toBe(true)
+  const datos = await resp.json()
+  expect(datos.rows.length).toBeGreaterThan(0)
+  for (const fila of datos.rows) {
+    expect(fila.verdict).toBe('ruido')
+    expect(fila.winrate_delta).toBe(0)
+  }
+
+  // la tabla tambien se renderiza: misma request con el minimo bajo
+  await page.route('**/api/operators/sites/**', async (route) => {
+    const url = new URL(route.request().url())
+    url.searchParams.set('min_rounds', '5')
+    await route.fulfill({ response: await route.fetch({ url: url.toString() }) })
+  })
+  await page.reload()
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(datos.rows.length)
+  await expect(filas.first()).toContainText('Sin señal')
+  await expect(panel.locator('th', { hasText: 'Veredicto' })).toBeVisible()
+
+  // el seed no tiene deltas distintos de 0: dos filas fijas prueban que la
+  // tabla sale en el orden del backend (|delta|) y no ordenada por mapa
+  const fila = (map, operator, delta, verdict) => ({
+    map, slug: map.toLowerCase(), map_id: 0, site: 'A Sitio', side: 'Attack', operator,
+    rounds: 20, rounds_won: 10, winrate: 50, rest_rounds: 20, rest_winrate: 50 - delta,
+    winrate_delta: delta, margin: 10, verdict,
+  })
+  await page.unroute('**/api/operators/sites/**')
+  await page.route('**/api/operators/sites/**', (route) =>
+    route.fulfill({
+      json: { rows: [fila('Bank', 'Ash', -30, 'hunde'), fila('Oregon', 'Zofia', 5, 'ruido')], min_rounds: 10, bands: 2 },
+    }),
+  )
+  await page.reload()
+  await expect(filas).toHaveCount(2)
+  await expect(filas.first()).toContainText('Bank')
+  await expect(filas.first()).toContainText('Te hunde')
+  await expect(filas.nth(1)).toContainText('Oregon')
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -396,6 +450,42 @@ test('el detalle de una partida muestra los trades por equipo', async ({ page })
   expect(errores).toEqual([])
 })
 
+test('el detalle de una partida muestra las fases de la ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/partidas')
+  await page.locator('table tbody tr').first().getByRole('link').first().click()
+  await expect(page).toHaveURL(/\/partidas\/\d+$/)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(panel).toBeVisible()
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Temprano (<30 s)')
+  await expect(filas.nth(2).locator('td').first()).toHaveText('Tarde (120 s o más)')
+
+  // Las bajas de cada fase son las de la misma respuesta que pinta la pagina
+  const id = page.url().match(/\/partidas\/(\d+)$/)[1]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  for (let i = 0; i < 3; i++) {
+    const celdas = filas.nth(i).locator('td')
+    await expect(celdas.nth(1)).toHaveText(String(detalle.phases.rows[i].mine))
+    await expect(celdas.nth(2)).toHaveText(String(detalle.phases.rows[i].rival))
+  }
+  // seed_demo no tiene bajas antes de los 30 s: temprano queda en cero en toda partida
+  await expect(filas.nth(0).locator('td').nth(1)).toHaveText('0')
+  await expect(filas.nth(0).locator('td').nth(2)).toHaveText('0')
+  // Numeros fijos de seed_demo (la partida mas nueva, demo-28 en Bank): sin
+  // ellos un backend que devolviera ceros pasaria la comparacion de arriba.
+  for (const [i, mias, rivales] of [[1, '4', '2'], [2, '1', '3']]) {
+    await expect(filas.nth(i).locator('td').nth(1)).toHaveText(mias)
+    await expect(filas.nth(i).locator('td').nth(2)).toHaveText(rivales)
+  }
+
+  expect(errores).toEqual([])
+})
+
 test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo no tiene partidas sin rondas: se toma una y se le vacia el detalle
@@ -416,6 +506,10 @@ test('una partida sin rondas muestra su cabecera y un aviso', async ({ page }) =
   // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
   await expect(rondas.locator('.round-tab')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Scoreboard de la partida', exact: true })).toBeVisible()
+  const fases = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Fases de la ronda', exact: true }),
+  })
+  await expect(fases).toContainText('Esta partida no tiene bajas con reloj entre equipos.')
 
   expect(errores).toEqual([])
 })
@@ -436,7 +530,7 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   for (let i = 0; i < total; i++) {
     await pestanas.nth(i).click()
     await expect(pestanas.nth(i)).toHaveClass(/active/)
-    const bajas = panel.locator('.timeline li', { hasText: /mato a|murio/ })
+    const bajas = panel.locator('.timeline li', { hasText: /mató a|murió/ })
     if ((await bajas.count()) === 0) continue
     const apertura = panel.locator('.timeline .chip', { hasText: /^apertura$/ })
     const entry = panel.locator('.timeline .chip', { hasText: /^entry$/ })
@@ -546,6 +640,8 @@ test('el Resumen muestra tus partidas', async ({ page }) => {
   await expect(stat(/^Mejor mapa$/).locator('.sub')).toHaveText('100% en 10 partidas')
   await expect(stat(/^Peor mapa$/).locator('.value')).toHaveText('—')
   await expect(stat(/^Peor mapa$/).locator('.sub')).toHaveText('Ningún mapa por debajo')
+  // Todas ganadas desde la primera, INICIO de seed_demo
+  await expect(page.locator('.racha-actual')).toHaveText('Racha actual: 29 victorias seguidas desde 2026-08-01')
 
   expect(errores).toEqual([])
 })
@@ -703,7 +799,7 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {
-    has: page.getByRole('heading', { name: 'Sus numeros', exact: true }),
+    has: page.getByRole('heading', { name: 'Sus números', exact: true }),
   })
   await expect(numeros).toContainText('14×2K')
 
@@ -736,7 +832,7 @@ test('los POST de la UI mandan JSON', async ({ page }) => {
 
   await page.goto('/')
   await page.locator('.topbar').getByRole('button', { name: 'Importar replays' }).click()
-  await expect(page.getByText('No habia partidas nuevas para importar.')).toBeVisible()
+  await expect(page.getByText('No había partidas nuevas para importar.')).toBeVisible()
   expect(tipo).toContain('application/json')
 
   expect(errores).toEqual([])
@@ -746,7 +842,7 @@ test('una ruta que no existe no rompe la app', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/no-existe')
 
-  await expect(page.getByText('Esa pagina no existe')).toBeVisible()
+  await expect(page.getByText('Esa página no existe')).toBeVisible()
   await page.getByRole('link', { name: 'Volver al resumen' }).click()
   await expect(page.locator('h1')).toHaveText('Resumen')
 
@@ -871,8 +967,8 @@ test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }
 
   const nav = page.locator('nav')
   for (const [ruta, titulo] of PAGINAS.slice(1, 6)) {
-    // por el menu y no con goto: un goto recarga y pierde los filtros
-    await nav.locator(`a[href="${ruta}"]`).click()
+    // por el menu; su href lleva los filtros en la query (ficha 96)
+    await nav.locator(`a[href^="${ruta}"]`).click()
     await expect(page.locator('h1')).toHaveText(titulo)
     await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
     await expect(page.locator('.filters')).toBeVisible()
@@ -883,7 +979,7 @@ test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }
   // la ultima es Tendencias: Limpiar desde ahi vuelve a los numeros
   await page.getByRole('button', { name: 'Limpiar' }).click()
   await expect(page.locator('.page-head p')).toHaveText(
-    'Como se mueven tus numeros en el tiempo y en que momento de la partida te caes.',
+    'Cómo se mueven tus números en el tiempo y en qué momento de la partida te caes.',
   )
   await expect(page.getByLabel('Tipo')).toHaveValue('')
   await expect(page.locator('.empty-state')).toHaveCount(0)
@@ -970,6 +1066,30 @@ test('el Coach muestra dónde quedas fuera de posición', async ({ page }) => {
     }),
   ).toBeVisible()
   await expect(page.getByRole('heading', { name: 'En A Ventilation, A Workshop (Border) te sostienes' })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('el Coach muestra la salida del spawn', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Salida del spawn' }),
+  })
+  // seed_demo no tiene bajas antes de los 30 s: 116 rondas de ataque con spawn
+  // en seis spawns (cinco de 20 y East Alley con 16), ninguna muerte temprana.
+  await expect(panel.locator('.salida-ataque')).toContainText('en el 0% de las rondas (0 de 116)')
+  await expect(panel.locator('tbody tr')).toHaveCount(6)
+  // Columnas: mapa, spawn, rondas, mueres temprano, %, resto, diferencia, margen, bajas, veredicto.
+  const boulevard = panel.locator('tr', {
+    has: page.getByRole('cell', { name: 'Boulevard', exact: true }),
+  })
+  await expect(boulevard.locator('td').nth(0)).toHaveText('Bank')
+  await expect(boulevard.locator('td').nth(2)).toHaveText('20')
+  await expect(boulevard.locator('td').nth(3)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(8)).toHaveText('0')
+  await expect(boulevard.locator('td').nth(9)).toHaveText('Sin señal')
 
   expect(errores).toEqual([])
 })

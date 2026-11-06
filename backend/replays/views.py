@@ -236,6 +236,13 @@ def operators(request: HttpRequest) -> JsonResponse:
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
 
 
+@require_GET
+def operators_by_site(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_by_site(
+        min_rounds=_min_rounds(request, agg.OPERADOR_SITIO_MIN_RONDAS), **_filters(request)
+    ))
+
+
 def _catalogo_operadores() -> list[dict]:
     """Todos los operadores conocidos con su lado, para la ruleta.
 
@@ -384,6 +391,7 @@ def duels(request: HttpRequest) -> JsonResponse:
     """Duelos: contra quien y contra que operadores ganas y pierdes."""
     filters = _filters(request)
     min_duels = _int_param(request, "min_duels", 3, minimum=1, maximum=1000)
+    min_matches = _int_param(request, "min_matches", 2, minimum=1, maximum=1000)
     return _ok(
         {
             "totals": agg.duel_totals(**filters),
@@ -396,10 +404,8 @@ def duels(request: HttpRequest) -> JsonResponse:
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
                 **filters,
             ),
-            "rivals": agg.repeated_rivals(
-                min_matches=_int_param(request, "min_matches", 2, minimum=1, maximum=1000),
-                **filters,
-            ),
+            "rivals": agg.repeated_rivals(min_matches=min_matches, **filters),
+            "rival_stacks": agg.rival_stacks(min_matches=min_matches, **filters),
         }
     )
 
@@ -416,6 +422,11 @@ def match_list(request: HttpRequest) -> JsonResponse:
     resultado = filtro_resultado(request.GET.get("result", ""))
     if resultado is not None:
         qs = qs.filter(resultado)
+    # el orden del modelo no desempata partidas con la misma fecha; el detalle
+    # navega con (played_at, id) y el listado tiene que mostrar el mismo orden.
+    # Va aca y no en match_queryset: otros lo agregan con values().annotate() y
+    # un order_by explicito entraria al GROUP BY
+    qs = qs.order_by("-played_at", "-id")
     total = qs.count()
     page = list(qs[offset : offset + limit])
 
@@ -481,6 +492,24 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         match = Match.objects.get(pk=pk)
     except Match.DoesNotExist:
         return _ok({"error": "partida no encontrada"}, status=404)
+
+    # historial completo, sin filtros y con las excluidas: navegar no es agregar
+    anterior = (
+        Match.objects.filter(
+            Q(played_at__lt=match.played_at) | Q(played_at=match.played_at, id__lt=match.id)
+        )
+        .order_by("-played_at", "-id")
+        .values_list("id", flat=True)
+        .first()
+    )
+    siguiente = (
+        Match.objects.filter(
+            Q(played_at__gt=match.played_at) | Q(played_at=match.played_at, id__gt=match.id)
+        )
+        .order_by("played_at", "id")
+        .values_list("id", flat=True)
+        .first()
+    )
 
     rounds = []
     for rnd in match.rounds.prefetch_related("players__player", "events").all():
@@ -567,6 +596,8 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,
+                "prev_id": anterior,
+                "next_id": siguiente,
                 "score": f"{match.my_score}-{match.opponent_score}",
                 "my_score": match.my_score,
                 "opponent_score": match.opponent_score,
@@ -580,6 +611,8 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "round_streaks": {clave: _racha_con_etiqueta(r) for clave, r in rachas.items()},
             "scoreboard": scoreboard,
             "team_trades": team_trades,
+            "phases": agg.fases_de_partida(rounds, match.my_team_index),
+            "rival_stacks": agg.rival_stacks_de_partida(match.id),
             "my_totals": my_totals,
         }
     )

@@ -4,20 +4,23 @@ import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas } from '../components/ui.jsx'
 import {
+  claseSalida,
   claseVeredicto,
   comoMargen,
   conSigno,
+  etiquetaSalida,
   etiquetaVeredicto,
   hayZonas,
   notaDeMuestra,
+  textoSinSalidas,
 } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 const GROUPS = [
-  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que mas te esta costando rondas.' },
+  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
   { key: 'media', title: 'Para trabajar', hint: 'Patrones claros con muestra suficiente.' },
-  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales mas debiles o de contexto.' },
-  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apoyate en esto al elegir rol y picks.' },
+  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales más débiles o de contexto.' },
+  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apóyate en esto al elegir rol y picks.' },
 ]
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
@@ -40,8 +43,8 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         <div>
           <h1>Coach</h1>
           <p>
-            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el numero, con que se compara
-            y cuantas rondas lo respaldan.
+            Reglas sobre {data.totals.rounds} rondas. Cada punto trae el número, con qué se compara
+            y cuántas rondas lo respaldan.
           </p>
         </div>
       </div>
@@ -58,7 +61,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
                 <h3>{insight.title}</h3>
                 <p>{insight.detail}</p>
                 <div className="action">
-                  <b>Que hacer:</b> {insight.action}
+                  <b>Qué hacer:</b> {insight.action}
                 </div>
                 <div className="meta">
                   {insight.metric ? (
@@ -79,6 +82,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
       })}
 
       <PanelPosicion {...posicion} />
+      <PanelSalidaSpawn {...posicion} />
 
       <p className="note">
         Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
@@ -160,6 +164,73 @@ function PanelPosicion({ data, error, loading }) {
               />
             </>
           )}
+        </>
+      )}
+    </Panel>
+  )
+}
+
+const columnasDeSalida = (segundos) => [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: 'spawn', label: 'Spawn', left: true },
+  { key: 'rounds', label: 'Rondas' },
+  {
+    key: 'early_deaths',
+    label: 'Mueres temprano',
+    help: `Rondas de ataque con este spawn en que moriste antes de los ${segundos} s de acción.`,
+  },
+  pctCol('early_death_pct', '%', 'Mueres temprano sobre las rondas de ataque con este spawn.'),
+  pctCol('rest_early_death_pct', 'Resto', 'El mismo porcentaje en el resto de tu ataque.'),
+  { key: 'early_death_delta', label: 'Diferencia', render: (row) => conSigno(row.early_death_delta) },
+  {
+    key: 'margin',
+    label: 'Margen',
+    dim: true,
+    help: 'Dos errores estándar de la diferencia. Con muchos spawns, una diferencia menor que esto sale sola por azar.',
+    render: (row) => comoMargen(row.margin),
+  },
+  {
+    key: 'early_kills',
+    label: 'Bajas tempranas',
+    help: `Tus bajas a rivales antes de los ${segundos} s de acción en esas rondas. Los teamkills no cuentan.`,
+  },
+  {
+    key: 'verdict',
+    label: 'Veredicto',
+    sortable: false,
+    csv: (row) => etiquetaSalida(row.verdict),
+    render: (row) => <span className={`chip ${claseSalida(row.verdict)}`.trim()}>{etiquetaSalida(row.verdict)}</span>,
+  },
+]
+
+function PanelSalidaSpawn({ data, error, loading }) {
+  const segundos = data?.spawn_exit_seconds ?? 15
+  const ataque = data?.spawn_exit_attack
+  return (
+    <Panel
+      title="Salida del spawn"
+      hint={`Rondas de ataque en que moriste en los primeros ${segundos} s de acción, por spawn, contra el resto de tu ataque.`}
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !data?.spawn_exits?.length ? (
+        <p className="note">{textoSinSalidas(data)}</p>
+      ) : (
+        <>
+          <p className="note salida-ataque">
+            En todo tu ataque mueres antes de los {segundos} s en el {ataque.early_death_pct ?? 0}% de las
+            rondas ({ataque.early_deaths} de {ataque.rounds}). {notaDeMuestra(data)}
+          </p>
+          <DataTable
+            columns={columnasDeSalida(segundos)}
+            rows={data.spawn_exits}
+            rowKey={(row) => `${row.map}-${row.map_id}-${row.spawn}`}
+            initialSort={{ key: 'early_death_pct', dir: 'desc' }}
+            csvName="salida-del-spawn"
+            empty={textoSinSalidas(data)}
+          />
         </>
       )}
     </Panel>

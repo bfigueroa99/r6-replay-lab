@@ -6,6 +6,7 @@ import math
 from collections import Counter
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
+from itertools import combinations
 
 from django.conf import settings
 from django.db.models import (
@@ -689,6 +690,84 @@ def by_operator(min_rounds: int = 1, **filters) -> list[dict]:
     return rows
 
 
+#: Rondas minimas del operador en un sitio, y del resto de tus operadores ahi,
+#: para que la fila salga: con menos, la banda de ruido se come cualquier
+#: diferencia y la tabla seria una lista de casualidades.
+OPERADOR_SITIO_MIN_RONDAS = 10
+
+
+def operator_by_site(min_rounds: int = OPERADOR_SITIO_MIN_RONDAS, **filters) -> dict:
+    """Winrate con cada operador en un sitio contra el resto de tus operadores ahi.
+
+    El resto es mismo mapa (por version), sitio y lado con otro operador; no
+    el total del sitio, que contiene al operador (mismo motivo que
+    `_contra_el_resto`). El filtro `operator` no entra a la base: dejaria el
+    resto vacio. Recorta las filas al final.
+
+    Solo cuentan rondas con ganador: una sin ganador no es derrota, asi que se
+    lee `round__my_team_won` y no `won`, que la cuenta como perdida.
+    """
+    operador = filters.get("operator")
+    base = {k: v for k, v in filters.items() if k != "operator"}
+    qs = (
+        base_queryset(**base)
+        .exclude(operator="")
+        .exclude(round__site="")
+        .exclude(side="")
+        .filter(round__my_team_won__isnull=False)
+    )
+    crudas = list(
+        qs.order_by()
+        .values(*_MAPA, "round__site", "side", "operator")
+        .annotate(rounds=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+    # El total del sitio se suma antes del minimo: ocultar una fila no mueve
+    # el resto de las demas.
+    def clave(c: dict) -> tuple:
+        return (*(c[campo] for campo in _MAPA), c["round__site"], c["side"])
+
+    totales: dict[tuple, list[int]] = {}
+    for c in crudas:
+        total = totales.setdefault(clave(c), [0, 0])
+        total[0] += c["rounds"]
+        total[1] += c["won"]
+
+    filas = []
+    for c in crudas:
+        total_rondas, total_ganadas = totales[clave(c)]
+        rondas, ganadas = c["rounds"], c["won"]
+        resto, resto_ganadas = total_rondas - rondas, total_ganadas - ganadas
+        if rondas < min_rounds or resto < min_rounds:
+            continue
+        if operador and c["operator"] != operador:
+            continue
+        winrate = _pct(ganadas, rondas)
+        resto_winrate = _pct(resto_ganadas, resto)
+        delta = _delta(winrate, resto_winrate)
+        margen, veredicto = _margen_y_veredicto(
+            delta, ganadas, rondas, total_ganadas, total_rondas, ("rinde", "hunde"),
+        )
+        filas.append({
+            **{etiqueta: c[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+            "site": c["round__site"],
+            "side": c["side"],
+            "operator": c["operator"],
+            "rounds": rondas,
+            "rounds_won": ganadas,
+            "winrate": winrate,
+            "rest_rounds": resto,
+            "rest_winrate": resto_winrate,
+            "winrate_delta": delta,
+            "margin": margen,
+            "verdict": veredicto,
+        })
+    filas = _etiquetar(filas)
+    filas.sort(key=lambda f: (
+        f["winrate_delta"] is None, -abs(f["winrate_delta"] or 0), -f["rounds"], f["operator"],
+    ))
+    return {"rows": filas, "min_rounds": min_rounds, "bands": POSICION_BANDAS}
+
+
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     """Solo tiene sentido en ataque: el spawn es la posicion de inicio."""
     qs = base_queryset(**filters).filter(side="Attack").exclude(spawn="")
@@ -712,6 +791,12 @@ POSICION_MIN_RONDAS = 5
 #: fila por sitio y spawn (20 o mas en un historial real) y con uno solo un
 #: tercio de las zonas saldria marcado por azar.
 POSICION_BANDAS = 2
+
+#: Segundos jugados de la fase de accion que cuentan como "salida del spawn".
+#: Es la mitad del primer tramo de "Sales muy temprano" (30 s): a los 15 s el
+#: atacante todavia esta saliendo del spawn o en el runout, y morir ahi no es
+#: lo mismo que morir en el primer contacto armado.
+SALIDA_SPAWN_SEGUNDOS = 15
 
 
 def _totales_de_posicion(qs: QuerySet[RoundPlayer]) -> dict:
@@ -743,6 +828,20 @@ def _ruido_combinado(parte: int, n: int, parte_total: int, n_total: int) -> floa
     return round(math.sqrt(p * (1 - p) * (1 / n + 1 / resto)) * 100, 1)
 
 
+def _margen_y_veredicto(delta: float | None, parte: int, n: int, parte_total: int,
+                        n_total: int, nombres: tuple[str, str]) -> tuple[float | None, str]:
+    """Margen de ruido de la zona y su veredicto: `nombres` es (delta positivo, delta negativo)."""
+    se = _ruido_combinado(parte, n, parte_total, n_total)
+    margen = round(POSICION_BANDAS * se, 1) if se is not None else None
+    if delta is None or margen is None:
+        return margen, "ruido"
+    if delta > margen:
+        return margen, nombres[0]
+    if delta < -margen:
+        return margen, nombres[1]
+    return margen, "ruido"
+
+
 def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
     """Compara cada zona contra el resto del historial, no contra el total.
 
@@ -754,17 +853,10 @@ def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
         resto = total["rounds"] - rondas
         resto_pct = _pct(total["caught_out_rounds"] - fila["caught_out_rounds"], resto)
         delta = _delta(fila["caught_out_pct"], resto_pct)
-        se = _ruido_combinado(fila["caught_out_rounds"], rondas,
-                              total["caught_out_rounds"], total["rounds"])
-        margen = round(POSICION_BANDAS * se, 1) if (se is not None and resto) else None
-        if delta is None or margen is None:
-            veredicto = "ruido"
-        elif delta > margen:
-            veredicto = "dormidero"
-        elif delta < -margen:
-            veredicto = "solido"
-        else:
-            veredicto = "ruido"
+        margen, veredicto = _margen_y_veredicto(
+            delta, fila["caught_out_rounds"], rondas,
+            total["caught_out_rounds"], total["rounds"], ("dormidero", "solido"),
+        )
         fila.update(
             {
                 "rest_rounds": resto,
@@ -777,6 +869,100 @@ def _contra_el_resto(filas: list[dict], total: dict) -> list[dict]:
     # Mayor diferencia primero; las que no tienen diferencia, al final.
     filas.sort(key=lambda f: (f["caught_out_delta"] is None, -(f["caught_out_delta"] or 0)))
     return filas
+
+
+def _temprano(campo: str) -> Q:
+    """Muerte o baja dentro de la salida del spawn.
+
+    El 0 no cuenta: `metrics.py` escribe `elapsed = 0.0` cuando el feed no
+    trae reloj, y en una ventana de 15 s ese 0 espurio pesaria mucho.
+    """
+    return Q(**{f"{campo}__gt": 0, f"{campo}__lt": SALIDA_SPAWN_SEGUNDOS})
+
+
+def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[dict], dict]:
+    """Muertes y bajas en los primeros segundos de accion, por mapa y spawn de ataque.
+
+    Mide si un spawn te cuesta rondas por salir a pelear antes de tiempo
+    (runout o spawn peek que sale mal). Cada spawn va contra el resto de tu
+    ataque, no contra el total: la zona esta dentro del total y la banda de
+    ruido supone dos muestras independientes. Devuelve las filas y el total
+    del ataque, que se calcula antes del minimo para que ocultar una fila no
+    mueva las demas.
+    """
+    ataque = ataque.exclude(spawn="")
+    # Las bajas se agrupan con la misma clave que las filas (mapa entero, con
+    # nombre): si una version tiene dos nombres, cada fila suma solo las suyas.
+    bajas: Counter = Counter()
+    me_ids = _me_ids()
+    if me_ids:
+        _, a_favor = _duelos(ataque, me_ids)
+        mi_spawn = Subquery(
+            RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True)
+            .values("spawn")[:1]
+        )
+        tempranas = (
+            a_favor.filter(_temprano("elapsed"))
+            .annotate(mi_spawn=mi_spawn)
+            .order_by()
+            .values(*_MAPA, "mi_spawn")
+            .annotate(n=Count("id"))
+        )
+        for t in tempranas:
+            if t["mi_spawn"]:
+                bajas[(*(t[c] for c in _MAPA), t["mi_spawn"])] += t["n"]
+
+    crudas = ataque.order_by().values(*_MAPA, "spawn").annotate(
+        rounds=Count("id"),
+        early_deaths=Count("id", filter=Q(died=True) & _temprano("death_elapsed")),
+    )
+    filas = _etiquetar([
+        {
+            **{etiqueta: c[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+            "spawn": c["spawn"],
+            "rounds": c["rounds"],
+            "early_deaths": c["early_deaths"],
+            "early_kills": bajas[(*(c[campo] for campo in _MAPA), c["spawn"])],
+        }
+        for c in crudas
+    ])
+
+    total_rondas = sum(f["rounds"] for f in filas)
+    total_tempranas = sum(f["early_deaths"] for f in filas)
+    total = {
+        "rounds": total_rondas,
+        "early_deaths": total_tempranas,
+        "early_death_pct": _pct(total_tempranas, total_rondas),
+        "early_kills": sum(bajas.values()),
+    }
+
+    for f in filas:
+        rondas, tempranas_fila = f["rounds"], f["early_deaths"]
+        kills = f["early_kills"]
+        resto = total_rondas - rondas
+        pct = _pct(tempranas_fila, rondas)
+        resto_pct = _pct(total_tempranas - tempranas_fila, resto)
+        delta = _delta(pct, resto_pct)
+        margen, veredicto = _margen_y_veredicto(
+            delta, tempranas_fila, rondas, total_tempranas, total_rondas, ("temprano", "aguanta"),
+        )
+        f.update(
+            {
+                "early_death_pct": pct,
+                "early_kills_per_round": _ratio(kills, rondas),
+                "rest_rounds": resto,
+                "rest_early_death_pct": resto_pct,
+                "early_death_delta": delta,
+                "margin": margen,
+                "verdict": veredicto,
+            }
+        )
+
+    filas = [f for f in filas if f["rounds"] >= min_rounds]
+    filas.sort(key=lambda f: (
+        f["early_death_pct"] is None, -(f["early_death_pct"] or 0), -f["rounds"], f["spawn"],
+    ))
+    return filas, total
 
 
 def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
@@ -800,6 +986,7 @@ def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
     ))
     total = _totales_de_posicion(qs)
     total_ataque = _totales_de_posicion(ataque)
+    salidas, salida_ataque = spawn_exits(ataque, min_rounds)
     return {
         "overall": total,
         "attack": total_ataque,
@@ -807,6 +994,9 @@ def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
         "spawns": _contra_el_resto(spawns, total_ataque),
         "min_rounds": min_rounds,
         "bands": POSICION_BANDAS,
+        "spawn_exits": salidas,
+        "spawn_exit_attack": salida_ataque,
+        "spawn_exit_seconds": SALIDA_SPAWN_SEGUNDOS,
     }
 
 
@@ -1217,6 +1407,31 @@ def by_margin(**filters) -> dict:
 MIN_PARTIDAS_MAPA = 3
 
 
+def racha_actual_de_partidas(partidas: list[dict]) -> dict | None:
+    """Partidas seguidas con el mismo resultado, contando hacia atras desde la ultima.
+
+    `partidas` llega en orden cronologico (`played_at`, `id`). Las de `won`
+    nulo (empate o incompleta, ficha 68) se saltan sin cortar: no son un
+    resultado, y un `.rec` faltante no deberia romperte la racha.
+    """
+    racha: list[dict] = []
+    for p in reversed(partidas):
+        if p["won"] is None:
+            continue
+        if racha and p["won"] != racha[0]["won"]:
+            break
+        racha.append(p)
+    if not racha:
+        return None
+    racha.reverse()
+    return {
+        "result": "win" if racha[0]["won"] else "loss",
+        "length": len(racha),
+        "since": racha[0]["played_at"].isoformat(),
+        "match_ids": [p["id"] for p in racha],
+    }
+
+
 def matches_summary(**filters) -> dict:
     """Tus partidas en una linea: ganadas, rondas por partida y mejor y peor mapa.
 
@@ -1278,6 +1493,7 @@ def matches_summary(**filters) -> dict:
         "min_matches_map": MIN_PARTIDAS_MAPA,
         "best_map": mejor,
         "worst_map": peor,
+        "current_streak": racha_actual_de_partidas(partidas),
     }
 
 
@@ -2280,17 +2496,13 @@ def nemesis(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["balance"], r["username"]))
 
 
-def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
-    """Record de partidas contra cada persona que te toco de rival varias veces.
+def _rivales_por_ronda(me_ids: list[int], **filters) -> dict[tuple[int, int], set[int]]:
+    """(match_id, round_id) -> Player.id de quienes estuvieron en el equipo
+    contrario en esa ronda tuya filtrada.
 
-    Rival es quien estuvo en el equipo contrario en al menos una de tus rondas
-    filtradas de esa partida: el equipo se lee por ronda, como en el perfil,
-    porque la misma persona puede ser companero en una partida y rival en otra.
-    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    El equipo se lee por ronda, como en el perfil, porque la misma persona
+    puede ser companero en una partida y rival en otra.
     """
-    me_ids = _me_ids()
-    if not me_ids:
-        return []
     mine = base_queryset(**filters)
     cruces = (
         RoundPlayer.objects.filter(Exists(mine.filter(round_id=OuterRef("round_id"))))
@@ -2298,12 +2510,44 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
         .annotate(mi_equipo=_MI_EQUIPO)
         .exclude(mi_equipo=None)
         .exclude(team_index=F("mi_equipo"))
-        .values_list("player_id", "round__match_id")
+        .values_list("player_id", "round__match_id", "round_id")
         .distinct()
     )
+    por_ronda: dict[tuple[int, int], set[int]] = {}
+    for pid, match_id, round_id in cruces:
+        por_ronda.setdefault((match_id, round_id), set()).add(pid)
+    return por_ronda
+
+
+# Un equipo tiene 5 por ronda; mas que esto es un dato raro y los subconjuntos
+# crecen como 2^n, asi que esa ronda no arma grupos.
+_MAX_RIVALES_POR_RONDA = 10
+
+
+def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
+    wins = sum(1 for mid in ids if resultado.get(mid) is True)
+    losses = sum(1 for mid in ids if resultado.get(mid) is False)
+    return {
+        "matches": len(ids),
+        "wins": wins,
+        "losses": losses,
+        # las partidas sin resultado no ensucian el winrate
+        "winrate": _pct(wins, wins + losses),
+    }
+
+
+def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
+    """Record de partidas contra cada persona que te toco de rival varias veces.
+
+    Se agrupa por profileID para que un cambio de nick no parta la fila.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
     partidas: dict[int, set[int]] = {}
-    for pid, match_id in cruces:
-        partidas.setdefault(pid, set()).add(match_id)
+    for (match_id, _), rivales in _rivales_por_ronda(me_ids, **filters).items():
+        for pid in rivales:
+            partidas.setdefault(pid, set()).add(match_id)
     partidas = {pid: ids for pid, ids in partidas.items() if len(ids) >= min_matches}
     if not partidas:
         return []
@@ -2312,22 +2556,98 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
     resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
     nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
 
-    salida = []
-    for pid, ids in partidas.items():
-        wins = sum(1 for mid in ids if resultado.get(mid) is True)
-        losses = sum(1 for mid in ids if resultado.get(mid) is False)
-        salida.append(
-            {
-                "player_id": pid,
-                "username": nicks.get(pid, ""),
-                "matches": len(ids),
-                "wins": wins,
-                "losses": losses,
-                # las partidas sin resultado no ensucian el winrate
-                "winrate": _pct(wins, wins + losses),
-            }
-        )
+    salida = [
+        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado)}
+        for pid, ids in partidas.items()
+    ]
     return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
+
+
+def rival_stacks(min_matches: int = 2, **filters) -> list[dict]:
+    """Grupos de 2 o mas rivales que te tocaron juntos en varias partidas.
+
+    Los grupos se arman por ronda: un rival que se fue y el que entro en su
+    lugar no estuvieron juntos. Una partida suma a un grupo si estuvo entero
+    en al menos una de sus rondas. Por cada conjunto de partidas queda solo el
+    grupo mas grande: si A, B y C se repiten juntos, A+B no sale aparte salvo
+    que sume alguna partida propia.
+    """
+    return _filas_de_stacks(_stacks_rivales(min_matches, **filters))
+
+
+def rival_stacks_de_partida(match_id: int, min_matches: int = 2) -> list[dict]:
+    """Los stacks rivales repetidos que jugaron en esta partida.
+
+    Sin filtros: el aviso del detalle habla de todo tu historial contra ese
+    grupo, no de lo que la pagina anterior tenia filtrado. La maximalidad de
+    Duelos es por conjunto de partidas, y aca no alcanza: si A+B se repite en
+    3 partidas y A+B+C en 2, las dos filas existen, pero en una partida donde
+    estuvieron los tres decir tambien "A y B" es repetir lo mismo. Se queda el
+    grupo mas grande que aplica a esta partida; el record sale de la misma
+    funcion que la fila de Duelos, asi los numeros coinciden.
+    """
+    pares = [(ids, g) for ids, g in _stacks_rivales(min_matches) if match_id in ids]
+    pares = [(ids, g) for ids, g in pares if not any(g < otro for _, otro in pares)]
+    return _filas_de_stacks(pares)
+
+
+def _stacks_rivales(min_matches: int, **filters) -> list[tuple[frozenset[int], frozenset[int]]]:
+    """Pares (partidas, grupo) de los stacks rivales, ya sin grupos redundantes."""
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    soporte: dict[frozenset[int], set[int]] = {}
+    for (match_id, _), rivales in _rivales_por_ronda(me_ids, **filters).items():
+        if len(rivales) > _MAX_RIVALES_POR_RONDA:
+            continue
+        orden = sorted(rivales)
+        for k in range(2, len(orden) + 1):
+            for grupo in combinations(orden, k):
+                soporte.setdefault(frozenset(grupo), set()).add(match_id)
+
+    por_partidas: dict[frozenset[int], list[frozenset[int]]] = {}
+    for grupo, ids in soporte.items():
+        if len(ids) >= min_matches:
+            por_partidas.setdefault(frozenset(ids), []).append(grupo)
+    # un grupo contenido en otro con las mismas partidas no dice nada nuevo
+    mejor = [
+        (ids, grupo)
+        for ids, grupos in por_partidas.items()
+        for grupo in grupos
+        if not any(grupo < otro for otro in grupos)
+    ]
+    return mejor
+
+
+def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list[dict]:
+    """Nicks y record de cada grupo, en el orden de la tabla de Duelos."""
+    if not mejor:
+        return []
+
+    match_ids = set().union(*(ids for ids, _ in mejor))
+    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    nicks = dict(
+        Player.objects.filter(id__in=set().union(*(g for _, g in mejor))).values_list(
+            "id", "username"
+        )
+    )
+
+    salida = []
+    for ids, grupo in mejor:
+        jugadores = sorted(
+            ({"player_id": pid, "username": nicks.get(pid, "")} for pid in grupo),
+            key=lambda j: (j["username"].lower(), j["player_id"]),
+        )
+        salida.append({"players": jugadores, "size": len(grupo), **_record(set(ids), resultado)})
+    return sorted(
+        salida,
+        key=lambda r: (
+            -r["matches"],
+            -r["size"],
+            -r["losses"],
+            ", ".join(j["username"] for j in r["players"]),
+        ),
+    )
 
 
 def _agregar_mapas(salida: list[dict], contra_mi, a_favor) -> None:
@@ -2650,12 +2970,12 @@ def compare_periods(
         inicio_previo = corte - timedelta(days=n * 2)
         actual = base_queryset(since=inicio_actual, **filters)
         previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
-        etiquetas = (f"Ultimos {n} dias", f"Los {n} dias anteriores")
+        etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
     else:
         recientes, anteriores = _periodo_por_partidas(filters, n)
         actual = base_queryset(**filters).filter(round__match_id__in=recientes)
         previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
-        etiquetas = (f"Ultimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
+        etiquetas = (f"Últimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
 
     fila_actual = _resumen(actual, baseline, etiquetas[0])
     fila_previa = _resumen(previo, baseline, etiquetas[1])
@@ -2941,6 +3261,107 @@ def opening_timing(**filters) -> dict:
             for clave, etiqueta in _TRAMOS_APERTURA
         ]
     return salida
+
+
+#: Cortes de las fases de la ronda, en segundos jugados de la fase de accion.
+#: 30 es el mismo corte de "sales muy temprano" y de la apertura temprana; 120
+#: deja el ultimo minuto de los 180 s como cierre. No se usa el 90 de
+#: `APERTURA_TARDIA`: ese habla de cuando llega la primera baja, no de en que
+#: momento de la ronda se pelea.
+FASE_MEDIA = APERTURA_TEMPRANA
+FASE_TARDIA = 120
+
+FASES = (
+    ("temprano", "Temprano (<30 s)", 0, FASE_MEDIA),
+    ("medio", "Medio (30–120 s)", FASE_MEDIA, FASE_TARDIA),
+    ("tarde", "Tarde (120 s o más)", FASE_TARDIA, None),
+)
+
+
+def _fase_de(elapsed: float) -> str:
+    if elapsed < FASE_MEDIA:
+        return "temprano"
+    if elapsed < FASE_TARDIA:
+        return "medio"
+    return "tarde"
+
+
+def fases_de_partida(rondas: list[dict], my_team_index: int) -> dict:
+    """Bajas de cada equipo en temprano, medio y tarde, y rondas dominadas por fase.
+
+    Recibe las rondas ya armadas de `match_detail` (cero queries). "Tu equipo"
+    se lee por ronda desde tu fila, como en Trades por equipo. El feed nombra
+    por nick: si un nick se repitiera en los dos equipos de una ronda (no
+    deberia pasar), el dict se queda con la ultima fila.
+    """
+    claves = [clave for clave, *_ in FASES]
+    bajas = {clave: Counter() for clave in claves}
+    rondas_por_fase = {clave: Counter() for clave in claves}
+    untimed = unknown = teamkills = 0
+
+    for ronda in rondas:
+        jugadores = ronda["players"]
+        yo = next((p for p in jugadores if p["is_me"]), None)
+        mio = yo["team_index"] if yo else my_team_index
+        equipo = {p["username"]: p["team_index"] for p in jugadores}
+        en_ronda = {clave: Counter() for clave in claves}
+        for evento in ronda["events"]:
+            # Un Death sin autor no es baja de ningun equipo.
+            if evento["kind"] != "Kill":
+                continue
+            # elapsed 0 es "sin reloj" (el feed no trajo el segundo), no el segundo 0.
+            if not evento["elapsed"]:
+                untimed += 1
+                continue
+            autor = equipo.get(evento["actor"])
+            victima = equipo.get(evento["target"])
+            if autor is None:
+                unknown += 1
+                continue
+            if victima is not None and autor == victima:
+                teamkills += 1
+                continue
+            lado = "mine" if autor == mio else "rival"
+            fase = _fase_de(evento["elapsed"])
+            bajas[fase][lado] += 1
+            en_ronda[fase][lado] += 1
+
+        gano = ronda["my_team_won"]
+        if gano is None:
+            continue
+        for fase, cuenta in en_ronda.items():
+            if cuenta["mine"] > cuenta["rival"]:
+                rondas_por_fase[fase]["ahead"] += 1
+                rondas_por_fase[fase]["ahead_won"] += bool(gano)
+            elif cuenta["rival"] > cuenta["mine"]:
+                rondas_por_fase[fase]["behind"] += 1
+                rondas_por_fase[fase]["behind_won"] += bool(gano)
+
+    filas = []
+    for clave, etiqueta, inicio, fin in FASES:
+        r = rondas_por_fase[clave]
+        filas.append(
+            {
+                "key": clave,
+                "label": etiqueta,
+                "start": inicio,
+                "end": fin,
+                "mine": bajas[clave]["mine"],
+                "rival": bajas[clave]["rival"],
+                "rounds_ahead": r["ahead"],
+                "rounds_ahead_won": r["ahead_won"],
+                "rounds_ahead_winrate": _pct(r["ahead_won"], r["ahead"]),
+                "rounds_behind": r["behind"],
+                "rounds_behind_won": r["behind_won"],
+                "rounds_behind_winrate": _pct(r["behind_won"], r["behind"]),
+            }
+        )
+    return {
+        "rows": filas,
+        "untimed_kills": untimed,
+        "unknown_team_kills": unknown,
+        "teamkills": teamkills,
+    }
 
 
 # --------------------------------------------------------------------- jugador

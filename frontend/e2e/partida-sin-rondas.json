@@ -21,6 +21,56 @@
       "untraded_pct": null
     }
   },
+  "phases": {
+    "rows": [
+      {
+        "key": "temprano",
+        "label": "Temprano (<30 s)",
+        "start": 0,
+        "end": 30,
+        "mine": 0,
+        "rival": 0,
+        "rounds_ahead": 0,
+        "rounds_ahead_won": 0,
+        "rounds_ahead_winrate": null,
+        "rounds_behind": 0,
+        "rounds_behind_won": 0,
+        "rounds_behind_winrate": null
+      },
+      {
+        "key": "medio",
+        "label": "Medio (30–120 s)",
+        "start": 30,
+        "end": 120,
+        "mine": 0,
+        "rival": 0,
+        "rounds_ahead": 0,
+        "rounds_ahead_won": 0,
+        "rounds_ahead_winrate": null,
+        "rounds_behind": 0,
+        "rounds_behind_won": 0,
+        "rounds_behind_winrate": null
+      },
+      {
+        "key": "tarde",
+        "label": "Tarde (120 s o más)",
+        "start": 120,
+        "end": null,
+        "mine": 0,
+        "rival": 0,
+        "rounds_ahead": 0,
+        "rounds_ahead_won": 0,
+        "rounds_ahead_winrate": null,
+        "rounds_behind": 0,
+        "rounds_behind_won": 0,
+        "rounds_behind_winrate": null
+      }
+    ],
+    "untimed_kills": 0,
+    "unknown_team_kills": 0,
+    "teamkills": 0
+  },
+  "rival_stacks": [],
   "my_totals": {
     "rounds": 0,
     "rounds_won": 0,
