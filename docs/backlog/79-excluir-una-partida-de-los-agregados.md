@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: release 2026-11-06 04:15 UTC
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -129,3 +129,8 @@ Trae migracion: `python manage.py backup`, `migrate` y `showmigrations replays`.
   `key`). La guardia de la 79 marco dos cosas llegadas a dev despues: la subconsulta de
   `spawn_exits` (89) pasa a `_mia_en_la_ronda()` (misma consulta) y `operators-by-site` (93)
   entra a `COMPARADAS`. VERDE 85e6cd228 (1056, 251, 77).
+- (release 20261106T0411Z-cu3JEpz, P3) Dev f0444b5 trajo la 97 con `0005_roundplayer_clutch_kills`:
+  la migracion de esta ficha pasa a `0006_match_excluded`, con dependencia en la 0005 de la 97
+  (merge sin conflicto de texto, pero dos hojas `0005` rompian `migrate`). `makemigrations
+  --check` sin cambios. VERDE da8a4f010 (1089, 257, 77). En el PC: `showmigrations replays`
+  tiene que mostrar `[X] 0006_match_excluded`; para volver atras, `migrate replays 0005`.
