@@ -1,6 +1,6 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: en curso (espejo; manda la rama)
+estado: implementado (espejo; manda la rama)
 candado: -
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
