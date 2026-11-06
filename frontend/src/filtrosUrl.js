@@ -26,6 +26,12 @@ export const RUTAS_CON_FILTROS = ['/', '/coach', '/operadores', '/companeros', '
 
 const LARGO_TEXTO = 64
 
+/**
+ * Los periodos del select de Filters.jsx: otro `days` la API lo entiende, pero
+ * la barra mostraria "Todo el historial" filtrando otra cosa.
+ */
+export const DIAS_DEL_PERIODO = ['7', '30', '90']
+
 export function usaFiltros(pathname) {
   if (!pathname) return false
   const limpio = pathname.length > 1 ? pathname.replace(/\/+$/, '') || '/' : pathname
@@ -53,7 +59,7 @@ function validar(clave, valor) {
     case 'side':
       return crudo === 'Attack' || crudo === 'Defense' ? crudo : null
     case 'days':
-      return /^[1-9]\d{0,3}$/.test(crudo) ? crudo : null
+      return DIAS_DEL_PERIODO.includes(crudo) ? crudo : null
     case 'session':
       return /^\d{1,5}$/.test(crudo) ? crudo : null
     case 'since':

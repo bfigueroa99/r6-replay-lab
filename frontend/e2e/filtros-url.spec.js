@@ -11,22 +11,21 @@ test('recargar conserva el filtro y los números', async ({ page }) => {
   const subtitulo = page.locator('.page-head p')
   await expect(subtitulo).toHaveText(/partidas · \d+ rondas analizadas/)
   const sinFiltro = await subtitulo.textContent()
+  // un select no deja historial: replace, no push
+  const largo = await page.evaluate(() => window.history.length)
 
   await page.getByLabel('Lado').selectOption('Defense')
   await expect(page).toHaveURL(/\/\?side=Defense$/)
   await expect(subtitulo).not.toHaveText(sinFiltro)
   await expect(subtitulo).toHaveText(/rondas/)
   const conFiltro = await subtitulo.textContent()
-
-  // un select no deja historial: Atras sale de la app y no vuelve al "sin filtro"
-  const largo = await page.evaluate(() => window.history.length)
+  expect(await page.evaluate(() => window.history.length)).toBe(largo)
 
   // sin esperar, el reload corta los fetch que el Resumen sigue haciendo y la consola los anota
   await page.waitForLoadState('networkidle')
   await page.reload()
   await expect(page.getByLabel('Lado')).toHaveValue('Defense')
   await expect(subtitulo).toHaveText(conFiltro)
-  expect(await page.evaluate(() => window.history.length)).toBe(largo)
 
   expect(errores).toEqual([])
 })

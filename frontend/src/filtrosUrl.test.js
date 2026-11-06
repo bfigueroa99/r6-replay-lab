@@ -36,10 +36,10 @@ describe('filtrosDeUrl y queryDeFiltros', () => {
   })
 
   it('days invalido se descarta', () => {
-    for (const malo of ['abc', '0', '-3', '99999', '1.5', '']) {
+    for (const malo of ['abc', '0', '-3', '99999', '1.5', '45', '']) {
       expect(filtrosDeUrl(`days=${malo}`)).toEqual({})
     }
-    expect(filtrosDeUrl('days=30')).toEqual({ days: '30' })
+    for (const bueno of ['7', '30', '90']) expect(filtrosDeUrl(`days=${bueno}`)).toEqual({ days: bueno })
     expect(queryDeFiltros({ days: 'abc', side: 'Attack' })).toBe('side=Attack')
   })
 

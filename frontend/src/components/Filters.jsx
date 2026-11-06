@@ -6,6 +6,7 @@ import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido } from '../tipoPartida
 
 const RANGO_EXACTO = 'rango'
 
+// los valores tienen que ser los DIAS_DEL_PERIODO de filtrosUrl.js
 const RANGES = [
   { value: '', label: 'Todo el historial' },
   { value: '7', label: 'Últimos 7 días' },
@@ -38,8 +39,8 @@ export default function Filters({
   // el modo vive aca y no en los filtros: hay un momento, entre elegir "entre
   // dos fechas" y escribir la primera, en el que no hay nada que mandar a la API
   const [rangoAbierto, setRangoAbierto] = useState(Boolean(value.since || value.until))
-  // Atras puede traer fechas sin que la barra se vuelva a montar
-  const abierto = rangoAbierto || Boolean(value.since || value.until)
+  // Atras puede traer fechas, o un periodo, sin que la barra se vuelva a montar
+  const abierto = (rangoAbierto && !value.days) || Boolean(value.since || value.until)
 
   const elegirPeriodo = (event) => {
     const elegido = event.target.value
