@@ -1,7 +1,7 @@
 # 98. Lado inicial por mapa
 
-estado: implementado
-candado: revisor 2026-11-06 04:38
+estado: revisado
+candado: -
 rama: claude/equipo-dev/98-lado-inicial-por-mapa
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: B17 de ALCANCE.md; [Siege.GG, win probability](https://siege.gg/news/how-analysts-estimate-win-probability-in-pro-siege-matches) (2026-04-27: "A team starting on defense may carry a higher early probability simply because of the map's structure"); investigador 2026-11-03
 archivos: backend/replays/analytics/aggregates.py (by_start_side_map, MIN_PARTIDAS_LADO_INICIAL), backend/replays/views.py (trends), backend/tests/test_mitades.py, frontend/src/ladoInicialMapa.js, frontend/src/ladoInicialMapa.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-cHA9KBb
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-cHA9KBb, revisor 20261106T0438Z-cWo3KEB
 
 ## PR
 
@@ -249,3 +249,31 @@ verificar.sh: VERDE 9b16f4a27 (1044 tests backend, 256 vitest, 76 e2e).
 Skills: no aplica (lo resolvio el diseno; tabla con el `DataTable` de siempre).
 
 OMC: plan=— · revisión=3 hallazgos LOW (3 arreglados) · verificación=—
+
+## Revision 2026-11-06 sobre a5d41f7
+
+(Revisor 20261106T0438Z-cWo3KEB.) Rama fusionada con dev (11 commits) antes de
+revisar. Dos ejes a ciegas (estandares e intencion); los cinco criterios
+cubiertos por tests (`test_mitades.py`, `ladoInicialMapa.test.js`, e2e
+`humo.spec.js`). Sin CRITICAL, HIGH ni MEDIUM. La banda con proporcion
+combinada en vez de `_ruido` (criterio 2) esta justificada en el Diseno
+(punto 4): no es hallazgo.
+
+- [test] [LOW] backend/tests/test_mitades.py (`test_el_filtro_de_lado_no_cambia_el_lado_inicial_por_mapa`)
+  Que pasa: el nombre promete que el filtro de lado no cambia la tabla, pero
+  `_arranque` crea siempre una ronda de cada lado y esquiva el caso que si la cambia.
+  Por que es cierto: una partida truncada con rondas solo en ataque sale de
+  `by_start_side_map(side="Defense")`, porque las ids salen de
+  `base_queryset(**filters)`; `by_start_side` hace lo mismo (no es regresion).
+  Arreglo sugerido: quitar `side` de los filtros como `matches_summary` y
+  agregar una partida de un solo lado al test, o renombrar el test.
+- [test] [LOW] frontend/src/ladoInicialMapa.test.js (`un lado necesita tres partidas con resultado`)
+  Que pasa: compara la constante del frontend con un literal 3; no detecta
+  si se desalinea de `MIN_PARTIDAS_LADO_INICIAL` del backend.
+  Arreglo sugerido: aceptarlo como espejo, o mandar el minimo en
+  `/api/trends/` como `min_matches_map`.
+
+Veredicto: aprobar. verificar.sh: VERDE a5d41f7 (1077 tests backend, 262
+vitest, 76 e2e).
+
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados) · verificación=—
