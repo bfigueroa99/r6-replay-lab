@@ -1,7 +1,7 @@
 # 97. Clutches silenciosos
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T04:04Z
 rama: claude/equipo-dev/97-clutches-silenciosos
 tipo: funcionalidad
 epica: impacto
