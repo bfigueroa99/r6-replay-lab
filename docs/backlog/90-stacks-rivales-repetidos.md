@@ -1,7 +1,7 @@
 # 90. Stacks rivales repetidos
 
 estado: aprobado
-candado: -
+candado: release 2026-11-06T00:09Z
 rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
