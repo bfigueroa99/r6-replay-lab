@@ -1,7 +1,7 @@
 # 100. Modo de juego como dimension
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T05:03Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/100-modo-de-juego-como-dimension
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -201,3 +201,64 @@ aparece con "Rehén" elegido.
 
 Skills: no aplica (filtro y tabla ya resueltos en el repo: `opcionesDeTipo`, `DataTable`, `by_stack`; sin busqueda).
 OMC: plan=— · revisión=— · verificación=— (ficha chica de una forma, sin consenso)
+
+## Implementacion
+
+(dev 20261106T0503Z-cNnHCRB)
+
+Quedo el diseno completo, sin cambio de `seed_demo`:
+
+- Backend: `gamemode` en `FILTER_KEYS`, `_filters`, `base_queryset` y
+  `match_queryset`; `GET /api/filters/` devuelve `gamemodes`;
+  `agg.by_gamemode` (calco de `by_stack`, con `kd`) en `/api/trends/` como
+  `by_gamemode`.
+- Frontend: `modoDeJuego.js` (nombres en castellano, opciones, cuando mostrar
+  el selector, filas), selector "Modo" en `Filters.jsx`, `gamemode` en
+  `CLAVES_DE_URL`, panel "Por modo" en Tendencias antes de "Por hora del día".
+- `docs/metricas.md`: seccion `## Modo de juego` despues de `## Mitades y prorroga`.
+
+Criterios -> tests:
+
+- filtro y 200 con modo inexistente: `test_filtrar_por_hostage_cuenta_solo_sus_rondas`,
+  `test_un_modo_que_no_existe_da_cero_rondas_y_no_500`, `test_el_listado_de_partidas_respeta_el_modo`.
+- opciones: `test_las_opciones_listan_cada_modo_una_vez_sin_vacios`; vitest
+  `opcionesDeModo` y `mostrarSelectorDeModo` (`modoDeJuego.test.js`).
+- URL: vitest `gamemode sobrevive ida y vuelta y uno demasiado largo se descarta`.
+- `by_gamemode`: `test_por_modo_suma_partidas_winrate_y_rating_por_modo`,
+  `test_por_modo_deja_fuera_del_porcentaje_las_partidas_sin_resultado`,
+  `test_por_modo_con_filtro_de_lado_mantiene_el_resultado_de_la_partida`,
+  `test_por_modo_deja_la_partida_sin_modo_en_su_propia_fila`.
+- e2e `modo-de-juego.spec.js`: sin selector con un modo; selector con
+  intercepcion, filtra (`/api/overview/?...gamemode=Hostage`, URL, "0 rondas
+  con estos filtros") y Limpiar lo saca; enlace `/?gamemode=Hostage` con base
+  de un modo; Partidas manda el modo; Tendencias con y sin "Por modo".
+
+Desvios del diseno:
+
+- **`partidas.js`**: `gamemode` entra a `CLAVES_DE_PARTIDA`. El diseno no lo
+  nombraba y sin eso Partidas mostraba el selector en "Rehén" pero listaba
+  todas las partidas (lo encontro la revision ciega). Test vitest en
+  `partidas.test.js` y paso e2e.
+- **`opcionesDeModo(gamemodes, elegido)`**: suma el modo elegido aunque la
+  base no lo tenga. Sin eso, con `?gamemode=Hostage` y base de un solo modo,
+  el `<select>` aparecia pero mostraba "Todos" filtrando (lo vio el e2e).
+- e2e: el selector se busca con `getByRole('combobox', { name: 'Modo', exact: true })`;
+  `getByLabel(..., { exact: true })` compara con el texto entero del `<label>`,
+  opciones incluidas, y no encuentra nada (el test "no aparece" pasaba por eso).
+- No se espero a la 99 (el diseno decia "prioriza, no bloquea"). La 98 entro a
+  dev durante el turno: merge de `origin/dev` con conflicto en
+  `aggregates.py` y `views.py` (by_start_side_map y by_gamemode conviven).
+  Contra la rama 99 mergea limpio (se movio el import de `modoDeJuego.js`
+  en Trends.jsx para no chocar con el suyo).
+
+Revision ciega (omc-code-reviewer, eje de estandares): 1 HIGH (partidas.js,
+arreglado), 3 LOW: `datos.get` redundante (arreglado), frase de metricas.md
+sobre cuando aparece el selector (arreglada), `matches_decided` vs `decided`
+de `by_start_side` (se deja: es el nombre de `by_stack`, la familia que el
+diseno manda copiar).
+
+verificar.sh: VERDE 8827e49b7 (1085 tests backend, 273 vitest, 81 e2e), con
+dev ya fusionado.
+
+Skills: no aplica (el Arquitecto no busco y el repo ya resuelve filtro y tabla).
+OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
