@@ -967,8 +967,8 @@ test('un filtro sin rondas deja la barra en todas las páginas', async ({ page }
 
   const nav = page.locator('nav')
   for (const [ruta, titulo] of PAGINAS.slice(1, 6)) {
-    // por el menu y no con goto: un goto recarga y pierde los filtros
-    await nav.locator(`a[href="${ruta}"]`).click()
+    // por el menu; su href lleva los filtros en la query (ficha 96)
+    await nav.locator(`a[href^="${ruta}"]`).click()
     await expect(page.locator('h1')).toHaveText(titulo)
     await expect(page.locator('.page-head p')).toHaveText('0 rondas con estos filtros')
     await expect(page.locator('.filters')).toBeVisible()

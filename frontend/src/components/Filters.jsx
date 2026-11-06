@@ -6,6 +6,7 @@ import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido } from '../tipoPartida
 
 const RANGO_EXACTO = 'rango'
 
+// los valores tienen que ser los DIAS_DEL_PERIODO de filtrosUrl.js
 const RANGES = [
   { value: '', label: 'Todo el historial' },
   { value: '7', label: 'Últimos 7 días' },
@@ -19,8 +20,8 @@ const etiquetaSesion = (s) =>
   `${s.start.slice(5, 16).replace('T', ' ')} · ${s.matches} partida${s.matches === 1 ? '' : 's'}`
 
 /**
- * Barra de filtros compartida. El estado vive en App para que se mantenga al
- * cambiar de pagina.
+ * Barra de filtros compartida. El estado vive en App y en la query de la URL,
+ * para que se mantenga al cambiar de pagina y al recargar.
  */
 export default function Filters({
   value,
@@ -38,6 +39,8 @@ export default function Filters({
   // el modo vive aca y no en los filtros: hay un momento, entre elegir "entre
   // dos fechas" y escribir la primera, en el que no hay nada que mandar a la API
   const [rangoAbierto, setRangoAbierto] = useState(Boolean(value.since || value.until))
+  // Atras puede traer fechas, o un periodo, sin que la barra se vuelva a montar
+  const abierto = (rangoAbierto && !value.days) || Boolean(value.since || value.until)
 
   const elegirPeriodo = (event) => {
     const elegido = event.target.value
@@ -125,7 +128,7 @@ export default function Filters({
       <label>
         Periodo
         <select
-          value={rangoAbierto ? RANGO_EXACTO : value.days || ''}
+          value={abierto ? RANGO_EXACTO : value.days || ''}
           onChange={elegirPeriodo}
         >
           {RANGES.map((r) => (
@@ -136,7 +139,7 @@ export default function Filters({
         </select>
       </label>
 
-      {rangoAbierto ? (
+      {abierto ? (
         <>
           <label>
             Desde
