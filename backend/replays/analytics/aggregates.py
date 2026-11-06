@@ -898,8 +898,7 @@ def spawn_exits(ataque: QuerySet[RoundPlayer], min_rounds: int) -> tuple[list[di
     if me_ids:
         _, a_favor = _duelos(ataque, me_ids)
         mi_spawn = Subquery(
-            RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True)
-            .values("spawn")[:1]
+            _mia_en_la_ronda().filter(round_id=OuterRef("round_id")).values("spawn")[:1]
         )
         tempranas = (
             a_favor.filter(_temprano("elapsed"))
