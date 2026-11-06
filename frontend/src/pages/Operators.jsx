@@ -13,7 +13,7 @@ import {
   SinRondasFiltradas,
   pct,
 } from '../components/ui.jsx'
-import { claseSitio, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
+import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
@@ -166,7 +166,8 @@ function TablaPorSitio({ rows }) {
           render: (row) => <span className={`chip ${claseSitio(row.verdict)}`.trim()}>{etiquetaSitio(row.verdict)}</span>,
         },
       ]}
-      rows={rows}
+      rows={conOrdenDelBackend(rows)}
+      initialSort={{ key: 'orden', dir: 'asc' }}
       rowKey={(row) => `${row.slug}-${row.map_id}-${row.site}-${row.side}-${row.operator}`}
       csvName="operadores-por-sitio"
     />

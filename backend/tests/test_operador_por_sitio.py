@@ -109,7 +109,9 @@ class OperadorPorSitioTests(TestCase):
     def test_rondas_sin_sitio_lado_u_operador_quedan_fuera(self):
         rondas("Ash", 10, 10)
         rondas("Zofia", 10, 0)
-        rondas("Ash", 5, 0, site="")
+        # sin sitio, en tandas de 10: sin el exclude formarian su propia fila
+        rondas("Ash", 10, 0, site="")
+        rondas("Zofia", 10, 10, site="")
         rondas("", 5, 5)
         # tandas de 10 para que, sin el exclude, pasen el minimo y se vean
         rondas("Zofia", 10, 10, side="")

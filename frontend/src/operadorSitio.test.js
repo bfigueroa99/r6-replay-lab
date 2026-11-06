@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { claseSitio, etiquetaSitio, textoSinFilas } from './operadorSitio.js'
+import { ordenarFilas } from './components/ui.jsx'
+import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from './operadorSitio.js'
 
 describe('operadorSitio', () => {
   it('cada veredicto tiene su etiqueta', () => {
@@ -31,5 +32,15 @@ describe('operadorSitio', () => {
   it('sin minimo en la respuesta cae en 10', () => {
     expect(textoSinFilas({})).toContain('llega a 10 rondas')
     expect(textoSinFilas(null)).toContain('llega a 10 rondas')
+  })
+
+  it('la tabla conserva el orden por |delta| que manda el backend', () => {
+    // el backend ya ordena por |delta|; ordenadas por mapa saldrian al reves
+    const filas = conOrdenDelBackend([
+      { map: 'Bank', winrate_delta: -30 },
+      { map: 'Oregon', winrate_delta: 5 },
+    ])
+    expect(ordenarFilas(filas, { key: 'orden', dir: 'asc' }).map((f) => f.map)).toEqual(['Bank', 'Oregon'])
+    expect(conOrdenDelBackend(undefined)).toEqual([])
   })
 })

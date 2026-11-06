@@ -133,6 +133,25 @@ test('Operadores muestra el operador por sitio', async ({ page }) => {
   await expect(filas.first()).toContainText('Sin señal')
   await expect(panel.locator('th', { hasText: 'Veredicto' })).toBeVisible()
 
+  // el seed no tiene deltas distintos de 0: dos filas fijas prueban que la
+  // tabla sale en el orden del backend (|delta|) y no ordenada por mapa
+  const fila = (map, operator, delta, verdict) => ({
+    map, slug: map.toLowerCase(), map_id: 0, site: 'A Sitio', side: 'Attack', operator,
+    rounds: 20, rounds_won: 10, winrate: 50, rest_rounds: 20, rest_winrate: 50 - delta,
+    winrate_delta: delta, margin: 10, verdict,
+  })
+  await page.unroute('**/api/operators/sites/**')
+  await page.route('**/api/operators/sites/**', (route) =>
+    route.fulfill({
+      json: { rows: [fila('Bank', 'Ash', -30, 'hunde'), fila('Oregon', 'Zofia', 5, 'ruido')], min_rounds: 10, bands: 2 },
+    }),
+  )
+  await page.reload()
+  await expect(filas).toHaveCount(2)
+  await expect(filas.first()).toContainText('Bank')
+  await expect(filas.first()).toContainText('Te hunde')
+  await expect(filas.nth(1)).toContainText('Oregon')
+
   expect(errores).toEqual([])
 })
 

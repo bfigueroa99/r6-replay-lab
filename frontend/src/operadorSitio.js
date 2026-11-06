@@ -27,3 +27,12 @@ export function textoSinFilas(datos) {
   const minimo = datos?.min_rounds ?? 10
   return `Ningún operador llega a ${minimo} rondas en un sitio (ni el resto del sitio).`
 }
+
+/**
+ * Fija el orden del backend (|delta| de mayor a menor) en una columna
+ * `orden`: `DataTable` sin `initialSort` reordena por la primera columna y
+ * la fila que mas se separa del resto quedaria perdida en la tabla.
+ */
+export function conOrdenDelBackend(filas) {
+  return (filas || []).map((fila, orden) => ({ ...fila, orden }))
+}
