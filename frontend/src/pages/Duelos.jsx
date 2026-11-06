@@ -60,6 +60,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const operators = data.operators || []
   const faced = data.faced || { base: {}, operators: [] }
   const rivals = data.rivals ?? []
+  const stacks = data.rival_stacks ?? []
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -263,6 +264,58 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.player_id}
           csvName="rivales-repetidos"
           empty="Nadie te tocó de rival en 2 o más partidas con estos filtros."
+        />
+      </Panel>
+
+      <Panel
+        title="Stacks rivales que se repiten"
+        hint={
+          'Grupos de 2 o más rivales que te tocaron juntos en el equipo contrario en 2 o más ' +
+          'partidas. Si el grupo entero se repite, sale una sola fila con todos; un grupo más ' +
+          'chico sale aparte solo si suma partidas propias. El replay no trae nombres de ' +
+          'equipo: es solo coincidencia de personas.'
+        }
+      >
+        <DataTable
+          columns={[
+            {
+              key: 'players',
+              label: 'Rivales',
+              left: true,
+              sortable: false,
+              render: (row) =>
+                row.players.map((p, i) => (
+                  <React.Fragment key={p.player_id}>
+                    {i > 0 && ' · '}
+                    <Link to={`/jugadores/${p.player_id}`}>{p.username}</Link>
+                  </React.Fragment>
+                )),
+              // sin esto la celda sale vacia en el CSV: `players` es una lista
+              csv: (row) => row.players.map((p) => p.username).join(' + '),
+            },
+            { key: 'size', label: 'Juntos' },
+            { key: 'matches', label: 'Partidas' },
+            { key: 'wins', label: 'Ganadas' },
+            { key: 'losses', label: 'Perdidas' },
+            {
+              key: 'record',
+              label: 'Récord',
+              sortable: false,
+              render: (row) => `${row.wins}-${row.losses}`,
+              csv: (row) => `${row.wins}-${row.losses}`,
+            },
+            {
+              key: 'winrate',
+              label: 'Winrate',
+              help: 'Sobre las partidas con resultado: las que no lo tienen cuentan en Partidas y no acá.',
+              render: (row) => pct(row.winrate),
+            },
+          ]}
+          rows={stacks}
+          initialSort={{ key: 'matches', dir: 'desc' }}
+          rowKey={(row) => row.players.map((p) => p.player_id).join('-')}
+          csvName="stacks-rivales"
+          empty="Ningún grupo de rivales se repitió en 2 o más partidas con estos filtros."
         />
       </Panel>
     </>
