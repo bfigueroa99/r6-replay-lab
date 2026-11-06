@@ -1,6 +1,6 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: implementado (espejo; manda la rama)
+estado: revisado (espejo; manda la rama)
 candado: -
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
