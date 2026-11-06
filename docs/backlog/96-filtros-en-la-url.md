@@ -1,8 +1,8 @@
 # 96. Filtros en la URL
 
-estado: disenado
+estado: en curso (espejo; manda la rama)
 candado: -
-rama: -
+rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
 area: frontend
