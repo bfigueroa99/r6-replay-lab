@@ -1,7 +1,7 @@
 # 100. Modo de juego como dimension
 
 estado: aprobado
-candado: -
+candado: release 2026-11-06T06:01Z
 rama: claude/equipo-dev/100-modo-de-juego-como-dimension
 tipo: funcionalidad
 epica: temporada-y-modo
