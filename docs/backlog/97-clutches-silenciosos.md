@@ -1,7 +1,7 @@
 # 97. Clutches silenciosos
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06 03:45
 rama: claude/equipo-dev/97-clutches-silenciosos
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: K11 de ALCANCE.md; [Siege.GG, rating rebalance](https://siege.gg/blog/946-player-rating-rebalance) (2026-08-11: "It also allows for 'quiet' clutches to have an impact on rating"); investigador 2026-11-03
 archivos: backend/replays/analytics/metrics.py, backend/replays/models.py, backend/replays/migrations/0005_roundplayer_clutch_kills.py, backend/replays/ingest.py, backend/replays/recompute.py, backend/replays/management/commands/recompute.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/management/commands/seed_demo.py, backend/tests/test_clutch.py, backend/tests/test_recompute.py, backend/tests/test_seed_demo.py, frontend/src/clutchSilencioso.js, frontend/src/clutchSilencioso.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0319Z-csweoG8
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0319Z-csweoG8, revisor 20261106T0345Z-cTsg2Tv
 
 ## PR
 
