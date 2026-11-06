@@ -64,6 +64,18 @@ class OperadorPorSitioTests(TestCase):
         # mayor |delta| primero; a igual delta, mas rondas y despues nombre
         self.assertEqual([f["operator"] for f in datos["rows"]], ["Ash", "Zofia"])
 
+    def test_las_filas_salen_por_mayor_diferencia_y_no_por_nombre_ni_rondas(self):
+        # Thatcher -68.8, Zofia +66.7, Ash y Buck -3.1: ni el orden alfabetico
+        # ni el de rondas (Zofia tiene 12) dan este
+        rondas("Ash", 10, 5)
+        rondas("Buck", 10, 5)
+        rondas("Thatcher", 10, 0)
+        rondas("Zofia", 12, 12)
+        datos = pedir(self.client)
+        self.assertEqual(
+            [f["operator"] for f in datos["rows"]], ["Thatcher", "Zofia", "Ash", "Buck"],
+        )
+
     def test_una_diferencia_chica_es_ruido(self):
         rondas("Ash", 20, 11)
         rondas("Zofia", 20, 10)
