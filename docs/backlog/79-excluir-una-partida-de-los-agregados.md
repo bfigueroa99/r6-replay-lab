@@ -124,3 +124,8 @@ Trae migracion: `python manage.py backup`, `migrate` y `showmigrations replays`.
 
   Si preferis otra cosa, decilo en la ficha.
 - (release 20261105T1358Z-ckVhKLL) El PR toca `CLAUDE.md`, asi que lo mergea el humano (puerta d).
+- (qa 20261106T0252Z-cf6G6Cs, P3) Dev ea8ccfa+96 chocaba en `MatchDetail.jsx`: botones de exclusion
+  juntos con "Partida anterior/siguiente" de la 95 dentro de `DetallePartida` (remonte por
+  `key`). La guardia de la 79 marco dos cosas llegadas a dev despues: la subconsulta de
+  `spawn_exits` (89) pasa a `_mia_en_la_ronda()` (misma consulta) y `operators-by-site` (93)
+  entra a `COMPARADAS`. VERDE 85e6cd228 (1056, 251, 77).
