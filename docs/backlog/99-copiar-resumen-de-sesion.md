@@ -1,7 +1,7 @@
 # 99. Copiar el resumen de una sesion
 
-estado: implementado
-candado: revisor 2026-11-06 04:38
+estado: revisado
+candado: -
 rama: claude/equipo-dev/99-copiar-resumen-de-sesion
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: H7 de ALCANCE.md; reusa la idea de la ficha 66 (copiar resumen de partida, `frontend/src/resumenPartida.js`)
 archivos: backend/replays/analytics/aggregates.py (sessions, _extremos_de_sesion), backend/tests/test_sessions.py, frontend/src/resumenSesion.js, frontend/src/resumenSesion.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-c9pasST
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-c9pasST, revisor 20261106T0438Z-cWo3KEB
 
 ## PR
 
@@ -228,3 +228,37 @@ Verificacion: verificar.sh VERDE e89bfd5ab (1042 tests backend, 254 vitest, 77 e
 
 Skills: no aplica (el diseno ya resolvia el portapapeles y la tabla).
 OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
+
+## Revision 2026-11-06 sobre 4d05752
+
+(Revisor 20261106T0438Z-cWo3KEB.) Rama fusionada con dev (11 commits) antes de
+revisar. Dos ejes a ciegas (estandares e intencion); los cinco criterios
+cubiertos (`test_sessions.py`, `resumenSesion.test.js`, e2e del boton
+"Copiar" con el portapapeles). Sin CRITICAL, HIGH ni MEDIUM.
+
+- [test] [LOW] backend/tests/test_sessions.py (`test_partidas_con_el_mismo_rating_no_dan_peor_partida`)
+  Que pasa: el desempate "gana la jugada antes" no esta probado: el test
+  pasa sin el `sort` de `_extremos_de_sesion`.
+  Por que es cierto: reproducido comentando `candidatas.sort(...)` en
+  `aggregates.py:2282`: `tests.test_sessions` sigue OK, porque las ids ya
+  llegan ordenadas por `played_at` desde `_sessions_raw`.
+  Arreglo sugerido: dos partidas con el mismo `played_at` y el mismo
+  rating, y afirmar que `best_match` es la de menor id; o quitar el `sort`.
+- [intencion] [LOW] backend/tests/test_sessions.py (sesion G, P, sin resultado)
+  Que pasa: el criterio 1 pide ese test con "las dos partidas extremas
+  correctas"; solo afirma los conteos (las tres partidas tienen el mismo
+  rating y `worst_match` sale `None`). Los extremos se prueban aparte.
+  Arreglo sugerido: kills distintos (3, 0, 1) y afirmar `best_match` y
+  `worst_match`.
+- [intencion] [LOW] frontend/src/resumenSesion.js
+  Que pasa: con `hours` 0 (sesion de una partida) el texto omite la
+  duracion que pide el criterio 2; desviacion razonable y cubierta por vitest.
+  Arreglo sugerido: ninguno, salvo que el PO quiera la duracion siempre.
+
+Nota (no hallazgo): con todas las partidas al mismo rating sale "Mejor
+partida" sin "Peor partida"; esta documentado en `metricas.md` y probado.
+
+Veredicto: aprobar. verificar.sh: VERDE 4d05752 (1075 tests backend, 260
+vitest, 77 e2e).
+
+OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados) · verificación=—
