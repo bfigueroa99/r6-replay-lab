@@ -1,8 +1,8 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: disenado
+estado: en curso (espejo; manda la rama)
 candado: -
-rama: -
+rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack
