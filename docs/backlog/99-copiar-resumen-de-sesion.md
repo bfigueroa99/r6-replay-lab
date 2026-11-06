@@ -1,7 +1,7 @@
 # 99. Copiar el resumen de una sesion
 
-estado: revisado
-candado: qa 2026-11-06T05:03Z
+estado: aprobado
+candado: release 2026-11-06T05:17Z
 rama: claude/equipo-dev/99-copiar-resumen-de-sesion
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: H7 de ALCANCE.md; reusa la idea de la ficha 66 (copiar resumen de partida, `frontend/src/resumenPartida.js`)
 archivos: backend/replays/analytics/aggregates.py (sessions, _extremos_de_sesion), backend/tests/test_sessions.py, frontend/src/resumenSesion.js, frontend/src/resumenSesion.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-c9pasST, revisor 20261106T0438Z-cWo3KEB
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-c9pasST, revisor 20261106T0438Z-cWo3KEB, qa 20261106T0503Z-cNp9Adt
 
 ## PR
 
@@ -262,3 +262,36 @@ Veredicto: aprobar. verificar.sh: VERDE 4d05752 (1075 tests backend, 260
 vitest, 77 e2e).
 
 OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados) · verificación=—
+
+## QA 2026-11-06 sobre 7a558373b
+
+(QA 20261106T0503Z-cNp9Adt.) Rama fusionada con `origin/dev` (que ya trae la 98, la otra que toca `Trends.jsx`): merge limpio.
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 7a558373b: 1083 tests backend, 265 vitest, 77 e2e`.
+- Base vacia: `curl -s localhost:8000/api/sessions/` -> 200, `sessions: []`.
+- Base sembrada con `tests/factories.py` (9 partidas): sesion G (3 bajas) /
+  P (0) / `won=None` -> `matches 3`, `1G 1P`, `decided 2`, `undecided 1`,
+  mejor Bank 4-3 r1.92, peor Oregon 3-4 r0.27; una partida -> sin extremos;
+  dos con el mismo rating -> mejor si, peor `None`; versiones de Consulate
+  con su etiqueta. `map=bank` saca a Oregon de la sesion y de los extremos.
+  `until=foo`, `page=-1`, `limit=-1`, `limit=foo`, `side=Defense`, `map=` ->
+  200; `since=2099-01-01` -> 0 sesiones.
+- Mutaciones (`manage.py test tests.test_sessions`): `won=None` como perdida
+  (cae 1), peor aunque empaten (cae 1), extremos con una partida (cae 1),
+  mejor y peor invertidos (caen 3). `derive` sin la copia sobrevive, pero
+  `sessions()` da la misma salida byte a byte (sin filtro y con `map=bank`):
+  mutante equivalente, porque `_fold` corre antes y cada partida esta en una
+  sola sesion. La copia queda como defensa.
+- `vite build`: chunk inicial `index` 194.59 kB, igual que dev; Tendencias
+  (lazy) 30.07 -> 31.41 kB.
+- Playwright sobre `/tendencias` con la base sembrada: con permiso, "Copiar"
+  en la sesion de 3 partidas deja "Sesión copiada (10-01 20:00)" y en el
+  portapapeles las 5 lineas del diseno (`3 partidas: 1G 1P 1 sin resultado`,
+  `Mejor partida: Bank · 4-3 · rating 1.92`, ...); sin permiso, "No se pudo
+  copiar: el navegador no dio acceso al portapapeles."; 0 errores de consola
+  en los dos casos.
+
+Veredicto: aprobado. Sin migracion, `recompute`, parser ni Electron.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5 criterios)
