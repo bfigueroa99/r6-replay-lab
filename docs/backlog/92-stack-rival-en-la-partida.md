@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06 00:42 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
@@ -191,6 +191,52 @@ nuevos y ver que no aparece nada.
 OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261106T0041Z-cqfAePA, sobre `origin/dev@c63314e`)
+
+Quedo el diseno completo, sin desvios de forma:
+
+- `aggregates.py`: `rival_stacks` partida en `_stacks_rivales` (pares
+  partidas/grupo) y `_filas_de_stacks` (nicks, record, orden). Nueva
+  `rival_stacks_de_partida(match_id)`: sin filtros, se queda con los pares que
+  incluyen la partida y descarta un grupo si es subconjunto estricto de otro
+  par que tambien aplica. Los 10 tests previos de `test_stacks_rivales.py` no
+  se tocaron y siguen verdes.
+- `views.py` `match_detail`: clave `rival_stacks`, siempre presente.
+- `frontend/src/stacksRivales.js` + test (6 vitest): `nombresDelGrupo`,
+  `textoStackRival` y, ademas del diseno, `separadorAntes(i, total)`, que usa
+  la vista para poner los nicks como enlaces con la misma puntuacion (un test
+  fija que reconstruye el mismo texto que `nombresDelGrupo`).
+- `MatchDetail.jsx`: `StacksRivales` entre las `kpis` y el panel Rondas;
+  `null` sin grupos. CSS: `.stacks-rivales` (margen 18px, 13px).
+- `docs/metricas.md`: fila **Stack rival en la partida** en Duelos.
+
+Desvio no previsto en el diseno: `frontend/e2e/partida-sin-rondas.json` suma
+`"rival_stacks": []`; `test_partida_sin_rondas` compara el payload entero y
+obliga a regenerarlo (lo dice su docstring).
+
+Criterios -> tests:
+- clave siempre presente / lista vacia: `test_una_partida_sin_stack_trae_lista_vacia`,
+  `test_una_partida_sin_rondas_trae_lista_vacia`, `test_el_detalle_de_una_partida_sin_rondas_responde_200`.
+- mismo record que Duelos (trio en 3 partidas): `test_el_detalle_trae_el_stack_con_el_mismo_record_que_duelos`.
+- solo el grupo mas grande: `test_el_detalle_muestra_solo_el_grupo_mas_grande_que_aplica`.
+- sin filtros: `test_el_detalle_no_aplica_los_filtros` (por la vista y por la funcion).
+- aviso en el detalle con enlaces y Duelos: e2e `el detalle de la partida avisa del stack rival repetido`
+  (Kaid_, Mozzie99 y Thorn.exe, 29 partidas, récord 29-0; seed sin cambios).
+- partida sin rondas no se rompe: e2e existente de la partida sin rondas, verde sin tocarlo.
+
+Revision ciega (omc-code-reviewer, revision.md): 0 CRITICAL/HIGH, 1 MEDIUM, 3 LOW.
+Arreglados: MEDIUM (el test de filtros pasaba siempre porque la vista no lee
+`request.GET`: ahora tambien afirma sobre `rival_stacks_de_partida` contra
+`rival_stacks(map=...)`), LOW de doc (el record coincide con Duelos *sin
+filtros*) y LOW de `nombresDelGrupo` (comentario de para que existe). Queda el
+LOW de costo: cada apertura del detalle recorre el historial como Duelos; lo
+asume el diseno.
+
+verificar.sh: VERDE f14af40eb (1005 tests backend, 216 vitest, 68 e2e).
+
+Skills: no aplica (lo dice el diseno). 
+OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
 
 ## Revision
 
