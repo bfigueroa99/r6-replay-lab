@@ -149,3 +149,84 @@ class CoachFatigaTests(TestCase):
         for posicion in range(4):
             partida(posicion, INICIO + timedelta(minutes=40 * posicion), ganadas=4 if posicion < 2 else 0)
         self.assertIsNone(find(build_insights(), "fatiga-sesion"))
+
+
+class ResumenDeSesionTests(TestCase):
+    """Campos de la ficha 99: ganadas, perdidas y partidas extremas de la sesion."""
+
+    def _partida(self, indice, minutos, *, mapa="Bank", kills=1, mi=4, rival=2, won=True):
+        match = make_match(
+            index=indice, map_name=mapa, played_at=INICIO + timedelta(minutes=minutos),
+            my_score=mi, opponent_score=rival,
+        )
+        if match.won != won:
+            match.won = won
+            match.save(update_fields=["won"])
+        for n in range(4):
+            rnd = make_round(match, n, won=n < 2)
+            make_round_player(rnd, kills=kills)
+        return match
+
+    def test_una_sesion_cuenta_ganadas_perdidas_y_sin_resultado(self):
+        self._partida(0, 0, won=True)
+        self._partida(1, 40, won=False, mi=2, rival=4)
+        self._partida(2, 80, won=None, mi=3, rival=3)
+
+        (sesion,) = agg.sessions()
+        self.assertEqual(sesion["matches"], 3)
+        self.assertEqual(sesion["wins"], 1)
+        self.assertEqual(sesion["losses"], 1)
+        self.assertEqual(sesion["decided"], 2)
+        self.assertEqual(sesion["undecided"], 1)
+
+    def test_la_mejor_y_la_peor_partida_salen_por_rating(self):
+        buena = self._partida(0, 0, mapa="Bank", kills=3, mi=4, rival=3)
+        mala = self._partida(1, 40, mapa="Oregon", kills=0, mi=2, rival=4, won=False)
+
+        (sesion,) = agg.sessions()
+        self.assertEqual(sesion["best_match"]["id"], buena.id)
+        self.assertEqual(sesion["best_match"]["map"], "Bank")
+        self.assertEqual(sesion["best_match"]["score"], "4-3")
+        self.assertIs(sesion["best_match"]["won"], True)
+        self.assertEqual(sesion["worst_match"]["id"], mala.id)
+        self.assertEqual(sesion["worst_match"]["score"], "2-4")
+        self.assertGreater(sesion["best_match"]["rating"], sesion["worst_match"]["rating"])
+
+    def test_una_sesion_de_una_partida_no_tiene_extremos(self):
+        self._partida(0, 0)
+        (sesion,) = agg.sessions()
+        self.assertIsNone(sesion["best_match"])
+        self.assertIsNone(sesion["worst_match"])
+
+    def test_partidas_con_el_mismo_rating_no_dan_peor_partida(self):
+        primera = self._partida(0, 0, kills=1)
+        self._partida(1, 40, kills=1)
+        (sesion,) = agg.sessions()
+        self.assertEqual(sesion["best_match"]["id"], primera.id)  # empate: la jugada antes
+        self.assertIsNone(sesion["worst_match"])
+
+    def test_el_filtro_de_mapa_deja_fuera_las_otras_partidas_de_los_extremos(self):
+        self._partida(0, 0, mapa="Bank", kills=3)
+        self._partida(1, 40, mapa="Bank", kills=1)
+        self._partida(2, 80, mapa="Oregon", kills=0, won=False)
+
+        (sesion,) = agg.sessions(map="bank")
+        self.assertEqual(sesion["matches"], 2)
+        self.assertEqual(sesion["losses"], 0)
+        self.assertEqual(sesion["best_match"]["map"], "Bank")
+        self.assertEqual(sesion["worst_match"]["map"], "Bank")
+
+    def test_la_partida_extrema_lleva_la_etiqueta_de_version_del_mapa(self):
+        vieja = make_match(index=0, map_name="Consulate", map_id=1,
+                           played_at=INICIO, my_score=4, opponent_score=3)
+        nueva = make_match(index=1, map_name="Consulate", map_id=2,
+                           played_at=INICIO + timedelta(minutes=40), my_score=2, opponent_score=4)
+        for match, kills in ((vieja, 3), (nueva, 0)):
+            rnd = make_round(match, 0)
+            make_round_player(rnd, kills=kills)
+
+        (sesion,) = agg.sessions()
+        etiquetas = agg.etiquetas_de_mapas()
+        self.assertEqual(sesion["best_match"]["map"], etiquetas[("consulate", 1)])
+        self.assertEqual(sesion["worst_match"]["map"], etiquetas[("consulate", 2)])
+        self.assertNotEqual(sesion["best_match"]["map"], sesion["worst_match"]["map"])
