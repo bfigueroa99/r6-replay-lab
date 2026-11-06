@@ -1,7 +1,7 @@
 # 99. Copiar el resumen de una sesion
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T05:03Z
 rama: claude/equipo-dev/99-copiar-resumen-de-sesion
 tipo: funcionalidad
 epica: exportar
