@@ -594,6 +594,26 @@ test('el detalle de partida copia el resumen', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias copia el resumen de una sesion', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const respuesta = await page.request.get('/api/sessions/')
+  const { sessions } = await respuesta.json()
+  const sesion = sessions.find((s) => s.index === 0)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
+  // La tabla abre ordenada por fecha desc: la primera fila es la sesion mas reciente
+  await expect(panel.locator('tbody tr').first()).toContainText('1G 0P')
+  await panel.getByRole('button', { name: 'Copiar' }).first().click()
+  await expect(panel.getByText('Sesión copiada', { exact: true })).toBeVisible()
+  const texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith(`Sesión del ${sesion.start.slice(0, 16).replace('T', ' ')}`)).toBe(true)
+  expect(texto).toContain('1 partida: 1G 0P')
+
+  expect(errores).toEqual([])
+})
+
 test('el Resumen muestra tus multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/')
