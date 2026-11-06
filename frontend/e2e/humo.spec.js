@@ -686,7 +686,7 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   await expect(conversion.getByRole('row', { name: /^1v1 2 2 100%/ })).toBeVisible()
   await expect(conversion.getByRole('row', { name: /^1v2 8 0 0%/ })).toBeVisible()
   // uno de los dos ganados (Bank) fue sin bajas desde que quedaste solo
-  await expect(conversion.getByRole('columnheader', { name: /Silenciosos/ })).toBeVisible()
+  await expect(conversion.getByRole('cell', { name: 'Silenciosos', exact: true })).toBeVisible()
   const fila1v1 = conversion.getByRole('row', { name: /^1v1 2 2 100%/ })
   await expect(fila1v1.getByRole('cell', { name: /1 \(50%\)/ })).toBeVisible()
   await expect(panel.getByText(/De tus 2 clutches ganados, 1 fue silencioso/)).toBeVisible()

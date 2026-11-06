@@ -141,7 +141,7 @@ def _recompute_resultados(dry_run: bool) -> int:
 
 
 def recompute(*, window: float | None = None, dry_run: bool = False) -> RecomputeResult:
-    """Rehace las bajas, los trades, `clutch_vs`, `clutch_kills` y `one_vx` de todas las rondas importadas.
+    """Rehace bajas, trades, `clutch_vs`, `clutch_kills` y `one_vx` de las rondas importadas.
 
     Tambien saca los teamkills de `kills` y `headshots` y rehace `Match.won`.
     """

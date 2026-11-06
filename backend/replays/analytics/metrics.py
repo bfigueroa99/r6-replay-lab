@@ -131,7 +131,9 @@ def bajas_a_rivales(eventos: list[dict], team_of: dict[str, int]) -> dict[str, d
     return valor
 
 
-def _quedar_solo(eventos: list[dict], team_of: dict[str, int]) -> tuple[dict[str, int], dict[str, int]]:
+def _quedar_solo(
+    eventos: list[dict], team_of: dict[str, int]
+) -> tuple[dict[str, int], dict[str, int]]:
     """Rivales vivos y posicion en el feed del instante en que cada jugador quedo solo.
 
     `desde[nick]` es el indice del evento cuya muerte lo dejo solo, o -1 si su
