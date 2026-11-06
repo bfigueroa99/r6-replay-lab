@@ -1,8 +1,8 @@
 # 100. Modo de juego como dimension
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/100-modo-de-juego-como-dimension
 tipo: funcionalidad
 epica: temporada-y-modo
 area: fullstack
