@@ -7,6 +7,7 @@ import { filasDeRecords } from '../records.js'
 import { rondasConMultikill, textoMultikills } from '../multikills.js'
 import Filters from '../components/Filters.jsx'
 import { hayFiltros } from '../tipoPartida.js'
+import { textoRachaActual } from '../rachas.js'
 import {
   Bar,
   DataTable,
@@ -43,6 +44,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
   }
 
   const { attack, defense, recent_form: form, data_health: health } = overview.data
+  const racha = textoRachaActual(overview.data.matches_summary?.current_streak)
   const records = filasDeRecords(overview.data.records)
   const topInsights = (coach.data?.insights || []).filter((i) => i.severity !== 'positivo').slice(0, 3)
   const series = (trends.data?.by_match || []).map((row, i) => ({
@@ -163,6 +165,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         </Panel>
 
         <Panel title="Últimas partidas" right={<Link className="btn small" to="/partidas">Ver todas</Link>}>
+          {racha && <p className="note racha-actual" style={{ margin: '0 0 8px' }}>{racha}</p>}
           <div className="form-row" style={{ marginBottom: 12 }}>
             {form.map((match) => (
               <Link
