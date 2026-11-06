@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06T01:09Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas

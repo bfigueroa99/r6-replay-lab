@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06T01:09Z
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia
