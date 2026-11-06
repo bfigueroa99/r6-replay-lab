@@ -1,7 +1,7 @@
 # 101. Dos partidas lado a lado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 05:55Z
 rama: -
 tipo: funcionalidad
 epica: paridad-referencia

@@ -1,7 +1,7 @@
 # 103. Tira de rondas en el listado de partidas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 05:55Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
