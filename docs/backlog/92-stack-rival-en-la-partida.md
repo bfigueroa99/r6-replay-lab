@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 00:15
 rama: -
 tipo: funcionalidad
 epica: rivales

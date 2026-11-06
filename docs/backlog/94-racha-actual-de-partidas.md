@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 00:15
 rama: -
 tipo: funcionalidad
 epica: progreso
