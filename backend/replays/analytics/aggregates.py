@@ -1672,6 +1672,77 @@ def by_start_side(**filters) -> list[dict]:
     return filas
 
 
+#: Partidas decididas por lado inicial para que un mapa de veredicto. Es el
+#: minimo de mapa de la ficha 64: con menos, un 100 % o un 0 % es lo normal.
+MIN_PARTIDAS_LADO_INICIAL = MIN_PARTIDAS_MAPA
+
+
+def _celda_lado_inicial(partidas: int, decididas: int, wins: int) -> dict:
+    # Los conteos salen aunque no lleguen al minimo, para que la UI diga
+    # "2 partidas" en vez de un hueco.
+    winrate = _pct(wins, decididas) if decididas >= MIN_PARTIDAS_LADO_INICIAL else None
+    return {"matches": partidas, "decided": decididas, "wins": wins, "winrate": winrate}
+
+
+def by_start_side_map(**filters) -> list[dict]:
+    """`by_start_side` partido por version de mapa, con banda de ruido.
+
+    La banda usa la proporcion combinada de los dos lados (`_ruido_combinado`)
+    y no `_ruido` (Wald): con 3 a 5 partidas por lado un 100 % o un 0 % es lo
+    normal, y Wald da varianza cero ahi y veredicto por azar.
+    """
+    ids = base_queryset(**filters).values_list("round__match_id", flat=True).distinct()
+    partidas = (
+        Match.objects.filter(id__in=ids)
+        .annotate(lado=_lado_inicial("id"))
+        .values("map_slug", "map_id", "lado", "won")
+    )
+    por_mapa: dict[tuple[str, int], dict] = {}
+    for p in partidas:
+        if p["lado"] not in ("Attack", "Defense"):
+            continue
+        clave = (p["map_slug"], p["map_id"])
+        conteo = por_mapa.setdefault(
+            clave, {lado: [0, 0, 0] for lado in ("Attack", "Defense")}
+        )[p["lado"]]
+        conteo[0] += 1
+        if p["won"] is not None:
+            conteo[1] += 1
+            conteo[2] += int(p["won"])
+    if not por_mapa:
+        return []
+
+    etiquetas = etiquetas_de_mapas({slug for slug, _ in por_mapa})
+    filas = []
+    for (slug, map_id), lados in por_mapa.items():
+        ataque = _celda_lado_inicial(*lados["Attack"])
+        defensa = _celda_lado_inicial(*lados["Defense"])
+        delta = margen = veredicto = None
+        if ataque["winrate"] is not None and defensa["winrate"] is not None:
+            delta = _delta(ataque["winrate"], defensa["winrate"])
+            margen, veredicto = _margen_y_veredicto(
+                delta, ataque["wins"], ataque["decided"],
+                ataque["wins"] + defensa["wins"],
+                ataque["decided"] + defensa["decided"],
+                ("ataque", "defensa"),
+            )
+        filas.append(
+            {
+                "slug": slug,
+                "map_id": map_id,
+                "map": etiquetas.get((slug, map_id), slug),
+                "matches": ataque["matches"] + defensa["matches"],
+                "attack": ataque,
+                "defense": defensa,
+                "delta": delta,
+                "margin": margen,
+                "verdict": veredicto,
+            }
+        )
+    filas.sort(key=lambda f: (-f["matches"], f["map"]))
+    return filas
+
+
 def trend_by_day(**filters) -> list[dict]:
     qs = base_queryset(**filters)
     baseline = rating_baseline()

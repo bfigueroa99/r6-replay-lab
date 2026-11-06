@@ -66,6 +66,10 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
     await expect(panel.getByRole('cell', { name: tramo, exact: true })).toBeVisible()
   }
   await expect(panel.getByText('Según el lado con que arrancas')).toBeVisible()
+  // seed_demo arranca siempre en ataque: defensa queda sin muestra y no hay veredicto
+  await expect(panel.getByText('Lado inicial por mapa')).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Bank', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Poca muestra', exact: true }).first()).toBeVisible()
 
   expect(errores).toEqual([])
 })
