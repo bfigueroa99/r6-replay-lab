@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06T02:34Z
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
