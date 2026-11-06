@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
-estado: implementado
-candado: revisor 2026-11-06T02:52Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: A10 de ALCANCE.md; idea del PR #14 (cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sigue y trae `frontend/src/filtros.js` como referencia, no para copiar a ciegas)
 archivos: frontend/src/filtrosUrl.js, frontend/src/filtrosUrl.test.js, frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/e2e/filtros-url.spec.js
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0228Z-cCNBxR6
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0228Z-cCNBxR6, revisor 20261106T0252Z-cPqrt5E
 
 ## PR
 
@@ -316,6 +316,64 @@ verificar.sh: VERDE b790722e9 (1016 tests backend, 234 vitest, 74 e2e).
 
 Skills: no aplica (react-router y vitest de logica pura ya resueltos en el repo).
 OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
+
+## Revision 2026-11-06 sobre a60d84b
+
+(revisor 20261106T0252Z-cPqrt5E; a ciegas: dos `omc-code-reviewer` en paralelo, eje de
+estandares con `revision.md` y eje de intencion contra Que gana, Criterios y
+Fuera de alcance. Sin `omc-security-reviewer`: el diff no toca POST, red,
+`.rec`, rutas de archivos, Electron ni dependencias.)
+
+verificar.sh: VERDE a60d84b6a (1016 tests backend, 234 vitest, 74 e2e).
+`origin/dev@8f3fb74` ya estaba en la rama: sin merge.
+
+Eje de estandares: aprobar, CRITICAL 0, HIGH 0, MEDIUM 0, LOW 2 (los dos
+confirmados leyendo el codigo; no bloquean):
+
+- [bug] [LOW] frontend/src/components/Filters.jsx:43
+  Que pasa: `abierto` mezcla `rangoAbierto` (estado local) con lo que trae la
+  URL; sin remontar la barra puede desfasarse.
+  Como reproducirlo: en una ruta con la barra montada sin fechas, Atras (POP)
+  a una entrada de la misma ruta con `?since=2026-01-01`; borrar la fecha del
+  input: `rangoAbierto` sigue `false`, los inputs desaparecen y el select
+  salta a "Todo el historial" a mitad de la edicion. Al reves, con
+  `rangoAbierto` en `true` un POP a una entrada sin periodo muestra "Entre dos
+  fechas" vacio (no filtra nada: cosmetico). Requiere dos entradas de
+  historial de la misma ruta con periodos distintos.
+  Arreglo sugerido: un efecto que ponga `setRangoAbierto(Boolean(value.since
+  || value.until))` cuando cambian esas claves desde afuera.
+- [bug] [LOW] frontend/src/App.jsx:132 (con `fechaValida` de filtrosUrl.js:42)
+  Que pasa: `cambiarFiltros` guarda en el estado el valor tal cual y solo la
+  URL lo valida; un valor que la validacion descarta llega a la API pero no a
+  la URL, y al recargar los numeros cambian.
+  Como reproducirlo: en el `<input type="date">` de Chromium escribir a mano
+  un ano de 5 digitos (`20261-01-01`): la API recibe `since=20261-01-01`, la
+  query no lo lleva y `mismosFiltros` ve iguales estado y URL, asi que nadie
+  corrige.
+  Arreglo sugerido: guardar en el estado `filtrosDeUrl(queryDeFiltros(nuevos))`
+  conservando los `''` del modo rango, o validar las fechas en `Filters.jsx`.
+
+Eje de intencion: aprobar. Los cinco criterios cubiertos, cada uno con su
+test (vitest `filtrosUrl.test.js`, 13 tests; e2e `filtros-url.spec.js`, 6
+tests con `vigilarConsola`). Las siete rutas que renderizan `<Filters` son
+exactamente `RUTAS_CON_FILTROS`; el ejemplo `/tendencias?side=Defense&days=30`
+no se reescribe y `days=30` sobrevive. Nada fuera de alcance (sin API, sin
+`localStorage`, Resultado de Partidas fuera de la URL). Un LOW de redaccion:
+"Que gana" promete sobrevivir a *reabrir* la app de escritorio, y eso no pasa
+(`electron/main.cjs` carga siempre `APP_URL`); Ctrl+R si. El Diseno ya lo
+dejaba fuera; el PR lo tiene que decir asi.
+
+Ficha: cada criterio con test; fuera de `archivos:` solo `humo.spec.js`
+(selector `a[href^=...]`, explicado en Implementacion); sin numeros nuevos
+(sin fila de `metricas.md`); identificadores sin tildes y textos de UI con
+tildes; sin `console.log`. El desvio de `days` (solo 7, 30 y 90) es
+coherente con el select.
+
+Veredicto: aprobar -> revisado. Los dos LOW quedan para un turno de Dev si
+QA o el humano los quieren; no bloquean.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos LOW + 1 LOW de intencion (0 arreglados, no bloquean) · verificación=—
 
 ## Para el humano
 
