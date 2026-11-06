@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: implementado
-candado: revisor 2026-11-06T02:28Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: F17 de ALCANCE.md; idea del PR #14 (cerrado sin merge el 2026-11-05, rama `claude/dazzling-einstein-w3qcyq` como referencia, decision del humano en `## Para el equipo` del 2026-11-05)
 archivos: backend/replays/views.py, backend/tests/test_partida_anterior_y_siguiente.py, frontend/e2e/partida-sin-rondas.json, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/navegar-partidas.spec.js
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ, revisor 20261106T0228Z-cgEzFUY
 
 ## PR
 
@@ -226,6 +226,40 @@ Skills: no aplica (lo dijo el diseno; nada fuera del repo).
 Arena: no.
 
 OMC: plan=— · revisión=5 hallazgos LOW (3 arreglados) · verificación=—
+
+## Revision 2026-11-06 sobre 9f2cd96
+
+(revisor 20261106T0228Z-cgEzFUY, rama al dia con dev 8f3fb74)
+
+Revision ciega (eje de estandares, `omc-code-reviewer`): sin hallazgos. Eje de
+intencion (diff de 377 lineas, backend y frontend): 1 MEDIUM y 1 LOW.
+
+- [test] [MEDIUM] `frontend/e2e/navegar-partidas.spec.js` — **confirmado y
+  arreglado por el Revisor con un test que pasa.** El criterio pide comprobar
+  que cambia el titulo, pero en `seed_demo` las tres partidas mas nuevas
+  (29, 28, 27) son todas `Bank 4-3`: lo reproduje con una base temporal y la
+  API. El `h1` es identico antes y despues de navegar, asi que las
+  aserciones del titulo pasaban aunque la pagina se quedara con la partida
+  previa. Agregado: el e2e afirma que las vecinas tienen fechas distintas y
+  que la linea de fecha de `.page-head p` muestra la de la partida esperada
+  en cada paso.
+- [intencion] [LOW] `MatchDetail.jsx`, hint del panel Rondas: no es hallazgo.
+  El texto nuevo describe las flechas de esta misma ficha y estaba en el
+  diseno; el fuera de alcance habla de la timeline y los paneles como
+  funcionalidad.
+
+Ficha: los cuatro criterios cubiertos (tests de Django en
+`test_partida_anterior_y_siguiente.py`, 11 vitest de `navegacionRondas`,
+e2e `navegar-partidas.spec.js`). Diff dentro de `archivos:` (el json de
+`partida-sin-rondas` no se toco, explicado en Implementacion). Sin numeros
+nuevos para `metricas.md`, sin tildes en identificadores, UI con tildes, sin
+`print` ni `console.log`, sin dependencias.
+
+verificar.sh: VERDE 9f2cd96 (1022 tests backend, 232 vitest, 69 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 descartado) · verificación=—
 
 ## Para el humano
 
