@@ -1,6 +1,6 @@
 # 96. Filtros en la URL
 
-estado: en curso (espejo; manda la rama)
+estado: revisado (espejo; manda la rama)
 candado: -
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
