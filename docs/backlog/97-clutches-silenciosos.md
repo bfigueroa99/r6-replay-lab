@@ -1,7 +1,7 @@
 # 97. Clutches silenciosos
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06 03:20Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/97-clutches-silenciosos
 tipo: funcionalidad
 epica: impacto
@@ -357,6 +357,59 @@ Arena: no (una forma razonable; las alternativas, booleano `clutch_silent` y cal
 OMC: plan=APPROVE (2 rondas; ronda 1 ITERATE: 1 MAJOR, el contrato de `clutch_kills` con todas las claves, y 4 MINOR; architect: el seed mostraba el caso raro, ahora el silencioso del seed es inferido del reloj) · revisión=— · verificación=—
 
 ## Implementacion
+
+(Dev 20261106T0319Z-csweoG8, sobre `origin/dev@9ca7562`.)
+
+Quedo el diseno completo, en el orden del plan:
+
+- `metrics.py`: `_quedar_solo` (algoritmo de `clutch_vs` sin cambios, mas el
+  indice del evento que deja solo), `clutch_vs` delega en el (firma y salida
+  identicas; `test_clutch_vs_devuelve_lo_mismo_que_antes` y `ClutchVsTests`
+  intactos) y `clutch_kills` nuevo, con una clave por nick de `team_of`.
+- `RoundPlayer.clutch_kills`, migracion `0005_roundplayer_clutch_kills` (dev
+  no trae todavia `0005_match_excluded`: queda `0005`; si la 79 entra antes,
+  esta renumera a `0006`, y si entra despues, renumera la 79), `ingest.py`,
+  `recompute.py` (`CAMPOS`) y el comando.
+- `aggregates.py`: `silent`, `silent_pct`, `silent_low_sample` por fila y
+  `silent` por lado en `clutch_conversion`; `clutch_silent` con el reparto por
+  `win_condition`; `views.teammates` lo sirve.
+- `seed_demo`: `CLUTCH_SILENCIOSO = 153` (demo-21 ronda 6, Bank, ataque,
+  `ObjectiveOrTime` inferido). `/api/teammates/` sobre el seed:
+  `clutch_silent = {"won": 2, "silent": 1, "silent_pct": 50.0, "by_condition": {"elimination": 0, "other": 1, "unknown": 0}}`
+  y `[("1v1", 1), ("1v2", 0)]`.
+- `recompute --dry-run` sobre el seed: 981 filas de jugador antes (dev) y
+  despues (rama): el seed llena `clutch_kills` igual que el feed.
+- `makemigrations --check --dry-run`: "No changes detected".
+- Frontend: `clutchSilencioso.js` (+ vitest), columna "Silenciosos" al final
+  de "Conversión por rivales" con `*` bajo 5 ganados, nota debajo y frase en
+  el hint. e2e de Compañeros afirma la celda `1 (50%)` y la nota.
+- `docs/metricas.md`: fila "Clutch silencioso" y la remision en la de
+  conversion.
+
+Tests con nombre por criterio: `ClutchKillsTests` (12), `ImportClutchTests`
+(2 nuevos), `MigracionClutchKillsTests` (2), `ConversionTests` (5 nuevos y el
+dict ajustado), `ClutchSilenciosoTests` (5), `RecomputeClutchKillsTests` (4) y
+el ajuste de `ComandoTests.setUp` (`clutch_kills=1` en amigo y rival, el valor
+del feed), 3 en `test_seed_demo.py`, 6 vitest.
+
+Desvios del diseno:
+- La nota usa "De tu único clutch ganado" con un solo ganado (en vez de "De
+  tus 1 clutch ganado") y dice "en temporadas nuevas, inferido del reloj",
+  como `metricas.md` (hallazgos LOW de la revision ciega).
+- En el e2e el encabezado se busca como `cell` (el `DataTable` no expone
+  `columnheader`).
+- El factory `make_round_player` gana `clutch_kills` (default 0).
+
+Revision ciega (`omc-code-reviewer`): 1 HIGH (dos E501 de ruff, ya
+corregidos antes del informe) y 3 LOW: dos textos de la nota (arreglados) y la
+migracion que da por bueno el `clutch_vs` guardado (documentado en su
+docstring; `recompute` rehace los dos juntos).
+
+Verificacion: `verificar.sh` VERDE d2809d2 (1069 tests backend, 257 vitest, 76 e2e).
+
+Skills: no aplica (el diseno resolvia todo; ningun dominio nuevo).
+Arena: no (sin puntos abiertos).
+OMC: plan=— · revisión=4 hallazgos (4 arreglados o documentados) · verificación=—
 
 ## Para el humano
 
