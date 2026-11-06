@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06T01:09Z
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
