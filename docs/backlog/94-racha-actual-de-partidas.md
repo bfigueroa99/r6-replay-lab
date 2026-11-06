@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T01:35Z
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: E14 de ALCANCE.md (salio del PR #14, cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sirve de referencia)
 archivos: backend/replays/analytics/aggregates.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/pages/Dashboard.jsx, backend/tests/test_racha_actual.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM, revisor 20261106T0109Z-cGwrEvi
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM, revisor 20261106T0109Z-cGwrEvi, qa 20261106T0135Z-cJAGtBp
 
 ## PR
 
