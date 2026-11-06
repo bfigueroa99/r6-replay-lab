@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: aprobado
-candado: release 2026-11-06T01:40Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
@@ -9,305 +9,97 @@ area: fullstack
 prioridad: 3
 fuente: D9 de ALCANCE.md (idea del arquitecto 20261105T1920Z-cAaALb8 al disenar la 90); tramo siguiente de la ficha 90
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/stacksRivales.js, frontend/src/stacksRivales.test.js, frontend/src/pages/MatchDetail.jsx, backend/tests/test_stacks_rivales.py, frontend/e2e/stacks-rivales.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA, revisor 20261106T0109Z-cSomhFc, qa 20261106T0135Z-cpWzYqk
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA, revisor 20261106T0109Z-cSomhFc, qa 20261106T0135Z-cpWzYqk, release 20261106T0135Z-cpWzYqk
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][frontend] El stack rival en el detalle de la partida`
+
+### Que cambia
+
+Al abrir una partida, arriba de las rondas aparece una linea por cada grupo
+del equipo rival que ya te toco junto en otras partidas ("Kaid_, Mozzie99 y
+Thorn.exe ya te tocaron juntos en 29 partidas, récord 29-0 · Ver en Duelos"),
+con los nicks enlazados a su perfil. Sin grupos repetidos no se muestra nada.
+
+### Por que esto y no otra cosa
+
+Ficha 92, segundo tramo de la epica de rivales despues de la tabla de stacks
+de Duelos (ficha 90). Reusa el mismo calculo para que los numeros coincidan
+con Duelos; descartado recalcular con los filtros globales (el aviso habla de
+todo tu historial) y mostrar subgrupos ya contenidos en uno mas grande.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 6147c5003 (QA), 1005 tests backend, 216 vitest, 68 e2e; de nuevo sobre el commit final de la rama.
+- Tests nuevos: `test_el_detalle_trae_el_stack_con_el_mismo_record_que_duelos`, `test_el_detalle_muestra_solo_el_grupo_mas_grande_que_aplica`, `test_una_partida_sin_stack_trae_lista_vacia`, `test_el_detalle_no_aplica_los_filtros`, `test_una_partida_sin_rondas_trae_lista_vacia`; 6 vitest en `stacksRivales.test.js`; e2e `el detalle de la partida avisa del stack rival repetido`.
+- QA: base sintetica con nick repetido, grupo anidado, partida sin resultado y sin rondas; `curl` contra `/api/duels/` (mismos records); Chromium con consola limpia; 5 mutaciones, todas detectadas.
+- OMC: diseno plan=— · implementacion revisión=4 hallazgos (3 arreglados) · revision revisión=3 hallazgos (0 arreglados; 2 LOW, 1 MEDIUM) · QA verificación=PASS.
+
+### Riesgos y lo que no entra
+
+Sin migracion ni `recompute`. Costo: cada apertura del detalle recorre los
+stacks de todo el historial, como Duelos; con 1000 partidas, 0.24 s contra
+0.017 s antes. Afuera: columna "Última vez" (D10), stacks de compañeros (C1).
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+
+Abrir `http://127.0.0.1:8000/partidas`, entrar a cualquier partida: arriba de
+Rondas, "Kaid_, Mozzie99 y Thorn.exe ya te tocaron juntos en 29 partidas,
+récord 29-0 · Ver en Duelos". Clic en un nick abre su perfil; Duelos dice lo mismo.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
-Al abrir una partida, ves sobre el scoreboard si en el equipo rival venia un
-grupo que ya te toco junto en otras partidas ("Kaid_, Mozzie99 y Thorn.exe ya
-te tocaron juntos en 4 partidas, récord 1-3"), con enlace a Duelos. Saber que
-el stack de enfrente ya te gano sin ir a buscarlo a otra pagina; es el
-segundo tramo de la epica de rivales despues de la tabla de stacks (ficha 90).
-
-**Implementar despues de que #90 se mergee**: usa `rival_stacks` de esa ficha (`replays/analytics/aggregates.py`) y suma una clave a `match_detail` (`replays/views.py`).
+Al abrir una partida ves si en el equipo rival venia un grupo que ya te toco
+junto, con su record y enlace a Duelos, sin ir a buscarlo a otra pagina.
 
 ## Criterios de aceptacion
 
-- [ ] `GET /api/matches/<id>/` trae una clave `rival_stacks`: lista de los
-      grupos de `rival_stacks` (ficha 90, sin filtros globales: sobre todas
-      tus partidas) cuyas partidas incluyen esta, cada uno con sus jugadores
-      (id y nick), partidas juntos, ganadas y perdidas contra ellos. Lista
-      vacia si no hay ninguno, nunca ausente.
-- [ ] El record de cada grupo cuenta esta partida igual que la tabla de
-      Duelos (mismos numeros que la fila de la ficha 90 para ese grupo): test
-      con una base de `factories.py` donde el mismo trio rival aparece en 3
-      partidas.
-- [ ] Si un grupo esta contenido en otro mas grande que tambien aplica a esta
-      partida, se muestra solo el mas grande (mismo criterio de maximalidad
-      que la ficha 90; si la 90 no lo define, el Arquitecto lo fija aca).
-- [ ] En `MatchDetail` se ve un aviso sobre el scoreboard por grupo, con los
-      nicks enlazados a su perfil y un enlace a Duelos; sin grupos, no se
-      renderiza nada (ni panel vacio).
-- [ ] Una partida sin rondas o sin rivales identificados devuelve
-      `rival_stacks: []` y el detalle no se rompe (e2e de la partida sin rondas
-      sigue verde).
-- [ ] e2e: una partida de `seed_demo` con stack repetido muestra el aviso con
-      los numeros que fija el seed (si el seed no tiene ninguno, el Arquitecto
-      decide si se agrega uno y actualiza los numeros que cambien).
-
-## Fuera de alcance
-
-- La columna "Última vez" (D10, otra idea).
-- Stacks de tus compañeros (C1).
-- Recalcular con los filtros globales: el aviso es sobre todo tu historial.
-- Nombres de equipo o clan: el `.rec` no los trae.
+- [x] `GET /api/matches/<id>/` trae `rival_stacks` (sin filtros, lista vacia si no hay, nunca ausente).
+- [x] El record de cada grupo es el mismo numero que la fila de Duelos.
+- [x] Si un grupo esta contenido en otro mas grande que aplica a la partida, sale solo el mas grande.
+- [x] Aviso sobre el scoreboard con nicks enlazados y enlace a Duelos; sin grupos, nada.
+- [x] Partida sin rondas o sin rivales identificados: `rival_stacks: []` y el detalle no se rompe.
+- [x] e2e sobre `seed_demo` (29 partidas, récord 29-0).
 
 ## Diseno
 
-(arquitecto 20261106T0015Z-cR6uHk3, sobre `origin/dev@c63314e`, con la ficha 90 ya en dev)
-
-**Forma.** Una sola forma obvia: reusar el calculo de `rival_stacks` sin
-filtros y quedarse con los grupos cuyas partidas incluyen esta. Sin arena ni
-consenso (no hay migracion, parser, `recompute` ni POST). `Skills:` no aplica
-(un aviso de texto con enlaces, como `textoDeRachas`; nada de un dominio nuevo).
-
-### Backend
-
-1. `backend/replays/analytics/aggregates.py`: partir `rival_stacks` en dos.
-   - `_stacks_rivales(min_matches, **filters) -> list[tuple[frozenset[int], frozenset[int]]]`:
-     el cuerpo actual hasta `mejor` inclusive (pares `(partidas, grupo)`,
-     maximalidad por conjunto de partidas igual que hoy). Devuelve `[]` sin
-     `me_ids`.
-   - `_filas_de_stacks(pares) -> list[dict]`: lo que hoy va despues de `mejor`
-     (resultado, nicks, `_record`, orden). Las dos funciones publicas lo usan
-     y por eso el record es el mismo numero que la fila de Duelos.
-   - `rival_stacks(min_matches=2, **filters)` queda como
-     `_filas_de_stacks(_stacks_rivales(min_matches, **filters))`: mismo
-     contrato, los tests de `test_stacks_rivales.py` no cambian.
-   - Nueva `rival_stacks_de_partida(match_id: int, min_matches: int = 2) -> list[dict]`:
-     `pares = [(ids, g) for ids, g in _stacks_rivales(min_matches) if match_id in ids]`
-     (sin filtros: todo tu historial, como pide la ficha). **Maximalidad de
-     esta partida** (lo fija este diseno; la de la 90 es por conjunto de
-     partidas y no alcanza): se descarta un grupo si su conjunto de jugadores
-     es subconjunto estricto del de otro par de la lista,
-     `not any(g < otro for _, otro in pares)`. Ejemplo: A+B en 3 partidas y
-     A+B+C en 2, las dos con esta partida: en Duelos salen las dos filas, aca
-     solo A+B+C; en la partida donde estuvo A+B sin C, sale A+B. Despues
-     `_filas_de_stacks(pares)`, mismo orden que Duelos. Docstring con el por que.
-   - Nota: con la ficha 79 en dev, `base_queryset` deja afuera las partidas
-     excluidas; una partida excluida no aparece en ningun grupo y su aviso
-     queda vacio. Es lo coherente con Duelos; no hace falta codigo extra.
-2. `backend/replays/views.py`, `match_detail`: clave
-   `"rival_stacks": agg.rival_stacks_de_partida(match.id)` en el payload,
-   al lado de `phases`/`team_trades`. Siempre presente (lista vacia si no hay).
-   Costo: recorre las rondas de todo el historial una vez por apertura del
-   detalle, lo mismo que hace Duelos; con miles de partidas sigue siendo una
-   consulta y combinaciones de a lo sumo 5 rivales (26 subconjuntos por ronda).
-
-### Frontend
-
-3. `frontend/src/stacksRivales.js` (nuevo), logica pura:
-   - `nombresDelGrupo(players)`: "A", "A y B", "A, B y C".
-   - `textoStackRival(grupo)`: `"ya te tocaron juntos en 4 partidas, récord 1-3"`;
-     singular "en 1 partida" (con `min_matches=1` no pasa hoy, pero el
-     formateador no lo rompe); si hay partidas sin resultado
-     (`matches - wins - losses > 0`) agrega `" (2 sin resultado)"`.
-     El record es `wins-losses` desde tu lado, como en Duelos.
-4. `frontend/src/stacksRivales.test.js` (nuevo, vitest):
-   `une dos nombres con y`, `une tres nombres con comas y y`,
-   `el texto lleva partidas y record`, `una sola partida va en singular`,
-   `avisa las partidas sin resultado`.
-5. `frontend/src/pages/MatchDetail.jsx`: componente `StacksRivales({ stacks })`
-   que devuelve `null` con lista vacia o ausente (`data.rival_stacks ?? []`).
-   Va **entre las `kpis` y el panel Rondas** (arriba de todo lo demas, y por
-   lo tanto sobre el scoreboard), como `<div className="note stacks-rivales">`
-   con una linea por grupo: los nicks como `<Link to={`/jugadores/${id}`}>`
-   unidos con el mismo separador que `nombresDelGrupo` (renderizar las
-   partes, no un string), el texto de `textoStackRival` y al final
-   `<Link to="/duelos">Ver en Duelos</Link>`. Sin panel ni titulo si no hay
-   grupos. Si hace falta CSS, una regla minima en `styles.css`
-   (`margin-bottom` igual al de `.kpis`).
-
-### Tests backend
-
-6. `backend/tests/test_stacks_rivales.py` (agregar a la clase existente, que
-   ya tiene el helper `_partida`):
-   - `test_el_detalle_trae_el_stack_con_el_mismo_record_que_duelos`: trio
-     A, B, C en 3 partidas (2 ganadas, 1 perdida); `GET /api/matches/<id>/`
-     de una de ellas trae un grupo con `matches=3, wins=2, losses=1` e igual
-     a `agg.rival_stacks()[0]`.
-   - `test_el_detalle_muestra_solo_el_grupo_mas_grande_que_aplica`: A+B+C en
-     las partidas 0 y 1, A+B+Z en la 2; la partida 0 trae solo A+B+C; la 2
-     trae solo A+B (con `matches=3`).
-   - `test_una_partida_sin_stack_trae_lista_vacia`: rivales que no se repiten
-     -> `rival_stacks == []` (la clave existe).
-   - `test_el_detalle_no_aplica_los_filtros`: `GET /api/matches/<id>/?map=border`
-     trae el mismo grupo (la vista no lee filtros; el test lo fija).
-   - `test_una_partida_sin_rondas_trae_lista_vacia`: `make_match` sin rondas
-     -> 200 y `rival_stacks == []`.
-
-### e2e
-
-7. `frontend/e2e/stacks-rivales.spec.js`: test nuevo
-   `el detalle de la partida avisa del stack rival repetido`. `seed_demo` ya
-   pone al trio Kaid_, Mozzie99 y Thorn.exe en todas las rondas de las 29
-   partidas, todas ganadas: no hace falta tocar el seed. Ir a `/partidas`,
-   abrir la primera, y en `.stacks-rivales` esperar los tres enlaces
-   (`toHaveText(['Kaid_', 'Mozzie99', 'Thorn.exe', 'Ver en Duelos'])`), el
-   texto `29 partidas, récord 29-0`, y que `Ver en Duelos` lleve a `/duelos`.
-   Consola limpia (`vigilarConsola`). La partida sin rondas
-   (`partida-sin-rondas.json`) ya tiene su e2e: tiene que seguir verde sin
-   tocarlo. Ojo: si algun e2e existente del detalle busca
-   `getByRole('link', { name: 'Kaid_' })` sin acotar al panel, ahora hay dos
-   enlaces; acotar ese selector al panel del scoreboard (hoy ninguno lo
-   hace: `git grep -n "Kaid_" frontend/e2e` solo da `stacks-rivales.spec.js`).
-
-### docs
-
-8. `docs/metricas.md`, seccion `## Duelos`, fila nueva debajo de **Stack rival
-   repetido**: **Stack rival en la partida** — los stacks rivales repetidos
-   (misma definicion, mismo record) calculados sobre **todo** tu historial,
-   sin filtros, que incluyen esta partida; si un grupo esta contenido en otro
-   que tambien aplica a esta partida, sale solo el mas grande. El record
-   cuenta esta partida. Detalle de la partida, aviso arriba de las rondas.
-
-### Orden
-
-1 -> 6 (backend en verde) -> 2 -> 3, 4 -> 5 -> `npm run build` -> 7 -> 8 -> `check.sh`.
-
-### Que puede romperse
-
-- El refactor de `rival_stacks`: los 10 tests de `test_stacks_rivales.py` y el
-  e2e de Duelos tienen que seguir iguales sin tocarlos.
-- Una partida con un solo rival repetido (no grupo) no muestra nada: correcto,
-  eso es Rivales repetidos, otra tabla.
-- Archivos compartidos con la rama abierta de la 79 (`aggregates.py`,
-  `views.py`, `MatchDetail.jsx`, `metricas.md`, esperando merge del humano):
-  zonas distintas de cada archivo, se resuelve con `git merge origin/dev`.
-  Prioriza, no bloquea. Sin migracion.
-
-### Verificacion manual
-
-`manage.py seed_demo`, `runserver`, abrir cualquier partida: arriba de Rondas
-la linea "Kaid_, Mozzie99 y Thorn.exe ya te tocaron juntos en 29 partidas,
-récord 29-0 · Ver en Duelos"; clic en un nick abre su perfil; la fila de
-Duelos dice lo mismo. Con la base real: abrir una partida contra rivales
-nuevos y ver que no aparece nada.
-
+(arquitecto 20261106T0015Z-cR6uHk3.) `rival_stacks` partida en `_stacks_rivales` y `_filas_de_stacks`;
+`rival_stacks_de_partida(match_id)` sin filtros, maximalidad por conjunto de jugadores dentro de la
+partida; clave en `match_detail`; `StacksRivales` entre las kpis y Rondas. Detalle en `git log`.
 OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261106T0041Z-cqfAePA, sobre `origin/dev@c63314e`)
-
-Quedo el diseno completo, sin desvios de forma:
-
-- `aggregates.py`: `rival_stacks` partida en `_stacks_rivales` (pares
-  partidas/grupo) y `_filas_de_stacks` (nicks, record, orden). Nueva
-  `rival_stacks_de_partida(match_id)`: sin filtros, se queda con los pares que
-  incluyen la partida y descarta un grupo si es subconjunto estricto de otro
-  par que tambien aplica. Los 10 tests previos de `test_stacks_rivales.py` no
-  se tocaron y siguen verdes.
-- `views.py` `match_detail`: clave `rival_stacks`, siempre presente.
-- `frontend/src/stacksRivales.js` + test (6 vitest): `nombresDelGrupo`,
-  `textoStackRival` y, ademas del diseno, `separadorAntes(i, total)`, que usa
-  la vista para poner los nicks como enlaces con la misma puntuacion (un test
-  fija que reconstruye el mismo texto que `nombresDelGrupo`).
-- `MatchDetail.jsx`: `StacksRivales` entre las `kpis` y el panel Rondas;
-  `null` sin grupos. CSS: `.stacks-rivales` (margen 18px, 13px).
-- `docs/metricas.md`: fila **Stack rival en la partida** en Duelos.
-
-Desvio no previsto en el diseno: `frontend/e2e/partida-sin-rondas.json` suma
-`"rival_stacks": []`; `test_partida_sin_rondas` compara el payload entero y
-obliga a regenerarlo (lo dice su docstring).
-
-Criterios -> tests:
-- clave siempre presente / lista vacia: `test_una_partida_sin_stack_trae_lista_vacia`,
-  `test_una_partida_sin_rondas_trae_lista_vacia`, `test_el_detalle_de_una_partida_sin_rondas_responde_200`.
-- mismo record que Duelos (trio en 3 partidas): `test_el_detalle_trae_el_stack_con_el_mismo_record_que_duelos`.
-- solo el grupo mas grande: `test_el_detalle_muestra_solo_el_grupo_mas_grande_que_aplica`.
-- sin filtros: `test_el_detalle_no_aplica_los_filtros` (por la vista y por la funcion).
-- aviso en el detalle con enlaces y Duelos: e2e `el detalle de la partida avisa del stack rival repetido`
-  (Kaid_, Mozzie99 y Thorn.exe, 29 partidas, récord 29-0; seed sin cambios).
-- partida sin rondas no se rompe: e2e existente de la partida sin rondas, verde sin tocarlo.
-
-Revision ciega (omc-code-reviewer, revision.md): 0 CRITICAL/HIGH, 1 MEDIUM, 3 LOW.
-Arreglados: MEDIUM (el test de filtros pasaba siempre porque la vista no lee
-`request.GET`: ahora tambien afirma sobre `rival_stacks_de_partida` contra
-`rival_stacks(map=...)`), LOW de doc (el record coincide con Duelos *sin
-filtros*) y LOW de `nombresDelGrupo` (comentario de para que existe). Queda el
-LOW de costo: cada apertura del detalle recorre el historial como Duelos; lo
-asume el diseno.
-
-verificar.sh: VERDE f14af40eb (1005 tests backend, 216 vitest, 68 e2e).
-
-Skills: no aplica (lo dice el diseno). 
+(dev 20261106T0041Z-cqfAePA.) Diseno completo, mas `separadorAntes` para los enlaces y
+`rival_stacks: []` en `frontend/e2e/partida-sin-rondas.json` (lo exige `test_partida_sin_rondas`).
 OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
 
 ## Revision 2026-11-06 sobre bd23b14
 
-(Revisor 20261106T0109Z-cSomhFc.) Dos ejes a ciegas (`omc-code-reviewer` con `revision.md`
-sobre el diff sin `docs/backlog`, y eje de intencion contra Que gana,
-Criterios y Fuera de alcance). Los dos: aprobar, sin CRITICAL ni HIGH.
-
-Criterios: los seis cubiertos (los tests que lista Implementacion; el e2e
-`stacks-rivales.spec.js` con 29 partidas, récord 29-0, corrio verde en
-`check.sh`). Nada fuera de `archivos:` salvo `styles.css` y el fixture
-`partida-sin-rondas.json`, explicados en Implementacion. Fila nueva en
-`metricas.md`. Sin tildes en identificadores, UI con tildes, sin `console.log`.
-
-Hallazgos confirmados, ninguno bloquea:
-- [test] LOW `backend/tests/test_stacks_rivales.py` (`test_el_detalle_no_aplica_los_filtros`):
-  el assert por la vista con `?map=` no puede fallar porque `match_detail`
-  no lee `request.GET`; lo que prueba de verdad es la comparacion contra
-  `rival_stacks(map=...)`. Arreglo: dejar un comentario de que la parte de la
-  vista solo fija el contrato de la URL.
-- [test] LOW `frontend/src/pages/MatchDetail.jsx` (`StacksRivales`): el
-  `return null` sin grupos no tiene un assert explicito. Arreglo: en el e2e de
-  la partida sin rondas, `expect(page.locator('.stacks-rivales')).toHaveCount(0)`.
-- [rendimiento] MEDIUM sin confirmar: cada GET del detalle recorre los stacks
-  de todo el historial (como Duelos) para quedarse con los de una partida. No
-  medido con una base grande; el diseno lo asume. Si molesta, generar solo
-  los subgrupos de los rivales de esta partida y contar su soporte.
-- Ubicacion "sobre el scoreboard": el aviso va entre las kpis y Rondas, como
-  fija el Diseno (paso de ubicacion). No es hallazgo.
-
-Veredicto: aprobar -> `revisado`. VERDE 2e576df13 (1005 tests backend, 216
-vitest, 68 e2e).
-
+(revisor 20261106T0109Z-cSomhFc.) Aprobar. Sin CRITICAL ni HIGH; 2 LOW de tests y 1 MEDIUM de
+costo sin confirmar (medido en QA: 0.24 s con 1000 partidas). Ninguno bloquea.
 OMC: plan=— · revisión=3 hallazgos (0 arreglados; 2 LOW, 1 MEDIUM sin confirmar) · verificación=—
 
 ## QA 2026-11-06 sobre 6147c5003
 
-(QA 20261106T0135Z-cpWzYqk.) Repetible: los scripts estan abajo; la base es sintetica de `tests/factories.py`, en un `SQLITE_PATH` aparte.
-
-- `verificar.sh` (check.sh completo): VERDE 6147c5003 en 100 s, 1005 tests backend, 216 vitest, 68 e2e.
-- Base sintetica (`SQLITE_PATH=<scratch>/db.sqlite3 python3 manage.py migrate` y
-  `python3 manage.py shell < sembrar.py`): trio A,B,C en las partidas 1, 2 (ganadas) y 3 (perdida);
-  A+B+Z en la 4; A,B,C en la 5 con `won=None`; la 6 sin rondas; la 7 con un solo rival repetido;
-  la 8 y la 9 con otro jugador de nick "A" (otro `profile_id`) junto a D.
-  `runserver 8792` y `curl -s localhost:8792/api/matches/<id>/`:
-  - 1, 3 y 5 -> `[A, B, C]`, 4 partidas, 2-1. Coincide con la fila de `/api/duels/`.
-  - 4 -> solo `[A, B]`, 5 partidas, 3-1: sale el subgrupo, no el trio.
-  - 6 (sin rondas) y 7 (un solo rival repetido) -> `rival_stacks: []`, 200.
-  - 8 y 9 -> `[A#11, D#12]`, 2-0: el nick repetido no se mezcla con A#2.
-  - Bordes: `/api/matches/999/` 404; `/api/matches/foo/` 404; `/api/matches/-1/` 404;
-    `/api/matches/1/?map=foo&until=foo&page=-1` 200 con el mismo grupo; `/api/duels/?until=foo` 200;
-    `/api/duels/?min_matches=-1` 200. Base vacia: `/api/matches/1/` 404, `/api/duels/` 200.
-- Chromium sobre esa base (`node ver.cjs` con playwright):
-  - Partida 1: "A, B y C ya te tocaron juntos en 4 partidas, récord 2-1 (1 sin resultado) · Ver en Duelos".
-  - Partidas 6 y 7: no hay `.stacks-rivales`.
-  - Clic en "A" de la partida 8 -> `/jugadores/11`; "Ver en Duelos" -> `/duelos`.
-  - Consola sin errores ni warnings.
-- Mutacion (todo restaurado; `git status` limpio):
-  - Sin la linea de maximalidad: 1 test cae.
-  - Sin `if match_id in ids`: 2 caen.
-  - `_stacks_rivales(min_matches, map="Border")`: 3 caen.
-  - Sin la clave en `match_detail`: 5 errores.
-  - `sinResultado > 99` en `stacksRivales.js`: 1 vitest cae.
-- Chunk inicial de `vite build`: `index-*.js` 191.85 kB en `origin/dev` y en la rama (MatchDetail es lazy).
-- Costo (el MEDIUM sin confirmar de la revision, ahora medido): base de 1000 partidas x 7 rondas
-  x 5 rivales de un pool de 60. `GET /api/matches/500/` tarda 0.24 s en la rama y 0.017 s en dev;
-  `/api/duels/` tarda 0.47 s. Aceptable para una app local; si molesta, la mejora es la que propone la revision.
-- Sin migracion, parser, `recompute`, Electron ni `.ps1`: no hay `## Verificar en el PC`.
-
-Veredicto: los seis criterios se cumplen -> `aprobado`.
-
-OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 6/6 VERIFIED; gaps LOW heredados de la revision y el costo medido)
+(qa 20261106T0135Z-cpWzYqk.) Seis criterios con evidencia: `curl` sobre base sintetica (grupo
+anidado, `won=None`, nick repetido con otro `profile_id`, partida sin rondas, bordes 404/200),
+Chromium sin errores de consola, 5 mutaciones detectadas, chunk inicial igual que dev (191.85 kB).
+Comandos y salidas en el commit `Prueba: 92 stack rival en la partida` (d93aaeb).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Pendiente
 
