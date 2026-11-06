@@ -11,11 +11,16 @@ test('el detalle pasa a la partida anterior y siguiente, y las flechas cambian l
 
   // los ids salen de la API: seed_demo es deterministico pero el orden de los ids no es contrato
   const listado = await (await page.request.get('/api/matches/?limit=1')).json()
-  const nueva = (await (await page.request.get(`/api/matches/${listado.matches[0].id}/`)).json()).match
+  const detalleNueva = await (await page.request.get(`/api/matches/${listado.matches[0].id}/`)).json()
+  const nueva = detalleNueva.match
   expect(nueva.next_id).toBeNull()
   expect(nueva.prev_id).not.toBeNull()
-  const previa = (await (await page.request.get(`/api/matches/${nueva.prev_id}/`)).json()).match
+  const detallePrevia = await (await page.request.get(`/api/matches/${nueva.prev_id}/`)).json()
+  const previa = detallePrevia.match
   expect(previa.next_id).toBe(nueva.id)
+  // las flechas necesitan al menos dos rondas en las dos partidas
+  expect(detalleNueva.rounds.length).toBeGreaterThanOrEqual(2)
+  expect(detallePrevia.rounds.length).toBeGreaterThanOrEqual(2)
 
   await page.goto(`/partidas/${nueva.id}`)
   await expect(page.locator('h1')).toContainText(`${nueva.map} · ${nueva.score}`)

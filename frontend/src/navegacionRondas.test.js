@@ -47,6 +47,17 @@ describe('pasoDeTecla', () => {
     expect(pasoDeTecla({ key: 'ArrowRight', target: { tagName: 'DIV', isContentEditable: true } })).toBe(0)
   })
 
+  it('dentro de una tabla con scroll horizontal la flecha desplaza la tabla', () => {
+    const celda = { tagName: 'TD', closest: (sel) => (sel.includes('.table-wrap') ? {} : null) }
+    expect(pasoDeTecla({ key: 'ArrowRight', target: celda })).toBe(0)
+    const fuera = { tagName: 'DIV', closest: () => null }
+    expect(pasoDeTecla({ key: 'ArrowRight', target: fuera })).toBe(1)
+  })
+
+  it('una tecla que otro widget ya tomo no cambia la ronda', () => {
+    expect(pasoDeTecla({ key: 'ArrowRight', target: cuerpo, defaultPrevented: true })).toBe(0)
+  })
+
   it('otra tecla no hace nada', () => {
     expect(pasoDeTecla({ key: 'ArrowUp', target: cuerpo })).toBe(0)
     expect(pasoDeTecla({ key: 'Enter', target: cuerpo })).toBe(0)

@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06 02:00 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -185,6 +185,47 @@ mueven la ronda. Alt+← sigue siendo Atras del navegador.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261106T0200Z-cK8ypRQ, sobre dev 8f3fb74)
+
+Quedo todo el diseno:
+
+- `views.py`: `match_detail` suma `prev_id`/`next_id` dentro de `match`, por
+  `(played_at, id)` sobre el historial completo (sin filtros, con excluidas);
+  `match_list` ordena `("-played_at", "-id")` despues de los filtros, con el
+  comentario de por que no va en `match_queryset`.
+- `backend/tests/test_partida_anterior_y_siguiente.py`: los cinco del diseno
+  mas `test_el_orden_es_por_fecha_y_no_por_id` (importada despues pero jugada
+  antes va primero).
+- `navegacionRondas.js` (`rondaVecina`, `pasoDeTecla`) + 11 vitest.
+- `MatchDetail.jsx`: `MatchDetail` devuelve `<DetallePartida key={id} id={id} />`;
+  listener `keydown` antes de los `return` tempranos; `EnlacePartida`
+  (Link o boton deshabilitado en el extremo) con `title` "Jugada antes" /
+  "Jugada después"; hint "Clic en una ronda o ← → para ver su timeline.".
+- e2e `navegar-partidas.spec.js`: los pasos del diseno, y ademas mueve a R2
+  antes de cambiar de partida para probar que la nueva vuelve a R1.
+
+Desvios del diseno:
+
+- `partida-sin-rondas.json` **no** se regenero: `test_partida_sin_rondas`
+  hace `cuerpo.pop("match")` antes de comparar, y `prev_id`/`next_id` viven
+  dentro de `match`. El test pasa sin tocarlo.
+- De la revision ciega (5 LOW, 0 CRITICAL/HIGH), arreglados: `pasoDeTecla`
+  devuelve 0 con `defaultPrevented` y con el foco dentro de `.table-wrap` o
+  `.matriz-scroll` (tablas con scroll horizontal: ahi la flecha desplaza la
+  tabla), con sus vitest; `flexWrap: 'wrap'` en la barra de botones del
+  encabezado (ahora son cinco); el e2e afirma que las dos partidas tienen al
+  menos dos rondas antes de apretar flechas.
+- No arreglado (LOW, anotado): al seguir un enlace de partida con Enter, el
+  remonte por `key` deja el foco en `body`. Mover el foco al `h1` es una
+  decision de accesibilidad mas amplia que la ficha; queda para otra.
+- No arreglado (LOW): `role` ARIA (slider, tablist...) no se excluye; hoy no
+  hay ninguno en el detalle y `defaultPrevented` cubre a los que tomen la tecla.
+
+Skills: no aplica (lo dijo el diseno; nada fuera del repo).
+Arena: no.
+
+OMC: plan=— · revisión=5 hallazgos LOW (3 arreglados) · verificación=—
 
 ## Para el humano
 

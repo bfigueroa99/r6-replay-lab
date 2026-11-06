@@ -86,7 +86,7 @@ function DetallePartida({ id }) {
           </p>
           {rachas && <p className="note">{rachas}</p>}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <EnlacePartida id={match.prev_id} title="Jugada antes">
             ← Partida anterior
           </EnlacePartida>
