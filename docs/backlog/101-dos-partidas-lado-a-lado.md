@@ -1,6 +1,6 @@
 # 101. Dos partidas lado a lado
 
-estado: en curso 2026-11-06
+estado: implementado
 candado: -
 rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
