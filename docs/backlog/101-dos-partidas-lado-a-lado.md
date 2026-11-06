@@ -1,14 +1,14 @@
 # 101. Dos partidas lado a lado
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T06:21Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
 epica: paridad-referencia
 area: frontend
 prioridad: 2
 fuente: ALCANCE.md R6 (replica/features.csv: la referencia compara partidas)
-archivos: frontend/src/compararPartidas.js, frontend/src/compararPartidas.test.js, frontend/src/pages/Comparar.jsx, frontend/src/App.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/comparar-partidas.spec.js
+archivos: docs/metricas.md, frontend/src/compararPartidas.js, frontend/src/compararPartidas.test.js, frontend/src/pages/Comparar.jsx, frontend/src/App.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/comparar-partidas.spec.js
 turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0621Z-c14zTHs
 
 ## PR
@@ -170,6 +170,53 @@ pagina gana por no pisar la 79).
 OMC: plan=— · revisión=— · verificación=— (ficha chica, sin consenso)
 
 ## Implementacion
+
+Dev 20261106T0621Z-c14zTHs. Hecho el diseño completo, sin backend:
+
+- `frontend/src/compararPartidas.js`: `opcionesParaComparar`, `rondasPorLado` y
+  `filasDeComparacion`, como dice el diseño. La diferencia se calcula sobre el
+  valor ya redondeado que muestra la celda (un rating de 1.234 contra 1.231
+  da `0.00` y no marca a nadie), y `-0` se muestra como `0`.
+- `frontend/src/pages/Comparar.jsx`: rutas `/comparar/:a` y `/comparar/:a/:b`
+  en `App.jsx`, cargadas en diferido como las demas paginas.
+- `MatchDetail.jsx`: solo el `Link` "Comparar con…", al lado de "Copiar resumen".
+- `styles.css`: `.mejor-a` en verde y `.mejor-b` en rojo, dentro de
+  `table.comparar`, y los encabezados de fila sin mayusculas.
+- `docs/metricas.md`: seccion "Comparar partidas" (lo pidio la revision ciega:
+  la columna Diferencia es un numero nuevo en la UI).
+- Tests: 11 de vitest en `compararPartidas.test.js` (los 8 del diseño, mas
+  "kst va en puntos y rating con dos decimales", "las filas de texto van
+  primero y sin diferencia" y "sin partida actual o con solo ella en el
+  listado no rompe"). El e2e `comparar-partidas.spec.js` va del detalle a
+  "Comparar con…", elige B en el select, mira los dos marcadores y la
+  columna "Diferencia", recarga, prueba `/comparar/<a>/999999` (el unico 404
+  que espera la consola) y exige la consola limpia.
+
+Desvios del diseño:
+
+- **La key del componente es A, y B va en un hijo `ConB` con `key={b}`.** Asi
+  al cambiar B desde el selector no se vuelven a pedir A ni el listado de 200
+  (lo marco la revision ciega: con la key `a-b` todo se remontaba). Sigue sin
+  verse la comparacion vieja mientras carga B. Consecuencia: si B no existe,
+  el aviso "Esa partida no existe" sale debajo de la cabecera y del selector,
+  no en la pagina entera. Asi se puede elegir otra B sin volver atras. Si A
+  no existe, el aviso ocupa la pagina entera, igual que el detalle.
+- **Diferencias en puntos con la unidad** (`-33 pts` en los lados, `+12 pts`
+  en KST): un `-33` al lado de "4 de 6" contra "3 de 3" se leia como una
+  resta de rondas.
+- Si B no esta entre las 200 del listado (o es la misma A), el select suma
+  una opcion "Partida <id>" para mostrarla elegida despues de recargar.
+  `a === b` se muestra con todo en 0, como pide el diseño.
+
+Verificacion: `verificar.sh` VERDE 7abdd640e (1092 tests backend, 287 vitest,
+83 e2e).
+
+Verificar en el PC: comparar una victoria y una derrota del mismo mapa con la
+base real, y una partida de un `.rec` cortado como B.
+
+Skills: no aplica (la ficha ya decia que no; sin dominio nuevo).
+Arena: no (el diseño no deja puntos abiertos).
+OMC: plan=— · revisión=5 hallazgos (4 arreglados; `/comparar/5/5` se deja como pide el diseño) · verificación=—
 
 ## Revision
 
