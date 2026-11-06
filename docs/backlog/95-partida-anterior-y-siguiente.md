@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T02:52Z
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: F17 de ALCANCE.md; idea del PR #14 (cerrado sin merge el 2026-11-05, rama `claude/dazzling-einstein-w3qcyq` como referencia, decision del humano en `## Para el equipo` del 2026-11-05)
 archivos: backend/replays/views.py, backend/tests/test_partida_anterior_y_siguiente.py, frontend/e2e/partida-sin-rondas.json, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/navegar-partidas.spec.js
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ, revisor 20261106T0228Z-cgEzFUY
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ, revisor 20261106T0228Z-cgEzFUY, qa 20261106T0252Z-cf6G6Cs
 
 ## PR
 
