@@ -1,15 +1,15 @@
 # 98. Lado inicial por mapa
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/98-lado-inicial-por-mapa
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
 prioridad: 3
 fuente: B17 de ALCANCE.md; [Siege.GG, win probability](https://siege.gg/news/how-analysts-estimate-win-probability-in-pro-siege-matches) (2026-04-27: "A team starting on defense may carry a higher early probability simply because of the map's structure"); investigador 2026-11-03
 archivos: backend/replays/analytics/aggregates.py (by_start_side_map, MIN_PARTIDAS_LADO_INICIAL), backend/replays/views.py (trends), backend/tests/test_mitades.py, frontend/src/ladoInicialMapa.js, frontend/src/ladoInicialMapa.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-cHA9KBb
 
 ## PR
 
