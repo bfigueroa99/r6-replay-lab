@@ -1,8 +1,8 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
 area: fullstack
