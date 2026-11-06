@@ -1302,6 +1302,31 @@ def by_margin(**filters) -> dict:
 MIN_PARTIDAS_MAPA = 3
 
 
+def racha_actual_de_partidas(partidas: list[dict]) -> dict | None:
+    """Partidas seguidas con el mismo resultado, contando hacia atras desde la ultima.
+
+    `partidas` llega en orden cronologico (`played_at`, `id`). Las de `won`
+    nulo (empate o incompleta, ficha 68) se saltan sin cortar: no son un
+    resultado, y un `.rec` faltante no deberia romperte la racha.
+    """
+    racha: list[dict] = []
+    for p in reversed(partidas):
+        if p["won"] is None:
+            continue
+        if racha and p["won"] != racha[0]["won"]:
+            break
+        racha.append(p)
+    if not racha:
+        return None
+    racha.reverse()
+    return {
+        "result": "win" if racha[0]["won"] else "loss",
+        "length": len(racha),
+        "since": racha[0]["played_at"].isoformat(),
+        "match_ids": [p["id"] for p in racha],
+    }
+
+
 def matches_summary(**filters) -> dict:
     """Tus partidas en una linea: ganadas, rondas por partida y mejor y peor mapa.
 
@@ -1363,6 +1388,7 @@ def matches_summary(**filters) -> dict:
         "min_matches_map": MIN_PARTIDAS_MAPA,
         "best_map": mejor,
         "worst_map": peor,
+        "current_streak": racha_actual_de_partidas(partidas),
     }
 
 
