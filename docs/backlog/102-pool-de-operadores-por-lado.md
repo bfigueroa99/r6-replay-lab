@@ -1,7 +1,7 @@
 # 102. Tu pool de operadores por lado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06T06:49Z
 rama: -
 tipo: funcionalidad
 epica: operadores
