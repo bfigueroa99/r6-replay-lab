@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T02:59Z
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: A10 de ALCANCE.md; idea del PR #14 (cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sigue y trae `frontend/src/filtros.js` como referencia, no para copiar a ciegas)
 archivos: frontend/src/filtrosUrl.js, frontend/src/filtrosUrl.test.js, frontend/src/App.jsx, frontend/src/components/Filters.jsx, frontend/e2e/filtros-url.spec.js
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0228Z-cCNBxR6, revisor 20261106T0252Z-cPqrt5E
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0200Z-ct6rosE, dev 20261106T0228Z-cCNBxR6, revisor 20261106T0252Z-cPqrt5E, qa 20261106T0252Z-cf6G6Cs
 
 ## PR
 
