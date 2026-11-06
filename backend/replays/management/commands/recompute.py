@@ -2,7 +2,7 @@
 
 Los trades se guardan calculados al importar, asi que cambiar
 `TRADE_WINDOW_SECONDS` en el `.env` no mueve nada hasta correr esto. Tambien
-llena `clutch_vs` en partidas importadas antes de que existiera y saca los
+llena `clutch_vs` y `clutch_kills` en partidas importadas antes de que existieran y saca los
 teamkills de las bajas y los headshots, y marca que aperturas quedaron
 devueltas (tradeadas) con la ventana nueva. Rehace el 1vX, donde quien se fue de
 la partida ya no cuenta como vivo. Rehace tambien el resultado de cada
@@ -26,7 +26,7 @@ from replays.recompute import recompute
 class Command(BaseCommand):
     help = (
         "Recalcula bajas y headshots (sin teamkills), trades, muertes sin trade, "
-        "KST y aperturas devueltas (con la ventana configurada), clutch_vs, 1vX y el "
+        "KST y aperturas devueltas (con la ventana configurada), clutch_vs, clutch_kills, 1vX y el "
         "resultado de cada partida."
     )
 

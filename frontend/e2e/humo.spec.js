@@ -250,7 +250,8 @@ test('Tendencias muestra como se cierran tus rondas', async ({ page }) => {
   await expect(panel).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Ataque', exact: true })).toBeVisible()
   await expect(panel.getByRole('cell', { name: 'Defensa', exact: true })).toBeVisible()
-  // seed_demo cierra todo por eliminacion: los numeros los afirman los tests de backend
+  // seed_demo cierra todo por eliminacion salvo una ronda de Bank en ataque (el clutch
+  // silencioso, cierre inferido): los numeros los afirman los tests de backend
 
   expect(errores).toEqual([])
 })
@@ -706,6 +707,12 @@ test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   const conversion = panel.locator('table').first()
   await expect(conversion.getByRole('row', { name: /^1v1 2 2 100%/ })).toBeVisible()
   await expect(conversion.getByRole('row', { name: /^1v2 8 0 0%/ })).toBeVisible()
+  // uno de los dos ganados (Bank) fue sin bajas desde que quedaste solo
+  await expect(conversion.getByRole('cell', { name: 'Silenciosos', exact: true })).toBeVisible()
+  const fila1v1 = conversion.getByRole('row', { name: /^1v1 2 2 100%/ })
+  await expect(fila1v1.getByRole('cell', { name: /1 \(50%\)/ })).toBeVisible()
+  await expect(panel.getByText(/De tus 2 clutches ganados, 1 fue silencioso/)).toBeVisible()
+  await expect(panel.getByText(/0 por eliminación, 1 sin eliminación/)).toBeVisible()
 
   expect(errores).toEqual([])
 })

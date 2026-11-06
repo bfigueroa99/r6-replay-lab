@@ -17,6 +17,7 @@ untraded_death murio y nadie lo vengo (la muerte mas caras del juego)
 death_elapsed  segundos jugados de la fase de accion hasta su muerte
 kst            aporto en la ronda: mato, sobrevivio o su muerte fue tradeada
 clutch_vs      rivales vivos cuando quedo como unico vivo de su equipo (0 si nunca)
+clutch_kills   bajas a rivales desde que quedo como unico vivo de su equipo (0 si nunca)
 one_vx         1vX de r6-dissect, pero quien se fue (PlayerLeave) esta fuera de la ronda
 """
 
@@ -130,20 +131,21 @@ def bajas_a_rivales(eventos: list[dict], team_of: dict[str, int]) -> dict[str, d
     return valor
 
 
-def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
-    """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
+def _quedar_solo(
+    eventos: list[dict], team_of: dict[str, int]
+) -> tuple[dict[str, int], dict[str, int]]:
+    """Rivales vivos y posicion en el feed del instante en que cada jugador quedo solo.
 
-    Unica implementacion: la usan el import, `recompute` y la migracion que
-    llena lo ya importado. No mira quien gano: un intento perdido tambien
-    cuenta, que es justo lo que `one_vx` no deja ver.
-
-    A diferencia de `died`, aca `PlayerLeave` mata: alguien que se fue no esta
-    vivo para ayudarte.
+    `desde[nick]` es el indice del evento cuya muerte lo dejo solo, o -1 si su
+    equipo arranco la ronda con uno solo. Solo aparece quien quedo solo con
+    algun rival vivo. Es el algoritmo de `clutch_vs`; `clutch_kills` necesita
+    ademas el instante, y separarlo garantiza que los dos miden lo mismo.
     """
     vivos = set(team_of)
     valor = dict.fromkeys(team_of, 0)
+    desde: dict[str, int] = {}
 
-    def marcar_solos() -> None:
+    def marcar_solos(i: int) -> None:
         por_equipo: dict[int, list[str]] = {}
         for nick in vivos:
             por_equipo.setdefault(team_of[nick], []).append(nick)
@@ -153,11 +155,12 @@ def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
             rivales = len(vivos) - 1
             if rivales:
                 valor[nicks[0]] = rivales
+                desde[nicks[0]] = i
 
     # un equipo puede arrancar con uno solo (abandonos de rondas previas,
     # custom): ese 1vX empieza antes de la primera baja
-    marcar_solos()
-    for e in eventos:
+    marcar_solos(-1)
+    for i, e in enumerate(eventos):
         kind = e.get("kind")
         if kind == KILL:
             muerto = e.get("target")
@@ -168,7 +171,42 @@ def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
         if muerto not in vivos:
             continue
         vivos.discard(muerto)
-        marcar_solos()
+        marcar_solos(i)
+    return valor, desde
+
+
+def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
+    """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
+
+    Unica implementacion: la usan el import, `recompute` y la migracion que
+    llena lo ya importado. No mira quien gano: un intento perdido tambien
+    cuenta, que es justo lo que `one_vx` no deja ver.
+
+    A diferencia de `died`, aca `PlayerLeave` mata: alguien que se fue no esta
+    vivo para ayudarte.
+
+    La importan las migraciones 0003 y 0005: su firma no cambia.
+    """
+    return _quedar_solo(eventos, team_of)[0]
+
+
+def clutch_kills(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
+    """Bajas a rivales de cada jugador desde que quedo como unico vivo de su equipo.
+
+    Unica implementacion: la usan el import, `recompute` y la migracion que
+    llena lo ya importado. Cuenta los eventos estrictamente posteriores al que
+    lo dejo solo (el mismo instante de `clutch_vs`), o todo el feed si su
+    equipo arranco con uno solo. La baja es la de `bajas_a_rivales`: sin
+    teamkills ni suicidios, y una que el feed atribuye despues de morir
+    (gadget) cuenta. Un clutch ganado con 0 es un clutch silencioso.
+
+    Devuelve una clave por cada nick de `team_of`, como `clutch_vs`:
+    `recompute` compara todos los campos de todos los jugadores.
+    """
+    _, desde = _quedar_solo(eventos, team_of)
+    valor = dict.fromkeys(team_of, 0)
+    for nick, i in desde.items():
+        valor[nick] = bajas_a_rivales(eventos[i + 1:], team_of)[nick]["kills"]
     return valor
 
 
@@ -314,6 +352,7 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
             "score": int(s.get("score", 0)),
             "one_vx": int(s.get("1vX", 0)),
             "clutch_vs": 0,
+            "clutch_kills": 0,
             "opening_kill": False,
             "opening_death": False,
             "opening_kill_traded": False,
@@ -363,6 +402,9 @@ def analyse_round(round_data: dict, window: float | None = None) -> dict:
     for nick, vs in clutch_vs(events, team_of).items():
         if nick in metrics:
             metrics[nick]["clutch_vs"] = vs
+    for nick, k in clutch_kills(events, team_of).items():
+        if nick in metrics:
+            metrics[nick]["clutch_kills"] = k
 
     # antes de los trades: `kst` sale de `kills`
     for nick, bajas in bajas_a_rivales(events, team_of).items():

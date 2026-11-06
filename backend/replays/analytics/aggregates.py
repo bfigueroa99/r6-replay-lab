@@ -1964,6 +1964,11 @@ def first_teammate_death(**filters) -> list[dict]:
 #: mas de cinco por lado, modos raros) van a la misma fila.
 CLUTCH_X_MAX = 5
 
+# el % de silenciosos es sobre los ganados de la fila, asi que el corte de
+# muestra chica tambien: a diferencia de sitio y operador, que cortan sobre
+# intentos. Es semantica nueva en esta tabla, que antes no marcaba muestra chica
+CLUTCH_SILENCIOSO_MIN = 5
+
 
 def clutch_conversion(**filters) -> list[dict]:
     """Intentos y ganados por cantidad de rivales cuando quedaste ultimo.
@@ -1977,20 +1982,28 @@ def clutch_conversion(**filters) -> list[dict]:
         base_queryset(**filters)
         .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
         .values("clutch_vs", "side")
-        .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+        .annotate(
+            attempts=Count("id"),
+            won=Count("id", filter=Q(round__my_team_won=True)),
+            silent=Count("id", filter=Q(round__my_team_won=True, clutch_kills=0)),
+        )
     )
     por_x: dict[int, dict] = {}
     for f in filas:
         vs = min(f["clutch_vs"], CLUTCH_X_MAX)
-        fila = por_x.setdefault(vs, {"attempts": 0, "won": 0, "Attack": [0, 0], "Defense": [0, 0]})
+        fila = por_x.setdefault(
+            vs, {"attempts": 0, "won": 0, "silent": 0, "Attack": [0, 0, 0], "Defense": [0, 0, 0]}
+        )
         fila["attempts"] += f["attempts"]
         fila["won"] += f["won"]
+        fila["silent"] += f["silent"]
         if f["side"] in ("Attack", "Defense"):
             fila[f["side"]][0] += f["attempts"]
             fila[f["side"]][1] += f["won"]
+            fila[f["side"]][2] += f["silent"]
 
     def _lado(par):
-        return {"attempts": par[0], "won": par[1], "pct": _pct(par[1], par[0])}
+        return {"attempts": par[0], "won": par[1], "silent": par[2], "pct": _pct(par[1], par[0])}
 
     return [
         {
@@ -1999,11 +2012,48 @@ def clutch_conversion(**filters) -> list[dict]:
             "attempts": fila["attempts"],
             "won": fila["won"],
             "pct": _pct(fila["won"], fila["attempts"]),
+            "silent": fila["silent"],
+            "silent_pct": _pct(fila["silent"], fila["won"]),
+            "silent_low_sample": 0 < fila["won"] < CLUTCH_SILENCIOSO_MIN,
             "attack": _lado(fila["Attack"]),
             "defense": _lado(fila["Defense"]),
         }
         for vs, fila in sorted(por_x.items())
     ]
+
+
+def clutch_silent(**filters) -> dict:
+    """Clutches ganados sin bajas tuyas desde que quedaste solo, por condicion de victoria.
+
+    `other` es `ObjectiveOrTime`, que en temporadas nuevas se infiere del reloj
+    (`docs/formato-rec.md`) y no se parte en plant, defuse o tiempo. Se usa
+    `win_condition` y no `win_condition_certain` para cuadrar con "Como se
+    cierran tus rondas" (hoy son equivalentes); una condicion certera nueva del
+    parser caeria en `unknown` hasta decidir donde va.
+    """
+    silencioso = Q(clutch_kills=0)
+    totales = (
+        base_queryset(**filters)
+        .filter(clutch_vs__gt=0, round__my_team_won=True)
+        .aggregate(
+            won=Count("id"),
+            silent=Count("id", filter=silencioso),
+            elimination=Count("id", filter=silencioso & Q(round__win_condition="KilledOpponents")),
+            other=Count("id", filter=silencioso & Q(round__win_condition="ObjectiveOrTime")),
+        )
+    )
+    # por resta, como round_endings: lo que no es ninguna de las dos es sin dato
+    unknown = totales["silent"] - totales["elimination"] - totales["other"]
+    return {
+        "won": totales["won"],
+        "silent": totales["silent"],
+        "silent_pct": _pct(totales["silent"], totales["won"]),
+        "by_condition": {
+            "elimination": totales["elimination"],
+            "other": totales["other"],
+            "unknown": unknown,
+        },
+    }
 
 
 # por debajo de esto el % de un sitio es anecdota: la fila sale igual, marcada
