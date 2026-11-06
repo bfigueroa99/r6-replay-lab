@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("replays", "0004_roundplayer_opening_kill_traded"),
+        ("replays", "0005_roundplayer_clutch_kills"),
     ]
 
     operations = [

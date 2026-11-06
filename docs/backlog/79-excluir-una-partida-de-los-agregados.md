@@ -8,7 +8,7 @@ epica: datos
 area: fullstack
 prioridad: 3
 fuente: ALCANCE.md G2; decision del humano del 2026-11-05 (POST nuevo permitido, local y con application/json, entra a la lista de CLAUDE.md al disenarse)
-archivos: backend/replays/models.py, backend/replays/migrations/0005_match_excluded.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/replays/ingest.py (comentario), backend/tests/factories.py, backend/tests/test_excluir_partida.py, frontend/src/pages/MatchDetail.jsx, frontend/e2e/partidas-excluidas.spec.js, CLAUDE.md, docs/metricas.md
+archivos: backend/replays/models.py, backend/replays/migrations/0006_match_excluded.py, backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/replays/ingest.py (comentario), backend/tests/factories.py, backend/tests/test_excluir_partida.py, frontend/src/pages/MatchDetail.jsx, frontend/e2e/partidas-excluidas.spec.js, CLAUDE.md, docs/metricas.md
 turnos: po 20261105T0230Z-c8Ahepa, arquitecto 20261105T0349Z-cCqeUqM, dev 20261105T1303Z-ciG2Prg, revisor 20261105T1330Z-cTQKqvr, qa 20261105T1358Z-ckVhKLL, release 20261105T1358Z-ckVhKLL
 
 ## PR
@@ -54,7 +54,7 @@ Este PR es el tramo 1. El chip en Partidas y la lista en Datos quedan en la fich
 
 ### Riesgos y lo que no entra
 
-- Trae la migracion `0005_match_excluded`. Es solo un `AddField` con default False, y se vuelve atras con `migrate replays 0004`.
+- Trae la migracion `0006_match_excluded`. Es solo un `AddField` con default False, y se vuelve atras con `migrate replays 0005`.
 - Al excluir una partida, los indices de `?session=` se pueden correr. El `my_rating` por partida se mide contra el 1.00 de las partidas que cuentan. Si la excluida era la unica de su version de mapa, esa version sale del selector. Todo esta documentado en `metricas.md`.
 - Queda afuera, a proposito, y va a la ficha 83: el chip en Partidas, la lista en Datos y el rango "visto entre" del perfil, que hoy cuenta la excluida (MEDIUM de la revision).
 
@@ -69,7 +69,7 @@ Este PR es el tramo 1. El chip en Partidas y la lista en Datos quedan en la fich
 
 ## Verificar en el PC
 
-`python manage.py backup`, despues `python manage.py migrate`, y `python manage.py showmigrations replays` tiene que mostrar `[X] 0005_match_excluded`. Excluir una custom y comprobar que cambian el K/D, el rating y la cantidad de partidas. Volver a contarla. Correr `import_replays --force` con una partida excluida: la marca tiene que seguir.
+`python manage.py backup`, despues `python manage.py migrate`, y `python manage.py showmigrations replays` tiene que mostrar `[X] 0006_match_excluded`. Excluir una custom y comprobar que cambian el K/D, el rating y la cantidad de partidas. Volver a contarla. Correr `import_replays --force` con una partida excluida: la marca tiene que seguir.
 
 ### Para el humano
 
