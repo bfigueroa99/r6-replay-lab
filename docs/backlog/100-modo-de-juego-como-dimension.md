@@ -1,7 +1,7 @@
 # 100. Modo de juego como dimension
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06T04:38Z
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
