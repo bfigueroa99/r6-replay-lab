@@ -1,6 +1,6 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
@@ -8,297 +8,82 @@ epica: revision-de-rondas
 area: fullstack
 prioridad: 3
 fuente: F17 de ALCANCE.md; idea del PR #14 (cerrado sin merge el 2026-11-05, rama `claude/dazzling-einstein-w3qcyq` como referencia, decision del humano en `## Para el equipo` del 2026-11-05)
-archivos: backend/replays/views.py, backend/tests/test_partida_anterior_y_siguiente.py, frontend/e2e/partida-sin-rondas.json, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/navegar-partidas.spec.js
-turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ, revisor 20261106T0228Z-cgEzFUY, qa 20261106T0252Z-cf6G6Cs
+archivos: backend/replays/views.py, backend/tests/test_partida_anterior_y_siguiente.py, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/navegar-partidas.spec.js
+turnos: po 20261106T0041Z-cSxDY1g, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0200Z-cK8ypRQ, revisor 20261106T0228Z-cgEzFUY, qa 20261106T0252Z-cf6G6Cs, release 20261106T0252Z-cf6G6Cs
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][frontend] Partida anterior y siguiente, y flechas para cambiar de ronda`
+
+### Que cambia
+
+En el detalle de una partida aparecen "← Partida anterior" y "Partida siguiente →" para recorrer el historial sin volver al listado, y las flechas del teclado cambian de ronda. La API del detalle suma `prev_id` y `next_id`, y el listado desempata por `id` partidas con la misma fecha.
+
+### Por que esto y no otra cosa
+
+Ficha 95 (F17 de `ALCANCE.md`, idea del PR #14 que el humano cerro y devolvio a idea). Navegar respetando los filtros globales queda para despues de la 96 (filtros en la URL); atajos de teclado para cambiar de partida, fuera.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE sobre el commit de QA, 1022 tests backend, 232 vitest, 69 e2e; repetido sobre la entrega.
+- Tests nuevos: `test_partida_anterior_y_siguiente.py` (del medio, extremos, una sola, empate de fecha recorrido en los dos sentidos, orden por fecha y no por id, listado desempata por id); `navegacionRondas.test.js` (11: tope, total 0, modificadores, campos, contenteditable, tablas con scroll, `defaultPrevented`); e2e `navegar-partidas.spec.js` (enlaces, fecha y titulo de la vecina, flechas, consola limpia).
+- QA: base vacia y sembrada con `factories.py` (empate de fecha, partida importada despues pero jugada antes, partida sin rondas); Chromium por la cadena entera; mutaciones en vista, listado y logica de teclas, todas detectadas.
+- OMC: plan=— · revisión=— · verificación=— (diseno)
+- OMC: plan=— · revisión=5 hallazgos LOW (3 arreglados) · verificación=— (implementacion)
+- OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 descartado) · verificación=— (revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+
+### Riesgos y lo que no entra
+
+Sin migraciones ni `recompute`. Orden sobre el historial completo, sin filtros e incluidas las excluidas de la 79. Al seguir un enlace con Enter el foco queda en `body` (accesibilidad, para otra ficha). Chunk inicial +0,05 %.
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py runserver
+```
+Abrir una partida en `http://127.0.0.1:8000/partidas/<id>`: "← Partida anterior" y "Partida siguiente →" llevan a la vecina y la ronda vuelve a la primera; en la mas nueva "Partida siguiente →" esta deshabilitado. Con ← y → cambia la ronda marcada sin pasarse de los extremos; Alt+← sigue siendo Atras.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
-Revisar una sesion de partidas hoy obliga a volver al listado entre una y
-otra, y cambiar de ronda dentro del detalle es solo con el mouse. Con esto,
-desde el detalle de una partida se pasa a la anterior o a la siguiente con
-un enlace, y las rondas se recorren con las flechas del teclado.
+Revisar una sesion de partidas hoy obliga a volver al listado entre una y otra, y cambiar de ronda dentro del detalle es solo con el mouse. Con esto se pasa a la partida anterior o siguiente con un enlace, y las rondas se recorren con las flechas del teclado.
 
 ## Criterios de aceptacion
 
-- [ ] `GET /api/matches/<id>/` suma `prev_id` y `next_id`: la partida
-      inmediatamente anterior y posterior por `Match.date` (desempate por
-      `id`, el mismo orden que el listado de `/api/matches/`), o `null`
-      en los extremos. Test de Django con tres partidas: la del medio trae
-      las dos, la primera trae `prev_id: null`, la ultima `next_id: null`,
-      y dos partidas con la misma fecha no se saltan ni se repiten.
-- [ ] `MatchDetail.jsx` muestra enlaces "← Partida anterior" y "Partida
-      siguiente →" (deshabilitados o ausentes en los extremos) que llevan a
-      `/partidas/<id>`; al navegar, la ronda elegida vuelve a la primera y
-      la pagina no queda con datos de la partida previa.
-- [ ] En el detalle, las flechas izquierda y derecha del teclado cambian la
-      ronda seleccionada (sin pasarse de la primera ni de la ultima) y no
-      actuan mientras el foco esta en un campo de texto o un select. La
-      logica de "ronda siguiente/anterior con tope" vive en una funcion pura
-      con test de vitest.
-- [ ] El e2e de `frontend/e2e/` abre una partida de `seed_demo`, sigue
-      "Partida siguiente" y comprueba que cambia el titulo, y aprieta la
-      flecha derecha y comprueba que cambia la ronda marcada, sin errores en
-      la consola.
-
-## Fuera de alcance
-
-- Navegar respetando los filtros globales (tipo de partida, mapa, fechas):
-  el orden es el del historial completo. Si se quiere, va despues de A10
-  (ficha 96), cuando los filtros vivan en la URL.
-- Atajos para cambiar de partida con el teclado (solo enlaces).
-- Cualquier cambio a la timeline o a los paneles del detalle.
+- [x] `GET /api/matches/<id>/` suma `prev_id` y `next_id` por `(played_at, id)`, `null` en los extremos; empates sin saltos ni repeticiones.
+- [x] Enlaces "← Partida anterior" / "Partida siguiente →" (deshabilitados en los extremos); al navegar, primera ronda y sin datos de la previa.
+- [x] Flechas ← → cambian la ronda con tope, no actuan en campos; logica pura con vitest.
+- [x] e2e sobre `seed_demo`: enlace, cambio de partida, flecha, consola limpia.
 
 ## Diseno
 
-(arquitecto 20261106T0109Z-cMAPx7f)
-
-Una sola forma obvia: sin arena ni consenso. Skills: no aplica (ni grafico
-ni tabla nuevos; un listener de teclado y dos enlaces).
-
-### Decisiones
-
-- **"Anterior" = jugada antes** (mas vieja), "siguiente" = jugada despues.
-  El listado muestra la mas nueva arriba, asi que en Partidas "siguiente"
-  es la fila de arriba; los textos lo dejan claro: "← Partida anterior" y
-  "Partida siguiente →" con `title` "Jugada antes" / "Jugada después".
-- **Orden total `(played_at, id)`.** `Match.Meta.ordering = ["-played_at"]`
-  no desempata y la ficha pide que dos partidas con la misma fecha no se
-  salten ni se repitan. El desempate por `id` va en la consulta de vecinos y
-  tambien en `match_list` (`qs.order_by("-played_at", "-id")` en la vista,
-  despues de los filtros y antes del slice): no en `match_queryset`, que
-  otras funciones agregan con `values().annotate()` y un `order_by` explicito
-  entraria al GROUP BY.
-- **Historial completo**, sin filtros (fuera de alcance de la ficha) e
-  incluidas las partidas excluidas de la 79: navegar no es agregar.
-- **Al cambiar de partida se remonta el detalle.** La ruta `/partidas/:id`
-  reusa el mismo componente: `selected` quedaria en la ronda 7 y `useApi`
-  mantiene `data` viejo mientras carga (`loading && !data`). Con
-  `key={id}` el estado entero vuelve a cero y la pagina muestra `Loading`
-  en vez de la partida previa.
-- **Teclas:** solo `ArrowLeft` / `ArrowRight` sin modificadores (Alt+←
-  es "Atras" del navegador; Ctrl/Meta/Shift tampoco), y nada si el foco
-  esta en `INPUT`, `TEXTAREA`, `SELECT` o un elemento `contenteditable`.
-  Con una tecla tomada se hace `preventDefault` (la flecha no desplaza la
-  pagina); con una ignorada, no.
-
-### Archivos
-
-- `backend/replays/views.py`, `match_detail`: despues de obtener `match`,
-  ```python
-  anterior = (Match.objects.filter(Q(played_at__lt=match.played_at)
-              | Q(played_at=match.played_at, id__lt=match.id))
-              .order_by("-played_at", "-id").values_list("id", flat=True).first())
-  siguiente = (Match.objects.filter(Q(played_at__gt=match.played_at)
-               | Q(played_at=match.played_at, id__gt=match.id))
-               .order_by("played_at", "id").values_list("id", flat=True).first())
-  ```
-  y dentro de `"match": {...}` las claves `"prev_id": anterior` y
-  `"next_id": siguiente`. En `match_list`, el `order_by("-played_at", "-id")`
-  de arriba con un comentario de por que.
-- `backend/tests/test_partida_anterior_y_siguiente.py` (nuevo), con
-  `make_match(index=...)` (fechas distintas por `index`) y `played_at=` fijo
-  para los empates:
-  - `test_la_partida_del_medio_trae_anterior_y_siguiente`
-  - `test_la_primera_no_tiene_anterior_y_la_ultima_no_tiene_siguiente`
-  - `test_dos_partidas_con_la_misma_fecha_no_se_saltan_ni_se_repiten`:
-    tres partidas, dos con el mismo `played_at`; recorrer `next_id` desde
-    la primera visita las tres una vez cada una, y `prev_id` desde la ultima
-    lo mismo al reves.
-  - `test_una_sola_partida_no_tiene_vecinas`
-  - `test_el_listado_desempata_por_id`: dos partidas con la misma fecha
-    salen en `/api/matches/` en orden `-id`, el mismo que siguen
-    `prev_id`/`next_id`.
-  - `test_partida_sin_rondas.py` compara el detalle entero con
-    `frontend/e2e/partida-sin-rondas.json`: regenerar ese json (trae
-    `prev_id: null` y `next_id: null`, es la unica partida del test) como dice
-    el comentario de `humo.spec.js`. La 92 tambien lo toca: si se mergea
-    antes, regenerar despues de mergear dev.
-- `frontend/src/navegacionRondas.js` (nuevo, logica pura):
-  - `rondaVecina(actual, total, paso)`: `Math.min(Math.max(actual + paso, 0), total - 1)`;
-    con `total <= 0` devuelve `0`.
-  - `pasoDeTecla(evento)`: `-1` para `ArrowLeft`, `1` para `ArrowRight`,
-    `0` si hay `altKey`, `ctrlKey`, `metaKey` o `shiftKey`, si
-    `evento.target` es `INPUT`/`TEXTAREA`/`SELECT` o `isContentEditable`, o
-    cualquier otra tecla.
-- `frontend/src/navegacionRondas.test.js` (vitest): no se pasa de la
-  primera ni de la ultima; total 0; cada modificador da 0; foco en input,
-  select, textarea y contenteditable da 0; otra tecla da 0.
-- `frontend/src/pages/MatchDetail.jsx`:
-  - `export default function MatchDetail()` pasa a leer `id` y devolver
-    `<DetallePartida key={id} id={id} />`; el cuerpo actual se mueve a
-    `function DetallePartida({ id })` sin otros cambios.
-  - `useEffect` que agrega `keydown` en `window` y lo saca al desmontar:
-    `const paso = pasoDeTecla(e); if (!paso || !total) return;` y
-    `e.preventDefault(); setSelected((s) => rondaVecina(s, total, paso))`
-    (el `preventDefault` evita que la flecha ademas desplace la pagina). `total = data?.rounds?.length ?? 0`
-    en las dependencias. El efecto va antes de los `return` tempranos
-    (reglas de hooks).
-  - En la barra de `page-head`, antes de "Copiar resumen": dos `Link`
-    `className="btn small"` a `/partidas/${match.prev_id}` y
-    `/partidas/${match.next_id}`; en el extremo, el mismo texto en un boton deshabilitado (no un `Link`
-    roto): `<button type="button" className="btn small" disabled>`, que
-    ya tiene estilo (`.btn:disabled` en `styles.css`).
-  - Hint del panel Rondas: "Clic en una ronda o ← → para ver su timeline."
-- `frontend/e2e/navegar-partidas.spec.js` (nuevo; pagina existente pero flujo
-  nuevo, en su propio spec como `stacks-rivales.spec.js`):
-  1. `page.request.get('/api/matches/?limit=1')` da la mas nueva; su
-     detalle (`/api/matches/<id>/`) trae `prev_id` no nulo y `next_id: null`.
-  2. `goto('/partidas/<id>')`: "Partida siguiente →" deshabilitado
-     (`toBeDisabled()`); clic en "← Partida anterior" lleva a
-     `/partidas/<prev_id>` (`toHaveURL`), el `h1` es el de la API de esa
-     partida (`map · score`) y la ronda activa (`.round-tab.active`) es `R1`.
-  3. `keyboard.press('ArrowRight')`: la activa pasa a `R2`;
-     `ArrowLeft` vuelve a `R1` y otra `ArrowLeft` la deja en `R1`.
-  4. Clic en "Partida siguiente →" vuelve a `/partidas/<id>`. Consola limpia
-     (`vigilarConsola`).
-  Los ids salen de la API y no se escriben a mano: `seed_demo` es
-  deterministico pero el orden de los ids no es parte del contrato.
-
-### Orden
-
-1. Vista + tests de Django.
-2. `navegacionRondas.js` + vitest.
-3. `MatchDetail.jsx` (remonte, teclas, enlaces), `npm run build`.
-4. e2e.
-
-### Que puede romperse
-
-- El remonte con `key` resetea tambien `copia` y cualquier estado de los
-  paneles del detalle: es lo buscado.
-- `match_list` con orden explicito: los e2e de Partidas que leen "la primera
-  fila" siguen viendo la mas nueva; solo cambia el orden entre empates.
-- La 92 (stack rival, `implementado`) y la 79 tocan `MatchDetail.jsx` y
-  `views.py`: **Implementar despues de que #92 se mergee** (esta en
-  revision); con la 79 el choque es chico (otra zona del `page-head`): si
-  la 79 entra antes, resolver juntando los botones.
-
-### Verificacion manual
-
-Abrir una partida, ir y volver con los enlaces, recorrer rondas con las
-flechas; con el foco en un select de la pagina (si hay) las flechas no
-mueven la ronda. Alt+← sigue siendo Atras del navegador.
+(arquitecto 20261106T0109Z-cMAPx7f) Orden total `(played_at, id)` en el detalle y en `match_list` (no en `match_queryset`, que otros agregan con `values().annotate()`); historial completo; `MatchDetail` devuelve `<DetallePartida key={id}>` para resetear el estado al cambiar de partida; flechas sin modificadores y fuera de campos, con `preventDefault` solo si se toman. Detalle en `git log`.
 
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261106T0200Z-cK8ypRQ, sobre dev 8f3fb74)
-
-Quedo todo el diseno:
-
-- `views.py`: `match_detail` suma `prev_id`/`next_id` dentro de `match`, por
-  `(played_at, id)` sobre el historial completo (sin filtros, con excluidas);
-  `match_list` ordena `("-played_at", "-id")` despues de los filtros, con el
-  comentario de por que no va en `match_queryset`.
-- `backend/tests/test_partida_anterior_y_siguiente.py`: los cinco del diseno
-  mas `test_el_orden_es_por_fecha_y_no_por_id` (importada despues pero jugada
-  antes va primero).
-- `navegacionRondas.js` (`rondaVecina`, `pasoDeTecla`) + 11 vitest.
-- `MatchDetail.jsx`: `MatchDetail` devuelve `<DetallePartida key={id} id={id} />`;
-  listener `keydown` antes de los `return` tempranos; `EnlacePartida`
-  (Link o boton deshabilitado en el extremo) con `title` "Jugada antes" /
-  "Jugada después"; hint "Clic en una ronda o ← → para ver su timeline.".
-- e2e `navegar-partidas.spec.js`: los pasos del diseno, y ademas mueve a R2
-  antes de cambiar de partida para probar que la nueva vuelve a R1.
-
-Desvios del diseno:
-
-- `partida-sin-rondas.json` **no** se regenero: `test_partida_sin_rondas`
-  hace `cuerpo.pop("match")` antes de comparar, y `prev_id`/`next_id` viven
-  dentro de `match`. El test pasa sin tocarlo.
-- De la revision ciega (5 LOW, 0 CRITICAL/HIGH), arreglados: `pasoDeTecla`
-  devuelve 0 con `defaultPrevented` y con el foco dentro de `.table-wrap` o
-  `.matriz-scroll` (tablas con scroll horizontal: ahi la flecha desplaza la
-  tabla), con sus vitest; `flexWrap: 'wrap'` en la barra de botones del
-  encabezado (ahora son cinco); el e2e afirma que las dos partidas tienen al
-  menos dos rondas antes de apretar flechas.
-- No arreglado (LOW, anotado): al seguir un enlace de partida con Enter, el
-  remonte por `key` deja el foco en `body`. Mover el foco al `h1` es una
-  decision de accesibilidad mas amplia que la ficha; queda para otra.
-- No arreglado (LOW): `role` ARIA (slider, tablist...) no se excluye; hoy no
-  hay ninguno en el detalle y `defaultPrevented` cubre a los que tomen la tecla.
-
-Skills: no aplica (lo dijo el diseno; nada fuera del repo).
-Arena: no.
+(dev 20261106T0200Z-cK8ypRQ) Todo el diseno. Desvios: `partida-sin-rondas.json` no se regenero (el test saca `match` antes de comparar); `pasoDeTecla` ademas ignora `defaultPrevented` y el foco dentro de `.table-wrap`/`.matriz-scroll`; barra del encabezado con `flexWrap`. No arreglado (LOW): foco en `body` tras el remonte; roles ARIA no excluidos.
 
 OMC: plan=— · revisión=5 hallazgos LOW (3 arreglados) · verificación=—
 
 ## Revision 2026-11-06 sobre 9f2cd96
 
-(revisor 20261106T0228Z-cgEzFUY, rama al dia con dev 8f3fb74)
-
-Revision ciega (eje de estandares, `omc-code-reviewer`): sin hallazgos. Eje de
-intencion (diff de 377 lineas, backend y frontend): 1 MEDIUM y 1 LOW.
-
-- [test] [MEDIUM] `frontend/e2e/navegar-partidas.spec.js` — **confirmado y
-  arreglado por el Revisor con un test que pasa.** El criterio pide comprobar
-  que cambia el titulo, pero en `seed_demo` las tres partidas mas nuevas
-  (29, 28, 27) son todas `Bank 4-3`: lo reproduje con una base temporal y la
-  API. El `h1` es identico antes y despues de navegar, asi que las
-  aserciones del titulo pasaban aunque la pagina se quedara con la partida
-  previa. Agregado: el e2e afirma que las vecinas tienen fechas distintas y
-  que la linea de fecha de `.page-head p` muestra la de la partida esperada
-  en cada paso.
-- [intencion] [LOW] `MatchDetail.jsx`, hint del panel Rondas: no es hallazgo.
-  El texto nuevo describe las flechas de esta misma ficha y estaba en el
-  diseno; el fuera de alcance habla de la timeline y los paneles como
-  funcionalidad.
-
-Ficha: los cuatro criterios cubiertos (tests de Django en
-`test_partida_anterior_y_siguiente.py`, 11 vitest de `navegacionRondas`,
-e2e `navegar-partidas.spec.js`). Diff dentro de `archivos:` (el json de
-`partida-sin-rondas` no se toco, explicado en Implementacion). Sin numeros
-nuevos para `metricas.md`, sin tildes en identificadores, UI con tildes, sin
-`print` ni `console.log`, sin dependencias.
-
-verificar.sh: VERDE 9f2cd96 (1022 tests backend, 232 vitest, 69 e2e).
-
-Veredicto: aprobar -> `revisado`.
+(revisor 20261106T0228Z-cgEzFUY) Aprobar. Hallazgo MEDIUM arreglado: en `seed_demo` las tres partidas mas nuevas son `Bank 4-3` y el `h1` no cambiaba; el e2e ahora afirma la fecha distinta de cada vecina. LOW del hint descartado (estaba en el diseno).
 
 OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 descartado) · verificación=—
 
 ## QA 2026-11-06 sobre f22461d
 
-(qa 20261106T0252Z-cf6G6Cs, rama al dia con dev 8f3fb74)
-
-Base temporal fuera del repo: `SQLITE_PATH=<scratchpad>/qa95.sqlite3`,
-`python3 manage.py migrate`, `runserver 127.0.0.1:8795 --noreload`.
-
-- **check.sh completo**: `verificar.sh` -> `VERDE f22461d8e en 102s: 1022 tests
-  backend, 232 vitest, 69 e2e. Todo en verde.`
-- **Base vacia**: `curl /api/matches/` -> `{"total": 0, ..., "matches": []}`;
-  `/api/matches/1/` -> 404 `partida no encontrada`; `/api/matches/-1/` y
-  `/api/matches/foo/` -> 404 `esa ruta de la API no existe`. Sin 500.
-- **Base sembrada** con `factories.py` (`manage.py shell` con un script): 1 Bank
-  09-01 20:00, 2 Oregon y 3 Kafe con el mismo `played_at` 09-02 12:00, 4
-  Border importada ultima pero jugada 08-01 (sin rondas). Detalle:
-  4 `prev None next 1`, 1 `prev 4 next 2`, 2 `prev 1 next 3`, 3 `prev 2 next None`.
-  Listado `/api/matches/`: `[3, 2, 1, 4]`, el mismo orden que recorre `prev_id`.
-  `?limit=1&page=-1&until=foo&map=` -> 200, primera fila 3. Ningun 500 en el log.
-- **UI en Chromium** (playwright contra esa base): en 4 (sin rondas) "← Partida
-  anterior" deshabilitado y las flechas no rompen nada; "Partida siguiente →"
-  lleva a `/partidas/1` con la primera ronda activa; → avanza y en la ultima se
-  queda; Shift+← no mueve; siguiente -> 2 con la primera ronda activa; en 3
-  "Partida siguiente →" deshabilitado; Atras del navegador vuelve a 2. Consola
-  sin errores. El detalle no tiene `select` ni `input`: el foco en campo queda
-  cubierto solo por vitest.
-- **Mutaciones** (restauradas con `git checkout`):
-  - `id__lt` -> `id__gt` en la consulta de la anterior: `manage.py test
-    tests.test_partida_anterior_y_siguiente` -> `FAILED (failures=2)`.
-  - `order_by("-played_at", "id")` en `match_list`: `FAILED (failures=1)`.
-  - `rondaVecina` sin tope superior: `npx vitest run src/navegacionRondas.test.js`
-    -> 2 fallan.
-  - `pasoDeTecla` sin `CAMPOS` (input/select/textarea): 1 falla.
-- **Bundle**: chunk inicial `index` 192,50 kB en dev -> 192,59 kB (+0,05 %);
-  `MatchDetail` (lazy) 16,43 -> 17,59 kB.
-- Sin migraciones, `recompute`, parser, Electron ni `.ps1`: nada para verificar
-  en el PC.
-
-Veredicto: los cuatro criterios con evidencia -> `aprobado`.
+(qa 20261106T0252Z-cf6G6Cs) `verificar.sh`: VERDE f22461d8e (1022 backend, 232 vitest, 69 e2e). Base vacia: listado vacio, 404 limpios. Base sembrada (empate de fecha 2/3, 4 jugada antes e importada despues, sin rondas): 4 `prev None next 1`, 1 `4/2`, 2 `1/3`, 3 `2/None`; listado `[3,2,1,4]`; parametros borde sin 500. Chromium: extremos deshabilitados, primera ronda al cambiar, tope de flechas, Shift+← ignorado, Atras ok, consola limpia. Mutaciones (`id__lt`->`id__gt`, orden del listado, tope de `rondaVecina`, `CAMPOS`) detectadas. Bundle inicial 192,50 -> 192,59 kB. Nada para el PC. Comandos completos en `git log` (commit "Prueba: 95").
 
 OMC: plan=— · revisión=— · verificación=PASS
 
