@@ -1,7 +1,7 @@
 # 98. Lado inicial por mapa
 
-estado: revisado
-candado: qa 2026-11-06T05:03Z
+estado: aprobado
+candado: release 2026-11-06T05:10Z
 rama: claude/equipo-dev/98-lado-inicial-por-mapa
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: B17 de ALCANCE.md; [Siege.GG, win probability](https://siege.gg/news/how-analysts-estimate-win-probability-in-pro-siege-matches) (2026-04-27: "A team starting on defense may carry a higher early probability simply because of the map's structure"); investigador 2026-11-03
 archivos: backend/replays/analytics/aggregates.py (by_start_side_map, MIN_PARTIDAS_LADO_INICIAL), backend/replays/views.py (trends), backend/tests/test_mitades.py, frontend/src/ladoInicialMapa.js, frontend/src/ladoInicialMapa.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-cHA9KBb, revisor 20261106T0438Z-cWo3KEB
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0345Z-cgK76Zp, dev 20261106T0411Z-cHA9KBb, revisor 20261106T0438Z-cWo3KEB, qa 20261106T0503Z-cNp9Adt
 
 ## PR
 
@@ -277,3 +277,45 @@ Veredicto: aprobar. verificar.sh: VERDE a5d41f7 (1077 tests backend, 262
 vitest, 76 e2e).
 
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados) · verificación=—
+
+## QA 2026-11-06 sobre 9b41bdaf2
+
+(QA 20261106T0503Z-cNp9Adt.) Rama ya fusionada con `origin/dev`.
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 9b41bdaf2: 1077 tests backend, 262 vitest, 76 e2e`.
+- Base vacia (`SQLITE_PATH=<tmp> manage.py migrate; runserver`):
+  `curl -s localhost:8000/api/trends/` -> 200, `by_start_side_map: []`
+  (la pagina muestra el texto de vacio).
+- Base sembrada con `tests/factories.py` (35 partidas, script en el
+  scratchpad): Bank 8 en ataque ganadas y 8 en defensa perdidas -> 100.0 /
+  0.0, delta 100, margen 50.0, `ataque`; Oregon 3-1 contra 2-2 -> delta 25,
+  margen 68.4, `ruido` (los dos margenes, a mano con la proporcion
+  combinada); Border con una partida `won=None` -> atk `matches 2, decided 1`;
+  Consulate `map_id` 1 y 2 en filas distintas; partida sin rondas fuera.
+- Bordes: `map=bank` solo Bank; `map=`, `until=foo`, `page=-1`,
+  `match_type=Ranked`, `days=999999999999` -> 200 y las mismas filas;
+  `since=2099-01-01` y `side=foo` -> 200 con lista vacia. `side=Attack`: las
+  mismas filas salvo una partida truncada con rondas solo de defensa, que
+  sale (igual que `by_start_side`; es el LOW del Revisor, no regresion).
+- Mutaciones (`manage.py test tests.test_mitades.LadoInicialPorMapaTests`),
+  4 de 4 detectadas: minimo `>` en vez de `>=` (caen 3), `won=None` contada
+  como decidida (cae 1), clave sin `map_id` (cae 1), veredicto con un lado
+  bajo el minimo (cae 1).
+- `vite build`: chunk inicial `index` 194.59 kB en dev y en la rama; el
+  lazy de Tendencias 28.12 -> 29.93 kB.
+- Playwright sobre `/tendencias` con la base sembrada: la tabla muestra
+  "Mejor arrancando en ataque", "Dentro del ruido" y "Poca muestra", "—" en
+  los lados sin minimo; 0 errores de consola.
+
+Veredicto: aprobado. Sin migracion, `recompute`, parser ni Electron: no hay
+"Verificar en el PC". Minimo de 3 partidas calibrado solo con datos
+sinteticos (`## Para el humano`).
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5 criterios, el 3 con el matiz heredado de `by_start_side`)
+
+## Para el humano
+
+- Calibrar con la base real el minimo de 3 partidas por lado
+  (`MIN_PARTIDAS_LADO_INICIAL`): con pocas partidas por mapa casi todo saldra
+  "Poca muestra". Aviso, no bloquea.
