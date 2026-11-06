@@ -1,7 +1,7 @@
 # 100. Modo de juego como dimension
 
-estado: revisado
-candado: qa 2026-11-06T05:55Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/100-modo-de-juego-como-dimension
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: A7 de ALCANCE.md; sigue a la ficha 77 (selector de tipo de partida) y a la 96 (filtros en la URL)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/modoDeJuego.js, frontend/src/modoDeJuego.test.js, frontend/src/components/Filters.jsx, frontend/src/filtrosUrl.js, frontend/src/filtrosUrl.test.js, frontend/src/pages/Trends.jsx, backend/tests/test_modo_de_juego.py, frontend/e2e/modo-de-juego.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0438Z-c2U4Qx9, dev 20261106T0503Z-cNnHCRB, revisor 20261106T0530Z-cjYLw9e
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0438Z-c2U4Qx9, dev 20261106T0503Z-cNnHCRB, revisor 20261106T0530Z-cjYLw9e, qa 20261106T0554Z-c7uH5QP
 
 ## PR
 
@@ -320,3 +320,71 @@ verificar.sh: VERDE e6fb3b3 (1092 tests backend, 276 vitest, 82 e2e), con dev fu
 
 Skills: no aplica.
 OMC: plan=— · revisión=4 hallazgos (1 arreglado) · verificación=—
+
+## QA 2026-11-06 sobre c77651c
+
+(qa 20261106T0554Z-c7uH5QP; dev sin commits nuevos sobre la rama, merge-tree limpio)
+
+Veredicto: **aprobado**.
+
+`SP` = scratchpad de la sesion; `PY` = interprete del venv. La base sembrada
+sale de `sembrar.py` (temporal, no se commitea): `build_dataset(matches=4)`
+(4 Bomb 3-3) mas, con `make_match`/`make_round`/`make_round_player` en
+Oregon: Hostage 3-1, SecureArea 1-3, `Unknown(7)` 2-2 con `won=None`,
+`gamemode=""` 2-0 y una Hostage sin rondas.
+
+- `check.sh` completo: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE c77651c04 en 146s: 1092 tests backend, 276 vitest, 82 e2e`.
+- Base vacia (`SQLITE_PATH=$SP/vacia.sqlite3 manage.py migrate`, `runserver 8765`):
+  `/api/filters/` -> `gamemodes: []`; `/api/overview/?gamemode=Hostage` ->
+  rounds 0; `/api/trends/` -> `by_gamemode: []`;
+  `/api/matches/?gamemode=Nada&page=-1` -> total 0. Todo 200.
+- Base sembrada, `curl localhost:8765/api/overview/?<q>`: sin filtro 38
+  rondas; `gamemode=Hostage` 4; `SecureArea` 4; `Unknown(7)` 4; `Nada` 0;
+  `Hostage&side=Attack` 2; `Hostage&until=foo` 4; `Hostage&map=oregon` 4;
+  `Bomb&match_type=Unranked` 0; `%27%3BDROP` 0; un modo de 300 caracteres 0.
+  Todo 200.
+- `/api/filters/` -> `['Bomb', 'Hostage', 'SecureArea', 'Unknown(7)']`,
+  sin el vacio.
+- `/api/trends/` `by_gamemode`: Bomb 4 partidas 0 % (todas 3-3), winrate 50,
+  K/D 0.5; `""` 1 partida 100 %; Hostage 1 partida 100 %, winrate 75, K/D 1.5;
+  SecureArea 0 %, winrate 25; `Unknown(7)` matches 1, `matches_decided` 0,
+  `match_winrate` null. Con `?side=Defense` las rondas bajan a la mitad y el
+  % de partidas no cambia (es el de la partida entera, como pide el diseno).
+  Con `?gamemode=SecureArea` sale una sola fila.
+- `/api/matches/?gamemode=Hostage` -> total 2 (incluida la que no tiene
+  rondas); `gamemode=` -> 9 (sin filtro); `gamemode=Unknown(7)` -> 1;
+  `page=-1` y `limit=foo` no rompen nada.
+- Endpoints vecinos con `gamemode=Hostage`: positioning, operators,
+  operators/sites, compare, export?table=maps, players/1, sessions, coach,
+  duels, teammates -> todos 200. Cero `Traceback` en los logs de runserver.
+- Chromium (playwright sobre la base sembrada): en `/tendencias` el selector
+  "Modo" ofrece `Todos, Bomba, Rehén, Área segura, Unknown(7)`. El panel
+  "Por modo" muestra las celdas Bomba, Rehén, Área segura, Unknown(7) y Sin
+  modo. Al elegir SecureArea la URL queda en `?gamemode=SecureArea`, y con
+  esa URL el panel no aparece. `/partidas?gamemode=Unknown(7)` lista 1
+  partida. Consola sin errores ni warnings.
+- Mutaciones (se rompe el codigo y se corre
+  `manage.py test tests.test_modo_de_juego` o
+  `vitest run src/modoDeJuego.test.js src/filtrosUrl.test.js src/partidas.test.js`):
+  las 8 caen.
+  - Sin el filtro de `match_queryset`: 2 fallos.
+  - `base_queryset` filtrando por `match_type`: 2.
+  - `by_gamemode` sacando el resultado de las rondas: 1.
+  - `filter_options` sin descartar los vacios: 1.
+  - `mostrarSelectorDeModo` ignorando el modo elegido: 1.
+  - `opcionesDeModo` sin el modo elegido: 1.
+  - `gamemode` fuera de `CLAVES_DE_PARTIDA`: 1.
+  - `gamemode` fuera de `CLAVES_DE_URL`: 1.
+- Chunk inicial de `vite build`: 195.34 kB en la rama contra 194.59 kB en
+  `origin/dev` (+0.4 %).
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hay nada que
+  verificar en el PC.
+
+Los dos LOW abiertos de la Revision (`hayVariosModos` cuenta filas, y la
+frase "cabeceras viejas") se reproducen tal cual: con Bomb mas `""` aparece
+la tabla y no el selector. No bloquean. Quedan para una ficha de pulido si
+el PO quiere.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 6/6 criterios VERIFIED, 2 huecos LOW ya conocidos)
