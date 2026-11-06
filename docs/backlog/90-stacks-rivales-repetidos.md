@@ -1,7 +1,7 @@
 # 90. Stacks rivales repetidos
 
-estado: revisado
-candado: qa 2026-11-06T00:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/90-stacks-rivales-repetidos
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: D4 de ALCANCE.md; `replica/features.csv` "Historial contra un equipo rival concreto" (should, partial: la referencia lo tiene por equipo y la app solo por persona, D1 en dev)
 archivos: backend/replays/analytics/aggregates.py (repeated_rivals, rival_stacks nueva), backend/replays/views.py (duels), frontend/src/pages/Duelos.jsx, backend/tests/test_stacks_rivales.py, frontend/e2e/stacks-rivales.spec.js, docs/metricas.md
-turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1920Z-cAaALb8, dev 20261105T1945Z-ceRZh1z, revisor 20261105T2004Z-cx71xGT
+turnos: po 20261105T1759Z-cCJ5erc, arquitecto 20261105T1920Z-cAaALb8, dev 20261105T1945Z-ceRZh1z, revisor 20261105T2004Z-cx71xGT, qa 20261106T0004Z-cibB3Yh
 
 ## PR
 
@@ -347,3 +347,45 @@ bloquea.
 Skills: no aplica.
 
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
+
+## QA 2026-11-06 sobre 4025670
+
+(QA 20261106T0004Z-cibB3Yh, rama ya fusionada con `origin/dev@9bc4bf6`.)
+
+- `check.sh` con `verificar.sh`: VERDE 40256703f (1000 tests backend, 210
+  vitest, 67 e2e).
+- Base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3 python3 manage.py migrate`,
+  `runserver 127.0.0.1:8765`): `curl /api/duels/` con ``, `?min_matches=1`,
+  `=0`, `=foo`, `=-5`, `?until=foo`, `?map=` -> 200 y `rival_stacks: []`.
+- Base sembrada con `factories.py` (script en el scratchpad, `manage.py shell
+  < sembrar.py`): A+B+C en 2 partidas (1 perdida), A+B+Z en otra (Oregon), un
+  reemplazo D->E con F en dos partidas, otra persona tambien llamada "A" con
+  G, B con otro nick junto a A, A+B con `won=None`, una partida solo mia.
+  `curl /api/duels/` -> `A+B 2 5 3-1 75.0`, `A+B+C 3 2 1-1 50.0`,
+  `A(otro)+G 2 2 2-0`, `D+F 2 2`, `E+F 2 2`; D+E nunca. El cambio de nick no
+  parte la fila (B suma 5) y el nick repetido no se mezcla (otro id).
+  `?min_matches=3` -> solo A+B; `=1` suma A+B+Z (1); `?map=oregon` -> [];
+  `?map=club-house` -> A+B 4 (2-1); `?map=%C2%B2` -> []; `?side=Defense` -> [];
+  `?until=foo`, `?page=-1`, `?min_matches=foo` -> igual que sin parametros.
+  `/duelos` -> 200.
+- `seed_demo` en base del scratchpad: `rival_stacks` = Kaid_ · Mozzie99 ·
+  Thorn.exe, size 3, 29 partidas, 29-0, 100.0: el numero que afirma
+  `e2e/stacks-rivales.spec.js`.
+- Chunk inicial: `index-*.js` 191939 bytes; Duelos es chunk lazy aparte
+  (`Duelos-*.js` 7960 bytes) y el diff de frontend solo toca `Duelos.jsx`: el
+  inicial no crece.
+- Mutaciones en `aggregates.py` (restauradas, `git status` limpio), con
+  `python3 manage.py test tests.test_stacks_rivales`: sin filtro de maximales
+  -> caen `test_tres_rivales_juntos...` y `test_un_grupo_mas_chico...`; grupos
+  por partida en vez de por ronda -> cae `test_un_reemplazo_no_forma_grupo...`;
+  partida sin resultado como derrota -> cae `test_el_record_deja...`; tope de
+  10 rivales ignorado -> cae `test_ronda_con_rivales_de_mas_no_arma_grupos`.
+- LOW de la revision arreglado de paso (solo docs): la fila **Stack rival
+  repetido** de `metricas.md` define *Juntos* y *Partidas*.
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: nada que verificar
+en el PC. Sin umbral que calibrar.
+
+Veredicto: aprobado.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5 criterios VERIFIED)
