@@ -1,8 +1,8 @@
 # 94. Racha actual de partidas
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
 area: fullstack
