@@ -54,6 +54,13 @@ SPAWNS = {
 OPERADORES = {"Attack": ("Zofia", "Ash", "Thermite"), "Defense": ("Mute", "Jager", "Rook")}
 
 RONDAS_POR_PARTIDA = 7
+# Indice de la ronda (demo-21, ronda 6, Bank en ataque) del clutch silencioso:
+# ganado sin bajas desde que quedaste solo y con el cierre inferido del reloj,
+# el caso que motiva la ficha 97. Los dos clutches ganados del seed son el 102
+# (Border, peleado) y este. Un ataque que gana sin eliminar implica plant, pero
+# `possible_plant` queda en False a proposito: test_seed_demo y humo.spec.js
+# afirman que ninguna ronda del seed es plant probable.
+CLUTCH_SILENCIOSO = 153
 INICIO = datetime(2026, 8, 1, 20, 0)
 
 
@@ -211,7 +218,8 @@ class Command(BaseCommand):
             site=datos["site"],
             my_side=lado,
             my_team_won=gane,
-            win_condition="KilledOpponents",
+            win_condition="ObjectiveOrTime" if indice == CLUTCH_SILENCIOSO else "KilledOpponents",
+            win_condition_certain=indice != CLUTCH_SILENCIOSO,
             clock_start=180,
             clock_end=20,
             teams=[{"name": "YOUR TEAM", "mine": True}, {"name": "ENEMY TEAM", "mine": False}],
@@ -235,6 +243,11 @@ class Command(BaseCommand):
             clutch_vs=(
                 1 if (gane and not murio and indice % 17 == 0)
                 else (2 if (not gane and murio and not fuera and indice % 7 == 3) else 0)
+            ),
+            # la baja del clutch silencioso fue antes de quedar solo
+            clutch_kills=(
+                1 if (gane and not murio and indice % 17 == 0 and indice != CLUTCH_SILENCIOSO)
+                else 0
             ),
             opening_kill=bajas > 0 and indice % 6 == 0,
             opening_death=fuera and indice % 5 == 0,
