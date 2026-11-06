@@ -1,8 +1,8 @@
 # 99. Copiar el resumen de una sesion
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/99-copiar-resumen-de-sesion
 tipo: funcionalidad
 epica: exportar
 area: fullstack
