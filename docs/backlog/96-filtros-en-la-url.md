@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06T02:52Z
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
