@@ -1,7 +1,7 @@
 # 92. El stack rival en el detalle de la partida
 
-estado: revisado
-candado: qa 2026-11-06T01:35Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/92-stack-rival-en-la-partida
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: D9 de ALCANCE.md (idea del arquitecto 20261105T1920Z-cAaALb8 al disenar la 90); tramo siguiente de la ficha 90
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/stacksRivales.js, frontend/src/stacksRivales.test.js, frontend/src/pages/MatchDetail.jsx, backend/tests/test_stacks_rivales.py, frontend/e2e/stacks-rivales.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA, revisor 20261106T0109Z-cSomhFc
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cqfAePA, revisor 20261106T0109Z-cSomhFc, qa 20261106T0135Z-cpWzYqk
 
 ## PR
 
@@ -271,7 +271,43 @@ vitest, 68 e2e).
 
 OMC: plan=— · revisión=3 hallazgos (0 arreglados; 2 LOW, 1 MEDIUM sin confirmar) · verificación=—
 
-## QA
+## QA 2026-11-06 sobre 6147c5003
+
+(QA 20261106T0135Z-cpWzYqk.) Repetible: los scripts estan abajo; la base es sintetica de `tests/factories.py`, en un `SQLITE_PATH` aparte.
+
+- `verificar.sh` (check.sh completo): VERDE 6147c5003 en 100 s, 1005 tests backend, 216 vitest, 68 e2e.
+- Base sintetica (`SQLITE_PATH=<scratch>/db.sqlite3 python3 manage.py migrate` y
+  `python3 manage.py shell < sembrar.py`): trio A,B,C en las partidas 1, 2 (ganadas) y 3 (perdida);
+  A+B+Z en la 4; A,B,C en la 5 con `won=None`; la 6 sin rondas; la 7 con un solo rival repetido;
+  la 8 y la 9 con otro jugador de nick "A" (otro `profile_id`) junto a D.
+  `runserver 8792` y `curl -s localhost:8792/api/matches/<id>/`:
+  - 1, 3 y 5 -> `[A, B, C]`, 4 partidas, 2-1. Coincide con la fila de `/api/duels/`.
+  - 4 -> solo `[A, B]`, 5 partidas, 3-1: sale el subgrupo, no el trio.
+  - 6 (sin rondas) y 7 (un solo rival repetido) -> `rival_stacks: []`, 200.
+  - 8 y 9 -> `[A#11, D#12]`, 2-0: el nick repetido no se mezcla con A#2.
+  - Bordes: `/api/matches/999/` 404; `/api/matches/foo/` 404; `/api/matches/-1/` 404;
+    `/api/matches/1/?map=foo&until=foo&page=-1` 200 con el mismo grupo; `/api/duels/?until=foo` 200;
+    `/api/duels/?min_matches=-1` 200. Base vacia: `/api/matches/1/` 404, `/api/duels/` 200.
+- Chromium sobre esa base (`node ver.cjs` con playwright):
+  - Partida 1: "A, B y C ya te tocaron juntos en 4 partidas, récord 2-1 (1 sin resultado) · Ver en Duelos".
+  - Partidas 6 y 7: no hay `.stacks-rivales`.
+  - Clic en "A" de la partida 8 -> `/jugadores/11`; "Ver en Duelos" -> `/duelos`.
+  - Consola sin errores ni warnings.
+- Mutacion (todo restaurado; `git status` limpio):
+  - Sin la linea de maximalidad: 1 test cae.
+  - Sin `if match_id in ids`: 2 caen.
+  - `_stacks_rivales(min_matches, map="Border")`: 3 caen.
+  - Sin la clave en `match_detail`: 5 errores.
+  - `sinResultado > 99` en `stacksRivales.js`: 1 vitest cae.
+- Chunk inicial de `vite build`: `index-*.js` 191.85 kB en `origin/dev` y en la rama (MatchDetail es lazy).
+- Costo (el MEDIUM sin confirmar de la revision, ahora medido): base de 1000 partidas x 7 rondas
+  x 5 rivales de un pool de 60. `GET /api/matches/500/` tarda 0.24 s en la rama y 0.017 s en dev;
+  `/api/duels/` tarda 0.47 s. Aceptable para una app local; si molesta, la mejora es la que propone la revision.
+- Sin migracion, parser, `recompute`, Electron ni `.ps1`: no hay `## Verificar en el PC`.
+
+Veredicto: los seis criterios se cumplen -> `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 6/6 VERIFIED; gaps LOW heredados de la revision y el costo medido)
 
 ## Pendiente
 
