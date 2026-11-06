@@ -408,6 +408,11 @@ def match_list(request: HttpRequest) -> JsonResponse:
     resultado = filtro_resultado(request.GET.get("result", ""))
     if resultado is not None:
         qs = qs.filter(resultado)
+    # el orden del modelo no desempata partidas con la misma fecha; el detalle
+    # navega con (played_at, id) y el listado tiene que mostrar el mismo orden.
+    # Va aca y no en match_queryset: otros lo agregan con values().annotate() y
+    # un order_by explicito entraria al GROUP BY
+    qs = qs.order_by("-played_at", "-id")
     total = qs.count()
     page = list(qs[offset : offset + limit])
 
@@ -472,6 +477,24 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         match = Match.objects.get(pk=pk)
     except Match.DoesNotExist:
         return _ok({"error": "partida no encontrada"}, status=404)
+
+    # historial completo, sin filtros y con las excluidas: navegar no es agregar
+    anterior = (
+        Match.objects.filter(
+            Q(played_at__lt=match.played_at) | Q(played_at=match.played_at, id__lt=match.id)
+        )
+        .order_by("-played_at", "-id")
+        .values_list("id", flat=True)
+        .first()
+    )
+    siguiente = (
+        Match.objects.filter(
+            Q(played_at__gt=match.played_at) | Q(played_at=match.played_at, id__gt=match.id)
+        )
+        .order_by("played_at", "id")
+        .values_list("id", flat=True)
+        .first()
+    )
 
     rounds = []
     for rnd in match.rounds.prefetch_related("players__player", "events").all():
@@ -557,6 +580,8 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "match_type": match.match_type,
                 "gamemode": match.gamemode,
                 "game_version": match.game_version,
+                "prev_id": anterior,
+                "next_id": siguiente,
                 "score": f"{match.my_score}-{match.opponent_score}",
                 "my_score": match.my_score,
                 "opponent_score": match.opponent_score,
