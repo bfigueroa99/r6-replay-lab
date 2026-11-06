@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: implementado
-candado: revisor 2026-11-06T02:00Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -277,7 +277,51 @@ verificar.sh: VERDE 7086bcc74 (1013 tests backend, 215 vitest, 68 e2e).
 Skills: no aplica (patron del repo, ningun dominio nuevo).
 OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-06 sobre 5bcfc11
+
+(revisor 20261106T0200Z-cC8Xgpa)
+
+Veredicto: **corregir**. Un HIGH confirmado (eje de intencion) y un LOW.
+
+verificar.sh: VERDE 5bcfc1133 (1013 tests backend, 215 vitest, 68 e2e),
+la rama ya contiene `origin/dev`.
+
+Hallazgos:
+
+- [intencion] [HIGH] `frontend/src/pages/Operators.jsx` (`TablaPorSitio`)
+  Que pasa: la tabla "Por sitio" no sale ordenada por |delta|, como pide el
+  criterio 5. Sale ordenada por Mapa, descendente.
+  Por que es cierto: `DataTable` se llama sin `initialSort` y su default es
+  `{ key: columns[0].key, dir: 'desc' }` (`components/ui.jsx:166`), con
+  `columns[0]` = `map`. `ordenarFilas` vuelve a ordenar y se pierde el orden
+  del backend. El e2e no lo ve porque en el seed todos los deltas son 0.
+  Arreglo sugerido: el patron de `Trends.jsx:205-221`:
+  `rows.map((row, orden) => ({ ...row, orden }))` e
+  `initialSort={{ key: 'orden', dir: 'asc' }}`. Un test que lo cubra: en el
+  e2e, `route.fulfill` con dos filas de delta distinto y comprobar que la
+  de mayor |delta| sale primero (o una funcion pura con vitest).
+- [test] [LOW] `backend/tests/test_operador_por_sitio.py:112`
+  (`test_rondas_sin_sitio_lado_u_operador_quedan_fuera`)
+  Que pasa: si se quita `.exclude(round__site="")` de `operator_by_site`,
+  el test sigue pasando. Lo confirme con el mutante: 13 tests OK.
+  Por que es cierto: la tanda `rondas("Ash", 5, 0, site="")` forma su propio
+  grupo de sitio `""` con 5 rondas, por debajo del minimo, y no entra al
+  resto de SITIO_A.
+  Arreglo sugerido: dos tandas de 10 sin sitio, por ejemplo
+  `rondas("Ash", 10, 0, site="")` y `rondas("Zofia", 10, 10, site="")`, asi
+  sin el exclude aparece una fila con `site == ""`.
+
+Criterios: 1, 2, 3, 4 y 6 cubiertos por tests (los de la lista de
+Implementacion; los conte y pasan). El 5 esta cubierto a medias: el panel,
+el texto vacio y el e2e estan, pero falta el orden (HIGH). Ninguna regla de
+`CLAUDE.md` rota: endpoint solo GET con test de 405, sin dependencias, fila
+en `metricas.md`, identificadores sin tildes y UI con tildes, sin
+`console.log`. El diff no toca archivos fuera de `archivos:`. Fuera de
+alcance: nada. El docstring de `_margen_y_veredicto` estaba pedido en el
+diseno.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos (0 arreglados; 1 HIGH, 1 LOW, los dos confirmados) · verificación=—
 
 ## QA
 
