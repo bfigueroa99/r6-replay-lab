@@ -1,7 +1,7 @@
 # 100. Modo de juego como dimension
 
-estado: implementado
-candado: revisor 2026-11-06T05:30Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/100-modo-de-juego-como-dimension
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: A7 de ALCANCE.md; sigue a la ficha 77 (selector de tipo de partida) y a la 96 (filtros en la URL)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, frontend/src/modoDeJuego.js, frontend/src/modoDeJuego.test.js, frontend/src/components/Filters.jsx, frontend/src/filtrosUrl.js, frontend/src/filtrosUrl.test.js, frontend/src/pages/Trends.jsx, backend/tests/test_modo_de_juego.py, frontend/e2e/modo-de-juego.spec.js, docs/metricas.md
-turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0438Z-c2U4Qx9, dev 20261106T0503Z-cNnHCRB
+turnos: po 20261106T0319Z-cqz8j6p, arquitecto 20261106T0438Z-c2U4Qx9, dev 20261106T0503Z-cNnHCRB, revisor 20261106T0530Z-cjYLw9e
 
 ## PR
 
@@ -25,25 +25,25 @@ del que no.
 
 ## Criterios de aceptacion
 
-- [ ] `_filters` acepta `gamemode` (texto, como `match_type`) y
+- [x] `_filters` acepta `gamemode` (texto, como `match_type`) y
       `base_queryset` y `match_queryset` filtran por `Match.gamemode`; un
       modo que no existe da listas vacias y 200, no 500. Test con una partida
       `Bomb` y una `Hostage`: `/api/overview/?gamemode=Hostage` cuenta solo
       las rondas de la segunda.
-- [ ] `GET /api/filters/` devuelve `gamemodes` (los valores presentes,
+- [x] `GET /api/filters/` devuelve `gamemodes` (los valores presentes,
       ordenados, sin vacios) y la barra muestra el selector "Modo" con
       "Todos" y nombres en castellano para los conocidos (Bomba, Rehén, Área
       segura, Bomba rápida; un `Unknown(...)` sale tal cual). Con un solo
       modo en la base el selector no aparece. Vitest de la funcion que arma
       las opciones.
-- [ ] `gamemode` entra a `CLAVES_DE_URL` de `filtrosUrl.js` (ficha 96), con
+- [x] `gamemode` entra a `CLAVES_DE_URL` de `filtrosUrl.js` (ficha 96), con
       la misma validacion de texto que `match_type`. Vitest: la query
       `?gamemode=Hostage` sobrevive ida y vuelta.
-- [ ] `GET /api/trends/` agrega `by_gamemode`: por modo, partidas,
+- [x] `GET /api/trends/` agrega `by_gamemode`: por modo, partidas,
       winrate de partida (`won=None` fuera del %), winrate de ronda, K/D y
       rating con `derive`; Tendencias lo muestra en una tabla "Por modo"
       solo si hay mas de un modo. Test con los numeros a mano.
-- [ ] El e2e cambia el selector de modo con `seed_demo` (si el seed tiene
+- [x] El e2e cambia el selector de modo con `seed_demo` (si el seed tiene
       un solo modo, el Arquitecto decide si suma una partida de otro modo y
       ajusta los numeros que afirman las pruebas) y la consola queda limpia.
 
@@ -262,3 +262,61 @@ dev ya fusionado.
 
 Skills: no aplica (el Arquitecto no busco y el repo ya resuelve filtro y tabla).
 OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
+
+## Revision 2026-11-06 sobre e6fb3b3
+
+(revisor 20261106T0530Z-cjYLw9e; dev fusionado: 98 y 99 ya en la rama, sin conflicto)
+
+Veredicto: **aprobar** -> `revisado`.
+
+Revision ciega en dos ejes (omc-code-reviewer, sin leer la ficha): estandares
+y, por tamano del diff (~460 lineas), intencion contra Que gana / Criterios /
+Fuera de alcance. Los dos dieron `aprobar`, sin CRITICAL, HIGH ni MEDIUM.
+Eje de seguridad: no aplica (ni POST nuevo, ni externo/, ni pydissect, ni
+rutas, ni electron, ni dependencias).
+
+Criterios, uno por uno:
+
+- filtro en `_filters`, `base_queryset` y `match_queryset`, 200 con modo
+  inexistente: `test_filtrar_por_hostage_cuenta_solo_sus_rondas`,
+  `test_un_modo_que_no_existe_da_cero_rondas_y_no_500`,
+  `test_el_listado_de_partidas_respeta_el_modo`. Confirmado leyendo: toda
+  vista con filtros de la barra pasa por `_filters`; las consultas directas
+  a `Match` en `aggregates.py` usan `id__in` de ids ya filtrados.
+- `gamemodes` y selector: test de opciones + vitest de `opcionesDeModo`;
+  nombres iguales a `pydissect/constants.py:GAME_MODES`.
+- URL: vitest de ida y vuelta y de 65 caracteres.
+- `by_gamemode`: tests con numeros a mano (confirmados: Bomb 2 partidas,
+  50 %, 5 rondas, 60 %, K/D 4.0).
+- e2e `modo-de-juego.spec.js` con consola limpia, sin tocar `seed_demo`.
+- Archivos fuera de `archivos:`: `partidas.js` y su test, explicados en
+  Implementacion. Fila en `metricas.md`: si. Sin `print`/`console.log`.
+
+Hallazgos (todos LOW, confirmados leyendo el codigo; ninguno bloquea):
+
+- [test] [LOW] `backend/tests/test_modo_de_juego.py`: el test de "filtro de
+  lado mantiene el resultado" pasaba tambien si `by_gamemode` leyera el
+  resultado de las rondas filtradas (las dos Bomb del setUp ganan/pierden su
+  ronda de defensa igual que la partida). **Arreglado por el Revisor** con
+  un test que pasa:
+  `test_por_modo_con_filtro_de_lado_cuenta_ganada_la_partida_que_perdio_su_defensa`
+  (SecureArea 2-1 que pierde su unica defensa sigue contando ganada).
+- [intencion] [LOW] `frontend/src/modoDeJuego.js` `hayVariosModos` cuenta
+  filas, no modos: una base con Bomb y partidas de `gamemode=""` muestra
+  "Por modo" con "Bomba" y "Sin modo" mientras la barra no muestra el
+  selector (que descarta vacios). Arreglo sugerido si se quiere unificar:
+  `new Set(filas.map(f => f.gamemode).filter(Boolean)).size > 1`. Se deja:
+  la tabla con "Sin modo" sigue diciendo algo cierto.
+- [estilo] [LOW] `aggregates.py` docstring de `by_gamemode` y fila de
+  `metricas.md`: atribuyen "Sin modo" a "cabeceras viejas", pero
+  `header._int` da 0 sin `gamemodeid` y el parser lo nombra `Unknown(0)`;
+  `ingest.py:166` solo deja `""` si el dict `gamemode` falta entero.
+  Arreglo sugerido: "partidas sin dato de modo en la base".
+- [intencion] [LOW] `mostrarSelectorDeModo` muestra el selector con un solo
+  modo si hay uno elegido; desvio consciente y documentado (sin eso el enlace
+  `?gamemode=X` filtra a 0 rondas sin explicacion). Correcto, no se cambia.
+
+verificar.sh: VERDE e6fb3b3 (1092 tests backend, 276 vitest, 82 e2e), con dev fusionado.
+
+Skills: no aplica.
+OMC: plan=— · revisión=4 hallazgos (1 arreglado) · verificación=—
