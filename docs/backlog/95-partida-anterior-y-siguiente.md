@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
-estado: revisado
-candado: qa 2026-11-06T02:52Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -260,6 +260,47 @@ verificar.sh: VERDE 9f2cd96 (1022 tests backend, 232 vitest, 69 e2e).
 Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 descartado) · verificación=—
+
+## QA 2026-11-06 sobre f22461d
+
+(qa 20261106T0252Z-cf6G6Cs, rama al dia con dev 8f3fb74)
+
+Base temporal fuera del repo: `SQLITE_PATH=<scratchpad>/qa95.sqlite3`,
+`python3 manage.py migrate`, `runserver 127.0.0.1:8795 --noreload`.
+
+- **check.sh completo**: `verificar.sh` -> `VERDE f22461d8e en 102s: 1022 tests
+  backend, 232 vitest, 69 e2e. Todo en verde.`
+- **Base vacia**: `curl /api/matches/` -> `{"total": 0, ..., "matches": []}`;
+  `/api/matches/1/` -> 404 `partida no encontrada`; `/api/matches/-1/` y
+  `/api/matches/foo/` -> 404 `esa ruta de la API no existe`. Sin 500.
+- **Base sembrada** con `factories.py` (`manage.py shell` con un script): 1 Bank
+  09-01 20:00, 2 Oregon y 3 Kafe con el mismo `played_at` 09-02 12:00, 4
+  Border importada ultima pero jugada 08-01 (sin rondas). Detalle:
+  4 `prev None next 1`, 1 `prev 4 next 2`, 2 `prev 1 next 3`, 3 `prev 2 next None`.
+  Listado `/api/matches/`: `[3, 2, 1, 4]`, el mismo orden que recorre `prev_id`.
+  `?limit=1&page=-1&until=foo&map=` -> 200, primera fila 3. Ningun 500 en el log.
+- **UI en Chromium** (playwright contra esa base): en 4 (sin rondas) "← Partida
+  anterior" deshabilitado y las flechas no rompen nada; "Partida siguiente →"
+  lleva a `/partidas/1` con la primera ronda activa; → avanza y en la ultima se
+  queda; Shift+← no mueve; siguiente -> 2 con la primera ronda activa; en 3
+  "Partida siguiente →" deshabilitado; Atras del navegador vuelve a 2. Consola
+  sin errores. El detalle no tiene `select` ni `input`: el foco en campo queda
+  cubierto solo por vitest.
+- **Mutaciones** (restauradas con `git checkout`):
+  - `id__lt` -> `id__gt` en la consulta de la anterior: `manage.py test
+    tests.test_partida_anterior_y_siguiente` -> `FAILED (failures=2)`.
+  - `order_by("-played_at", "id")` en `match_list`: `FAILED (failures=1)`.
+  - `rondaVecina` sin tope superior: `npx vitest run src/navegacionRondas.test.js`
+    -> 2 fallan.
+  - `pasoDeTecla` sin `CAMPOS` (input/select/textarea): 1 falla.
+- **Bundle**: chunk inicial `index` 192,50 kB en dev -> 192,59 kB (+0,05 %);
+  `MatchDetail` (lazy) 16,43 -> 17,59 kB.
+- Sin migraciones, `recompute`, parser, Electron ni `.ps1`: nada para verificar
+  en el PC.
+
+Veredicto: los cuatro criterios con evidencia -> `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
