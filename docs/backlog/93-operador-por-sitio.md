@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: implementado
-candado: revisor 2026-11-06T02:34Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: O1 de ALCANCE.md; `replica/features.csv` "Delta de win rate de un operador contra la base, por mapa y sitio" (must, partial: la ficha 65 da el delta contra tu lado, falta el corte por mapa y sitio); [aurelix](https://aurelix.app/blog/how-to-analyse-r6-siege-replays)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_operador_por_sitio.py, frontend/src/operadorSitio.js, frontend/src/operadorSitio.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0135Z-cYfUHhx, revisor 20261106T0200Z-cC8Xgpa, dev 20261106T0228Z-c6PJnck
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0109Z-cMAPx7f, dev 20261106T0135Z-cYfUHhx, revisor 20261106T0200Z-cC8Xgpa, dev 20261106T0228Z-c6PJnck, revisor 20261106T0228Z-cgEzFUY
 
 ## PR
 
@@ -351,8 +351,56 @@ verificar.sh: VERDE 2f0fa51f5 (1029 tests backend, 227 vitest, 69 e2e).
 Skills: no aplica.
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
+## Revision 2026-11-06 sobre c755e41 (segunda pasada)
+
+(revisor 20261106T0228Z-cgEzFUY, rama al dia con dev 8f3fb74)
+
+Los dos hallazgos de la primera pasada estan corregidos: `TablaPorSitio` usa
+`conOrdenDelBackend` con `initialSort` sobre `orden` (el e2e con
+`route.fulfill` lo discrimina: sin el, Oregon saldria antes que Bank), y el
+test de rondas sin sitio falla con el mutante sin `.exclude(round__site="")`.
+
+Revision ciega en dos ejes sobre el diff completo (575 lineas):
+
+- Estandares: aprobar, 2 LOW.
+- Intencion: aprobar, 1 MEDIUM.
+
+Hallazgos:
+
+- [test] [MEDIUM] `backend/replays/analytics/aggregates.py` (orden de
+  `operator_by_site`) — **confirmado y cubierto por el Revisor con un test
+  que pasa.** Ningun test probaba el orden por |delta| del backend: el unico
+  (Ash +80, Zofia -80) tiene el mismo |delta| y el orden alfabetico da lo
+  mismo. Mutante (ordenar solo por `operator`): los 13 tests seguian en
+  verde. Agregado `test_las_filas_salen_por_mayor_diferencia_y_no_por_nombre_ni_rondas`
+  (Thatcher -68.8, Zofia +66.7, Ash y Buck -3.1): pasa con el codigo y falla
+  con el mutante.
+- [estilo] [LOW] `frontend/src/operadorSitio.js:25`: el texto vacio
+  "Ningún operador llega a N rondas en un sitio (ni el resto del sitio)."
+  tambien sale cuando el operador si llega y el que no llega es el resto
+  (Zofia 20 rondas contra 9 del resto). No bloquea; queda en
+  `## Para el humano` por si se quiere afinar.
+- [bug] [LOW] `aggregates.py`, agrupar por `round__match__map_name` partiria
+  una version si quedara guardada con dos nombres. Es el mismo patron de
+  `by_site` y `positioning`, no lo introduce esta ficha y no lo reproduje: no
+  es hallazgo de la 93.
+
+Criterios 1 a 6 cubiertos por tests (con el nuevo, el orden del criterio 5
+queda probado en backend y frontend). Sin reglas rotas: endpoint solo GET con
+test de 405, fila en `metricas.md`, sin dependencias, UI con tildes y
+identificadores sin, sin `console.log`. El diff no sale de `archivos:`.
+
+verificar.sh: VERDE c755e41 (1030 tests backend, 227 vitest, 69 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=3 hallazgos (1 cubierto con test, 1 LOW al humano, 1 descartado) · verificación=—
+
 ## QA
 
 ## Pendiente
 
 ## Para el humano
+
+- (revisor cgEzFUY, LOW, no bloquea) El texto vacio de la tabla Por sitio dice "Ningún operador llega a N rondas" tambien cuando el que no llega es el resto del sitio; podria ser "Ninguna combinación de operador y sitio llega a N rondas propias y N del resto."
