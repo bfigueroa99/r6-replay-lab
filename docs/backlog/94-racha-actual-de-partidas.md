@@ -1,7 +1,7 @@
 # 94. Racha actual de partidas
 
-estado: revisado
-candado: qa 2026-11-06T01:35Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
 epica: progreso
@@ -24,22 +24,22 @@ que contar los puntos de la forma reciente a mano, y solo se ven 10.
 
 ## Criterios de aceptacion
 
-- [ ] `GET /api/overview/` trae en `matches_summary` una clave
+- [x] `GET /api/overview/` trae en `matches_summary` una clave
       `current_streak`: `{"result": "win"|"loss", "length": n, "since": <fecha
       de la primera partida de la racha>, "match_ids": [...]}`, o `null` si no
       hay ninguna partida decidida.
-- [ ] Orden por `played_at` y `id` (igual que `matches_summary`); las
+- [x] Orden por `played_at` y `id` (igual que `matches_summary`); las
       partidas con `won=None` (incompletas o empate, ficha 68) no cortan ni
       suman la racha: test con G, None, G -> racha de 2 victorias.
-- [ ] Se calcula sobre las partidas del filtro, como el resto de
+- [x] Se calcula sobre las partidas del filtro, como el resto de
       `matches_summary` (el lado no parte una partida): test con filtro de
       mapa que cambia la racha.
-- [ ] Una racha de 1 se muestra igual ("1 victoria"); singular y plural
+- [x] Una racha de 1 se muestra igual ("1 victoria"); singular y plural
       correctos en la UI.
-- [ ] El Inicio muestra la racha junto a la forma reciente, sin renderizar
+- [x] El Inicio muestra la racha junto a la forma reciente, sin renderizar
       nada con `current_streak: null`; e2e con el numero que fija
       `seed_demo`.
-- [ ] Fila nueva en `docs/metricas.md`.
+- [x] Fila nueva en `docs/metricas.md`.
 
 ## Fuera de alcance
 
@@ -199,10 +199,6 @@ Verificacion: verificar.sh VERDE 692b47fb3 (1011 tests backend, 215 vitest, 67 e
 Skills: no aplica (diseno sin dominio nuevo).
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
-## Revision
-
-## QA
-
 ## Pendiente
 
 ## Para el humano
@@ -243,3 +239,52 @@ Verificacion: verificar.sh VERDE 6f70db827 (1011 tests backend, 215 vitest, 67 e
 Veredicto: aprobar -> `revisado`.
 
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
+
+## QA 2026-11-06 sobre 46f257a
+
+(qa 20261106T0135Z-cJAGtBp; ejercita el sistema, no relee el diff.)
+
+Todo en el scratchpad, sin `.rec` ni `.sqlite3` en el repo. Bases: `vacia`
+(solo `migrate`) y `sembrada` con `factories.py`: P (Border, id 1), G (Club
+House, id 2), sin resultado (Border, id 3, `won=None`), G (Club House, rondas
+de ataque y defensa, id 4), G (Border, solo rondas de defensa, id 5) y una
+partida Oregon sin rondas (id 6). Cada una con
+`SQLITE_PATH=<base> R6_ENV_FILE=<env vacio> python3 manage.py runserver`.
+
+- `check.sh` (`verificar.sh`): VERDE 46f257a92 en 119 s (1011 tests backend,
+  215 vitest, 67 e2e); el e2e del Inicio espera "Racha actual: 29 victorias
+  seguidas desde 2026-08-01" con `seed_demo`.
+- `curl /api/overview/`, `matches_summary.current_streak`:
+  - base vacia, sin filtro y `?map=border`: `null` (200).
+  - sembrada, sin filtro: `{"result": "win", "length": 3, "since": "2026-09-01T21:00:00", "match_ids": [2, 4, 5]}`:
+    la sin resultado (id 3) no corta ni suma ni entra en los ids.
+  - `?map=club-house`: win 2 `[2, 4]`; `?map=border`: win 1 `[5]` (la
+    perdida id 1 queda detras de la sin resultado).
+  - `?side=Attack` y `?side=Defense`: iguales a sin filtro (la id 5 solo tiene
+    defensa y sigue contando): el lado no parte la partida.
+  - `?map=oregon` (solo la partida sin rondas), `?map=noexiste`,
+    `?since=2099-01-01`, `?days=-1`: `null` (200).
+  - `?map=` vacio, `?until=foo`, `?page=-1`, `?days=99999999999`: 200, win 3.
+  - el resto de `matches_summary` sigue igual (5 partidas, 3-1, 1 sin resultado).
+- Vecinos `/api/matches/`, `/api/matches/2/`, `/api/trends/`, `/api/coach/`,
+  `/api/operators/`: 200 en las dos bases (`/api/matches/2/` 404 en la vacia).
+- UI en Chromium (playwright, consola sin errores ni warnings): base vacia,
+  `.racha-actual` no se renderiza; sembrada, "Racha actual: 3 victorias
+  seguidas desde 2026-09-01"; con el selector Mapa en Border, "Racha actual: 1
+  victoria (2026-09-02)" (singular, sin "seguidas"); en Club House, "2
+  victorias seguidas desde 2026-09-01".
+- Chunk inicial de `vite build`: 191939 B en `origin/dev` -> 192594 B (+655 B,
+  +0,3 %).
+- Mutacion (todas caen, el codigo quedo restaurado con `git checkout`):
+  `None` corta (`break`) -> 2 tests; `None` suma -> 3 tests; no cortar en el
+  otro resultado -> `test_el_filtro_de_mapa_cambia_la_racha`; `since` de la
+  ultima -> 3 tests; el lado filtra partidas ->
+  `test_el_filtro_de_lado_no_parte_la_partida`; sin singular en
+  `textoRachaActual` -> 2 vitest; victorias/derrotas invertidas -> 2 vitest.
+
+Criterios: los seis cumplidos con la evidencia de arriba. Sin migracion,
+parser, `recompute`, Electron ni `.ps1`: no hay "Verificar en el PC".
+
+Veredicto: `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 6/6 VERIFIED)
