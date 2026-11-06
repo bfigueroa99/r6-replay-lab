@@ -65,6 +65,29 @@ class FormaTests(TestCase):
         self.assertFalse(Round.objects.exclude(clock_end=20).exists())
         self.assertFalse(Round.objects.filter(possible_plant=True).exists())
 
+    def test_de_los_dos_clutches_ganados_uno_es_silencioso(self):
+        ganados = RoundPlayer.objects.filter(is_me=True, clutch_vs__gt=0, round__my_team_won=True)
+        por_mapa = {p.round.match.map_name: p.clutch_kills for p in ganados}
+        self.assertEqual(por_mapa, {"Border": 1, "Bank": 0})
+
+    def test_la_api_del_seed_da_un_silencioso_inferido_del_reloj(self):
+        datos = self.client.get("/api/teammates/").json()
+        self.assertEqual(
+            datos["clutch_silent"],
+            {"won": 2, "silent": 1, "silent_pct": 50.0,
+             "by_condition": {"elimination": 0, "other": 1, "unknown": 0}},
+        )
+        self.assertEqual(
+            [(f["label"], f["silent"]) for f in datos["clutch_conversion"]], [("1v1", 1), ("1v2", 0)]
+        )
+
+    def test_la_ronda_del_clutch_silencioso_es_la_unica_inferida(self):
+        # una ficha futura que siembre otra ronda inferida ajusta este numero
+        inferidas = Round.objects.filter(win_condition_certain=False)
+        self.assertEqual(inferidas.count(), 1)
+        ronda = inferidas.get()
+        self.assertEqual((ronda.match.map_name, ronda.my_side), ("Bank", "Attack"))
+
     def test_hay_un_solo_jugador_principal(self):
         self.assertEqual(Player.objects.filter(is_me=True).count(), 1)
         self.assertEqual(RoundPlayer.objects.filter(is_me=True).count(), 203)

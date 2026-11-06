@@ -20,6 +20,7 @@ import { vistaSinRondas } from '../tipoPartida.js'
 import { filasDeGrupo, textoHabituales } from '../grupo.js'
 import { MUESTRA_PARTIDAS } from '../margen.js'
 import { filasConPocaMuestra } from '../muestra.js'
+import { celdaSilenciosos, notaSilenciosos } from '../clutchSilencioso.js'
 
 const SAMPLES = [
   { value: 5, label: '5+ rondas' },
@@ -250,7 +251,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Clutches"
-        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda."
+        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda. Silenciosos son los ganados sin bajas tuyas desde que quedaste solo."
       >
         <h3>Conversión por rivales</h3>
         <DataTable
@@ -261,6 +262,23 @@ export default function Teammates({ filters, setFilters, runImport, importing })
             { key: 'pct', label: 'Conversión', render: (row) => pct(row.pct) },
             { key: 'attack_pct', label: 'Ataque', render: (row) => pct(row.attack_pct) },
             { key: 'defense_pct', label: 'Defensa', render: (row) => pct(row.defense_pct) },
+            // al final: los e2e afirman el principio de cada fila
+            {
+              key: 'silent',
+              label: 'Silenciosos',
+              help: 'Clutches ganados sin ninguna baja tuya desde que quedaste solo. Un * marca menos de 5 ganados: con tan poca muestra el % todavía no dice mucho.',
+              csv: (row) => row.silent,
+              render: (row) => (
+                <>
+                  {celdaSilenciosos(row)}
+                  {row.silent_low_sample ? (
+                    <span className="dim muestra-chica" title="Menos de 5 ganados">
+                      *
+                    </span>
+                  ) : null}
+                </>
+              ),
+            },
           ]}
           rows={conversion}
           initialSort={{ key: 'vs', dir: 'asc' }}
@@ -268,6 +286,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           csvName="clutch-conversion"
           empty="Todavía no quedaste último en ninguna ronda."
         />
+        {notaSilenciosos(data?.clutch_silent) ? <p className="note">{notaSilenciosos(data?.clutch_silent)}</p> : null}
         <h3>Clutch por mapa y sitio</h3>
         <DataTable
           columns={[
