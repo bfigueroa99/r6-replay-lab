@@ -9,7 +9,9 @@ def llenar(apps, schema_editor):
     Sin esto todo clutch ganado quedaria en 0 y se veria silencioso. Corre en
     la base real al primer `runserver`: rondas sin jugadores o eventos sin
     nick no pueden tumbarla. Solo mira rondas con un intento de clutch: en el
-    resto el valor es 0 por definicion.
+    resto el valor es 0 por definicion. Da por bueno el `clutch_vs` guardado
+    (lo lleno la 0003 con la misma regla); si alguna vez no cuadraran,
+    `manage.py recompute` rehace los dos juntos.
     """
     RoundPlayer = apps.get_model("replays", "RoundPlayer")
     Event = apps.get_model("replays", "Event")

@@ -14,12 +14,12 @@ export function celdaSilenciosos(row) {
 export function notaSilenciosos(resumen) {
   if (!resumen?.won) return null
   const { won, silent, by_condition: cond } = resumen
-  const ganados = won === 1 ? 'clutch ganado' : 'clutches ganados'
+  const ganados = won === 1 ? 'De tu único clutch ganado' : `De tus ${won} clutches ganados`
   const fueron = silent === 1 ? 'fue silencioso' : 'fueron silenciosos'
   const sinDato = cond.unknown ? `, ${cond.unknown} sin dato` : ''
   return (
-    `De tus ${won} ${ganados}, ${silent} ${fueron} (sin bajas tuyas desde que quedaste solo): ` +
+    `${ganados}, ${silent} ${fueron} (sin bajas tuyas desde que quedaste solo): ` +
     `${cond.elimination} por eliminación, ${cond.other} sin eliminación ` +
-    `(plant, defuse o tiempo; inferido del reloj)${sinDato}.`
+    `(plant, defuse o tiempo; en temporadas nuevas, inferido del reloj)${sinDato}.`
   )
 }

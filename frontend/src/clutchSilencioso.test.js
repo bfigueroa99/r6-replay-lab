@@ -34,8 +34,8 @@ describe('notaSilenciosos', () => {
       resumen({ won: 1, silent: 1, by_condition: { elimination: 1, other: 0, unknown: 0 } }),
     )
     expect(nota).toBe(
-      'De tus 1 clutch ganado, 1 fue silencioso (sin bajas tuyas desde que quedaste solo): ' +
-        '1 por eliminación, 0 sin eliminación (plant, defuse o tiempo; inferido del reloj).',
+      'De tu único clutch ganado, 1 fue silencioso (sin bajas tuyas desde que quedaste solo): ' +
+        '1 por eliminación, 0 sin eliminación (plant, defuse o tiempo; en temporadas nuevas, inferido del reloj).',
     )
   })
 
