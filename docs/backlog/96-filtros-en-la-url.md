@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
-estado: revisado
-candado: qa 2026-11-06T02:59Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -374,6 +374,47 @@ QA o el humano los quieren; no bloquean.
 
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos LOW + 1 LOW de intencion (0 arreglados, no bloquean) · verificación=—
+
+## QA 2026-11-06 sobre db1ada5
+
+(qa 20261106T0252Z-cf6G6Cs; rama con dev 8ebdeca (la 95) mezclado, sin conflictos)
+
+- **check.sh completo**: `verificar.sh` -> `VERDE db1ada553 en 103s: 1022 tests
+  backend, 245 vitest, 75 e2e. Todo en verde.`
+- **App real**: `SQLITE_PATH=<scratchpad>/qa96.sqlite3`, `migrate`, `seed_demo`
+  (29 partidas), `runserver 127.0.0.1:8796 --noreload`, Chromium (playwright)
+  anotando cada request a `/api/`. Consola limpia y ningun 500 en todos los casos:
+  - `/tendencias?side=Defense&days=30`: URL igual, barra Lado=Defense y
+    Periodo=30; API `/api/trends/?side=Defense&days=30`, `/api/sessions/?side=Defense&days=30`.
+  - `/tendencias?days=abc&x=1&since=2026-02-31&side=foo&session=-1`: URL
+    `/tendencias`, barra vacia, API sin parametros.
+  - `/?days=45`: URL `/`, sin `days`. `/coach?since=2026-01-01&until=2026-12-31&days=7`:
+    `days` quitado, Periodo "rango" con las dos fechas, API con `since`/`until`.
+  - `/operadores?ranked_only=true&session=0`: URL `?session=0&ranked_only=1`,
+    Tipo=Ranked, la API recibe los dos.
+  - `map` de 65 caracteres: descartado. `/ajustes?side=Defense`: la query no
+    se toca y solo pide `/api/settings/`.
+  - Con `?side=Attack`, los 7 enlaces del menu con barra llevan la query
+    (Ruleta, Datos y Ajustes no); clic en Duelos -> `/duelos?side=Attack`;
+    elegir Defensa -> `/duelos?side=Defense` sin entrada de historial nueva
+    (`history.length` 11 -> 11).
+  - Elegir Bank en el Resumen -> `/?map=bank`; esa URL en otra pestaña: select
+    `bank` y el mismo texto de la pagina.
+  - `/partidas?side=Defense` -> detalle -> Atras vuelve a `/partidas?side=Defense`.
+- **Mutaciones** en `filtrosUrl.js` (restauradas), `npx vitest run
+  src/filtrosUrl.test.js`: `days` sin validar contra 7/30/90 -> 1 falla; fechas
+  sin borrar `days` -> 1 falla; `2026-02-31` aceptada -> 1 falla.
+- **Bundle**: chunk inicial ~192,6 kB (dev con la 95) -> 194,55 kB (+1 %).
+- Sin migraciones, `recompute`, parser, Electron ni `.ps1`.
+
+Hallazgo LOW, no bloquea (por diseno: `map`, `operator` y `site` son texto de
+hasta 64): `/?map=noexiste` llega a la API, la pagina dice "0 rondas con estos
+filtros" y el select de Mapa muestra "Todos". Mismo caso que `session=99999`,
+anotado por el Dev. Validarlo contra las opciones cargadas seria un tramo aparte.
+
+Veredicto: los cinco criterios con evidencia -> `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
