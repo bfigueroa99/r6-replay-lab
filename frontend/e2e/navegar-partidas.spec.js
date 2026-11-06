@@ -21,9 +21,14 @@ test('el detalle pasa a la partida anterior y siguiente, y las flechas cambian l
   // las flechas necesitan al menos dos rondas en las dos partidas
   expect(detalleNueva.rounds.length).toBeGreaterThanOrEqual(2)
   expect(detallePrevia.rounds.length).toBeGreaterThanOrEqual(2)
+  // en seed_demo las vecinas mas nuevas comparten mapa y marcador: el h1 no las distingue, la fecha si
+  const fecha = (m) => m.played_at.slice(0, 16).replace('T', ' ')
+  expect(fecha(previa)).not.toBe(fecha(nueva))
+  const fechaEnPantalla = page.locator('.page-head p').first()
 
   await page.goto(`/partidas/${nueva.id}`)
   await expect(page.locator('h1')).toContainText(`${nueva.map} · ${nueva.score}`)
+  await expect(fechaEnPantalla).toContainText(fecha(nueva))
   await expect(page.getByRole('button', { name: 'Partida siguiente →' })).toBeDisabled()
 
   // ir a otra ronda antes de cambiar de partida: la nueva tiene que volver a R1
@@ -33,6 +38,7 @@ test('el detalle pasa a la partida anterior y siguiente, y las flechas cambian l
   await page.getByRole('link', { name: '← Partida anterior' }).click()
   await expect(page).toHaveURL(new RegExp(`/partidas/${previa.id}$`))
   await expect(page.locator('h1')).toContainText(`${previa.map} · ${previa.score}`)
+  await expect(fechaEnPantalla).toContainText(fecha(previa))
   await expect(activa).toHaveText('R1')
 
   await page.keyboard.press('ArrowRight')
@@ -45,6 +51,7 @@ test('el detalle pasa a la partida anterior y siguiente, y las flechas cambian l
   await page.getByRole('link', { name: 'Partida siguiente →' }).click()
   await expect(page).toHaveURL(new RegExp(`/partidas/${nueva.id}$`))
   await expect(page.locator('h1')).toContainText(`${nueva.map} · ${nueva.score}`)
+  await expect(fechaEnPantalla).toContainText(fecha(nueva))
 
   expect(errores).toEqual([])
 })
