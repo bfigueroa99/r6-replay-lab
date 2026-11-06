@@ -1,6 +1,6 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: implementado (espejo; manda la rama)
+estado: con hallazgos (espejo; manda la rama)
 candado: -
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
