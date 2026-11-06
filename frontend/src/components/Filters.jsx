@@ -168,7 +168,7 @@ export default function Filters({
         <label>
           Modo
           <select value={value.gamemode || ''} onChange={set('gamemode')}>
-            {opcionesDeModo(data?.gamemodes).map((o) => (
+            {opcionesDeModo(data?.gamemodes, value.gamemode).map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

@@ -86,7 +86,7 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 ## Modo de juego
 
 En Tendencias, y como filtro "Modo" de la barra cuando la base tiene mas de un
-modo.
+modo o hay uno elegido (un enlace con `?gamemode=`).
 
 | Metrica | Definicion |
 |---|---|

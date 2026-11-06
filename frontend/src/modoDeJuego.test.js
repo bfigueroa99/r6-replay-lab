@@ -34,6 +34,13 @@ describe('opcionesDeModo', () => {
   })
 })
 
+describe('opcionesDeModo con uno elegido', () => {
+  it('suma el elegido si la base no lo tiene, al final y una sola vez', () => {
+    expect(opcionesDeModo(['Bomb'], 'Hostage').map((o) => o.value)).toEqual(['', 'Bomb', 'Hostage'])
+    expect(opcionesDeModo(['Bomb', 'Hostage'], 'Hostage').map((o) => o.value)).toEqual(['', 'Bomb', 'Hostage'])
+  })
+})
+
 describe('mostrarSelectorDeModo', () => {
   it('con un solo modo no aparece', () => {
     expect(mostrarSelectorDeModo(['Bomb'], '')).toBe(false)

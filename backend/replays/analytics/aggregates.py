@@ -41,7 +41,8 @@ from .metrics import trade_window
 # --------------------------------------------------------------------- filtros
 
 FILTER_KEYS = (
-    "side", "map", "operator", "site", "match_type", "gamemode", "since", "until", "ranked_only", "session",
+    "side", "map", "operator", "site", "match_type", "gamemode", "since", "until", "ranked_only",
+    "session",
 )
 
 
@@ -1692,12 +1693,12 @@ def by_gamemode(**filters) -> list[dict]:
     baseline = rating_baseline()
     grupos: dict[str, list[int]] = {}
     for mid in por_partida:
-        grupos.setdefault(datos.get(mid, ("", None))[0] or "", []).append(mid)
+        grupos.setdefault(datos[mid][0] or "", []).append(mid)
 
     filas = []
     for modo, mids in grupos.items():
         t = _fold([por_partida[m] for m in mids], baseline)
-        decididas = [datos[m][1] for m in mids if datos.get(m, ("", None))[1] is not None]
+        decididas = [datos[m][1] for m in mids if datos[m][1] is not None]
         filas.append({
             "gamemode": modo,
             "matches": len(mids),

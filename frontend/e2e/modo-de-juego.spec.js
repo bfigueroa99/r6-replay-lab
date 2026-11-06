@@ -55,6 +55,16 @@ test('un enlace con modo muestra el selector aunque la base tenga uno solo', asy
   expect(errores).toEqual([])
 })
 
+test('Partidas manda el modo al listado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const pedido = page.waitForRequest(/\/api\/matches\/\?.*gamemode=Hostage/)
+  await page.goto('/partidas?gamemode=Hostage')
+  await pedido
+  await expect(page.getByLabel('Modo', { exact: true })).toHaveValue('Hostage')
+  await expect(page.locator('table tbody a[href^="/partidas/"]')).toHaveCount(0)
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra Por modo solo con más de un modo', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

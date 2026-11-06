@@ -19,11 +19,15 @@ export function nombreDeModo(modo) {
   return NOMBRES_DE_MODO[modo] ?? modo
 }
 
-/** Opciones del `<select>`: "Todos" y cada modo de la base, en el orden de la API. */
-export function opcionesDeModo(gamemodes) {
+/**
+ * Opciones del `<select>`: "Todos" y cada modo de la base, en el orden de la
+ * API. El elegido entra aunque la base no lo tenga (un enlace con
+ * `?gamemode=X`): sin su opcion el `<select>` mostraria "Todos" filtrando.
+ */
+export function opcionesDeModo(gamemodes, elegido = '') {
   const vistos = new Set()
   const opciones = [{ value: '', label: 'Todos' }]
-  for (const modo of gamemodes || []) {
+  for (const modo of [...(gamemodes || []), elegido]) {
     if (!modo || vistos.has(modo)) continue
     vistos.add(modo)
     opciones.push({ value: modo, label: nombreDeModo(modo) })
