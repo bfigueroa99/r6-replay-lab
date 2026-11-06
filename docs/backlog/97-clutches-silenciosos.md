@@ -1,7 +1,7 @@
 # 97. Clutches silenciosos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 02:20 UTC
 rama: -
 tipo: funcionalidad
 epica: impacto
