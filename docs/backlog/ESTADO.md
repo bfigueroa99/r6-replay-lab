@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-06 00:50 UTC por arquitecto (sesion 20261106T0015Z-cR6uHk3; motivo: pedido; reloj: release, franja 0)
+actualizado: 2026-11-06 01:05 UTC por po (sesion 20261106T0041Z-cSxDY1g; motivo: pedido; reloj: release, franja 0)
 playbook: origin/dev@c63314e
 rutina: TURNOS_SIN_RASTRO=2 en 48 h (~11-05T17:19Z ~11-05T21:28Z) | 13 de 40 en 7 dias
 pausa: no
@@ -10,22 +10,25 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). P3 hecho por release c7Taz2A: dev 3d89622 mezclado (conflicto en `MatchDetail.jsx` resuelto con `status` y `reload`) y `match_exclude` pasa al 404 en JSON de la 84 (el merge dejaba `Http404` sin importar: ruff F821 y 500). VERDE ac3fc61d7 (980, 199, 65) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
+| claude/equipo-dev/92-stack-rival-en-la-partida | 92 | en curso 2026-11-06 (dev, candado 00:42 UTC) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/92-stack-rival-en-la-partida?expand=1) |
+| claude/equipo-dev/94-racha-actual-de-partidas | 94 | en curso 2026-11-06 (dev, candado 00:42 UTC) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/94-racha-actual-de-partidas?expand=1) |
 
 La 90 entro a dev por [PR #90](https://github.com/bfigueroa99/r6-replay-lab/pull/90) (c63314e), qa/release cibB3Yh. La 89 entro a dev por [PR #89](https://github.com/bfigueroa99/r6-replay-lab/pull/89) (9bc4bf6), qa/release cLLCG3x. La 91 entro a dev por [PR #88](https://github.com/bfigueroa99/r6-replay-lab/pull/88) (0127019), qa/release cSTWy1D. La 81 entro a dev por [PR #86](https://github.com/bfigueroa99/r6-replay-lab/pull/86) (3ca8c12) y la 87 por [PR #87](https://github.com/bfigueroa99/r6-replay-lab/pull/87) (4a1aa8e), las dos qa/release cpRZAms. La 88 entro a dev por [PR #85](https://github.com/bfigueroa99/r6-replay-lab/pull/85) (e7cc919), qa/release cpQZfWz. La 84 entro a dev por [PR #84](https://github.com/bfigueroa99/r6-replay-lab/pull/84) (3d89622), qa/release cAimE1D. La 86 entro a dev por [PR #83](https://github.com/bfigueroa99/r6-replay-lab/pull/83) (0861b0b), qa/release cEexMKJ. La 85 entro a dev por [PR #80](https://github.com/bfigueroa99/r6-replay-lab/pull/80) (a9f8a28) y la 82 por [PR #82](https://github.com/bfigueroa99/r6-replay-lab/pull/82) (85009f6), qa/release cxcyM5F. La 78 entro a dev por [PR #78](https://github.com/bfigueroa99/r6-replay-lab/pull/78) y la 80 por [PR #79](https://github.com/bfigueroa99/r6-replay-lab/pull/79) (dev 696c79d).
 
-COLA=1/4  TOTAL=1/6
-RESUMEN propuesto=1 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=88 sin_merge=no pausa=no sin_rastro_48h=2 bloqueadas=0
+COLA=3/4  TOTAL=3/6
+RESUMEN propuesto=4 disenado=1 en_curso=2 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=89 sin_merge=no pausa=no sin_rastro_48h=2 bloqueadas=0
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`): merge-tree contra dev c63314e (con la 90) limpio. Unica rama abierta.
+1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`): merge-tree contra dev c63314e limpio.
+2. `claude/equipo-dev/92-stack-rival-en-la-partida` y `claude/equipo-dev/94-racha-actual-de-partidas`: en curso (sin codigo todavia al cierre de este turno); el orden lo fija el Release cuando lleguen a `aprobado`.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 13 (70 a 78, 80, 89, 90 y 91) otros:9
-- Epicas en curso: temporada-y-modo: A4 (70), A6 (71), A8 (74) y A1 (77) en dev. paridad-referencia: R1 (64), R4 (72), R2 (75) en dev. impacto: K3 (55), K5 (59), K10 (76) en dev. revision-de-rondas: F16 (78) en dev. posicionamiento: S1 (80) en dev; S2 (89) en dev; S3 y S4 en idea. rivales: D4 ficha 90 en dev (PR #90); D9 ficha 92 (disenado); D10 y D11 en idea. progreso: E14 ficha 94 (disenado). paridad-referencia: O1 ficha 93 (propuesto, `must` partial de la referencia). paridad-referencia: R3 ficha 91 en dev (PR #88). datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79).
-- Papel: PAPEL_TIPOS=funcionalidad:4 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 88 ideas libres. Ideas nuevas de este turno (po cvqUYh1): D11 rivales que te abren, E16 tu forma contra tu historial, H10 copiar una ronda como texto, O10 repetir o cambiar de operador despues de perder.
+- Epicas en curso: temporada-y-modo: A4 (70), A6 (71), A8 (74) y A1 (77) en dev. paridad-referencia: R1 (64), R4 (72), R2 (75) en dev. impacto: K3 (55), K5 (59), K10 (76) en dev. revision-de-rondas: F16 (78) en dev. posicionamiento: S1 (80) en dev; S2 (89) en dev; S3 y S4 en idea. rivales: D4 ficha 90 en dev (PR #90); D9 ficha 92 (disenado); D10 y D11 en idea. progreso: E14 ficha 94 (disenado). paridad-referencia: O1 ficha 93 (propuesto, `must` partial de la referencia). paridad-referencia: R3 ficha 91 en dev (PR #88). datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). Nuevas fichas (po cSxDY1g): revision-de-rondas F17 ficha 95; temporada-y-modo A10 ficha 96; impacto K11 ficha 97 (las tres `propuesto`). 92 y 94 pasaron a `en curso`.
+- Papel: PAPEL_TIPOS=funcionalidad:5 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:3 de 3 ramas de trabajo.
+- `ALCANCE.md`: 89 ideas libres. Ideas nuevas de este turno (po cSxDY1g): K12 clutch segun el reloj, D12 rivales que te clutchean, C15 clutches de tus compañeros, B19 clutches segun el marcador.
 - Investigacion: ultima entrada 2026-11-03 (familias 8, 3, 5 y 6).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
 - Ciclo: CICLO=2h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 90:4 89:1 91:0 80:8 78:8 77:0 76:0 75:0 74:6 73:8)
@@ -35,13 +38,16 @@ RESUMEN propuesto=1 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | entregado, PR #81 (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
-| 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79; revalidado contra 0861b0b) | funcionalidad | datos | 3 | fullstack | - |
-| 92-stack-rival-en-la-partida | disenado (D9; la 90 ya esta en dev; seed sin tocar) | funcionalidad | rivales | 3 | fullstack | - |
+| 92-stack-rival-en-la-partida | en curso 2026-11-06 (rama de trabajo) | funcionalidad | rivales | 3 | fullstack | dev (en la rama) |
+| 94-racha-actual-de-partidas | en curso 2026-11-06 (rama de trabajo) | funcionalidad | progreso | 3 | fullstack | dev (en la rama) |
+| 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
 | 93-operador-por-sitio | propuesto (O1, `must` partial de la referencia) | funcionalidad | paridad-referencia | 3 | fullstack | - |
-| 94-racha-actual-de-partidas | disenado (E14) | funcionalidad | progreso | 3 | fullstack | - |
+| 95-partida-anterior-y-siguiente | propuesto (F17; `prev_id`/`next_id` y flechas de ronda) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
+| 96-filtros-en-la-url | propuesto (A10; filtros globales en la query) | funcionalidad | temporada-y-modo | 3 | frontend | - |
+| 97-clutches-silenciosos | propuesto (K11; migracion + `recompute`) | funcionalidad | impacto | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo: Papel en tope de disenado: 83 (espera la 79, PR #81 del humano), 92 y 94 tomables por el Dev (cola 1/4). Queda 93 propuesto para el proximo Arquitecto. Nada `revisado` ni `implementado`.
+Proximo: 92 y 94 en curso (dev). 83 espera la 79 (PR #81 del humano). Papel: 4 `propuesto` (93, 95, 96, 97) para el Arquitecto, que tiene lugar (1 de 3 `disenado`). Nada `revisado` ni `implementado`.
 
 ## Ultimo turno de cada rol
 
@@ -53,7 +59,7 @@ Proximo: Papel en tope de disenado: 83 (espera la 79, PR #81 del humano), 92 y 9
 | qa | 2026-11-06 00:30 | (qa 20261106T0004Z-cibB3Yh, por estado: 1 revisado) Prueba 90 (`revisado` -> `aprobado`, 7bdafbf): VERDE 40256703f (1000, 210, 67); API con base vacia, base de bordes de `factories.py` (reemplazo D->E sin grupo, nick repetido aparte, cambio de nick sin partir la fila, `won=None` fuera del winrate, filtros de mapa y lado, parametros borde en 200) y `seed_demo` (Kaid_/Mozzie99/Thorn.exe 29, 29-0); chunk inicial igual (Duelos lazy); 4 mutantes muertos; LOW de la revision arreglado (*Juntos* en `metricas.md`); `omc-verifier` PASS. Antes, (qa 20261105T1945Z-cLLCG3x, por estado) Prueba 89 (`revisado` -> `aprobado`, 2dba610) sobre la rama fusionada con dev 0127019: VERDE ff44ebd (990, 210, 66); API con base vacia y base de bordes de `factories.py` (14.9 cuenta, 15.0 no, teamkill afuera, sin reloj, defensa/sin spawn, muestra minima, parametros borde); panel en Chromium con chips con señal y los dos textos de vacio; chunk inicial igual; 4 mutantes muertos; `omc-verifier` PASS. |
 | arquitecto | 2026-11-06 00:50 | (arquitecto 20261106T0015Z-cR6uHk3, pedido) Disena 92 (stack rival en el detalle: `rival_stacks` partido en `_stacks_rivales` + `_filas_de_stacks`, `rival_stacks_de_partida` sin filtros con maximalidad por jugadores entre los grupos que aplican a la partida, clave en `match_detail`, aviso con enlaces arriba de las Rondas; seed ya trae el trio 29-0) y 94 (racha actual: `racha_actual_de_partidas` pura sobre las partidas de `matches_summary`, `won=None` ni corta ni suma, `current_streak` en `/api/overview/`, linea en Ultimas partidas del Inicio; e2e "29 victorias seguidas desde 2026-08-01"). Sin consenso ni arena (chicas, una forma). Papel en tope de disenado; 93 queda propuesto. Antes, (arquitecto 20261105T1920Z-cAaALb8, pedido) Disena 90 (stacks rivales: `rival_stacks` con conjuntos cerrados sobre `_rivales_por_partida` extraido de `repeated_rivals`, clave en `/api/duels/`, panel "Stacks rivales que se repiten" en Duelos; titulo ajustado para no romper los locators `hasText` de `humo.spec.js`; el seed ya trae el stack Kaid_/Mozzie99/Thorn.exe, 29 partidas 29-0, sin tocarlo). Sin consenso ni arena (chica, una forma). Sin `propuesto` restante: D9 y D10 a `ALCANCE.md`. Antes, (arquitecto 20261105T1825Z-cVr9Dsg, pedido) Disena 89 (salida del spawn: `spawn_exits` dentro de `/api/positioning/`, corte 15 s, 0 = sin reloj, panel en el Coach) y 91 (fases de la ronda: `fases_de_partida` pura sobre las rondas de `match_detail`, cortes 30/120 s, panel en MatchDetail, despues de la 79). Papel en tope de disenado (83, 89, 91); 90 queda propuesto. Sin consenso ni arena (dos fichas chicas de una forma). |
 | investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
-| po | 2026-11-05 20:15 | (po 20261105T1945Z-cvqUYh1, pedido) Reconcilia: R3 (91) en dev en `ALCANCE.md`, espejo de la 90 a `en curso` + `rama:`. Propone 92 (D9 stack rival en el detalle de la partida, tramo siguiente de la 90), 93 (O1 operador por sitio contra el resto del sitio, `must` partial de la referencia) y 94 (E14 racha actual de partidas, epica `progreso`). Ideas nuevas D11, E16, H10 y O10; libres 87 -> 88. Sin pushes de codigo. Antes, (po cCJ5erc, 18:35) Reconcilia: espejo de la 79 a `entregado` (como su rama), `ALCANCE.md` marca en dev A1 (77), F16 (78), K10 (76), G7 (68), R2 (75) y S1 (80). Propone 89 (S2 salida del spawn por mapa, epica `posicionamiento`, sin enlace a peekabooR6: pregunta al humano), 90 (D4 stacks rivales repetidos, `should` partial de la referencia) y 91 (R3 fases de la ronda en la partida, paridad). Ideas nuevas S3, S4, E15 y O9; libres 84 -> 85. Sin pushes de codigo. |
+| po | 2026-11-06 01:05 | (po 20261106T0041Z-cSxDY1g, pedido) Reconcilia: S2 (89) y D4 (90) en dev en `ALCANCE.md`; espejos de 92 y 94 ya `en curso` (otra sesion). Propone 95 (F17 partida anterior y siguiente, y flechas de ronda), 96 (A10 filtros en la URL, idea del PR #14) y 97 (K11 clutches silenciosos, con migracion y `recompute`). Ideas nuevas K12, D12, C15 y B19; libres 88 -> 89. Sin pushes de codigo. Antes, (po 20261105T1945Z-cvqUYh1, pedido) Reconcilia: R3 (91) en dev en `ALCANCE.md`, espejo de la 90 a `en curso` + `rama:`. Propone 92 (D9 stack rival en el detalle de la partida, tramo siguiente de la 90), 93 (O1 operador por sitio contra el resto del sitio, `must` partial de la referencia) y 94 (E14 racha actual de partidas, epica `progreso`). Ideas nuevas D11, E16, H10 y O10; libres 87 -> 88. Sin p |
 
 ## Para el humano
 
