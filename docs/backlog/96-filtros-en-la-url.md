@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-06 02:05 UTC
 rama: -
 tipo: funcionalidad
 epica: temporada-y-modo
