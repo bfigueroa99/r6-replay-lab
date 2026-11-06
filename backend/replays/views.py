@@ -284,6 +284,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_round_length": agg.by_round_length(**filters),
             "by_start_side": agg.by_start_side(**filters),
             "by_gamemode": agg.by_gamemode(**filters),
+            "by_start_side_map": agg.by_start_side_map(**filters),
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),

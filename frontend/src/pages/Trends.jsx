@@ -22,6 +22,7 @@ import { filasPorModo, hayVariosModos } from '../modoDeJuego.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
+import { MIN_PARTIDAS_LADO, filasLadoInicialMapa } from '../ladoInicialMapa.js'
 import {
   celdasConPocaMuestra,
   filasDeDuracion,
@@ -266,6 +267,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     lado: LADOS[row.side] || row.side,
   }))
+  const ladoInicialPorMapa = filasLadoInicialMapa(data.by_start_side_map)
   const porAnterior = data.by_previous_round ?? []
   // sin marcador es ruido de replays viejos: solo se muestra si tiene rondas
   const porMarcador = (data.by_score_state ?? []).filter(
@@ -680,6 +682,32 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.side}
             csvName="por-lado-inicial"
           />
+          <h3 style={{ margin: '16px 0 8px' }}>Lado inicial por mapa</h3>
+          {ladoInicialPorMapa.length ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'map', label: 'Mapa', left: true },
+                  { key: 'attack_matches', label: 'Partidas en ataque' },
+                  { key: 'attack_winrate', label: 'Ganadas en ataque', digits: 1, suffix: '%', help: 'Partidas ganadas arrancando en ataque, sobre las que tienen resultado.' },
+                  { key: 'defense_matches', label: 'Partidas en defensa' },
+                  { key: 'defense_winrate', label: 'Ganadas en defensa', digits: 1, suffix: '%', help: 'Partidas ganadas arrancando en defensa, sobre las que tienen resultado.' },
+                  { key: 'delta', label: 'Diferencia', digits: 1, suffix: ' pts', help: 'Ataque menos defensa. Si no supera el margen de ruido, es varianza.' },
+                  { key: 'margin', label: 'Margen (± pts)', digits: 1, help: 'Dos errores estándar de la diferencia.' },
+                  { key: 'veredicto', label: 'Veredicto', left: true, sortable: false },
+                ]}
+                rows={ladoInicialPorMapa}
+                initialSort={{ key: 'matches', dir: 'desc' }}
+                rowKey={(row) => `${row.slug}-${row.map_id}`}
+                csvName="lado-inicial-por-mapa"
+              />
+              <p className="note">
+                Un lado necesita {MIN_PARTIDAS_LADO} partidas con resultado para tener porcentaje.
+              </p>
+            </>
+          ) : (
+            <p className="note">Todavía no hay partidas con lado inicial conocido.</p>
+          )}
         </Panel>
       ) : null}
 
