@@ -1,7 +1,7 @@
 # 98. Lado inicial por mapa
 
 estado: revisado
-candado: -
+candado: qa 2026-11-06T05:03Z
 rama: claude/equipo-dev/98-lado-inicial-por-mapa
 tipo: funcionalidad
 epica: lado-y-marcador
