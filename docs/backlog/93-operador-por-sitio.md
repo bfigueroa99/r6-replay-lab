@@ -1,8 +1,8 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: disenado
+estado: en curso 2026-11-06
 candado: -
-rama: -
+rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
 area: fullstack
