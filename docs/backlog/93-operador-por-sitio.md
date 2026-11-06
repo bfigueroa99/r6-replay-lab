@@ -346,6 +346,8 @@ Merge de `origin/dev` (8f3fb74) en la rama, sin conflictos.
 Revision ciega `omc-code-reviewer` (revision.md) sobre el diff: aprobar, 1
 LOW (el nombre del vitest prometia probar la tabla; renombrado).
 
+verificar.sh: VERDE 2f0fa51f5 (1029 tests backend, 227 vitest, 69 e2e).
+
 Skills: no aplica.
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
