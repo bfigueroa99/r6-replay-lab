@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
@@ -21,12 +21,32 @@ import { textoResumenPartida } from '../resumenPartida.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
+import { pasoDeTecla, rondaVecina } from '../navegacionRondas.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
+  // La ruta reusa el componente al ir a otra partida: con la key cambia todo el
+  // estado (ronda elegida, copia) y useApi no muestra la partida previa mientras carga
+  return <DetallePartida key={id} id={id} />
+}
+
+function DetallePartida({ id }) {
   const { data, error, status, loading } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
   const [copia, setCopia] = useState(null)
+  const total = data?.rounds?.length ?? 0
+
+  useEffect(() => {
+    function alApretar(e) {
+      const paso = pasoDeTecla(e)
+      if (!paso || !total) return
+      // sin esto la flecha ademas desplaza la pagina
+      e.preventDefault()
+      setSelected((s) => rondaVecina(s, total, paso))
+    }
+    window.addEventListener('keydown', alApretar)
+    return () => window.removeEventListener('keydown', alApretar)
+  }, [total])
 
   if (status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
   if (error) return <ErrorBox error={error} />
@@ -66,7 +86,13 @@ export default function MatchDetail() {
           </p>
           {rachas && <p className="note">{rachas}</p>}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <EnlacePartida id={match.prev_id} title="Jugada antes">
+            ← Partida anterior
+          </EnlacePartida>
+          <EnlacePartida id={match.next_id} title="Jugada después">
+            Partida siguiente →
+          </EnlacePartida>
           {copia && (
             <span className="note">
               {copia === 'ok' ? 'Copiado' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
@@ -109,7 +135,7 @@ export default function MatchDetail() {
       <StacksRivales stacks={data.rival_stacks} />
 
       {round ? (
-        <Panel title="Rondas" hint="Clic en una ronda para ver su timeline.">
+        <Panel title="Rondas" hint="Clic en una ronda o ← → para ver su timeline.">
           <div className="round-tabs">
             {rounds.map((r, i) => (
               <button
@@ -444,5 +470,21 @@ function Mini({ label, value, sub }) {
       </div>
       {sub ? <div className="sub">{sub}</div> : null}
     </div>
+  )
+}
+
+function EnlacePartida({ id, title, children }) {
+  // en el extremo del historial, un boton apagado y no un Link a /partidas/null
+  if (id == null) {
+    return (
+      <button type="button" className="btn small" disabled title={title}>
+        {children}
+      </button>
+    )
+  }
+  return (
+    <Link className="btn small" to={`/partidas/${id}`} title={title}>
+      {children}
+    </Link>
   )
 }
