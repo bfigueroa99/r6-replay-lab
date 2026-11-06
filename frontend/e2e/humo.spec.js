@@ -121,6 +121,18 @@ test('Operadores muestra el operador por sitio', async ({ page }) => {
     expect(fila.winrate_delta).toBe(0)
   }
 
+  // la tabla tambien se renderiza: misma request con el minimo bajo
+  await page.route('**/api/operators/sites/**', async (route) => {
+    const url = new URL(route.request().url())
+    url.searchParams.set('min_rounds', '5')
+    await route.fulfill({ response: await route.fetch({ url: url.toString() }) })
+  })
+  await page.reload()
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(datos.rows.length)
+  await expect(filas.first()).toContainText('Sin señal')
+  await expect(panel.locator('th', { hasText: 'Veredicto' })).toBeVisible()
+
   expect(errores).toEqual([])
 })
 

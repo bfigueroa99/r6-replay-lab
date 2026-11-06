@@ -106,14 +106,18 @@ class OperadorPorSitioTests(TestCase):
         self.assertEqual(ash["rest_rounds"], 10)
         self.assertEqual(ash["rest_winrate"], 50.0)
 
-    def test_rondas_sin_sitio_u_operador_quedan_fuera(self):
+    def test_rondas_sin_sitio_lado_u_operador_quedan_fuera(self):
         rondas("Ash", 10, 10)
         rondas("Zofia", 10, 0)
         rondas("Ash", 5, 0, site="")
         rondas("", 5, 5)
+        # tandas de 10 para que, sin el exclude, pasen el minimo y se vean
+        rondas("Zofia", 10, 10, side="")
+        rondas("Ash", 10, 0, side="")
         datos = pedir(self.client)
         self.assertEqual({f["site"] for f in datos["rows"]}, {SITIO_A})
         self.assertNotIn("", {f["operator"] for f in datos["rows"]})
+        self.assertEqual({f["side"] for f in datos["rows"]}, {"Attack"})
         ash = fila(datos, "Ash")
         self.assertEqual(ash["rounds"], 10)
         self.assertEqual(ash["rest_rounds"], 10)
