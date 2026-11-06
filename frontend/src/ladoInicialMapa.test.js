@@ -53,7 +53,7 @@ describe('textoVeredicto', () => {
     ])
   })
 
-  it('el minimo es el mismo que el del backend', () => {
+  it('un lado necesita tres partidas con resultado', () => {
     expect(MIN_PARTIDAS_LADO).toBe(3)
   })
 })

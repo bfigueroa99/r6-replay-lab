@@ -687,9 +687,9 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
                 columns={[
                   { key: 'map', label: 'Mapa', left: true },
                   { key: 'attack_matches', label: 'Partidas en ataque' },
-                  { key: 'attack_winrate', label: 'Ganadas en ataque', digits: 0, suffix: '%', help: 'Partidas ganadas arrancando en ataque, sobre las que tienen resultado.' },
+                  { key: 'attack_winrate', label: 'Ganadas en ataque', digits: 1, suffix: '%', help: 'Partidas ganadas arrancando en ataque, sobre las que tienen resultado.' },
                   { key: 'defense_matches', label: 'Partidas en defensa' },
-                  { key: 'defense_winrate', label: 'Ganadas en defensa', digits: 0, suffix: '%', help: 'Partidas ganadas arrancando en defensa, sobre las que tienen resultado.' },
+                  { key: 'defense_winrate', label: 'Ganadas en defensa', digits: 1, suffix: '%', help: 'Partidas ganadas arrancando en defensa, sobre las que tienen resultado.' },
                   { key: 'delta', label: 'Diferencia', digits: 1, suffix: ' pts', help: 'Ataque menos defensa. Si no supera el margen de ruido, es varianza.' },
                   { key: 'margin', label: 'Margen (± pts)', digits: 1, help: 'Dos errores estándar de la diferencia.' },
                   { key: 'veredicto', label: 'Veredicto', left: true, sortable: false },

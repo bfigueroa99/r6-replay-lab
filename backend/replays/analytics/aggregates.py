@@ -1678,8 +1678,8 @@ MIN_PARTIDAS_LADO_INICIAL = MIN_PARTIDAS_MAPA
 
 
 def _celda_lado_inicial(partidas: int, decididas: int, wins: int) -> dict:
-    # Los conteos salen aunque no lleguen al minimo, para que la UI diga
-    # "2 partidas" en vez de un hueco.
+    # Los conteos salen aunque no lleguen al minimo: la tabla muestra la
+    # muestra que hay aunque todavia no tenga porcentaje.
     winrate = _pct(wins, decididas) if decididas >= MIN_PARTIDAS_LADO_INICIAL else None
     return {"matches": partidas, "decided": decididas, "wins": wins, "winrate": winrate}
 
