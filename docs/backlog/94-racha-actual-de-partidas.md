@@ -1,6 +1,6 @@
 # 94. Racha actual de partidas
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/94-racha-actual-de-partidas
 tipo: funcionalidad
@@ -9,11 +9,70 @@ area: fullstack
 prioridad: 3
 fuente: E14 de ALCANCE.md (salio del PR #14, cerrado sin merge el 2026-11-05; la rama `claude/dazzling-einstein-w3qcyq` sirve de referencia)
 archivos: backend/replays/analytics/aggregates.py, frontend/src/rachas.js, frontend/src/rachas.test.js, frontend/src/pages/Dashboard.jsx, backend/tests/test_racha_actual.py, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM, revisor 20261106T0109Z-cGwrEvi, qa 20261106T0135Z-cJAGtBp
+turnos: po 20261105T1945Z-cvqUYh1, arquitecto 20261106T0015Z-cR6uHk3, dev 20261106T0041Z-cJuLRWM, revisor 20261106T0109Z-cGwrEvi, qa 20261106T0135Z-cJAGtBp, release 20261106T0135Z-cJAGtBp
 
 ## PR
 
-(La escribe el Release manager al final.)
+Titulo: `[equipo-dev][backend] Racha actual de partidas en el Inicio`
+
+### Que cambia
+
+En el Inicio, panel Últimas partidas, una linea dice cuantas partidas seguidas
+llevas ganando o perdiendo ahora ("Racha actual: 3 victorias seguidas desde
+2026-11-05", "Racha actual: 1 derrota (2026-11-05)"). Sale de
+`matches_summary.current_streak` de `/api/overview/`, sobre las partidas del
+filtro sin el lado; las partidas sin resultado (`won` nulo) no cortan ni suman.
+
+### Por que esto y no otra cosa
+
+Ficha 94, idea E14 de `ALCANCE.md` (salio del PR #14, cerrado sin merge). La
+rama de ese PR no se reuso: es anterior a `won=None` (ficha 68) y a
+`matches_summary`. Una racha que respete el lado partiria partidas: se
+descarto, como en Partidas ganadas.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE sobre el commit de entrega (ver QA de
+  la ficha; 1011 tests backend, 215 vitest, 67 e2e).
+- Tests nuevos (`backend/tests/test_racha_actual.py`, 11): racha nula sin
+  partidas o solo sin resultado; tres ganadas al final; G, None, G da 2; las
+  sin resultado no entran en `match_ids`; la ultima perdida da 1 derrota; el
+  filtro de mapa cambia la racha; el lado no parte la partida; la API la trae.
+  Vitest (`rachas.test.js`, 5): nula sin texto, singular y plural de victoria y
+  derrota. e2e `humo.spec.js`: "29 victorias seguidas desde 2026-08-01".
+- QA: `curl` con base vacia y sembrada (filtros de mapa, lado, `until=foo`,
+  `page=-1`, `days` borde), UI en Chromium con el selector de mapa (singular y
+  plural, consola limpia), chunk inicial +655 B (+0,3 %), 7 mutaciones que caen.
+- OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (implementacion)
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (revision)
+- OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 6/6 VERIFIED)
+
+### Riesgos y lo que no entra
+
+Sin migracion, `recompute` ni parser: una clave mas en `matches_summary`. Con
+filtro de lado, los puntos de la forma reciente (que si usan el lado) pueden no
+coincidir con la racha; es a proposito y esta en `metricas.md`. Fuera: racha
+mas larga (E4) y señal del Coach (E6).
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+
+Abrir http://127.0.0.1:8000/ : en Últimas partidas, "Racha actual: 29
+victorias seguidas desde 2026-08-01". Con la base real: la racha coincide con
+los ultimos puntos de la forma reciente (sin filtro de lado) y un filtro de
+mapa la cambia.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -49,242 +108,41 @@ que contar los puntos de la forma reciente a mano, y solo se ven 10.
 
 ## Diseno
 
-(arquitecto 20261106T0015Z-cR6uHk3, sobre `origin/dev@c63314e`)
-
-**Forma.** Una sola forma obvia: `matches_summary` ya trae la lista de
-partidas del filtro (sin lado) en orden `played_at, id`; la racha sale de
-recorrerla desde el final. Sin arena ni consenso. `Skills:` no aplica (una
-linea de texto en un panel existente). La rama `claude/dazzling-einstein-w3qcyq`
-(PR #14, cerrado) no se reusa: es anterior a `won=None` (ficha 68) y a
-`matches_summary`; sirve solo como referencia del texto.
-
-### Backend
-
-1. `backend/replays/analytics/aggregates.py`:
-   - Funcion pura nueva, arriba de `matches_summary`:
-     `racha_actual_de_partidas(partidas: list[dict]) -> dict | None`. Recibe
-     las filas de `matches_summary` (con `id`, `played_at`, `won`) ya en orden
-     cronologico. Recorre desde la ultima: salta las de `won is None` (ni
-     cortan ni suman: empate o incompleta, ficha 68); la primera decidida fija
-     el resultado; sigue sumando mientras `won` sea igual y corta en la
-     primera decidida distinta. Devuelve
-     `{"result": "win"|"loss", "length": n, "since": <played_at.isoformat() de la mas vieja de la racha>, "match_ids": [ids en orden cronologico, sin las None]}`,
-     o `None` si no hay ninguna decidida. Docstring con el por que de saltar
-     las `None` (no son resultado; cortarian la racha por un `.rec` faltante).
-   - `matches_summary`: agregar `"current_streak": racha_actual_de_partidas(partidas)`
-     al dict que devuelve. Nada mas cambia: el filtro sin lado ya esta
-     (`filtros` sin `side`), asi que el lado no parte una partida.
-   - Con la ficha 79 en dev, las partidas excluidas ya no llegan a
-     `matches_summary` (sale de `base_queryset`): no cortan ni suman, sin
-     codigo extra.
-2. `backend/replays/views.py`: nada; `overview` ya pone `matches_summary`.
-
-### Frontend
-
-3. `frontend/src/rachas.js` (ya tiene el texto de las rachas de rondas):
-   `textoRachaActual(racha)`:
-   - `null`/`undefined` -> `''`.
-   - `length === 1` -> `"Racha actual: 1 victoria (2026-11-05)"` /
-     `"Racha actual: 1 derrota (2026-11-05)"`.
-   - `length > 1` -> `"Racha actual: 3 victorias seguidas desde 2026-11-05"` /
-     `"... 2 derrotas seguidas desde ..."`.
-   - Fecha: `since.slice(0, 10)` (como el resto de la UI; `USE_TZ = False`).
-4. `frontend/src/rachas.test.js`: `la racha actual nula no da texto`,
-   `una victoria va en singular sin seguidas`,
-   `varias derrotas van en plural con desde`.
-5. `frontend/src/pages/Dashboard.jsx`, panel **Últimas partidas**: arriba del
-   `.form-row`, `{racha && <p className="note racha-actual" style={{ margin: '0 0 8px' }}>{racha}</p>}`
-   con `const racha = textoRachaActual(overview.data.matches_summary?.current_streak)`.
-   Con `current_streak: null` no se renderiza nada. Color: si se quiere,
-   clase `win`/`loss` ya existente en `styles.css`; no es requisito.
-   Nota: la forma reciente usa todos los filtros (lado incluido) y la racha
-   no usa el lado, igual que "Partidas ganadas": con filtro de lado pueden no
-   coincidir los puntos con la racha. Es a proposito (una partida no se
-   parte por lado) y queda en `metricas.md`.
-
-### Tests backend
-
-6. `backend/tests/test_racha_actual.py` (nuevo; `make_match` de `factories.py`
-   con `my_score`/`opponent_score` y `index` para el orden, y
-   `Match.objects.filter(...).update(won=None)` para las incompletas, como en
-   `test_stacks_rivales.py`; cada partida con una ronda y su `make_round_player`
-   para que `base_queryset` la vea):
-   - `test_sin_partidas_la_racha_es_nula`
-   - `test_tres_ganadas_al_final_dan_racha_de_tres` (P, G, G, G -> win 3,
-     `since` de la primera G, `match_ids` en orden)
-   - `test_una_partida_sin_resultado_no_corta_ni_suma` (G, None, G -> win 2)
-   - `test_solo_partidas_sin_resultado_dan_nula`
-   - `test_la_ultima_perdida_da_racha_de_una_derrota` (G, G, P -> loss 1)
-   - `test_el_filtro_de_mapa_cambia_la_racha` (en orden: Club House G,
-     Border P, Club House G; sin filtro -> win 1; con `map=club-house` ->
-     win 2)
-   - `test_el_filtro_de_lado_no_parte_la_partida` (partida con una ronda de
-     ataque y una de defensa; `side=Attack` da la misma racha que sin filtro)
-   - `test_la_api_del_resumen_trae_la_racha`: `GET /api/overview/` ->
-     `matches_summary.current_streak.length`.
-   Ademas tests directos de `racha_actual_de_partidas` con dicts a mano para
-   el orden (no hace falta base).
-
-### e2e
-
-7. `frontend/e2e/humo.spec.js`, en `el Resumen muestra tus partidas` (que ya
-   fija los numeros de `seed_demo`): `seed_demo` tiene 29 partidas, todas
-   ganadas, la primera a `2026-08-01T20:00` (`INICIO`, `numero = 0`), asi que
-   `await expect(page.locator('.racha-actual')).toHaveText('Racha actual: 29 victorias seguidas desde 2026-08-01')`.
-   No hace falta tocar el seed.
-
-### docs
-
-8. `docs/metricas.md`, `## Base`, fila debajo de **Partidas ganadas**:
-   **Racha actual de partidas** — partidas seguidas con el mismo resultado
-   contando hacia atras desde la mas reciente (orden `played_at`, `id`), sobre
-   las partidas del filtro sin el lado (como Partidas ganadas). Las partidas
-   sin resultado (empate o incompleta, `won` nulo) no cortan ni suman. "Desde"
-   es la fecha de la mas vieja de la racha. Inicio, panel Últimas partidas.
-
-### Orden
-
-1 -> 6 -> 3, 4 -> 5 -> `npm run build` -> 7 -> 8 -> `check.sh`.
-
-### Que puede romperse
-
-- `matches_summary` lo consume `ResumenPartidas`; una clave mas no la rompe.
-  Si el Coach o algun test compara el dict entero de `matches_summary` con
-  `assertEqual`, hay que sumarle la clave (`git grep -n "matches_summary" backend/tests`).
-- Comparte `aggregates.py` y `metricas.md` con la ficha 92 (disenada en el
-  mismo turno) y con la rama abierta de la 79: funciones y filas distintas,
-  se resuelve con `git merge origin/dev`. Prioriza, no bloquea. Sin migracion.
-
-### Verificacion manual
-
-`seed_demo`, `runserver`, Inicio: en Últimas partidas, "Racha actual: 29
-victorias seguidas desde 2026-08-01". Con la base real: la racha coincide con
-los ultimos puntos de la forma reciente (sin filtro de lado), y un filtro de
-mapa la cambia.
-
-OMC: plan=— (ficha chica, una forma obvia) · revisión=— · verificación=—
+(arquitecto 20261106T0015Z-cR6uHk3) Funcion pura `racha_actual_de_partidas`
+en `aggregates.py` que recorre desde la ultima las filas de `matches_summary`
+(orden `played_at`, `id`, filtro sin lado), salta las `won=None` y corta en el
+primer resultado distinto; clave `current_streak` en `matches_summary`;
+`textoRachaActual` en `rachas.js`; `.racha-actual` en el panel Últimas
+partidas de `Dashboard.jsx`; fila en `metricas.md` (`## Base`). Detalle en
+`git log` de esta ficha.
 
 ## Implementacion
 
-(dev 20261106T0041Z-cJuLRWM, sobre `origin/dev@c63314e`)
-
-Quedo el diseno completo, sin desvios:
-
-- `aggregates.py`: `racha_actual_de_partidas(partidas)` (pura) y la clave
-  `current_streak` en `matches_summary`. Las `won=None` se saltan sin cortar.
-- `rachas.js`: `textoRachaActual`; `Dashboard.jsx`: `.racha-actual` arriba de
-  la forma reciente en Últimas partidas, nada con `current_streak: null`.
-- `docs/metricas.md`: fila **Racha actual de partidas** en `## Base`.
-
-Criterios -> tests:
-- clave y forma, `null` sin decididas: `test_sin_partidas_la_racha_es_nula`,
-  `test_solo_partidas_sin_resultado_dan_nula`,
-  `test_tres_ganadas_al_final_dan_racha_de_tres` (since y match_ids),
-  `test_cuenta_desde_la_ultima_y_corta_en_el_otro_resultado` (pura).
-- `won=None` no corta ni suma: `test_una_partida_sin_resultado_no_corta_ni_suma`,
-  `test_las_sin_resultado_no_entran_en_los_ids`.
-- filtro (sin lado): `test_el_filtro_de_mapa_cambia_la_racha`,
-  `test_el_filtro_de_lado_no_parte_la_partida` (la perdida solo tiene rondas
-  en defensa: con lado aplicado daria victoria).
-- API: `test_la_api_del_resumen_trae_la_racha`; ademas
-  `test_la_ultima_perdida_da_racha_de_una_derrota`.
-- singular/plural: vitest `una victoria va en singular sin seguidas`,
-  `una derrota va en singular sin seguidas`, `varias derrotas van en plural con desde`,
-  `varias victorias van en plural con desde`, `la racha actual nula no da texto`.
-- e2e: `el Resumen muestra tus partidas` (humo.spec.js) espera
-  "Racha actual: 29 victorias seguidas desde 2026-08-01".
-
-Verificacion: verificar.sh VERDE 692b47fb3 (1011 tests backend, 215 vitest, 67 e2e).
-
-Skills: no aplica (diseno sin dominio nuevo).
+(dev 20261106T0041Z-cJuLRWM) El diseno completo, sin desvios. VERDE 692b47fb3.
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
-
-## Pendiente
-
-## Para el humano
 
 ## Revision 2026-11-06 sobre 24c968d
 
-(revisor 20261106T0109Z-cGwrEvi, diff `origin/dev...24c968d`, dev sin moverse desde `c63314e`)
-
-Revision a ciegas (`omc-code-reviewer`, eje de estandares; diff de 184 lineas
-y un solo tema, sin eje de intencion ni de seguridad: no toca POST, `.rec`,
-rutas ni dependencias): sin hallazgos.
-
-Confirmado por el lider:
-- `racha_actual_de_partidas` recibe las filas de `matches_summary`, que ya
-  vienen con `order_by("played_at", "id")` y sin el lado (`filtros` sin
-  `side`): orden y filtro como pide la ficha.
-- `won=None` se salta con `continue` antes de comparar: no corta ni suma.
-  Lo prueban `test_una_partida_sin_resultado_no_corta_ni_suma` (G, None, G da
-  2: daria 1 si cortara y 3 si sumara) y `test_las_sin_resultado_no_entran_en_los_ids`.
-- Filtro de mapa (`test_el_filtro_de_mapa_cambia_la_racha`, 1 sin filtro y 2
-  con filtro) y de lado (`test_el_filtro_de_lado_no_parte_la_partida`: la
-  perdida solo tiene rondas de defensa, con el lado aplicado daria victoria).
-- Singular y plural: cuatro casos en vitest, mas el nulo.
-- UI: `.racha-actual` solo con texto no vacio; con `current_streak: null`
-  `textoRachaActual` da `''` y no se renderiza nada. Texto con tildes
-  ("Últimas partidas" ya existia), identificadores sin tildes, sin
-  `console.log` ni `print`.
-- e2e: "29 victorias seguidas desde 2026-08-01" sale de `seed_demo` (29
-  partidas ganadas desde `INICIO`).
-- Fila **Racha actual de partidas** en `docs/metricas.md`, `## Base`.
-- El diff no sale de `archivos:` (`views.py` no se toco, como decia el diseno).
-
-Criterios de aceptacion: los seis cubiertos por tests (mapeo en
-`## Implementacion`, comprobado).
-
-Verificacion: verificar.sh VERDE 6f70db827 (1011 tests backend, 215 vitest, 67 e2e).
-
-Veredicto: aprobar -> `revisado`.
-
+(revisor 20261106T0109Z-cGwrEvi) Aprobar, sin hallazgos; los seis criterios
+cubiertos por tests. VERDE 6f70db827.
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## QA 2026-11-06 sobre 46f257a
 
-(qa 20261106T0135Z-cJAGtBp; ejercita el sistema, no relee el diff.)
-
-Todo en el scratchpad, sin `.rec` ni `.sqlite3` en el repo. Bases: `vacia`
-(solo `migrate`) y `sembrada` con `factories.py`: P (Border, id 1), G (Club
-House, id 2), sin resultado (Border, id 3, `won=None`), G (Club House, rondas
-de ataque y defensa, id 4), G (Border, solo rondas de defensa, id 5) y una
-partida Oregon sin rondas (id 6). Cada una con
-`SQLITE_PATH=<base> R6_ENV_FILE=<env vacio> python3 manage.py runserver`.
-
-- `check.sh` (`verificar.sh`): VERDE 46f257a92 en 119 s (1011 tests backend,
-  215 vitest, 67 e2e); el e2e del Inicio espera "Racha actual: 29 victorias
-  seguidas desde 2026-08-01" con `seed_demo`.
-- `curl /api/overview/`, `matches_summary.current_streak`:
-  - base vacia, sin filtro y `?map=border`: `null` (200).
-  - sembrada, sin filtro: `{"result": "win", "length": 3, "since": "2026-09-01T21:00:00", "match_ids": [2, 4, 5]}`:
-    la sin resultado (id 3) no corta ni suma ni entra en los ids.
-  - `?map=club-house`: win 2 `[2, 4]`; `?map=border`: win 1 `[5]` (la
-    perdida id 1 queda detras de la sin resultado).
-  - `?side=Attack` y `?side=Defense`: iguales a sin filtro (la id 5 solo tiene
-    defensa y sigue contando): el lado no parte la partida.
-  - `?map=oregon` (solo la partida sin rondas), `?map=noexiste`,
-    `?since=2099-01-01`, `?days=-1`: `null` (200).
-  - `?map=` vacio, `?until=foo`, `?page=-1`, `?days=99999999999`: 200, win 3.
-  - el resto de `matches_summary` sigue igual (5 partidas, 3-1, 1 sin resultado).
-- Vecinos `/api/matches/`, `/api/matches/2/`, `/api/trends/`, `/api/coach/`,
-  `/api/operators/`: 200 en las dos bases (`/api/matches/2/` 404 en la vacia).
-- UI en Chromium (playwright, consola sin errores ni warnings): base vacia,
-  `.racha-actual` no se renderiza; sembrada, "Racha actual: 3 victorias
-  seguidas desde 2026-09-01"; con el selector Mapa en Border, "Racha actual: 1
-  victoria (2026-09-02)" (singular, sin "seguidas"); en Club House, "2
-  victorias seguidas desde 2026-09-01".
-- Chunk inicial de `vite build`: 191939 B en `origin/dev` -> 192594 B (+655 B,
-  +0,3 %).
-- Mutacion (todas caen, el codigo quedo restaurado con `git checkout`):
-  `None` corta (`break`) -> 2 tests; `None` suma -> 3 tests; no cortar en el
-  otro resultado -> `test_el_filtro_de_mapa_cambia_la_racha`; `since` de la
-  ultima -> 3 tests; el lado filtra partidas ->
-  `test_el_filtro_de_lado_no_parte_la_partida`; sin singular en
-  `textoRachaActual` -> 2 vitest; victorias/derrotas invertidas -> 2 vitest.
-
-Criterios: los seis cumplidos con la evidencia de arriba. Sin migracion,
-parser, `recompute`, Electron ni `.ps1`: no hay "Verificar en el PC".
-
-Veredicto: `aprobado`.
-
+(qa 20261106T0135Z-cJAGtBp) VERDE 46f257a92 (1011/215/67). `curl` a
+`/api/overview/` con base vacia (`null`) y sembrada con `factories.py` (P, G,
+sin resultado, G, G y una sin rondas): win 3 `[2, 4, 5]`; `?map=club-house`
+win 2; `?map=border` win 1; `?side=Attack|Defense` igual a sin filtro;
+`?map=oregon`, `?since=2099-01-01`, `?days=-1` `null`; `until=foo`, `page=-1`
+200. UI en Chromium: nada con base vacia, singular y plural con el selector de
+mapa, consola limpia. Chunk inicial +655 B. Mutaciones: 7 de 7 caen. Sin
+"Verificar en el PC". Veredicto: `aprobado`.
 OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 6/6 VERIFIED)
+
+## Release
+
+(release 20261106T0135Z-cJAGtBp, mismo turno que la QA) Puerta de merge: ver `ESTADO.md`.
+
+## Pendiente
+
+## Para el humano
