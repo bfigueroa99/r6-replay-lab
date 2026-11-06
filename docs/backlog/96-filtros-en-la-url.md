@@ -1,7 +1,7 @@
 # 96. Filtros en la URL
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T02:29Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/96-filtros-en-la-url
 tipo: funcionalidad
 epica: temporada-y-modo
@@ -247,6 +247,75 @@ Arena: no (una sola forma razonable: estado en App sincronizado con la query).
 OMC: plan=— (ficha chica, solo frontend, de una forma obvia) · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261106T0228Z-cCNBxR6)
+
+Quedo el diseno completo, en su orden:
+
+- `frontend/src/filtrosUrl.js` (nuevo, logica pura): `CLAVES_DE_URL`,
+  `RUTAS_CON_FILTROS`, `usaFiltros`, `filtrosDeUrl`, `queryDeFiltros`,
+  `conFiltros` y `mismosFiltros`, con las reglas de validacion del diseno.
+- `frontend/src/App.jsx`: estado inicial perezoso desde la URL,
+  `cambiarFiltros` (reemplaza a `setFilters` en el `context`, navega con
+  `replace`), un efecto que sincroniza URL -> estado o estado -> URL (lee los
+  filtros por `useRef`, navega solo si la query canonica difiere: sin bucle) y
+  los `NavLink` del menu con `conFiltros` solo para las rutas con barra.
+- `frontend/src/components/Filters.jsx`: `abierto` deriva el modo "Entre dos
+  fechas" tambien del valor, en los dos sentidos.
+- `frontend/e2e/humo.spec.js`: el test "un filtro sin rondas deja la barra en
+  todas las paginas" buscaba el enlace del menu con `a[href="/coach"]` exacto;
+  ahora el `href` lleva la query, pasa a `a[href^=...]`. Unica linea tocada
+  fuera de `archivos:`, necesaria.
+
+Cada criterio y su test:
+
+- funcion pura ida y vuelta, vacias, desconocidas, valores raros:
+  `filtrosUrl.test.js` (13 tests): `ida y vuelta sin perdida`, `las claves
+  vacias y false no se escriben`, `las claves desconocidas de la url se
+  ignoran`, `days invalido se descarta`, `una fecha invalida se descarta y una
+  valida saca a days`, `session cero es un filtro valido`, `ranked_only de un
+  enlace viejo se lee como true`, `side solo acepta attack o defense`, `el
+  texto se recorta y uno demasiado largo se descarta`, `acepta
+  URLSearchParams y la query sin signo`, `el orden de la query es fijo`,
+  `usaFiltros distingue partidas de su detalle`, `conFiltros sin filtros no
+  deja un signo de pregunta suelto`.
+- elegir un filtro actualiza la URL con `replace` y recargar deja lo mismo:
+  e2e `recargar conserva el filtro y los números` (mide `history.length`
+  antes y despues del select).
+- el menu conserva los filtros y la URL los lleva: e2e `el menú lleva los
+  filtros a la otra página` y `volver del detalle de una partida no pierde
+  los filtros`.
+- URL directa con filtros llega a la API: e2e `una URL directa llega a la API
+  sin los valores raros` (request real a `/api/trends/`, sin `days=abc` ni
+  `foo`, y la URL queda reescrita).
+- e2e de recarga sin errores de consola: todos los specs con
+  `vigilarConsola`.
+- Extras: `un enlace interno sin query hereda los filtros` ("Ver en Duelos"
+  del detalle) y `Limpiar deja la URL sin query`.
+
+Desvios del diseno:
+
+- `days` valida contra los periodos del select (`DIAS_DEL_PERIODO = 7, 30,
+  90`) y no contra cualquier entero de hasta 4 digitos: con `?days=45` la
+  barra mostraba "Todo el historial" filtrando 45 dias (MEDIUM del revisor
+  ciego). Un comentario en `RANGES` de `Filters.jsx` pide mantenerlos iguales.
+- El efecto deja mandar a la URL tambien cuando trae una query que no deja
+  ningun filtro valido (`?foo=1` por un Link interno): se reescribe sin query
+  en vez de heredar los del estado. Ningun Link interno lleva query hoy.
+- `session` fuera de rango (`?session=99999`) sigue pasando: es posicional y
+  no se puede validar sin la lista de sesiones; la barra muestra "Todas" y la
+  pagina 0 rondas. Anotado, no bloquea (el diseno ya lo aceptaba).
+- El e2e de recarga espera `networkidle` antes del `reload`: sin eso el
+  reload cortaba un fetch del Resumen y `vigilarConsola` lo anotaba.
+
+Revision ciega `omc-code-reviewer` (revision.md): aprobar, 3 hallazgos (1
+MEDIUM `days` fuera del select, 1 LOW assert de historial medido despues del
+select, 1 LOW `abierto` sin el sentido inverso); los tres corregidos.
+
+verificar.sh: VERDE b790722e9 (1016 tests backend, 234 vitest, 74 e2e).
+
+Skills: no aplica (react-router y vitest de logica pura ya resueltos en el repo).
+OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
 
 ## Para el humano
 
