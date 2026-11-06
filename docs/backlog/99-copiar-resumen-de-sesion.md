@@ -1,7 +1,7 @@
 # 99. Copiar el resumen de una sesion
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-06T04:12Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/99-copiar-resumen-de-sesion
 tipo: funcionalidad
 epica: exportar
@@ -185,3 +185,46 @@ filtros; las sin resultado (empate o incompleta) no son ni una ni otra. Y
 rondas en esa partida, con dos partidas o mas; solo en el texto copiado.
 
 OMC: plan=— · revisión=— · verificación=—
+
+## Implementacion
+
+Dev 20261106T0411Z-c9pasST. Quedo todo el diseno:
+
+- `aggregates.sessions`: cada fila suma `wins`, `losses`, `decided`, `undecided`,
+  `best_match` y `worst_match`. `rating_baseline()` se calcula una vez por
+  request; los `Match` de las partidas filtradas se leen en una sola query.
+  `_extremos_de_sesion` copia la fila antes de `derive`, ordena por
+  (`played_at`, `id`) para que en un empate gane la jugada antes, y no da peor
+  partida si todas tienen el mismo rating.
+- `frontend/src/resumenSesion.js` (`textoResumenSesion`), puro, con su `numero()` local.
+- `Trends.jsx`, tabla Sesiones: columna "Resultado" (`1G 0P`, CSV `1-0`, sin
+  orden) y una ultima columna con el boton "Copiar" (`csv: false`). El aviso
+  va en un `<p className="note" role="status">` arriba de la tabla.
+- `docs/metricas.md`, seccion Sesiones: filas **Resultado de la sesion** y
+  **Mejor / peor partida de la sesion**.
+
+Tests: `ResumenDeSesionTests` en `backend/tests/test_sessions.py` (los cinco del
+diseno, mas `test_la_partida_extrema_lleva_la_etiqueta_de_version_del_mapa`),
+`frontend/src/resumenSesion.test.js` (3 casos) y el e2e `'Tendencias copia el
+resumen de una sesion'` en `humo.spec.js`.
+
+Desvios del diseno:
+
+- Una sesion de una partida (`hours: 0`) no lleva "· 0 h" en la cabecera: no
+  dice nada.
+- El aviso dice "Sesión copiada (MM-DD HH:MM)" con la fecha de la sesion, no
+  "Sesión copiada" a secas. El aviso se queda a la vista si cambian los
+  filtros o el orden, y sin la fecha no se sabria cual se copio (hallazgo LOW
+  de la revision ciega).
+- `decided` queda en la API aunque el frontend no lo use: lo pide el
+  criterio 1, y tiene la misma forma que `matches_decided` del resumen.
+
+Revision ciega (`omc-code-reviewer`, eje de estandares): APPROVE, 4 LOW. Se
+arreglaron 3: el comentario de la copia antes de `derive`, la fecha en el
+aviso y, en el e2e, que el texto de una sesion de una partida no tenga
+"Mejor partida". `decided` se dejo (ver arriba).
+
+Verificacion: verificar.sh VERDE e89bfd5ab (1042 tests backend, 254 vitest, 77 e2e).
+
+Skills: no aplica (el diseno ya resolvia el portapapeles y la tabla).
+OMC: plan=— · revisión=4 hallazgos (3 arreglados) · verificación=—
