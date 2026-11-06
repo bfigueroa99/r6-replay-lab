@@ -1,7 +1,7 @@
 # 95. Partida anterior y siguiente, y flechas para cambiar de ronda
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-06T02:28Z
 rama: claude/equipo-dev/95-partida-anterior-y-siguiente
 tipo: funcionalidad
 epica: revision-de-rondas
