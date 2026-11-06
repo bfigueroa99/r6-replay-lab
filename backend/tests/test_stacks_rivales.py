@@ -164,6 +164,9 @@ class StacksRivalesTests(TestCase):
         grupos = self._detalle(club, "?map=border")
         self.assertEqual([nicks(g) for g in grupos], [["A", "B"]])
         self.assertEqual(grupos[0]["matches"], 2)
+        # la funcion tampoco filtra por su cuenta: con el filtro, Duelos no ve al grupo
+        self.assertEqual(agg.rival_stacks(map="border"), [])
+        self.assertEqual(len(agg.rival_stacks_de_partida(club.id)), 1)
 
     def test_una_partida_sin_rondas_trae_lista_vacia(self):
         self._partida(0, ["A", "B"])

@@ -1,6 +1,7 @@
 // Textos del aviso de stack rival del detalle de la partida. El record va
 // desde tu lado, igual que la fila de Duelos, para que los dos digan lo mismo.
 
+// El texto plano del grupo; la vista arma lo mismo con enlaces via separadorAntes.
 export function nombresDelGrupo(players) {
   const nombres = (players ?? []).map((j) => j.username)
   if (nombres.length <= 1) return nombres.join('')
