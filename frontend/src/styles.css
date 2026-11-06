@@ -557,3 +557,10 @@ body.streamer .ruleta-head { justify-content: flex-end; }
 .matriz td { color: var(--muted); }
 .matriz td.con-dato { color: var(--text); font-weight: 600; }
 .matriz td small { font-weight: 400; color: var(--muted); }
+
+/* ------------------------------------------------------------- comparar */
+
+/* la diferencia se lee desde A: verde si A sale mejor, rojo si sale mejor B */
+table.comparar .mejor-a { color: var(--good); }
+table.comparar .mejor-b { color: var(--bad); }
+table.comparar tbody th { text-transform: none; font-size: inherit; letter-spacing: 0; color: var(--text); border-bottom: 0; }
