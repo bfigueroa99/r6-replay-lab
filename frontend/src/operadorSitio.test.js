@@ -34,7 +34,7 @@ describe('operadorSitio', () => {
     expect(textoSinFilas(null)).toContain('llega a 10 rondas')
   })
 
-  it('la tabla conserva el orden por |delta| que manda el backend', () => {
+  it('conOrdenDelBackend numera las filas en el orden recibido', () => {
     // el backend ya ordena por |delta|; ordenadas por mapa saldrian al reves
     const filas = conOrdenDelBackend([
       { map: 'Bank', winrate_delta: -30 },

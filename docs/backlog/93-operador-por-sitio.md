@@ -1,7 +1,7 @@
 # 93. Operador por sitio contra el resto del sitio
 
-estado: con hallazgos
-candado: dev 2026-11-06T02:28Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/93-operador-por-sitio
 tipo: funcionalidad
 epica: paridad-referencia
@@ -322,6 +322,32 @@ diseno.
 
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (0 arreglados; 1 HIGH, 1 LOW, los dos confirmados) · verificación=—
+
+## Correccion 2026-11-06
+
+(dev 20261106T0228Z-c6PJnck)
+
+Los dos hallazgos de la revision sobre 5bcfc11, corregidos:
+
+- [HIGH] Orden de la tabla: `operadorSitio.js` suma `conOrdenDelBackend(filas)`
+  (numera las filas en una columna `orden`, el patron de `Trends.jsx`) y
+  `TablaPorSitio` la usa con `initialSort={{ key: 'orden', dir: 'asc' }}`.
+  Test: el e2e `Operadores muestra el operador por sitio` suma un paso con
+  `route.fulfill` y dos filas fijas (Bank -30 `hunde`, Oregon +5 `ruido`):
+  con el default de `DataTable` (mapa descendente) Oregon saldria primero; el
+  e2e exige Bank primero. Vitest de `conOrdenDelBackend` (numeracion y lista
+  vacia).
+- [LOW] `test_rondas_sin_sitio_lado_u_operador_quedan_fuera`: la tanda sin
+  sitio paso a dos de 10 (Ash 10/0 y Zofia 10/10). Mutante: sin
+  `.exclude(round__site="")` el test falla (lo corri: FAILED failures=1).
+
+Merge de `origin/dev` (8f3fb74) en la rama, sin conflictos.
+
+Revision ciega `omc-code-reviewer` (revision.md) sobre el diff: aprobar, 1
+LOW (el nombre del vitest prometia probar la tabla; renombrado).
+
+Skills: no aplica.
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## QA
 
