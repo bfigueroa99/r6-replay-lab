@@ -8,7 +8,8 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
-  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja; (2) si
+  `## Pendiente`: se continua; (1) `con hallazgos` mas vieja que no este
+  `estancada` (esa va al Arquitecto); (2) si
   `COLA < 4` y `TOTAL < 6`, `disenado` de mayor prioridad (a igual
   prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
   no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de

@@ -116,6 +116,11 @@ else
     pl=$(tr '\n' ' ' < "$bl/ESTADO.plantilla.md" 2>/dev/null | tr -s ' ')
     echo "$pl" | grep -qF -- "COLA=<n>/$tc TOTAL=<n>/$tt" || det="$det ESTADO.plantilla.md sin 'COLA=<n>/$tc TOTAL=<n>/$tt';"
 fi
+# Las vueltas de Dev que estancan una ficha, en estado.sh y en el Arquitecto.
+tv=$(tope tope_vueltas)
+if [ -z "$tv" ]; then det="$det estado.sh sin tope_vueltas;"
+else tr '\n' ' ' < "$ro/arquitecto.md" | tr -s ' ' | grep -qF -- "$tv o mas \`dev\` en \`turnos:\`" || det="$det roles/arquitecto.md sin '$tv o mas \`dev\` en \`turnos:\`';"
+fi
 # El largo del turno tambien vive en los dos lados.
 mt=$(grep -oE 'minutos_turno=[0-9]+' "$tu" 2>/dev/null | head -1 | cut -d= -f2)
 if [ -z "$mt" ]; then det="$det turno.sh sin minutos_turno;"
@@ -201,6 +206,9 @@ casos=(
 '|con_hallazgos=1 espera_humano=1 hora=0001|rol=dev motivo=por estado: 1 con_hallazgos, 0 huerfanas reloj=release franja=0'
 '|disenado=2 propuesto=1 cola=1 total=1 bloqueadas=1 hora=0331|rol=dev motivo=por estado: 2 disenado, lugar en cola; 1 bloqueadas por independencia reloj=po franja=1'
 'revisor|bloqueadas=1 hora=0331|rol=revisor motivo=pedido reloj=po franja=1'
+'|estancadas=1 propuesto=2 hora=0905|rol=arquitecto motivo=por estado: 1 estancadas reloj=dev franja=3'
+'|estancadas=1 con_hallazgos=1 hora=1201|rol=dev motivo=por estado: 1 con_hallazgos, 0 huerfanas reloj=revisor franja=4'
+'|estancadas=1 implementado=1 hora=0905|rol=revisor motivo=por estado: 1 implementado reloj=dev franja=3'
 )
 malos=0
 for c in "${casos[@]}"; do
@@ -366,6 +374,14 @@ ts=$(mktemp -d)
     for c in 'cAAAAA|implementado=0 revisado=1 bloqueadas=1 ' 'cCCCCC|implementado=1 revisado=0 bloqueadas=1 ' 'cBBBBB|implementado=1 revisado=0 bloqueadas=1 ' 'cOTRO1|implementado=1 revisado=1 bloqueadas=0 ' '|implementado=1 revisado=1 bloqueadas=0 '; do
         s=$(r "${c%%|*}"); [ "$s" = "${c#*|}" ] || echo "estado.sh con contexto '${c%%|*}': '$s' (esperado '${c#*|}')"
     done
+    # Estancada (la 81 dio 4 vueltas): tres dev desde el ultimo arquitecto,
+    # notas entre parentesis incluidas, va al Arquitecto; una con un
+    # arquitecto despues de sus tres dev vuelve a contar para el Dev.
+    ficha c 82-estancada 'con hallazgos' 'arquitecto 20261101T0000Z-cA, dev 20261101T0100Z-cD1, revisor 20261101T0200Z-cR1, dev 20261101T0300Z-cD2 (relevo de qa, P7), qa 20261101T0400Z-cQ1, dev 20261101T0500Z-cD3, revisor 20261101T0600Z-cR2'
+    ficha d 83-rehecha 'con hallazgos' 'dev 20261101T0100Z-cD1, dev 20261101T0300Z-cD2, dev 20261101T0500Z-cD3, arquitecto 20261101T0700Z-cA (estancada)'
+    s=$(EQUIPO_AHORA=$(date -u +%s) EQUIPO_INDEPENDENCIA="$in" bash "$es" --resumen 2>/dev/null | grep -oE 'con_hallazgos=[0-9]+|estancadas=[0-9]+' | tr '\n' ' ')
+    [ "$s" = 'con_hallazgos=1 estancadas=1 ' ] || echo "estado.sh con una estancada y una rehecha: '$s' (esperado 'con_hallazgos=1 estancadas=1 ')"
+    EQUIPO_AHORA=$(date -u +%s) EQUIPO_INDEPENDENCIA="$in" bash "$es" 2>/dev/null | grep -F '82-estancada' | grep -qF 'estancada: 3 vueltas de dev' || echo "estado.sh no marca la 82 como estancada en su linea"
 ) > "$ts/fallos" 2>&1
 [ -s "$ts/fallos" ] && det="$det $(tr '\n' ';' < "$ts/fallos")"
 rm -rf "$ts"
@@ -498,7 +514,7 @@ grep -qF 'PRUEBAS_SIN_RED=1 bash scripts/equipo-dev/pruebas.sh' "$base/scripts/c
     || det=" scripts/check.sh no corre pruebas.sh"
 cierra en-check "$det"
 
-# 11. resumen: contra el remoto real, la linea existe y trae los 21 pares en
+# 11. resumen: contra el remoto real, la linea existe y trae los 22 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
 # estable: la rama del playbook no aparece como rama de trabajo.
 if [ "${PRUEBAS_SIN_RED:-}" = 1 ]; then
@@ -508,7 +524,7 @@ else
     salida=$(bash "$es" --resumen 2>/dev/null)
     lineas=$(printf '%s\n' "$salida" | grep -c .)
     claves=$(printf '%s\n' "$salida" | grep -m1 '^RESUMEN ' | sed 's/^RESUMEN //' | tr ' ' '\n' | grep -E '^[a-z_0-9]+=[^ ]+$' | cut -d= -f1 | tr '\n' ' ')
-    esperadas='propuesto disenado en_curso huerfanas implementado revisado con_hallazgos aprobado entregado espera_humano cola total tope_cola tope_total tope_propuesto tope_disenado ideas_libres sin_merge pausa sin_rastro_48h bloqueadas '
+    esperadas='propuesto disenado en_curso huerfanas implementado revisado con_hallazgos aprobado entregado espera_humano cola total tope_cola tope_total tope_propuesto tope_disenado ideas_libres sin_merge pausa sin_rastro_48h bloqueadas estancadas '
     [ "$lineas" -eq 1 ] || det="$det $lineas lineas en vez de 1;"
     [ "$claves" = "$esperadas" ] || det="$det pares: '${claves:-ninguno}';"
     filas=$(bash "$es" 2>/dev/null | grep -c 'equipo-dev/playbook |')

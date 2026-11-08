@@ -167,7 +167,8 @@ linea `RESUMEN` de `estado.sh --resumen`, el primero que aplique:
 2. `qa` si hay `revisado`.
 3. `revisor` si hay `implementado`.
 4. `dev` si hay `con hallazgos` o huerfanas (`en curso` con `candado: -` o
-   sin commits sobre la ficha en 3 h).
+   sin commits sobre la ficha en 3 h); si no, `arquitecto` si hay
+   `estancadas` (`roles/arquitecto.md`).
 5. `release` si hay `entregado (...)` (espera al humano) y el reloj dice
    release, motivo `reloj: release, N en espera`: lo que quedo `pendiente
    de merge` por un motivo transitorio (sin herramientas, veto levantado,

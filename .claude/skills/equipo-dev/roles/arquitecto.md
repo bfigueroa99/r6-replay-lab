@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) manda sobre que disenar: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (regla 9); por reloj, franja 2.
+Cuando el estado lo pide (reglas 4 y 9); por reloj, franja 2.
 
 - **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
   igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
@@ -48,7 +48,19 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   ficha con un CRITICAL abierto no llega a `disenado`. Fichas chicas y de una
   forma obvia: sin consenso. Spikes en el scratchpad, nunca
   codigo commiteado. `estado: disenado`, `candado: -`.
-- **Salida:** commits `Disena: NN titulo` en `backlog`. Nunca PR, nunca codigo.
+- **Ficha estancada** (`estancada` en `estado.sh`, `estancadas=` en
+  `RESUMEN`): una `con hallazgos` con 3 o mas `dev` en `turnos:` desde el
+  ultimo `arquitecto`. Va antes que el papel: cada Dev arreglo el hallazgo de
+  su vuelta y el siguiente encontro otro, asi que lo que falla es el diseno.
+  Candado `arquitecto` en su rama de trabajo, push. Lee `## Diseno`,
+  `## Implementacion` y los hallazgos de cada vuelta, y reescribe `## Diseno`
+  acotado a lo que se puede cerrar (lo que queda afuera, tramo `propuesto` en
+  `backlog` con "Implementar despues de #NN"), o `estado: descartado
+  (<motivo>)` si no tiene arreglo. Suma `arquitecto <EQUIPO_SESION>
+  (estancada)` a `turnos:` (desde ahi el Dev cuenta de cero), deja `estado:
+  con hallazgos` y `candado: -`, push. Nunca codigo.
+- **Salida:** commits `Disena: NN titulo` en `backlog` (en la rama de
+  trabajo, si la ficha estaba estancada). Nunca PR, nunca codigo.
 - **Turno bien hecho:** un Dev en sesion nueva implementa el diseno sin tomar
   ninguna decision de alcance.
 - **Sin trabajo:** con 3 `disenado` esperando, no disena mas: revalida esos
