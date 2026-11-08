@@ -47,7 +47,7 @@ cierra() { if [ -z "$2" ]; then ok "$1"; else falla "$1" "$2"; fi; }
 
 # 1. sintaxis
 det=""
-for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/equipo-dev/verificar.sh scripts/equipo-dev/independencia.sh scripts/check.sh .claude/hooks/session-start.sh; do
+for s in scripts/equipo-dev/turno.sh scripts/equipo-dev/estado.sh scripts/equipo-dev/pruebas.sh scripts/equipo-dev/opencode.sh scripts/equipo-dev/verificar.sh scripts/equipo-dev/independencia.sh scripts/equipo-dev/puerta.sh scripts/check.sh .claude/hooks/session-start.sh; do
     if [ ! -f "$base/$s" ]; then det="$det falta $s"
     elif ! bash -n "$base/$s" 2>/dev/null; then det="$det bash -n $s"
     fi
@@ -369,6 +369,126 @@ ts=$(mktemp -d)
 [ -s "$ts/fallos" ] && det="$det $(tr '\n' ';' < "$ts/fallos")"
 rm -rf "$ts"
 cierra independencia "$det"
+
+# 10f. guardia: el hook PreToolUse que frena el push forzado, el push a main y
+# a dev, el commit sin hooks y core.hooksPath (.claude/hooks/guardia.py, copia
+# vendorizada: no se edita aca). Sus casos propios; que settings.json la
+# registre para Bash, y que esta prueba caiga si se le quita el registro (se
+# lo quita a una copia); y que cada `git push` que el playbook le pide
+# escribir al equipo pase por el hook de verdad (stdin, guardia.json al lado),
+# para que nadie quede trabado por su propio hook. El push a dev y el forzado
+# tienen que frenarse: sin eso la lista pasaria aunque la guardia no frenara
+# nada. La bandera del commit sin hooks va partida para que este archivo no
+# la contenga (frontera.py la marcaria como debilitador).
+registra_guardia() {
+    python3 - "$1" <<'PY'
+import json, re, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as f:
+        datos = json.load(f)
+except (OSError, ValueError):
+    sys.exit(1)
+for e in (datos.get("hooks") or {}).get("PreToolUse") or []:
+    m = e.get("matcher") or ""
+    if not all(re.fullmatch(m, h) for h in ("Bash", "mcp__github__push_files")):
+        continue
+    if any("/.claude/hooks/guardia.py" in (h.get("command") or "") for h in e.get("hooks") or []):
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+det=""
+gu=$base/.claude/hooks/guardia.py
+if ! command -v python3 >/dev/null 2>&1; then det=" sin python3"
+elif [ ! -f "$gu" ]; then det=" falta .claude/hooks/guardia.py"
+else
+    python3 "$gu" --probar >/dev/null 2>&1 || det="$det guardia.py --probar falla;"
+    registra_guardia "$base/.claude/settings.json" || det="$det settings.json no registra guardia.py como PreToolUse de Bash;"
+    tg=$(mktemp -d)
+    python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); d["hooks"].pop("PreToolUse", None); json.dump(d, open(sys.argv[2], "w"))' "$base/.claude/settings.json" "$tg/sin.json" 2>/dev/null
+    registra_guardia "$tg/sin.json" && det="$det la prueba del registro pasa sin el registro;"
+    # El cwd del evento es $base y el log iria a $CLAUDE_PROJECT_DIR/.git, que no existe.
+    guarda() {
+        python3 -c 'import json, sys; print(json.dumps({"tool_name": "Bash", "tool_input": {"command": sys.argv[1]}, "cwd": sys.argv[2]}))' "$2" "$base" \
+            | CLAUDE_PROJECT_DIR="$tg" GUARDIA_RAMA_ACTUAL="$1" python3 "$gu" >/dev/null 2>&1
+        echo $?
+    }
+    pushes=$(cat "${playbook[@]}" "$ru" "$bl/README.md" 2>/dev/null | tr '\n' ' ' | tr -s ' ' | grep -oE '`git push [^`]*`' | tr -d '`' | sed 's/<rama>/claude\/equipo-dev\/99-prueba/g' | sort -u)
+    np=$(printf '%s\n' "$pushes" | grep -c .)
+    [ "$np" -ge 3 ] || det="$det el playbook nombra $np git push (se esperaban al menos 3: el de prueba de acceso, el del reclamo y el borrado);"
+    while IFS= read -r p; do
+        [ -n "$p" ] || continue
+        for r in claude/equipo-dev/99-prueba claude/equipo-dev/backlog; do
+            c=$(guarda "$r" "$p"); [ "$c" = 0 ] || det="$det '$p' parado en $r: la guardia sale $c;"
+        done
+    done <<< "$pushes"$'\n''git push'$'\n''git push origin HEAD'
+    for p in 'git push origin dev' 'git push origin HEAD:main' 'git push --force origin claude/equipo-dev/99-prueba' 'git commit --no-'"verify -m x"; do
+        c=$(guarda claude/equipo-dev/99-prueba "$p"); [ "$c" = 2 ] || det="$det '$p' no lo frena (salida $c);"
+    done
+    c=$(guarda dev 'git push'); [ "$c" = 2 ] || det="$det 'git push' parado en dev no lo frena (salida $c);"
+    rm -rf "$tg"
+fi
+cierra guardia "$det"
+
+# 10g. frontera: la condicion d de la puerta de merge (roles/release.md). Los
+# casos propios de frontera.py (copia vendorizada), frontera.json que nombra
+# archivos que existen, el Release que la corre por puerta.sh, y puerta.sh
+# entero sobre un remoto sintetico: una rama que suma una prueba pasa; las que
+# borran o saltan una, la que poda con `Frontera:` (la mergea el humano) y la
+# que toca check.sh aflojando su propio frontera.json (se juzga con el de la
+# ref) no pasan. Y puerta.sh no mueve el checkout ni deja arboles colgados.
+det=""
+fr=$base/scripts/equipo-dev/frontera.py
+pu=$base/scripts/equipo-dev/puerta.sh
+if ! command -v python3 >/dev/null 2>&1; then det=" sin python3"
+elif [ ! -f "$fr" ] || [ ! -f "$pu" ]; then det=" falta scripts/equipo-dev/frontera.py o puerta.sh"
+else
+    python3 "$fr" --probar >/dev/null 2>&1 || det="$det frontera.py --probar falla;"
+    python3 "$fr" --validar-config --config "$base/scripts/equipo-dev/frontera.json" >/dev/null 2>&1 \
+        || det="$det frontera.py --validar-config falla;"
+    rel=$(tr '\n' ' ' < "$ro/release.md" 2>/dev/null | tr -s ' ')
+    for t in 'scripts/equipo-dev/puerta.sh | bash -s -- <rama> --ref $EQUIPO_REF' 'PUERTA_OK d' '`frontera.py`'; do
+        echo "$rel" | grep -qF -- "$t" || det="$det roles/release.md sin '$t';"
+    done
+    grep -qE 'python3 .*frontera\.py' "$pu" || det="$det puerta.sh no corre frontera.py;"
+    tf=$(mktemp -d)
+    (
+        export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+        export GIT_AUTHOR_NAME=Claude GIT_COMMITTER_NAME=Claude GIT_AUTHOR_EMAIL=c@c GIT_COMMITTER_EMAIL=c@c
+        unset EQUIPO_REF
+        cd "$tf" && git init -q --bare origen.git && git clone -q origen.git w 2>/dev/null && cd w || exit 9
+        mkdir -p scripts/equipo-dev backend/tests
+        cp "$fr" "$base/scripts/equipo-dev/frontera.json" scripts/equipo-dev/
+        printf '#!/bin/sh\necho ok\n' > scripts/check.sh
+        printf 'def test_uno():\n    assert 1\n\n\ndef test_dos():\n    assert 2\n' > backend/tests/test_a.py
+        git add -A && git commit -qm base && git push -q origin HEAD:dev || exit 9
+        git fetch -q origin
+        caso() { # rama mensaje salida-esperada texto-esperado
+            git add -A && git commit -qm "$2" && git push -q origin "HEAD:refs/heads/claude/equipo-dev/$1" || { echo "no pude empujar $1"; return; }
+            git checkout -q --detach origin/dev
+            s=$(bash "$pu" "claude/equipo-dev/$1" --ref origin/dev 2>&1); c=$?
+            [ "$c" = "$3" ] && printf '%s\n' "$s" | grep -qF -- "$4" || echo "puerta.sh $1: salida $c, '$(printf '%s\n' "$s" | tail -1)' (esperado $3 con '$4')"
+        }
+        git checkout -q -B a origin/dev
+        printf 'def test_tres():\n    assert 3\n' > backend/tests/test_b.py
+        caso 90-suma 'suma una prueba' 0 'PUERTA_OK d'
+        git checkout -q -B b origin/dev && git rm -q backend/tests/test_a.py
+        caso 91-borra 'borra la prueba' 1 'PUERTA_FALLA d: prueba borrada'
+        git checkout -q -B c origin/dev && printf 'def test_uno():\n    assert 1\n' > backend/tests/test_a.py
+        caso 92-declara $'poda una prueba\n\nFrontera: era de una pagina que ya no existe' 1 'lo mergea el humano'
+        git checkout -q -B d origin/dev
+        printf 'def test_uno(self):\n    self.skipTest("x")\n\n\ndef test_dos():\n    assert 2\n' > backend/tests/test_a.py
+        caso 93-salta 'salta una prueba' 1 'PUERTA_FALLA d: salto'
+        git checkout -q -B e origin/dev && echo 'exit 0' >> scripts/check.sh
+        python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); d["protegidos"] = []; json.dump(d, open(sys.argv[1], "w"))' scripts/equipo-dev/frontera.json
+        caso 94-afloja 'afloja la puerta' 1 'archivo protegido tocado: scripts/check.sh'
+        [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/dev)" ] || echo "puerta.sh movio el checkout"
+        [ "$(git worktree list | wc -l)" -eq 1 ] || echo "puerta.sh dejo arboles de trabajo: $(git worktree list | tr '\n' ' ')"
+    ) > "$tf/fallos" 2>&1
+    [ -s "$tf/fallos" ] && det="$det $(tr '\n' ';' < "$tf/fallos")"
+    rm -rf "$tf"
+fi
+cierra frontera "$det"
 
 # 11. resumen: contra el remoto real, la linea existe y trae los 21 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico
