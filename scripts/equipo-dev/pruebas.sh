@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Pruebas del playbook del equipo: que los scripts, la skill, la rutina y las
 # plantillas digan lo mismo, y que la regla del rol siga fija. No escribe en el
-# repo ni en el remoto. Corre antes de empujar a la rama del playbook.
+# repo ni en el remoto. Corre antes de empujar a la rama del playbook y, sin
+# red, como paso [6/6] de scripts/check.sh.
 # Uso:  bash scripts/equipo-dev/pruebas.sh                                   # arbol de trabajo
 #       bash scripts/equipo-dev/pruebas.sh origin/claude/equipo-dev/playbook  # lo que hay en una ref
 #       PRUEBAS_SIN_RED=1 bash scripts/equipo-dev/pruebas.sh                 # sin la prueba contra el remoto
@@ -489,6 +490,13 @@ else
     rm -rf "$tf"
 fi
 cierra frontera "$det"
+
+# 10h. en check.sh: este archivo corre dentro de la puerta, sin red, para que
+# una rama que rompe el arnes no llegue en verde (antes corria solo a mano).
+det=""
+grep -qF 'PRUEBAS_SIN_RED=1 bash scripts/equipo-dev/pruebas.sh' "$base/scripts/check.sh" 2>/dev/null \
+    || det=" scripts/check.sh no corre pruebas.sh"
+cierra en-check "$det"
 
 # 11. resumen: contra el remoto real, la linea existe y trae los 21 pares en
 # orden; los valores no se afirman porque cambian con cada turno. Lo unico

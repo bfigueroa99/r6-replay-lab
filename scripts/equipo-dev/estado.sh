@@ -410,7 +410,7 @@ if ! { [ -d frontend/node_modules ] && [ "$tiene_ruff" = si ] && "$py" -c 'impor
     completo=no
     echo "ENTORNO_INCOMPLETO: pip install -r requirements.txt -r requirements-dev.txt; (cd frontend && npm install)"
 fi
-# Sin navegador check.sh cae en [5/5]: el e2e maneja la app en Chromium.
+# Sin navegador check.sh cae en el e2e, que maneja la app en Chromium.
 if ! ls -d "${PLAYWRIGHT_BROWSERS_PATH:-${HOME:-}/.cache/ms-playwright}"/chromium-* >/dev/null 2>&1; then
     completo=no
     echo "ENTORNO_INCOMPLETO: cd frontend && npm run e2e:browser"
