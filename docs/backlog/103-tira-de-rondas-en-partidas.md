@@ -1,7 +1,7 @@
 # 103. Tira de rondas en el listado de partidas
 
-estado: revisado
-candado: qa 2026-11-09T16:10Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/103-tira-de-rondas-en-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F4 (el PR #14, que tocaba Matches.jsx, se cerro sin merge el 2026-11-05)
 archivos: backend/replays/views.py (match_list), backend/tests/test_tira_de_rondas.py, frontend/src/tiraRondas.js, frontend/src/tiraRondas.test.js, frontend/src/pages/Matches.jsx, frontend/src/styles.css, frontend/e2e/tira-rondas.spec.js
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc, revisor 20261109T1205Z-cP2rEUw
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc, revisor 20261109T1205Z-cP2rEUw, qa 20261109T1604Z-cyu4hFR
 
 ## PR
 
@@ -256,6 +256,56 @@ Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados, no bloquean) · verificación=—
 
 ## QA
+
+## QA 2026-11-09 sobre 32988db
+
+QA 20261109T1604Z-cyu4hFR. La rama ya contenia `origin/dev` 580e6da
+(`merge-tree` limpio). Base sintetica desde `tests/factories.py`
+(script en el scratchpad, nada al repo): Bank con 7 rondas (`won`
+True/False/None, `side` Attack/""/Defense, `overtime_number` 1 y 2),
+Oregon con 4 rondas creadas desordenadas (3, 0, 2, 1) y Border sin rondas.
+
+- **check.sh completo:** `verificar.sh` VERDE 32988dbbe (1100 tests
+  backend, 295 vitest, 84 e2e), exit 0.
+- **Base vacia:** `SQLITE_PATH=<vacia> manage.py migrate` + `runserver`;
+  `curl /api/matches/` -> 200 `{"total": 0, ..., "matches": []}`.
+- **Criterio 1 (strip en orden, crudo):** `curl /api/matches/` sobre la
+  sembrada: Bank `number` 0..6, `won: null` en R3, `side: ""` en R5,
+  `overtime: true` solo en R6 y R7; Oregon sale 0..3 aunque se creo
+  desordenada; Border `strip: []`. La consulta unica la cubre
+  `test_la_tira_no_suma_una_consulta_por_partida`.
+- **Criterio 2 (filtros no recortan):** `?side=Attack`, `?side=Defense`,
+  `?site=B%20Church`, `?operator=Ash`, `?side=` -> 200 y largos `[0, 4, 7]`.
+- **Bordes:** `until=foo`, `page=-1`, `offset=-1`, `limit=99999`,
+  `days=99999999` -> 200 con tiras completas; `limit=0` -> 1 fila (como en
+  dev). `result=victoria` -> Oregon 4 y Bank 7; `result=empate` -> Border 0;
+  `result=victoria&limit=1&offset=1` -> Bank con 7. Vecinos:
+  `/api/matches/1/` 200, `/api/matches/999/` 404, `/api/sessions/` 200.
+  Logs del server sin traceback.
+- **Criterio 3 (UI):** Chromium en `/partidas` con la base sembrada: Bank
+  dibuja 7 `.tira-celda` `win loss nula win loss win win`, letras
+  `A A A D ? D A`, `title` `R3 · ataque · sin ganador claro`,
+  `R5 · lado desconocido · perdida`, `R6 · defensa · ganada · prórroga`,
+  un solo `.tira-corte`; Border sin celdas; consola con 0 errores. Columna
+  "Secuencia" despues de "Resultado"; "Rondas" sigue con el conteo.
+- **Criterio 4 (filtros, paginacion, e2e):** los de arriba y
+  `tira-rondas.spec.js` + `humo.spec.js` dentro de los 84 e2e verdes.
+- **Peso:** chunk inicial `index-*.js` 195615 bytes en la rama y en dev
+  (sin crecer); chunk lazy de Matches 3057 -> 4067; CSS 13505 -> 13896.
+- **Mutaciones (todas caen):** `overtime > 0` -> `>= 0` (2 tests backend);
+  tira filtrada por el `side` de la request
+  (`test_el_filtro_de_lado_no_recorta_la_tira`, Attack y Defense);
+  `won=null` -> clase `loss` (2 vitest); corte en cada ronda de prorroga
+  (2 vitest).
+
+Como repetirlo: `SQLITE_PATH=/tmp/x.sqlite3 python manage.py migrate`,
+sembrar con `make_match`/`make_round` como arriba en `manage.py shell`,
+`runserver` y los `curl` de esta seccion.
+
+Veredicto: **aprobar** -> `aprobado`. Sin migracion, parser, Electron ni
+`.ps1`: nada nuevo para Verificar en el PC (queda el de Implementacion).
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 4 criterios VERIFIED)
 
 ## Para el humano
 
