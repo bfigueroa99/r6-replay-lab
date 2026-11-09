@@ -305,6 +305,28 @@ td.dim { color: var(--muted); }
 .chip.atk { color: var(--atk); border-color: #ff8a3d55; background: #ff8a3d12; }
 .chip.def { color: var(--def); border-color: #4aa8ff55; background: #4aa8ff12; }
 
+/* ------------------------------------------------------------- tira de rondas */
+
+/* clases propias y no .round-tab: el detalle y la matriz de duelos ya la usan y el e2e la busca */
+.tira { display: inline-flex; gap: 2px; align-items: center; vertical-align: middle; }
+.tira-celda {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--bg);
+}
+/* el lado va solo en la letra: un borde de color competiria con el verde y el rojo */
+.tira-celda.win { background: var(--good); }
+.tira-celda.loss { background: var(--bad); }
+.tira-celda.nula { background: var(--muted); }
+.tira-corte { width: 6px; }
+
 .form-row { display: flex; gap: 5px; flex-wrap: wrap; }
 .form-dot {
   width: 26px;
@@ -557,25 +579,3 @@ body.streamer .ruleta-head { justify-content: flex-end; }
 .matriz td { color: var(--muted); }
 .matriz td.con-dato { color: var(--text); font-weight: 600; }
 .matriz td small { font-weight: 400; color: var(--muted); }
-
-/* ------------------------------------------------------------- tira de rondas */
-
-/* clases propias y no .round-tab: el detalle y la matriz de duelos ya la usan y el e2e la busca */
-.tira { display: inline-flex; gap: 2px; align-items: center; vertical-align: middle; }
-.tira-celda {
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--bg);
-}
-/* el lado va solo en la letra: un borde de color competiria con el verde y el rojo */
-.tira-celda.win { background: var(--good); }
-.tira-celda.loss { background: var(--bad); }
-.tira-celda.nula { background: var(--muted); }
-.tira-corte { width: 6px; }
