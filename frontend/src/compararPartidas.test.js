@@ -46,6 +46,16 @@ describe('filasDeComparacion', () => {
     expect(fila(menos, 'kills')).toMatchObject({ diferencia: '-1', mejor: 'b' })
   })
 
+  it('menos aperturas perdidas y menos muertes sin trade es mejor', () => {
+    const filas = filasDeComparacion(
+      partida({ my_totals: totales({ opening_kills: 3, opening_deaths: 3, untraded_deaths: 1 }) }),
+      partida({ my_totals: totales({ opening_kills: 1, opening_deaths: 1, untraded_deaths: 4 }) }),
+    )
+    expect(fila(filas, 'opening_kills')).toMatchObject({ diferencia: '+2', mejor: 'a' })
+    expect(fila(filas, 'opening_deaths')).toMatchObject({ diferencia: '+2', mejor: 'b' })
+    expect(fila(filas, 'untraded_deaths')).toMatchObject({ diferencia: '-3', mejor: 'a' })
+  })
+
   it('diferencia cero no marca a nadie', () => {
     const filas = filasDeComparacion(partida({ my_totals: totales() }), partida({ my_totals: totales() }))
     expect(fila(filas, 'kills')).toMatchObject({ diferencia: '0', mejor: null })
