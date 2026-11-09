@@ -1,7 +1,7 @@
 # 103. Tira de rondas en el listado de partidas
 
-estado: implementado
-candado: revisor 2026-11-09T12:06Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/103-tira-de-rondas-en-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F4 (el PR #14, que tocaba Matches.jsx, se cerro sin merge el 2026-11-05)
 archivos: backend/replays/views.py (match_list), backend/tests/test_tira_de_rondas.py, frontend/src/tiraRondas.js, frontend/src/tiraRondas.test.js, frontend/src/pages/Matches.jsx, frontend/src/styles.css, frontend/e2e/tira-rondas.spec.js
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc, revisor 20261109T1205Z-cP2rEUw
 
 ## PR
 
@@ -207,6 +207,53 @@ Arena: no (el diseno no deja puntos abiertos).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado; sin subagente, la hizo el Dev) · verificación=—
 
 ## Revision
+
+## Revision 2026-11-09 sobre c25627e
+
+Revisor 20261109T1205Z-cP2rEUw. Rama fusionada con dev (c25627e, merge limpio) antes de revisar.
+
+Revision ciega en dos ejes (receta 2 de OMC), cada uno con su propio
+`omc-code-reviewer` sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'`:
+
+- **Estandares:** sin hallazgos. Una consulta por pagina, `won=null` no se
+  cuenta como perdida, lado vacio -> `?`, `overtime_number` no admite nulo,
+  partida sin rondas -> `[]`. Sin Django en `pydissect/`, sin dependencias,
+  sin escrituras, sin numeros nuevos (no corresponde fila en `metricas.md`),
+  sin tildes en identificadores, UI con tildes, sin `print`/`console.log`
+  (confirmado con grep). Veredicto: aprobar.
+- **Intencion** (contra Que gana, Criterios y Fuera de alcance): los cuatro
+  criterios cumplidos. Dos LOW, confirmados y no bloqueantes:
+  - `Matches.jsx`: la columna Secuencia en el CSV no la pide la ficha. Es lo
+    que el diseno pidio para no exportar `[object Object]` (`DataTable`
+    exporta toda columna); no es alcance nuevo.
+  - `tira-rondas.spec.js`: el e2e no afirma en la app real la celda gris
+    (`won=null`) ni el corte de prorroga; esos casos los cubre solo vitest.
+    El criterio pide "ve la tira y la consola limpia", y eso lo hace. Mejora
+    opcional: contar tambien `.tira-celda.loss` y `.tira-celda.nula` contra
+    `strip`.
+
+Criterios contra tests:
+
+- `strip` en orden con `won`/`side`/`overtime` y una sola consulta:
+  `test_cada_partida_trae_su_tira_en_orden`, `test_ronda_sin_ganador_viaja_como_null`,
+  `test_la_prorroga_se_marca`, `test_la_tira_no_suma_una_consulta_por_partida`
+  (compara paginas de 2 y 6 filas de verdad; fallaria con una consulta por partida).
+- Filtros no recortan: `test_el_filtro_de_lado_no_recorta_la_tira` (`side`,
+  `site`, `operator`; la partida tiene una ronda de cada lado y sitio).
+- Render en `Matches.jsx`: vitest `tiraRondas.test.js` (clases, titulo
+  `R5 · ataque · ganada`, prorroga una vez, tira vacia, lado `?`) y el e2e.
+- Filtros y paginacion igual: suite completa y e2e de `humo.spec.js` verdes.
+
+`archivos:` cubre todo el diff. Nada fuera de alcance (sin clic a la ronda,
+sin Inicio ni Sesiones, sin bajas).
+
+Verificacion: `verificar.sh` VERDE c25627eb5 (1100 tests backend, 295
+vitest, 84 e2e).
+
+Veredicto: **aprobar** -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados, no bloquean) · verificación=—
 
 ## QA
 
