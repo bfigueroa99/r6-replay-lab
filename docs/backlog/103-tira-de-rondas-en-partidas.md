@@ -1,7 +1,7 @@
 # 103. Tira de rondas en el listado de partidas
 
-estado: en curso 2026-11-06
-candado: dev 2026-11-09 03:45 UTC
+estado: implementado
+candado: -
 rama: claude/equipo-dev/103-tira-de-rondas-en-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -148,6 +148,63 @@ Arena: no (una forma obvia).
 OMC: plan=— · revisión=— · verificación=— (ficha chica, sin consenso)
 
 ## Implementacion
+
+Dev 20261109T0345Z-c8x1kCc (retoma: el reclamo de cYjqMjZ quedo sin codigo
+y con el candado muerto 68 h). Hecho el diseno completo, en 136fc61 y 71655cf:
+
+- `backend/replays/views.py`, `match_list`: `strip` por fila con una sola
+  consulta a `Round` para la pagina (`order_by("match_id", "number")`), tal
+  como el diseno; `won` crudo (puede ser `null`), `side` crudo (`""` si el
+  import no lo supo) y `overtime` = `overtime_number > 0`.
+- `backend/tests/test_tira_de_rondas.py` (8 tests): los 6 del diseno, mas
+  `test_cada_tira_es_de_su_partida` y `test_lado_desconocido_viaja_vacio`.
+  El de filtros prueba `side=Attack`, `side=Defense`, `site=` y `operator=`.
+  Mutantes vistos caer: una consulta por partida (`8 != 12` en el conteo de
+  consultas de 2 contra 6 partidas) y ordenar por `id` en vez de `number`.
+- `frontend/src/tiraRondas.js`: `celdasDeTira(strip)` como el diseno y
+  `textoDeTira(strip)` para el CSV (`G G P - | P G`). Vitest
+  `tiraRondas.test.js` (7): los 5 del diseno, mas claves unicas con prorroga
+  y el texto del CSV.
+- `frontend/src/pages/Matches.jsx`: columna "Secuencia" despues de
+  "Resultado", `sortable: false`, `csv:` con `textoDeTira`; componente
+  `TiraRondas` en el mismo archivo. Partida sin rondas: celda vacia.
+- `frontend/src/styles.css`: `.tira`, `.tira-celda` (14x14, letra de 9 px
+  en el color de fondo) con `win`/`loss`/`nula` y `.tira-corte` de 6 px,
+  despues de los `.chip` y no al final del archivo: al final chocaba con el
+  bloque `comparar` que la 101 agrega ahi (71655cf).
+- `frontend/e2e/tira-rondas.spec.js` (nuevo): la fila de la partida mas
+  nueva de `/api/matches/?limit=1` tiene tantos `.tira-celda` como su
+  `strip`, la primera con `title` `R1 · ...`, tantas `.win` como rondas
+  ganadas; "Descargar CSV" trae la columna Secuencia con el formato legible
+  en cada fila con rondas; consola limpia. Sin el `csv:` cae con
+  `[object Object] / ...` (visto).
+
+Desvios del diseno:
+
+- **Ronda sin ganador en el CSV: `-`.** El diseno daba `G`/`P` y `|`; faltaba
+  la letra de `won=null`. `-` no se confunde con el `?` del lado desconocido
+  de la celda.
+- La letra de la celda va en `var(--bg)` (el fondo oscuro) y no en un color
+  fijo, por contraste sobre verde, rojo y gris.
+
+Revision ciega: sin subagente en esta sesion (no tiene la herramienta para
+lanzar `omc-code-reviewer`); la hizo el Dev con el prompt de `revision.md`
+sobre el diff sin `docs/backlog`: sin hallazgos CRITICAL ni HIGH. Lo unico
+que salio, el e2e buscaba el encabezado por rol `columnheader` y la tabla
+lo expone como `cell`: corregido antes del commit. Queda para el Revisor de
+otra sesion la revision ciega de verdad.
+
+Verificacion: `verificar.sh` VERDE 71655cf2c (1100 tests backend, 283
+vitest, 83 e2e). `merge-tree` limpio contra dev 32fb68d y contra la 79 y la
+101.
+
+Verificar en el PC: una partida con prorroga y una ronda sin ganador claro
+(ficha 38) se ven distintas en Partidas; "Descargar CSV" y abrirlo en Excel:
+la columna Secuencia se lee.
+
+Skills: no aplica (el diseno ya decia que no; sin dominio nuevo).
+Arena: no (el diseno no deja puntos abiertos).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado; sin subagente, la hizo el Dev) · verificación=—
 
 ## Revision
 
