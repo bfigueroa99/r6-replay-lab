@@ -309,6 +309,21 @@ la partida). Suma dos numeros propios; una linea sin datos no sale:
 
 No se guarda ni sale a la red: es el portapapeles del navegador.
 
+## Comparar partidas
+
+**Comparar con…** en el detalle lleva a `/comparar/<a>/<b>`, que pone dos
+partidas lado a lado con los numeros del detalle (`my_totals`) de cada una.
+No calcula metricas nuevas; solo suma la columna **Diferencia**:
+
+| Fila | Definicion |
+|---|---|
+| **Rondas en ataque / defensa: n de m** | Por lado, `m` = rondas de la partida en que jugaste ese lado y `n` = las que gano tu equipo. Una ronda sin ganador cuenta en `m` y no en `n`. Sin rondas en ese lado: `—`. |
+| **Diferencia de los lados** | Winrate del lado en A menos el de B, en puntos (`-33 pts`), redondeado a entero: se compara el winrate y no el conteo, porque 4 de 6 no es mejor que 3 de 3. |
+| **Diferencia de Bajas, Muertes, Aperturas, Muertes sin trade, KST y Rating** | A menos B, con signo, sobre lo que muestra la celda ya redondeado (KST en puntos, rating con dos decimales). En verde si A sale mejor y en rojo si sale mejor B; para Muertes, Aperturas perdidas y Muertes sin trade sale mejor quien tiene menos. Diferencia 0 no marca a nadie. |
+
+Una partida sin tu fila (no jugaste ninguna ronda) o un rating sin dato dan
+`—` y la diferencia queda vacia.
+
 ## Sobre la granularidad espacial
 
 El `.rec` **no expone coordenadas** de las bajas, asi que no hay heatmap de
