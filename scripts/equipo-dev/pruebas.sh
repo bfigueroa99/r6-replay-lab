@@ -443,6 +443,21 @@ else
         c=$(guarda claude/equipo-dev/99-prueba "$p"); [ "$c" = 2 ] || det="$det '$p' no lo frena (salida $c);"
     done
     c=$(guarda dev 'git push'); [ "$c" = 2 ] || det="$det 'git push' parado en dev no lo frena (salida $c);"
+    # El comando registrado en settings.json, tal cual: en una rama sin guardia.py deja
+    # pasar (python3 sobre un archivo que falta sale 2 y trabaria todo Bash; revision del
+    # PR #587 de cit_sanmiguel), y con ella frena el push a main.
+    reg=$(python3 -c 'import json, sys
+for e in json.load(open(sys.argv[1]))["hooks"]["PreToolUse"]:
+    for h in e["hooks"]:
+        if "/.claude/hooks/guardia.py" in h.get("command", ""): print(h["command"])' "$base/.claude/settings.json" 2>/dev/null | head -1)
+    registrado() {
+        printf '{"tool_name": "Bash", "tool_input": {"command": "git push origin main"}, "cwd": "%s"}' "$tg" \
+            | CLAUDE_PROJECT_DIR="$1" GUARDIA_RAMA_ACTUAL=claude/equipo-dev/99-prueba bash -c "$reg" >/dev/null 2>&1
+        echo $?
+    }
+    c=$(registrado "$tg"); [ "$c" = 0 ] || det="$det el hook registrado sin guardia.py sale $c (traba Bash);"
+    mkdir -p "$tg/con/.claude/hooks" && cp "$gu" "$tg/con/.claude/hooks/"
+    c=$(registrado "$tg/con"); [ "$c" = 2 ] || det="$det el hook registrado con guardia.py no frena el push a main (salida $c);"
     rm -rf "$tg"
 fi
 cierra guardia "$det"
