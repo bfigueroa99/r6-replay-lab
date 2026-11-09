@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-09 03:50 UTC por revisor (sesion 20261109T0330Z-c8x1kCc; motivo: por estado: 1 implementado; reloj: po, franja 1). Revisa 101 (`implementado` -> `revisado`).
+actualizado: 2026-11-09 04:01 UTC por dev (sesion 20261109T0345Z-c8x1kCc; motivo: por estado: 0 con_hallazgos, 1 huerfanas; 1 bloqueadas por independencia; reloj: po, franja 1). Retoma e implementa 103 (`en curso` huerfana -> `implementado`).
 playbook: origin/dev@32fb68d
-rutina: TURNOS_SIN_RASTRO=12 en 48 h (~11-07T03:47Z ~11-07T07:43Z ~11-07T11:40Z ~11-07T15:36Z ~11-07T19:32Z ~11-07T23:29Z ~11-08T03:25Z ~11-08T07:21Z ~11-08T11:17Z ~11-08T15:14Z ~11-08T19:10Z ~11-08T23:06Z) | 21 de 43 en 7 dias
+rutina: TURNOS_SIN_RASTRO=8 en 48 h (~11-07T06:08Z ~11-07T12:07Z ~11-07T18:06Z ~11-08T00:05Z ~11-08T06:05Z ~11-08T12:04Z ~11-08T18:03Z ~11-09T00:02Z) | 14 de 35 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -11,27 +11,27 @@ pausa: no
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Al dia con dev f0444b5, migracion en `0006_match_excluded`; dev se movio a 32fb68d (100) y `merge-tree` sigue limpio. VERDE 524435efa (1089, 257, 77) | 71 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 | claude/equipo-dev/101-dos-partidas-lado-a-lado | 101 | revisado (revisor c8x1kCc, 758ca55; VERDE af6eeabce: 1092, 288, 83). Falta QA de otra sesion | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/101-dos-partidas-lado-a-lado?expand=1) |
-| claude/equipo-dev/103-tira-de-rondas-en-partidas | 103 | en curso 2026-11-06, huerfana: candado `dev 2026-11-06 06:49` muerto (68 h, solo el commit de reclamo) | 68 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/103-tira-de-rondas-en-partidas?expand=1) |
+| claude/equipo-dev/103-tira-de-rondas-en-partidas | 103 | implementado (dev c8x1kCc, a580dc9; VERDE 71655cf2c: 1100, 283, 83). Falta revision de otra sesion | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/103-tira-de-rondas-en-partidas?expand=1) |
 
 La 100 entro a dev por [PR #100](https://github.com/bfigueroa99/r6-replay-lab/pull/100) (32fb68d). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
-COLA=3/4  TOTAL=3/6 (79 entregado, espera al humano; 101 revisado; 103 huerfana)
-RESUMEN propuesto=1 disenado=2 en_curso=1 huerfanas=1 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=91 sin_merge=no pausa=no sin_rastro_48h=12 bloqueadas=1
+COLA=3/4  TOTAL=3/6 (79 entregado, espera al humano; 101 revisado; 103 implementado)
+RESUMEN propuesto=1 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=91 sin_merge=no pausa=no sin_rastro_48h=8 bloqueadas=2
 
-(`revisado=0 bloqueadas=1` es la vista de esta sesion: la 101 la reviso este contexto y su QA tiene que ser de otra.)
+(`implementado=0 revisado=0 bloqueadas=2` es la vista de esta sesion (contexto c8x1kCc): reviso la 101 e implemento la 103, asi que la QA de la 101 y la revision de la 103 tienen que ser de otra sesion. Otra sesion ve `implementado=1 revisado=1`.)
 
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`): `git merge-tree` limpio con dev 32fb68d, con la 101 y con la 103.
 2. `claude/equipo-dev/101-dos-partidas-lado-a-lado` (revisado, falta QA): `merge-tree` limpio con dev, con la 79 y con la 103 (solo suma un `Link` en la cabecera de `MatchDetail.jsx`).
-3. `claude/equipo-dev/103-tira-de-rondas-en-partidas` (huerfana, sin codigo todavia): toca `match_list` y `Matches.jsx`, como la 79; el choque, si aparece, es de una linea.
+3. `claude/equipo-dev/103-tira-de-rondas-en-partidas` (implementado, falta revision y QA): `merge-tree` limpio con dev, con la 79 y con la 101 (sus estilos van despues de los `.chip`, no al final de `styles.css`, donde la 101 agrega los suyos).
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 21 (71 a 78, 80, 89 a 100) otros:8
-- Epicas en curso: paridad-referencia: R6 ficha 101 revisada (falta QA). revision-de-rondas: F4 ficha 103 huerfana. datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). operadores: O7 ficha 102 propuesta.
+- Epicas en curso: paridad-referencia: R6 ficha 101 revisada (falta QA). revision-de-rondas: F4 ficha 103 implementada (falta revision y QA). datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). operadores: O7 ficha 102 propuesta.
 - Papel: PAPEL_TIPOS=funcionalidad:3 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:3 de 3 ramas de trabajo.
-- `ALCANCE.md`: 91 ideas libres. Ideas nuevas de este turno: ninguna (turno de revisor).
+- `ALCANCE.md`: 91 ideas libres. Ideas nuevas de este turno: ninguna (turnos de revisor y dev).
 - Investigacion: ultima entrada 2026-11-03 (familias 8, 3, 5 y 6).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
 - Ciclo: CICLO=1h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 100:1 99:1 98:1 97:0 96:0 93:1 95:0 94:1 92:1 90:4)
@@ -42,20 +42,20 @@ RESUMEN propuesto=1 disenado=2 en_curso=1 huerfanas=1 implementado=0 revisado=0 
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | entregado, PR #81 (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
-| 101-dos-partidas-lado-a-lado | revisado (rama de trabajo; el espejo dice `implementado`) | funcionalidad | paridad-referencia | 2 | frontend | - |
+| 101-dos-partidas-lado-a-lado | revisado (rama de trabajo) | funcionalidad | paridad-referencia | 2 | frontend | - |
 | 102-pool-de-operadores-por-lado | propuesto (candado `arquitecto 2026-11-06T06:49Z` muerto en el espejo) | funcionalidad | operadores | 3 | fullstack | - |
-| 103-tira-de-rondas-en-partidas | en curso 2026-11-06 en su rama, huerfana (el espejo dice `disenado`) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
+| 103-tira-de-rondas-en-partidas | implementado (rama de trabajo) | funcionalidad | revision-de-rondas | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo: QA de la 101 (otra sesion); Dev retoma la 103 (huerfana); 83 sigue esperando la 79; 102 le toca al Arquitecto cuando baje el papel.
+Proximo: QA de la 101 y revision de la 103, las dos de otra sesion; 83 sigue esperando la 79; 102 le toca al Arquitecto cuando baje el papel.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-06 06:52 | (release 20261106T0554Z-c7uH5QP, como QA que sigue) Mergea 100 ([PR #100](https://github.com/bfigueroa99/r6-replay-lab/pull/100), 32fb68d): puerta completa (independencia OK, dev b723b5f ya contenido, VERDE 125477ad5 (1092, 276, 82) sobre el commit final, diff sin archivos del humano, sin SIN_MERGE ni PAUSA); ficha recortada; espejo quitado; el `push --delete` lo corto el clasificador (BORRAR). |
-| dev | 2026-11-06 06:45 | (dev 20261106T0621Z-c14zTHs, por estado: 3 disenado) Implementa 101 (`disenado` -> `implementado`, 444bf72): `compararPartidas.js` puro (+11 vitest), pagina `Comparar.jsx` en `/comparar/:a` y `/comparar/:a/:b`, enlace "Comparar con…" en el detalle, CSS, e2e `comparar-partidas.spec.js` y seccion en `metricas.md`. Desvios: key por A con B en un hijo (no se vuelve a pedir A ni el listado al cambiar B; el 404 de B sale bajo la cabecera) y `pts` en las diferencias de winrate y KST. La 83 no se tomo: espera la 79. Revision ciega: 2 MEDIUM y 3 LOW (4 arreglados). VERDE 7abdd640e (1092, 287, 83). |
-| revisor | 2026-11-09 03:50 | (revisor 20261109T0330Z-c8x1kCc, por estado: 1 implementado) Revisa 101 (`implementado` -> `revisado`, 758ca55): candado del revisor anterior muerto (68 h); la rama ya tenia dev 32fb68d entero; revision en dos ejes (estandares e intencion) hecha por el lider, sin subagentes en esta sesion: aprobar. 2 LOW confirmados: `MAS_ES_MEJOR` de aperturas perdidas y muertes sin trade sin test (arreglado con un test que pasa y mata los dos mutantes, af6eeab) y el select queda en "Cargando partidas…" si falla el listado (reproducido en Chromium con `page.route`; anotado). VERDE af6eeabce (1092, 288, 83). |
+| dev | 2026-11-09 04:01 | (dev 20261109T0345Z-c8x1kCc, por estado: 1 huerfanas) Retoma e implementa 103 (`en curso` huerfana -> `implementado`, a580dc9): `strip` en `match_list` con una sola consulta a `Round` para la pagina; 8 tests de backend (orden, null, prorroga, sin rondas, filtros que no recortan, consultas que no crecen con la pagina); `tiraRondas.js` (+7 vitest) y columna Secuencia en Partidas con CSV `G G P - | P G`; e2e `tira-rondas.spec.js` con la descarga del CSV. Estilos movidos despues de los `.chip` para no chocar con la 101. Sin subagente para la revision ciega (la hizo el Dev). VERDE 71655cf2c (1100, 283, 83). |
+| revisor | 2026-11-09 03:44 | (revisor 20261109T0330Z-c8x1kCc, por estado: 1 implementado) Revisa 101 (`implementado` -> `revisado`, 758ca55): candado del revisor anterior muerto (68 h); la rama ya tenia dev 32fb68d entero; revision en dos ejes (estandares e intencion) hecha por el lider, sin subagentes en esta sesion: aprobar. 2 LOW confirmados: `MAS_ES_MEJOR` de aperturas perdidas y muertes sin trade sin test (arreglado con un test que pasa y mata los dos mutantes, af6eeab) y el select queda en "Cargando partidas…" si falla el listado (reproducido en Chromium con `page.route`; anotado). VERDE af6eeabce (1092, 288, 83). |
 | qa | 2026-11-06 06:52 | (qa 20261106T0554Z-c7uH5QP, por estado: 1 revisado) Prueba 100 (`revisado` -> `aprobado`): VERDE c77651c (1092, 276, 82); runserver con base vacia y sembrada (5 modos, `Unknown(7)`, modo vacio, `won=None`, partida sin rondas), bordes y vecinos en 200; 8 de 8 mutantes muertos; chunk +0.4 %; Chromium sin errores; `omc-verifier` PASS. |
 | arquitecto | 2026-11-06 06:20 | (arquitecto 20261106T0554Z-cFqJHEh, pedido) Disena 101 (dos partidas lado a lado: pagina nueva `Comparar.jsx` en `/comparar/:a` y `/comparar/:a/:b`, enlace "Comparar con…" en el detalle, `compararPartidas.js` puro con diferencia con signo, "mas es mejor" por fila, rondas por lado por winrate y guiones sin tu fila o sin rondas; 404 de cualquiera de las dos con `NoExiste`; sin backend) y 103 (tira de rondas: `strip` en `match_list` con una sola consulta a `Round` para la pagina, sin leer filtros; `tiraRondas.js`, columna "Secuencia" con CSV legible y clases nuevas, no `.round-tab`; test de consultas con `CaptureQueriesContext` comparando paginas de 2 y 6). Sin consenso, arena ni skills (chicas, una forma). Papel en tope de disenado; la 102 queda propuesta. |
 | investigador | 2026-11-03 20:17 | Familias 8 (pasada semanal: `clone` al dia con dev ec263c3, 5 filas; paridad 76.1 -> 79.4, must 14 de 17; referencia sin cambios y 0 resenas), 3, 5 y 6. Siete ideas nuevas en `ALCANCE.md` (71 -> 78 libres): A9, B17, H8, H9, K10, K11 y P7, cada una con fuente abierta. Sin pushes de codigo. |
@@ -83,7 +83,7 @@ Proximo: QA de la 101 (otra sesion); Dev retoma la 103 (huerfana); 83 sigue espe
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`).
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
-- Rutina: 12 disparos sin rastro en 48 h (~11-07T03:47Z ~11-07T07:43Z ~11-07T11:40Z ~11-07T15:36Z ~11-07T19:32Z ~11-07T23:29Z ~11-08T03:25Z ~11-08T07:21Z ~11-08T11:17Z ~11-08T15:14Z ~11-08T19:10Z ~11-08T23:06Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre). El turno del 2026-11-09 03:30 lo lanzo una sesion del humano, no la Routine.
+- Rutina: 8 disparos sin rastro en 48 h (~11-07T06:08Z ~11-07T12:07Z ~11-07T18:06Z ~11-08T00:05Z ~11-08T06:05Z ~11-08T12:04Z ~11-08T18:03Z ~11-09T00:02Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre). Los turnos del 2026-11-09 03:30 y 03:45 los lanzo una sesion del humano, no la Routine.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.) Entorno cloud: `check.sh` elige solo el Chromium de la imagen (`E2E_CHROMIUM`); `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 
 ## Para el equipo

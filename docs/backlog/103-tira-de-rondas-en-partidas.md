@@ -1,8 +1,8 @@
 # 103. Tira de rondas en el listado de partidas
 
-estado: disenado
+estado: implementado
 candado: -
-rama: -
+rama: claude/equipo-dev/103-tira-de-rondas-en-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack
