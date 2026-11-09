@@ -451,6 +451,20 @@ def match_list(request: HttpRequest) -> JsonResponse:
     # despues de leer la pagina
     etiquetas = agg.etiquetas_de_mapas({m.map_slug for m in page})
 
+    # La tira es de la partida entera: sale de Round (una partida sin tu fila
+    # igual tiene rondas) y no lee los filtros de lado, operador ni sitio. Una
+    # sola consulta para la pagina; el order_by explicito evita el JOIN que
+    # agrega el ordering de Round (match__played_at).
+    tiras: dict[int, list[dict]] = {m.id: [] for m in page}
+    for match_id, number, won, side, overtime in (
+        Round.objects.filter(match__in=page)
+        .order_by("match_id", "number")
+        .values_list("match_id", "number", "my_team_won", "my_side", "overtime_number")
+    ):
+        tiras[match_id].append(
+            {"number": number, "won": won, "side": side, "overtime": overtime > 0}
+        )
+
     rows = []
     for match in page:
         stats = mine.get(match.id, {})
@@ -470,6 +484,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
                 "won": match.won,
                 "result": match.result,
                 "rounds": match.rounds_count,
+                "strip": tiras.get(match.id, []),
                 "my_kills": stats.get("kills_sum") or 0,
                 "my_deaths": stats.get("deaths") or 0,
                 "my_opening_kills": stats.get("opening_kills") or 0,
