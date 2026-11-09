@@ -1,7 +1,7 @@
 # 101. Dos partidas lado a lado
 
-estado: revisado
-candado: qa 2026-11-09T08:05Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: ALCANCE.md R6 (replica/features.csv: la referencia compara partidas)
 archivos: docs/metricas.md, frontend/src/compararPartidas.js, frontend/src/compararPartidas.test.js, frontend/src/pages/Comparar.jsx, frontend/src/App.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/comparar-partidas.spec.js
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0621Z-c14zTHs, revisor 20261109T0330Z-c8x1kCc
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0621Z-c14zTHs, revisor 20261109T0330Z-c8x1kCc, qa 20261109T0805Z-cTPuCNz
 
 ## PR
 
@@ -280,7 +280,56 @@ verificar.sh: VERDE af6eeabce (1092 tests backend, 288 vitest, 83 e2e).
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (1 arreglado) · verificación=— (sin subagentes en esta sesion: la revision la hizo el lider)
 
-## QA
+## QA 2026-11-09 sobre c2c1656
+
+(qa 20261109T0805Z-cTPuCNz; rama sin commits detras de dev, `merge-tree` limpio)
+
+Veredicto: **aprobado**.
+
+- `check.sh` completo: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE c2c165698 en 163s: 1092 tests backend, 288 vitest, 83 e2e`.
+- Bases de prueba (scratchpad, nada al repo): sembrada con
+  `DATA_DIR=<tmp> SQLITE_PATH=<tmp>/db.sqlite3 python3 manage.py migrate && python3 manage.py seed_demo`
+  (29 partidas) mas una partida de `factories.make_match(map_name="Bank", index=900, my_score=0, opponent_score=0)`
+  (id 30: sin rondas y `my_totals.rounds == 0`); y una vacia (solo `migrate`).
+  `runserver --noreload` en 8031 (sembrada) y 8032 (vacia), bajados al terminar.
+- API (sin backend nuevo, vecinos): `curl -s -o /dev/null -w %{http_code}` ->
+  `/api/matches/1/` 200, `/30/` 200, `/abc/` 404, `/999999/` 404, `/-1/` 404,
+  `/api/matches/?limit=200|-1|foo` 200; base vacia `?limit=200` ->
+  `{"total": 0, ..., "matches": []}`.
+- App real en Chromium (playwright, script en el scratchpad), consola sin
+  errores salvo los 404 esperados:
+  - `/partidas/1` -> clic "Comparar con…" -> `/comparar/1`; el select tiene
+    "Mismo mapa" (9) y "Otras" (20) y no lista la partida A.
+  - `/comparar/1/2`: ataque `4 de 4`/`4 de 4` `0 pts`, defensa `0 de 3`,
+    aperturas perdidas `2`/`1` `+1` en rojo (`mejor-b`), rating
+    `0.38`/`0.44` `-0.06` en rojo; cotejado con `my_totals` y `rounds` de
+    `/api/matches/1/` y `/2/`: coinciden.
+  - `/comparar/1/30` (B sin rondas ni fila): toda la columna B `—`,
+    diferencia vacia, sin color. `/comparar/30/30`: todo `—`, sin error.
+  - `/comparar/1/999999` y `/comparar/1/abc`: cabecera + "Esa partida no
+    existe" (desvio documentado). `/comparar/abc`, `/comparar/-1/2` y la base
+    vacia: la pagina entera "Esa partida no existe".
+  - Cambiar B a 30 en el select -> `/comparar/1/30`; atras -> `/comparar/1/2`
+    con el select en 2 y la tabla visible.
+  - Viewport 375 px: `scrollWidth` 375, sin scroll horizontal.
+  - Listado con 500 (`page.route`): el select queda "Cargando partidas…"
+    deshabilitado con el `ErrorBox` debajo. Es el LOW que ya anoto el
+    Revisor; no bloquea (A se ve y el error se avisa).
+- Chunk inicial (`npx vite build --outDir <tmp>`): dev `index` 195.34 kB ->
+  rama 195.52 kB (+0.09 %); `Comparar` va diferido (5.15 kB).
+- Mutacion sobre `src/compararPartidas.js` con
+  `npx vitest run src/compararPartidas.test.js` (12 tests), cada mutante con
+  `sed` y `git checkout` despues: `my_team_won === true` -> `!== false`
+  (1 falla), `deaths: true` en `MAS_ES_MEJOR` (1), no excluir la partida
+  actual de las opciones (2), mismo mapa por `map_slug` (1). Mueren los 4.
+- e2e `comparar-partidas.spec.js` afirma los dos marcadores (desde la API),
+  el encabezado "Diferencia", el select en B tras recargar y un unico 404.
+
+Verificar en el PC: lo de `## Implementacion` (victoria contra derrota del
+mismo mapa y un `.rec` cortado como B, con la base real).
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 0 bloqueantes; 1 LOW ya anotado)
 
 ## Para el humano
 
