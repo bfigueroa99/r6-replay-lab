@@ -1,7 +1,7 @@
 # 101. Dos partidas lado a lado
 
-estado: implementado
-candado: revisor 2026-11-09 03:32
+estado: revisado
+candado: -
 rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
 epica: paridad-referencia
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 2
 fuente: ALCANCE.md R6 (replica/features.csv: la referencia compara partidas)
 archivos: docs/metricas.md, frontend/src/compararPartidas.js, frontend/src/compararPartidas.test.js, frontend/src/pages/Comparar.jsx, frontend/src/App.jsx, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/comparar-partidas.spec.js
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0621Z-c14zTHs
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0621Z-c14zTHs, revisor 20261109T0330Z-c8x1kCc
 
 ## PR
 
@@ -22,22 +22,22 @@ memoria. Es lo que la referencia hace y la app todavia no.
 
 ## Criterios de aceptacion
 
-- [ ] Desde el detalle de una partida hay un control "Comparar con..." que
+- [x] Desde el detalle de una partida hay un control "Comparar con..." que
       lista tus otras partidas (mapa, fecha, marcador) y lleva a una vista
       con las dos; la URL lleva las dos (`/partidas/<a>?vs=<b>` o
       `/comparar/<a>/<b>`), asi se puede recargar y volver.
-- [ ] La vista muestra, por partida: mapa (con version), fecha, tipo,
+- [x] La vista muestra, por partida: mapa (con version), fecha, tipo,
       marcador, rondas ganadas por lado (ataque y defensa), y de tus totales
       (`my_totals`): bajas, muertes, aperturas ganadas y perdidas, muertes
       sin trade, KST y rating. Una columna "Diferencia" con el signo y el
       color de quien sale mejor.
-- [ ] El armado de las filas es una funcion pura (sin React) con tests de
+- [x] El armado de las filas es una funcion pura (sin React) con tests de
       vitest: diferencia con signo, partida sin tu fila (sin `my_totals`) y
       partida sin rondas (ficha 82) devuelven filas con `—` y no rompen.
-- [ ] Un id inexistente en la segunda partida muestra el mismo aviso de
+- [x] Un id inexistente en la segunda partida muestra el mismo aviso de
       "partida no encontrada" que el detalle (ficha 84), no una pantalla en
       blanco.
-- [ ] Entra al e2e (`frontend/e2e/`): abrir dos partidas de `seed_demo`
+- [x] Entra al e2e (`frontend/e2e/`): abrir dos partidas de `seed_demo`
       comparadas, ver los dos marcadores y la columna de diferencia, consola
       limpia.
 
@@ -218,7 +218,67 @@ Skills: no aplica (la ficha ya decia que no; sin dominio nuevo).
 Arena: no (el diseño no deja puntos abiertos).
 OMC: plan=— · revisión=5 hallazgos (4 arreglados; `/comparar/5/5` se deja como pide el diseño) · verificación=—
 
-## Revision
+## Revision 2026-11-09 sobre af6eeab
+
+(revisor 20261109T0330Z-c8x1kCc; candado del revisor anterior muerto, 68 h
+sin commits sobre la ficha; la rama ya tenia dev entero: 0 commits detras,
+`merge-tree` limpio)
+
+Veredicto: **aprobar** -> `revisado`.
+
+Revision en dos ejes hecha por el lider, sin subagente (esta sesion no tiene
+la herramienta para lanzar `omc-code-reviewer`): estandares sobre `git diff
+origin/dev...<rama>` sin `docs/backlog`, y por tamano (~490 lineas)
+intencion contra Que gana / Criterios / Fuera de alcance. Sin CRITICAL, HIGH
+ni MEDIUM. Eje de seguridad: no aplica (sin POST, sin `externo/`, sin
+`pydissect/`, sin rutas de archivos, sin electron, sin dependencias).
+
+Criterios, uno por uno:
+
+- "Comparar con…" en el detalle lleva a `/comparar/<a>`, el select lista
+  las otras partidas (fecha, mapa, marcador, resultado) y la URL lleva las
+  dos (`/comparar/<a>/<b>`): e2e `comparar-partidas.spec.js` (clic,
+  `selectOption`, URL, recarga y el select sigue en B).
+- Mapa con version, fecha, tipo, marcador, rondas por lado y los siete
+  totales con columna Diferencia y color: vitest de `filasDeComparacion`
+  (orden de filas, signo, `MAS_ES_MEJOR`, winrate de lado y no conteo, KST
+  en puntos, rating con dos decimales). Confirmado contra
+  `views.match_detail`: `my_totals` sale de `agg.totals` + `derive`, con
+  `rounds`, `kills`, `deaths`, `opening_kills`, `opening_deaths`,
+  `untraded_deaths`, `kst_pct` y `rating`; `map` usa la misma etiqueta con
+  version que `match_list`, asi "Mismo mapa" separa Consulate (Y10).
+- Funcion pura con vitest: sin tu fila (`rounds: 0` y sin `my_totals`),
+  sin rondas (`rounds: []`) y rating nulo dan `—` y no rompen.
+- Id inexistente en B: `NoExiste` "Esa partida no existe" debajo del
+  selector (desvio documentado en Implementacion); e2e con
+  `/comparar/<a>/999999`. Sonda en Chromium: `/comparar/<a>/abc` da el
+  mismo aviso (el atrapa-todo `api_no_existe` contesta 404 en JSON) y
+  `/comparar/<a>/<a>` muestra todo en 0 con el select en A.
+- e2e con consola limpia salvo el unico 404 esperado.
+- Archivos: exactamente los de `archivos:`. Fila en `metricas.md`: si
+  ("Comparar partidas"). Identificadores y comentarios sin tildes, UI con
+  tildes. Sin `print` ni `console.log`.
+
+Hallazgos (LOW, confirmados; ninguno bloquea):
+
+- [test] [LOW] `frontend/src/compararPartidas.js:9-19` `MAS_ES_MEJOR`:
+  ningun test afirmaba el sentido de `opening_deaths` ni de
+  `untraded_deaths`; con cualquiera de los dos en `true` las 11 pruebas
+  pasaban. **Arreglado por el Revisor** con un test que pasa y que cae con
+  cada mutante: `menos aperturas perdidas y menos muertes sin trade es
+  mejor` (af6eeab).
+- [bug] [LOW] `frontend/src/pages/Comparar.jsx:41-43`: si
+  `/api/matches/?limit=200` falla, el select queda deshabilitado para
+  siempre con el texto "Cargando partidas…" mientras el `ErrorBox` de abajo
+  dice que la API fallo. Reproducido en Chromium con `page.route` devolviendo
+  500 a ese listado. Arreglo sugerido: con `listado.error`, la opcion vacia
+  dice "No se pudo cargar el listado" (o se oculta el select). No se
+  arregla en esta pasada: el error ya se ve y A se sigue mostrando.
+
+verificar.sh: VERDE af6eeabce (1092 tests backend, 288 vitest, 83 e2e).
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos (1 arreglado) · verificación=— (sin subagentes en esta sesion: la revision la hizo el lider)
 
 ## QA
 
