@@ -1,7 +1,7 @@
 # 103. Tira de rondas en el listado de partidas
 
 estado: aprobado
-candado: -
+candado: release 2026-11-09T16:35Z
 rama: claude/equipo-dev/103-tira-de-rondas-en-partidas
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F4 (el PR #14, que tocaba Matches.jsx, se cerro sin merge el 2026-11-05)
 archivos: backend/replays/views.py (match_list), backend/tests/test_tira_de_rondas.py, frontend/src/tiraRondas.js, frontend/src/tiraRondas.test.js, frontend/src/pages/Matches.jsx, frontend/src/styles.css, frontend/e2e/tira-rondas.spec.js
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc, revisor 20261109T1205Z-cP2rEUw, qa 20261109T1604Z-cyu4hFR
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261106T0554Z-cFqJHEh, dev 20261106T0648Z-cYjqMjZ, dev 20261109T0345Z-c8x1kCc, revisor 20261109T1205Z-cP2rEUw, qa 20261109T1604Z-cyu4hFR, release 20261109T1604Z-cyu4hFR
 
 ## PR
 
