@@ -1,7 +1,7 @@
 # 101. Dos partidas lado a lado
 
 estado: revisado
-candado: -
+candado: qa 2026-11-09T08:05Z
 rama: claude/equipo-dev/101-dos-partidas-lado-a-lado
 tipo: funcionalidad
 epica: paridad-referencia
