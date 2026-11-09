@@ -23,13 +23,13 @@ vivos y corrige lo que no. `ultima visita` y `senal` las actualiza cada turno
 
 | familia | donde mirar | ultima visita | senal |
 |---|---|---|---|
-| 1. Parsers abiertos del `.rec` | r6-dissect (https://github.com/redraskal/r6-dissect): upstream quieto desde e6c2ca8 (2025-09-16); ultimo issue/PR #131 y #130 (2026-09-30). Forks con senal: nicktstewart y defiancer6s-hub (Y11S2), lumina-r6/siege-dissect (picks de preparacion, score). Secos: aa-sasha, cliffside-git, ItaloRossySantiago, PR #105. `api.github.com` da 403 desde la nube: usar las paginas HTML | 2026-10-14 (2211Z) | alta |
-| 2. Herramientas de replay de Siege | r6tv.online/how-it-works (la pagina util de R6TV), aurelix.app (portada y su unico post del blog), r6-replay.com/roadmap (casi todo ya esta en ALCANCE; `/changelog` da 404; `/siegewatch` es anti-cheat, no sirve). SiegeScope (siege-scope-stats.vercel.app, local con `.rec`, en desarrollo; 2026-11-03: nada que la app no tenga). Secos: r6.arenyze.com, ReplayAnalysis, Sprabuni/R6-Replays, Breach Report (top.gg 403), r6data.eu (dominio vencido, redirige a expireddomains) | 2026-10-14 (2211Z); SiegeScope de paso 2026-11-03 | alta |
+| 1. Parsers abiertos del `.rec` | r6-dissect (https://github.com/redraskal/r6-dissect): upstream quieto desde e6c2ca8 (2025-09-16); #131 y #129 cerradas sin merge, #126 y #124 abiertas, #132 (2026-11-08) sin contenido. Fork con mas senal: **prestonwillis10/r6-dissect** (488 commits, activo 2026-10-19 a 10-28: arma por baja, loadout, dano, DBNO, salas, Y11S2). nicktstewart, defiancer6s-hub y lumina-r6 quietos desde antes de 2026-10-14. Secos: aa-sasha, cliffside-git, ItaloRossySantiago, Animuxs/r6-stats-app, PR #105. `api.github.com` y el MCP de GitHub dan 403 fuera del repo: usar las paginas HTML | 2026-11-09 | alta |
+| 2. Herramientas de replay de Siege | r6tv.online/how-it-works, aurelix.app (blog con un solo post, 2026-03-20), r6-replay.com/roadmap (sin cambios desde 2026-02), SiegeScope (sin cambios). Nuevas 2026-11-09: r6insights.org/overview (equipos y coach, KPI Tracking) y matchanalytics.eu (sube `.rec` a la nube; sitios, "Cheat Analytics"), sin fechas por funcion. Secos: r6.arenyze.com, ReplayAnalysis, Sprabuni/R6-Replays, Breach Report, r6data.eu (vencido), GitHub R6ReadRecFile y r6-dissect-application | 2026-11-09 | baja |
 | 3. Trackers de API | stats.cc, R6 Tracker: descripcion publica, resenas, lo que se comenta. Detras de Cloudflare: si da 403, busqueda y seguir. Sin changelog abrible de ninguno desde 2026-10 (R6 Analyst: ultimo changelog 2021, soporte de Overwolf 404). Lo que rinde es el rating de Siege.GG: blog 946 (2026-08-11) y news de support value y win probability. r6data.eu vencido | 2026-11-03 | baja (trackers) / alta (Siege.GG) |
-| 4. Otros juegos tacticos | Refrag blog (nuevo, alta: oportunidades de trade, intentos de apertura), Leetify blog (profiles-update), vlr.gg (pestana Performance de una partida; `/stats` falla por redirects), CS Demo Manager `/changelog`. Secos: Dotabuff (403), csstats.gg (403), Scope.gg (blog quieto desde 2025-08), tracker.gg (403), help.op.gg (403) | 2026-10-14 (2211Z) | alta |
+| 4. Otros juegos tacticos | Refrag blog (2026-10-30: Coach por partida y por ventana), Leetify blog (2026-11-07 veto de Premier), Siege.GG news (fantasy 2026-11-04, MVP 2026-11-08), CS Demo Manager `/changelog` (sin fechas, solo CS), vlr.gg. Secos o 403: Dotabuff, csstats.gg, Scope.gg, tracker.gg, help.op.gg, noesis.gg, mobalytics.gg, blitz.gg (403), roundiq.gg (404), csskill.com (502), runitback.gg (503) | 2026-11-09 | baja |
 | 5. Comunidad | Reddit bloqueado desde la nube (WebSearch rechaza reddit.com, WebFetch no abre old.reddit): no se usan mirrors. Rinden Siege.GG news (2026-10-29 analytics), shattered.io ranks-guide y stats-tracker-setup (actualizadas 2026-10-20/21: todo ya en ALCANCE). Secos: boostroom (blog ahora solo The Division 2), metafy, bsky, foros de Ubisoft; exitlag y sportskeeda 403 | 2026-11-03 | baja |
 | 6. Ubisoft | ubisoft.com/.../news-updates (listado, seasons/splitfire, patch notes Y11S3.2 y Y11S3.3, Community Checkpoint Recap) y MP1st para fechas y numero de parche. Liquipedia da 403. Ninguna fuente publica da IDs ni code versions: eso sale de r6-dissect o del PC | 2026-11-03 | alta |
-| 7. Analitica de esports y deporte | Siege.GG blog (rating rebalance 2026-08-11: normalizacion por operador, trade differential), FanGraphs (regresion a la media), Agresti y Coull (Wilson), nomiun.substack.com, HLTV Rating 3.0. Secos: Leetify glossary, ESPN consistency (vacio), Pythagorean para esports. No hay tabla publica XvY ni ventana de trade en segundos para Siege | 2026-10-14 (2211Z) | alta |
+| 7. Analitica de esports y deporte | FanGraphs library (LI y Clutch), metricgate.com (Bradley-Terry, shrinkage), Counterwatch (shrinkage), arXiv 1701.02359 (supervivencia), Miller y Sanjurjo 2018 (hot hand, sin metodo en la pagina), Siege.GG (win probability 2026-04-27, sin tabla XvY), HLTV Rating 3.0, nomiun. Secos: Leetify glossary, ESPN consistency, Pythagorean, varianceexplained.org (503) | 2026-11-09 | alta |
 | 8. Paridad con la referencia (Replica) | r6-replay.com (portada, /roadmap "last updated February 2026") y aurelix.app (portada, /features, /blog con un solo post de 2026-03-20). Secos: aurelix /faq /changelog /docs /help (404), X (402), Discord (cuenta), Trustpilot de las dos (404), HN Algolia 0, Overwolf sin ficha. Matriz en `replica/features.csv`; proximo recon completo desde 2026-11-21 | 2026-11-03 (2005Z) | baja (sin cambios en la referencia) |
 
 ## Trampas conocidas
@@ -57,6 +57,15 @@ La entrada mas nueva arriba. Formato:
 - Descartadas: <idea> porque <motivo>
 ```
 
+### 2026-11-09 (sesion 20261109T2004Z-cQbf8yt)
+
+- Familias: 1, 2, 4 y 7 (las mas viejas, 2026-10-14). La 8 no tocaba (ultima pasada 2026-11-03).
+- Dio senal: fork prestonwillis10/r6-dissect (arma por baja 63149de, loadout 807d93f, dano d8a0d4d, DBNO a3b438e, salas en el README, tags de Y11S2 044bc7c); FanGraphs LI y Clutch; metricgate Bradley-Terry; arXiv 1701.02359; Refrag (Coach por partida); matchanalytics.eu (sitio de la partida, rivales atipicos).
+- Seco: upstream r6-dissect (sin commits; #132 sin contenido), forks viejos, herramientas de replay ya visitadas (ninguna fecha posterior a 2026-10-14), CS Demo Manager, blogs con 403 (noesis, mobalytics, blitz).
+- Ideas agregadas a ALCANCE.md: B21 peso de cada ronda, K13 supervivencia sin sesgo, D15 duelos ajustados por rival, D16 rivales fuera de lo comun, F20 sitios de la partida, F21 Coach de una partida, P8 sala inicial del defensor; fuentes nuevas en P3 y P5.
+- Descartadas: arma, loadout y dano del fork (choca con `CLAUDE.md`; pregunta al humano), winrates encogidos (E8), comparar jugadores, operador sugerido (O1), puntos fantasy, mapa repetido, hot hand, puesto por stat (E4), antes y despues (Tendencias).
+- Proxima: familias 3, 5 y 6 (2026-11-03) y la 8 desde 2026-11-10; mirar si el humano respondio sobre armas y dano.
+
 ### 2026-11-03 (sesion 20261103T2005Z-cWAnVGk)
 
 - Familias: 8 (pasada semanal liviana, sin recon completo), 3, 5 y 6.
@@ -67,15 +76,9 @@ La entrada mas nueva arriba. Formato:
 - Descartadas: KOST (ya es KST), rating compuesto normalizado por operador (O3 y Rating), Villa rehecho en Y11S3 (ya anotado en A4), pool fijo de Y11S4 (E11 lo cubre), heatmaps y post-plant (formato), Glicko de equipos (fuera de tus replays).
 - Proxima: familias 1, 2, 4 y 7 (2026-10-14). A9 y P7 piden un `.rec` del PC: P7 es lo primero a mirar con replays posteriores al 2026-11-03.
 
-### 2026-10-24 (sesion 20261024T2004Z)
+### 2026-10-24 (sesion 20261024T2004Z, condensada)
 
-- Familias: 8 (primera pasada de Replica: recon completo, paridad y resenas; por replica.md no se visitan otras).
-- Paridad: 76.1 / 100, must 12 de 17, skip 21, resenas 0 de 8 fuentes.
-- Dio senal: r6-replay.com portada (trades por equipo, apertura en el kill feed) y roadmap (casi todo es coordenadas, equipos o nube: skip); aurelix.app /features y blog (resumen del Clubhouse, win delta por mapa y sitio, tramos de 30 s, tags por ronda).
-- Seco: resenas de las dos (Trustpilot y Overwolf sin ficha, HN 0, Reddit 403, X 402, Discord con cuenta); aurelix /faq, /changelog, /docs y /help (404).
-- Ideas agregadas a ALCANCE.md: epica nueva `paridad-referencia` con R1 partidas en el Inicio, R2 trades de los dos equipos en la partida, R3 fases de la ronda en la partida, R4 apertura marcada en la timeline.
-- Descartadas (skip en la matriz): recorridos, heatmaps, visor 2D y setups (coordenadas); plants, post-plant y retakes (formato); Drive, API key, cuentas, equipos, planes y analytics (no-goals); OCR (dependencia); overlays de torneo; leaderboards y scouting fuera de tus replays (Ubisoft). Ya tenian idea: A1, O1, O5, D2, D4, F1, F2, F13, G2, O2.
-- Proxima: familias 3, 5 y 6 (las mas viejas, 2026-10-14); en la proxima pasada de Replica, reintentar resenas.
+- Familia 8, primera pasada de Replica: paridad 76.1, epica `paridad-referencia` con R1 a R4; resenas 0 de 8 fuentes. Descartadas por formato, no-goals o Ubisoft: recorridos, heatmaps, plants, cuentas, OCR, overlays, scouting.
 
 ### 2026-10-14 (sesiones 20261014T2010Z, 2111Z y 2211Z, condensadas)
 
