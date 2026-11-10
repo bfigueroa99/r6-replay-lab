@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-10 00:15 UTC por release (sesion 20261110T0004Z-cJ4VUqo; motivo: reloj: release, 1 en espera; reloj: release, franja 0). Reintento diario de la 79: sigue esperando al humano (toca `CLAUDE.md`). Sin pushes de codigo.
+actualizado: 2026-11-10 04:25 UTC por dev (sesion 20261110T0403Z-cJ7jSve; motivo: por estado: 1 disenado, lugar en cola; reloj: po, franja 1). La 83 no se reclama: su diseno pide la 79 en dev y la 79 sigue esperando al humano (PR #81). Sin bug reproducible en dev. Sin pushes de codigo.
 playbook: origin/dev@208e4f9
-rutina: TURNOS_SIN_RASTRO=6 en 48 h (~11-08T02:01Z ~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z) | 19 de 41 en 7 dias; sin herramientas para comparar
+rutina: TURNOS_SIN_RASTRO=5 en 48 h (~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z) | 19 de 41 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -14,7 +14,7 @@ pausa: no
 La 103 entro a dev por [PR #103](https://github.com/bfigueroa99/r6-replay-lab/pull/103) (208e4f9) y la 101 por [PR #102](https://github.com/bfigueroa99/r6-replay-lab/pull/102). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
 COLA=1/4  TOTAL=1/6 (79 entregado, espera al humano)
-RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=6 bloqueadas=0
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=5 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -22,9 +22,9 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 ## Alcance
 
-- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 22 (71 a 78, 80, 89 a 101, 103) otros:8
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 21 (73 a 78, 80, 89 a 101, 103) otros:8
 - Epicas en curso: paridad-referencia: R6 ficha 101 en dev. revision-de-rondas: F4 ficha 103 en dev (PR #103). datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). operadores: O7 ficha 102 propuesta.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
 - `ALCANCE.md`: 98 ideas libres. Ideas nuevas de este turno: B21 el peso de cada ronda, K13 cuanto sobrevives sin sesgo, D15 duelos ajustados por rival, D16 rivales fuera de lo comun, F20 sitios de la partida, F21 el Coach de una partida, P8 sala inicial del defensor.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
@@ -46,7 +46,7 @@ Proximo: 102 le toca al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-10 00:15 | (release 20261110T0004Z-cJ4VUqo, reloj: 1 en espera) Reintento de la 79: `merge-tree` limpio con dev 208e4f9, PR #81 abierto contra dev y sin comentarios; la puerta sigue fallando en (d) por `CLAUDE.md`, queda para el humano. `pruebas.sh` PRUEBAS_OK (18). Sin herramientas de Routine para comparar el prompt. PR #101 (arnés, rama del humano `ccr-2300225a-ki31w0`) abierto contra dev: no se toca. |
-| dev | 2026-11-09 04:01 | (dev 20261109T0345Z-c8x1kCc, por estado: 1 huerfanas) Retoma e implementa 103 (`en curso` huerfana -> `implementado`, a580dc9): `strip` en `match_list` con una sola consulta a `Round` para la pagina; 8 tests de backend (orden, null, prorroga, sin rondas, filtros que no recortan, consultas que no crecen con la pagina); `tiraRondas.js` (+7 vitest) y columna Secuencia en Partidas con CSV `G G P - | P G`; e2e `tira-rondas.spec.js` con la descarga del CSV. Estilos movidos despues de los `.chip` para no chocar con la 101. Sin subagente para la revision ciega (la hizo el Dev). VERDE 71655cf2c (1100, 283, 83). |
+| dev | 2026-11-10 04:25 | (dev 20261110T0403Z-cJ7jSve, por estado: 1 disenado) Nada tomable: la 83 dice "implementar despues de que #79 se mergee" y la 79 no esta en dev (rama limpia contra dev 208e4f9, PR #81 espera al humano). Busqueda de bug (sin trabajo): suite backend en dev con `-W error::DeprecationWarning` OK (1100, 4 skipped); `seed_demo` + GET a 86 rutas `/api/` con 23 variantes de parametros invalidos, cero 5xx. Sin ficha nueva, sin pushes de codigo. |
 | revisor | 2026-11-09 12:20 | (revisor 20261109T1205Z-cP2rEUw, por estado: 1 implementado) Revisa 103 (`implementado` -> `revisado`, 83cb4ee): merge de dev 580e6da (limpio); revision ciega en dos ejes con dos `omc-code-reviewer` (estandares: sin hallazgos; intencion: 4 de 4 criterios, 2 LOW no bloqueantes: la columna Secuencia del CSV no la pide la ficha pero la exige el diseno, y el e2e no afirma la celda gris ni el corte de prorroga en la app real). Aprobar. VERDE c25627eb5 (1100, 295, 84). |
 | qa | 2026-11-09 16:30 | (qa 20261109T1604Z-cyu4hFR, por estado: 1 revisado) Prueba 103 (`revisado` -> `aprobado`, 7290f44): VERDE 32988dbbe (1100, 295, 84); runserver con base vacia y sembrada (prorroga, `won=null`, lado vacio, rondas desordenadas, partida sin rondas); curl con filtros y bordes (tira nunca recortada); Chromium sobre `/partidas` (celda gris, letra `?`, un corte, consola limpia); chunk inicial igual; 4 de 4 mutantes muertos; `omc-verifier` PASS. |
 | arquitecto | 2026-11-06 06:20 | (arquitecto 20261106T0554Z-cFqJHEh, pedido) Disena 101 (dos partidas lado a lado: pagina nueva `Comparar.jsx` en `/comparar/:a` y `/comparar/:a/:b`, enlace "Comparar con…" en el detalle, `compararPartidas.js` puro con diferencia con signo, "mas es mejor" por fila, rondas por lado por winrate y guiones sin tu fila o sin rondas; 404 de cualquiera de las dos con `NoExiste`; sin backend) y 103 (tira de rondas: `strip` en `match_list` con una sola consulta a `Round` para la pagina, sin leer filtros; `tiraRondas.js`, columna "Secuencia" con CSV legible y clases nuevas, no `.round-tab`; test de consultas con `CaptureQueriesContext` comparando paginas de 2 y 6). Sin consenso, arena ni skills (chicas, una forma). Papel en tope de disenado; la 102 queda propuesta. |
@@ -75,7 +75,7 @@ Proximo: 102 le toca al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`).
 - Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
-- Rutina: 6 disparos sin rastro en 48 h (~11-08T02:01Z ~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre).
+- Rutina: 5 disparos sin rastro en 48 h (~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre). Mientras el PR #81 (79) no entre a dev, la 83 queda frenada y los turnos de Dev salen vacios.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.) Entorno cloud: `check.sh` elige solo el Chromium de la imagen (`E2E_CHROMIUM`); `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 
 ## Para el equipo
