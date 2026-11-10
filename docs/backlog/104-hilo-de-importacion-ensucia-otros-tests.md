@@ -1,7 +1,7 @@
 # 104. Tests que ensucian a los que vienen despues (hilo de importacion y cache de overrides)
 
-estado: revisado
-candado: qa 2026-11-10T16:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests
 tipo: bug
 epica: -
@@ -136,7 +136,34 @@ sin `print`; no muestra numeros nuevos (sin fila en `metricas.md`).
 Skills: no aplica.
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
-## QA
+## QA 2026-11-10 sobre 204ad1f
+
+(qa 20261110T1604Z-ciNeyUS)
+
+Veredicto: aprobar. Desde `backend/`, sobre la rama (ya contiene `origin/dev` 208e4f9):
+
+- Criterio 1: `python3 manage.py test tests.test_import_job tests.test_ajustes` -> `Ran 68 tests OK`.
+- Criterio 2: `python3 manage.py test tests.test_import_job.HiloTests.test_el_post_ya_trae_el_total tests.test_ajustes.VigilanteTests` -> `Ran 11 tests OK`.
+- Criterio 4: `python3 manage.py test tests --reverse` -> `Ran 1100 tests OK (skipped=4)`.
+  Ademas `--shuffle 2026` y `--shuffle 9`: 1100 OK (skipped=4) cada uno.
+- Criterio 5: `verificar.sh` VERDE 204ad1f53 en 153 s (1100 tests backend, 295 vitest, 84 e2e).
+- Criterio 3, mutacion (cada una revertida con `git checkout`):
+  - M1: borrar `self.addCleanup(overrides.load, force=True)` de `test_pydissect.py` ->
+    `test tests.test_pydissect.ModoYTipoDesconocidoTests --reverse` FAILED `'Arcade' != 'Unknown(999)'`.
+  - M2: `replays/ingest.py:520` `args=(folders[:1],)` -> `test_el_post_ya_trae_el_total`
+    FAILED `['Match-a'] != ['Match-a', 'Match-b']`: el test ve las carpetas que llegan al trabajo.
+  - M3: sacar el `mock.patch.object(ingest, "run_import_job", ...)` (hilo real) ->
+    `test_import_job test_ajustes` FAILED (failures=5): vuelven los 4 de `VigilanteTests`.
+- Sistema: `runserver` con base vacia (`DATA_DIR` temporal en el scratchpad, `REPLAY_DIR`
+  inexistente): `GET /api/import/progress/` 200; `POST /api/import/` con JSON 200 (`total: 0`,
+  `running: false`); `POST` con formulario 415 `se esperaba application/json`. Servidor bajado.
+  El cambio es solo de tests: sin migracion, sin `frontend/src`, sin parser, sin `.ps1`.
+
+Verificacion ciega `omc-verifier` (receta 3): PASS, los 5 criterios VERIFIED, corrio en fresco
+C1, C2, `--reverse` y la suite.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Verificar en el PC
 
