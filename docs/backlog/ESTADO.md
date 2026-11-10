@@ -1,8 +1,8 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-10 04:25 UTC por dev (sesion 20261110T0403Z-cJ7jSve; motivo: por estado: 1 disenado, lugar en cola; reloj: po, franja 1). La 83 no se reclama: su diseno pide la 79 en dev y la 79 sigue esperando al humano (PR #81). Sin bug reproducible en dev. Sin pushes de codigo.
+actualizado: 2026-11-10 08:17 UTC por dev (sesion 20261110T0805Z-ck1PCEC; motivo: por estado: 1 disenado, lugar en cola; reloj: dev, franja 3). La 83 sigue frenada por la 79 (PR #81). Sin trabajo: ficha 104 (bug de tests dependientes del orden) reclamada, arreglada y dejada `implementado`.
 playbook: origin/dev@208e4f9
-rutina: TURNOS_SIN_RASTRO=5 en 48 h (~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z) | 19 de 41 en 7 dias
+rutina: TURNOS_SIN_RASTRO=4 en 48 h (~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z) | 19 de 42 en 7 dias
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -10,15 +10,18 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Migracion en `0006_match_excluded`; `merge-tree` limpio con dev 208e4f9; PR #81 sin comentarios. VERDE 524435efa (1089, 257, 77) | 91 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
+| claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests | 104 | implementado (tipo bug, solo tests). VERDE dc33c8294 (1100, 295, 84) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests?expand=1) |
 
 La 103 entro a dev por [PR #103](https://github.com/bfigueroa99/r6-replay-lab/pull/103) (208e4f9) y la 101 por [PR #102](https://github.com/bfigueroa99/r6-replay-lab/pull/102). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
-COLA=1/4  TOTAL=1/6 (79 entregado, espera al humano)
-RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=5 bloqueadas=0
+COLA=2/4  TOTAL=2/6 (79 entregado, espera al humano; 104 implementado, le toca al Revisor)
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=4 bloqueadas=1
+(la linea es la de este contexto, que implemento la 104 y no puede revisarla: por eso `implementado=0 bloqueadas=1`)
 
 ## Orden de merge sugerido
 
 1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). `merge-tree` limpio con dev 208e4f9 (ya con la 103).
+2. `claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests`: solo `backend/tests/test_import_job.py` y `test_pydissect.py`; `merge-tree` limpio con dev 208e4f9 y con la 79. Independiente: puede entrar antes o despues.
 
 ## Alcance
 
@@ -35,18 +38,19 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | entregado, PR #81 (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
+| 104-hilo-de-importacion-ensucia-otros-tests | implementado (rama de trabajo) | bug | - | 2 | backend | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
 | 102-pool-de-operadores-por-lado | propuesto (candado `arquitecto 2026-11-06T06:49Z` muerto en el espejo) | funcionalidad | operadores | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo: 102 le toca al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
+Proximo: 104 le toca al Revisor; 102 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-10 00:15 | (release 20261110T0004Z-cJ4VUqo, reloj: 1 en espera) Reintento de la 79: `merge-tree` limpio con dev 208e4f9, PR #81 abierto contra dev y sin comentarios; la puerta sigue fallando en (d) por `CLAUDE.md`, queda para el humano. `pruebas.sh` PRUEBAS_OK (18). Sin herramientas de Routine para comparar el prompt. PR #101 (arnés, rama del humano `ccr-2300225a-ki31w0`) abierto contra dev: no se toca. |
-| dev | 2026-11-10 04:25 | (dev 20261110T0403Z-cJ7jSve, por estado: 1 disenado) Nada tomable: la 83 dice "implementar despues de que #79 se mergee" y la 79 no esta en dev (rama limpia contra dev 208e4f9, PR #81 espera al humano). Busqueda de bug (sin trabajo): suite backend en dev con `-W error::DeprecationWarning` OK (1100, 4 skipped); `seed_demo` + GET a 86 rutas `/api/` con 23 variantes de parametros invalidos, cero 5xx. Sin ficha nueva, sin pushes de codigo. |
+| dev | 2026-11-10 08:17 | (dev 20261110T0805Z-ck1PCEC, por estado: 1 disenado) La 83 sigue frenada (79 sin mergear). Sin trabajo: reproduce el aviso de tests dependientes del orden y abre la 104 (bug): `HiloTests.test_el_post_ya_trae_el_total` lanzaba un hilo real que commiteaba `ImportLog` fuera de la transaccion; `--reverse` destapo otra fuga (cache de overrides con 'Arcade' en `ModoYTipoDesconocidoTests`). Arreglo solo en tests; `--reverse` y `--shuffle` 1, 2, 104 en verde. Revision ciega: aprobar. VERDE dc33c8294 (1100, 295, 84). |
 | revisor | 2026-11-09 12:20 | (revisor 20261109T1205Z-cP2rEUw, por estado: 1 implementado) Revisa 103 (`implementado` -> `revisado`, 83cb4ee): merge de dev 580e6da (limpio); revision ciega en dos ejes con dos `omc-code-reviewer` (estandares: sin hallazgos; intencion: 4 de 4 criterios, 2 LOW no bloqueantes: la columna Secuencia del CSV no la pide la ficha pero la exige el diseno, y el e2e no afirma la celda gris ni el corte de prorroga en la app real). Aprobar. VERDE c25627eb5 (1100, 295, 84). |
 | qa | 2026-11-09 16:30 | (qa 20261109T1604Z-cyu4hFR, por estado: 1 revisado) Prueba 103 (`revisado` -> `aprobado`, 7290f44): VERDE 32988dbbe (1100, 295, 84); runserver con base vacia y sembrada (prorroga, `won=null`, lado vacio, rondas desordenadas, partida sin rondas); curl con filtros y bordes (tira nunca recortada); Chromium sobre `/partidas` (celda gris, letra `?`, un corte, consola limpia); chunk inicial igual; 4 de 4 mutantes muertos; `omc-verifier` PASS. |
 | arquitecto | 2026-11-06 06:20 | (arquitecto 20261106T0554Z-cFqJHEh, pedido) Disena 101 (dos partidas lado a lado: pagina nueva `Comparar.jsx` en `/comparar/:a` y `/comparar/:a/:b`, enlace "Comparar con…" en el detalle, `compararPartidas.js` puro con diferencia con signo, "mas es mejor" por fila, rondas por lado por winrate y guiones sin tu fila o sin rondas; 404 de cualquiera de las dos con `NoExiste`; sin backend) y 103 (tira de rondas: `strip` en `match_list` con una sola consulta a `Round` para la pagina, sin leer filtros; `tiraRondas.js`, columna "Secuencia" con CSV legible y clases nuevas, no `.round-tab`; test de consultas con `CaptureQueriesContext` comparando paginas de 2 y 6). Sin consenso, arena ni skills (chicas, una forma). Papel en tope de disenado; la 102 queda propuesta. |
@@ -73,7 +77,6 @@ Proximo: 102 le toca al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano
 - Verificar en el PC (34, 38, 47, 55; ya en main desde el PR #62): `manage.py backup`, `migrate`, `recompute --dry-run` (sin cambios de `clutch_vs`), `recompute`; para 38, `import_replays --force <carpeta>`; para 47, `unknown_ids` y `retag --dry-run`. Detalle en cada ficha.
 - Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa. Idea P7: con un replay posterior al parche Y11S3.3, mira en Partidas o Rivales si algun rival sale con nick generico. **Pregunta (P10, regla de `CLAUDE.md`):** el fork prestonwillis10 de r6-dissect (commits 63149de, 807d93f y d8a0d4d, 2026-10) lee el arma o gadget de cada baja, el loadout por ronda y el dano recibido (Y10S4+), verificado por su autor en Y8 a Y11S3 y sin nombres para los IDs. `CLAUDE.md` dice que armas y dano no estan en el formato. ¿Queres que el equipo lo trate como dato nuevo (idea en `datos-nuevos-del-parser`, verificar con tus `.rec`) o sigue fuera? Hasta que respondas queda en "Ideas descartadas" de `ALCANCE.md`.
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`).
-- Tests dependientes del orden (preexistente): `python manage.py test tests.test_import_job tests.test_ajustes` da 4 fallos en `VigilanteTests`; la suite completa pasa. Candidato a ficha `tests`.
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
 - Rutina: 5 disparos sin rastro en 48 h (~11-08T06:10Z ~11-08T10:19Z ~11-08T14:28Z ~11-08T18:37Z ~11-08T22:47Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre). Mientras el PR #81 (79) no entre a dev, la 83 queda frenada y los turnos de Dev salen vacios.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.) Entorno cloud: `check.sh` elige solo el Chromium de la imagen (`E2E_CHROMIUM`); `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
