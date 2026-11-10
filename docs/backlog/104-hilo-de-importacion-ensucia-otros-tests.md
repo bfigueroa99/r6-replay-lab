@@ -1,7 +1,7 @@
 # 104. Tests que ensucian a los que vienen despues (hilo de importacion y cache de overrides)
 
 estado: revisado
-candado: -
+candado: qa 2026-11-10T16:04Z
 rama: claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: dev 20261110T0805Z-ck1PCEC (sin trabajo: la 83 espera a la 79). Aviso "Tests dependientes del orden" de `## Para el humano` en ESTADO.md
 archivos: backend/tests/test_import_job.py, backend/tests/test_pydissect.py
-turnos: dev 20261110T0805Z-ck1PCEC, revisor 20261110T1205Z-cUxSwwp
+turnos: dev 20261110T0805Z-ck1PCEC, revisor 20261110T1205Z-cUxSwwp, qa 20261110T1604Z-ciNeyUS
 
 ## PR
 
