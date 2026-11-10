@@ -1,6 +1,6 @@
 # 104. Tests que ensucian a los que vienen despues (hilo de importacion y cache de overrides)
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests
 tipo: bug
@@ -9,9 +9,64 @@ area: backend
 prioridad: 2
 fuente: dev 20261110T0805Z-ck1PCEC (sin trabajo: la 83 espera a la 79). Aviso "Tests dependientes del orden" de `## Para el humano` en ESTADO.md
 archivos: backend/tests/test_import_job.py, backend/tests/test_pydissect.py
-turnos: dev 20261110T0805Z-ck1PCEC, revisor 20261110T1205Z-cUxSwwp, qa 20261110T1604Z-ciNeyUS
+turnos: dev 20261110T0805Z-ck1PCEC, revisor 20261110T1205Z-cUxSwwp, qa 20261110T1604Z-ciNeyUS, release 20261110T1604Z-ciNeyUS
 
 ## PR
+
+Titulo: `[equipo-dev][tests] Tests que ensucian a los que vienen despues`
+
+### Que cambia
+
+Dos tests dejaban estado global que hacia fallar a otros segun el orden. La
+suite pasaba solo porque el orden alfabetico los esquivaba: un test nuevo mal
+ubicado fallaba sin motivo, o pasaba por la fila que dejo otro. Solo cambian
+tests; el codigo de la app no se toca.
+
+- `test_import_job.py`, `test_el_post_ya_trae_el_total`: el hilo real de
+  importacion commiteaba `ImportLog` por otra conexion, fuera del rollback, y
+  `VigilanteTests` contaba de mas. Ahora `run_import_job` va con un doble que
+  anota las carpetas; el test afirma ademas que llegan `Match-a` y `Match-b`.
+- `test_pydissect.py`, `_con_overrides`: la recarga de `overrides` corria antes
+  de parar el parche del entorno y dejaba `999 -> Arcade` en el cache. Ahora es
+  un cleanup que corre despues (LIFO).
+
+### Por que esto y no otra cosa
+
+Ficha 104, aviso "Tests dependientes del orden" de `ESTADO.md`. Descartado:
+tocar `ingest.start_import` o el vigilante (estan bien); fijar `--shuffle` en
+`check.sh` (es decision de la maquinaria).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 204ad1f53, 1100 tests backend, 295 vitest, 84 e2e.
+- `manage.py test tests --reverse`, `--shuffle 2026` y `--shuffle 9`: 1100 OK.
+- Mutaciones: sin el cleanup cae `ModoYTipoDesconocidoTests --reverse`; con el
+  hilo recibiendo una sola carpeta cae `test_el_post_ya_trae_el_total`; sin el
+  doble vuelven los 4 fallos de `VigilanteTests`.
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (implementacion)
+- OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=— (revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+
+### Riesgos y lo que no entra
+
+Sin migraciones, sin `recompute`, sin frontend. Correr la suite en orden
+aleatorio en `check.sh` queda fuera (maquinaria).
+
+### Como probarlo en 2 minutos
+
+```
+cd backend
+python manage.py test tests.test_import_job tests.test_ajustes   # OK, 68 tests
+python manage.py test tests --reverse                            # OK, 1100 tests
+```
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -108,30 +163,9 @@ OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## Revision 2026-11-10 sobre c356079
 
-(revisor 20261110T1205Z-cUxSwwp)
-
-Veredicto: aprobar.
-
-Revision ciega `omc-code-reviewer` (eje de estandares; diff de 2 archivos y
-~30 lineas, sin eje de intencion ni de seguridad): sin hallazgos, aprobar.
-Confirmado por el lider:
-
-- El parche llega al hilo: `start_import` resuelve `run_import_job` al crear
-  el `Thread`, dentro del `mock.patch.object`; el doble anota las carpetas
-  antes de poner `running = False`, asi que no hay carrera con los asserts.
-- Cleanups LIFO: `parche.stop` corre antes de la recarga de `overrides`.
-
-Criterios, reproducidos:
-
-- Con los tests de `origin/dev`: `test_import_job test_ajustes` ->
-  `FAILED (failures=4)`; `ModoYTipoDesconocidoTests --reverse` ->
-  `FAILED (failures=1)`. Con la rama: los dos OK. Los tests prueban el arreglo.
-- Criterio 2 (aislado con `VigilanteTests`): OK.
-- `manage.py test tests --reverse`: 1100 tests OK (4 skipped, ya existentes).
-- `verificar.sh` VERDE c3560798f en 157 s (1100 tests backend, 295 vitest, 84 e2e).
-
-Archivos dentro de `archivos:`; sin skips nuevos, sin tildes en comentarios,
-sin `print`; no muestra numeros nuevos (sin fila en `metricas.md`).
+(revisor 20261110T1205Z-cUxSwwp) Veredicto: aprobar, sin hallazgos. Reprodujo
+los fallos con los tests de `origin/dev` y el verde con la rama; `verificar.sh`
+VERDE c3560798f (1100 backend, 295 vitest, 84 e2e).
 
 Skills: no aplica.
 OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
