@@ -1,7 +1,7 @@
 # 104. Tests que ensucian a los que vienen despues (hilo de importacion y cache de overrides)
 
-estado: en curso 2026-11-10
-candado: dev 2026-11-10T08:06Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests
 tipo: bug
 epica: -
@@ -94,7 +94,17 @@ Despues: los dos comandos de arriba OK (68 y 11 tests), `--reverse` OK y
 Desvios: la ficha nacio con la fuga del hilo y sumo la del cache al correr
 `--reverse`; mismo tipo de bug, mismo arreglo de una linea, misma ficha.
 
+Verificacion: `verificar.sh` VERDE dc33c8294 en 155 s (1100 tests backend,
+295 vitest, 84 e2e).
+
+Revision ciega `omc-code-reviewer` (eje de estandares, `revision.md`): sin
+hallazgos, aprobar. Corrio ademas `--reverse` de los tres modulos y `--shuffle`
+7 y 42 en verde. Anoto su nota fuera del diff: `test_api.py:315`
+(`test_import_sin_replays_no_importa_nada`) tambien lanza un hilo real, con
+carpeta inexistente: lista vacia, no escribe `ImportLog`; no ensucia.
+
 Skills: no aplica (dos tests de Django, sin dominio externo).
+OMC: plan=— · revisión=0 hallazgos (0 arreglados) · verificación=—
 
 ## Revision
 
