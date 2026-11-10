@@ -1,7 +1,7 @@
 # 104. Tests que ensucian a los que vienen despues (hilo de importacion y cache de overrides)
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-10T12:05Z
 rama: claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests
 tipo: bug
 epica: -
