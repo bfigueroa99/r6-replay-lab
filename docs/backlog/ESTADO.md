@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-11 12:15 UTC por dev (sesion 20261111T1204Z-cW2ZKMz; motivo: por estado: 1 disenado, lugar en cola; reloj: revisor, franja 4). La 83 sigue frenada: depende de la 79 (PR #81, del humano); la rama de la 79 mergea limpio con dev def7322. Sin bug reproducible, sin pushes de codigo.
+actualizado: 2026-11-11 16:30 UTC por dev (sesion 20261111T1603Z-ctict1j; motivo: por estado: 1 disenado, lugar en cola; reloj: dev, franja 5). La 83 sigue frenada por la 79 (PR #81, del humano). Sin trabajo tomable: barrido de la UI en Chromium encontro un bug, ficha 105 (URL con `%00` da 500 en la SPA y chequeo por prefijo de `dist`), `implementado`.
 playbook: origin/dev@def7322
 rutina: TURNOS_SIN_RASTRO=0 en 48 h | 19 de 41 en 7 dias
 pausa: no
@@ -10,21 +10,23 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Migracion en `0006_match_excluded`; `merge-tree` limpio con dev def7322; PR #81 sin comentarios ni reviews (revisado 2026-11-11 00:15). VERDE 524435efa (1089, 257, 77) | 116 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
+| claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa | 105 | implementado (bug, espera Revisor). VERDE aaab2a2d3 (1105, 295, 84) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa) |
 
 La 104 entro a dev por [PR #104](https://github.com/bfigueroa99/r6-replay-lab/pull/104) (def7322). La 103 entro por [PR #103](https://github.com/bfigueroa99/r6-replay-lab/pull/103) (208e4f9) y la 101 por [PR #102](https://github.com/bfigueroa99/r6-replay-lab/pull/102). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
-COLA=1/4  TOTAL=1/6 (79 entregado, espera al humano)
-RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
+COLA=2/4  TOTAL=2/6 (79 entregado, espera al humano; 105 implementado)
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=1 (la 105 no la puede revisar este contexto)
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). `merge-tree` limpio con dev def7322 (ya con la 104). Es la unica rama abierta.
+1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). `merge-tree` limpio con dev def7322 (ya con la 104). 
+2. `claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa` (solo `config/urls.py` y un test nuevo): `merge-tree` limpio con dev y con la 79.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 21 (73 a 78, 80, 89 a 101, 103) otros:8
 - Epicas en curso: paridad-referencia: R6 ficha 101 en dev. revision-de-rondas: F4 ficha 103 en dev (PR #103). datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). operadores: O7 ficha 102 propuesta.
-- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo. Bug 104 (tests que ensucian a los siguientes) en dev por PR #104.
+- Papel: PAPEL_TIPOS=funcionalidad:2 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 2 ramas de trabajo. Bug 104 (tests que ensucian a los siguientes) en dev por PR #104.
 - `ALCANCE.md`: 98 ideas libres. Ideas nuevas de este turno: B21 el peso de cada ronda, K13 cuanto sobrevives sin sesgo, D15 duelos ajustados por rival, D16 rivales fuera de lo comun, F20 sitios de la partida, F21 el Coach de una partida, P8 sala inicial del defensor.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
@@ -35,18 +37,19 @@ RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | entregado, PR #81 (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
+| 105-url-con-byte-nulo-tumba-la-spa | implementado (rama de trabajo) | bug | - | 2 | backend | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
 | 102-pool-de-operadores-por-lado | propuesto (candado `arquitecto 2026-11-06T06:49Z` muerto en el espejo) | funcionalidad | operadores | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
-Proximo: 102 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
+Proximo: 105 al Revisor; 102 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-11 00:20 | (release 20261111T0004Z-cJPhkhn, reloj, 1 en espera) Reintento de la 79: la puerta sigue fallando en (d), toca `CLAUDE.md`; PR #81 abierto contra dev, sin comentarios ni reviews; `merge-tree` limpio con dev def7322. Sin `aprobado`. `pruebas.sh`: PRUEBAS_OK (18). Rutina: sin herramientas para comparar. El PR #101 (arnes del equipo, rama `ccr-2300225a-ki31w0`) es del humano: no se toca. |
-| dev | 2026-11-11 12:15 | (dev 20261111T1204Z-cW2ZKMz, por estado: 1 disenado) La 83 sigue frenada (79 sin mergear; `merge-tree` de su rama limpio con dev def7322). Sin trabajo, busqueda de bugs distinta al barrido de las 08:20: suite backend con `-W error::DeprecationWarning -W error::PendingDeprecationWarning` (1100 OK, ninguna deprecacion), `--shuffle 7311` (OK) y vitest con `--sequence.shuffle` (295 OK). Sin bug reproducible, sin ficha nueva, sin pushes de codigo. |
+| dev | 2026-11-11 16:30 | (dev 20261111T1603Z-ctict1j, por estado: 1 disenado) La 83 sigue frenada (79 sin mergear). Sin trabajo, barrido de la UI en Chromium sobre `seed_demo` (436 rutas: paginas x queries raras, ids raros y reales; consola, `pageerror` y 5xx): `/partidas/%00` y similares daban 500 en el atrapa-todo `spa` (`ValueError: embedded null byte`), y su chequeo `startswith` dejaba servir `dist-viejo/...`. Ficha 105 (bug) escrita y `implementado`: test que falla primero (1 fail + 3 errores), arreglo de 6 lineas en `config/urls.py`, revision ciega aprobar (2 LOW arreglados). VERDE aaab2a2d3 (1105, 295, 84). |
 | revisor | 2026-11-10 12:25 | (revisor 20261110T1205Z-cUxSwwp, por estado: 1 implementado) Revisa 104 (`implementado` -> `revisado`, 27fe744): rama al dia con dev 208e4f9; revision ciega `omc-code-reviewer`: sin hallazgos. Confirmado: con los tests de dev, `test_import_job test_ajustes` da 4 fallos y `ModoYTipoDesconocidoTests --reverse` 1; con la rama, OK. `tests --reverse` completo OK (1100). VERDE c3560798f (1100, 295, 84). |
 | qa | 2026-11-10 16:25 | (qa 20261110T1604Z-ciNeyUS, por estado: 1 revisado) Prueba 104 (`revisado` -> `aprobado`, 9266101): VERDE 204ad1f53 (1100, 295, 84); criterios 1, 2 y 4 OK; `--shuffle` 2026 y 9 OK; 3 de 3 mutantes muertos (sin cleanup de overrides, hilo con una carpeta, sin el doble); runserver con base vacia (`/api/import/` 200 con JSON, 415 sin JSON); `omc-verifier` PASS. |
 | arquitecto | 2026-11-06 06:20 | (arquitecto 20261106T0554Z-cFqJHEh, pedido) Disena 101 (dos partidas lado a lado: pagina nueva `Comparar.jsx` en `/comparar/:a` y `/comparar/:a/:b`, enlace "Comparar con…" en el detalle, `compararPartidas.js` puro con diferencia con signo, "mas es mejor" por fila, rondas por lado por winrate y guiones sin tu fila o sin rondas; 404 de cualquiera de las dos con `NoExiste`; sin backend) y 103 (tira de rondas: `strip` en `match_list` con una sola consulta a `Round` para la pagina, sin leer filtros; `tiraRondas.js`, columna "Secuencia" con CSV legible y clases nuevas, no `.round-tab`; test de consultas con `CaptureQueriesContext` comparando paginas de 2 y 6). Sin consenso, arena ni skills (chicas, una forma). Papel en tope de disenado; la 102 queda propuesta. |
