@@ -1,7 +1,7 @@
 # 105. Una URL con byte nulo tumba la SPA con un 500
 
-estado: en curso 2026-11-11
-candado: dev 2026-11-11T16:40Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa
 tipo: bug
 epica: -
@@ -59,6 +59,38 @@ temporal (parchean `config.urls.DIST` e `INDEX`): no dependen de
 `npm run build`.
 
 ## Implementacion
+
+(dev 20261111T1603Z-ctict1j, sobre dev def7322.)
+
+Como se encontro: barrido de la UI en Chromium (build + `e2e/servidor.js` con
+`seed_demo`, 436 rutas: las 10 paginas con 14 claves de query x 2 valores
+raros, ids raros en `/partidas/`, `/comparar/` y `/jugadores/`, las 29
+partidas y 7 jugadores reales), mirando `console.error`, `pageerror` y
+respuestas 5xx. Lo unico que aparecio: las 5 rutas con `%00` daban 500 del
+atrapa-todo (`ValueError: embedded null byte` en `Path.resolve()`). Los 404
+de ids inexistentes son el comportamiento esperado (`NoExiste`). Leyendo la
+vista salio el segundo problema, el chequeo por prefijo de texto.
+
+Test primero: `tests/test_spa.py` contra el `urls.py` de dev da
+`FAILED (failures=1, errors=3)`: los 3 subtests del byte nulo con
+`ValueError: embedded null byte` y la carpeta hermana con
+`AssertionError: b'no se sirve' != b'<html>la app</html>'`. Con el arreglo,
+5/5 OK. `test_no_sirve_archivos_fuera_del_build` ya pasaba antes: queda como
+red de regresion, y asi lo dice su comentario.
+
+Quedo todo lo de `## Diseno`, sin desvios. Revision ciega
+`omc-code-reviewer`: aprobar, 2 LOW (assert de `status_code` faltante en el
+ultimo test, `__import__("shutil")`), los dos corregidos en aaab2a2.
+
+Desvio del playbook: el test que falla lo escribi yo antes de lanzar
+`omc-test-engineer` (la receta 4 pide que lo proponga el agente); la falla
+se vio igual antes del arreglo, y el revisor ciego confirmo que los tests
+fallan contra el codigo de dev.
+
+verificar.sh: VERDE aaab2a2d3 (1105 tests backend, 295 vitest, 84 e2e).
+
+Skills: no aplica (una vista de Django y pathlib).
+OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
 ## Revision
 
