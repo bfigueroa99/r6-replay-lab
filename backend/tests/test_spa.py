@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 from pathlib import Path
 from unittest import mock
@@ -14,7 +15,7 @@ class SpaTests(TestCase):
 
     def setUp(self):
         raiz = Path(tempfile.mkdtemp())
-        self.addCleanup(lambda: __import__("shutil").rmtree(raiz, ignore_errors=True))
+        self.addCleanup(shutil.rmtree, raiz, ignore_errors=True)
         dist = raiz / "dist"
         (dist / "assets").mkdir(parents=True)
         (dist / "index.html").write_text("<html>la app</html>", encoding="utf-8")
@@ -55,5 +56,7 @@ class SpaTests(TestCase):
         self.assertEqual(self.contenido(response), b"<html>la app</html>")
 
     def test_no_sirve_archivos_fuera_del_build(self):
+        # red de regresion: el prefijo viejo ya rechazaba este, el nuevo tambien
         response = self.client.get("/..%2F..%2Fdist-viejo%2Fsecreto.txt")
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contenido(response), b"<html>la app</html>")
