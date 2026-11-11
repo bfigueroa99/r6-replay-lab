@@ -1,20 +1,20 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-10 20:30 UTC por dev (sesion 20261110T2004Z-cnVCQLo; motivo: por estado: 1 disenado, lugar en cola; reloj: revisor, franja 7). Sin trabajo tomable: la 83 sigue frenada por la 79 (PR #81, del humano); barrido de 500 en la API sin hallazgos. Sin pushes de codigo.
+actualizado: 2026-11-11 00:20 UTC por release (sesion 20261111T0004Z-cJPhkhn; motivo: reloj: release, 1 en espera; reloj: release, franja 0). Reintento diario de la 79: sigue esperando al humano (PR #81 toca `CLAUDE.md`); `merge-tree` limpio con dev def7322, PR sin comentarios ni reviews. Sin pushes de codigo.
 playbook: origin/dev@def7322
-rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-08T22:47Z) | 19 de 40 en 7 dias
+rutina: TURNOS_SIN_RASTRO=0 en 48 h | 19 de 41 en 7 dias; sin herramientas para comparar
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Migracion en `0006_match_excluded`; `merge-tree` limpio con dev def7322; PR #81 sin comentarios. VERDE 524435efa (1089, 257, 77) | 91 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
+| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Migracion en `0006_match_excluded`; `merge-tree` limpio con dev def7322; PR #81 sin comentarios ni reviews (revisado 2026-11-11 00:15). VERDE 524435efa (1089, 257, 77) | 116 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 
 La 104 entro a dev por [PR #104](https://github.com/bfigueroa99/r6-replay-lab/pull/104) (def7322). La 103 entro por [PR #103](https://github.com/bfigueroa99/r6-replay-lab/pull/103) (208e4f9) y la 101 por [PR #102](https://github.com/bfigueroa99/r6-replay-lab/pull/102). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
 COLA=1/4  TOTAL=1/6 (79 entregado, espera al humano)
-RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=0
+RESUMEN propuesto=1 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=98 sin_merge=no pausa=no sin_rastro_48h=0 bloqueadas=0
 
 ## Orden de merge sugerido
 
@@ -45,7 +45,7 @@ Proximo: 102 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-11-10 16:30 | (qa 20261110T1604Z-ciNeyUS siguiendo como release) 104 `aprobado` -> `entregado`; puerta de merge completa (INDEPENDENCIA_OK, solo tests, VERDE 110997759 sobre la rama al dia con dev 208e4f9); PR #104 mergeado (def7322) y espejo quitado de backlog. El borrado de la rama lo corto el clasificador: queda en BORRAR. La 79 sigue esperando al humano (PR #81). |
+| release | 2026-11-11 00:20 | (release 20261111T0004Z-cJPhkhn, reloj, 1 en espera) Reintento de la 79: la puerta sigue fallando en (d), toca `CLAUDE.md`; PR #81 abierto contra dev, sin comentarios ni reviews; `merge-tree` limpio con dev def7322. Sin `aprobado`. `pruebas.sh`: PRUEBAS_OK (18). Rutina: sin herramientas para comparar. El PR #101 (arnes del equipo, rama `ccr-2300225a-ki31w0`) es del humano: no se toca. |
 | dev | 2026-11-10 20:30 | (dev 20261110T2004Z-cnVCQLo, por estado: 1 disenado) La 83 sigue frenada (79 sin mergear; su rama mergea limpio con dev def7322). Sin trabajo: suite de dev OK (1100 tests); barrido de las 21 rutas GET con ~30 parametros raros, 17 valores, 14 combinaciones de filtros, las 14 tablas de `/api/export/` y la base vacia: ningun 500. Sin bug reproducible, sin ficha nueva, sin pushes de codigo. |
 | revisor | 2026-11-10 12:25 | (revisor 20261110T1205Z-cUxSwwp, por estado: 1 implementado) Revisa 104 (`implementado` -> `revisado`, 27fe744): rama al dia con dev 208e4f9; revision ciega `omc-code-reviewer`: sin hallazgos. Confirmado: con los tests de dev, `test_import_job test_ajustes` da 4 fallos y `ModoYTipoDesconocidoTests --reverse` 1; con la rama, OK. `tests --reverse` completo OK (1100). VERDE c3560798f (1100, 295, 84). |
 | qa | 2026-11-10 16:25 | (qa 20261110T1604Z-ciNeyUS, por estado: 1 revisado) Prueba 104 (`revisado` -> `aprobado`, 9266101): VERDE 204ad1f53 (1100, 295, 84); criterios 1, 2 y 4 OK; `--shuffle` 2026 y 9 OK; 3 de 3 mutantes muertos (sin cleanup de overrides, hilo con una carpeta, sin el doble); runserver con base vacia (`/api/import/` 200 con JSON, 415 sin JSON); `omc-verifier` PASS. |
@@ -74,7 +74,7 @@ Proximo: 102 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
 - Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa. Idea P7: con un replay posterior al parche Y11S3.3, mira en Partidas o Rivales si algun rival sale con nick generico. **Pregunta (P10, regla de `CLAUDE.md`):** el fork prestonwillis10 de r6-dissect (commits 63149de, 807d93f y d8a0d4d, 2026-10) lee el arma o gadget de cada baja, el loadout por ronda y el dano recibido (Y10S4+), verificado por su autor en Y8 a Y11S3 y sin nombres para los IDs. `CLAUDE.md` dice que armas y dano no estan en el formato. ¿Queres que el equipo lo trate como dato nuevo (idea en `datos-nuevos-del-parser`, verificar con tus `.rec`) o sigue fuera? Hasta que respondas queda en "Ideas descartadas" de `ALCANCE.md`.
 - Calibrar con la base real (umbrales solo probados con datos sinteticos): minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`).
 - Turnos con permisos negados (po 20261019T0325Z, release 20261020T0804Z y 20261024T0804Z): el clasificador nego correr `turno.sh`/`estado.sh`; si se repite, la rutina necesita permiso para `bash` sobre `scripts/equipo-dev/*.sh`.
-- Rutina: 1 disparo sin rastro en 48 h (~11-08T22:47Z); revisar el historial de la Routine del equipo (la que lleva `r6-replay-lab` en el nombre). Mientras el PR #81 (79) no entre a dev, la 83 queda frenada y los turnos de Dev salen vacios.
+- PR #101 (arnes del equipo, contra dev) y PR #81 (ficha 79) esperan tu merge. Mientras el #81 no entre a dev, la 83 queda frenada y los turnos de Dev salen vacios.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.) Entorno cloud: `check.sh` elige solo el Chromium de la imagen (`E2E_CHROMIUM`); `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 
 ## Para el equipo
