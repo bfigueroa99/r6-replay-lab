@@ -34,6 +34,7 @@ from django.db.models.functions import Cast, Floor
 from pydissect.constants import MAPS, Y9S4
 from pydissect.header import etiqueta_de_version
 
+from .. import unknowns
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
 from .metrics import trade_window
@@ -744,6 +745,95 @@ def operator_by_site(min_rounds: int = OPERADOR_SITIO_MIN_RONDAS, **filters) -> 
         f["winrate_delta"] is None, -abs(f["winrate_delta"] or 0), -f["rounds"], f["operator"],
     ))
     return {"rows": filas, "min_rounds": min_rounds, "bands": POSICION_BANDAS}
+
+
+#: Partidas que cuentan como "lo que jugas hoy" en el pool: suficientes para
+#: que un operador de rotacion aparezca, pocas para que no pese lo de hace meses.
+POOL_PARTIDAS_RECIENTES = 20
+
+#: Dias sin un operador para decir que lo dejaste. Se cuentan desde tu partida
+#: mas nueva y no desde hoy: quien no juega dos meses no lo dejo todo.
+POOL_DIAS_SIN_JUGAR = 30
+
+
+def operator_pool(catalogo: list[dict], **filters) -> dict:
+    """Operadores distintos por lado, los que dejaste y los que nunca jugaste.
+
+    El catalogo entra como argumento porque se arma en las vistas. `operator`
+    no filtra (no hay "tu pool de Ash") y `side` tampoco: filtrar por lado
+    dejaria el otro entero en `never`, asi que salen siempre los dos y la UI
+    muestra el del filtro. `site` tampoco, por lo mismo: con un sitio puesto,
+    todo operador que no jugaste ahi pasaria por "nunca jugado".
+    """
+    filtros = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
+    qs = (
+        base_queryset(**filtros)
+        .exclude(operator="")
+        .exclude(operator__startswith=unknowns.UNKNOWN_PREFIX)
+        .exclude(side="")
+    )
+    ids: list[int] = []
+    referencia = None
+    for fila in (
+        qs.order_by("-round__match__played_at", "-round__match_id")
+        .values_list("round__match_id", "round__match__played_at")
+        .distinct()
+        .iterator()
+    ):
+        if referencia is None:
+            referencia = fila[1]
+        ids.append(fila[0])
+        if len(ids) >= POOL_PARTIDAS_RECIENTES:
+            break
+    partidas = qs.values("round__match_id").distinct().count()
+
+    filas = list(
+        qs.order_by()
+        .values("operator", "side")
+        .annotate(
+            rounds=Count("id"),
+            last=Max("round__match__played_at"),
+            recent=Count("id", filter=Q(round__match_id__in=ids)),
+        )
+    )
+    corte = referencia - timedelta(days=POOL_DIAS_SIN_JUGAR) if referencia else None
+
+    lados = {}
+    for lado in ("Attack", "Defense"):
+        propias = [f for f in filas if f["side"] == lado]
+        jugados = {f["operator"] for f in propias}
+        # Por nombre primero y despues por fecha (sort estable): dos operadores
+        # de la misma partida salen siempre en el mismo orden.
+        viejos = sorted(
+            (f for f in propias if corte is not None and f["last"] < corte),
+            key=lambda f: f["operator"].lower(),
+        )
+        viejos.sort(key=lambda f: f["last"], reverse=True)
+        lados[lado] = {
+            "distinct_recent": sum(1 for f in propias if f["recent"] > 0),
+            "distinct_all": len(jugados),
+            "never": sorted(
+                (
+                    o["name"] for o in catalogo
+                    if o["side"] == lado and o["name"] not in jugados
+                    and o["name"] and not o["name"].startswith(unknowns.UNKNOWN_PREFIX)
+                ),
+                key=str.lower,
+            ),
+            "stale": [
+                {"operator": f["operator"], "last_played": f["last"].isoformat(),
+                 "rounds": f["rounds"]}
+                for f in viejos
+            ],
+        }
+    return {
+        "matches": partidas,
+        "recent_matches": len(ids),
+        "reference": referencia.isoformat() if referencia else None,
+        "recent_window": POOL_PARTIDAS_RECIENTES,
+        "stale_days": POOL_DIAS_SIN_JUGAR,
+        "sides": lados,
+    }
 
 
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
