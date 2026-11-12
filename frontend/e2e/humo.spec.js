@@ -126,6 +126,33 @@ test('Operadores muestra tu pool por lado', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra si repites o cambias de operador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: rota operador cada ronda, gana todo el ataque y pierde toda la
+  // defensa. 145 pares, todos cambian: 87 de ataque tras ganar, 58 de defensa
+  // tras perder. Columnas: lado, tras, repite, winrate, cambia, winrate
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
+  })
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(4)
+  await expect(filas.nth(0).locator('td')).toHaveText(['Total', 'Tras perder', '0', '—', '58', '0%'])
+  await expect(filas.nth(1).locator('td')).toHaveText(['Total', 'Tras ganar', '0', '—', '87', '100%'])
+  await expect(filas.nth(2).locator('td')).toHaveText(['Ataque', 'Tras ganar', '0', '—', '87', '100%'])
+  await expect(filas.nth(3).locator('td')).toHaveText(['Defensa', 'Tras perder', '0', '—', '58', '0%'])
+
+  await page.goto('/operadores?side=Defense')
+  await expect(filas).toHaveCount(1)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Defensa')
+
+  await page.goto('/operadores?operator=Ash')
+  await expect(panel.locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
+
+  expect(errores).toEqual([])
+})
+
 test('Operadores muestra el operador por sitio', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/operadores')

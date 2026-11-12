@@ -244,6 +244,11 @@ def operators_pool(request: HttpRequest) -> JsonResponse:
     return _ok(agg.operator_pool(_catalogo_operadores(), **_filters(request)))
 
 
+@require_GET
+def operators_after_result(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_after_result(**_filters(request)))
+
+
 def _catalogo_operadores() -> list[dict]:
     """Todos los operadores conocidos con su lado, para la ruleta.
 

@@ -16,6 +16,8 @@ urlpatterns = [
     path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
     path("operators/sites/", views.operators_by_site, name="operators-by-site"),
     path("operators/pool/", views.operators_pool, name="operators-pool"),
+    path("operators/after-result/", views.operators_after_result,
+         name="operators-after-result"),
     path("trends/", views.trends, name="trends"),
     path("teammates/", views.teammates, name="teammates"),
     path("duels/", views.duels, name="duels"),
