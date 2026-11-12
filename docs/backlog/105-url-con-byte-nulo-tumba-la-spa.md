@@ -1,7 +1,7 @@
 # 105. Una URL con byte nulo tumba la SPA con un 500
 
-estado: revisado
-candado: qa 2026-11-12T00:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 2
 fuente: dev 20261111T1603Z-ctict1j, sin trabajo tomable (83 espera a la 79): barrido de la UI en Chromium sobre `seed_demo` con rutas y queries raras
 archivos: backend/config/urls.py, backend/tests/test_spa.py
-turnos: dev 20261111T1603Z-ctict1j, revisor 20261111T2003Z-c5GamMd
+turnos: dev 20261111T1603Z-ctict1j, revisor 20261111T2003Z-c5GamMd, qa 20261112T0003Z-cymg32T
 
 ## PR
 
@@ -143,7 +143,54 @@ Veredicto: aprobar (solo LOW en el diff).
 Skills: no aplica.
 OMC: plan=— · revisión=3 hallazgos (0 arreglados: 2 LOW para el Dev si vuelve, 1 MEDIUM fuera del diff a ficha propia) · verificación=—
 
-## QA
+## QA 2026-11-12 sobre 7075aba
+
+(qa 20261112T0003Z-cymg32T, dev sin moverse desde def7322: sin merge.)
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 7075aba4d en 153s: 1105 tests backend, 295 vitest, 84 e2e`.
+- Servidor real con el build (`npm run build` ya hecho por check.sh), base
+  vacia, y dos senuelos creados a mano: `frontend/dist-viejo/secreto.txt` y
+  `frontend/secreto-qa.txt` (borrados al terminar):
+
+      cd backend; SQLITE_PATH=/tmp/qa.sqlite3 python3 manage.py migrate
+      SQLITE_PATH=/tmp/qa.sqlite3 python3 manage.py runserver 127.0.0.1:8765 --noreload
+      curl -s -o /dev/null -w "%{http_code} %{content_type}\n" "127.0.0.1:8765/partidas/%00"
+
+  Criterio 1: `/partidas/%00`, `/assets/app%00.js`, `/comparar/3/%00` y
+  `/jugadores/%00%00?until=foo` -> 200 `text/html`, el index (398 bytes).
+  Criterio 2: `/..%2Fdist-viejo%2Fsecreto.txt`, `/..%2Fsecreto-qa.txt`,
+  `/..%2F..%2FCLAUDE.md`, `/%2e%2e/secreto-qa.txt`, `/%5C%5Csrv%5Cs%5Cx`,
+  `/%C0%AE%C0%AE/x`, `/a%FFb`, `/nul`, `/con/aux` -> 200 con el index, nunca
+  el senuelo. Criterio 3: `/assets/Ajustes-Bq2D0rqJ.js` -> 200
+  `text/javascript` 5786 bytes, `/partidas/12` y `/` -> el index.
+  API vecina: `/api/matches/%00/` -> 404 JSON (no 400 como dice
+  `## Fuera de alcance`; igual no es 500), `?page=-1` y `?until=foo` -> 200.
+  0 tracebacks en el log.
+- Contraste: el mismo servidor con `backend/config/urls.py` de `origin/dev`
+  da 500 en las tres URLs con `%00` y sirve "no se sirve" en
+  `/..%2Fdist-viejo%2Fsecreto.txt`: el bug existe y la rama lo cierra.
+- Base sembrada (`seed_demo`, 29 partidas): `/partidas/29`, `/partidas/29%00`,
+  `/comparar/29/%00` -> 200 index; `/api/matches/29/` -> 200; 0 tracebacks.
+- Mutacion sobre `config/urls.py` (`python3 manage.py test tests.test_spa`):
+  M1 volver a `str(...).startswith` -> cae `..._carpeta_hermana_con_el_mismo_prefijo`;
+  M2 `except OSError` sin `ValueError` -> 3 errores en
+  `..._byte_nulo_devuelve_el_index_y_no_un_500`; M3 sin chequeo de contencion
+  -> cae solo `..._carpeta_hermana...`: `test_no_sirve_archivos_fuera_del_build`
+  sigue verde (confirma el LOW del Revisor; no bloquea).
+- Symlink en bucle (`ln -s loopqa frontend/dist/loopqa`, `GET /loopqa/x`)
+  -> 500, preexistente (LOW del Revisor, fuera de criterios).
+- Sin cambios en `frontend/src`, migraciones ni parser: sin chunk, migrate
+  ni fixture que mirar.
+
+Hallazgos (no bloquean, LOW): los dos del Revisor siguen en pie y quedan
+para una ficha de seguimiento junto con el MEDIUM de Windows (UNC), que
+`/%5C%5Csrv%5Cs%5Cx` en Linux no puede ejercitar.
+
+Veredicto: aprobado.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS (3/3 VERIFIED; gaps: los dos LOW ya anotados)
 
 ## Verificar en el PC
 
