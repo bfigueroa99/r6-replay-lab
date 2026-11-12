@@ -1,7 +1,7 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
-estado: en curso 2026-11-12T16:11Z
-candado: dev 2026-11-12T16:11Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo
 tipo: funcionalidad
 epica: posicionamiento
@@ -186,6 +186,53 @@ Skills: no aplica (panel y tabla en una pagina existente; el repo ya lo resuelve
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261112T1603Z-cor3JBP) Diseno completo:
+
+- `aggregates.py`: `REPETIR_SITIO_MIN_RONDAS = 8`, `site_after_loss(**filters)`
+  despues de `positioning`. Vista `site_after_loss` y url
+  `positioning/site-after-loss/`.
+- `repetirSitio.js` (`hayPares`, `casosRepetirSitio`, `textoPares`,
+  `textoWinrate`, `filasPorMapa`) + vitest (6). `PanelRepetirSitio` en el
+  Coach despues de "Salida del spawn": dos `Stat` en `.kpis` (clases
+  existentes; nada nuevo en `styles.css`) y `DataTable` por mapa con
+  `csvName="repetir-sitio-por-mapa"`.
+- e2e `el Coach muestra si repites el sitio tras perderlo` (56 / 2, Club
+  House 19 y 1, "pocas rondas" en Cambia, 3 mapas); numeros recalculados con
+  `seed_demo` en base temporal: 58 pares, Bank 19/1, Club House 19/1, Border
+  18/0, iguales al diseno.
+- Filas en `docs/metricas.md` (`## Cortes` y `## Muestra minima`).
+
+Desvios del diseno:
+- **Huecos sin segunda consulta a `Round`.** Se leen tus rondas de los dos
+  lados del mismo `base_queryset` (sin `side`, `site` ni `operator`) en
+  orden por partida y numero; un numero que no sigue al anterior corta el par.
+  Asi corta tambien una ronda que existe pero sin fila tuya (no se sabe que
+  defendio tu equipo) y una con `side=""`, y es una sola consulta.
+- **"Pocas rondas" tambien por mapa** (revision ciega): la columna de winrate
+  de la tabla lo agrega cuando ese caso del mapa tiene menos de 8 pares; el
+  diseno solo lo pedia en el total. El winrate de las tarjetas se redondea
+  igual que la tabla (sin decimales).
+- Tests backend: los 13 del diseno mas
+  `test_el_filtro_de_tipo_de_partida_aplica` y
+  `test_dos_versiones_del_mapa_son_dos_filas` (15).
+  `test_los_pares_no_cruzan_partidas` arma la segunda partida desde la
+  ronda 2 para que solo el cambio de partida corte (comprobado: sin esa
+  condicion, falla).
+
+Criterios -> tests: repeat/switch (`test_perder_y_volver_...`,
+`test_ir_a_otro_sitio_...`, `test_separa_por_mapa_...`); ataque entre medio
+y partidas (`test_las_rondas_de_ataque_...`, `test_los_pares_no_cruzan_...`);
+`site=""` (`test_una_ronda_sin_sitio_corta_el_par`); filtros (`..._sitio_mira_la_ronda_perdida`,
+`..._lado_y_el_de_operador_se_ignoran`, `..._mapa_aplica`, `..._tipo_de_partida_aplica`);
+UI vacia (`test_sin_pares_responde_vacio_sin_error` y vitest `sin datos o sin
+pares`), muestra minima (vitest y e2e), consola (e2e); metricas (filas
+nuevas).
+
+verificar.sh: VERDE 7aaeb4f (1124 backend, 301 vitest, 85 e2e).
+
+Skills: no aplica (el repo ya lo resuelve con `PorSitio` y `PanelSalidaSpawn`).
+OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision
 
