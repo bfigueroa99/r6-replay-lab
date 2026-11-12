@@ -1,7 +1,7 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
-estado: implementado
-candado: revisor 2026-11-12T20:12Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S4 (PO 20261105T1759Z-cCJ5erc)
 archivos: backend/replays/analytics/aggregates.py (site_after_loss, REPETIR_SITIO_*), backend/replays/views.py (site_after_loss), backend/replays/urls.py, backend/tests/test_repetir_sitio.py, frontend/src/repetirSitio.js, frontend/src/repetirSitio.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1127Z-cT8M5Vz, arquitecto 20261112T1204Z-chGLrtC, dev 20261112T1603Z-cor3JBP
+turnos: po 20261112T1127Z-cT8M5Vz, arquitecto 20261112T1204Z-chGLrtC, dev 20261112T1603Z-cor3JBP, revisor 20261112T2004Z-cbaTGDt
 
 ## PR
 
@@ -234,7 +234,51 @@ verificar.sh: VERDE 7aaeb4f (1124 backend, 301 vitest, 85 e2e).
 Skills: no aplica (el repo ya lo resuelve con `PorSitio` y `PanelSalidaSpawn`).
 OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-12 sobre b2c94af
+
+(revisor 20261112T2004Z-cbaTGDt) Rama fusionada con `origin/dev` (entro la 102, sin
+conflictos). Partida de verde: verificar.sh VERDE b2c94af (1137 backend, 309
+vitest, 86 e2e). Revision a ciegas en dos ejes (estandares e intencion,
+`omc-code-reviewer` cada uno); cada hallazgo confirmado por el lider.
+
+Reglas: endpoint `@require_GET`, sin dependencias, sin `pydissect/` ni
+Electron, agrega columnas existentes (sitio, lado, ganador), fila en
+`metricas.md` y en muestras minimas, e2e por el Coach, sin tildes en
+identificadores y con tildes en la UI. Criterios: los cinco cubiertos
+(tests de la Implementacion; numeros del e2e reproducidos sobre `seed_demo`).
+
+Hallazgos (ninguno CRITICAL ni HIGH):
+
+- [test] MEDIUM `backend/tests/test_repetir_sitio.py:93` -> **cerrado con test**
+  Que pasa: `test_el_filtro_de_sitio_mira_la_ronda_perdida` pasa igual si el
+  filtro de sitio mirara la segunda ronda (K->Bar y Bar->K dan los dos
+  pairs=1, switch=1).
+  Por que es cierto: mutacion (filtro movido a la segunda ronda) deja ese
+  test en verde. Agregado `test_el_filtro_de_sitio_no_mira_la_segunda_ronda`
+  (K perdida->Bar y Bar perdida->Bar con `site=K`): pasa con el codigo y cae
+  con la mutacion. Tambien `test_el_filtro_de_fechas_aplica` (`since`), que
+  el criterio nombra y no tenia test.
+- [intencion] LOW `frontend/src/pages/Coach.jsx:262` (hint)
+  Que pasa: el panel ignora los filtros de lado y de operador y el hint solo
+  explica el de sitio; con `operator=Ash` los numeros no son de Ash.
+  Arreglo sugerido: sumar "No depende del filtro de lado ni del de operador."
+- [bug] LOW `frontend/src/pages/Coach.jsx:247`
+  Que pasa: el `csv` propio de `winrateConMuestra` exporta `33.3` con punto;
+  `celdaCsv` (`components/ui.jsx:91`) solo pasa a coma sin `csv:` propio.
+  Mismo patron ya existente en `Trends.jsx:72`.
+  Arreglo sugerido: `csv: (row) => row[k] == null ? '' : String(row[k]).replace('.', ',')`.
+- [intencion] LOW `frontend/src/pages/Coach.jsx:31`: un filtro que este panel
+  ignora y que vacia `/coach/` esconde la pagina entera; coherente con el
+  resto del Coach, solo anotado.
+
+Pregunta no bloqueante: el par tambien se corta si falta un numero de ronda
+(aunque fuera de ataque). Conservador y documentado en el docstring y en
+`metricas.md`; no se pide cambio.
+
+Veredicto: aprobar -> `revisado`. Los LOW quedan para pulir; no frenan.
+
+Skills: no aplica.
+OMC: plan=— · revisión=4 hallazgos (1 MEDIUM cerrado con test; 3 LOW sin arreglar) · verificación=—
 
 ## QA
 

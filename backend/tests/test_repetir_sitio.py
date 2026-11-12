@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
@@ -97,6 +99,27 @@ class RepetirSitioTests(TestCase):
         self.assertEqual(datos["pairs"], 1)
         self.assertEqual(datos["total"]["switch"]["rounds"], 1)
         self.assertEqual(datos["maps"][0]["switch"]["rounds"], 1)
+
+    def test_el_filtro_de_sitio_no_mira_la_segunda_ronda(self):
+        # Si el filtro mirara la segunda ronda, ningun par entraria: las dos
+        # segundas son Bar. Mirando la perdida entra solo el de Kitchen.
+        self._partida([("Defense", KITCHEN, False), ("Defense", BAR, True)])
+        self._partida([("Defense", BAR, False), ("Defense", BAR, False)])
+        datos = self.client.get(URL, {"site": KITCHEN}).json()
+        self.assertEqual(datos["pairs"], 1)
+        self.assertEqual(datos["total"]["switch"]["rounds"], 1)
+        self.assertEqual(datos["total"]["switch"]["winrate"], 100.0)
+        self.assertEqual(datos["total"]["repeat"]["rounds"], 0)
+
+    def test_el_filtro_de_fechas_aplica(self):
+        vieja = self._partida([("Defense", KITCHEN, False), ("Defense", KITCHEN, True)])
+        vieja.played_at = datetime(2025, 1, 10, 20, 0)
+        vieja.save(update_fields=["played_at"])
+        self._partida([("Defense", KITCHEN, False), ("Defense", BAR, True)])
+        datos = self.client.get(URL, {"since": "2026-01-01"}).json()
+        self.assertEqual(datos["pairs"], 1)
+        self.assertEqual(datos["total"]["switch"]["rounds"], 1)
+        self.assertEqual(datos["total"]["repeat"]["rounds"], 0)
 
     def test_el_filtro_de_lado_y_el_de_operador_se_ignoran(self):
         self._partida([
