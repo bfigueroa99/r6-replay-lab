@@ -1,7 +1,7 @@
 # 105. Una URL con byte nulo tumba la SPA con un 500
 
 estado: revisado
-candado: -
+candado: qa 2026-11-12T00:04Z
 rama: claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa
 tipo: bug
 epica: -
