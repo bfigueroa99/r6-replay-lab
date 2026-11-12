@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T16:20Z
 rama: -
 tipo: funcionalidad
 epica: operadores

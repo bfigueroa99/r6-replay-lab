@@ -1,7 +1,7 @@
 # 109. Quien te venga
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T16:20Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
