@@ -1,8 +1,8 @@
 # 102. Tu pool de operadores por lado
 
-estado: disenado
+estado: en curso 2026-11-12T12:04Z
 candado: -
-rama: -
+rama: claude/equipo-dev/102-pool-de-operadores-por-lado
 tipo: funcionalidad
 epica: operadores
 area: fullstack
