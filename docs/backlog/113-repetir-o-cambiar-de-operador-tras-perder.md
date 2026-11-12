@@ -1,8 +1,8 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: disenado
+estado: en curso 2026-11-12T20:18Z
 candado: -
-rama: -
+rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
 area: fullstack
