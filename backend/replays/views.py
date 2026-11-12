@@ -227,6 +227,11 @@ def positioning(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def site_after_loss(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.site_after_loss(**_filters(request)))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
