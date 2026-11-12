@@ -1,7 +1,7 @@
 # 106. Una ruta UNC en la URL hace que la SPA toque la red en Windows
 
-estado: implementado
-candado: revisor 2026-11-12T11:28Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/106-ruta-unc-en-la-spa
 tipo: bug
 epica: -
@@ -95,7 +95,38 @@ symlinks. `RuntimeError` se suma al `except`. Test primero: un espia sobre
 Skills: no aplica (Django y `pathlib`, resuelto en el repo).
 OMC: plan=— · revisión=4 hallazgos (4 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-12 sobre 15b47a9
+
+(revisor 20261112T1127Z-cT8M5Vz; rama fusionada con dev 4e84ac2, cambios solo de maquinaria)
+
+- **Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
+  `revision.md`): aprobar. Mutacion propia: con el filtro sin filtrar fallan
+  los 9 subtests y `test_no_sirve_archivos_fuera_del_build`; sin la regla de
+  punto/espacio final fallan los 4 casos que dependen de ella.
+  - [test] LOW `test_spa.py` (bucle de symlinks): en Python 3.13 (el de la
+    nube) `resolve()` no lanza ante el bucle, asi que borrar `RuntimeError`
+    del `except` dejaba la suite verde. Confirmado y cubierto por el Revisor:
+    `test_un_runtimeerror_de_resolve_devuelve_el_index` parchea
+    `Path.resolve` con `RuntimeError`; con `RuntimeError` fuera del `except`
+    da ERROR, con el codigo de la rama pasa.
+  - [estilo] LOW `config/urls.py` comentario del `except`: dice "Python 3.11"
+    y tambien vale 3.12. No bloquea; queda para quien toque el archivo.
+- **Eje de seguridad** (`omc-security-reviewer`, toca rutas de archivos):
+  aprobar, 0 hallazgos. Cubrio `%2F`/`%5C` ya decodificados, UNC, `\\?\`,
+  unidades y ADS, byte nulo, punto/espacio final de Win32, separadores
+  Unicode, nombres de dispositivo (`CON`, `nul.js`: quedan bajo DIST e
+  `is_file` falso; analisis de `ntpath`, sin Windows), nombres de mas de 255
+  bytes y `%0A` (404 de Django, no 500).
+- **Criterios:** los cuatro cubiertos por los tests nombrados; los tests de
+  la 105 siguen en verde. El diff solo toca `archivos:`. Sin numeros nuevos
+  en la UI, sin tildes en identificadores, sin `print`.
+- **Verificacion:** verificar.sh VERDE 15b47a9 (1109 tests backend, 295
+  vitest, 84 e2e).
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos (1 cubierto con test) · verificación=—
 
 ## QA
 
