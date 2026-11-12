@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -56,7 +57,61 @@ class SpaTests(TestCase):
         self.assertEqual(self.contenido(response), b"<html>la app</html>")
 
     def test_no_sirve_archivos_fuera_del_build(self):
-        # red de regresion: el prefijo viejo ya rechazaba este, el nuevo tambien
+        # el ".." se descarta por su forma, antes de tocar el disco: sin esa
+        # afirmacion el test pasaba tambien con el chequeo de contencion borrado
+        tocadas = self.espiar_disco()
         response = self.client.get("/..%2F..%2Fdist-viejo%2Fsecreto.txt")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.contenido(response), b"<html>la app</html>")
+        self.assertEqual(tocadas, [])
+
+    def espiar_disco(self):
+        """Anota cada ruta sobre la que se llama resolve o is_file, sin cambiar su resultado."""
+        tocadas = []
+        for nombre in ("resolve", "is_file"):
+            original = getattr(Path, nombre)
+
+            def espia(ruta, *a, _orig=original, **kw):
+                tocadas.append(str(ruta))
+                return _orig(ruta, *a, **kw)
+
+            parche = mock.patch.object(Path, nombre, autospec=True, side_effect=espia)
+            parche.start()
+            self.addCleanup(parche.stop)
+        return tocadas
+
+    def test_una_ruta_que_no_puede_ser_del_build_no_toca_el_disco(self):
+        # en Windows `\\host\s\x` o `//host/s/x` reemplazan a DIST en el join y
+        # resolve() abriria la ruta UNC (SMB, hash NTLM) antes del chequeo de
+        # contencion: estas rutas se descartan por su forma
+        casos = {
+            "barra invertida UNC": {"path": "/%5C%5Chost%5Cs%5Cx"},
+            "barra invertida suelta": {"path": "/assets%5Capp.js"},
+            # el cliente de prueba se come la doble barra al parsear la URL:
+            # PATH_INFO forzado para que la vista reciba `//host/s/x`
+            "doble barra": {"PATH_INFO": "///host/s/x"},
+            "doble barra sin host": {"PATH_INFO": "//host/s/x"},
+            "unidad con barra invertida": {"path": "/C:%5Cx"},
+            "unidad con barra": {"path": "/C:/x"},
+            "punto punto escapado": {"path": "/..%2Fdist-viejo%2Fsecreto.txt"},
+        }
+        tocadas = self.espiar_disco()
+        for nombre, caso in casos.items():
+            with self.subTest(caso=nombre):
+                tocadas.clear()
+                extra = {"PATH_INFO": caso["PATH_INFO"]} if "PATH_INFO" in caso else {}
+                response = self.client.get(caso.get("path", "/x"), **extra)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(self.contenido(response), b"<html>la app</html>")
+                self.assertEqual(tocadas, [])
+
+    def test_un_bucle_de_symlinks_devuelve_el_index(self):
+        # resolve() lanza RuntimeError en Python 3.11 (OSError en otras
+        # versiones): ninguno puede terminar en un 500
+        from config import urls
+
+        os.symlink("b", urls.DIST / "a")
+        os.symlink("a", urls.DIST / "b")
+        response = self.client.get("/a")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contenido(response), b"<html>la app</html>")

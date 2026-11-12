@@ -10,18 +10,36 @@ DIST = settings.FRONTEND_DIST
 INDEX = DIST / "index.html"
 
 
+def _partes_del_build(path: str) -> tuple[str, ...] | None:
+    """Tramos de una ruta que puede ser un archivo del build, o None si no puede.
+
+    Se decide por la forma, sin tocar el disco: en Windows `DIST / "\\\\host\\s"`
+    o `DIST / "//host/s"` reemplazan a DIST por una ruta UNC, y un resolve()
+    sobre ella abre SMB contra ese host (y le entrega el hash NTLM) antes de
+    que ningun chequeo de contencion llegue a correr.
+    """
+    partes = tuple(path.split("/"))
+    for parte in partes:
+        if parte in ("", ".", "..") or any(c in parte for c in "\\:\x00"):
+            return None
+    return partes
+
+
 def spa(request, path: str = ""):
     """Sirve el build de React si existe; si no, explica como levantarlo."""
-    if path:
+    partes = _partes_del_build(path) if path else None
+    if partes:
         try:
-            candidate = (DIST / path).resolve()
+            candidate = DIST.joinpath(*partes).resolve()
             # is_relative_to y no un prefijo de texto: "dist-viejo" empieza
-            # igual que "dist" y no es parte del build
+            # igual que "dist" y no es parte del build. Sigue haciendo falta
+            # despues del filtro de forma por los symlinks del build
             if candidate.is_relative_to(DIST.resolve()) and candidate.is_file():
                 return FileResponse(open(candidate, "rb"))
-        except (OSError, ValueError):
-            # un byte nulo (o un nombre que el sistema no admite) no puede ser
-            # un archivo del build: es una ruta de la app, que decide el 404
+        except (OSError, ValueError, RuntimeError):
+            # un nombre que el sistema no admite o un bucle de symlinks
+            # (RuntimeError en Python 3.11) no pueden ser un archivo del
+            # build: es una ruta de la app, que decide el 404
             pass
     if INDEX.exists():
         return FileResponse(open(INDEX, "rb"), content_type="text/html")
