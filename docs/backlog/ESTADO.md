@@ -1,9 +1,9 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-12 12:05 UTC por revisor, arquitecto, qa, release, po (sesion 20261112T1128Z-cKKCvKD; motivo: por estado: 1 implementado, con candado ajeno: salud de la 79; sigue: 1 propuesto; sigue: 1 revisado; sigue: papel corto; reloj: revisor, franja 4). 79 al dia con dev (VERDE 654b742). Disena 102. Prueba 106 y la mergea (PR #107, 5a76618). Propone 110, 111 y 112.
-playbook: origin/dev@4e84ac2 (dev ya en 5a76618 con la 106)
+actualizado: 2026-11-12 12:35 UTC por dev, arquitecto, po (sesion 20261112T1204Z-chGLrtC; motivo: por estado: 1 disenado, lugar en cola; sigue: 6 propuesto, 1 disenado de 3; sigue: papel corto; reloj: revisor, franja 4). Implementa 102 (VERDE 69e09cc6b). Disena 107, descarta 108. Propone 113 y 114.
+playbook: origin/dev@5a76618
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 20 de 41 en 7 dias
-en vacio: TURNOS_EN_VACIO=5 de 12 en 48 h | 7 de 23 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
+en vacio: TURNOS_EN_VACIO=5 de 11 en 48 h | 7 de 23 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -11,22 +11,24 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | 79 | entregado (PR pendiente de merge: toca `CLAUDE.md`, lo mergea el humano). Mezclado dev 4e84ac2 (89 commits, sin conflictos; migracion sigue en `0006_match_excluded`). VERDE 654b742 (1125, 295, 85) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
+| claude/equipo-dev/102-pool-de-operadores-por-lado | 102 | implementado (VERDE 69e09cc6b: 1121, 303, 85); al Revisor de otra sesion | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/102-pool-de-operadores-por-lado?expand=1) |
 
 La 106 entro a dev por [PR #107](https://github.com/bfigueroa99/r6-replay-lab/pull/107) (5a76618). La 105 entro a dev por [PR #105](https://github.com/bfigueroa99/r6-replay-lab/pull/105) (6af42af). La 104 entro a dev por [PR #104](https://github.com/bfigueroa99/r6-replay-lab/pull/104) (def7322). La 103 entro por [PR #103](https://github.com/bfigueroa99/r6-replay-lab/pull/103) (208e4f9) y la 101 por [PR #102](https://github.com/bfigueroa99/r6-replay-lab/pull/102). Las anteriores, en el historial de este archivo y en las fichas de dev.
 
-COLA=1/4  TOTAL=1/6 (79 entregado, espera al humano)
-RESUMEN propuesto=6 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=1 total=1 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=96 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=0
+COLA=2/4  TOTAL=2/6 (79 entregado, espera al humano; 102 implementado)
+RESUMEN propuesto=6 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=2 total=2 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=96 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1 (la 102 no la puede revisar esta sesion)
 
 ## Orden de merge sugerido
 
-1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Unica rama abierta; al dia con dev 4e84ac2 y `merge-tree` limpio con dev 5a76618 (la 106 solo toca `config/urls.py` y `test_spa.py`).
+1.  (PR #81, lo mergea el humano: toca ).  limpio con dev 5a76618 y con la 102.
+2.  (implementado): limpio con dev y con la 79 (funciones nuevas en ,  y ); entra antes o despues, da igual.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): 16 (78, 80, 89 a 101, 103) otros:10 (con la 106)
-- Epicas en curso: datos: G2 en dos tramos, 79 entregado (PR #81, espera al humano) y 83 disenado (despues de la 79). operadores: O7 ficha 102 disenado. posicionamiento: 107. rivales: 108. escuadra: 109. progreso: 110 (E16). exportar: 111 (H6, con H12 como tramo siguiente). revision-de-rondas: 112 (F6 tramo 1).
-- Papel: PAPEL_TIPOS=funcionalidad:8 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:1 de 1 ramas de trabajo.
-- `ALCANCE.md`: 96 ideas libres. Ideas nuevas de este turno: E18 mejor y peor partida de cada sesion, H12 copiar las señales del Inicio (antes, en la sesion cT8M5Vz: S6 y D17).
+- Epicas en curso: datos: 79 entregado (PR #81, espera al humano), 83 disenado (despues de la 79). operadores: 102 implementado, 113 propuesto (O10). posicionamiento: 107 disenado. rivales: 114 propuesto (D7; la 108 descartada). escuadra: 109. progreso: 110. exportar: 111. revision-de-rondas: 112.
+- Papel: PAPEL_TIPOS=funcionalidad:8 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:2 de 2 ramas de trabajo.
+- `ALCANCE.md`: 96 ideas libres. Ideas nuevas de este turno: O11 duplas de operadores con tu compañero habitual, S7 el sitio con el que abres la defensa.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
 - Ciclo: CICLO=1h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 103:81 101:73 100:1 99:1 98:1 97:0 96:0 93:1 95:0 94:1)
@@ -37,30 +39,32 @@ RESUMEN propuesto=6 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 |---|---|---|---|---|---|---|
 | 79-excluir-una-partida-de-los-agregados | entregado, PR #81 (rama de trabajo) | funcionalidad | datos | 3 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado (tramo 2 de la 79; implementar despues de la 79) | funcionalidad | datos | 3 | fullstack | - |
-| 102-pool-de-operadores-por-lado | disenado (arquitecto cKKCvKD: endpoint `/api/operators/pool/`, panel Tu pool en Operadores; no se frena detras de la 79) | funcionalidad | operadores | 3 | fullstack | - |
-| 107-sitio-que-tu-equipo-repite-tras-perderlo | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
-| 108-rivales-que-te-abren | propuesto | funcionalidad | rivales | 3 | fullstack | - |
+| 102-pool-de-operadores-por-lado | implementado (rama de trabajo; espejo en curso) | funcionalidad | operadores | 3 | fullstack | - |
+| 107-sitio-que-tu-equipo-repite-tras-perderlo | disenado (panel en el Coach, `/api/positioning/site-after-loss/`) | funcionalidad | posicionamiento | 3 | fullstack | - |
+| 108-rivales-que-te-abren | descartado (premisa falsa: ya es la columna De apertura de Duelos > Por rival) | funcionalidad | rivales | 3 | fullstack | - |
 | 109-quien-te-venga | propuesto | funcionalidad | escuadra | 3 | fullstack | - |
 | 110-tu-forma-contra-tu-historial | propuesto | funcionalidad | progreso | 3 | fullstack | - |
 | 111-copiar-las-senales-del-coach | propuesto | funcionalidad | exportar | 3 | frontend | - |
 | 112-saltar-a-la-ronda-desde-los-records | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 113-repetir-o-cambiar-de-operador-tras-perder | propuesto | funcionalidad | operadores | 3 | fullstack | - |
+| 114-que-operadores-te-abren | propuesto | funcionalidad | rivales | 3 | fullstack | - |
 | 49-mapas-rehechos-mezclan-lados | descartado (premisa falsa) | bug | temporada-y-modo | 2 | backend | - |
 
 FRENADAS=1 (la 83 espera a la 79)
 
-Proximo: 102 al Dev; 107 a 112 al Arquitecto (papel en tope de `propuesto`); 83 sigue esperando la 79 (PR #81, del humano).
+Proximo: 102 al Revisor (otra sesion: esta la implemento); 107 al Dev; 109 a 114 al Arquitecto; 83 sigue esperando la 79 (PR #81, del humano).
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-12 12:00 | (release 20261112T1128Z-cKKCvKD, sigue de QA) 106: `Entrega` (9a54a44, ficha recortada a 100 lineas), VERDE 9a54a44d8 sobre el head exacto, puerta a-f OK (INDEPENDENCIA_OK, sin `CLAUDE.md` ni maquinaria), PR #107 contra dev, mergeado (5a76618), ficha en dev. El borrado de la rama lo nego el clasificador: queda en BORRAR. Pasos 6 a 9 no corridos (rol tomado solo para la 106; el disparo prohibe tocar Routines). |
-| dev | 2026-11-12 04:30 | (dev 20261112T0403Z-cLKK8wJ, por estado: 1 disenado) La 83 sigue frenada (79 sin mergear). Sin trabajo: fuzz de la API sobre `seed_demo` (19 rutas x 33 claves x 14 valores, combinaciones de filtros, todos los detalles), del parser (240 `.rec` basura, sin cuelgues) y build/vitest: limpios. Tomo el hallazgo de seguridad de la revision de la 105 como ficha 106 (bug, prioridad 1): test que falla primero (8 fail + 1 error), `_partes_del_build` en `config/urls.py` rechaza por forma `\`, `:`, tramos vacios y con punto o espacio final antes de tocar el disco; `RuntimeError` del bucle de symlinks capturado. Revision ciega: 1 HIGH (symlink en Windows) y 3 LOW, arreglados. VERDE 5c20de34b (1108, 295, 84). |
+| dev | 2026-11-12 12:20 | (dev 20261112T1204Z-chGLrtC, por estado: 1 disenado) Implementa 102 (`disenado` -> `implementado`, 29d46ab): `operator_pool` + `/api/operators/pool/`, panel Tu pool en Operadores, 12 tests backend, 8 vitest, e2e en humo, fila en `metricas.md`. Revision ciega: 0 CRITICAL/HIGH, 1 MEDIUM (el filtro de sitio tambien se ignora, desvio anotado) y 3 LOW, arreglados. VERDE 69e09cc6b (1121, 303, 85). |
 | revisor | 2026-11-12 11:50 | (revisor 20261112T1127Z-cT8M5Vz, por estado: 1 implementado) Revisa 106 (`implementado` -> `revisado`, fff0530): rama al dia con dev 4e84ac2, VERDE 640994402 y, con el test nuevo, 15b47a946 (1109, 295, 84). Ciega `omc-code-reviewer` aprobar (2 LOW: el bucle de symlinks no pasa por el `except RuntimeError` en Python 3.13, cubierto con `test_un_runtimeerror_de_resolve_devuelve_el_index`, que muere con el mutante; comentario "3.11" que tambien vale 3.12). `omc-security-reviewer` aprobar, 0 hallazgos. |
 | qa | 2026-11-12 11:58 | (qa 20261112T1128Z-cKKCvKD, sigue) Prueba 106 (`revisado` -> `aprobado`, 76c45ae): VERDE 7ef161370 (1109, 295, 84); runserver con base vacia y `seed_demo`, 14 rutas hostiles (UNC, `///`, `C:`, `..`, punto final, `%00`) dan el index, asset real 200; symlinks a mano (afuera y bucle) dan el index; 4 de 4 mutantes muertos; `omc-verifier` PASS. |
-| arquitecto | 2026-11-12 11:35 | (arquitecto 20261112T1128Z-cKKCvKD, sigue) Retoma la 102 (candado muerto del 11-06) y la disena: `operator_pool(catalogo, **filters)` en `aggregates.py` sobre `base_queryset` (ignora lado y operador; ventana de 20 partidas; "sin jugar" a 30 dias de tu ultima partida, no de hoy), vista `/api/operators/pool/`, `poolOperadores.js` con vitest, panel Tu pool en `Operators.jsx`, 8 tests backend, e2e en humo, fila en `metricas.md`. No se frena detras de la 79 (mismos archivos, otras funciones; precedente 98, 100, 103). Sin consenso ni arena. |
+| arquitecto | 2026-11-12 12:28 | (arquitecto 20261112T1204Z-chGLrtC, sigue) Disena 107 (repetir el sitio tras perderlo: `site_after_loss`, panel en el Coach, numeros del e2e calculados con `seed_demo`: 56 repite, 2 cambia). Descarta 108 (premisa falsa: `nemesis` ya trae `opening_kills`/`opening_deaths` por rival y Duelos lo muestra en De apertura). Sin consenso ni arena. |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-12 12:03 | (po 20261112T1128Z-cKKCvKD, sigue; la sesion cT8M5Vz habia propuesto 107 a 109) Propone 110 (E16 tu forma contra tu historial, progreso), 111 (H6 copiar las señales del Coach, exportar) y 112 (F6 saltar a la ronda desde los records, revision-de-rondas; el PR #14 que la frenaba se cerro). Ideas nuevas E18 y H12. Papel en 6 `propuesto`. |
+| po | 2026-11-12 12:32 | (po 20261112T1204Z-chGLrtC, sigue) Reconcilia `ALCANCE.md` (D11 descartada, O10 -> 113, D7 -> 114). Propone 113 (repetir o cambiar de operador tras perder, operadores) y 114 (que operadores te abren, rivales). Ideas nuevas O11 y S7. Papel en 6 `propuesto`. |
 
 ## Para el humano
 
