@@ -30,6 +30,22 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 
+/* Texto que lee el lector de pantalla y no se ve: la cabecera de una columna
+   que a la vista se explica sola (la de los botones Copiar, la esquina de la
+   matriz de duelos). */
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  /* clip-path y no `clip`, que esta deprecado */
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ------------------------------------------------------------------- datos */
 
 .unknown {
@@ -82,12 +98,15 @@ button { font: inherit; }
 
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 
+/* min-height y no height: bajo ~1440 px de ancho el menu y los controles de la
+   derecha no entran en una linea, y con el alto fijo la segunda fila quedaba
+   fuera de la barra, encima del titulo de la pagina. */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 0 20px;
-  height: 56px;
+  gap: 4px 20px;
+  padding: 6px 20px;
+  min-height: 56px;
   background: var(--bg-soft);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -272,6 +291,25 @@ th {
 }
 th.plain { cursor: default; }
 th .arrow { color: var(--accent); }
+/* La cabecera que ordena es un boton que llena la celda: el padding pasa del
+   th al boton para que todo el ancho siga siendo clickeable. */
+th.orden { padding: 0; }
+.th-orden {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  white-space: inherit;
+  cursor: pointer;
+}
+.th-orden:hover { color: var(--text); }
+.th-orden:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
 tbody tr { border-bottom: 1px solid #1e2635; }
 tbody tr:hover { background: var(--panel-2); }
 tbody tr.me { background: var(--accent-soft); }
@@ -300,10 +338,12 @@ td.dim { color: var(--muted); }
   border: 1px solid var(--border);
   background: var(--panel-2);
 }
-.chip.win { color: var(--good); border-color: #3fb95055; background: #3fb95015; }
-.chip.loss { color: var(--bad); border-color: #f8514955; background: #f8514915; }
-.chip.atk { color: var(--atk); border-color: #ff8a3d55; background: #ff8a3d12; }
-.chip.def { color: var(--def); border-color: #4aa8ff55; background: #4aa8ff12; }
+/* Fondo opaco (el color mezclado con el del panel) y no translucido: sobre una
+   fila resaltada el translucido heredaba su tinte y el rojo bajaba de 4.5:1. */
+.chip.win { color: var(--good); border-color: #3fb95055; background: color-mix(in srgb, var(--good) 8%, var(--panel)); }
+.chip.loss { color: var(--bad); border-color: #f8514955; background: color-mix(in srgb, var(--bad) 8%, var(--panel)); }
+.chip.atk { color: var(--atk); border-color: #ff8a3d55; background: color-mix(in srgb, var(--atk) 7%, var(--panel)); }
+.chip.def { color: var(--def); border-color: #4aa8ff55; background: color-mix(in srgb, var(--def) 7%, var(--panel)); }
 
 /* ------------------------------------------------------------- tira de rondas */
 
@@ -442,8 +482,10 @@ td.dim { color: var(--muted); }
 
 @media (max-width: 700px) {
   main { padding: 12px; }
-  .topbar { height: auto; padding: 10px 12px; }
+  .topbar { padding: 10px 12px; }
   th, td { padding: 6px 7px; }
+  th.orden { padding: 0; }
+  .th-orden { padding: 6px 7px; }
 }
 
 /* ------------------------------------------------------------------ ruleta */
