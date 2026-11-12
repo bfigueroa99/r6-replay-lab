@@ -32,8 +32,10 @@ la ficha esta en `dev`.
 Cada turno lo regenera: cola con estados y links de compare, orden de merge
 sugerido, ramas borrables con el comando listo, preguntas para el humano.
 `## Para el humano` abre con las lineas `DESTRABA` de `estado.sh`: lo que el
-equipo no puede mover sin vos (un PR que toca `CLAUDE.md`, una pregunta), hace
-cuanto espera y que fichas tiene frenadas detras.
+equipo no puede mover sin vos (un PR que solo vos mergeas, como el que toca
+`CLAUDE.md`), hace cuanto espera y que fichas tiene frenadas detras; y el
+aviso de que el equipo gira en vacio, si un tercio o mas de los turnos de 48
+horas no dejaron otro commit que `ESTADO.md` (`TURNOS_EN_VACIO`).
 
 ## Quien mergea
 

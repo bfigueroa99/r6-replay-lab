@@ -3,6 +3,7 @@
 actualizado: <fecha-hora UTC> por <rol>[, <rol>...] (sesion <EQUIPO_SESION>; motivo: <EQUIPO_MOTIVO>)
 playbook: <ref>@<sha corto>
 rutina: <linea TURNOS_SIN_RASTRO de estado.sh tal cual>[; prompt al dia | prompt sincronizado con rutina.md@<sha corto> | sin herramientas para comparar | apagada]
+en vacio: <linea TURNOS_EN_VACIO de estado.sh tal cual>
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)

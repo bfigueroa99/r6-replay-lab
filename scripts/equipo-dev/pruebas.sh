@@ -292,7 +292,61 @@ for c in "$(printf 'Implementar despu\303\251s de que la 78 y la #79 se mergeen:
 done
 cierra dependencia "$det"
 
-# 9d. encadenar: turno.sh y estado.sh enteros sobre un remoto sintetico, con
+# 9d. vacio: los turnos que no dejaron otro commit que ESTADO.md. Primero la
+# cuenta sola (rastros R y actividad A sinteticos, como en rastros), despues
+# estado.sh entero contra un remoto con commits fechados: lo que firma el
+# humano no es entrega del equipo, lo de una rama de trabajo si, y con un
+# tercio o mas de los turnos de 48 h en vacio sale como DESTRABA.
+det=""
+v0=1790812800; vh=3600
+vcasos=(
+"uno en vacio entre dos con entrega|$((v0 + 9 * vh))|A:$((v0 - 600)) R:$v0 R:$((v0 + 4 * vh)) A:$((v0 + 8 * vh - 120)) R:$((v0 + 8 * vh))|1 3 1 3"
+"dos rastros a 10 min son una sesion|$((v0 + vh))|R:$v0 A:$((v0 + 300)) R:$((v0 + 600))|0 1 0 1"
+"a un disparo por hora, lo que sigue al cierre es de esa sesion y no de la siguiente|$((v0 + 2 * vh))|A:$((v0 - 60)) R:$v0 A:$((v0 + 200)) R:$((v0 + vh))|1 2 1 2"
+"una sesion larga: entrega 130 min antes de su rastro|$((v0 + 5 * vh))|A:$((v0 - 60)) R:$v0 A:$((v0 + 4 * vh - 7800)) R:$((v0 + 4 * vh))|0 2 0 2"
+"actividad de hace 3 horas no es de este turno|$((v0 + 5 * vh))|A:$((v0 + vh - 10800)) R:$((v0 + vh))|1 1 1 1"
+"un turno de hace 3 dias cuenta en 7 dias y no en 48 h|$((v0 + vh))|R:$((v0 - 72 * vh)) A:$((v0 - 60)) R:$v0|0 1 1 2"
+"sin rastros|$v0||0 0 0 0"
+)
+for c in "${vcasos[@]}"; do
+    nombre=${c%%|*}; resto=${c#*|}; ahora=${resto%%|*}; resto=${resto#*|}; eps=${resto%%|*}; e=${resto#*|}
+    r=$(EQUIPO_AHORA=$ahora bash "$es" --vacio "$eps" 2>&1)
+    [ "$r" = "$e" ] || det="$det --vacio '$nombre' -> '$r' (esperado '$e');"
+done
+tz=$(mktemp -d)
+(
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+    export GIT_AUTHOR_NAME=Claude GIT_COMMITTER_NAME=Claude GIT_AUTHOR_EMAIL=c@c GIT_COMMITTER_EMAIL=c@c
+    unset EQUIPO_CONTEXTO EQUIPO_REF EQUIPO_AHORA EQUIPO_INDEPENDENCIA
+    cd "$tz" && git init -q --bare origen.git && git clone -q origen.git w 2>/dev/null && cd w || exit 9
+    ya=$(date -u +%s)
+    # Commit fechado hace N horas (y M segundos mas).
+    hace() { local t=$(( ya - $1 * 3600 - ${3:-0} )); git add -A && GIT_AUTHOR_DATE="$t +0000" GIT_COMMITTER_DATE="$t +0000" git commit -qm "$2"; }
+    mkdir -p .claude/skills/equipo-dev docs/backlog && echo x > .claude/skills/equipo-dev/rutina.md
+    hace 40 base && git push -q origin HEAD:dev HEAD:main || exit 9
+    git fetch -q origin && git checkout -q -B papel origin/dev && mkdir -p docs/backlog
+    echo 'estado: propuesto' > docs/backlog/90-a.md && hace 20 'Propone: 90' 300
+    for n in 20 16 12 8; do echo "turno de hace $n h" > docs/backlog/ESTADO.md && hace $n "Estado: hace $n h"; done
+    git push -q origin HEAD:refs/heads/claude/equipo-dev/backlog || exit 9
+    v() { bash "$es" 2>/dev/null | grep -E '^TURNOS_EN_VACIO=|^DESTRABA: el equipo gira en vacio' | sed 's/ (turnos que.*//; s/ no dejaron.*//' | tr '\n' ';'; }
+    s=$(v); e='TURNOS_EN_VACIO=3 de 4 en 48 h | 3 de 4 en 7 dias;DESTRABA: el equipo gira en vacio: 3 de los 4 turnos de las ultimas 48 h;'
+    [ "$s" = "$e" ] || echo "tres turnos con solo ESTADO.md: '$s' (esperado '$e')"
+    # El humano commitea en la ventana del turno de hace 12 h: no es entrega.
+    git checkout -q -B t91 origin/dev && mkdir -p docs/backlog && echo x > docs/backlog/91-b.md
+    GIT_AUTHOR_NAME=Humano hace 12 'pedido del humano' 600 && git push -q origin HEAD:refs/heads/claude/equipo-dev/91-b || exit 9
+    s=$(v); [ "$s" = "$e" ] || echo "un commit del humano conto como entrega: '$s'"
+    # El equipo commitea en esa rama en los turnos de hace 12 y 8 h: queda 1 de 4.
+    echo y >> docs/backlog/91-b.md && hace 12 'Agrega algo' 300
+    echo z >> docs/backlog/91-b.md && hace 8 'Agrega mas' 300
+    git push -q origin HEAD:refs/heads/claude/equipo-dev/91-b || exit 9
+    s=$(v); [ "$s" = 'TURNOS_EN_VACIO=1 de 4 en 48 h | 1 de 4 en 7 dias;' ] || echo "con entregas en la rama de trabajo: '$s' (esperado 1 de 4, sin DESTRABA)"
+) > "$tz/fallos" 2>&1
+[ -s "$tz/fallos" ] && det="$det $(tr '\n' ';' < "$tz/fallos")"
+rm -rf "$tz"
+grep -qF 'TURNOS_EN_VACIO' "$bl/ESTADO.plantilla.md" 2>/dev/null || det="$det ESTADO.plantilla.md sin TURNOS_EN_VACIO;"
+cierra vacio "$det"
+
+# 9e. encadenar: turno.sh y estado.sh enteros sobre un remoto sintetico, con
 # el papel como estaba el 2026-11-10: una `disenado` (83) que espera a la 79,
 # la 79 `entregado (...)` esperando al humano y una `propuesto` con candado.
 # Antes el rol era dev ("1 disenado, lugar en cola") y no habia nada que
@@ -599,7 +653,7 @@ else
     done
     nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
     [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
-    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO RELEASE DEV_7D FRENADAS; do
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO RELEASE DEV_7D FRENADAS TURNOS_EN_VACIO; do
         printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
     done
     printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"
