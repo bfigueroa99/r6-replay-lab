@@ -67,6 +67,10 @@ class OperadorTrasResultadoTests(TestCase):
         self._partida([(A, "Ash", False), (A, "Unknown(7)", False), (A, "Ash", True)])
         self.assertEqual(agg.operator_after_result()["pairs"], 0)
 
+    def test_una_ronda_sin_lado_corta_el_par(self):
+        self._partida([(A, "Ash", False), ("", "Ash", False), (A, "Ash", True)])
+        self.assertEqual(agg.operator_after_result()["pairs"], 0)
+
     def test_los_pares_no_cruzan_partidas(self):
         # La segunda arranca en la ronda 2: sin hueco de numero, solo el cambio
         # de partida puede cortar el par.

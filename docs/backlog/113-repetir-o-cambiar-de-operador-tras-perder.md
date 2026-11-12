@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: en curso 2026-11-12T20:18Z
-candado: dev 2026-11-12T20:18Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -225,6 +225,59 @@ Skills: no aplica (tabla en una pagina existente; el repo ya lo resuelve con `Po
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261112T2004Z-cbaTGDt) Diseno completo:
+
+- `aggregates.py`, despues de `operator_pool` (la 102 ya esta en dev):
+  `OPERADOR_TRAS_RESULTADO_MIN_RONDAS = 12`, `OPERADOR_TRAS_RESULTADO`,
+  `OPERADOR_TRAS_RESULTADO_CASOS` y `operator_after_result(**filters)`: una
+  consulta ordenada por partida y numero, recorrida con `.iterator()` y un
+  pendiente por lado. Helper `_bloque_tras_resultado` con nombre propio para
+  no chocar con `_caso_vacio`/`_sumar_caso` de la 107 cuando entre.
+- Vista `operators_after_result` + url `operators/after-result/` (despues de
+  `operators/pool/`).
+- `operadorTrasResultado.js` (`hayPares`, `filasTrasResultado`,
+  `textoWinrate`, `winrateCsv`) + vitest (7). Panel `TrasResultado` al final
+  de `Operators.jsx`, despues de `PorSitio`; `DataTable` con
+  `initialSort={{ key: 'orden', dir: 'asc' }}` sobre un campo `orden` de las
+  filas, asi la tabla arranca en el orden Total, Ataque, Defensa y sigue
+  siendo ordenable.
+- e2e `Operadores muestra si repites o cambias de operador`: 4 filas con los
+  numeros del diseno (58/87, recalculados con `seed_demo` en base temporal:
+  145 pares, `?operator=Ash` 29), `?side=Defense` una fila, consola limpia.
+- Filas en `docs/metricas.md` (`## Cortes` y `## Muestra minima`).
+
+Desvios del diseno:
+- **`site` tambien elige la primera ronda** (el diseno no lo nombraba y lo
+  dejaba en `base_queryset`): filtrar las filas por sitio abria huecos de
+  numero y solo quedaban pares de dos rondas seguidas en ese sitio. Mismo
+  criterio que la 107 (el sitio mira la ronda perdida). Test
+  `test_el_filtro_de_sitio_elige_la_primera_ronda`; hint y `metricas.md` lo
+  dicen.
+- El CSV de los winrates sale con coma decimal (`winrateCsv`), no con el
+  numero crudo: la revision de la 107 encontro que un `csv:` propio se salta
+  la coma de `celdaCsv`.
+- `textoWinrate` vive en `operadorTrasResultado.js`: la 107 no esta en dev.
+  Cuando entre, se puede unificar con `repetirSitio.js`.
+
+Tests backend (`tests/test_operador_tras_resultado.py`, 18): los 15 del
+diseno mas `test_el_filtro_de_sitio_elige_la_primera_ronda`,
+`test_el_filtro_de_tipo_de_partida_aplica` y
+`test_una_ronda_sin_lado_corta_el_par` (de la revision ciega).
+
+Criterios -> tests: repeat/switch (`test_perder_con_ash_y_volver_a_ash_cuenta_repeat`,
+`test_pasar_a_thermite_cuenta_switch`, `test_tras_ganar_va_a_after_win`,
+`test_total_suma_los_dos_lados`); cortes (`test_una_ronda_faltante_entre_medio_corta_el_par`,
+`test_operador_vacio_o_unknown_corta_el_par`, `test_los_pares_no_cruzan_partidas`,
+`test_los_pares_no_cruzan_lados`); sin ganador (`test_primera_sin_ganador_no_abre_par`,
+`test_segunda_sin_ganador_cuenta_en_rondas_y_no_en_winrate`); filtros
+(`test_el_filtro_de_operador_elige_la_primera_ronda`, `test_el_filtro_de_lado_se_ignora`,
+`test_el_filtro_de_mapa_aplica`, `test_el_filtro_de_tipo_de_partida_aplica`); UI
+(vitest de `pocas rondas` y e2e); vacio (`test_sin_pares_responde_vacio_sin_error`);
+metricas (filas nuevas).
+
+Skills: no aplica (el repo ya lo resuelve con `PorSitio`).
+OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Revision
 

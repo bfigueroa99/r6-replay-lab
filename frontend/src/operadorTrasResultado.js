@@ -54,6 +54,6 @@ export function textoWinrate(winrate, poca) {
 }
 
 // Con coma decimal, como el resto de las columnas numericas del CSV: el
-// archivo es para un Excel en español.
+// archivo es para un Excel en espanol.
 export const winrateCsv = (winrate) =>
   winrate === null || winrate === undefined ? '' : String(winrate).replace('.', ',')
