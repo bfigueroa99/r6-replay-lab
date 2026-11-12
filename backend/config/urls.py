@@ -13,10 +13,16 @@ INDEX = DIST / "index.html"
 def spa(request, path: str = ""):
     """Sirve el build de React si existe; si no, explica como levantarlo."""
     if path:
-        candidate = (DIST / path).resolve()
-        dist = DIST.resolve()
-        if candidate.is_file() and str(candidate).startswith(str(dist)):
-            return FileResponse(open(candidate, "rb"))
+        try:
+            candidate = (DIST / path).resolve()
+            # is_relative_to y no un prefijo de texto: "dist-viejo" empieza
+            # igual que "dist" y no es parte del build
+            if candidate.is_relative_to(DIST.resolve()) and candidate.is_file():
+                return FileResponse(open(candidate, "rb"))
+        except (OSError, ValueError):
+            # un byte nulo (o un nombre que el sistema no admite) no puede ser
+            # un archivo del build: es una ruta de la app, que decide el 404
+            pass
     if INDEX.exists():
         return FileResponse(open(INDEX, "rb"), content_type="text/html")
     return HttpResponse(

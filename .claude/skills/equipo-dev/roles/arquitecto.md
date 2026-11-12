@@ -19,8 +19,9 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral
   nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
   los de una rama abierta, o agrega migracion mientras otra rama abierta ya
-  agrega una: `Implementar despues de que #NN se mergee` (prioriza, no
-  bloquea). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
+  agrega una: `Implementar despues de que #NN se mergee`, con esas palabras
+  y el `#NN` (no bloquea el diseno; `estado.sh` la lee y no le da la ficha a
+  un Dev hasta que NN este en dev: `FRENADAS`). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
   partir en tramos de la misma epica: el diseno cubre el primer tramo que
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de

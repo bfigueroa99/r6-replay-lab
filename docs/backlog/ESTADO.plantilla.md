@@ -1,8 +1,9 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: <fecha-hora UTC> por <rol> (sesion <EQUIPO_SESION>; motivo: <EQUIPO_MOTIVO>)
+actualizado: <fecha-hora UTC> por <rol>[, <rol>...] (sesion <EQUIPO_SESION>; motivo: <EQUIPO_MOTIVO>)
 playbook: <ref>@<sha corto>
 rutina: <linea TURNOS_SIN_RASTRO de estado.sh tal cual>[; prompt al dia | prompt sincronizado con rutina.md@<sha corto> | sin herramientas para comparar | apagada]
+en vacio: <linea TURNOS_EN_VACIO de estado.sh tal cual>
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -34,6 +35,8 @@ RESUMEN <linea tal cual de estado.sh>
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
 
+<linea FRENADAS de estado.sh tal cual> (solo si no es 0)
+
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
@@ -43,6 +46,7 @@ RESUMEN <linea tal cual de estado.sh>
 
 (Solo lo que el humano tiene que decidir o hacer, bajo el tope de `PARA_EL_HUMANO`. Un aviso que no bloquea de una ficha ya en `dev` queda en la ficha, no aca.)
 
+- <cada linea DESTRABA de estado.sh tal cual, una vineta por linea y antes que todo lo demas: es lo que frena al equipo hasta que el humano actue> (solo si aparece)
 - Ramas borrables: <linea BORRAR de estado.sh tal cual>
 - Release: <linea RELEASE de estado.sh tal cual> (solo si dev lleva commits que main no tiene)
 - Preguntas abiertas: ...

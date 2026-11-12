@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 
 import { useApi } from '../api.js'
 import { opcionesDeMapa } from '../mapas.js'
+import { mostrarSelectorDeModo, opcionesDeModo } from '../modoDeJuego.js'
 import { conTipo, hayFiltros, opcionesDeTipo, tipoElegido } from '../tipoPartida.js'
 
 const RANGO_EXACTO = 'rango'
@@ -162,6 +163,19 @@ export default function Filters({
           ))}
         </select>
       </label>
+
+      {mostrarSelectorDeModo(data?.gamemodes, value.gamemode) ? (
+        <label>
+          Modo
+          <select value={value.gamemode || ''} onChange={set('gamemode')}>
+            {opcionesDeModo(data?.gamemodes, value.gamemode).map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       {/* filtros propios de una pagina (el resultado en Partidas), en la misma fila */}
       {children}

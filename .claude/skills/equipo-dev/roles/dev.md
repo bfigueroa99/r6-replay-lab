@@ -13,6 +13,11 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
   no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
   menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
+  Una ficha que este contexto ya reviso o probo (`git show
+  $EQUIPO_REF:scripts/equipo-dev/independencia.sh | bash -s -- <rama> --puedo
+  dev` en salida 1; pasa al seguir de Revisor o QA en la misma sesion)
+  tampoco: con un dev y un revisor del mismo contexto la puerta de merge no
+  la deja pasar nunca.
 - **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/dev` (el
   mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
   `backlog`; `estado: en curso <fecha>`, `candado: dev

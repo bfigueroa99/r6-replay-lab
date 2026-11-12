@@ -408,6 +408,10 @@ class ModoYTipoDesconocidoTests(SimpleTestCase):
         ruta = Path(carpeta.name) / "overrides.json"
         ruta.write_text(json.dumps(contenido), encoding="utf-8")
         parche = mock.patch.dict(os.environ, {overrides.ENV_VAR: str(ruta)})
+        # Los cleanups corren despues de tearDown y en orden inverso: esta
+        # recarga va despues de parar el parche. La de tearDown todavia lee este
+        # archivo y dejaba "Arcade" en el cache para el test siguiente (ficha 104).
+        self.addCleanup(overrides.load, force=True)
         parche.start()
         self.addCleanup(parche.stop)
         overrides.load(force=True)

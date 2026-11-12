@@ -41,7 +41,8 @@ from .metrics import trade_window
 # --------------------------------------------------------------------- filtros
 
 FILTER_KEYS = (
-    "side", "map", "operator", "site", "match_type", "since", "until", "ranked_only", "session",
+    "side", "map", "operator", "site", "match_type", "gamemode", "since", "until", "ranked_only",
+    "session",
 )
 
 
@@ -94,6 +95,8 @@ def base_queryset(**filters) -> QuerySet[RoundPlayer]:
         qs = qs.filter(round__site=filters["site"])
     if filters.get("match_type"):
         qs = qs.filter(round__match__match_type=filters["match_type"])
+    if filters.get("gamemode"):
+        qs = qs.filter(round__match__gamemode=filters["gamemode"])
     if filters.get("ranked_only"):
         qs = qs.filter(round__match__match_type="Ranked")
     if filters.get("since"):
@@ -121,6 +124,8 @@ def match_queryset(**filters) -> QuerySet[Match]:
         qs = qs.filter(**filtro_mapa(filters["map"], prefijo=""))
     if filters.get("match_type"):
         qs = qs.filter(match_type=filters["match_type"])
+    if filters.get("gamemode"):
+        qs = qs.filter(gamemode=filters["gamemode"])
     if filters.get("ranked_only"):
         qs = qs.filter(match_type="Ranked")
     if filters.get("since"):
@@ -1698,6 +1703,115 @@ def by_start_side(**filters) -> list[dict]:
     return filas
 
 
+def by_gamemode(**filters) -> list[dict]:
+    """Tus partidas agrupadas por el modo de juego de la cabecera del `.rec`.
+
+    El modo es de la partida: con filtro de lado, el winrate de partida sigue
+    siendo el de la partida entera, como `by_start_side`. Una partida sin modo
+    (cabeceras viejas) queda en su propia fila con `gamemode` vacio.
+    """
+    por_partida = _por_partida(**filters)
+    datos = {
+        mid: (modo, won)
+        for mid, modo, won in Match.objects.filter(id__in=list(por_partida))
+        .values_list("id", "gamemode", "won")
+    }
+    baseline = rating_baseline()
+    grupos: dict[str, list[int]] = {}
+    for mid in por_partida:
+        grupos.setdefault(datos[mid][0] or "", []).append(mid)
+
+    filas = []
+    for modo, mids in grupos.items():
+        t = _fold([por_partida[m] for m in mids], baseline)
+        decididas = [datos[m][1] for m in mids if datos[m][1] is not None]
+        filas.append({
+            "gamemode": modo,
+            "matches": len(mids),
+            "matches_decided": len(decididas),
+            "matches_won": sum(decididas),
+            "match_winrate": _pct(sum(decididas), len(decididas)),
+            "rounds": t["rounds"] or 0,
+            "rounds_won": t["rounds_won"] or 0,
+            "winrate": t["winrate"],
+            "kd": t["kd"],
+            "rating": t["rating"],
+        })
+    filas.sort(key=lambda f: (-f["matches"], f["gamemode"]))
+    return filas
+
+
+#: Partidas decididas por lado inicial para que un mapa de veredicto. Es el
+#: minimo de mapa de la ficha 64: con menos, un 100 % o un 0 % es lo normal.
+MIN_PARTIDAS_LADO_INICIAL = MIN_PARTIDAS_MAPA
+
+
+def _celda_lado_inicial(partidas: int, decididas: int, wins: int) -> dict:
+    # Los conteos salen aunque no lleguen al minimo: la tabla muestra la
+    # muestra que hay aunque todavia no tenga porcentaje.
+    winrate = _pct(wins, decididas) if decididas >= MIN_PARTIDAS_LADO_INICIAL else None
+    return {"matches": partidas, "decided": decididas, "wins": wins, "winrate": winrate}
+
+
+def by_start_side_map(**filters) -> list[dict]:
+    """`by_start_side` partido por version de mapa, con banda de ruido.
+
+    La banda usa la proporcion combinada de los dos lados (`_ruido_combinado`)
+    y no `_ruido` (Wald): con 3 a 5 partidas por lado un 100 % o un 0 % es lo
+    normal, y Wald da varianza cero ahi y veredicto por azar.
+    """
+    ids = base_queryset(**filters).values_list("round__match_id", flat=True).distinct()
+    partidas = (
+        Match.objects.filter(id__in=ids)
+        .annotate(lado=_lado_inicial("id"))
+        .values("map_slug", "map_id", "lado", "won")
+    )
+    por_mapa: dict[tuple[str, int], dict] = {}
+    for p in partidas:
+        if p["lado"] not in ("Attack", "Defense"):
+            continue
+        clave = (p["map_slug"], p["map_id"])
+        conteo = por_mapa.setdefault(
+            clave, {lado: [0, 0, 0] for lado in ("Attack", "Defense")}
+        )[p["lado"]]
+        conteo[0] += 1
+        if p["won"] is not None:
+            conteo[1] += 1
+            conteo[2] += int(p["won"])
+    if not por_mapa:
+        return []
+
+    etiquetas = etiquetas_de_mapas({slug for slug, _ in por_mapa})
+    filas = []
+    for (slug, map_id), lados in por_mapa.items():
+        ataque = _celda_lado_inicial(*lados["Attack"])
+        defensa = _celda_lado_inicial(*lados["Defense"])
+        delta = margen = veredicto = None
+        if ataque["winrate"] is not None and defensa["winrate"] is not None:
+            delta = _delta(ataque["winrate"], defensa["winrate"])
+            margen, veredicto = _margen_y_veredicto(
+                delta, ataque["wins"], ataque["decided"],
+                ataque["wins"] + defensa["wins"],
+                ataque["decided"] + defensa["decided"],
+                ("ataque", "defensa"),
+            )
+        filas.append(
+            {
+                "slug": slug,
+                "map_id": map_id,
+                "map": etiquetas.get((slug, map_id), slug),
+                "matches": ataque["matches"] + defensa["matches"],
+                "attack": ataque,
+                "defense": defensa,
+                "delta": delta,
+                "margin": margen,
+                "verdict": veredicto,
+            }
+        )
+    filas.sort(key=lambda f: (-f["matches"], f["map"]))
+    return filas
+
+
 def trend_by_day(**filters) -> list[dict]:
     qs = base_queryset(**filters)
     baseline = rating_baseline()
@@ -2295,24 +2409,77 @@ def _por_partida(**filters) -> dict[int, dict]:
     }
 
 
+def _extremos_de_sesion(ids: list[int], por_partida: dict[int, dict], info: dict[int, dict],
+                        etiquetas: dict[tuple[str, int], str],
+                        baseline: float | None) -> tuple[dict | None, dict | None]:
+    """Mejor y peor partida de una sesion por el rating de tus rondas en ella.
+
+    Con una sola partida no hay extremos: "mejor" y "peor" serian la misma.
+    """
+    candidatas = []
+    for mid in ids:
+        # Copia: `derive` hace pop de los alias y la fila de `por_partida` es compartida.
+        rating = derive(dict(por_partida[mid]), baseline)["rating"]
+        if rating is not None:
+            candidatas.append((rating, info[mid]))
+    if len(candidatas) < 2:
+        return None, None
+    # Empate: gana la jugada antes, asi el resultado no depende del orden de la query.
+    candidatas.sort(key=lambda c: (c[1]["played_at"], c[1]["id"]))
+    mejor = max(candidatas, key=lambda c: c[0])
+    peor = min(candidatas, key=lambda c: c[0])
+
+    def resumen(rating, m):
+        return {
+            "id": m["id"],
+            "map": etiquetas.get((m["map_slug"], m["map_id"]), m["map_name"]),
+            "score": f"{m['my_score']}-{m['opponent_score']}",
+            "won": m["won"],
+            "rating": round(rating, 2),
+        }
+
+    # Todas con el mismo rating: no hay una peor que senalar (igual que el peor
+    # mapa de `matches_summary`).
+    return resumen(*mejor), (resumen(*peor) if peor[0] != mejor[0] else None)
+
+
 def sessions(limit: int = 30, **filters) -> list[dict]:
     """Resumen de cada sesion de juego, de la mas reciente hacia atras."""
     por_partida = _por_partida(**filters)
+    baseline = rating_baseline()  # una vez por request, no una por sesion
+    info = {
+        m["id"]: m
+        for m in Match.objects.filter(id__in=list(por_partida)).values(
+            "id", "map_slug", "map_id", "map_name", "my_score", "opponent_score", "won",
+            "played_at",
+        )
+    }
+    etiquetas = etiquetas_de_mapas({m["map_slug"] for m in info.values()})
     salida = []
     for sesion in _sessions_raw()[:limit]:
-        filas = [por_partida[mid] for mid in sesion["match_ids"] if mid in por_partida]
-        if not filas:
+        ids = [mid for mid in sesion["match_ids"] if mid in por_partida]
+        if not ids:
             continue
-        fila = _fold(filas)
+        fila = _fold([por_partida[mid] for mid in ids], baseline)
+        # `won=None` (partida sin cerrar, ficha 68) no es ni ganada ni perdida.
+        wins = sum(1 for mid in ids if info[mid]["won"] is True)
+        losses = sum(1 for mid in ids if info[mid]["won"] is False)
+        mejor, peor = _extremos_de_sesion(ids, por_partida, info, etiquetas, baseline)
         fila.update(
             {
                 "index": sesion["index"],
                 "start": sesion["start"].isoformat(),
                 "end": sesion["end"].isoformat(),
-                "matches": len(filas),
+                "matches": len(ids),
                 "hours": round(
                     (sesion["end"] - sesion["start"]).total_seconds() / 3600, 1
                 ),
+                "wins": wins,
+                "losses": losses,
+                "decided": wins + losses,
+                "undecided": len(ids) - wins - losses,
+                "best_match": mejor,
+                "worst_match": peor,
             }
         )
         salida.append(fila)

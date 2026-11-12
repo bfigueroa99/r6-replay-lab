@@ -23,7 +23,9 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      rama de trabajo. Las `descartado` no se borran: son historia y reservan
      su numero. En `ALCANCE.md`, marcar `en dev` lo que llego y `ficha NN`
      lo que ya tiene ficha. A una ficha vieja del papel sin `tipo:` se le
-     pone el que corresponde.
+     pone el que corresponde. Una de `FRENADAS` que espera a una ficha
+     `descartado` no se destraba sola: se le reescribe el alcance sin esa
+     dependencia (vuelve a `propuesto`) o se descarta.
   2. **Hacer crecer `ALCANCE.md`:** al menos 2 ideas nuevas por turno, cada
      una con que gana el usuario, que datos usa (archivo y campo del parser
      o del modelo) y tamano S/M/L. Fuentes, rotando para no secar ninguna:

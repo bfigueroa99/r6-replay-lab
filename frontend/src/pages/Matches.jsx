@@ -12,6 +12,7 @@ import {
   paramsDePartidas,
   subtituloDePartidas,
 } from '../partidas.js'
+import { celdasDeTira, textoDeTira } from '../tiraRondas.js'
 import { hayFiltros } from '../tipoPartida.js'
 
 const PAGE = 50
@@ -101,6 +102,15 @@ export default function Matches({ filters, setFilters, runImport, importing }) {
               label: 'Resultado',
               render: (row) => <ResultChip won={row.won}>{row.result}</ResultChip>,
             },
+            {
+              key: 'strip',
+              label: 'Secuencia',
+              // sin sortable: false la tabla ordenaria arrays de objetos
+              sortable: false,
+              render: (row) => <TiraRondas strip={row.strip} />,
+              // sin csv: el archivo diria [object Object] por ronda
+              csv: (row) => textoDeTira(row.strip),
+            },
             { key: 'rounds', label: 'Rondas' },
             { key: 'my_rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica. Ver docs/metricas.md para la fórmula y los pesos.' },
             { key: 'my_kills', label: 'Bajas' },
@@ -136,5 +146,23 @@ export default function Matches({ filters, setFilters, runImport, importing }) {
         ) : null}
       </Panel>
     </>
+  )
+}
+
+/** Un cuadradito por ronda: verde ganada, rojo perdida, gris sin ganador claro; la letra es el lado. */
+function TiraRondas({ strip }) {
+  const celdas = celdasDeTira(strip)
+  if (!celdas.length) return null
+  return (
+    <span className="tira">
+      {celdas.map((celda) => (
+        <React.Fragment key={celda.clave}>
+          {celda.corteAntes ? <span className="tira-corte" aria-hidden="true" /> : null}
+          <span className={`tira-celda ${celda.clase}`} title={celda.titulo}>
+            {celda.letra}
+          </span>
+        </React.Fragment>
+      ))}
+    </span>
   )
 }

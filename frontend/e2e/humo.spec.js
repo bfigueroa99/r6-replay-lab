@@ -66,6 +66,10 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
     await expect(panel.getByRole('cell', { name: tramo, exact: true })).toBeVisible()
   }
   await expect(panel.getByText('Según el lado con que arrancas')).toBeVisible()
+  // seed_demo arranca siempre en ataque: defensa queda sin muestra y no hay veredicto
+  await expect(panel.getByText('Lado inicial por mapa')).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Bank', exact: true })).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Poca muestra', exact: true }).first()).toBeVisible()
 
   expect(errores).toEqual([])
 })
@@ -591,6 +595,28 @@ test('el detalle de partida copia el resumen', async ({ page }) => {
   await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
   const texto = await page.evaluate(() => navigator.clipboard.readText())
   expect(texto.startsWith(`${partida.map} · ${partida.score} · `)).toBe(true)
+
+  expect(errores).toEqual([])
+})
+
+test('Tendencias copia el resumen de una sesion', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const respuesta = await page.request.get('/api/sessions/')
+  const { sessions } = await respuesta.json()
+  const sesion = sessions.find((s) => s.index === 0)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
+  // La tabla abre ordenada por fecha desc: la primera fila es la sesion mas reciente
+  await expect(panel.locator('tbody tr').first()).toContainText('1G 0P')
+  await panel.getByRole('button', { name: 'Copiar' }).first().click()
+  await expect(panel.getByText(`Sesión copiada (${sesion.start.slice(5, 16).replace('T', ' ')})`, { exact: true })).toBeVisible()
+  const texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith(`Sesión del ${sesion.start.slice(0, 16).replace('T', ' ')}`)).toBe(true)
+  expect(texto).toContain('1 partida: 1G 0P')
+  // seed_demo: cada sesion es una partida, asi que no hay extremos que nombrar
+  expect(texto).not.toContain('Mejor partida')
 
   expect(errores).toEqual([])
 })
