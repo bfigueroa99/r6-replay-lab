@@ -14,7 +14,7 @@ import {
   notaDeMuestra,
   textoSinSalidas,
 } from '../posicion.js'
-import { casosRepetirSitio, filasPorMapa, hayPares, textoPares } from '../repetirSitio.js'
+import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 const GROUPS = [
@@ -241,12 +241,19 @@ function PanelSalidaSpawn({ data, error, loading }) {
 
 const SIN_PARES = 'Sin rondas de defensa perdidas seguidas de otra con estos filtros.'
 
+const winrateConMuestra = (caso, label) => ({
+  key: `${caso}_winrate`,
+  label,
+  csv: (row) => row[`${caso}_winrate`],
+  render: (row) => textoWinrate(row[`${caso}_winrate`], row[`${caso}_poca`]),
+})
+
 const columnasRepetirSitio = [
   { key: 'map', label: 'Mapa', left: true },
   { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que tu equipo volvió al sitio que acababa de perder.' },
-  pctCol('repeat_winrate', 'Winrate repitiendo'),
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
   { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que tu equipo defendió otro sitio.' },
-  pctCol('switch_winrate', 'Winrate cambiando'),
+  winrateConMuestra('switch', 'Winrate cambiando'),
 ]
 
 function PanelRepetirSitio({ filters }) {
@@ -271,7 +278,7 @@ function PanelRepetirSitio({ filters }) {
                 key={caso.clave}
                 label={caso.titulo}
                 value={caso.rounds}
-                sub={`winrate ${caso.winrate === null ? '—' : `${caso.winrate}%`}${caso.poca ? ' · pocas rondas' : ''}`}
+                sub={`winrate ${textoWinrate(caso.winrate, caso.poca)}`}
               />
             ))}
           </div>

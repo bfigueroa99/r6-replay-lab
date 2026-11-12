@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { casosRepetirSitio, filasPorMapa, hayPares, textoPares } from './repetirSitio.js'
+import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from './repetirSitio.js'
 
 describe('repetirSitio', () => {
   it('sin datos o sin pares no hay nada que mostrar', () => {
@@ -31,11 +31,21 @@ describe('repetirSitio', () => {
 
   it('aplana los casos de cada mapa para la tabla', () => {
     const filas = filasPorMapa({
+      min_rounds: 8,
       maps: [{ slug: 'bank', map_id: 0, map: 'Bank', repeat: { rounds: 19, winrate: 0 }, switch: { rounds: 1, winrate: null } }],
     })
     expect(filas).toEqual([
-      { slug: 'bank', map_id: 0, map: 'Bank', repeat_rounds: 19, repeat_winrate: 0, switch_rounds: 1, switch_winrate: null },
+      {
+        slug: 'bank', map_id: 0, map: 'Bank', repeat_rounds: 19, repeat_winrate: 0,
+        switch_rounds: 1, switch_winrate: null, repeat_poca: false, switch_poca: true,
+      },
     ])
     expect(filasPorMapa(null)).toEqual([])
+  })
+
+  it('el winrate se redondea como la tabla y avisa la muestra chica', () => {
+    expect(textoWinrate(33.3, false)).toBe('33%')
+    expect(textoWinrate(null, false)).toBe('—')
+    expect(textoWinrate(0, true)).toBe('0% · pocas rondas')
   })
 })

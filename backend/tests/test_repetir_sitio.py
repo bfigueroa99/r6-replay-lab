@@ -66,8 +66,9 @@ class RepetirSitioTests(TestCase):
         self.assertEqual(agg.site_after_loss()["pairs"], 0)
 
     def test_los_pares_no_cruzan_partidas(self):
+        # La segunda partida arranca en la ronda 2: solo el cambio de partida corta.
         self._partida([("Attack", "", True), ("Defense", KITCHEN, False)])
-        self._partida([("Defense", KITCHEN, True), ("Attack", "", True)])
+        self._partida([None, None, ("Defense", KITCHEN, True)])
         self.assertEqual(agg.site_after_loss()["pairs"], 0)
 
     def test_tras_ganar_o_sin_ganador_no_hay_par(self):

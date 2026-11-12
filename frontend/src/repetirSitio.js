@@ -10,6 +10,12 @@ export function hayPares(data) {
 }
 
 // `poca` no oculta el winrate: lo marca, como los cortes de Tendencias.
+// Mismo redondeo que las columnas de porcentaje de la tabla (digits: 0).
+export function textoWinrate(winrate, poca) {
+  const valor = winrate === null || winrate === undefined ? '—' : `${Math.round(winrate)}%`
+  return poca ? `${valor} · pocas rondas` : valor
+}
+
 export function casosRepetirSitio(total, minRondas) {
   return CASOS.map(({ clave, titulo }) => {
     const caso = total?.[clave] || {}
@@ -26,6 +32,7 @@ export function textoPares(n) {
 
 // DataTable ordena por clave plana: se aplanan los dos casos de cada mapa.
 export function filasPorMapa(data) {
+  const minimo = data?.min_rounds || 0
   return (data?.maps || []).map((m) => ({
     slug: m.slug,
     map_id: m.map_id,
@@ -34,5 +41,7 @@ export function filasPorMapa(data) {
     repeat_winrate: m.repeat?.winrate ?? null,
     switch_rounds: m.switch?.rounds || 0,
     switch_winrate: m.switch?.winrate ?? null,
+    repeat_poca: (m.repeat?.rounds || 0) < minimo,
+    switch_poca: (m.switch?.rounds || 0) < minimo,
   }))
 }

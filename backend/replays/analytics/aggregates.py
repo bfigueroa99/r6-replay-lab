@@ -1037,7 +1037,8 @@ def site_after_loss(**filters) -> dict:
             caso = "repeat" if fila["round__site"] == perdida["round__site"] else "switch"
             clave = tuple(perdida[campo] for campo in _MAPA)
             mapa = por_mapa.setdefault(clave, {
-                **{etiqueta: perdida[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+                **{etiqueta: perdida[campo]
+                   for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
                 **{c: _caso_vacio() for c in REPETIR_SITIO_CASOS},
             })
             _sumar_caso(total[caso], fila["round__my_team_won"])
