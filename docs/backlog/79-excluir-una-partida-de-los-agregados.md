@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-12T11:28Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -134,3 +134,10 @@ Trae migracion: `python manage.py backup`, `migrate` y `showmigrations replays`.
   (merge sin conflicto de texto, pero dos hojas `0005` rompian `migrate`). `makemigrations
   --check` sin cambios. VERDE da8a4f010 (1089, 257, 77). En el PC: `showmigrations replays`
   tiene que mostrar `[X] 0006_match_excluded`; para volver atras, `migrate replays 0005`.
+
+## Salud 2026-11-12 (revisor 20261112T1128Z-cKKCvKD, sin implementado tomable)
+
+Mezclado `origin/dev` (89 commits, sin conflictos; la migracion sigue en
+`0006_match_excluded`, despues de la `0005` de dev). verificar.sh: VERDE
+654b742 (1125 tests backend, 295 vitest, 85 e2e). Sigue esperando el merge
+del humano: toca `CLAUDE.md`.
