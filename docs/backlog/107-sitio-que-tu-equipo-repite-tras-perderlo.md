@@ -1,8 +1,8 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
-estado: disenado
+estado: en curso 2026-11-12T16:11Z
 candado: -
-rama: -
+rama: claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo
 tipo: funcionalidad
 epica: posicionamiento
 area: fullstack
