@@ -1,7 +1,7 @@
 # 102. Tu pool de operadores por lado
 
 estado: aprobado
-candado: -
+candado: release 2026-11-12T20:08Z
 rama: claude/equipo-dev/102-pool-de-operadores-por-lado
 tipo: funcionalidad
 epica: operadores
