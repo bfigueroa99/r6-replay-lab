@@ -4,6 +4,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationTy
 import { get, post, useApi } from './api.js'
 import { conFiltros, filtrosDeUrl, mismosFiltros, queryDeFiltros, usaFiltros } from './filtrosUrl.js'
 import { avisoAutomatico, etiquetaImportacion } from './importacion.js'
+import { tituloDePagina } from './titulo.js'
 import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
 
@@ -126,6 +127,10 @@ export default function App() {
       setProgreso(null)
     }
   }, [health])
+
+  useEffect(() => {
+    document.title = tituloDePagina(location.pathname, LINKS)
+  }, [location.pathname])
 
   // replace siempre: cada cambio de select no tiene que ser una entrada de historial
   const cambiarFiltros = useCallback(
