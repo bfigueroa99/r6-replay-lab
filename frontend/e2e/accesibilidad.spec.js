@@ -210,3 +210,34 @@ test('ninguna tabla deja una columna sin nombre', async ({ page }) => {
 
   expect(errores).toEqual([])
 })
+
+/** Las lineas de un grafico: nombre en la leyenda y si va punteada. */
+async function lineas(panel) {
+  // no toBeVisible: una linea plana (el winrate de seed_demo) tiene alto 0
+  await expect(panel.locator('path.recharts-line-curve')).not.toHaveCount(0)
+  // recharts dibuja una linea solida como "<largo>px 0px" y una punteada
+  // repitiendo el patron "4px, 3px"
+  const punteadas = await panel
+    .locator('path.recharts-line-curve')
+    .evaluateAll((ps) => ps.map((p) => (p.getAttribute('stroke-dasharray') || '').startsWith('4px, 3px')))
+  return { leyenda: await panel.locator('.recharts-legend-item-text').allTextContents(), punteadas }
+}
+
+test('los graficos dicen que es cada linea y cual se lee en el eje derecho', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const panel = (titulo) => page.locator('.panel', { has: page.getByText(titulo, { exact: true }) })
+
+  // dos lineas, dos ejes: sin leyenda solo el hover decia cual era cual. La
+  // del eje derecho va punteada, como el KPR de "Por día de juego"
+  await page.goto('/')
+  await expect(page.locator('h1')).toHaveText('Resumen')
+  await expect.poll(async () => (await lineas(panel('Evolución por partida'))).leyenda).toEqual(['Rondas ganadas %', 'KPR'])
+  expect((await lineas(panel('Evolución por partida'))).punteadas).toEqual([false, true])
+
+  await page.goto('/tendencias')
+  await expect.poll(async () => (await lineas(panel('Por partida'))).leyenda).toEqual(['Rondas ganadas %', 'KST %', 'Rating'])
+  expect((await lineas(panel('Por partida'))).punteadas).toEqual([false, false, true])
+  expect((await lineas(panel('Por día de juego'))).punteadas).toEqual([false, false, false, true])
+
+  expect(errores).toEqual([])
+})
