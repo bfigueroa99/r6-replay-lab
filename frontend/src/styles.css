@@ -319,10 +319,12 @@ td.dim { color: var(--muted); }
   border: 1px solid var(--border);
   background: var(--panel-2);
 }
-.chip.win { color: var(--good); border-color: #3fb95055; background: #3fb95015; }
-.chip.loss { color: var(--bad); border-color: #f8514955; background: #f8514915; }
-.chip.atk { color: var(--atk); border-color: #ff8a3d55; background: #ff8a3d12; }
-.chip.def { color: var(--def); border-color: #4aa8ff55; background: #4aa8ff12; }
+/* Fondo opaco (el color mezclado con el del panel) y no translucido: sobre una
+   fila resaltada el translucido heredaba su tinte y el rojo bajaba de 4.5:1. */
+.chip.win { color: var(--good); border-color: #3fb95055; background: color-mix(in srgb, var(--good) 8%, var(--panel)); }
+.chip.loss { color: var(--bad); border-color: #f8514955; background: color-mix(in srgb, var(--bad) 8%, var(--panel)); }
+.chip.atk { color: var(--atk); border-color: #ff8a3d55; background: color-mix(in srgb, var(--atk) 7%, var(--panel)); }
+.chip.def { color: var(--def); border-color: #4aa8ff55; background: color-mix(in srgb, var(--def) 7%, var(--panel)); }
 
 /* ------------------------------------------------------------- tira de rondas */
 

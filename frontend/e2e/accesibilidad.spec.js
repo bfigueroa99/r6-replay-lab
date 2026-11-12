@@ -118,3 +118,50 @@ test('cada pagina pone su nombre en el titulo del documento', async ({ page }) =
 
   expect(errores).toEqual([])
 })
+
+/** Luminancia relativa de WCAG a partir de un color computado opaco. */
+const contraste = (texto, fondo) => {
+  const canales = (color) => {
+    const numeros = color.match(/[\d.]+/g).map(Number)
+    // `color(srgb r g b)` viene de 0 a 1 y `rgb(r, g, b)` de 0 a 255
+    return color.startsWith('color(') ? numeros.slice(0, 3) : numeros.slice(0, 3).map((n) => n / 255)
+  }
+  const luminancia = (color) => {
+    const [r, g, b] = canales(color).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  const [clara, oscura] = [luminancia(texto), luminancia(fondo)].sort((a, b) => b - a)
+  return (clara + 0.05) / (oscura + 0.05)
+}
+
+test('las etiquetas de color se leen tambien sobre tu fila resaltada', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  await page.goto(`/partidas/${matches[0].id}`)
+
+  // tu fila del scoreboard lleva fondo naranja: una etiqueta con fondo
+  // translucido heredaba ese fondo y el rojo quedaba en 3.7:1
+  const etiquetas = page.locator('tbody tr.me .chip.loss, tbody tr.me .chip.win')
+  // el rojo es el color justo; no todas las rondas te dejan una etiqueta
+  // roja, asi que se busca la primera ronda que si
+  const rojas = page.locator('tbody tr.me .chip.loss')
+  const rondas = page.locator('.round-tab')
+  await expect(rondas.first()).toBeVisible()
+  for (let i = 0; i < (await rondas.count()) && !(await rojas.count()); i += 1) {
+    await rondas.nth(i).click()
+  }
+  await expect(rojas.first()).toBeVisible()
+  const estilos = await etiquetas.evaluateAll((nodos) =>
+    nodos.map((n) => {
+      const s = getComputedStyle(n)
+      return { texto: n.textContent, color: s.color, fondo: s.backgroundColor }
+    }),
+  )
+  for (const { texto, color, fondo } of estilos) {
+    // opaco: el contraste no depende de la fila que haya detras
+    expect(fondo, `fondo de "${texto}"`).not.toMatch(/rgba\(|\/ 0?\.\d/)
+    expect(contraste(color, fondo), `contraste de "${texto}" (${color} sobre ${fondo})`).toBeGreaterThanOrEqual(4.5)
+  }
+
+  expect(errores).toEqual([])
+})
