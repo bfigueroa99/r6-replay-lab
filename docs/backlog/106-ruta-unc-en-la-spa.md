@@ -1,7 +1,7 @@
 # 106. Una ruta UNC en la URL hace que la SPA toque la red en Windows
 
 estado: revisado
-candado: -
+candado: qa 2026-11-12T11:35Z
 rama: claude/equipo-dev/106-ruta-unc-en-la-spa
 tipo: bug
 epica: -
