@@ -113,6 +113,27 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Operadores muestra tu pool por lado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: 3 operadores por lado, todos en las ultimas 20 partidas y ninguno viejo
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Tu pool', exact: true }) })
+  const ataque = panel.locator('div:has(> h3:text-is("Ataque"))')
+  const defensa = panel.locator('div:has(> h3:text-is("Defensa"))')
+  await expect(ataque).toContainText('3 operadores distintos')
+  await expect(defensa).toContainText('3 operadores distintos')
+  await expect(ataque).toContainText('Sin jugar hace más de 30 días: ninguno')
+  await expect(ataque.locator('.chip', { hasText: /^Sledge$/ })).toHaveCount(1)
+  await expect(ataque.locator('.chip', { hasText: /^Thermite$/ })).toHaveCount(0)
+
+  await page.goto('/operadores?side=Attack')
+  await expect(panel.locator('h3:text-is("Ataque")')).toBeVisible()
+  await expect(panel.locator('h3:text-is("Defensa")')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Operadores muestra el operador por sitio', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/operadores')
