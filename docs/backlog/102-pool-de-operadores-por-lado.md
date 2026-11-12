@@ -197,6 +197,52 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
+(dev 20261112T1204Z-chGLrtC) Diseno completo, sin desvios de forma:
+
+- `aggregates.py`: `POOL_PARTIDAS_RECIENTES = 20`, `POOL_DIAS_SIN_JUGAR = 30` y
+  `operator_pool(catalogo, **filters)`. Ventana reciente con un iterador
+  ordenado por `played_at` desc (corta en 20 ids, no carga el queryset);
+  una consulta agrupada por operador y lado con `Count`, `Max` y
+  `Count(filter=__in ids)`. Referencia = tu partida mas nueva filtrada.
+- Vista `operators_pool` + url `operators/pool/`.
+- `poolOperadores.js` (`bloquesDelPool`, `textoResumen`, `textoRondas`,
+  `textoHintPool`, `fechaCorta`) + vitest (8). Panel `TuPool` en
+  `Operators.jsx`, entre las tablas por lado y `PorSitio`, con chips (`.chip`
+  existente; nada nuevo en `styles.css`).
+- e2e `Operadores muestra tu pool por lado` en `humo.spec.js`.
+- Fila "Pool de operadores" en `docs/metricas.md`.
+
+Desvios del diseno (de la revision ciega):
+- **`site` tambien se ignora** (el diseno nombraba solo `side` y
+  `operator`, y su fila de `metricas.md` no listaba el sitio entre los que
+  aplican): con un sitio puesto, todo operador no jugado ahi caia en "Nunca
+  jugados", el mismo problema que el diseno evita con el lado. Test
+  `test_el_filtro_de_sitio_se_ignora`; el hint lo dice.
+- `stale` desempata por nombre a igual fecha (test propio).
+- "Sin jugar" muestra tambien las rondas (`Thermite (último: 2026-07-22, 2
+  rondas)`), como dice la fila de metricas; el hint toma los dias de
+  `stale_days` en vez de "30" escrito a mano.
+- El catalogo se limpia tambien en el agregado (vacios y `Unknown(...)` no
+  entran a `never` aunque el catalogo los traiga).
+
+Tests backend (`tests/test_pool_operadores.py`, 12): los ocho del diseno mas
+`test_stale_va_de_la_mas_reciente_a_la_mas_vieja`,
+`test_una_partida_solo_con_unknown_no_cuenta_como_partida`,
+`test_el_filtro_de_sitio_se_ignora` y
+`test_stale_desempata_por_nombre_con_la_misma_fecha`.
+
+Criterios -> tests: ventana y total (`test_cuenta_operadores_distintos...`),
+40 dias en `stale` (`test_un_operador_jugado_hace_40_dias_cae_en_stale`),
+`never` (`test_un_operador_del_catalogo_sin_rondas_cae_en_never`), filtros
+(`test_el_filtro_de_operador_y_el_de_lado_se_ignoran`,
+`test_el_filtro_de_mapa_aplica`), `Unknown` y vacios
+(`test_unknown_y_operador_vacio_no_cuentan`), sin partidas
+(`test_sin_partidas_responde_vacio_sin_error` y vitest `sin datos o sin
+partidas no hay bloques`), panel y consola (e2e), metricas (fila nueva).
+
+Skills: no aplica (el repo ya lo resuelve con `PorSitio`).
+OMC: plan=— · revisión=4 hallazgos (4 arreglados; 0 CRITICAL/HIGH) · verificación=—
+
 ## Revision
 
 ## QA

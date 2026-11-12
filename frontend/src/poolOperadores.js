@@ -37,3 +37,14 @@ export function textoResumen(bloque, recentMatches) {
 export function fechaCorta(iso) {
   return iso ? String(iso).slice(0, 10) : ''
 }
+
+export function textoRondas(n) {
+  return `${n || 0} ${n === 1 ? 'ronda' : 'rondas'}`
+}
+
+// El numero de dias sale de la API (`stale_days`): asi el hint y el texto del
+// bloque no se contradicen si cambia la constante del backend.
+export function textoHintPool(dias) {
+  const ventana = dias ? `${dias} días` : 'unos días'
+  return `Operadores distintos por lado. «Sin jugar» cuenta ${ventana} desde tu última partida con estos filtros, no desde hoy. El filtro de sitio no aplica.`
+}

@@ -14,7 +14,7 @@ import {
   pct,
 } from '../components/ui.jsx'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
-import { bloquesDelPool, fechaCorta } from '../poolOperadores.js'
+import { bloquesDelPool, fechaCorta, textoHintPool, textoRondas } from '../poolOperadores.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
@@ -134,7 +134,7 @@ function TuPool({ filters }) {
           <p>
             Sin jugar hace más de {data.stale_days} días:{' '}
             {b.stale.length
-              ? b.stale.map((s) => `${s.operator} (último: ${fechaCorta(s.last_played)})`).join(', ')
+              ? b.stale.map((s) => `${s.operator} (último: ${fechaCorta(s.last_played)}, ${textoRondas(s.rounds)})`).join(', ')
               : 'ninguno'}
           </p>
           <p>Nunca jugados ({b.never.length}):</p>
@@ -152,7 +152,7 @@ function TuPool({ filters }) {
   return (
     <Panel
       title="Tu pool"
-      hint="Operadores distintos por lado. «Sin jugar» cuenta 30 días desde tu última partida con estos filtros, no desde hoy."
+      hint={textoHintPool(data?.stale_days)}
     >
       {cuerpo}
     </Panel>

@@ -103,6 +103,18 @@ class PoolDeOperadoresTests(TestCase):
         self.assertEqual(sin_filtro, con_filtro)
         self.assertEqual(sin_filtro["sides"]["Defense"]["distinct_all"], 1)
 
+    def test_el_filtro_de_sitio_se_ignora(self):
+        self._partida(["Ash", "Sledge"], cuando=HOY)
+        sin_filtro = self.client.get("/api/operators/pool/").json()
+        con_sitio = self.client.get("/api/operators/pool/?site=Otro").json()
+        self.assertEqual(sin_filtro, con_sitio)
+
+    def test_stale_desempata_por_nombre_con_la_misma_fecha(self):
+        self._partida(["Thermite", "Ash"], cuando=HOY - timedelta(days=40))
+        self._partida(["Sledge"], cuando=HOY)
+        stale = agg.operator_pool(CATALOGO)["sides"]["Attack"]["stale"]
+        self.assertEqual([s["operator"] for s in stale], ["Ash", "Thermite"])
+
     def test_el_filtro_de_mapa_aplica(self):
         self._partida(["Ash"], cuando=HOY)
         self._partida(["Sledge"], cuando=HOY, map_name="Oregon")

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { bloquesDelPool, fechaCorta, textoResumen } from './poolOperadores.js'
+import { bloquesDelPool, fechaCorta, textoHintPool, textoResumen, textoRondas } from './poolOperadores.js'
 
 const DATA = {
   matches: 25,
@@ -47,5 +47,15 @@ describe('poolOperadores', () => {
   it('la fecha se corta al dia', () => {
     expect(fechaCorta('2026-07-01T20:00:00')).toBe('2026-07-01')
     expect(fechaCorta(null)).toBe('')
+  })
+
+  it('las rondas dicen singular y plural', () => {
+    expect(textoRondas(1)).toBe('1 ronda')
+    expect(textoRondas(4)).toBe('4 rondas')
+  })
+
+  it('el hint usa los dias que manda la api', () => {
+    expect(textoHintPool(30)).toContain('cuenta 30 días')
+    expect(textoHintPool(45)).toContain('cuenta 45 días')
   })
 })

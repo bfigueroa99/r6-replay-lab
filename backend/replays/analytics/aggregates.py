@@ -762,9 +762,10 @@ def operator_pool(catalogo: list[dict], **filters) -> dict:
     El catalogo entra como argumento porque se arma en las vistas. `operator`
     no filtra (no hay "tu pool de Ash") y `side` tampoco: filtrar por lado
     dejaria el otro entero en `never`, asi que salen siempre los dos y la UI
-    muestra el del filtro.
+    muestra el del filtro. `site` tampoco, por lo mismo: con un sitio puesto,
+    todo operador que no jugaste ahi pasaria por "nunca jugado".
     """
-    filtros = {k: v for k, v in filters.items() if k not in ("side", "operator")}
+    filtros = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
     qs = (
         base_queryset(**filtros)
         .exclude(operator="")
@@ -801,10 +802,13 @@ def operator_pool(catalogo: list[dict], **filters) -> dict:
     for lado in ("Attack", "Defense"):
         propias = [f for f in filas if f["side"] == lado]
         jugados = {f["operator"] for f in propias}
+        # Por nombre primero y despues por fecha (sort estable): dos operadores
+        # de la misma partida salen siempre en el mismo orden.
         viejos = sorted(
             (f for f in propias if corte is not None and f["last"] < corte),
-            key=lambda f: f["last"], reverse=True,
+            key=lambda f: f["operator"].lower(),
         )
+        viejos.sort(key=lambda f: f["last"], reverse=True)
         lados[lado] = {
             "distinct_recent": sum(1 for f in propias if f["recent"] > 0),
             "distinct_all": len(jugados),
