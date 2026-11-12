@@ -6,6 +6,12 @@ import { vigilarConsola } from './consola.js'
 // asi que el segundo modo entra interceptando la API y ningun numero del seed
 // se mueve.
 
+// Lo mismo que en humo.spec.js: una request interceptada que queda en vuelo al
+// terminar el test no tiene que tumbar al worker.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
+
 async function conRehen(page) {
   await page.route('**/api/filters/', async (route) => {
     const respuesta = await route.fetch()

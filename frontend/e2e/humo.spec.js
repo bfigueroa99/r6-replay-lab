@@ -24,6 +24,14 @@ const PAGINAS = [
   ['/ajustes', 'Ajustes'],
 ]
 
+// Una ruta interceptada que sigue en vuelo cuando el test termina (la app
+// vuelve a pedir /api/filters/ despues de la ultima asercion) tumbaba al worker
+// con "route.fetch: Test ended". Lo que se pide despues de las aserciones no es
+// parte de la prueba.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
+
 test.describe('todas las paginas cargan', () => {
   for (const [ruta, titulo] of PAGINAS) {
     test(`${titulo} (${ruta}) renderiza y no ensucia la consola`, async ({ page }) => {
@@ -1166,6 +1174,10 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   respuesta = page.waitForResponse(/\/api\/matches\/\?.*map=/)
   await mapa.selectOption(valor)
   await respuesta
+  // la respuesta llega antes de que React la pinte: hasta entonces el
+  // subtitulo ya dice "con estos filtros" pero con el total de antes (29), y
+  // leerlo ahi hacia fallar el `< 29` de abajo cuando la maquina va cargada
+  await expect(subtitulo).not.toHaveText('29 partidas con estos filtros.')
   await expect(subtitulo).toHaveText(/^\d+ partidas? con estos filtros\.$/)
   const n = Number((await subtitulo.textContent()).split(' ')[0])
   expect(n).toBeGreaterThan(0)
