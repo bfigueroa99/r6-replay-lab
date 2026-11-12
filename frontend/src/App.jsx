@@ -207,7 +207,11 @@ export default function App() {
             {enCurso.total} listas.
           </div>
         ) : null}
-        {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        {/* el contenedor esta siempre: un lector de pantalla anuncia lo que
+            cambia dentro de una region que ya existia, no una que aparece */}
+        <div role="status">
+          {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        </div>
         <Suspense fallback={<Loading />}>
           <Routes>
           <Route path="/" element={<Dashboard {...context} />} />

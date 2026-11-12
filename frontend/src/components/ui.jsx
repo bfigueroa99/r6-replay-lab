@@ -282,10 +282,26 @@ export function Loading({ children = 'Cargando...' }) {
   return <p className="loading">{children}</p>
 }
 
+/**
+ * El aviso de una accion de la pagina (guardar, hacer una copia): `flash` es
+ * `{ ok, text }` o null. Lo que salio bien va en una region `status` y lo que
+ * fallo en una `alert`, y las dos estan siempre: un lector de pantalla anuncia
+ * lo que cambia dentro de una region que ya existia, y una que aparece con el
+ * texto adentro puede quedar en silencio.
+ */
+export function Aviso({ flash }) {
+  return (
+    <>
+      <div role="status">{flash?.ok ? <div className="flash">{flash.text}</div> : null}</div>
+      <div role="alert">{flash && !flash.ok ? <div className="flash bad">{flash.text}</div> : null}</div>
+    </>
+  )
+}
+
 export function ErrorBox({ error }) {
   if (!error) return null
   return (
-    <div className="error">
+    <div className="error" role="alert">
       <b>No pude leer la API.</b> {String(error)}
       <br />
       <span className="note">Revisa que Django esté corriendo.</span>

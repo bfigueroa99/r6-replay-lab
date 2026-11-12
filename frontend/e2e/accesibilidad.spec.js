@@ -42,3 +42,34 @@ test('una tabla se ordena con el teclado y dice en que orden esta', async ({ pag
 
   expect(errores).toEqual([])
 })
+
+test('el resultado de importar se anuncia', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/')
+
+  // la carpeta de replays del e2e no existe: no hay nada que importar
+  await page.getByRole('button', { name: 'Importar replays' }).click()
+  await expect(page.getByRole('status')).toHaveText('No había partidas nuevas para importar.')
+
+  expect(errores).toEqual([])
+})
+
+test('los avisos de Ajustes salen en regiones que ya estaban en la pagina', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/ajustes')
+  await expect(page.locator('h1')).toHaveText('Ajustes')
+
+  // un lector de pantalla anuncia lo que cambia dentro de una region viva que
+  // ya existia; una que aparece con el texto adentro puede quedar en silencio
+  const regiones = page.locator('[role="status"], [role="alert"]')
+  const antes = await regiones.count()
+  const input = page.getByLabel('Carpeta de replays')
+  await input.fill((await input.inputValue()).replace(/sin-replays$/, 'inventada'))
+  await page.getByRole('button', { name: 'Guardar' }).click()
+
+  await expect(page.getByRole('alert')).toContainText('No existe la carpeta')
+  await expect(regiones).toHaveCount(antes)
+
+  // el 400 de la API sale en la consola como recurso fallido, y es el esperado
+  expect(errores.filter((e) => !e.includes('400'))).toEqual([])
+})
