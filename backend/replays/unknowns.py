@@ -12,6 +12,7 @@ Lo consumen `manage.py unknown_ids` y la pagina Datos.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -160,21 +161,19 @@ def overrides_path() -> Path:
 
 
 def read_overrides() -> dict:
-    """El JSON en disco, siempre con todas las claves y sin reventar si esta roto."""
+    """El JSON en disco, siempre con todas las claves y sin reventar si esta roto.
+
+    Lo lee igual que el parser (`overrides.leer_json`): si uno aceptara un
+    archivo que el otro no, guardar desde Datos pisaria etiquetas que el
+    parser si estaba usando.
+    """
     path = overrides_path()
     data = {clave: {} for clave in CLAVES}
-    if not path.exists():
-        return data
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return data
-    if not isinstance(raw, dict):
+    raw = overrides.leer_json(path) if path.exists() else None
+    if raw is None:
         return data
     for key in CLAVES:
-        valores = raw.get(key)
-        if isinstance(valores, dict):
-            data[key] = {str(k): str(v) for k, v in valores.items()}
+        data[key] = overrides.etiquetas(raw, key)
     return data
 
 
@@ -198,7 +197,16 @@ def clean_labels(raw) -> dict[str, str]:
         ident = str(key).strip()
         if not ident.isdigit():
             raise LabelError(f"{ident!r} no es un ID valido")
-        nombre = "" if value is None else str(value).strip()
+        if value is not None and not isinstance(value, str):
+            raise LabelError(f"el nombre para {ident} tiene que ser texto")
+        nombre = (value or "").strip()
+        try:
+            nombre.encode("utf-8")
+        except UnicodeEncodeError:
+            # "\ud83d" es JSON valido y medio emoji: no se puede escribir en el archivo
+            raise LabelError(
+                f"el nombre para {ident} tiene texto que no es Unicode válido"
+            ) from None
         if len(nombre) > MAX_LABEL:
             raise LabelError(f"el nombre para {ident} pasa de {MAX_LABEL} caracteres")
         if nombre.startswith(UNKNOWN_PREFIX):
@@ -208,9 +216,23 @@ def clean_labels(raw) -> dict[str, str]:
 
 
 def _save(data: dict) -> dict:
+    """Deja `data` en el archivo sin poder dejarlo a medias.
+
+    Se codifica antes de tocar el disco y se reemplaza de una vez, como el
+    `.env`: con `write_text` el archivo ya esta truncado cuando la escritura
+    falla (texto que no es UTF-8, disco lleno, la app cerrada a la mitad) y se
+    pierden todas las etiquetas puestas a mano.
+    """
     path = overrides_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    contenido = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    if path.exists() and overrides.leer_json(path) is None:
+        # `read_overrides` lo tomo por vacio (una coma de mas al editarlo a
+        # mano): lo que tenia queda al lado en vez de perderse al pisarlo
+        os.replace(path, path.with_name(path.name + ".roto"))
+    temporal = path.with_name(path.name + ".tmp")
+    temporal.write_bytes(contenido)
+    os.replace(temporal, path)
     return data
 
 

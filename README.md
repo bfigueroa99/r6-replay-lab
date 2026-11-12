@@ -357,7 +357,10 @@ parser esta hecho para degradar bien en vez de reventar:
   importado se reetiqueta solo. Por consola es lo mismo en dos pasos:
   `manage.py unknown_ids --write` deja las entradas en `data/overrides.json` y
   `manage.py retag` las aplica. En los dos casos no se vuelve a leer un solo
-  `.rec`: los IDs ya estan en la base.
+  `.rec`: los IDs ya estan en la base. Si editas `overrides.json` a mano, da
+  igual que el editor lo guarde con BOM; si queda sin poder leerse (una coma de
+  mas), la app lo ignora y, al guardar una etiqueta desde **Datos**, deja lo que
+  habia en `overrides.json.roto` en vez de pisarlo.
 - **Modo o tipo de partida nuevo**: tambien sale como `Unknown(<id>)` (en
   Partidas y en los filtros) y aparece en **Datos** con los tipos o modos con
   que se vio. Se etiqueta igual, y en `overrides.json` va bajo `gamemodes` o
