@@ -128,6 +128,10 @@ export function descargarCsv(columns, rows, nombre) {
  *
  * Con `csvName` aparece el boton de descarga, que exporta exactamente lo que se
  * ve: las mismas columnas, en el orden en que estan ordenadas.
+ *
+ * La cabecera que ordena es un boton dentro del `th` y no el `th` con un
+ * onClick: asi se llega con Tab, se aprieta con Enter o Espacio y el lector de
+ * pantalla la anuncia como boton. El orden vigente va en `aria-sort`.
  */
 /**
  * Orden de la tabla. Los nulos van siempre al final, en las dos direcciones: un
@@ -190,17 +194,35 @@ export function DataTable({
       <table>
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={[col.sortable === false ? 'plain' : '', col.left ? 'left' : ''].join(' ').trim()}
-                onClick={col.sortable === false ? undefined : () => toggle(col.key)}
-                title={col.help}
-              >
-                {col.label}
-                {sort.key === col.key ? <span className="arrow"> {sort.dir === 'asc' ? '↑' : '↓'}</span> : null}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const ordenada = sort.key === col.key
+              const flecha = ordenada ? (
+                <span className="arrow" aria-hidden="true">
+                  {' '}
+                  {sort.dir === 'asc' ? '↑' : '↓'}
+                </span>
+              ) : null
+              if (col.sortable === false) {
+                return (
+                  <th key={col.key} className={`plain ${col.left ? 'left' : ''}`.trim()} title={col.help}>
+                    {col.label}
+                  </th>
+                )
+              }
+              return (
+                <th
+                  key={col.key}
+                  className={`orden ${col.left ? 'left' : ''}`.trim()}
+                  aria-sort={ordenada ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  {/* la ayuda va en el boton: ahi la lee tambien quien llega con el teclado */}
+                  <button type="button" className="th-orden" onClick={() => toggle(col.key)} title={col.help}>
+                    {col.label}
+                    {flecha}
+                  </button>
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>

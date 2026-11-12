@@ -828,7 +828,8 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel).toContainText('2950 MMR')
   await expect(panel).toContainText('Consultado el 01-09-2026 12:00 · temporada Y10S2.')
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
-  await expect(panel.getByRole('button')).toHaveCount(0)
+  // las cabeceras de la tabla de playlists son botones (ordenan); ningun otro
+  await expect(panel.locator('button:not(.th-orden)')).toHaveCount(0)
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {

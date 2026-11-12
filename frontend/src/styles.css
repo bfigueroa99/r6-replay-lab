@@ -272,6 +272,25 @@ th {
 }
 th.plain { cursor: default; }
 th .arrow { color: var(--accent); }
+/* La cabecera que ordena es un boton que llena la celda: el padding pasa del
+   th al boton para que todo el ancho siga siendo clickeable. */
+th.orden { padding: 0; }
+.th-orden {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  white-space: inherit;
+  cursor: pointer;
+}
+.th-orden:hover { color: var(--text); }
+.th-orden:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
 tbody tr { border-bottom: 1px solid #1e2635; }
 tbody tr:hover { background: var(--panel-2); }
 tbody tr.me { background: var(--accent-soft); }
@@ -444,6 +463,8 @@ td.dim { color: var(--muted); }
   main { padding: 12px; }
   .topbar { height: auto; padding: 10px 12px; }
   th, td { padding: 6px 7px; }
+  th.orden { padding: 0; }
+  .th-orden { padding: 6px 7px; }
 }
 
 /* ------------------------------------------------------------------ ruleta */
