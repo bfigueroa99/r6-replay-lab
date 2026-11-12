@@ -46,7 +46,9 @@ pozo del que el PO saca.
      es la referencia y como cambiarla. No rota como las demas: va primero en
      el primer turno en que su fila de la tabla de Fuentes lleve 7 dias o mas
      sin visita, o no exista; asi corre una vez por semana.
-- **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
+- **Trabajo:** un subagente por familia, en paralelo (las llamadas juntas,
+  en un mismo mensaje y en primer plano: nunca en segundo plano ni cerrando
+  el turno a esperar su aviso), cada uno con la lista de ideas que ya
   existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
   con link verificado, fecha y una linea de que hace. Despues el lider
   filtra cada candidato, en este orden:

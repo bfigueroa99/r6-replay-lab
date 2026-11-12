@@ -120,6 +120,14 @@ mt=$(grep -oE 'minutos_turno=[0-9]+' "$tu" 2>/dev/null | head -1 | cut -d= -f2)
 if [ -z "$mt" ]; then det="$det turno.sh sin minutos_turno;"
 else echo "$texto" | grep -qF -- "$mt minutos" || det="$det SKILL.md sin '$mt minutos'"
 fi
+# Y los roles que una sesion puede encadenar (--seguir): turno.sh, el playbook
+# y el README del humano, que es donde se le dice como bajarlo.
+rs=$(grep -oE '^tope_roles=[0-9]+' "$tu" 2>/dev/null | head -1 | cut -d= -f2)
+if [ -z "$rs" ]; then det="$det turno.sh sin tope_roles;"
+else
+    tr '\n' ' ' < "$sk" | tr -s ' ' | grep -qF -- "hasta $rs roles por sesion" || det="$det SKILL.md sin 'hasta $rs roles por sesion';"
+    tr '\n' ' ' < "$bl/README.md" | tr -s ' ' | grep -qF -- "hasta $rs roles" || det="$det README.md sin 'hasta $rs roles';"
+fi
 cierra topes "$det"
 
 # 6. plantilla: la cabecera que estado.sh y los roles leen con grep.
@@ -211,6 +219,248 @@ GIT_DIR="$base/.nogit" bash "$tu" foo --simular "hora=0905" >/dev/null 2>&1; cod
 [ "$codigo" -eq 1 ] || { malos=$((malos + 1)); echo "FALLA simular: foo --simular hora=0905 -> salida $codigo (esperado 1)"; }
 det=""; [ "$malos" -eq 0 ] || det=" $malos de $(( ${#casos[@]} + 1 )) casos"
 cierra simular "$det"
+
+# 9b. seguir: la sesion encadena roles con `turno.sh --seguir`. La misma regla
+# de arriba, sin el reloj y sin lo que la sesion no debe tomar; un caso es
+# "pares|salida esperada" (`hechos=` son los roles ya liderados, `restante=`
+# los minutos que quedan; sin `restante`, el turno entero). Cada veto tiene su
+# caso: quitarlo de seguir_rol tiene que caer aca.
+casos_s=(
+'hechos=release aprobado=1 entregado=1 revisado=1|sigue=qa motivo=sigue: por estado: 1 revisado'
+'hechos=qa revisado=1 con_hallazgos=1 huerfanas=1 implementado=1|sigue=revisor motivo=sigue: por estado: 1 implementado'
+'hechos=qa aprobado=1|sigue=release motivo=sigue: por estado: 1 aprobado'
+'hechos=revisor implementado=1 con_hallazgos=1 disenado=1 cola=1 total=1|sigue=dev motivo=sigue: por estado: 1 disenado, lugar en cola'
+'hechos=revisor con_hallazgos=1 huerfanas=1 propuesto=2|sigue=arquitecto motivo=sigue: por estado: 2 propuesto, 0 disenado de 3'
+'hechos=qa con_hallazgos=1 propuesto=6 disenado=3 cola=4 total=4 ideas_libres=50|fin=nada mas que tomar por estado'
+'hechos=dev con_hallazgos=1 huerfanas=1 disenado=2 propuesto=1 cola=1 total=1|sigue=arquitecto motivo=sigue: por estado: 1 propuesto, 2 disenado de 3'
+'hechos=dev implementado=1 bloqueadas=1|sigue=revisor motivo=sigue: por estado: 1 implementado; 1 bloqueadas por independencia'
+'hechos=dev,arquitecto disenado=2 propuesto=1 cola=1 total=1|sigue=po motivo=sigue: papel corto: 1 propuesto de 6'
+'hechos=arquitecto disenado=1 cola=1 total=1 ideas_libres=50|sigue=po motivo=sigue: papel corto: 0 propuesto de 6'
+'hechos=arquitecto disenado=1 con_hallazgos=1 cola=1 total=1|sigue=dev motivo=sigue: por estado: 1 con_hallazgos, 0 huerfanas'
+'hechos=po propuesto=3 ideas_libres=50|fin=nada mas que tomar por estado'
+'hechos=po propuesto=3 disenado=1 cola=1 total=1|sigue=dev motivo=sigue: por estado: 1 disenado, lugar en cola'
+'hechos=dev,arquitecto,po disenado=2 propuesto=1 cola=1 total=1 ideas_libres=50|fin=nada mas que tomar por estado'
+'hechos=po ideas_libres=50|fin=lo que sigue es po, que esta sesion ya lidero'
+'hechos=arquitecto ideas_libres=50|sigue=po motivo=sigue: papel vacio'
+'hechos=qa,revisor,dev,arquitecto propuesto=1 ideas_libres=50|fin=tope de 4 roles por sesion'
+'hechos=dev propuesto=6 disenado=3 cola=4 total=4 ideas_libres=50 espera_humano=1 hora=0001|fin=nada mas que tomar por estado'
+'hechos=dev propuesto=6 disenado=3 cola=4 total=4 ideas_libres=50 hora=2101 fecha=2026-10-12|fin=nada mas que tomar por estado'
+'hechos=dev propuesto=6 disenado=3 cola=4 total=4 ideas_libres=5|sigue=investigador motivo=sigue: ideas libres: 5 de 10'
+'hechos=dev,investigador propuesto=6 disenado=3 cola=4 total=4 ideas_libres=5|fin=nada mas que tomar por estado'
+'hechos=revisor disenado=1 cola=1 total=1 restante=45|sigue=dev motivo=sigue: por estado: 1 disenado, lugar en cola'
+'hechos=revisor disenado=1 cola=1 total=1 restante=44|fin=quedan 44 min y dev pide 45'
+'hechos=dev aprobado=1 restante=19|fin=quedan 19 min y release pide 20'
+'hechos=qa aprobado=1 pausa=si|fin=PAUSA'
+'hechos=dev implementado=1 pedido_antes=si|fin=el rol vino pedido a mano: no encadena'
+)
+malos=0
+for c in "${casos_s[@]}"; do
+    a=${c%%|*}; e=${c#*|}
+    s=$(GIT_DIR="$base/.nogit" bash "$tu" --seguir --simular "$a" 2>&1)
+    [ "$s" = "$e" ] || { malos=$((malos + 1)); echo "FALLA seguir: $a -> $s (esperado $e)"; }
+done
+GIT_DIR="$base/.nogit" bash "$tu" --seguir dev --simular "hechos=qa" >/dev/null 2>&1; codigo=$?
+[ "$codigo" -eq 1 ] || { malos=$((malos + 1)); echo "FALLA seguir: --seguir dev -> salida $codigo (esperado 1: --seguir no lleva rol)"; }
+det=""; [ "$malos" -eq 0 ] || det=" $malos de $(( ${#casos_s[@]} + 1 )) casos;"
+# El playbook, la rutina y la plantilla dicen como se encadena y como se cierra.
+for t in 'bash -s -- --seguir' '# turno: sigue como' '# fin:' 'DESTRABA' 'FRENADAS'; do
+    grep -qF -- "$t" "$sk" || det="$det SKILL.md sin '$t';"
+done
+grep -qF -- '--seguir' "$ru" 2>/dev/null || det="$det rutina.md no nombra --seguir;"
+grep -qF -- 'bash -s -- --seguir' "$tu" || det="$det turno.sh no anuncia --seguir al terminar;"
+tr '\n' ' ' < "$ro/dev.md" | tr -s ' ' | grep -qF -- '--puedo dev' || det="$det roles/dev.md no pide --puedo dev (quien reviso no arregla);"
+for t in DESTRABA FRENADAS; do grep -qF "$t" "$bl/ESTADO.plantilla.md" 2>/dev/null || det="$det ESTADO.plantilla.md sin $t;"; done
+cierra seguir "$det"
+
+# 9c. dependencia: la frase con que el playbook manda escribir "esta ficha va
+# despues de aquella" es una que estado.sh sabe leer. Si alguien la redacta de
+# otro modo en un rol o en la plantilla, las FRENADAS vuelven a contarse como
+# tomables sin que nada falle.
+det=""
+frases=$(cat "$bl/PLANTILLA.md" "$al" "$ro"/*.md 2>/dev/null | tr '\n' ' ' | tr -s ' ' | grep -oiE 'implementar despues de[^"`.;:)]*#NN')
+nf=$(printf '%s\n' "$frases" | grep -c .)
+[ "$nf" -ge 4 ] || det="$det solo $nf frases 'Implementar despues de ... #NN' en la plantilla y los roles (se esperaban 4 o mas);"
+while IFS= read -r fr; do
+    [ -n "$fr" ] || continue
+    r=$(bash "$es" --espera "${fr//NN/79}" 2>&1)
+    [ "$r" = 79 ] || det="$det estado.sh --espera no lee '$fr' (dio '$r');"
+done <<< "$frases"
+# Con tilde tambien (la e acentuada va por printf: este archivo es ASCII).
+for c in "$(printf 'Implementar despu\303\251s de que la 78 y la #79 se mergeen: usa la columna 0006|78 79')" 'implementar despues de la ficha 101, la 102 o #103. Despues, 5 tests|101 102 103' 'La 79 ya esta en dev; despues de implementar la 80, nada|'; do
+    r=$(bash "$es" --espera "${c%%|*}" 2>&1)
+    [ "$r" = "${c#*|}" ] || det="$det --espera '${c%%|*}' -> '$r' (esperado '${c#*|}');"
+done
+cierra dependencia "$det"
+
+# 9d. vacio: los turnos que no dejaron otro commit que ESTADO.md. Primero la
+# cuenta sola (rastros R y actividad A sinteticos, como en rastros), despues
+# estado.sh entero contra un remoto con commits fechados: lo que firma el
+# humano no es entrega del equipo, lo de una rama de trabajo si, y con un
+# tercio o mas de los turnos de 48 h en vacio sale como DESTRABA.
+det=""
+v0=1790812800; vh=3600
+vcasos=(
+"uno en vacio entre dos con entrega|$((v0 + 9 * vh))|A:$((v0 - 600)) R:$v0 R:$((v0 + 4 * vh)) A:$((v0 + 8 * vh - 120)) R:$((v0 + 8 * vh))|1 3 1 3"
+"dos rastros a 10 min son una sesion|$((v0 + vh))|R:$v0 A:$((v0 + 300)) R:$((v0 + 600))|0 1 0 1"
+"a un disparo por hora, lo que sigue al cierre es de esa sesion y no de la siguiente|$((v0 + 2 * vh))|A:$((v0 - 60)) R:$v0 A:$((v0 + 200)) R:$((v0 + vh))|1 2 1 2"
+"una sesion larga: entrega 130 min antes de su rastro|$((v0 + 5 * vh))|A:$((v0 - 60)) R:$v0 A:$((v0 + 4 * vh - 7800)) R:$((v0 + 4 * vh))|0 2 0 2"
+"actividad de hace 3 horas no es de este turno|$((v0 + 5 * vh))|A:$((v0 + vh - 10800)) R:$((v0 + vh))|1 1 1 1"
+"un turno de hace 3 dias cuenta en 7 dias y no en 48 h|$((v0 + vh))|R:$((v0 - 72 * vh)) A:$((v0 - 60)) R:$v0|0 1 1 2"
+"sin rastros|$v0||0 0 0 0"
+)
+for c in "${vcasos[@]}"; do
+    nombre=${c%%|*}; resto=${c#*|}; ahora=${resto%%|*}; resto=${resto#*|}; eps=${resto%%|*}; e=${resto#*|}
+    r=$(EQUIPO_AHORA=$ahora bash "$es" --vacio "$eps" 2>&1)
+    [ "$r" = "$e" ] || det="$det --vacio '$nombre' -> '$r' (esperado '$e');"
+done
+tz=$(mktemp -d)
+(
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+    export GIT_AUTHOR_NAME=Claude GIT_COMMITTER_NAME=Claude GIT_AUTHOR_EMAIL=c@c GIT_COMMITTER_EMAIL=c@c
+    unset EQUIPO_CONTEXTO EQUIPO_REF EQUIPO_AHORA EQUIPO_INDEPENDENCIA
+    cd "$tz" && git init -q --bare origen.git && git clone -q origen.git w 2>/dev/null && cd w || exit 9
+    ya=$(date -u +%s)
+    # Commit fechado hace N horas (y M segundos mas).
+    hace() { local t=$(( ya - $1 * 3600 - ${3:-0} )); git add -A && GIT_AUTHOR_DATE="$t +0000" GIT_COMMITTER_DATE="$t +0000" git commit -qm "$2"; }
+    mkdir -p .claude/skills/equipo-dev docs/backlog && echo x > .claude/skills/equipo-dev/rutina.md
+    hace 40 base && git push -q origin HEAD:dev HEAD:main || exit 9
+    git fetch -q origin && git checkout -q -B papel origin/dev && mkdir -p docs/backlog
+    echo 'estado: propuesto' > docs/backlog/90-a.md && hace 20 'Propone: 90' 300
+    for n in 20 16 12 8; do echo "turno de hace $n h" > docs/backlog/ESTADO.md && hace $n "Estado: hace $n h"; done
+    git push -q origin HEAD:refs/heads/claude/equipo-dev/backlog || exit 9
+    v() { bash "$es" 2>/dev/null | grep -E '^TURNOS_EN_VACIO=|^DESTRABA: el equipo gira en vacio' | sed 's/ (turnos que.*//; s/ no dejaron.*//' | tr '\n' ';'; }
+    s=$(v); e='TURNOS_EN_VACIO=3 de 4 en 48 h | 3 de 4 en 7 dias;DESTRABA: el equipo gira en vacio: 3 de los 4 turnos de las ultimas 48 h;'
+    [ "$s" = "$e" ] || echo "tres turnos con solo ESTADO.md: '$s' (esperado '$e')"
+    # El humano commitea en la ventana del turno de hace 12 h: no es entrega.
+    git checkout -q -B t91 origin/dev && mkdir -p docs/backlog && echo x > docs/backlog/91-b.md
+    GIT_AUTHOR_NAME=Humano hace 12 'pedido del humano' 600 && git push -q origin HEAD:refs/heads/claude/equipo-dev/91-b || exit 9
+    s=$(v); [ "$s" = "$e" ] || echo "un commit del humano conto como entrega: '$s'"
+    # El equipo commitea en esa rama en los turnos de hace 12 y 8 h: queda 1 de 4.
+    echo y >> docs/backlog/91-b.md && hace 12 'Agrega algo' 300
+    echo z >> docs/backlog/91-b.md && hace 8 'Agrega mas' 300
+    git push -q origin HEAD:refs/heads/claude/equipo-dev/91-b || exit 9
+    s=$(v); [ "$s" = 'TURNOS_EN_VACIO=1 de 4 en 48 h | 1 de 4 en 7 dias;' ] || echo "con entregas en la rama de trabajo: '$s' (esperado 1 de 4, sin DESTRABA)"
+) > "$tz/fallos" 2>&1
+[ -s "$tz/fallos" ] && det="$det $(tr '\n' ';' < "$tz/fallos")"
+rm -rf "$tz"
+grep -qF 'TURNOS_EN_VACIO' "$bl/ESTADO.plantilla.md" 2>/dev/null || det="$det ESTADO.plantilla.md sin TURNOS_EN_VACIO;"
+cierra vacio "$det"
+
+# 9e. encadenar: turno.sh y estado.sh enteros sobre un remoto sintetico, con
+# el papel como estaba el 2026-11-10: una `disenado` (83) que espera a la 79,
+# la 79 `entregado (...)` esperando al humano y una `propuesto` con candado.
+# Antes el rol era dev ("1 disenado, lugar en cola") y no habia nada que
+# implementar. Despues, --seguir de verdad: el env de la sesion, los roles ya
+# liderados, el reloj, PAUSA y quien reviso no arregla.
+det=""
+te=$(mktemp -d)
+(
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+    export GIT_AUTHOR_NAME=Claude GIT_COMMITTER_NAME=Claude GIT_AUTHOR_EMAIL=c@c GIT_COMMITTER_EMAIL=c@c
+    unset EQUIPO_CONTEXTO EQUIPO_REF EQUIPO_AHORA EQUIPO_INDEPENDENCIA
+    cd "$te" && git init -q --bare origen.git && git clone -q origen.git w 2>/dev/null && cd w || exit 9
+    mkdir -p .claude/skills/equipo-dev scripts/equipo-dev docs/backlog && echo x > .claude/skills/equipo-dev/rutina.md
+    cp "$tu" "$es" "$in" scripts/equipo-dev/ || exit 9
+    git add -A && git commit -qm base && git push -q origin HEAD:dev HEAD:main || exit 9
+    git fetch -q origin
+    sube() { git add -A && git commit -qm "$1" && git push -q origin "HEAD:refs/heads/$2" && git checkout -q --detach origin/dev; }
+    # Un directorio vacio no se commitea: dev no trae docs/backlog.
+    rama() { git checkout -q -B "$1" "$2" && mkdir -p docs/backlog; }
+    rama papel origin/dev
+    printf 'estado: disenado\ncandado: -\ntipo: funcionalidad\nturnos: arquitecto 20261101T0000Z-cARQ001\n\n**Implementar despues de que #79 se mergee**: usa su columna.\n' > docs/backlog/83-tramo-dos.md
+    printf 'estado: propuesto\ncandado: arquitecto 2026-11-06T06:49Z\ntipo: funcionalidad\nturnos: po 20261101T0000Z-cPO0001\n' > docs/backlog/102-pool.md
+    # Con ideas libres de sobra: sin ellas el estado pediria un investigador.
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do echo "| I$i | una idea | idea |"; done > docs/backlog/ALCANCE.md
+    sube papel claude/equipo-dev/backlog || exit 9
+    rama t79 origin/dev
+    printf 'estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)\ncandado: -\ntipo: funcionalidad\nturnos: dev 20261101T0100Z-cDEV001, revisor 20261101T0200Z-cREV001, qa 20261101T0300Z-cQA0001\n' > docs/backlog/79-tramo-uno.md
+    sube 'Reclama: 79' claude/equipo-dev/79-tramo-uno || exit 9
+
+    e() { bash "$es" "$@" 2>/dev/null; }
+    pares() { tr ' ' '\n' | grep -E "^($1)=" | tr '\n' ' '; }
+    s=$(e --resumen | pares 'propuesto|disenado|espera_humano')
+    [ "$s" = 'propuesto=1 disenado=0 espera_humano=1 ' ] || echo "RESUMEN con una frenada: '$s' (esperado 'propuesto=1 disenado=0 espera_humano=1 ')"
+    completa=$(e)
+    grep -qF 'FRENADAS=1 (la 83 espera a la 79)' <<< "$completa" || echo "sin 'FRENADAS=1 (la 83 espera a la 79)': $(grep -m1 '^FRENADAS' <<< "$completa")"
+    grep -F '83-tramo-dos.md' <<< "$completa" | grep -qF 'frenada: espera a la 79' || echo "la linea de la 83 en el papel no dice que esta frenada"
+    grep -E '^DESTRABA: ficha 79, entregado \(PR pendiente de merge: toca CLAUDE.md' <<< "$completa" | grep -qF '| frena a: 83 |' || echo "sin la linea DESTRABA de la 79 con 'frena a: 83': $(grep -m1 '^DESTRABA' <<< "$completa")"
+    grep -F '102-pool.md' <<< "$completa" | grep -qF 'candado muerto' && echo "un candado recien puesto en el papel sale como muerto"
+    EQUIPO_AHORA=$(( $(date -u +%s) + 14400 )) bash "$es" 2>/dev/null | grep -F '102-pool.md' | grep -qF 'candado muerto: si' || echo "un candado de 4 h en el papel no sale como muerto"
+
+    # El reloj fijo a las 09:05 UTC de hoy (franja 3): a las 23 el reloj
+    # elegiria release (la 79 espera al humano) y a las 21 de un dia par,
+    # investigador, antes de mirar el papel, y la prueba dependeria de la hora.
+    fijo=$(date -u -d "$(date -u +%F) 09:05" +%s)
+    t() { EQUIPO_AHORA=$fijo bash "$tu" "$@" 2>&1; }
+    env_f="$(git rev-parse --absolute-git-dir)/equipo-dev.env"
+    campo_env() { sed -n "s/^export $1=//p" "$env_f"; }
+    t --seguir >/dev/null; c=$?; [ "$c" = 1 ] || echo "--seguir sin turno en curso: salida $c (esperada 1)"
+    s=$(t --contexto cSES001)
+    grep -q '^# turno: arquitecto | motivo: por estado: 1 propuesto, 0 disenado de 3 ' <<< "$s" || echo "primer rol con la 83 frenada: $(grep -m1 '^# turno' <<< "$s") (esperado arquitecto)"
+    grep -qF 'bash -s -- --seguir' <<< "$s" || echo "el arranque no anuncia --seguir"
+    [ "$(campo_env EQUIPO_ROLES)" = '"arquitecto"' ] || echo "EQUIPO_ROLES tras el arranque: $(campo_env EQUIPO_ROLES)"
+    sesion=$(campo_env EQUIPO_SESION); inicio=$(campo_env EQUIPO_INICIO)
+    s=$(t --seguir)
+    grep -q '^# turno: sigue como po | motivo: sigue: papel corto: 1 propuesto de 6 | roles de esta sesion: arquitecto po ' <<< "$s" || echo "primer --seguir: $(grep -m1 '^# ' <<< "$s") (esperado sigue como po)"
+    [ "$(campo_env EQUIPO_ROL)" = po ] && [ "$(campo_env EQUIPO_ROLES)" = '"arquitecto po"' ] || echo "env tras seguir: rol $(campo_env EQUIPO_ROL), roles $(campo_env EQUIPO_ROLES)"
+    [ "$(campo_env EQUIPO_SESION)" = "$sesion" ] && [ "$(campo_env EQUIPO_INICIO)" = "$inicio" ] || echo "--seguir cambio la sesion o el inicio del turno"
+    grep -qF 'roles/po.md' <<< "$s" || echo "--seguir no manda a leer roles/po.md"
+    grep -qE 'SKILL\.md|alcance\.md' <<< "$s" && echo "--seguir manda a releer SKILL.md o alcance.md"
+    # Al seguir se lee el estado recortado: el comando impreso, tal cual, trae
+    # lo que el rol necesita y deja afuera lo que ya se leyo al arrancar. Si
+    # estado.sh renombra una seccion, el recorte cae aca y no en un turno.
+    leer=$(grep -m1 '^# leer: .*estado\.sh' <<< "$s" | sed 's/^# leer: //')
+    r=$(bash -c "$leer" 2>/dev/null)
+    for k in '^docs/backlog/83-tramo-dos.md ' '^FRENADAS=' '^origin/claude/equipo-dev/79-tramo-uno ' '^DESTRABA: ' '^COLA=' '^RESUMEN '; do
+        grep -q -- "$k" <<< "$r" || echo "el estado recortado de --seguir no trae $k"
+    done
+    grep -qE '^(BORRABLES|RELEASE|CADENCIA|PAPEL_TIPOS)=|^ENTORNO|^completo' <<< "$r" && echo "el estado recortado de --seguir trae secciones de mas: $(grep -oE '^(BORRABLES|RELEASE|CADENCIA|PAPEL_TIPOS)=|^ENTORNO|^completo' <<< "$r" | tr '\n' ' ')"
+    s=$(t --seguir)
+    grep -q '^# fin: nada mas que tomar por estado | roles de esta sesion: arquitecto po ' <<< "$s" || echo "segundo --seguir: $(head -1 <<< "$s") (esperado fin)"
+    [ "$(printf '%s\n' "$s" | grep -c .)" -eq 1 ] || echo "el fin imprime mas de una linea"
+    [ "$(campo_env EQUIPO_ROLES)" = '"arquitecto po"' ] || echo "un fin cambio el env"
+
+    # Una implementado de otro contexto: sigue como revisor. Y una con hallazgos:
+    # esta sesion ya reviso, no la arregla (sin el veto saldria dev).
+    rama t106 origin/dev
+    printf 'estado: implementado\ncandado: -\ntipo: bug\nturnos: dev 20261101T0100Z-cOTRO01\n' > docs/backlog/106-bug.md
+    sube 'Reclama: 106' claude/equipo-dev/106-bug || exit 9
+    s=$(t --seguir)
+    grep -q '^# turno: sigue como revisor | motivo: sigue: por estado: 1 implementado | roles de esta sesion: arquitecto po revisor ' <<< "$s" || echo "con una implementado ajena: $(grep -m1 '^# ' <<< "$s") (esperado sigue como revisor)"
+    rama t107 origin/dev
+    printf 'estado: con hallazgos\ncandado: -\ntipo: bug\nturnos: dev 20261101T0100Z-cOTRO02, revisor 20261101T0500Z-cSES001\n' > docs/backlog/107-otro.md
+    sube 'Reclama: 107' claude/equipo-dev/107-otro || exit 9
+    git push -q origin --delete claude/equipo-dev/106-bug
+    s=$(t --seguir)
+    grep -q '^# fin: nada mas que tomar por estado ' <<< "$s" || echo "tras revisar, con una con hallazgos: $(head -1 <<< "$s") (esperado fin: quien reviso no arregla)"
+
+    # El reloj: con 15 minutos no arranca un Dev. Y con PAUSA no sigue nadie.
+    sed -i "s/^export EQUIPO_ROLES=.*/export EQUIPO_ROLES=\"po\"/; s/^export EQUIPO_INICIO=.*/export EQUIPO_INICIO=$(( fijo - 120 * 60 ))/; s/^export EQUIPO_MINUTOS=.*/export EQUIPO_MINUTOS=135/" "$env_f"
+    s=$(t --seguir)
+    grep -q '^# fin: quedan 15 min y dev pide 45 ' <<< "$s" || echo "con 15 minutos: $(head -1 <<< "$s") (esperado fin: quedan 15 min y dev pide 45)"
+    sed -i "s/^export EQUIPO_INICIO=.*/export EQUIPO_INICIO=$fijo/" "$env_f"
+    s=$(t --seguir)
+    grep -q '^# turno: sigue como dev | motivo: sigue: por estado: 1 con_hallazgos, 0 huerfanas ' <<< "$s" || echo "con el reloj entero: $(grep -m1 '^# ' <<< "$s") (esperado sigue como dev)"
+    rama papel origin/claude/equipo-dev/backlog && : > docs/backlog/PAUSA
+    sube pausa claude/equipo-dev/backlog || exit 9
+    sed -i 's/^export EQUIPO_ROLES=.*/export EQUIPO_ROLES="po"/' "$env_f"
+    s=$(t --seguir)
+    grep -q '^# fin: PAUSA ' <<< "$s" || echo "con PAUSA: $(head -1 <<< "$s") (esperado fin: PAUSA)"
+
+    # La 79 llega a dev: la 83 deja de estar frenada y nada espera al humano.
+    rama d origin/dev
+    printf 'estado: entregado\ncandado: -\ntipo: funcionalidad\nturnos: dev 20261101T0100Z-cDEV001\n' > docs/backlog/79-tramo-uno.md
+    git add -A && git commit -qm 'entra la 79' && git push -q origin HEAD:dev && git checkout -q --detach origin/dev || exit 9
+    s=$(e --resumen | pares 'disenado|espera_humano')
+    [ "$s" = 'disenado=1 espera_humano=0 ' ] || echo "con la 79 en dev: '$s' (esperado 'disenado=1 espera_humano=0 ')"
+    completa=$(e)
+    grep -q '^FRENADAS=0 ' <<< "$completa" || echo "con la 79 en dev sigue habiendo frenadas: $(grep -m1 '^FRENADAS' <<< "$completa")"
+    grep -q '^DESTRABA' <<< "$completa" && echo "con la 79 en dev sigue saliendo DESTRABA"
+    grep -qF 'nada espera al humano' <<< "$completa" || echo "sin 'nada espera al humano'"
+) > "$te/fallos" 2>&1
+[ -s "$te/fallos" ] && det="$det $(tr '\n' ';' < "$te/fallos")"
+rm -rf "$te"
+cierra encadenar "$det"
 
 # 10. rastros: los disparos sin rastro se cuentan a la cadencia que la Routine
 # tiene de verdad, no a un cron fijo. Series sinteticas (un commit de ESTADO.md
@@ -403,7 +653,7 @@ else
     done
     nb=$(printf '%s\n' "$completa" | grep -m1 '^BORRABLES=' | cut -d= -f2)
     [ -n "$nb" ] && [ "$nb" -eq "$(printf '%s\n' "${borrar#BORRAR: git push origin --delete }" | tr ' ' '\n' | grep -c .)" ] || det="$det BORRABLES='${nb:-}' no cuadra con BORRAR;"
-    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO RELEASE DEV_7D; do
+    for k in CADENCIA ROTACION_EPICAS ROTACION_PAGINAS ROTACION CICLO PARA_EL_HUMANO RELEASE DEV_7D FRENADAS TURNOS_EN_VACIO; do
         printf '%s\n' "$completa" | grep -q "^$k=" || det="$det falta $k=;"
     done
     printf '%s\n' "$completa" | grep -qE '^ROTACION=saturadas \(' || det="$det ROTACION sin saturadas;"
