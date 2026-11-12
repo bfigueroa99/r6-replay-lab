@@ -14,6 +14,7 @@ import {
   pct,
 } from '../components/ui.jsx'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
+import { bloquesDelPool, fechaCorta, textoHintPool, textoRondas } from '../poolOperadores.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
@@ -62,6 +63,8 @@ export default function Operators({ filters, setFilters, runImport, importing })
           <Table rows={rows} nombre="operadores" />
         </Panel>
       ) : null}
+
+      <TuPool filters={filters} />
 
       <PorSitio filters={filters} />
     </>
@@ -112,6 +115,47 @@ function Table({ rows, nombre }) {
       rowKey={(row) => `${row.operator}-${row.side}`}
       csvName={nombre}
     />
+  )
+}
+
+// Request aparte, como PorSitio: un error del panel no tumba la pagina.
+function TuPool({ filters }) {
+  const { data, error, loading } = useApi('/operators/pool/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else {
+    const bloques = bloquesDelPool(data, filters?.side)
+    cuerpo = bloques.length ? (
+      bloques.map((b) => (
+        <div key={b.lado}>
+          <h3>{b.titulo}</h3>
+          <p>{b.resumen}</p>
+          <p>
+            Sin jugar hace más de {data.stale_days} días:{' '}
+            {b.stale.length
+              ? b.stale.map((s) => `${s.operator} (último: ${fechaCorta(s.last_played)}, ${textoRondas(s.rounds)})`).join(', ')
+              : 'ninguno'}
+          </p>
+          <p>Nunca jugados ({b.never.length}):</p>
+          <div>
+            {b.never.map((nombre) => (
+              <span key={nombre} className="chip">{nombre}</span>
+            ))}
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="note">Sin partidas con estos filtros.</p>
+    )
+  }
+  return (
+    <Panel
+      title="Tu pool"
+      hint={textoHintPool(data?.stale_days)}
+    >
+      {cuerpo}
+    </Panel>
   )
 }
 
