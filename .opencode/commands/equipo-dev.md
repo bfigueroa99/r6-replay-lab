@@ -19,6 +19,7 @@ Corres en OpenCode (lo lanza `scripts/equipo-dev/opencode.sh`, normalmente con u
   Si `gh auth status` falla, es "sin herramientas", como dice el playbook.
 - **La rutina de Claude Code** (paso 9 del Release, `get_trigger`/`update_trigger`): no hay; `sin herramientas para comparar`.
 - **Subagentes** (revision ciega, dev de backend y frontend, investigador por familia, la arena): la herramienta `task` con `subagent_type: "general"`; `revision.md` va tal cual como su prompt. Los agentes de OMC (`omc-*`, recetas de `.claude/skills/omc/SKILL.md`) tampoco existen como tipo: `general`, con el cuerpo de `git show origin/dev:.claude/agents/omc-<x>.md` desde `<Adaptacion_Loop>` delante del brief.
+- **Skills** (las que el playbook cita como skill `<nombre>`): se leen por su ruta, como dice el playbook, aunque OpenCode las ofrezca como herramienta. `dataviz` viene con Claude Code y aca no existe: se sigue sin ella y se anota en `Skills del repo:`.
 - **Scratchpad**: `/tmp/opencode` o un `mktemp -d`, nunca dentro del repo.
 - **Autor**: los commits salen como `OpenCode` (lo fija `opencode.sh`) y `estado.sh` lo cuenta como del equipo. No lo cambies: con otro autor, cada commit pareceria un pedido del humano.
 - **Comandos largos**: la herramienta `bash` corta a los 2 minutos. `check.sh` va igual por `verificar.sh` (como dice el playbook), con `--max 1700` y `timeout: 1800000`; se repite mientras salga 124. Nada queda corriendo al cerrar el turno.

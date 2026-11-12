@@ -98,7 +98,7 @@ while IFS= read -r p; do
     [ -n "$p" ] || continue
     case "$p" in *'<'*) continue ;; esac
     [ -e "$base/.claude/skills/equipo-dev/$p" ] || det="$det .claude/skills/equipo-dev/$p"
-done <<< "$(cat "${playbook[@]}" "$ru" 2>/dev/null | grep -oE '`(roles/[a-z<>]+\.md|alcance\.md)`' | tr -d '`' | sort -u)"
+done <<< "$(cat "${playbook[@]}" "$ru" 2>/dev/null | grep -oE '`(roles/[a-z<>]+\.md|alcance\.md|skills-del-repo\.md)`' | tr -d '`' | sort -u)"
 cierra rutas "$det"
 
 # 5. topes: los numeros de estado.sh son los que el playbook y la plantilla
@@ -665,7 +665,7 @@ fi
 # un compare/main... solo en RELEASE; todo git fetch trae dev. Una rama de
 # trabajo creada desde main, un merge de main o un PR contra main caen aca.
 det=""
-for f in "${playbook[@]}" "$ru" "$tu" "$es" $base/.claude/skills/equipo-dev/revision.md $base/.claude/skills/equipo-dev/plantilla-pr.md $base/.claude/skills/equipo-dev/arena.md $base/.claude/skills/equipo-dev/replica.md $base/.claude/skills/equipo-dev/skills.md "$bl/ESTADO.plantilla.md" "$bl/README.md"; do
+for f in "${playbook[@]}" "$ru" "$tu" "$es" $base/.claude/skills/equipo-dev/revision.md $base/.claude/skills/equipo-dev/plantilla-pr.md $base/.claude/skills/equipo-dev/arena.md $base/.claude/skills/equipo-dev/replica.md $base/.claude/skills/equipo-dev/skills.md $base/.claude/skills/equipo-dev/skills-del-repo.md "$bl/ESTADO.plantilla.md" "$bl/README.md"; do
     [ -f "$f" ] || continue
     m=$(grep -nE 'origin/main|compare/main\.\.\.' "$f" | grep -vF -- "$cadena" | grep -v 'RELEASE' | cut -d: -f1 | tr '\n' ',')
     [ -z "$m" ] || det="$det ${f#$base/} nombra main fuera de la cadena y de RELEASE (lineas ${m%,});"
@@ -674,6 +674,95 @@ for f in "${playbook[@]}" "$ru" "$tu" "$es" $base/.claude/skills/equipo-dev/revi
 done
 grep -qE 'abierto contra `dev`' "$ro/release.md" 2>/dev/null || det="$det roles/release.md: la puerta de merge no pide el PR contra dev;"
 cierra base "$det"
+
+# 14. skills: toda skill que el playbook nombra existe, y toda vendorizada
+# tiene un paso que la cita o su motivo para quedar a mano. El mapa es la
+# tabla de `skills-del-repo.md`. Un paso cita una skill como "skill `<nombre>`";
+# tambien cuentan `<plugin>:<nombre>`, `/<nombre> ...` y las rutas
+# .claude/skills/<nombre>/. Lo que no esta en .claude/skills/ solo vale si
+# viene con Claude Code o es un conector (las dos listas). Cada cita tiene su
+# fila con ese archivo en `donde`, y cada archivo de `donde` la cita: asi el
+# mapa no se aleja de los roles. MAQUINARIA.md no se mira: ahi se proponen
+# skills que todavia no estan.
+INCORPORADAS="dataviz code-review security-review simplify claude-api"
+CONECTORES="github"
+det=""
+ed=$base/.claude/skills/equipo-dev
+sr=$ed/skills-del-repo.md
+vm=$base/.claude/skills/VENDORIZADAS.md
+hay_skill() {
+    [ -f "$base/.claude/skills/$1/SKILL.md" ] && return 0
+    case " $INCORPORADAS $CONECTORES " in *" $1 "*) return 0 ;; esac
+    return 1
+}
+# Un parrafo partido entre "skill" y su nombre sigue siendo una cita: se mira
+# cada archivo con los saltos de linea hechos espacios.
+plano() { tr '\n' ' ' < "$1" | tr -s ' '; }
+citas() { plano "$1" | grep -oE 'skill `[a-z0-9:-]+`' | sed -E 's/^skill `(.*)`$/\1/; s/^.*://' | sort -u; }
+textos=()
+for f in "$ed"/*.md "$ro"/*.md "$bl/README.md" "$bl/PLANTILLA.md" "$bl/ESTADO.plantilla.md" "$base/.opencode/commands/equipo-dev.md"; do
+    [ -f "$f" ] && textos+=("$f")
+done
+nombradas=$( {
+    for f in "${textos[@]}"; do citas "$f"; done
+    grep -ohE '`[a-z][a-z0-9-]*:[a-z][a-z0-9-]*`' "${textos[@]}" | tr -d '`' | sed 's/^.*://'
+    grep -ohE '`/[a-z][a-z0-9-]*( [^`]*)?`' "${textos[@]}" | sed -E 's#^`/([a-z0-9-]+).*#\1#'
+    grep -ohE '\.claude/skills/[a-z0-9][a-z0-9-]*/' "${textos[@]}" | sed -E 's#^\.claude/skills/##; s#/$##'
+} 2>/dev/null | sort -u)
+for s in $nombradas; do
+    hay_skill "$s" || det="$det el playbook nombra '$s', que no esta en .claude/skills/ ni en INCORPORADAS ni en CONECTORES;"
+done
+filas=$(grep -E '^\| `[a-z0-9-]+` \|' "$sr" 2>/dev/null)
+[ -n "$filas" ] || det="$det skills-del-repo.md sin la tabla del mapa;"
+mapa=" "
+while IFS='|' read -r _ nom o d _; do
+    [ -n "$nom" ] || continue
+    nom=$(printf '%s' "$nom" | tr -d ' `'); o=$(printf '%s' "$o" | tr -d ' '); d=$(printf '%s' "$d" | sed 's/^ *//; s/ *$//')
+    mapa="$mapa$nom "
+    case "$o" in
+        propia|vendorizada) [ -f "$base/.claude/skills/$nom/SKILL.md" ] || det="$det mapa: $nom ($o) no esta en .claude/skills/;" ;;
+        incorporada) case " $INCORPORADAS " in *" $nom "*) ;; *) det="$det mapa: $nom no esta en INCORPORADAS;" ;; esac ;;
+        conector) case " $CONECTORES " in *" $nom "*) ;; *) det="$det mapa: $nom no esta en CONECTORES;" ;; esac ;;
+        *) det="$det mapa: $nom con origen '$o';" ;;
+    esac
+    if grep -qE "^\| \`$nom\` \|" "$vm" 2>/dev/null; then
+        [ "$o" = vendorizada ] || det="$det mapa: $nom esta en VENDORIZADAS.md y dice $o;"
+    else
+        [ "$o" != vendorizada ] || det="$det mapa: $nom dice vendorizada y no esta en VENDORIZADAS.md;"
+    fi
+    case "$d" in
+        'a mano:'*)
+            m=${d#a mano:}; m=$(printf '%s' "$m" | tr -d ' ')
+            [ "${#m}" -ge 20 ] || det="$det mapa: $nom a mano sin motivo;" ;;
+        *)
+            arch=$(printf '%s\n' "$d" | grep -oE '`[A-Za-z/-]+\.md`' | tr -d '`')
+            [ -n "$arch" ] || det="$det mapa: $nom sin donde (archivos del playbook o 'a mano: <motivo>');"
+            for a in $arch; do
+                if [ ! -f "$ed/$a" ]; then det="$det mapa: $nom en $a, que no existe;"; continue; fi
+                case "$o" in
+                    conector) grep -qF "mcp__${nom}__" "$ed/$a" ;;
+                    propia) grep -qiw -- "$nom" "$ed/$a" ;;
+                    *) plano "$ed/$a" | grep -qF -- "skill \`$nom\`" ;;
+                esac || det="$det mapa: $a no cita $nom;"
+            done ;;
+    esac
+done <<< "$filas"
+for f in "$ed"/*.md "$ro"/*.md; do
+    [ -f "$f" ] || continue
+    rel=${f#$ed/}
+    for nom in $(citas "$f"); do
+        fila=$(printf '%s\n' "$filas" | grep -E "^\| \`$nom\` \|")
+        if [ -z "$fila" ]; then det="$det $rel cita la skill $nom y el mapa no la tiene;"
+        else printf '%s\n' "$fila" | cut -d'|' -f4 | grep -qF "\`$rel\`" || det="$det $rel cita la skill $nom y su fila del mapa no lo dice;"
+        fi
+    done
+done
+vend=$(grep -oE '^\| `[a-z0-9-]+` \|' "$vm" 2>/dev/null | tr -d '|` ')
+[ -n "$vend" ] || det="$det VENDORIZADAS.md sin su tabla;"
+for nom in $vend; do
+    case "$mapa" in *" $nom "*) ;; *) det="$det $nom esta vendorizada y el mapa no dice en que paso se usa ni por que queda a mano;" ;; esac
+done
+cierra skills "$det"
 
 if [ "$fallos" -gt 0 ]; then echo "PRUEBAS_FALLAN: $fallos"; exit 1; fi
 echo "PRUEBAS_OK ($n)"

@@ -17,7 +17,15 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   y `archivos:`: archivos exactos y por que esos; tests nuevos con nombre en
   espanol; orden de implementacion; que puede romperse; verificacion manual;
   fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral
-  nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
+  nuevo necesita calibrarse con la base real, decirlo. Un numero o un umbral
+  nuevo se define con la skill `statistical-analysis` (denominador y `n`
+  minimo, ponderado y no promedio de promedios, cuando una diferencia es
+  ruido), y eso va a su fila de `metricas.md`; un grafico nuevo o cambiado,
+  con la skill `dataviz` (forma, ejes, color), y el diseno la cita para que
+  el Dev valide la paleta con ella; con `tipo: tests` o una pagina, flujo o
+  endpoint nuevo, la skill `testing-strategy` reparte los tests entre
+  Django, vitest y `frontend/e2e/`. `## Diseno` cierra con su linea
+  `Skills del repo:`. Si `archivos:` pisa
   los de una rama abierta, o agrega migracion mientras otra rama abierta ya
   agrega una: `Implementar despues de que #NN se mergee`, con esas palabras
   y el `#NN` (no bloquea el diseno; `estado.sh` la lee y no le da la ficha a
@@ -26,8 +34,9 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de
   descarte; solo lo son los filtros duros. Si la ficha entra en un dominio
-  que el repo todavia no resuelve (un grafico o una tabla nuevos, una
-  migracion delicada, un flujo e2e nuevo), antes de disenar se busca una
+  que ni el repo ni sus skills resuelven (una tabla nueva, una migracion
+  delicada, un flujo e2e nuevo; un grafico ya lo cubre `dataviz`), antes de
+  disenar se busca una
   skill de afuera que lo cubra (`.claude/skills/equipo-dev/skills.md`,
   leerlo de `$REF`): una busqueda por turno, se consulta sin instalarla y
   `## Diseno` lleva su linea `Skills:` (tambien si no aplica). Si una ficha
