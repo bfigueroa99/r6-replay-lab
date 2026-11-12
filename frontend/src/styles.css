@@ -30,6 +30,21 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 
+/* Texto que lee el lector de pantalla y no se ve: la cabecera de una columna
+   que a la vista se explica sola (la de los botones Copiar, la esquina de la
+   matriz de duelos). */
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ------------------------------------------------------------------- datos */
 
 .unknown {

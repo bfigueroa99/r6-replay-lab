@@ -186,3 +186,27 @@ test('la barra superior contiene sus controles tambien en una ventana angosta', 
 
   expect(errores).toEqual([])
 })
+
+test('ninguna tabla deja una columna sin nombre', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { matches } = await (await page.request.get('/api/matches/?limit=2')).json()
+  const { synergy } = await (await page.request.get('/api/teammates/?min_rounds=10')).json()
+  const [a, b] = matches.map((m) => m.id)
+
+  // un lector de pantalla lee la cabecera de cada celda: una vacia deja la
+  // columna sin nombre (la de "Copiar", la de Ataque y Defensa, la esquina de
+  // la matriz de duelos)
+  for (const ruta of ['/', '/tendencias', `/partidas/${a}`, `/comparar/${a}/${b}`, `/jugadores/${synergy[0].player_id}`]) {
+    await page.goto(ruta)
+    await expect(page.locator('table').first()).toBeVisible()
+    // todas las tablas de la pagina, y sin cortar requests al pasar a la siguiente
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('.loading')).toHaveCount(0)
+    const vacias = await page.locator('thead th').evaluateAll((ths) =>
+      ths.filter((th) => !th.textContent.trim()).map((th) => th.closest('table').outerHTML.slice(0, 80)),
+    )
+    expect(vacias, `cabeceras vacias en ${ruta}`).toEqual([])
+  }
+
+  expect(errores).toEqual([])
+})

@@ -88,7 +88,7 @@ export default function Jugador() {
         >
           <DataTable
             columns={[
-              { key: 'name', label: '', sortable: false, left: true },
+              { key: 'name', label: 'Comparación', soloLector: true, sortable: false, left: true },
               { key: 'rounds', label: 'Rondas' },
               {
                 key: 'winrate',

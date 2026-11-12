@@ -186,6 +186,11 @@ export function ordenarFilas(rows, sort) {
   return copia
 }
 
+/**
+ * Tabla ordenable. Toda columna lleva `label`: es lo que lee un lector de
+ * pantalla en cada celda y la cabecera del CSV. Una columna que no necesita
+ * titulo a la vista (la de los botones Copiar) trae `soloLector: true`.
+ */
 export function DataTable({
   columns,
   rows,
@@ -233,7 +238,7 @@ export function DataTable({
               if (col.sortable === false) {
                 return (
                   <th key={col.key} className={`plain ${col.left ? 'left' : ''}`.trim()} title={col.help}>
-                    {col.label}
+                    {col.soloLector ? <span className="solo-lector">{col.label}</span> : col.label}
                   </th>
                 )
               }

@@ -522,7 +522,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
               {
                 key: 'copiar',
-                label: '',
+                label: 'Copiar',
+                soloLector: true,
                 sortable: false,
                 csv: false,
                 render: (row) => (
