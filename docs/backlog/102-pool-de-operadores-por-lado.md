@@ -1,7 +1,7 @@
 # 102. Tu pool de operadores por lado
 
-estado: revisado
-candado: qa 2026-11-12T20:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/102-pool-de-operadores-por-lado
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O7
 archivos: backend/replays/analytics/aggregates.py (operator_pool, POOL_*), backend/replays/views.py (operators_pool), backend/replays/urls.py, backend/tests/test_pool_operadores.py, frontend/src/poolOperadores.js, frontend/src/poolOperadores.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261112T1128Z-cKKCvKD, dev 20261112T1204Z-chGLrtC, revisor 20261112T1603Z-cor3JBP
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261112T1128Z-cKKCvKD, dev 20261112T1204Z-chGLrtC, revisor 20261112T1603Z-cor3JBP, qa 20261112T2004Z-cbaTGDt
 
 ## PR
 
@@ -283,7 +283,54 @@ pulirlos; no frenan.
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados; 1 test agregado) · verificación=—
 
-## QA
+## QA 2026-11-12 sobre 7bde1db
+
+(qa 20261112T2004Z-cbaTGDt) Ejercitado el sistema, no el diff. La rama ya contiene
+`origin/dev` (`git merge-base --is-ancestor origin/dev HEAD`: si).
+
+- `check.sh` completo: `verificar.sh` -> VERDE 7bde1db en 134 s (1122 tests
+  backend, 303 vitest, 85 e2e).
+- Bases temporales en el scratchpad (`DATA_DIR=<tmp> manage.py migrate`):
+  vacia en :8011; sembrada en :8012 con `seed_demo` mas 3 partidas borde
+  desde `tests/factories.py` (Montagne 40 dias antes de la ultima partida,
+  una partida solo con `Unknown(123)` y operador `""`, Valkyrie en defensa
+  en el mapa "Mapa Raro" 45 dias antes).
+- `curl localhost:8012/api/operators/pool/` -> 200, `matches` 31 de 32 (la
+  de solo Unknown no cuenta), `recent_matches` 20, `reference`
+  2026-08-05T08:00:00; Ataque 3 recientes / 4 total / 35 nunca / stale
+  Montagne (2026-06-26, 2 rondas); Defensa 3/4/34, stale Valkyrie.
+  `Unknown(...)` y `""` no aparecen en `never`.
+- Bordes, misma respuesta que sin filtros: `?operator=Ash&side=Attack`,
+  `?side=Defense`, `?site=foo`, `?until=foo`, `?page=-1`,
+  `?days=99999999999`, `?map=`. `?map=mapa-raro` -> 1 partida, solo
+  Defensa con 1 operador. `?map=noexiste`, `?since=2099-01-01`,
+  `?session=abc` -> 200, `matches` 0, `reference` null (el vecino
+  `/api/operators/?session=abc` tambien da 200 vacio). POST -> 403. Base
+  vacia -> 200, `matches` 0.
+- UI en Chromium (Playwright, script en el scratchpad): `/operadores` con
+  Ataque y Defensa, "3 operadores distintos en tus últimas 20 partidas · 4
+  en todo el historial", "Montagne (último: 2026-06-26, 2 rondas)", chips de
+  Nunca jugados; `?side=Defense` solo Defensa; base vacia y
+  `?since=2099-01-01` sin panel (EmptyState de la pagina). Consola limpia.
+- `vite build`: chunk inicial `index` 195.52 kB en dev y en la rama (sin
+  cambio); `Operators` 4.81 -> 6.50 kB.
+- Mutacion sobre `operator_pool` (`tests.test_pool_operadores`, archivo
+  restaurado despues): dejar de ignorar `operator` -> 1 test cae; quitar el
+  exclude de `Unknown` -> 2; invertir el corte de stale -> 4; referencia =
+  `datetime.now()` -> 6; ventana de 19 -> 1.
+- `docs/metricas.md` linea 274: fila "Pool de operadores".
+
+Observacion (no frena, no es criterio): con un mapa donde solo jugaste un
+lado (`?map=mapa-raro`), el bloque del otro lado sale con "0 operadores
+distintos" y todo el catalogo en Nunca jugados. Coherente con la
+definicion; ocultar el bloque de un lado sin rondas seria un pulido.
+
+Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+
+Veredicto: los cinco criterios con evidencia -> `aprobado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
