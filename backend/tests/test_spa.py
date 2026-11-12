@@ -38,6 +38,24 @@ class SpaTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contenido(response), b"console.log(1)")
 
+    def test_los_nombres_que_genera_un_build_se_siguen_sirviendo(self):
+        # ata el filtro de forma: endurecerlo no puede dejar afuera estos nombres
+        from config import urls
+
+        (urls.DIST / "@vite").mkdir()
+        for nombre in ("assets/index-Ab_C1.js", "@vite/x.js", "a b.png", "favicon.ico"):
+            (urls.DIST / nombre).write_text(nombre, encoding="utf-8")
+        for url, nombre in (
+            ("/assets/index-Ab_C1.js", "assets/index-Ab_C1.js"),
+            ("/@vite/x.js", "@vite/x.js"),
+            ("/a%20b.png", "a b.png"),
+            ("/favicon.ico", "favicon.ico"),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(self.contenido(response), nombre.encode())
+
     def test_una_ruta_de_la_app_devuelve_el_index(self):
         response = self.client.get("/partidas/12")
         self.assertEqual(response.status_code, 200)
@@ -94,6 +112,9 @@ class SpaTests(TestCase):
             "unidad con barra invertida": {"path": "/C:%5Cx"},
             "unidad con barra": {"path": "/C:/x"},
             "punto punto escapado": {"path": "/..%2Fdist-viejo%2Fsecreto.txt"},
+            # Win32 recorta el punto y el espacio final: ".. " termina siendo ".."
+            "punto punto con espacio": {"path": "/..%20%2Fdist-viejo%2Fsecreto.txt"},
+            "punto final": {"path": "/assets/app.js."},
         }
         tocadas = self.espiar_disco()
         for nombre, caso in casos.items():
@@ -106,12 +127,16 @@ class SpaTests(TestCase):
                 self.assertEqual(tocadas, [])
 
     def test_un_bucle_de_symlinks_devuelve_el_index(self):
-        # resolve() lanza RuntimeError en Python 3.11 (OSError en otras
-        # versiones): ninguno puede terminar en un 500
+        # resolve() lanza RuntimeError en Python 3.11 y 3.12; desde 3.13 no
+        # lanza y is_file da False: en ningun caso puede terminar en un 500
         from config import urls
 
-        os.symlink("b", urls.DIST / "a")
-        os.symlink("a", urls.DIST / "b")
+        try:
+            os.symlink("b", urls.DIST / "a")
+            os.symlink("a", urls.DIST / "b")
+        except OSError:
+            # Windows sin modo de desarrollador no deja crear symlinks
+            self.skipTest("el sistema no permite crear symlinks")
         response = self.client.get("/a")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contenido(response), b"<html>la app</html>")

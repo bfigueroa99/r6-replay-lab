@@ -1,7 +1,7 @@
 # 106. Una ruta UNC en la URL hace que la SPA toque la red en Windows
 
-estado: en curso 2026-11-12
-candado: dev 2026-11-12T04:14Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/106-ruta-unc-en-la-spa
 tipo: bug
 epica: -
@@ -59,10 +59,51 @@ symlinks. `RuntimeError` se suma al `except`. Test primero: un espia sobre
 
 ## Implementacion
 
+(dev 20261112T0403Z-cLKK8wJ, sobre dev 6af42af)
+
+- **Test que falla primero (receta 4):** `omc-test-engineer` propuso el espia
+  sobre `Path.resolve`/`Path.is_file` y el bucle de symlinks. Con el
+  `urls.py` de dev, `cd backend && python manage.py test tests.test_spa`:
+  `FAILED (failures=8, errors=1)`; los 7 casos de forma anotan rutas tocadas
+  (p. ej. `['/host/s/x', '/tmp/.../dist']` para `//host/s/x`, que en Linux ya
+  sale de `DIST`) y el bucle da `RuntimeError: Symlink loop`.
+- **Arreglo** (`backend/config/urls.py`): `_partes_del_build(path)` parte por
+  `/` y devuelve `None` si un tramo es vacio (doble barra, barra final),
+  termina en `.` o espacio (cubre `.`, `..` y el recorte de Win32 de `.. `),
+  o tiene `\`, `:` o byte nulo. `spa` solo toca el disco con
+  `DIST.joinpath(*partes)`; `is_relative_to(DIST.resolve())` se queda por los
+  symlinks del build; `RuntimeError` entra al `except`.
+- **Tests** (`backend/tests/test_spa.py`):
+  `test_una_ruta_que_no_puede_ser_del_build_no_toca_el_disco` (9 casos:
+  UNC con `\`, `\` suelta, `///host`, `//host`, `C:\x`, `C:/x`, `..`,
+  `.. ` y punto final), `test_un_bucle_de_symlinks_devuelve_el_index` (se
+  salta si el sistema no deja crear symlinks, Windows sin modo de
+  desarrollador), `test_los_nombres_que_genera_un_build_se_siguen_sirviendo`
+  (`index-Ab_C1.js`, `@vite/x.js`, `a b.png`, `favicon.ico`), y
+  `test_no_sirve_archivos_fuera_del_build` ahora afirma que el `..` no toca el
+  disco (antes pasaba sin chequeo, LOW de la 105).
+- **Revision ciega** (`omc-code-reviewer`): corregir antes de entregar. HIGH
+  (symlink sin guarda rompe `check.ps1` en Windows) arreglado con `skipTest`
+  ante `OSError`; LOW comentario de versiones, LOW nombres legitimos sin test
+  y LOW `.. `/punto final en Win32, los tres arreglados. Su mutacion (filtro
+  borrado) hace fallar 8 aserciones; con `PureWindowsPath` ninguna parte
+  aceptada cambia el ancla del join (nombres reservados, separadores Unicode
+  y `...` incluidos).
+- Desvios del diseno: rechazar por "termina en `.` o espacio" en vez de
+  listar `.` y `..` (los incluye).
+
+Skills: no aplica (Django y `pathlib`, resuelto en el repo).
+OMC: plan=— · revisión=4 hallazgos (4 arreglados) · verificación=—
+
 ## Revision
 
 ## QA
 
 ## Verificar en el PC
+
+En Windows, con `runserver` levantado: `curl -s -o NUL -w "%{http_code}" http://127.0.0.1:8000/%5C%5C127.0.0.1%5Cc$%5Cnada`
+responde 200 al instante (sin esperar a SMB) y la app sigue cargando sus
+`assets/`. La suite en Windows: `test_un_bucle_de_symlinks_devuelve_el_index`
+sale `skipped` si no tenes modo de desarrollador.
 
 ## Para el humano

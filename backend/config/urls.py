@@ -20,7 +20,9 @@ def _partes_del_build(path: str) -> tuple[str, ...] | None:
     """
     partes = tuple(path.split("/"))
     for parte in partes:
-        if parte in ("", ".", "..") or any(c in parte for c in "\\:\x00"):
+        # Win32 recorta el punto y el espacio del final (".. " vale ".."), y un
+        # build de Vite nunca genera esos nombres
+        if not parte or parte[-1] in ". " or any(c in parte for c in "\\:\x00"):
             return None
     return partes
 
