@@ -20,8 +20,8 @@ RESUMEN propuesto=6 disenado=1 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 ## Orden de merge sugerido
 
-1.  (PR #81, lo mergea el humano: toca ).  limpio con dev 5a76618 y con la 102.
-2.  (implementado): limpio con dev y con la 79 (funciones nuevas en ,  y ); entra antes o despues, da igual.
+1. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). `merge-tree` limpio con dev 5a76618 y con la 102.
+2. `claude/equipo-dev/102-pool-de-operadores-por-lado` (implementado): limpio con dev y con la 79 (funciones nuevas en `aggregates.py`, `views.py` y `urls.py`); entra antes o despues, da igual.
 
 ## Alcance
 
