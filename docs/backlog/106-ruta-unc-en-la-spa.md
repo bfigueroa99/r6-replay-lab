@@ -1,7 +1,7 @@
 # 106. Una ruta UNC en la URL hace que la SPA toque la red en Windows
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-12T11:28Z
 rama: claude/equipo-dev/106-ruta-unc-en-la-spa
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: revision de la 105 (omc-security-reviewer, revisor 20261111T2003Z-c5GamMd) y `## Para el humano` de ESTADO.md; escrita por el Dev sin trabajo (la 83 espera a la 79)
 archivos: backend/config/urls.py, backend/tests/test_spa.py
-turnos: dev 20261112T0403Z-cLKK8wJ
+turnos: dev 20261112T0403Z-cLKK8wJ, revisor 20261112T1127Z-cT8M5Vz
 
 ## PR
 
