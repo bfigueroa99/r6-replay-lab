@@ -1,7 +1,7 @@
 # 102. Tu pool de operadores por lado
 
-estado: implementado
-candado: revisor 2026-11-12T16:04Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/102-pool-de-operadores-por-lado
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O7
 archivos: backend/replays/analytics/aggregates.py (operator_pool, POOL_*), backend/replays/views.py (operators_pool), backend/replays/urls.py, backend/tests/test_pool_operadores.py, frontend/src/poolOperadores.js, frontend/src/poolOperadores.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261112T1128Z-cKKCvKD, dev 20261112T1204Z-chGLrtC
+turnos: po 20261106T0530Z-ciXX3AM, arquitecto 20261112T1128Z-cKKCvKD, dev 20261112T1204Z-chGLrtC, revisor 20261112T1603Z-cor3JBP
 
 ## PR
 
@@ -243,7 +243,45 @@ partidas no hay bloques`), panel y consola (e2e), metricas (fila nueva).
 Skills: no aplica (el repo ya lo resuelve con `PorSitio`).
 OMC: plan=— · revisión=4 hallazgos (4 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-12 sobre 1ff5760
+
+(revisor 20261112T1603Z-cor3JBP) Revision a ciegas en dos ejes (estandares e
+intencion, `omc-code-reviewer` cada uno), confirmada por el lider. Partida de
+verde: verificar.sh VERDE 1ff5760 (1121 backend, 303 vitest, 85 e2e).
+
+Reglas: sin Django en `pydissect/`, sin dependencias, endpoint `@require_GET`,
+solo agrega columnas existentes, fila en `metricas.md`, panel en el e2e,
+identificadores sin tildes y UI con tildes, sin `print`/`console.log`. Todo
+el pool sale de `base_queryset` (`is_me=True`): son tus rondas; el catalogo
+de rivales solo completa nombres para `never`.
+
+Criterios: los cinco cubiertos (tests de la Implementacion). Faltaba un test
+del filtro de tipo de partida, que el criterio nombra: agregado
+`test_el_filtro_de_tipo_de_partida_aplica` (pasa; con el filtro ignorado
+`matches` daria 2).
+
+Hallazgos (ninguno CRITICAL, HIGH ni MEDIUM):
+
+- [estilo] LOW `frontend/src/poolOperadores.js:48`
+  Que pasa: el hint dice "El filtro de sitio no aplica" y calla que el de
+  operador tampoco.
+  Por que es cierto: `/operadores?operator=Ash` muestra el pool entero
+  (`test_el_filtro_de_operador_y_el_de_lado_se_ignoran`).
+  Arreglo sugerido: "Los filtros de sitio y de operador no aplican."
+- [intencion] LOW mismo hint
+  Que pasa: con mapa o tipo puestos, "Nunca jugados" es "nunca en ese mapa o
+  tipo"; el hint no lo dice.
+  Arreglo sugerido: sumar "«Nunca jugados» y «Sin jugar» respetan mapa y tipo
+  de partida." (opcional; el comportamiento es el del criterio).
+
+"Sin jugar" desde tu ultima partida filtrada y no desde hoy: decision del
+diseno, documentada en `metricas.md` y en el hint; no es hallazgo.
+
+Veredicto: aprobar -> `revisado`. Los dos LOW quedan para quien quiera
+pulirlos; no frenan.
+
+Skills: no aplica.
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados; 1 test agregado) · verificación=—
 
 ## QA
 

@@ -25,8 +25,10 @@ class PoolDeOperadoresTests(TestCase):
     def setUp(self):
         self.indice = 0
 
-    def _partida(self, operadores, *, cuando, side="Attack", map_name="Club House"):
-        match = make_match(index=self.indice, played_at=cuando, map_name=map_name)
+    def _partida(self, operadores, *, cuando, side="Attack", map_name="Club House",
+                 match_type="Ranked"):
+        match = make_match(index=self.indice, played_at=cuando, map_name=map_name,
+                           match_type=match_type)
         self.indice += 1
         for numero, operador in enumerate(operadores):
             rnd = make_round(match, numero, side=side)
@@ -119,6 +121,15 @@ class PoolDeOperadoresTests(TestCase):
         self._partida(["Ash"], cuando=HOY)
         self._partida(["Sledge"], cuando=HOY, map_name="Oregon")
         pool = self.client.get("/api/operators/pool/?map=club-house").json()
+        ataque = pool["sides"]["Attack"]
+        self.assertIn("Sledge", ataque["never"])
+        self.assertNotIn("Ash", ataque["never"])
+        self.assertEqual(pool["matches"], 1)
+
+    def test_el_filtro_de_tipo_de_partida_aplica(self):
+        self._partida(["Ash"], cuando=HOY)
+        self._partida(["Sledge"], cuando=HOY, match_type="Unranked")
+        pool = self.client.get("/api/operators/pool/?match_type=Ranked").json()
         ataque = pool["sides"]["Attack"]
         self.assertIn("Sledge", ataque["never"])
         self.assertNotIn("Ash", ataque["never"])
