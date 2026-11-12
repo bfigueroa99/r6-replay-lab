@@ -165,3 +165,24 @@ test('las etiquetas de color se leen tambien sobre tu fila resaltada', async ({ 
 
   expect(errores).toEqual([])
 })
+
+test('la barra superior contiene sus controles tambien en una ventana angosta', async ({ page }) => {
+  const errores = vigilarConsola(page)
+
+  // 1024 es el ancho minimo de la ventana de escritorio y 1366 el de un
+  // portatil comun: en los dos el menu ocupa dos filas
+  await page.goto('/')
+  await expect(page.locator('h1')).toHaveText('Resumen')
+  await expect(page.getByRole('button', { name: 'Importar replays' })).toBeVisible()
+  for (const ancho of [1024, 1366, 1920]) {
+    await page.setViewportSize({ width: ancho, height: 800 })
+    const cajas = await page.evaluate(() => {
+      const caja = (selector) => document.querySelector(selector).getBoundingClientRect()
+      return { barra: caja('.topbar').bottom, controles: caja('.topbar-right').bottom, titulo: caja('h1').top }
+    })
+    expect(cajas.controles, `controles dentro de la barra a ${ancho} px`).toBeLessThanOrEqual(cajas.barra)
+    expect(cajas.titulo, `el titulo queda debajo de la barra a ${ancho} px`).toBeGreaterThanOrEqual(cajas.barra)
+  }
+
+  expect(errores).toEqual([])
+})
