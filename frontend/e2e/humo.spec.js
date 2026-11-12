@@ -374,9 +374,10 @@ test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page 
   const [cabecera, ...filas] = texto.split('\r\n').map((linea) => linea.split(';'))
   const col = (nombre) => cabecera.indexOf(nombre)
   expect(filas.length).toBeGreaterThan(0)
-  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia
+  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia.
+  // Va con raya (–) y no con guion: "3-1" Excel lo abre como el 3 de enero
   for (const fila of filas) {
-    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}-${fila[col('Perdidas')]}`)
+    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}–${fila[col('Perdidas')]}`)
   }
 
   expect(errores).toEqual([])

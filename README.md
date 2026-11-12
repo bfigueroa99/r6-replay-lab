@@ -275,7 +275,10 @@ npm run dev     # http://localhost:5173
 Cada tabla de la app tiene un boton **Descargar CSV** que baja exactamente lo que
 estas viendo: las mismas columnas, con los filtros y el orden aplicados. Ese
 archivo va con punto y coma y coma decimal, que es lo que Excel en espanol abre
-sin preguntar nada.
+sin preguntar nada. Un récord o un marcador va con raya (`3–1`), porque con
+guion Excel lo abre como fecha, y un texto que Excel ejecutaria como formula
+(un nick de un replay ajeno que empieza con `=`, `+`, `-` o `@`) va con un
+apostrofo adelante.
 
 Para scripts hay un endpoint aparte, con CSV estandar (coma, punto decimal):
 

@@ -82,14 +82,42 @@ export function winrateColor(value, low = 35, high = 65) {
  * Una columna puede traer `csv: (row) => valor` para exportar algo distinto de
  * lo que muestra, o `csv: false` para quedarse fuera del archivo.
  */
+const MARCADOR = /^(\d+)-(\d+)$/
+const NUMERO_CON_SIGNO = /^[+-]\d+([.,]\d+)?( ?(%|pts))?$/
+/**
+ * La secuencia de rondas de Partidas ("- G P | G"), con la forma exacta que
+ * arma textoDeTira: sus letras no arman ninguna formula. Un nick con las
+ * mismas letras pero otra forma ("-G|P") no pasa y lleva el apostrofo.
+ */
+const TIRA_DE_RONDAS = /^(\| )?[GP-]( (\| )?[GP-])*$/
+
+/**
+ * Un texto tal como tiene que quedar para que la planilla lo deje como texto.
+ *
+ * Excel no pregunta: "3-1" (un record, un marcador) lo abre como el 3 de enero,
+ * y lo que empieza con `=`, `+`, `-` o `@` lo evalua como formula. Los nicks,
+ * operadores y sitios salen del `.rec`, y el de un replay ajeno no es de
+ * confianza. El marcador va con raya (–), que no es separador de fecha, y la
+ * formula con un apostrofo adelante, que es como se neutraliza en un CSV. Un
+ * numero con signo escrito como texto ("-33 pts") y la secuencia de rondas se
+ * dejan como estan.
+ */
+export function textoParaPlanilla(texto) {
+  const marcador = MARCADOR.exec(texto)
+  if (marcador) return `${marcador[1]}–${marcador[2]}`
+  const conSigno = /^[+-]/.test(texto) && !NUMERO_CON_SIGNO.test(texto) && !TIRA_DE_RONDAS.test(texto)
+  return /^[=@\t\r]/.test(texto) || conSigno ? `'${texto}` : texto
+}
+
 function celdaCsv(col, row) {
-  if (typeof col.csv === 'function') return col.csv(row)
-  const valor = row[col.key]
+  // lo que devuelve `csv` pasa por lo mismo que el valor de la fila: un numero
+  // con punto decimal (9.6) Excel en espanol lo lee como el 9 de junio
+  const valor = typeof col.csv === 'function' ? col.csv(row) : row[col.key]
   if (valor === null || valor === undefined) return ''
-  if (Array.isArray(valor)) return valor.join(' / ')
+  if (Array.isArray(valor)) return textoParaPlanilla(valor.join(' / '))
   if (typeof valor === 'boolean') return valor ? 'si' : 'no'
   if (typeof valor === 'number') return String(valor).replace('.', ',')
-  return String(valor)
+  return textoParaPlanilla(String(valor))
 }
 
 const escaparCsv = (texto) =>
