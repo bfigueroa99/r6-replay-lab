@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T20:25Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador

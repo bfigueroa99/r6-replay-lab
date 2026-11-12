@@ -1,7 +1,7 @@
 # 112. Saltar a la ronda desde los records
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T20:25Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
