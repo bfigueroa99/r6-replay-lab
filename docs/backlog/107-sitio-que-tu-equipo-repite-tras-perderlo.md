@@ -1,7 +1,7 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T12:15Z
 rama: -
 tipo: funcionalidad
 epica: posicionamiento

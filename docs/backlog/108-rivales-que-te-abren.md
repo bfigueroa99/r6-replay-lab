@@ -1,7 +1,7 @@
 # 108. Rivales que te abren
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-12T12:15Z
 rama: -
 tipo: funcionalidad
 epica: rivales
