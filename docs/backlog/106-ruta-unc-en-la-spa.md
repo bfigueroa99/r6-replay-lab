@@ -1,7 +1,7 @@
 # 106. Una ruta UNC en la URL hace que la SPA toque la red en Windows
 
-estado: revisado
-candado: qa 2026-11-12T11:35Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/106-ruta-unc-en-la-spa
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: backend
 prioridad: 1
 fuente: revision de la 105 (omc-security-reviewer, revisor 20261111T2003Z-c5GamMd) y `## Para el humano` de ESTADO.md; escrita por el Dev sin trabajo (la 83 espera a la 79)
 archivos: backend/config/urls.py, backend/tests/test_spa.py
-turnos: dev 20261112T0403Z-cLKK8wJ, revisor 20261112T1127Z-cT8M5Vz
+turnos: dev 20261112T0403Z-cLKK8wJ, revisor 20261112T1127Z-cT8M5Vz, qa 20261112T1128Z-cKKCvKD
 
 ## PR
 
@@ -128,7 +128,38 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=2 hallazgos (1 cubierto con test) · verificación=—
 
-## QA
+## QA 2026-11-12 sobre 7ef1613
+
+(qa 20261112T1128Z-cKKCvKD) **aprobado**. `verificar.sh` VERDE 7ef161370 (1109 tests
+backend, 295 vitest, 84 e2e); rama al dia con dev 4e84ac2.
+
+- **Servidor real** (`SQLITE_PATH` y `R6_ENV_FILE` en el scratchpad,
+  `migrate`, `runserver 127.0.0.1:8765 --noreload`), `curl --path-as-is`, base
+  vacia: `/`, `/%5C%5Chost%5Cs%5Cx`, `///host/s/x`, `//host/s/x`,
+  `/assets%5Capp.js`, `/C:%5Cx`, `/C:/x`, `/..%2F..%2Fetc%2Fpasswd`,
+  `/assets/../../manage.py`, `/x/..%20`, `/favicon.ico.`, `/partidas/12`,
+  `/assets/`, `/%00`: todos 200 con el index. `/%0A`: 404 de Django
+  (preexistente, ya anotado por la revision). Un asset real
+  (`/assets/Ajustes-*.js`) 200 `text/javascript`; `/api/health/` 200,
+  `/api/nada/` 404 JSON. Con `seed_demo` (29 partidas): `/api/overview/`,
+  `/api/matches/`, `/partidas/1` y `/%5C%5C127.0.0.1%5Cc$%5Cnada` 200. Log
+  del server sin Traceback; server bajado.
+- **Symlinks a mano en `frontend/dist`** (borrados despues): uno a
+  `/etc/hostname` da el index (no sirve el archivo); un bucle `qa-loop ->
+  qa-loop` da el index, no 500; uno a `assets/` sirve el js (queda dentro del
+  build, esperado).
+- **Mutacion** sobre `config/urls.py` (restaurado, `git status` limpio):
+  sin `\` en el set, 2 FAIL (UNC y suelta); sin `RuntimeError` en el
+  `except`, ERROR en `test_un_runtimeerror_de_resolve_devuelve_el_index`;
+  sin la regla de punto/espacio final, 4 FAIL (incluido
+  `test_no_sirve_archivos_fuera_del_build`); aceptando tramo vacio, 2 FAIL
+  (doble barra). 4 de 4 mueren.
+- **Criterios:** 1 a 4 VERIFIED (omc-verifier, con corrida fresca de
+  `tests.test_spa`). Sin cambio de `frontend/src`: chunk no aplica. Sin
+  migracion ni parser.
+- No probado: Windows real; sigue en `## Verificar en el PC`.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 0 bloqueantes)
 
 ## Verificar en el PC
 
