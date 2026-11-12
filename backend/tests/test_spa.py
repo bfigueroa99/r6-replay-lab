@@ -140,3 +140,11 @@ class SpaTests(TestCase):
         response = self.client.get("/a")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.contenido(response), b"<html>la app</html>")
+
+    def test_un_runtimeerror_de_resolve_devuelve_el_index(self):
+        # el bucle real solo lanza RuntimeError antes de 3.13: forzarlo cubre
+        # el except en cualquier version del interprete
+        with mock.patch.object(Path, "resolve", side_effect=RuntimeError("Symlink loop")):
+            response = self.client.get("/assets/app.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.contenido(response), b"<html>la app</html>")
