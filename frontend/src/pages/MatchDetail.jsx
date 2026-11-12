@@ -101,6 +101,9 @@ function DetallePartida({ id }) {
           <button type="button" className="btn small" onClick={copiarResumen}>
             Copiar resumen
           </button>
+          <Link className="btn small" to={`/comparar/${match.id}`}>
+            Comparar con…
+          </Link>
           <Link className="btn small" to="/partidas">
             Volver
           </Link>

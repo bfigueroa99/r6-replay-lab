@@ -81,7 +81,17 @@ tiene cada modo: la mitad se deduce del lado de cada ronda.
 | **Primera / segunda mitad** | Rondas sin prorroga. Primera mitad: las jugadas en el lado inicial de la partida; segunda: las del otro lado. Las metricas (ganadas, rating, KPR, aperturas) son las de siempre sobre ese corte. Rondas sin lado, o de una partida sin lado inicial, no entran en ninguna. Si faltan los `.rec` de la primera mitad, la segunda se lee como primera. |
 | **Prorroga** | Rondas con `overtimeRoundNumber > 0` en la cabecera del `.rec`. Sin prorroga la fila sale en 0 y con metricas vacias. |
 | **Lado inicial** | El lado de tu ronda de numero mas bajo sin prorroga. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia con que lado arrancaste. Ganadas = partidas ganadas sobre las que tienen resultado; las incompletas cuentan en Partidas pero no en el porcentaje. |
+| **Lado inicial por mapa** | El mismo lado inicial, separado por version de mapa (la misma etiqueta que Mapas: "Consulate (Y10)" no se mezcla con la vieja). Ganadas en ataque y en defensa = partidas ganadas sobre las que tienen resultado, solo con 3 o mas partidas con resultado en ese lado; con menos sale "—" y la fila dice "Poca muestra". Diferencia = ataque menos defensa, en puntos. Margen = 2 errores estandar con la proporcion de los dos lados juntos (no colapsa con 100 % o 0 %); si la diferencia no lo supera, "Dentro del ruido". |
 | **Primera ronda de cada lado** | Ronda 1: tu ronda sin prorroga de numero mas bajo de la partida. Primera tras el cambio: la ronda sin prorroga de numero mas bajo cuyo lado no es el inicial (una partida que nunca cambio de lado no tiene). Resto: tus demas rondas sin prorroga con lado. La prorroga no entra en ninguna fila. Se lee de la partida entera: el filtro de lado limita las rondas, no cambia cual es la primera. Si faltan los `.rec` del arranque, la primera ronda que quedo se lee como "Ronda 1"; si falta el de la primera ronda del otro lado, la siguiente se lee como "Primera tras el cambio". |
+
+## Modo de juego
+
+En Tendencias, y como filtro "Modo" de la barra cuando la base tiene mas de un
+modo o hay uno elegido (un enlace con `?gamemode=`).
+
+| Metrica | Definicion |
+|---|---|
+| **Por modo** | Tus partidas agrupadas por el modo de la cabecera del `.rec` (Bomba, Rehén, Área segura, Bomba rápida; un id que el parser no conoce sale como `Unknown(<id>)`, y una partida sin modo como "Sin modo"). Partidas = partidas con alguna ronda tuya que pasa los filtros. Ganadas = partidas ganadas sobre las que tienen resultado; se lee de la partida entera, como "Lado inicial". Rondas ganadas, K/D y rating: las de siempre sobre las rondas de ese modo. |
 
 ## Contexto de la ronda
 
@@ -122,6 +132,8 @@ esa partida sigue siendo la tercera de su noche.
 |---|---|
 | **Posicion en la sesion** | Si fue tu 1a, 2a, 3a... partida de ese bloque. De la 5a en adelante se juntan en un tramo: las sesiones largas son pocas y cada posicion suelta no junta muestra. |
 | **Curva de la sesion** | Las metricas de siempre (winrate, KPR, aperturas, momento de la muerte) cortadas por posicion. Responde "juego peor despues de la tercera" con el numero. |
+| **Resultado de la sesion** | Partidas ganadas y perdidas de la sesion (`1G 0P`), solo las que cumplen los filtros. Las que no tienen resultado (empate o partida sin cerrar, `won` nulo) no son ni una ni otra: en el texto copiado salen como "N sin resultado". |
+| **Mejor / peor partida de la sesion** | La de mayor y menor rating de tus rondas en esa partida, entre las que cumplen los filtros y tienen rating. Solo con dos partidas o mas; si todas tienen el mismo rating no hay peor. Empate: la jugada antes. Solo aparece en el texto que copia el boton "Copiar". |
 | **Caida de sesion** | Diferencia en puntos de winrate entre las 2 primeras partidas y de la 3a en adelante. El coach opina desde 30 rondas de cada lado y 10 puntos de diferencia. |
 
 El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
@@ -296,6 +308,21 @@ la partida). Suma dos numeros propios; una linea sin datos no sale:
 | **Mejor ronda** | La ronda con mas bajas tuyas (las de la columna Bajas, solo a rivales); en empate, la primera. No sale si no hiciste ninguna baja. El nick es el de tu fila en la ultima ronda de la partida. |
 
 No se guarda ni sale a la red: es el portapapeles del navegador.
+
+## Comparar partidas
+
+**Comparar con…** en el detalle lleva a `/comparar/<a>/<b>`, que pone dos
+partidas lado a lado con los numeros del detalle (`my_totals`) de cada una.
+No calcula metricas nuevas; solo suma la columna **Diferencia**:
+
+| Fila | Definicion |
+|---|---|
+| **Rondas en ataque / defensa: n de m** | Por lado, `m` = rondas de la partida en que jugaste ese lado y `n` = las que gano tu equipo. Una ronda sin ganador cuenta en `m` y no en `n`. Sin rondas en ese lado: `—`. |
+| **Diferencia de los lados** | Winrate del lado en A menos el de B, en puntos (`-33 pts`), redondeado a entero: se compara el winrate y no el conteo, porque 4 de 6 no es mejor que 3 de 3. |
+| **Diferencia de Bajas, Muertes, Aperturas, Muertes sin trade, KST y Rating** | A menos B, con signo, sobre lo que muestra la celda ya redondeado (KST en puntos, rating con dos decimales). En verde si A sale mejor y en rojo si sale mejor B; para Muertes, Aperturas perdidas y Muertes sin trade sale mejor quien tiene menos. Diferencia 0 no marca a nadie. |
+
+Una partida sin tu fila (no jugaste ninguna ronda) o un rating sin dato dan
+`—` y la diferencia queda vacia.
 
 ## Sobre la granularidad espacial
 

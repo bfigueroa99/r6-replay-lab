@@ -9,7 +9,7 @@
 
 import { qs } from './api.js'
 
-export const CLAVES_DE_PARTIDA = ['map', 'days', 'since', 'until', 'session', 'match_type', 'ranked_only']
+export const CLAVES_DE_PARTIDA = ['map', 'days', 'since', 'until', 'session', 'match_type', 'gamemode', 'ranked_only']
 
 export const OPCIONES_DE_RESULTADO = [
   { value: '', label: 'Todos' },

@@ -140,14 +140,28 @@ class HiloTests(TestCase):
             sub.mkdir()
             (sub / "r.rec").write_bytes(b"x")
 
-        with self.settings(REPLAY_DIR=str(raiz), IMPORT_QUIET_SECONDS=0):
-            data = self._importar().json()
-        self.assertEqual(data["total"], 2)
+        # El hilo real abre otra conexion y commitea sus ImportLog fuera de la
+        # transaccion del test: el rollback no los borra y le quedaban de mas a
+        # VigilanteTests, que cuenta los de "Match-a" (ficha 104).
+        recibidas = []
 
-        for _ in range(200):
-            if not ingest.import_job().running:
-                break
-            time.sleep(0.02)
+        def sin_importar(folders, *, force=False):
+            recibidas.extend(f.name for f in folders)
+            ingest._job.running = False
+            return ingest._job
+
+        self.addCleanup(setattr, ingest, "_job", ingest.ImportJob())
+        with mock.patch.object(ingest, "run_import_job", sin_importar):
+            with self.settings(REPLAY_DIR=str(raiz), IMPORT_QUIET_SECONDS=0):
+                data = self._importar().json()
+            for _ in range(200):
+                if not ingest.import_job().running:
+                    break
+                time.sleep(0.02)
+
+        self.assertEqual(data["total"], 2)
+        self.assertEqual(sorted(recibidas), ["Match-a", "Match-b"])
+        self.assertFalse(ingest.import_job().running)
 
     def test_el_post_vuelve_enseguida(self):
         with self.settings(REPLAY_DIR="/ruta/que/no/existe"):

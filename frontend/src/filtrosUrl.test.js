@@ -51,6 +51,13 @@ describe('filtrosDeUrl y queryDeFiltros', () => {
     expect(filtrosDeUrl('days=30&since=2026-02-31')).toEqual({ days: '30' })
   })
 
+  it('gamemode sobrevive ida y vuelta y uno demasiado largo se descarta', () => {
+    expect(filtrosDeUrl(`?${queryDeFiltros({ gamemode: 'Hostage' })}`)).toEqual({ gamemode: 'Hostage' })
+    expect(queryDeFiltros({ match_type: 'Unranked', gamemode: 'Hostage' })).toBe('match_type=Unranked&gamemode=Hostage')
+    expect(filtrosDeUrl(`gamemode=${'x'.repeat(65)}`)).toEqual({})
+    expect(filtrosDeUrl(`gamemode=${'x'.repeat(64)}`)).toEqual({ gamemode: 'x'.repeat(64) })
+  })
+
   it('session cero es un filtro valido', () => {
     expect(filtrosDeUrl('session=0')).toEqual({ session: '0' })
     expect(queryDeFiltros({ session: 0 })).toBe('session=0')

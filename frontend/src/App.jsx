@@ -12,6 +12,7 @@ import { Loading } from './components/ui.jsx'
 // que pesa mas que todo lo demas junto.
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'))
 const Coach = lazy(() => import('./pages/Coach.jsx'))
+const Comparar = lazy(() => import('./pages/Comparar.jsx'))
 const Datos = lazy(() => import('./pages/Datos.jsx'))
 const Duelos = lazy(() => import('./pages/Duelos.jsx'))
 const Jugador = lazy(() => import('./pages/Jugador.jsx'))
@@ -217,6 +218,8 @@ export default function App() {
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />
+          <Route path="/comparar/:a" element={<Comparar />} />
+          <Route path="/comparar/:a/:b" element={<Comparar />} />
           <Route path="/jugadores/:id" element={<Jugador />} />
           <Route path="/ruleta" element={<Ruleta />} />
           <Route path="/datos" element={<Datos />} />

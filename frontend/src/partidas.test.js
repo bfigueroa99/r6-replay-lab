@@ -18,6 +18,13 @@ describe('filtrosDePartida', () => {
     ).toEqual({ map: 'bank', days: '7', session: '0' })
   })
 
+  it('el modo de juego es de partida y pasa', () => {
+    expect(filtrosDePartida({ side: 'Attack', gamemode: 'Hostage', match_type: 'Ranked' })).toEqual({
+      match_type: 'Ranked',
+      gamemode: 'Hostage',
+    })
+  })
+
   it('filtros de partida sin datos dan un objeto vacio', () => {
     expect(filtrosDePartida(null)).toEqual({})
     expect(filtrosDePartida(undefined)).toEqual({})
