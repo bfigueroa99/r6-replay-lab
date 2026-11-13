@@ -145,6 +145,9 @@ El panel **Tus récords** del Resumen. Se calculan con los filtros activos. En
 todos, a igual valor gana la partida (o el dia) mas reciente: igualar un record
 lo mueve a la partida nueva. Sin candidato el record no aparece; nunca se
 muestra un 0 inventado.
+Cada record enlaza a su partida; los de ronda (mas bajas en una ronda, clutch
+mas grande y racha de rondas) abren el detalle parado en esa ronda
+(`/partidas/<id>#ronda-<n>`, la ronda donde empieza en la racha).
 
 | Metrica | Definicion |
 |---|---|

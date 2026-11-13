@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { pasoDeTecla, rondaVecina } from './navegacionRondas.js'
+import { anclaDeRonda, indiceDeAncla, pasoDeTecla, rondaVecina } from './navegacionRondas.js'
 
 describe('rondaVecina', () => {
   it('avanza y retrocede una ronda', () => {
@@ -65,5 +65,36 @@ describe('pasoDeTecla', () => {
 
   it('sin destino igual lee la tecla', () => {
     expect(pasoDeTecla({ key: 'ArrowRight', target: null })).toBe(1)
+  })
+})
+
+const rondas = (...numeros) => numeros.map((number) => ({ number }))
+
+describe('indiceDeAncla', () => {
+  it('busca la ronda por su numero y no por la posicion', () => {
+    expect(indiceDeAncla('#ronda-1', rondas(0, 1, 2))).toBe(0)
+    expect(indiceDeAncla('#ronda-3', rondas(0, 1, 2))).toBe(2)
+    // falta el .rec de la ronda 3: la R4 esta en la posicion 2
+    expect(indiceDeAncla('#ronda-4', rondas(0, 1, 3))).toBe(2)
+    expect(indiceDeAncla('#ronda-3', rondas(0, 1, 3))).toBeNull()
+  })
+
+  it('un ancla que no es de ronda o que no existe no elige nada', () => {
+    for (const hash of ['', '#', '#ronda-', '#ronda-abc', '#ronda-0', '#ronda--1', '#ronda-1.5', '#ronda-01x', '#otra-2', '#ronda-999']) {
+      expect(indiceDeAncla(hash, rondas(0, 1, 2)), hash).toBeNull()
+    }
+  })
+
+  it('aguanta la partida sin rondas o sin datos', () => {
+    expect(indiceDeAncla('#ronda-1', [])).toBeNull()
+    expect(indiceDeAncla('#ronda-1', undefined)).toBeNull()
+    expect(indiceDeAncla(undefined, rondas(0))).toBeNull()
+  })
+})
+
+describe('anclaDeRonda', () => {
+  it('usa el numero humano de la ronda, el de la etiqueta R<n>', () => {
+    expect(anclaDeRonda(0)).toBe('#ronda-1')
+    expect(anclaDeRonda(6)).toBe('#ronda-7')
   })
 })
