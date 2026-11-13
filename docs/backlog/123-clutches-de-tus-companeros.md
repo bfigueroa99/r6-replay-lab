@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:58Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
