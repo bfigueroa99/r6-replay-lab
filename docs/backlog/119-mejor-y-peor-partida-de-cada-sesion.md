@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T18:33Z
 rama: claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion
 tipo: funcionalidad
 epica: progreso
