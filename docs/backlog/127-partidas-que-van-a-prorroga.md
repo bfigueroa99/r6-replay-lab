@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T22:07Z
 rama: -
 tipo: funcionalidad
 epica: lado-y-marcador
