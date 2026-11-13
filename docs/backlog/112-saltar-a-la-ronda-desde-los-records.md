@@ -1,7 +1,7 @@
 # 112. Saltar a la ronda desde los records
 
-estado: implementado
-candado: revisor 2026-11-13T04:23Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/112-saltar-a-la-ronda-desde-los-records
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F6 (el PR #14 que lo frenaba se cerro sin merge el 2026-11-05)
 archivos: backend/replays/analytics/aggregates.py (_record_de_ronda, record de racha), backend/tests/test_records.py, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md, frontend/src/components/ui.jsx (Panel acepta id)
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T0003Z-cVnayJ8
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T0003Z-cVnayJ8, revisor 20261113T0404Z-cnRfz4a
 
 ## PR
 
@@ -172,7 +172,42 @@ Skills: no aplica (seleccion de ronda y navegacion ya resueltas en el repo).
 Skills del repo: ninguna (sin texto nuevo para el usuario; JSX minimo sobre un componente existente).
 OMC: plan=— · revisión=2 hallazgos (2 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre db81dc9
+
+(20261113T0404Z-cnRfz4a) La rama ya tiene `origin/dev` (fcba457), sin conflictos.
+Partida: verificar.sh sobre db81dc9 -> ROJO solo por
+`e2e/accesibilidad.spec.js:226` (94 e2e pasan, incluido el de esta ficha). Ese
+test cae tambien en `origin/dev` (7 de 8 aislado); es una carrera con la
+animacion de recharts y lo arregla el hotfix 117 (rama
+`claude/equipo-dev/117-hotfix-graficos-punteados`). Con el parche de la 117
+aplicado en el arbol sin commitear: verificar.sh VERDE db81dc953-sucio (1165
+backend, 334 vitest, 95 e2e). Revision a ciegas, eje de estandares
+(`omc-code-reviewer`, diff de codigo ~140 lineas y un tema: sin eje de
+intencion ni de seguridad, no toca POST, `.rec`, rutas ni Electron).
+
+Reglas: sin dependencias, sin escritura en la API, sin numero nuevo en la UI
+(el campo `round_number` solo arma el enlace; frase en `metricas.md`),
+identificadores sin tildes, sin `print` ni `console.log`. `ui.jsx` esta en
+`archivos:` y el desvio esta explicado.
+Criterios: los cuatro cubiertos. `round_number` = `Round.number` del detalle
+(`views.py` expone `"number": rnd.number`; tests de records y racha, la
+racha arranca en la ronda 2 para que un off-by-one caiga); ancla por
+`number` y no por posicion (vitest con rondas 0, 1, 3); anclas invalidas y
+partida sin rondas -> `null` sin error; e2e exige `round_number > 0` y
+`#ronda-999` deja R1 con la consola limpia. El `useEffect` nuevo esta antes
+de los `return` tempranos.
+
+Hallazgos (ninguno CRITICAL, HIGH ni MEDIUM):
+
+- [estilo] LOW `frontend/src/pages/MatchDetail.jsx:51-53`
+  Que pasa: el comentario de tres lineas se lee como una sola frase ("como
+  siempre con `key` volver a clicar...").
+  Arreglo sugerido: punto al final de la linea 52.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
 
 ## QA
 
