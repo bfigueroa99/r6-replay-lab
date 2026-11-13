@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T23:18Z
 rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
