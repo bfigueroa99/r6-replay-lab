@@ -228,16 +228,18 @@ test('los graficos dicen que es cada linea y cual se lee en el eje derecho', asy
   const panel = (titulo) => page.locator('.panel', { has: page.getByText(titulo, { exact: true }) })
 
   // dos lineas, dos ejes: sin leyenda solo el hover decia cual era cual. La
-  // del eje derecho va punteada, como el KPR de "Por día de juego"
+  // del eje derecho va punteada, como el KPR de "Por día de juego". Con poll:
+  // mientras recharts anima el trazo, el dasharray es el del dibujo y no el
+  // patron, y una sola lectura caia antes de que termine la animacion
   await page.goto('/')
   await expect(page.locator('h1')).toHaveText('Resumen')
   await expect.poll(async () => (await lineas(panel('Evolución por partida'))).leyenda).toEqual(['Rondas ganadas %', 'KPR'])
-  expect((await lineas(panel('Evolución por partida'))).punteadas).toEqual([false, true])
+  await expect.poll(async () => (await lineas(panel('Evolución por partida'))).punteadas).toEqual([false, true])
 
   await page.goto('/tendencias')
   await expect.poll(async () => (await lineas(panel('Por partida'))).leyenda).toEqual(['Rondas ganadas %', 'KST %', 'Rating'])
-  expect((await lineas(panel('Por partida'))).punteadas).toEqual([false, false, true])
-  expect((await lineas(panel('Por día de juego'))).punteadas).toEqual([false, false, false, true])
+  await expect.poll(async () => (await lineas(panel('Por partida'))).punteadas).toEqual([false, false, true])
+  await expect.poll(async () => (await lineas(panel('Por día de juego'))).punteadas).toEqual([false, false, false, true])
 
   expect(errores).toEqual([])
 })
