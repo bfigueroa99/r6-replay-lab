@@ -1,7 +1,7 @@
 # 110. Tu forma contra tu historial
 
-estado: revisado
-candado: qa 2026-11-13T16:03Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/110-tu-forma-contra-tu-historial
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E16
 archivos: backend/replays/analytics/aggregates.py (compare_periods against, _periodo_por_partidas), backend/replays/views.py (compare), backend/tests/test_compare.py, frontend/src/components/Delta.jsx (nuevo, sale de Trends.jsx), frontend/src/pages/Trends.jsx (import), frontend/src/formaHistorial.js (nuevo), frontend/src/formaHistorial.test.js (nuevo), frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T0804Z-cJw5MQs, revisor 20261113T1203Z-cWfR3tT
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T0804Z-cJw5MQs, revisor 20261113T1203Z-cWfR3tT, qa 20261113T1603Z-cHj1H4k
 
 ## PR
 
@@ -263,7 +263,74 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=8 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 196edd0
+
+(qa 20261113T1603Z-cHj1H4k) Ejercite el sistema, no el diff. Scripts en el scratchpad
+(`sembrar.py` con `tests/factories.py`: 15 partidas viejas 2/6 y 10
+recientes 5/6, Bank y Club House alternados; otra base de 6 partidas; otra
+vacia). Bases con `SQLITE_PATH=<tmp> python manage.py migrate` y
+`python manage.py shell < sembrar.py`; nada al repo.
+
+- **check.sh:** `verificar.sh` -> `VERDE 196edd0d0 en 150s: 1173 tests
+  backend, 340 vitest, 96 e2e. Todo en verde.`
+- **Criterio 1 (API con delta y banda):** `curl
+  'localhost:8811/api/compare/?by=matches&n=10&against=rest'` -> 200,
+  `against: rest`, `Últimas 10 partidas` 60 rondas contra `El resto (15
+  partidas)` 90; winrate 33.3 -> 83.3, delta 50.0, ruido 6.9, `mejor`.
+  **Recalculado a mano:** resto 30/90 = 33.3, actual 50/60 = 83.3; banda
+  sqrt(.333·.667/90 + .833·.167/60) = 0.0692 -> 6.9. Coincide.
+  `by=days&n=30&against=rest` -> `Antes de los últimos 30 días`, 90 rondas.
+- **Regresion de Progreso:** sin `against`, `against=foo`,
+  `against=REST` y `against=rest&against=previous` -> `previous`, `Las 10
+  anteriores` 60 rondas, ruido 7.8 (el modo de hoy intacto).
+- **Criterio 2 (sin resto):** `n=25` y `n=100000` -> `El resto (0
+  partidas)`, deltas `None`, `enough_sample` false. En Chromium, base de 6
+  partidas: nota "Todavía no hay historial para comparar: hacen falta más de
+  10 partidas." y sin tabla (no ceros). Base vacia: el panel no aparece.
+- **Criterio 3 (filtros a los dos lados):** `&map=bank` -> actual 10
+  partidas 60 rondas, resto 3 partidas 18 rondas; winrate 33.3 -> 58.3.
+  **Recalculado:** 13 partidas de Bank; las 10 ultimas = 5 recientes (5/6) +
+  5 viejas (2/6) = 35/60 = 58.3; resto 3 viejas = 6/18 = 33.3. Coincide. En
+  `/?map=bank` el panel muestra la nota de muestra chica y la tabla.
+- **Bordes:** `map=noexiste`, `side=Defense` (sin rondas) y base vacia ->
+  200 con todo `None`; `n=-1` -> 1; `n=foo` -> 10; `until=foo&since=bar`
+  ignorados. Sin tracebacks ni 500 en los logs de `runserver`.
+- **Criterio 4 (panel en el Inicio):** Chromium (Playwright) sobre el build
+  servido por `runserver`: titulo, cabeceras de la API y 4 filas en orden;
+  consola limpia en los 4 escenarios. El e2e de humo lo afirma con valores
+  (corrio en las 96 del check).
+- **Criterio 5:** fila "Forma contra tu historial" en `docs/metricas.md`.
+- **Chunk inicial:** `vite build` de `origin/dev` 197.63 kB -> rama 200.00
+  kB (+1.2 %).
+- **Mutacion** (cada una revertida con `git checkout`): resto =
+  `ordenados[n : n * 2]` -> cae `test_contra_el_resto_toma_todas...`;
+  previo sin `exclude` -> caen 5 tests; dias con `since` -> cae
+  `test_contra_el_resto_por_dias...`; vista con `against = "previous"` fijo
+  -> cae `test_la_vista_acepta_against_rest...`; `estadoDeForma` sin
+  `sin-resto` -> cae el vitest "sin resto avisa que falta historial".
+
+Skills del repo:
+- accessibility-review (Inicio, panel nuevo, base sembrada): 0 Critical, 0
+  Major. Contraste medido: chip verde rgb(63,185,80) sobre rgb(26,42,44)
+  5.8:1; `th`, `.dim` y `.note` rgb(139,152,169) sobre rgb(23,30,41)
+  5.71:1 (pasa 4.5:1). Teclado: el panel no tiene controles (tabla no
+  ordenable), nada que alcanzar. Minor, ya existia: la ayuda de "Ruido" es un
+  `title` del `th` de `DataTable`, que no llega por teclado ni lector
+  (WCAG 2.1.1/1.3.1); va como idea a `ALCANCE.md`.
+- validate-data (fila "Forma contra tu historial"): sin division por cero
+  (resto vacio -> `None`), totales de rondas y no promedio de promedios, banda
+  con el `n` de cada lado. Low, no frena: las cabeceras dicen partidas y no
+  rondas (la `n` de la tasa queda dentro de la banda), igual que Progreso.
+  Valores recalculados: winrate 33.3/83.3 y banda 6.9 sin filtro; 33.3/58.3
+  con `map=bank`.
+- design-critique: no se corrio (el panel reusa `Panel`, `DataTable` y
+  `Delta` sin CSS nuevo).
+
+Nada que verificar en el PC: sin migracion, parser, Electron ni `.ps1`.
+
+Veredicto: `aprobado`.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5/5 VERIFIED; gap bajo: el e2e no afirma las celdas de KST y Muertes sin trade)
 
 ## Para el humano
 
