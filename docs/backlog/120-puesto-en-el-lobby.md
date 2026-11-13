@@ -1,7 +1,7 @@
 # 120. Puesto en el lobby
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T19:04Z
 rama: claude/equipo-dev/120-puesto-en-el-lobby
 tipo: funcionalidad
 epica: progreso
