@@ -1,7 +1,7 @@
 # 114. Qué operadores te abren
 
-estado: revisado
-candado: qa 2026-11-13T17:33Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/114-que-operadores-te-abren
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D7
 archivos: backend/replays/analytics/aggregates.py (openings_by_operator), backend/replays/views.py (duels), backend/tests/test_duels.py, frontend/src/operadoresQueTeAbren.js (nuevo), frontend/src/operadoresQueTeAbren.test.js (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261113T1203Z-cWfR3tT, dev 20261113T1643Z-c4P1LiD, revisor 20261113T1703Z-ctZvzXQ
+turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261113T1203Z-cWfR3tT, dev 20261113T1643Z-c4P1LiD, revisor 20261113T1703Z-ctZvzXQ, qa 20261113T1732Z-cdpsq83
 
 ## PR
 
@@ -274,7 +274,59 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=4 hallazgos LOW (1 cubierto con test; 3 no son hallazgo) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 30dbc7e
+
+(qa 20261113T1732Z-cdpsq83) La rama no contenia el `origin/dev` actual: merge
+de `origin/dev` (30dbc7e, sin conflictos; solo `humo.spec.js` automatico).
+
+- **check.sh**: `verificar.sh` -> VERDE 30dbc7e1b (1211 backend, 365
+  vitest, 100 e2e; incluye el e2e `Duelos muestra los operadores que te abren`).
+- **API, base vacia** (`SQLITE_PATH=<tmp>/vacia.sqlite3 manage.py migrate`,
+  `runserver`): `/api/duels/` y `?min_duels=1` -> 200, `opening_operators: []`.
+- **API, base sembrada** con `tests/factories.py` (script en el scratchpad):
+  Club House, r1 y r3 Ash te abre (Attack), r2 le abres a Ash, r4 Thorn te
+  abre (Defense), r5 teamkill de un compañero abre, r6 un rival
+  `Unknown(5)` te abre, r7 abre un `Death` sin autor y despues Ash te
+  mata; mas una partida Border de un solo jugador sin eventos.
+  - `?min_duels=1` -> Ash/Attack 2/1, openings 3, balance -1, winrate
+    33.3, share 66.7; Thorn/Defense 1/0, share 100.0.
+  - **Recalculado a mano:** share Ash = 2 / 3 muertes de apertura contra
+    rivales en Attack (r1, r3, r6; r5 teamkill y r7 sin autor fuera) =
+    66.7; winrate Ash = 1/3 = 33.3. Coinciden con la API.
+  - Sin parametro (3) -> solo Ash. `side=Defense` -> solo Thorn;
+    `side=Attack` -> solo Ash; `map=border` -> `[]`; `side=Banana` -> `[]`.
+  - Bordes: `until=foo`, `page=-1`, `side=&map=`, `min_duels=foo|0|-1|99999999999999999999`
+    -> 200 todos, 0 `Traceback` en los logs del server.
+- **Chunk inicial**: `index-*.js` 199.91 kB (gzip 65.77); el modulo nuevo va
+  en el chunk lazy `Duelos-*.js` (9.00 kB). No crece.
+- **accessibility-review** (Playwright en Chromium sobre la base sembrada,
+  `/duelos`): heading "Operadores que te abren", una `table` con 7
+  `columnheader`, fila `Ash Ataque 2 1 -1 33% 67%`; 27 textos del panel
+  medidos, ninguno con contraste < 4.5; CSV y encabezados alcanzables con
+  Tab, Enter ordena (`aria-sort=descending`); el `help` del % tiene
+  `title`; el select de muestra esta dentro de su `label`. Con lado
+  Defense y muestra 3: "Ningún operador llega a 3 aperturas con estos
+  filtros.". Consola sin errores. Sin Critical ni Major.
+- **validate-data** sobre la fila de `metricas.md`: division por cero ->
+  `None` (`_pct`); sin promedio de promedios (conteos sumados); la tasa
+  va con su `n` (Te abre / Le abres en la misma fila); redondeo a 1
+  decimal en la API, entero en la UI como el resto de Duelos.
+- **Mutacion** (`manage.py test tests.test_duels.OperadoresQueTeAbrenTests`):
+  quitar el descarte de `Unknown(` -> cae
+  `test_operador_vacio_o_desconocido_no_tiene_fila_pero_pesa_en_el_share`;
+  quitar `.filter(id=_PRIMER_EVENTO)` en `contra_mi` -> caen
+  `test_muerte_sin_autor_que_abre_no_suma` y
+  `test_solo_cuenta_la_primera_baja_de_la_ronda`; orden ascendente -> cae
+  `test_muestra_minima_y_orden`. Codigo restaurado (`git checkout`).
+- **omc-verifier** (receta 3): PASS, los 5 criterios VERIFIED; observacion
+  sin bloqueo: la muestra reusa el selector de la pagina (decision del
+  diseno, documentada).
+
+Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 0 Minor en el panel nuevo), validate-data (share Ash 66.7 y winrate 33.3 recalculados a mano), design-critique no aplica (panel dentro de una pagina existente, mismo `Panel`/`DataTable`).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
