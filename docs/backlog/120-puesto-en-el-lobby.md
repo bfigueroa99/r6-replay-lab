@@ -1,7 +1,7 @@
 # 120. Puesto en el lobby
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:03Z
 rama: -
 tipo: funcionalidad
 epica: progreso
