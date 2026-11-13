@@ -1,8 +1,8 @@
 # 128. Repetir o cambiar el spawn tras perder
 
-estado: disenado
+estado: en curso 2026-11-13T23:45Z
 candado: -
-rama: -
+rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
 area: fullstack
