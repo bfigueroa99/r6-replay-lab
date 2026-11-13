@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T18:58Z
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md D10
 archivos: backend/replays/analytics/aggregates.py (_record, repeated_rivals, _filas_de_stacks), backend/tests/test_duels.py, backend/tests/test_stacks_rivales.py, frontend/src/ultimaVez.js (nuevo), frontend/src/ultimaVez.test.js (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-c2rHpej
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-c2rHpej, revisor 20261113T1858Z-cxdASk3
 
 ## PR
 
