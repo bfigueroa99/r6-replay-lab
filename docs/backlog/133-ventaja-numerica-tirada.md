@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: con hallazgos
-candado: -
+estado: en curso 2026-11-13T22:53Z
+candado: dev 2026-11-13T22:53Z
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md F5
 archivos: backend/replays/analytics/metrics.py (ventaja_maxima), backend/replays/analytics/aggregates.py (thrown_advantage), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_ventaja_tirada.py (nuevo), frontend/src/ventajaTirada.js (nuevo), frontend/src/ventajaTirada.test.js (nuevo), frontend/src/components/VentajaTirada.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH
 
 ## PR
 
