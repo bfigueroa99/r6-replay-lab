@@ -1,7 +1,7 @@
 # 130. Saltar a la siguiente ronda perdida
 
-estado: revisado
-candado: qa 2026-11-13T22:23Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F24
 archivos: frontend/src/navegacionRondas.js (siguientePerdida, pideSiguientePerdida), frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx (DetallePartida: teclado y panel Rondas), frontend/e2e/humo.spec.js
-turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2003Z-c3vr7mZ, revisor 20261113T2157Z-chbMW9r
+turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2003Z-c3vr7mZ, revisor 20261113T2157Z-chbMW9r, qa 20261113T2223Z-c24t16L
 
 ## PR
 
@@ -126,7 +126,24 @@ Veredicto: aprobar -> `revisado`.
 OMC: plan=— · revisión=4 hallazgos (0 arreglados: 2 decisiones del diseno, 1 descartado, 1 duplicado) · verificación=—
 Skills del repo: ninguna (revision de codigo con `revision.md`)
 
-## QA
+## QA 2026-11-13 sobre cc63536
+
+(qa 20261113T2223Z-c24t16L) Rama al dia con `origin/dev@72df8f9`. Solo frontend: sin migracion, parser, `recompute`, Electron ni `.ps1` (no hay `## Verificar en el PC`); sin numero nuevo en la UI (`validate-data` no aplica) ni pagina o panel nuevo (`design-critique` no aplica).
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --` -> exit 0, `VERDE cc63536fc en 180s: 1284 tests backend, 421 vitest, 114 e2e`.
+- Servidores: `SQLITE_PATH=<scratch>/vacia.sqlite3 manage.py migrate && runserver 127.0.0.1:8111` (base vacia) y `SQLITE_PATH=<scratch>/sembrada.sqlite3 manage.py migrate && seed_demo && runserver 127.0.0.1:8112` (29 partidas, 203 rondas). `curl`: `/api/matches/?limit=-1`, `?page=-1`, `?until=foo` -> 200; `/api/matches/999999/` y `/abc/` -> 404; base vacia `/api/matches/1/` -> 404 y `/partidas/1` -> 200 con "Esa partida no existe", apretar `p` ahi no tira errores.
+- Criterios 1-3 en la app (Playwright, script `prueba130.cjs` en el scratchpad): en las 29 partidas sembradas, desde cada ronda y por tres caminos (clic en "Siguiente ronda perdida", tecla `p`, foco en el boton + Enter) -> 609 saltos, todos a la ronda que da la regla sobre `/api/matches/<id>/` (primera `my_team_won === false` despues de la elegida, con vuelta). `Shift+P` y `Alt+p` no mueven. La URL no cambia. Consola sin errores ni warnings.
+- Bordes con `/api/matches/<id>/` interceptada (`borde130.cjs`): unica perdida en R3 -> boton habilitado, desde R1 boton y `p` van a R3 y ahi se quedan; R2 con `my_team_won: null` y R4 perdida -> desde R1 va a R4 (el nulo no cuenta); partida de una sola ronda, perdida -> se queda en R1, sin errores. Todo ganado -> deshabilitado (ya lo afirma el e2e).
+- Criterio 4: el hint del panel tiene "P para la siguiente perdida" y el `title` "Próxima ronda que tu equipo perdió (tecla P)".
+- Bundle (`vite build` de `origin/dev` y de la rama): chunk inicial `index` 200.00 -> 200.34 kB (+0.17 %); `MatchDetail` 19.37 -> 19.66 kB.
+- accessibility-review (Chromium, base sembrada): el boton es `<button>` con nombre "Siguiente ronda perdida" (rol y nombre por el texto visible), se alcanza con Tab, foco visible (`outline: auto`), se activa con Enter; contraste del texto medido 12.92:1 (`rgb(230,237,243)` sobre `rgb(29,38,50)`), 28 px de alto. Sin Critical ni Major.
+- Mutaciones en `navegacionRondas.js` con `npx vitest run src/navegacionRondas.test.js`: nulo contado como perdida -> caen 2 (`una ronda sin ganador no cuenta como perdida`, `sin perdidas devuelve null`); `k <= n` -> `k < n` -> cae `con la elegida como unica perdida devuelve la misma`; sin `'P'` -> cae `la p pide el salto`. Restaurado.
+- `omc-verifier` (receta 3) con criterios, comandos y diff: PASS, los 4 criterios VERIFIED; gaps LOW ya conocidos (unica perdida con boton habilitado, ancla sin seguir la ronda: decisiones del Diseno, en `## Para el humano`).
+
+Veredicto: `aprobado`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 0 Minor en lo agregado; contraste 12.92:1), testing-strategy (mutaciones: 3 de 3 caen). Valores recalculados: no aplica (sin numero nuevo).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
