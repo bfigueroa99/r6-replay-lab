@@ -210,10 +210,28 @@ def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | Non
     teamkill tambien restan: quien se fue no ayuda a convertir la ventaja. La
     diferencia de arranque (un 5v4 de entrada) no cuenta sola: se mide recien
     despues de la primera salida, asi la ventaja es algo que paso en la ronda.
+
+    Las salidas con el mismo `clock` se miden juntas: un trade en el mismo
+    segundo no dejo a nadie con uno mas. Sin reloj (0 o ausente) cada salida
+    se mide sola. Cuando un equipo queda sin vivos la ronda ya se decidio: esa
+    diferencia no cuenta, si no toda eliminacion ganada seria "ventaja".
     `None` si el feed no saca a nadie.
     """
     vivos = set(team_of)
     maxima = None
+    pendiente = False
+    reloj_pendiente = None
+
+    def medir() -> bool:
+        nonlocal maxima
+        mios = sum(1 for j in vivos if team_of[j] == equipo)
+        suyos = len(vivos) - mios
+        if mios == 0 or suyos == 0:
+            return False
+        diferencia = mios - suyos
+        maxima = diferencia if maxima is None else max(maxima, diferencia)
+        return True
+
     for e in eventos:
         kind = e.get("kind")
         if kind == KILL:
@@ -224,10 +242,15 @@ def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | Non
             continue
         if muerto not in vivos:
             continue
+        reloj = e.get("clock") or None
+        if pendiente and (reloj is None or reloj != reloj_pendiente):
+            if not medir():
+                return maxima
         vivos.discard(muerto)
-        mios = sum(1 for j in vivos if team_of[j] == equipo)
-        diferencia = mios - (len(vivos) - mios)
-        maxima = diferencia if maxima is None else max(maxima, diferencia)
+        pendiente = True
+        reloj_pendiente = reloj
+    if pendiente:
+        medir()
     return maxima
 
 

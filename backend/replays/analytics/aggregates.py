@@ -2561,10 +2561,11 @@ def thrown_advantage(**filters) -> dict:
     for ev in (
         Event.objects.filter(en_mis_rondas, kind__in=(Event.KILL, Event.DEATH, PLAYER_LEAVE))
         .order_by("round_id", "order")
-        .values("round_id", "kind", "actor_id", "target_id")
+        .values("round_id", "kind", "actor_id", "target_id", "clock")
     ):
         feeds.setdefault(ev["round_id"], []).append(
-            {"kind": ev["kind"], "actor": ev["actor_id"], "target": ev["target_id"]}
+            {"kind": ev["kind"], "actor": ev["actor_id"], "target": ev["target_id"],
+             "clock": ev["clock"]}
         )
 
     total = _fila_tirada()

@@ -61,6 +61,51 @@ class VentajaMaximaTests(SimpleTestCase):
         ]
         self.assertEqual(self._max(eventos), 0)
 
+    def test_una_eliminacion_ganada_no_cuenta_la_ventaja_del_cierre(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": f"rival{i}", "clock": 100.0 - i}
+            for i in range(5)
+        ]
+        self.assertEqual(self._max(eventos), 4)
+
+    def test_un_clutch_1v1_ganado_no_es_ventaja(self):
+        eventos = [
+            {"kind": "Kill", "actor": "rival0", "target": nick, "clock": 100.0 - i}
+            for i, nick in enumerate(MATES)
+        ] + [
+            {"kind": "Kill", "actor": ME, "target": f"rival{i}", "clock": 90.0 - i}
+            for i in (1, 2, 3, 4, 0)
+        ]
+        self.assertEqual(self._max(eventos), 0)
+
+    def test_un_trade_en_el_mismo_segundo_no_da_ventaja(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0},
+            {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 100.0},
+        ]
+        self.assertEqual(self._max(eventos), 0)
+
+    def test_bajas_en_segundos_distintos_si_dan_ventaja(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0},
+            {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 99.0},
+        ]
+        self.assertEqual(self._max(eventos), 1)
+
+    def test_sin_reloj_cada_baja_se_mide_sola(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 0.0},
+            {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 0.0},
+        ]
+        self.assertEqual(self._max(eventos), 1)
+
+    def test_un_5v4_de_arranque_cuenta_desde_la_primera_salida(self):
+        team_of = {ME: 0, **dict.fromkeys(MATES, 0), **dict.fromkeys(RIVALES[:4], 1)}
+        rival_cae = [{"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0}]
+        propio_cae = [{"kind": "Kill", "actor": "rival0", "target": "mate0", "clock": 100.0}]
+        self.assertEqual(metrics.ventaja_maxima(rival_cae, team_of, 0), 2)
+        self.assertEqual(metrics.ventaja_maxima(propio_cae, team_of, 0), 0)
+
     def test_una_muerte_repetida_o_sin_resolver_no_resta_dos_veces(self):
         eventos = [
             {"kind": "Kill", "actor": "mate0", "target": None},
@@ -90,7 +135,8 @@ class VentajaTiradaTests(TestCase):
             make_round_player(rnd, username=nick, is_me=False, team_index=1, side=rival_side,
                               won=rival)
         for orden, (kind, actor, target) in enumerate(eventos):
-            make_event(rnd, orden, actor, target, kind=kind)
+            # Un segundo entre bajas: con el mismo reloj contarian como simultaneas.
+            make_event(rnd, orden, actor, target, kind=kind, clock=120.0 - orden)
         return rnd
 
     def test_cuenta_ventaja_ganada_tirada_y_sin_ventaja(self):
@@ -108,6 +154,19 @@ class VentajaTiradaTests(TestCase):
                          ["one", "two_plus"])
         self.assertEqual((grupos["one"]["rounds"], grupos["one"]["thrown"]), (1, 1))
         self.assertEqual((grupos["two_plus"]["rounds"], grupos["two_plus"]["thrown"]), (1, 1))
+
+    def test_un_trade_en_el_mismo_segundo_no_cuenta_como_ventaja(self):
+        rnd = self._ronda([], won=False)
+        make_event(rnd, 0, ME, "rival0", clock=100.0)
+        make_event(rnd, 1, "rival1", ME, clock=100.0)
+        data = agg.thrown_advantage()
+        self.assertEqual((data["rounds"], data["thrown"]), (0, 0))
+
+    def test_un_clutch_ganado_por_eliminacion_no_es_ronda_con_ventaja(self):
+        caen_mios = [("Kill", "rival0", nick) for nick in MATES]
+        caen_suyos = [("Kill", ME, f"rival{i}") for i in (1, 2, 3, 4, 0)]
+        self._ronda(caen_mios + caen_suyos, won=True)
+        self.assertEqual(agg.thrown_advantage()["rounds"], 0)
 
     def test_una_ronda_sin_ganador_no_cuenta(self):
         self._ronda([("Kill", ME, "rival0")], won=None)

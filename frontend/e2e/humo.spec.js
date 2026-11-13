@@ -518,10 +518,22 @@ test('Duelos muestra la ventaja numerica tirada', async ({ page }) => {
   await expect(panel).toContainText(`${datos.thrown} de ${datos.rounds} rondas con ventaja tiradas`)
   const grupos = panel.locator('table').first()
   await expect(grupos.locator('tbody tr')).toHaveCount(2)
-  const uno = datos.groups.find((g) => g.group === 'one')
-  const filaUno = grupos.locator('tbody tr', { hasText: 'Con uno más' })
-  await expect(filaUno.locator('td').nth(1)).toHaveText(String(uno.rounds))
-  await expect(filaUno.locator('td').nth(2)).toHaveText(String(uno.thrown))
+  for (const [grupo, etiqueta] of [['one', 'Con uno más'], ['two_plus', 'Con dos o más']]) {
+    const g = datos.groups.find((x) => x.group === grupo)
+    const fila = grupos.locator('tbody tr', { hasText: etiqueta })
+    await expect(fila.locator('td').nth(1)).toHaveText(String(g.rounds))
+    await expect(fila.locator('td').nth(2)).toHaveText(String(g.thrown))
+  }
+  const ataque = datos.sides.find((x) => x.side === 'Attack')
+  const filaAtaque = panel.locator('table').nth(1).locator('tbody tr', { hasText: 'Ataque' })
+  await expect(filaAtaque.locator('td').nth(1)).toHaveText(String(ataque.rounds))
+  await expect(filaAtaque.locator('td').nth(2)).toHaveText(String(ataque.thrown))
+  const mapa = datos.maps[0]
+  // celda exacta: "Club House" no tiene que tomar tambien la fila "Club House (Y10)"
+  const filaMapa = panel.locator('table').nth(2).locator('tbody tr')
+    .filter({ has: page.getByRole('cell', { name: mapa.map, exact: true }) })
+  await expect(filaMapa.locator('td').nth(1)).toHaveText(String(mapa.rounds))
+  await expect(filaMapa.locator('td').nth(2)).toHaveText(String(mapa.thrown))
 
   if (datos.recent.length) {
     const primera = datos.recent[0]
