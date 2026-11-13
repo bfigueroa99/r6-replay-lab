@@ -1,8 +1,8 @@
 # 114. Qué operadores te abren
 
-estado: disenado
+estado: en curso 2026-11-13T17:03Z
 candado: -
-rama: -
+rama: claude/equipo-dev/114-que-operadores-te-abren
 tipo: funcionalidad
 epica: rivales
 area: fullstack
