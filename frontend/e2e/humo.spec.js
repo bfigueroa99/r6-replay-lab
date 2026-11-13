@@ -773,6 +773,35 @@ test('el detalle de partida copia el resumen', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el detalle de partida copia una ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const { matches } = await (await page.request.get('/api/matches/?limit=200')).json()
+  const detalle = await (await page.request.get(`/api/matches/${matches[0].id}/`)).json()
+  // la primera ronda con una baja, para que el texto tenga una linea de la timeline
+  const i = detalle.rounds.findIndex((r) => r.events.some((e) => e.kind === 'Kill'))
+  expect(i).toBeGreaterThanOrEqual(0)
+  const ronda = detalle.rounds[i]
+  const primera = ronda.events.filter((e) => e.kind === 'Kill').sort((a, b) => a.order - b.order)[0]
+  await page.goto(`/partidas/${matches[0].id}`)
+
+  await page.locator('.round-tab').nth(i).click()
+  await page.getByRole('button', { name: 'Copiar ronda' }).click()
+  await expect(page.getByText('Ronda copiada', { exact: true })).toBeVisible()
+  const texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith(`${detalle.match.map} · ${ronda.label} · `)).toBe(true)
+  expect(texto).toContain(primera.actor)
+  // autor y victima en la misma linea, con su reloj: no alcanza con que el nick aparezca
+  expect(texto).toContain(`${primera.clock_raw || '—'} ${primera.actor} mató a ${primera.target}`)
+
+  // Al cambiar de ronda el aviso no queda pegado a la otra
+  expect(detalle.rounds.length).toBeGreaterThan(1)
+  await page.locator('.round-tab').nth(i === 0 ? 1 : 0).click()
+  await expect(page.getByText('Ronda copiada', { exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
@@ -791,6 +820,29 @@ test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   expect(texto).toContain('1 partida: 1G 0P')
   // seed_demo: cada sesion es una partida, asi que no hay extremos que nombrar
   expect(texto).not.toContain('Mejor partida')
+
+  expect(errores).toEqual([])
+})
+
+test('Tendencias tiene las columnas Mejor y Peor, con guion en una sesion de una partida', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { sessions } = await (await page.request.get('/api/sessions/')).json()
+  // seed_demo con el gap del e2e: cada sesion es una partida, sin extremos que nombrar
+  expect(sessions[0].best_match).toBeNull()
+  await page.goto('/tendencias')
+
+  const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
+  // evaluateAll no espera: sin esto lee la pagina mientras dice Cargando...
+  await expect(panel.locator('tbody tr').first()).toBeVisible()
+  const cabeceras = await panel.locator('thead th').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
+  const mejor = cabeceras.findIndex((t) => t.startsWith('Mejor'))
+  const peor = cabeceras.findIndex((t) => t.startsWith('Peor'))
+  expect(mejor).toBeGreaterThan(-1)
+  expect(peor).toBe(mejor + 1)
+  const fila = panel.locator('tbody tr').first()
+  await expect(fila.locator('td').nth(mejor)).toHaveText('—')
+  await expect(fila.locator('td').nth(peor)).toHaveText('—')
+  await expect(fila.locator('td').nth(mejor).getByRole('link')).toHaveCount(0)
 
   expect(errores).toEqual([])
 })
@@ -1350,6 +1402,58 @@ test('el Coach copia sus señales', async ({ page }) => {
   expect(texto.startsWith('Coach · Filtros: Solo defensa\n')).toBe(true)
   expect(texto).toContain(`- ${conLado.insights[0].title}`)
 
+  expect(errores).toEqual([])
+})
+
+test('una señal del Coach abre el Resumen filtrado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  const senal = insights.find((i) => i.key === 'operador-debil')
+  expect(senal.filters.operator).toBeTruthy()
+  const general = insights.find((i) => i.key === 'kst')
+  expect(general).toBeTruthy()
+  await page.goto('/coach')
+
+  // una señal general no ofrece enlace
+  const suya = page.locator('.insight').filter({ has: page.getByRole('heading', { name: general.title }) })
+  await expect(suya).toBeVisible()
+  await expect(suya.getByRole('link')).toHaveCount(0)
+
+  const tarjeta = page.locator('.insight').filter({ has: page.getByRole('heading', { name: senal.title }) })
+  await tarjeta.getByRole('link', { name: 'Ver esas rondas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Resumen' })).toBeVisible()
+  const destino = new URL(page.url())
+  expect(destino.pathname).toBe('/')
+  expect(destino.searchParams.get('operator')).toBe(senal.filters.operator)
+  expect(destino.searchParams.get('side')).toBe(senal.filters.side)
+  await expect(page.getByLabel('Operador')).toHaveValue(senal.filters.operator)
+  await page.waitForLoadState('networkidle')
+  expect(errores).toEqual([])
+})
+
+test('el sitio que trae una señal del Coach se ve en la barra y se quita', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  const senal = insights.find((i) => i.filters?.site)
+  expect(senal).toBeTruthy()
+  await page.goto('/coach')
+
+  const tarjeta = page.locator('.insight').filter({ has: page.getByRole('heading', { name: senal.title }) })
+  await tarjeta.getByRole('link', { name: 'Ver esas rondas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Resumen' })).toBeVisible()
+  const destino = new URL(page.url())
+  expect(destino.searchParams.get('site')).toBe(senal.filters.site)
+  // la señal de sitio es tambien la de mapa que pide la ficha: el mapa llega a la URL y al selector
+  expect(senal.filters.map).toBeTruthy()
+  expect(destino.searchParams.get('map')).toBe(senal.filters.map)
+  await expect(page.getByLabel('Mapa')).toHaveValue(senal.filters.map)
+  // el Resumen no tiene selector de sitio: sin esto el filtro quedaria puesto y sin verse
+  const sitio = page.getByLabel('Sitio')
+  await expect(sitio).toHaveValue(senal.filters.site)
+  await sitio.selectOption('')
+  await expect(page).not.toHaveURL(/site=/)
+  await expect(page.getByLabel('Sitio')).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
   expect(errores).toEqual([])
 })
 

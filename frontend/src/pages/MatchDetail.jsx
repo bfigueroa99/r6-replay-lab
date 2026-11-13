@@ -18,6 +18,7 @@ import { detalleMultikills, textoMultikills } from '../multikills.js'
 import { marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
+import { textoRonda } from '../textoRonda.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
@@ -192,6 +193,7 @@ function DetallePartida({ id }) {
               <h3 style={{ marginTop: 0, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 {round.label} <SideChip side={round.my_side} />
                 <ResultChip won={round.my_team_won} />
+                <CopiarRonda key={round.number} round={round} mapa={match.map} miEquipo={myTeam(round)} />
               </h3>
               <p className="note" style={{ marginTop: 0 }}>
                 Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
@@ -520,5 +522,46 @@ function EnlacePartida({ id, title, children }) {
     <Link className="btn small" to={`/partidas/${id}`} title={title}>
       {children}
     </Link>
+  )
+}
+
+/**
+ * Boton para copiar la ronda elegida. Lleva su propio estado para no sumar un
+ * hook en `DetallePartida` despues de sus returns tempranos; la `key` de la
+ * ronda lo reinicia al cambiar de ronda, asi el aviso no queda pegado a otra.
+ */
+function CopiarRonda({ round, mapa, miEquipo }) {
+  const [copia, setCopia] = useState(null)
+
+  async function copiar() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia('error')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(textoRonda(round, mapa, miEquipo))
+      setCopia('ok')
+    } catch {
+      setCopia('error')
+    }
+  }
+
+  return (
+    <>
+      {copia && (
+        <span className="note" style={{ fontWeight: 'normal' }}>
+          {copia === 'ok' ? 'Ronda copiada' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+        </span>
+      )}
+      <button
+        type="button"
+        className="btn small"
+        onClick={copiar}
+        title="Copia esta ronda y sus bajas en texto plano."
+      >
+        Copiar ronda
+      </button>
+    </>
   )
 }

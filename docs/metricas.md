@@ -147,7 +147,7 @@ bloques, asi que excluir la que los juntaba parte la sesion en dos.
 | **Posicion en la sesion** | Si fue tu 1a, 2a, 3a... partida de ese bloque. De la 5a en adelante se juntan en un tramo: las sesiones largas son pocas y cada posicion suelta no junta muestra. |
 | **Curva de la sesion** | Las metricas de siempre (winrate, KPR, aperturas, momento de la muerte) cortadas por posicion. Responde "juego peor despues de la tercera" con el numero. |
 | **Resultado de la sesion** | Partidas ganadas y perdidas de la sesion (`1G 0P`), solo las que cumplen los filtros. Las que no tienen resultado (empate o partida sin cerrar, `won` nulo) no son ni una ni otra: en el texto copiado salen como "N sin resultado". |
-| **Mejor / peor partida de la sesion** | La de mayor y menor rating de tus rondas en esa partida, entre las que cumplen los filtros y tienen rating. Solo con dos partidas o mas; si todas tienen el mismo rating no hay peor. Empate: la jugada antes. Solo aparece en el texto que copia el boton "Copiar". |
+| **Mejor / peor partida de la sesion** | La de mayor y menor rating de tus rondas en esa partida, entre las que cumplen los filtros y tienen rating. Solo con dos partidas o mas; si todas tienen el mismo rating no hay peor. Empate: la jugada antes. Se ve en las columnas Mejor y Peor de la tabla Sesiones de Tendencias (cada una enlaza a su partida; sin partida, `—`) y en el texto del boton "Copiar". |
 | **Caida de sesion** | Diferencia en puntos de winrate entre las 2 primeras partidas y de la 3a en adelante. El coach opina desde 30 rondas de cada lado y 10 puntos de diferencia. |
 
 El corte de la 3a partida esta fijo a proposito: probar varios cortes y quedarse
@@ -430,3 +430,13 @@ opinar:
 | Estado al morir | 30 muertes por fila: no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.
+
+**Ver esas rondas** (señales del Coach): abre el Resumen con los filtros que
+definen la señal (lado, mapa por slug, operador con su lado, mapa y sitio),
+sumados a los de la barra; los de la señal pisan a los de la barra. No hay
+filtro de spawn: una señal de spawn abre su mapa en ataque. Las señales de
+rival (operador rival, nemesis) abren Duelos con los filtros de la barra, y
+las generales no tienen enlace. El mapa va por slug: en un mapa rehecho el
+enlace junta las dos versiones, salvo que la barra ya tenga un mapa (o una
+version), que la señal respeta. Un sitio que llega por el enlace aparece en
+la barra aunque la pagina no tenga selector de sitio, para poder quitarlo.
