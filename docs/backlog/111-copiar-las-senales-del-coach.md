@@ -1,8 +1,8 @@
 # 111. Copiar las señales del Coach como texto
 
-estado: disenado
+estado: en curso 2026-11-13T16:16Z
 candado: -
-rama: -
+rama: claude/equipo-dev/111-copiar-las-senales-del-coach
 tipo: funcionalidad
 epica: exportar
 area: frontend
