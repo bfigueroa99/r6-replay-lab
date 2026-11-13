@@ -1,7 +1,7 @@
 # 131. Rondas que el equipo gano sin ti
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T22:10Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
