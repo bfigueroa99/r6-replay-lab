@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
-estado: aprobado
-candado: release 2026-11-13T19:32Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,10 +9,44 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O13 (Fuera de alcance de la ficha 113)
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_CAMBIO_MIN_RONDAS), backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js (filasCambioTrasPerder), frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx (TrasResultado), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq, revisor 20261113T1858Z-cxdASk3, qa 20261113T1926Z-cNCxUZs
+turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq, revisor 20261113T1858Z-cxdASk3, qa 20261113T1926Z-cNCxUZs, release 20261113T1926Z-cNCxUZs
 
 ## PR
 
+**[equipo-dev][frontend] A qué operador cambias tras perder, en Operadores**
+
+### Que cambia
+Debajo de "Repetir o cambiar tras perder" (ficha 113), Operadores suma la tabla "A qué operador cambias tras perder": por lado y operador con el que perdiste, a qué operador cambiaste en tu siguiente ronda del mismo lado, cuántas rondas y qué winrate. Responde "cuando pierdo con Ash, ¿me va mejor yendo a Thermite o a Sledge?". `/api/operators/after-result/` suma las claves `switches` y `switch_min_rounds` (aditivas; el panel de la 113 y su CSV no cambian).
+
+### Por que esto y no otra cosa
+Ficha 126 (ALCANCE.md O13, el "Fuera de alcance" de la 113). Las filas salen del mismo bucle que la celda *Tras perder · Cambia*, así suman exactamente esa celda. Descartado: recomendar a qué cambiar (se muestran números, no consejos) y lo mismo tras ganar (la base de la 113 ya lo cubre).
+
+### Como se probo
+- `check.sh` (con `verificar.sh`) sobre la rama fusionada con `origin/dev@84c575b`: VERDE 5e1b906, 1261 tests backend, 399 vitest, 107 e2e.
+- Tests nuevos (`AQueOperadorCambiasTests`): Ash->Thermite y Ash->Sledge (criterio 1), suma de filas == switch de la 113, tras ganar no entra, repetir tras perder no entra, filtro de operador elige desde dónde, segunda sin ganador fuera del winrate, orden por lado/operador/rondas, la API trae `switches`. Vitest de `filasCambioTrasPerder` (lados, filtro de lado, sin datos, marca de pocas rondas). e2e de humo de Operadores (filas == API, suma == Cambia de defensa, `?side=Attack` da la nota, consola limpia).
+- QA: base vacía, `seed_demo` y base de `factories.py` con valores recalculados a mano (50 %, —, 0 %), parámetros borde, accesibilidad en Chromium (teclado, `aria-sort`, contraste 14,17:1 y 5,71:1), CSV, 5 mutaciones que caen.
+- OMC: plan=— · revisión=— · verificación=— (diseño); plan=— · revisión=0 hallazgos · verificación=— (implementación); plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=— (revisión); plan=— · revisión=— · verificación=PASS (QA).
+- Skills del repo: statistical-analysis, testing-strategy (diseño e implementación); accessibility-review (0 Critical, 0 Major), validate-data, design-critique (QA).
+
+### Riesgos y lo que no entra
+Sin migración, sin `recompute`, sin parser. Umbral de 5 rondas por par sin calibrar con una base real. Fuera: lo mismo tras ganar, recomendar operador, el mismo corte para el spawn (S3).
+
+### Como probarlo en 2 minutos
+```
+cd backend; python manage.py seed_demo; python manage.py runserver
+curl -s localhost:8000/api/operators/after-result/ | python -m json.tool   # mirar "switches"
+```
+En `http://localhost:8000/operadores`: la tabla nueva debajo del panel de la 113; con "Solo defensa" solo filas de defensa; "Descargar CSV".
+
+### Para el humano
+Calibrar con tu base el umbral de 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`). Dos LOW de tests del revisor (abajo), no bloquean.
+
+### Candidatos descubiertos
+Ninguno.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_01CqYLDXzAeFMLJ5RJNCxUZs
 ## Que gana quien usa la app
 
 El panel "Repetir o cambiar tras perder" de Operadores (ficha 113) dice si
@@ -23,23 +57,23 @@ Responde "cuando pierdo con Ash, ¿me va mejor yendo a Thermite o a Sledge?".
 
 ## Criterios de aceptacion
 
-- [ ] `/api/operators/after-result/` (o una clave nueva de la misma
+- [x] `/api/operators/after-result/` (o una clave nueva de la misma
       respuesta) devuelve filas `from_operator`, `side`, `to_operator`,
       `rounds`, `won`, `winrate` con los mismos pares que el caso
       `switch` de `after_loss` de la 113 (misma partida, mismo lado,
       sin hueco de numeracion, sin operador vacio). Test con rondas armadas:
       pierdes con Ash, cambias dos veces a Thermite (ganas una) y una a
       Sledge (pierdes) -> Ash->Thermite 2 rondas 50 %, Ash->Sledge 1 ronda 0 %.
-- [ ] La suma de `rounds` de las filas de un lado es igual al `rounds` de
+- [x] La suma de `rounds` de las filas de un lado es igual al `rounds` de
       `after_loss.switch` de ese lado con los mismos filtros. Test.
-- [ ] Los filtros globales aplican como en la 113 (`operator` elige la
+- [x] Los filtros globales aplican como en la 113 (`operator` elige la
       primera ronda del par: con `?operator=Ash` solo salen filas desde
       Ash). Test.
-- [ ] Se ve en Operadores debajo del panel de la 113, con el aviso de muestra
+- [x] Se ve en Operadores debajo del panel de la 113, con el aviso de muestra
       de la pagina (se avisa, no se oculta); sin cambios tras perder, un
       texto y no un error. El e2e de humo pasa por Operadores con la consola
       limpia.
-- [ ] Fila nueva en `docs/metricas.md` ("A qué operador cambias tras perder").
+- [x] Fila nueva en `docs/metricas.md` ("A qué operador cambias tras perder").
 
 ## Fuera de alcance
 
@@ -49,198 +83,28 @@ Responde "cuando pierdo con Ash, ¿me va mejor yendo a Thermite o a Sledge?".
 
 ## Diseno
 
-(arquitecto 20261113T1802Z-c8dAf7p, sobre `origin/dev@1de3c54`) Filtros
-duros: pasa (operador y resultado por ronda, ya en `RoundPlayer` y
-`Round`; sin red, sin dependencias, sin POST, sin migracion). Una forma
-obvia, ~250 lineas: sin arena ni consenso. Sale del mismo bucle de la 113,
-asi que los pares son exactamente los de `after_loss.switch` por
-construccion.
-
-**Backend, `backend/replays/analytics/aggregates.py`, `operator_after_result`.**
-- Dentro del `if previa is not None:`, cuando `tras == "after_loss"` y
-  `caso == "switch"`, sumar tambien a un `dict` `cambios[(lado, op_previo, op)]`
-  con `{"rounds", "decided", "won"}`, con las mismas reglas que `celda`
-  (una segunda sin ganador suma a `rounds`, no a `decided`).
-- La respuesta suma la clave `"switches"`: lista de filas
-  `{"side", "from_operator", "to_operator", "rounds", "decided", "won",
-  "winrate"}` (`winrate = _pct(won, decided)`), ordenada por `side`
-  (Attack antes que Defense), `from_operator`, `-rounds`, `to_operator`.
-  Sin el lado: el filtro `side` no recorta el queryset (lo dice el docstring
-  de la 113); la UI filtra, como en el panel de la 113.
-- Constante `OPERADOR_CAMBIO_MIN_RONDAS = 5` junto a
-  `OPERADOR_TRAS_RESULTADO_MIN_RONDAS`, y la respuesta la manda como
-  `"switch_min_rounds"`. Por que 5 y no 12: cada fila es un par de
-  operadores, una celda mucho mas fina que "cambia / repite"; con 12 casi
-  todas saldrian "pocas rondas" y la tabla no diria nada. Con menos de 5
-  el winrate de un par es casi ruido puro (una ronda mueve 20 puntos): se
-  avisa, no se oculta. Umbral sin calibrar con una base real (abajo).
-- `views.operators_after_result` no cambia: ya devuelve todo el dict.
-
-**Tests, `backend/tests/test_operador_tras_resultado.py`**, clase nueva
-`AQueOperadorCambiasTests` con el `_partida` de la clase vecina (copiarlo
-o subirlo a una funcion del modulo):
-- `test_ash_a_thermite_y_a_sledge`: el caso del criterio 1 (perder con Ash
-  y cambiar dos veces a Thermite, una ganada, y una a Sledge, perdida) ->
-  filas Ash->Thermite 2 rondas 50.0, Ash->Sledge 1 ronda 0.0, las dos en
-  Attack, en ese orden.
-- `test_la_suma_de_las_filas_es_el_switch_de_la_113`: historial con los dos
-  lados, repeticiones, victorias y un hueco; por lado, la suma de `rounds`
-  de `switches` == `sides[lado]["after_loss"]["switch"]["rounds"]`, y lo
-  mismo con `decided` y `won`.
-- `test_repetir_o_cambiar_tras_ganar_no_entra`: Ash gana y cambia a
-  Thermite -> `switches` vacio.
-- `test_el_filtro_de_operador_elige_desde_donde`: pares desde Ash y desde
-  Jager; con `operator="Ash"` solo filas con `from_operator == "Ash"`.
-- `test_una_segunda_sin_ganador_no_entra_al_winrate`: la ronda siguiente con
-  `won=None` -> `rounds` 1, `decided` 0, `winrate` None.
-- `test_la_api_trae_switches`: `self.client.get(URL)` con base vacia ->
-  `switches == []` y `switch_min_rounds == 5`.
-
-**Frontend.**
-- `frontend/src/operadorTrasResultado.js` (logica pura, ya de la 113):
-  `filasCambioTrasPerder(data, lado)` -> `[]` sin `data?.switches`; si
-  `lado` es Attack o Defense, solo ese lado; cada fila `{clave:
-  "<side>-<from>-<to>", lado: "Ataque"|"Defensa", desde, hacia, rondas,
-  winrate, poca: rondas < data.switch_min_rounds}`. `textoWinrate` y
-  `winrateCsv` ya existen y se reusan.
-- `frontend/src/operadorTrasResultado.test.js`: `filasCambioTrasPerder`
-  con los dos lados, con `lado='Defense'`, sin `switches` (`[]`) y la marca
-  `poca` con 4 y 5 rondas.
-- `frontend/src/pages/Operators.jsx`, componente `TrasResultado` (misma
-  request, sin otra llamada): debajo de la tabla de la 113, dentro del
-  mismo `Panel`, un `<h3>` "A qué operador cambias tras perder" y una
-  `DataTable` con columnas Lado, Perdiste con, Cambiaste a, Rondas,
-  Winrate (con `textoWinrate(winrate, poca)`; `csv` con `winrateCsv`),
-  `initialSort` por `rondas` desc, `csvName="operador-cambio-tras-perder"`.
-  Sin filas: `<p className="note">No cambiaste de operador tras perder con
-  estos filtros.</p>`. El `hint` del panel suma una frase: "Abajo, a qué
-  operador cambiaste y cómo te fue con cada uno; con menos de 5 rondas por
-  par se avisa «pocas rondas»."
-- Muestra: el `5` del texto sale de `data.switch_min_rounds`, no escrito a
-  mano.
-
-**e2e, `frontend/e2e/humo.spec.js`**: el test de humo de Operadores que hoy
-busca el heading "Repetir o cambiar tras perder" (linea ~160) suma
-`getByRole('heading', { name: 'A qué operador cambias tras perder' })`
-visible; si `seed_demo` da `switches` (leer `/api/operators/after-result/`),
-la primera fila de la tabla muestra el `from_operator` de la API; si no, la
-nota. Consola limpia.
-
-**`docs/metricas.md`**: fila nueva despues de "Repetir o cambiar de
-operador":
-`| **A qué operador cambias tras perder** | Debajo del panel Repetir o cambiar tras perder (clave `switches` de `/api/operators/after-result/`). Los pares *Tras perder · Cambia* de esa fila, partidos por operador de la primera ronda (*Perdiste con*), operador de la segunda (*Cambiaste a*) y lado. Winrate de la segunda sobre las que tienen ganador. Por lado, la suma de las filas es el *Cambia* de *Tras perder*. Mismos filtros que el panel. Muestra minima 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`): se avisa *pocas rondas*, no se oculta. |`
-y en `## Muestra minima`: `| A qué operador cambias tras perder | 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`): no se oculta, se avisa |`.
-
-**Orden.** Tests backend (rojo) -> `cambios` en el bucle y `switches` ->
-vitest -> `filasCambioTrasPerder` -> tabla en `Operators.jsx` -> e2e ->
-`metricas.md` -> `npm run build` -> `verificar.sh`.
-
-**Que puede romperse.** La clave es aditiva: el panel de la 113 y su CSV no
-cambian. Las tuplas del bucle no se tocan; solo se suma un contador en la
-rama `after_loss`/`switch`. Un operador `Unknown(...)` ya corta el par antes
-de llegar ahi.
-
-**Archivos ocupados.** Ramas abiertas (79, 119, 120, 121): ninguna toca
-`operator_after_result`, `test_operador_tras_resultado.py`,
-`operadorTrasResultado.js` ni `Operators.jsx`; `humo.spec.js` y
-`metricas.md` los tocan en otras zonas. No se frena.
-
-**Verificacion manual.** `seed_demo`, `runserver`, `curl -s
-localhost:8000/api/operators/after-result/ | python -m json.tool` y mirar
-`switches`; `/operadores`: la tabla nueva debajo del panel; con
-`?side=Defense` solo filas de defensa; con `?operator=<op>` solo filas desde
-ese operador; "Descargar CSV" con coma decimal.
-
-Skills: no aplica (una tabla mas sobre un dato que ya se calcula).
-Skills del repo: statistical-analysis (winrate con su `n` y `decided` aparte; umbral 5 por par justificado y avisado, no oculto; suma de las filas == el agregado de la 113 como invariante testeado), testing-strategy (Django para el desglose y el invariante, vitest para las filas y el filtro de lado, humo e2e para el render).
+(arquitecto 20261113T1802Z-c8dAf7p) En el bucle de `operator_after_result`, el caso `after_loss`/`switch` suma también a `cambios[(lado, op_previo, op)]`; la respuesta trae `switches` (lado, desde, -rondas, hacia) y `switch_min_rounds = OPERADOR_CAMBIO_MIN_RONDAS = 5` (por par, más fino que el 12 de la 113: se avisa, no se oculta). UI: `<h3>` y `DataTable` en el mismo `Panel` de la 113, misma request. Detalle completo en `git log`.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-Dev 20261113T1830Z-cTivbSq, sobre `origin/dev@ed7bb52`. Diseno completo.
-
-- `aggregates.py`: `OPERADOR_CAMBIO_MIN_RONDAS = 5`; en el bucle de
-  `operator_after_result`, el caso `after_loss`/`switch` suma ademas a
-  `cambios[(lado, op_previo, op)]` con las mismas reglas que la celda; la
-  respuesta suma `switches` (ordenadas por lado, desde, -rondas, hacia) y
-  `switch_min_rounds`. La vista no cambia.
-- Tests (`test_operador_tras_resultado.py`): `_partida` sube a un mixin
-  `_ConPartidas` que comparten las dos clases; `AQueOperadorCambiasTests` con
-  los seis del diseno mas `test_repetir_tras_perder_no_entra` y
-  `test_las_filas_van_por_lado_operador_y_rondas`. Vistos en rojo (8 errores,
-  `KeyError: 'switches'`) antes del codigo.
-- `operadorTrasResultado.js`: `filasCambioTrasPerder(data, lado)`; 4 vitest
-  (vistos en rojo: "not a function").
-- `Operators.jsx`: `<h3>` y `DataTable` debajo de la tabla de la 113 dentro
-  del mismo `Panel`, misma request; nota sin filas; el `hint` suma la frase
-  con el `5` de `switch_min_rounds`. No se muestra mientras carga ni con error.
-- e2e: el test de la 113 acota sus filas a la primera tabla del panel (la
-  nueva vive en el mismo `section`); test nuevo `Operadores muestra a qué
-  operador cambias tras perder` (heading, filas = `switches`, primera fila =
-  par de mas rondas de la API, suma = Cambia de defensa, `?side=Attack` da la
-  nota, consola limpia).
-- `metricas.md`: fila y muestra minima.
-
-Desvios: dos tests backend extra (repetir tras perder no entra; orden de las
-filas). Con `pairs == 0` el panel muestra las dos notas seguidas (correcto,
-algo redundante; anotado por la revision ciega, sin cambio).
-
-Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares):
-aprobar, sin hallazgos.
-
-Verificacion: `verificar.sh` VERDE 5563bae26 (1247 tests backend, 392 vitest, 106 e2e).
-
-Skills del repo: statistical-analysis (winrate sobre `decided` con `rondas`
-a la vista, umbral avisado, invariante suma == Cambia testeado en Django y en
-el e2e), testing-strategy (Django, vitest, e2e). modern-web-guidance:
-busque `responsive-table` y `accessibility`; ninguna se aplico porque la
-tabla reusa `DataTable` y `Panel` de `ui.jsx`. ux-copy: nota vacia y
-encabezados en el tono de la pagina ("No cambiaste de operador tras perder
-con estos filtros.").
-Skills: ninguna de afuera.
+(dev 20261113T1830Z-cTivbSq) Diseño completo, más dos tests backend extra (repetir tras perder no entra; orden de filas). `verificar.sh` VERDE 5563bae26 (1247, 392, 106).
 OMC: plan=— · revisión=0 hallazgos · verificación=—
 
 ## Revision 2026-11-13 sobre 8932c28
 
-(revisor 20261113T1858Z-cxdASk3, en el fallback de QA) Punto de partida: la rama ya contenia `origin/dev`; `verificar.sh`: VERDE 8932c2833 (1247 backend, 392 vitest, 106 e2e).
-
-**Eje de estandares** (`omc-code-reviewer`, prompt de `revision.md`, 252 lineas de diff): aprobar, 1 LOW **confirmado con mutacion**:
-- L1 [test, LOW] `backend/tests/test_operador_tras_resultado.py:230`: `test_las_filas_van_por_lado_operador_y_rondas` pasa aunque se quite `-f["rounds"]` del `sort` de `aggregates.py:938` (Thermite < Zofia ya da ese orden). El orden por rondas si queda cubierto: con esa mutacion cae `test_ash_a_thermite_y_a_sledge` (`[Sledge 1, Thermite 2] != [Thermite 2, Sledge 1]`). Arreglo: Ash->Zofia x2 y Ash->Thermite x1 en ese test, esperando Zofia primero. No bloquea.
-Verifico ademas: las filas salen del mismo bucle y rama que la celda `after_loss.switch` (heredan hueco, lado, operador vacio/`Unknown`), segunda sin ganador cuenta en rondas y no en winrate, sin dependencias ni escritura nueva (clave `switches` en un GET existente), identificadores sin tildes, UI con tildes, sin `print`/`console.log`.
-
-**Eje de intencion** (`omc-code-reviewer`, contra Que gana, Criterios y Fuera de alcance): los 5 criterios cumplidos, nada fuera de alcance; el umbral `OPERADOR_CAMBIO_MIN_RONDAS` no oculta filas (solo marca `poca`, vitest "marca pocas rondas debajo del minimo..."), asi que la suma por lado no depende de el. 1 LOW **confirmado leyendo el test**:
-- L2 [intencion, LOW] `test_la_suma_de_las_filas_es_el_switch_de_la_113` comprueba la suma solo sin filtros; el criterio dice "con los mismos filtros". La igualdad vale por construccion (mismo incremento), riesgo bajo. Arreglo: repetir el assert con `operator="Ash"`. No bloquea.
-Descartado: la posible fragilidad del e2e por empate en el par de mas rondas del seed; `seed_demo` es deterministico y el e2e pasa.
-
-**Ficha.** Criterio 1: `test_ash_a_thermite_y_a_sledge`; 2: `test_la_suma_de_las_filas_es_el_switch_de_la_113` + suma en el e2e; 3: `test_el_filtro_de_operador_elige_desde_donde`; 4: `Operators.jsx` (tabla debajo de la de la 113 en el mismo `Panel`, aviso "· pocas rondas", nota sin cambios) + e2e `Operadores muestra a qué operador cambias tras perder` (consola limpia, `?side=Attack` da la nota); 5: fila en `metricas.md` y en muestra minima. Diff dentro de `archivos:`.
-
-Veredicto: aprobar.
-
-Skills del repo: ninguna (revision con `revision.md`).
+(revisor 20261113T1858Z-cxdASk3) Aprobar. Dos LOW, sin arreglar, no bloquean:
+- L1 `test_las_filas_van_por_lado_operador_y_rondas` no detecta quitar `-rounds` del orden (sí lo detecta `test_ash_a_thermite_y_a_sledge`).
+- L2 la suma de filas == switch de la 113 se prueba en Django solo sin filtros (QA la comprobó a mano con `operator=Jager`).
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=—
 
 ## QA 2026-11-13 sobre 5e1b906
 
-(qa 20261113T1926Z-cNCxUZs) Rama + merge limpio de `origin/dev@84c575b` (5e1b906).
-
-- **check.sh**: `verificar.sh` -> `VERDE 5e1b906ba en 150s: 1261 tests backend, 399 vitest, 107 e2e. Todo en verde.`
-- **Base vacia** (`migrate`, `runserver`): `curl -s localhost:8000/api/operators/after-result/` -> `switches []`, `switch_min_rounds 5`, `pairs 0`; `/operadores` muestra el estado sin replays, consola limpia.
-- **Base `seed_demo`** (29 partidas, 203 rondas): 3 filas, todas Defensa (Jager->Mute 20, Mute->Rook 19, Rook->Jager 19, 0 %). Suma Defensa 58/58/0 == `after_loss.switch` Defensa; Ataque 0 == 0.
-- **Parametros borde** (todos 200): `until=foo`, `page=-1`, `operator=`, `side=`, `site=`, `days=99999999999`, `player=%00` -> las mismas 3 filas; `operator=Jager` -> solo Jager->Mute; `operator=NoExiste` -> `[]` (la pagina muestra "0 rondas con estos filtros"); `since=2099-01-01` -> `[]`; `side=Attack` devuelve todo (por diseno lo filtra la UI).
-- **Valores recalculados a mano** (base de `factories.py`, script en el scratchpad): partida A ataque r1 Ash L, r2 Thermite W, r3 Ash L, r4 Thermite L, r5 Thermite W, r6 Sledge W; defensa r8 Jager L, r9 Mute sin ganador, r10 Mute L, r11 Jager L, r13 Mute W (hueco); partida B r1 Rook W. A mano: Ash->Thermite 2 rondas, 1 ganada, **50 %**; Jager->Mute 1 ronda, 0 decididas, **—**; Mute->Jager 1 ronda **0 %**; sin par 11->13 ni entre partidas. La API dio exactamente eso; por lado, suma == `after_loss.switch` (Ataque 2/2/1, Defensa 2/1/0). `operator=Jager` -> solo Jager->Mute y Defensa switch 1/0/0 (suma con filtro == celda).
-- **Build**: chunk inicial `index-*.js` 200116 B en dev y en la rama (0 %); `Operators-*.js` (lazy) 8695 -> 9946 B.
-- **Accesibilidad** (Playwright, Chromium, `/operadores`): h3 "A qué operador cambias tras perder" debajo de la tabla de la 113 en el mismo panel; cabeceras como botones con `aria-sort` (Rondas `descending`); Tab alcanza "Descargar CSV" y las 5 cabeceras; contraste celda 14,17:1, nota vacia (`?operator=Thermite`: "No cambiaste de operador tras perder con estos filtros.") 5,71:1; "50% · pocas rondas" visible; `?side=Attack` deja solo la fila de ataque; consola sin errores ni warnings. Sin Critical ni Major.
-- **CSV**: `operador-cambio-tras-perder-2026-11-13.csv` -> `Lado;Perdiste con;Cambiaste a;Rondas;Winrate` / `Ataque;Ash;Thermite;2;50` / `Defensa;Jager;Mute;1;` / `Defensa;Mute;Jager;1;0`.
-- **Mutacion** (revertidas, arbol limpio): sumar tambien tras ganar -> caen `test_la_suma_de_las_filas_es_el_switch_de_la_113` y `test_repetir_o_cambiar_tras_ganar_no_entra`; winrate sobre `rounds` -> cae `test_una_segunda_sin_ganador_no_entra_al_winrate`; desde/hacia cruzados -> caen 3; vitest `poca: <=` -> cae "marca pocas rondas..."; sin filtro de lado -> cae "con lado sale solo ese".
-- **validate-data** sobre la fila de `metricas.md` (282 y muestra minima 418): winrate sobre decididas con `_pct` (sin division por cero: `decided 0` -> `None` -> "—"), `n` a la vista (Rondas), sin promedio de promedios, redondeo entero en la UI.
-- Sin migracion, sin parser, sin Electron ni `.ps1`: no hay "Verificar en el PC".
-
-Veredicto: aprobado. Los 2 LOW del revisor siguen sin bloquear.
-
-Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data (2 valores recalculados: 50 % y —; invariante suma == celda con y sin filtro), design-critique (la tabla reusa `DataTable`/`Panel`; nada nuevo para `ALCANCE.md`).
+(qa 20261113T1926Z-cNCxUZs) `verificar.sh` VERDE 5e1b906 (1261, 399, 107). Base vacía (`switches []`), `seed_demo` (suma Defensa 58 == switch), parámetros borde todos 200, base de `factories.py` recalculada a mano (Ash->Thermite 2 rondas 50 %, Jager->Mute sin ganador —, Mute->Jager 0 %, sin par por hueco ni entre partidas), chunk inicial sin cambio (200116 B), accesibilidad sin Critical ni Major, CSV correcto, 5 mutaciones caen. Comandos completos en el commit `Prueba: 126 a que operador cambias tras perder`. Aprobado.
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data (50 % y — recalculados), design-critique (nada nuevo).
 OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
-- (arquitecto 2026-11-13, no bloquea) El umbral de 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`) se fijo sin una base real: calibrar con la tuya (cuantos pares pasan de 5).
-- (revisor 2026-11-13, no bloquea) Dos LOW de tests en la 126 (orden por rondas y suma con filtros, detalle en `## Revision`): los puede sumar un Dev despues.
+- (arquitecto 2026-11-13, no bloquea) Calibrar con tu base el umbral de 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`).
+- (revisor 2026-11-13, no bloquea) Dos LOW de tests (arriba): los puede sumar un Dev después.
