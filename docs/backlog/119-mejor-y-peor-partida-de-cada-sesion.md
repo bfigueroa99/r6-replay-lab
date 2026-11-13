@@ -68,10 +68,9 @@ que falta es que se **vea**, porque hoy solo sale en el texto del boton
 **1. `frontend/src/resumenSesion.js`.** Exportar
 `celdaPartidaDeSesion(partida)`: `null` si `partida` es `null`/`undefined`;
 si no, `{ id, texto }` con `texto = "<map> · <score> · <rating con 2 decimales>"`
-(rating `null` sale `—`, con el `numero()` del archivo). `lineaPartida` pasa a
-usar el mismo texto (`${titulo}: ${texto}` con `rating` delante del numero como
-hoy: mantener exactamente el texto actual del resumen, que el e2e de copiar ya
-afirma). Sin React: se prueba con vitest.
+(rating `null` sale `—`, con el `numero()` del archivo). `lineaPartida` no cambia: el texto copiado
+("Mejor partida: Bank · 4-3 · rating 1.40") lo afirman su test y el e2e.
+Sin React: se prueba con vitest.
 
 **2. `frontend/src/pages/Trends.jsx`, tabla Sesiones.** Dos columnas despues
 de "Rating": `{ key: 'best_match', label: 'Mejor' }` y
