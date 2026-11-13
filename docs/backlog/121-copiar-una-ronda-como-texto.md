@@ -1,7 +1,7 @@
 # 121. Copiar una ronda como texto
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T17:07Z
 rama: -
 tipo: funcionalidad
 epica: exportar
