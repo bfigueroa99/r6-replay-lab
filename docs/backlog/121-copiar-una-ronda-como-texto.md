@@ -1,7 +1,7 @@
 # 121. Copiar una ronda como texto
 
-estado: revisado
-candado: qa 2026-11-13T18:30Z
+estado: aprobado
+candado: release 2026-11-13T18:38Z
 rama: claude/equipo-dev/121-copiar-una-ronda-como-texto
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H10
 archivos: frontend/src/textoRonda.js (nuevo), frontend/src/textoRonda.test.js (nuevo), frontend/src/pages/MatchDetail.jsx (componente CopiarRonda en el encabezado de la ronda), frontend/e2e/humo.spec.js
-turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1703Z-ctZvzXQ, dev 20261113T1733Z-cudo1Sw, revisor 20261113T1802Z-c8dAf7p
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1703Z-ctZvzXQ, dev 20261113T1733Z-cudo1Sw, revisor 20261113T1802Z-c8dAf7p, qa 20261113T1830Z-cTivbSq
 
 ## PR
 
@@ -245,7 +245,60 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=2 hallazgos LOW (1 cubierto con test, 1 refutado) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 50c6ac7
+
+(qa 20261113T1830Z-cTivbSq) Rama sin atraso contra `origin/dev` (1de3c54) y
+sin conflicto (`git merge-tree --write-tree origin/dev HEAD`: salida 0).
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 50c6ac708 en 193s: 1239 tests backend, 385 vitest, 104 e2e. Todo en verde.`
+- **Chunk inicial**: `npx vite build` de `origin/dev` y de la rama: `index-*.js`
+  200.00 kB en los dos (sin cambio); `MatchDetail-*.js` lazy 17.52 -> 18.97 kB.
+- **Base vacia** (`SQLITE_PATH=<scratchpad>/qa121.sqlite3`, `migrate`,
+  `runserver 127.0.0.1:8765`): `/api/matches/` 200, `/api/matches/1/` 404,
+  `/api/matches/abc/` 404, `/api/matches/?limit=-1` 200, `/partidas/1` 200.
+- **Base sembrada**: `seed_demo` (29 partidas, 203 rondas) y, con
+  `tests/factories.py` (`make_round`, `make_event`) en `manage.py shell`, dos
+  rondas mas en la partida 1: R9 sin bajas, lado y sitio vacios y
+  `my_team_won=None`; R10 con un teamkill con HS, un `Death` sin victima, una
+  baja `traded` y un `OperatorSwap`. `?until=foo` 200, `?page=-1` 200.
+- **Ejercicio en Chromium** (Playwright, script en el scratchpad, sobre
+  `/partidas/1`, portapapeles con permiso):
+  - R1: `Club House · R1 · ataque · sitio B Church, B Arsenal Room · ganada` /
+    `2:25 Thorn.exe mató a BearF99 (apertura, HS)`.
+  - R9: `Club House · R9 · lado desconocido · sitio desconocido · sin resultado` / `Sin bajas`.
+  - R10: `... · R10 · defensa · sitio 2F Office · ganada` / `2:30 Seba mató a
+    BearF99 (apertura, HS)` / `1:40 Kaid_ murió` / `1:00 Thorn.exe mató a Chamo
+    (tradeada)`: mismas etiquetas y chips que la timeline de la pagina; el
+    `OperatorSwap` (que la timeline muestra) no se copia, como pide la ficha.
+  - Ningun texto con espacio final, `undefined`, `null`, `NaN` ni `<`.
+  - El aviso `Ronda copiada` desaparece al cambiar de ronda (0 apariciones).
+  - Sin portapapeles (`navigator.clipboard = undefined` por `addInitScript`):
+    `No se pudo copiar: el navegador no dio acceso al portapapeles.` (criterio 4,
+    que el e2e no puede forzar).
+  - Consola sin errores ni warnings.
+- **Accesibilidad** (`accessibility-review`, mismas pantallas): el boton se
+  alcanza con Tab justo despues de las pestañas de ronda y Enter copia; foco
+  visible (outline del navegador); rol `button`, nombre `Copiar ronda`;
+  contraste medido 12.92:1 el boton y 5.71:1 el aviso. Sin Critical ni Major.
+  Minor: el aviso no tiene `role="status"`/`aria-live` (WCAG 4.1.3), igual que
+  el `Copiado` que ya tenia "Copiar resumen"; va como idea a `ALCANCE.md` para
+  los dos.
+- **Mutacion** (`npx vitest run src/textoRonda.test.js`, archivo restaurado
+  despues): sin `.sort(porOrden)` -> 1 falla; sin `Sin bajas` -> 1 falla; sin
+  `tradeada` -> 1 falla; `Death` como `Kill` -> 1 falla.
+- **Sin numero nuevo** en la UI: `validate-data` no aplica. Sin migracion,
+  parser, Electron ni `.ps1`: nada para verificar en el PC.
+- **omc-verifier** (receta 3, criterios + esta evidencia + diff): PASS, los 5
+  criterios PASS, confianza alta; gaps de riesgo bajo: el `aria-live` de arriba
+  y `porOrden` duplicada (decision del diseno).
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 1 Minor
+preexistente en el patron), testing-strategy (mutacion: 4 de 4 mutantes
+muertos). validate-data y design-critique no aplican (sin numero ni panel nuevo).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
