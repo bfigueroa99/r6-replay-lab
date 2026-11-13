@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
-estado: aprobado
-candado: release 2026-11-13T18:40Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion
 tipo: funcionalidad
 epica: progreso
@@ -9,241 +9,102 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md E18
 archivos: frontend/src/resumenSesion.js (celdaPartidaDeSesion), frontend/src/resumenSesion.test.js, frontend/src/pages/Trends.jsx (tabla Sesiones: columnas Mejor y Peor), frontend/e2e/humo.spec.js, docs/metricas.md (fila Mejor / peor partida de la sesion)
-turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83, revisor 20261113T1802Z-c8dAf7p, qa 20261113T1830Z-c2rHpej
+turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83, revisor 20261113T1802Z-c8dAf7p, qa 20261113T1830Z-c2rHpej, release 20261113T1830Z-c2rHpej
 
 ## PR
+
+Titulo: `[equipo-dev][frontend] Mejor y peor partida de cada sesion en Tendencias`
+
+### Que cambia
+
+La tabla Sesiones de Tendencias gana las columnas **Mejor** y **Peor**: la
+partida de mayor y menor rating de la sesion, con mapa, marcador y rating, y
+cada una enlaza a su partida. Se ve de un vistazo si la noche se cayo en una
+sola partida o fue pareja. Con una sola partida (o si todas empatan, en Peor)
+la celda dice `—`. El CSV de la tabla trae el mismo texto.
+
+### Por que esto y no otra cosa
+
+Ficha 119 (ALCANCE E18). El backend ya calculaba `best_match`/`worst_match`
+desde la ficha 99, pero solo salian en el texto de "Copiar": no se toca el
+backend ni la definicion de la metrica. Otro criterio (K/D, winrate) quedo
+fuera: se usa el rating, el mismo de Tendencias por partida.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 412b32333, 1239 tests backend, 380 vitest, 104 e2e.
+- vitest `celdaPartidaDeSesion da texto e id de la partida`, `... sin partida da null`,
+  `... con rating nulo muestra guion`; los de `textoResumenSesion` sin cambios.
+- e2e `Tendencias tiene las columnas Mejor y Peor, con guion en una sesion de una partida`.
+- QA en Chromium sobre base de `factories.py` (3 sesiones: 3 partidas, 1, 2 empatadas):
+  enlaces a `/partidas/1`, `/partidas/2`, `/partidas/5`; `—` donde toca; CSV sin
+  `[object Object]`; teclado y contraste ok; mutaciones en `resumenSesion.js` detectadas.
+- OMC: plan=— · revisión=— · verificación=— (diseno)
+- OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=— (implementacion)
+- OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: 1 decision del diseno, 1 al humano) · verificación=— (revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+- Skills del repo: dataviz (no aplica), statistical-analysis (no aplica), testing-strategy (diseno); modern-web-guidance (no aplica), ux-copy (implementacion); accessibility-review, validate-data (QA).
+
+### Riesgos y lo que no entra
+
+Sin migraciones ni `recompute`. El e2e no monta el enlace con valor: con el
+gap del e2e cada sesion de `seed_demo` tiene una partida (no se movio el seed
+para no cambiar otros numeros); lo cubren vitest y la QA manual. Mejor y peor
+ronda de la sesion: fuera (F9).
+
+### Como probarlo en 2 minutos
+
+1. `SESSION_GAP_MINUTES=600` en el `.env`; `cd backend; python manage.py seed_demo`.
+2. `python manage.py runserver` y abrir Tendencias.
+3. Tabla Sesiones: columnas Mejor y Peor con enlace; el clic abre esa partida.
+4. "Descargar CSV": las columnas traen el texto.
+
+### Para el humano
+
+Nada que decidir. Aviso: la ayuda de Peor no nombra el caso de todas empatadas
+(`metricas.md` si).
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
 En Tendencias, cada sesion dice cual fue su mejor y su peor partida (por
-rating, con mapa y marcador) y enlaza a las dos: se ve de un vistazo si la
-noche se cayo en una sola partida o fue pareja, cosa que los totales de la
-sesion esconden.
+rating, con mapa y marcador) y enlaza a las dos.
 
 ## Criterios de aceptacion
 
-- [x] `sessions()` (`aggregates.py`) suma a cada sesion `best_match` y
-      `worst_match` (`id`, `map`, marcador, `rating`), por el rating de
-      la partida calculado como `trend_by_match` (`totals()` por partida);
-      test con una sesion de 3 partidas de rating conocido.
-- [x] Una sesion de una sola partida trae `best_match` y `worst_match`
-      `null` (no hay reparto que mostrar); test. Empate de rating: gana la
-      partida mas vieja, determinista; test.
-- [x] Los filtros que ya aplican a `sessions()` aplican igual (la partida
-      mejor y peor sale de las rondas filtradas); test con filtro de mapa.
-- [x] En Tendencias, la tabla de sesiones muestra "Mejor" y "Peor" con mapa,
-      marcador y rating, cada una enlazada a `/partidas/<id>`; con una sola
-      partida, `—`. e2e sobre `seed_demo` con el numero de una fila y la
-      consola limpia.
-- [x] Fila nueva en `docs/metricas.md` ("Mejor y peor partida de la
-      sesion").
-
-## Fuera de alcance
-
-- Elegir el criterio (KD, winrate de rondas): se usa el rating, el mismo de
-  Tendencias por partida.
-- Mejor y peor ronda de la sesion (F9 elige la ronda para revisar).
+- [x] `sessions()` trae `best_match`/`worst_match` por el rating de `trend_by_match` (ficha 99, `test_sessions.py`).
+- [x] Una partida: los dos `null`; empate: la jugada antes; todas iguales: Peor `null`.
+- [x] Los filtros de `sessions()` aplican igual.
+- [x] Tendencias muestra Mejor y Peor con mapa, marcador y rating, enlazadas; `—` sin partida; e2e con consola limpia.
+- [x] Fila en `docs/metricas.md` al dia.
 
 ## Diseno
 
-**Lo que ya esta en dev (no se rehace).** La ficha 99 (copiar resumen de
-sesion, 0f3dbe8, 2026-11-06) ya calcula los extremos: `sessions()` en
-`backend/replays/analytics/aggregates.py` trae `best_match` y `worst_match`
-(`id`, `map` con la etiqueta de version, `score`, `won`, `rating`) via
-`_extremos_de_sesion`, con estas reglas, ya escritas en la fila
-"Mejor / peor partida de la sesion" de `docs/metricas.md`:
-
-- rating de tus rondas en la partida, sobre las rondas que pasan los filtros
-  (el mismo `derive` que `trend_by_match`);
-- con menos de dos partidas con rating, los dos son `null`;
-- empate: la jugada antes; si todas tienen el mismo rating, `worst_match` es
-  `null` (no hay una peor que senalar).
-
-Eso cubre los criterios 1, 2, 3 y 5 de la ficha con una diferencia que se
-mantiene: con todas iguales la peor es `null`, no "la mas nueva". **No se
-toca el backend.** La metrica tampoco cambia de definicion (P10 no aplica): lo
-que falta es que se **vea**, porque hoy solo sale en el texto del boton
-"Copiar" de la tabla Sesiones. La ficha queda como un tramo de frontend.
-
-**1. `frontend/src/resumenSesion.js`.** Exportar
-`celdaPartidaDeSesion(partida)`: `null` si `partida` es `null`/`undefined`;
-si no, `{ id, texto }` con `texto = "<map> · <score> · <rating con 2 decimales>"`
-(rating `null` sale `—`, con el `numero()` del archivo). `lineaPartida` no cambia: el texto copiado
-("Mejor partida: Bank · 4-3 · rating 1.40") lo afirman su test y el e2e.
-Sin React: se prueba con vitest.
-
-**2. `frontend/src/pages/Trends.jsx`, tabla Sesiones.** Dos columnas despues
-de "Rating": `{ key: 'best_match', label: 'Mejor' }` y
-`{ key: 'worst_match', label: 'Peor' }`, `sortable: false`, con
-`help` "La partida de mayor (menor) rating de la sesión, entre las que pasan los
-filtros. Hace falta más de una partida." Render: `celdaPartidaDeSesion(row.x)`;
-con valor, `<Link to={`/partidas/${id}`}>{texto}</Link>` (como Dashboard.jsx
-y Matches.jsx); sin valor, `—`. CSV: `csv: (row) => celda?.texto ?? ''` (sin
-esto `celdaCsv` escribiria `[object Object]`). Ninguna request nueva: las
-filas de `/api/sessions/` ya traen los campos.
-
-**3. `docs/metricas.md`.** En la fila "Mejor / peor partida de la sesion",
-cambiar "Solo aparece en el texto que copia el boton \"Copiar\"" por "Se ve
-en las columnas Mejor y Peor de la tabla Sesiones (cada una enlaza a su
-partida) y en el texto del boton \"Copiar\"". Ningun numero nuevo.
-
-**Tests (nombres en espanol).**
-
-- vitest, `resumenSesion.test.js`:
-  `celdaPartidaDeSesion da texto e id de la partida`,
-  `celdaPartidaDeSesion sin partida da null`,
-  `celdaPartidaDeSesion con rating nulo muestra guion`, y los tests actuales
-  de `textoResumenSesion` siguen pasando sin cambios (prueba de que el texto
-  copiado no cambio).
-- e2e, `humo.spec.js`, en el test `Tendencias copia el resumen de una sesion`
-  o uno nuevo al lado: la tabla Sesiones tiene `columnheader` "Mejor" y
-  "Peor", y en la primera fila las dos celdas dicen `—`. `seed_demo` pone una
-  partida cada 3 h y el e2e fija `SESSION_GAP_MINUTES=120`
-  (`frontend/e2e/entorno.js`), asi que **toda sesion del seed tiene una sola
-  partida**: no cambiar el gap ni el seed (moveria los numeros de la curva de
-  sesion que ya afirman otras pruebas). El enlace con valor lo cubre vitest
-  (texto e id) y el render es el mismo patron de `Link` de Dashboard.
-- Backend: nada nuevo; los tests de `_extremos_de_sesion` ya estan
-  (`backend/tests/test_sessions.py`).
-
-**Orden.** 1 (helper + vitest), 2 (columnas), 3 (metricas), e2e,
-`npm run build`, `verificar.sh`.
-
-**Que puede romperse.** El texto de "Copiar" si `lineaPartida` cambia un
-caracter (lo afirman `resumenSesion.test.js` y el e2e de copiar). El CSV de
-la tabla si falta `csv:`. La tabla gana dos columnas en una pantalla que ya es
-ancha: `DataTable` ya hace scroll horizontal; mirar en 390 px que la columna
-"Cuando" siga visible. `accesibilidad.spec.js` revisa que las columnas tengan
-nombre: "Mejor" y "Peor" lo tienen.
-
-**Archivos ocupados.** Ninguna rama abierta toca `Trends.jsx`,
-`resumenSesion.js` ni la fila de `metricas.md` (111: Coach; 114 y 116:
-Duelos; 79: no toca Tendencias). No hay "Implementar despues". `Trends.jsx`
-esta saturada en `ROTACION_PAGINAS`, pero el lugar natural de estas columnas
-es la tabla que ya existe; abrirlas en otra pagina seria peor.
-
-**Verificacion manual.** `SESSION_GAP_MINUTES=600` en el `.env`,
-`manage.py seed_demo`, Tendencias: las sesiones de varias partidas muestran
-Mejor y Peor con enlace; el clic abre esa partida; una sesion de una partida
-muestra `—`; "Descargar CSV" trae el texto, no `[object Object]`.
-
-Skills: no aplica (frontend chico, sin dominio nuevo).
-Skills del repo: dataviz (no aplica: no hay grafico), statistical-analysis (no aplica: la metrica ya esta definida en `metricas.md`), testing-strategy (vitest para el helper, e2e para que la pantalla renderice las columnas).
-OMC: plan=— · revisión=— · verificación=—
+Solo frontend: `celdaPartidaDeSesion` en `resumenSesion.js` (`{id, texto}` o
+`null`), dos columnas `sortable: false` con `help`, `Link` y `csv` propio en
+`Trends.jsx`, y la fila de `metricas.md`. Detalle en `git log` de la rama.
 
 ## Implementacion
 
-(dev 20261113T1732Z-cdpsq83) Diseno completo, solo frontend (el backend ya
-traia `best_match`/`worst_match` desde la ficha 99):
-
-- `resumenSesion.js`: `celdaPartidaDeSesion(partida)` -> `null` sin partida;
-  si no, `{ id, texto: "<map> · <score> · <rating 2 decimales>" }` (rating
-  nulo `—`). `lineaPartida` y el texto copiado no cambian.
-- `Trends.jsx`, tabla Sesiones: columnas "Mejor" y "Peor" despues de
-  "Rating" (`columnaPartidaDeSesion`), `sortable: false`, `help` del
-  diseno, `<Link to="/partidas/<id>">` con valor y `—` sin el; `csv` con el
-  texto (sin el, el CSV decia `[object Object]`).
-- `docs/metricas.md`: la fila "Mejor / peor partida de la sesion" dice que
-  se ve en esas columnas y en "Copiar". Ningun numero nuevo.
-- e2e nuevo `Tendencias tiene las columnas Mejor y Peor, con guion en una
-  sesion de una partida` (en `seed_demo` toda sesion es de una partida,
-  como dice el diseno): cabeceras contiguas en `thead`, `—` en las dos y
-  sin enlace. Dos rojos del propio test antes del verde: `evaluateAll` leia
-  la pagina en "Cargando..." (ahora espera la primera fila) y las `th` de
-  `DataTable` no tienen rol `columnheader` (ahora `thead th`).
-
-Tests vistos en rojo antes del codigo: vitest `celdaPartidaDeSesion da
-texto e id de la partida`, `... sin partida da null`, `... con rating nulo
-muestra guion` (los 3 caian con `celdaPartidaDeSesion is not a function`);
-los de `textoResumenSesion` siguen igual. Criterios -> tests: 1, 2 y 3 ya
-cubiertos en `backend/tests/test_sessions.py` (ficha 99); 4: vitest + e2e;
-5: fila en `metricas.md`. Chunk inicial: `index-*.js` 199.99 kB (Trends es
-lazy).
-
-verificar.sh: VERDE 2acad9bed (1230 backend, 373 vitest, 102 e2e).
-
-Revision ciega (`omc-code-reviewer`, estandares): aprobar, 2 LOW, los 2
-arreglados (la funcion nueva habia separado el JSDoc de `TablaDePartidas`;
-el nombre del e2e prometia una partida que el seed no tiene).
-
-Skills: no aplica.
-Skills del repo: modern-web-guidance (no aplica: columnas de un `DataTable` existente, sin CSS ni componente nuevo), ux-copy (`help` del diseno, con tildes; `—` como el resto de las tablas).
-OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
+(dev 20261113T1732Z-cdpsq83) Segun el diseno; tests vistos en rojo antes del
+codigo; chunk inicial sin cambio (Trends es lazy). VERDE 2acad9bed.
 
 ## Revision 2026-11-13 sobre 102c3e9
 
-(revisor 20261113T1802Z-c8dAf7p) Punto de partida: merge de `origin/dev`
-(1de3c54, con la 118; sin conflictos); `verificar.sh`: VERDE 102c3e91a
-(1239 backend, 380 vitest, 104 e2e).
-
-**Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
-`revision.md`, solo el diff de 70 lineas; un tema, sin eje de intencion ni
-de seguridad): aprobar, 2 LOW, los dos **confirmados leyendo el codigo**:
-- L1 [test, LOW] `humo.spec.js` (test nuevo): solo renderiza la celda sin
-  partida (`—`); con `SESSION_GAP_MINUTES=120` (`e2e/entorno.js:52`) y el
-  seed cada 3 h ninguna sesion tiene dos partidas, asi que el `<Link>` no lo
-  monta ningun e2e. Es lo que decidio el diseno (no mover el seed ni el
-  gap); lo cubre el vitest de `celdaPartidaDeSesion` (texto e id). No
-  bloquea.
-- L2 [estilo, LOW] `Trends.jsx:176`: la ayuda dice "Hace falta más de una
-  partida." pero Peor tambien queda en `—` cuando todas empatan en rating
-  (`aggregates.py:2753`). `metricas.md` si lo dice. Arreglo sugerido:
-  sumar "Si todas tienen el mismo rating, no hay peor." a la ayuda de Peor.
-  No bloquea: va a `## Para el humano`.
-
-**Ficha.** Criterios 1, 2, 3 (backend): ya en dev desde la 99,
-`backend/tests/test_sessions.py` (`_extremos_de_sesion`: tres partidas,
-una sola, empate, filtro). Criterio 4: vitest `celdaPartidaDeSesion` (3) +
-e2e `Tendencias tiene las columnas Mejor y Peor...` (cabeceras, `—`, sin
-enlace, consola limpia); el enlace con valor solo por vitest (L1).
-Criterio 5: fila de `metricas.md` actualizada. El diff no sale de
-`archivos:`; sin numero nuevo; identificadores sin tildes, UI con tildes
-("sesión", "más"); sin `print` ni `console.log`; `csv` propio (no
-`[object Object]`).
-
-Veredicto: aprobar.
-
-Skills del repo: ninguna (revision con `revision.md`).
-OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: 1 decision del diseno, 1 al humano) · verificación=—
+(revisor 20261113T1802Z-c8dAf7p) Aprobar. 2 LOW sin bloquear: el e2e no monta
+el enlace con valor (decision del diseno) y la ayuda de Peor no nombra el empate.
 
 ## QA 2026-11-13 sobre 412b323
 
-(qa 20261113T1830Z-c2rHpej) Ejercite el sistema; scripts temporales en el scratchpad, nada al repo.
+(qa 20261113T1830Z-c2rHpej) Aprobado. VERDE 412b32333; API y pantalla sobre base de
+`factories.py` y `seed_demo` con filtros borde; extremos = `by_match` de
+`/api/trends/`; CSV, teclado, contraste y 390 px ok; 3 mutaciones detectadas;
+`omc-verifier`: PASS. Comandos completos en el commit "Prueba: 119".
 
-- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
-  -> `VERDE 412b32333 en 189s: 1239 tests backend, 380 vitest, 104 e2e`. `origin/dev` (1de3c54) ya fusionado.
-- **Base sembrada con `factories.py`** (`SQLITE_PATH=<tmp> python manage.py migrate` y
-  `manage.py shell < sembrar.py`): sesion A de 3 partidas (Bank kills 3, Oregon 0, Kafe 1),
-  B de 1 (Villa), C de 2 empatadas (Chalet y Border, kills 1); `runserver` con gap 120.
-  `curl /api/sessions/` -> A: mejor Bank id 1 (1.86), peor Oregon id 2 (0.31); B: `null`/`null`;
-  C: mejor Chalet id 5 (0.83, la jugada antes), peor `null`. Criterios 1 y 2: ok.
-- **Valores recalculados contra otra vista** (`validate-data`): `curl /api/trends/` `by_match`
-  da Bank 1.86, Oregon 0.31, Kafe 0.83, Chalet 0.83, Border 0.83: los extremos salen del mismo
-  rating por partida que Tendencias. Sin division nueva ni promedio de promedios: la celda es
-  un rating que ya existia.
-- **Parametros borde** (`seed_demo` con gap 600, una sesion de 29): `?map=bank` -> 10 partidas,
-  mejor id 28 (1.89), peor id 21 (0.38), las dos de Bank (criterio 3); `?until=foo` y
-  `?player=zzz` -> 200 sin cambio; `?days=-1` -> 200, 0 sesiones. Base vacia -> `{"sessions": []}`.
-- **Pantalla en Chromium** (Playwright sobre la base de `factories.py`, `/tendencias`): cabeceras
-  `Rating, Mejor, Peor, K/D`; filas `Chalet · 4-3 · 0.83` -> `/partidas/5` y `—`; `—`/`—` sin
-  enlace; `Bank · 4-3 · 1.86` -> `/partidas/1`, `Oregon · 2-4 · 0.31` -> `/partidas/2`
-  (criterio 4). Consola sin errores ni warnings.
-- **CSV** ("Descargar CSV" de Sesiones): `Mejor;Peor` trae `Bank · 4-3 · 1.86;Oregon · 2-4 · 0.31`
-  y vacio sin partida; nada de `[object Object]`.
-- **Accesibilidad** (`accessibility-review`): el enlace toma foco con teclado y Enter abre
-  `/partidas/1`; nombre accesible = su texto; `th` con `title` de ayuda; contraste del enlace
-  rgb(230,237,243) sobre rgb(23,30,41), ~14:1 (AA pide 4.5). A 390 px la tabla Sesiones queda
-  dentro de `.table-wrap` (`overflow-x: auto`) y "Cuando" se ve. Sin Critical ni Major.
-- **Chunk inicial**: `index-*.js` 200116 B (la implementacion midio 199.99 kB); Trends es lazy.
-- **Mutacion** (`npx vitest run src/resumenSesion.test.js`): `if (partida === undefined)` ->
-  cae `sin partida da null`; `numero(rating, 1)` -> cae `da texto e id`; `id: partida.match_id`
-  -> caen 2. Codigo restaurado, arbol limpio.
-- Criterio 5: fila de `metricas.md` al dia (ya revisada).
-
-Veredicto: **aprobado**. Los dos LOW del Revisor siguen como avisos (el e2e no monta el
-enlace con valor; la ayuda de Peor no nombra el empate); lo primero lo cubrio esta corrida a mano.
-
-Skills del repo: accessibility-review (sin hallazgos Critical/Major), validate-data (rating 1.86 y 0.31 recalculados contra `by_match`).
+Skills del repo: accessibility-review (sin Critical/Major), validate-data (1.86 y 0.31 recalculados).
 OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
