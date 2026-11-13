@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 17:25 UTC por qa, dev, release, revisor (sesion 20261113T1703Z-c66ztji; motivo: por estado: 1 revisado; sigue: 3 disenado, lugar en cola; sigue: 1 entregado; sigue: 1 implementado). QA sin ficha propia (la 111 la probo otra corrida): VERDE de dev 0293ade y deriva de docs sin hallazgos; Dev implementa la 116; Release sin merge (la 111 la entrega otra corrida); Revisor sin trabajo (la 114 tiene candado ajeno).
+actualizado: 2026-11-13 17:30 UTC por qa, arquitecto, po, revisor (sesion 20261113T1703Z-ctZvzXQ; motivo: por estado: 1 revisado; sigue: 6 propuesto, 2 disenado de 3; sigue: papel corto; sigue: 1 implementado). QA sin ficha propia (la 111 la tenia otra corrida): VERDE de dev 0293ade, deriva de docs sin hallazgos; Arquitecto disena 121; PO propone 125; Revisor deja la 114 en `revisado`.
 playbook: origin/dev@0293ade (pruebas: ok)
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 14 de 41 en 7 dias; prompt de la Routine distinto de rutina.md@0293ade, no sincronizado (corrida simultanea: no se tocan Routines)
 en vacio: TURNOS_EN_VACIO=0 de 12 en 48 h | 7 de 28 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -10,19 +10,17 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/111-copiar-las-senales-del-coach | docs/backlog/111-copiar-las-senales-del-coach.md | entregado (merge en curso en otra sesion) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/111-copiar-las-senales-del-coach?expand=1) |
-| claude/equipo-dev/114-que-operadores-te-abren | docs/backlog/114-que-operadores-te-abren.md | implementado (revision en curso en otra sesion) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/114-que-operadores-te-abren?expand=1) |
+| claude/equipo-dev/114-que-operadores-te-abren | docs/backlog/114-que-operadores-te-abren.md | revisado (espera QA de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/114-que-operadores-te-abren?expand=1) |
 | claude/equipo-dev/116-en-que-estado-de-vivos-mueres | docs/backlog/116-en-que-estado-de-vivos-mueres.md | implementado (espera Revisor de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/116-en-que-estado-de-vivos-mueres?expand=1) |
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 
-COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=1 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=100 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+COLA=3 (tope 4)  TOTAL=3 (tope 6)
+RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=100 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
 
 ## Orden de merge sugerido
 
 Todas las ramas fusionan con dev sin conflicto. Entre ellas, solo **114 x 116 choca** (`git merge-tree` sale 1: las dos agregan al final de `aggregates.py`, `views.py`/`urls.py`, `humo.spec.js` y `metricas.md`); la que entre segunda mezcla dev y resuelve (P3).
 
-1. `claude/equipo-dev/111-copiar-las-senales-del-coach` (entregado, merge en curso en otra sesion): solo frontend del Coach.
 2. `claude/equipo-dev/114-que-operadores-te-abren` (implementado): `aggregates.py`, `views.py` (duels), `Duelos.jsx`, `humo.spec.js` en otro test.
 3. `claude/equipo-dev/116-en-que-estado-de-vivos-mueres` (implementado): componente aparte en Duelos; tras la 114, mezclar dev y resolver el conflicto de texto.
 4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
@@ -32,7 +30,7 @@ Todas las ramas fusionan con dev sin conflicto. Entre ellas, solo **114 x 116 ch
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:8 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 115-prorroga-por-lado) otros:4 (fichas que llegaron a dev en 7 dias)
 - Epicas en curso: operadores: 113 en dev, 126 propuesto. lado-y-marcador: 115 en dev. rivales: 114 implementado, 122 propuesto. exportar: 111 entregado, 121 disenado. impacto: 116 implementado. progreso: 110 en dev, 119 disenado, 120 propuesto. revision-de-rondas: 112 en dev, 118 disenado, 125 propuesto. datos: 79 entregado (PR #81), 83 disenado (despues de la 79), 124 propuesto. escuadra: 109 disenado (despues de la 79), 123 propuesto.
 - Papel: PAPEL_TIPOS=funcionalidad:11 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
-- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: O15 (duelo de apertura por operador contra operador) y B22 (partidas que van a prorroga: cuantas ganas) (po 20261113T1643Z-c4P1LiD).
+- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: O15 (duelo de apertura por operador contra operador) y B22 (partidas que van a prorroga: cuantas ganas) (po 20261113T1643Z-c4P1LiD). Ademas E20 (ultimos resultados por mapa) y F24 (saltar a la siguiente ronda perdida) (po 20261113T1703Z-ctZvzXQ).
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): pagina Trends.jsx | sin entrega: ninguna
 - Ciclo: CICLO=7h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 113:20 115:4 110:7 112:7 107:8 102:8 103:81 101:73 100:1 99:1)
@@ -50,7 +48,7 @@ Todas las ramas fusionan con dev sin conflicto. Entre ellas, solo **114 x 116 ch
 | 122 cuando te toco por ultima vez | propuesto | funcionalidad | rivales | 3 | backend | - |
 | 123 clutches de tus companeros | propuesto | funcionalidad | escuadra | 3 | backend | - |
 | 124 partidas por version del juego en Datos | propuesto | funcionalidad | datos | 3 | backend | - |
-| 125 teamkill marcado en la timeline | propuesto | funcionalidad | revision-de-rondas | 3 | - | - |
+| 125 teamkill marcado en la timeline | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
 | 126 a que operador cambias tras perder | propuesto | funcionalidad | operadores | 3 | fullstack | - |
 
 FRENADAS=2 (la 109 espera a la 79; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
@@ -60,12 +58,12 @@ FRENADAS=2 (la 109 espera a la 79; la 83 espera a la 79) | disenado que esperan 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-13 17:15 | (release 20261113T1643Z-c4P1LiD, sigue de QA) 113: mezcla dev dos veces (16d3986 y e29393f, la 115), VERDE 308bbc11c (1200, 351, 98), puerta pasada y **mergeado** PR #111 (0293ade). Borrado de la rama denegado: sale en BORRAR. Pares de ramas abiertas sin conflicto; pruebas.sh: PRUEBAS_OK (23). |
-| qa | 2026-11-13 17:08 | (qa 20261113T1703Z-c66ztji, por estado: 1 revisado) La 111 ya tenia candado qa de otra corrida: fallback sin trabajo. VERDE de dev 0293ade47 (1200, 351, 98); deriva de docs: comandos del README y variables del `.env.example` al dia, sin hallazgos. |
-| revisor | 2026-11-13 16:57 | (qa 20261113T1647Z-cRa8Bqm, fallback de QA: la 115 tenia candado de otra corrida) Revisa 111 (`implementado` -> `revisado`): partida VERDE dd2cc0ca9 (1173, 348, 97); ciega en dos ejes, 0 CRITICAL/HIGH, 2 MEDIUM confirmados (linea de filtros con slug/`map_id` y `Sesión N`; era el Diseno, idea H13) y 2 LOW de tests; agrego vitest de dos señales con filtros (mutacion lo tumba). VERDE e2326be4c (1173, 349, 97). |
+| qa | 2026-11-13 17:08 | (qa 20261113T1703Z-ctZvzXQ, por estado: 1 revisado) La 111 tenia candado qa de otra corrida: fallback sin trabajo. VERDE de dev 0293ade47 (1200, 351, 98); deriva de docs (comandos del README, scripts, variables del `.env.example`, filas de metricas de la 113 y la 115) sin hallazgos. |
+| revisor | 2026-11-13 17:30 | (revisor 20261113T1703Z-ctZvzXQ, sigue) Revisa 114 (`implementado` -> `revisado`): partida VERDE f0be4ed66 (1210, 354, 99); ciega en dos ejes, 0 CRITICAL/HIGH/MEDIUM, 4 LOW (1 cubierto con test de borde, mutacion lo tumba; 3 no son hallazgo). VERDE 25599e93c (1211, 354, 99). |
 | dev | 2026-11-13 17:22 | (dev 20261113T1703Z-c66ztji, sigue de QA) Implementa 116 (`disenado` -> `implementado`): `metrics.estado_al_morir`, `death_state` (3 consultas fijas) en `/api/duels/death-state/`, panel "Estado al morir" en Duelos, 18 tests backend (en rojo antes), 5 vitest, e2e. Ciega: 2 LOW, los 2 arreglados. VERDE c8d356085 (1218, 356, 99). |
-| arquitecto | 2026-11-13 16:57 | (arquitecto 20261113T1649Z-ccPezGq, sigue de QA y Revisor sin trabajo: la 115 y la 111 tenian candado de corridas simultaneas) Disena 116 (estado de vivos al morir): `metrics.estado_al_morir` (mismo recorrido que `_quedar_solo`, `PlayerLeave` y teamkill restan) y `death_state` al consultar sobre `Event`, sin migracion para no frenarla detras de la 79; endpoint propio `/api/duels/death-state/` y componente aparte en Duelos para no pisar la 114. Sin consenso: sin migracion ni parser. |
+| arquitecto | 2026-11-13 17:15 | (arquitecto 20261113T1703Z-ctZvzXQ, sigue de QA) Disena 121 (copiar una ronda como texto): `textoRonda.js` puro con las etiquetas y marcas de la timeline (`marcasDeApertura`), componente `CopiarRonda` con estado propio en el `<h3>` de la ronda (sin tocar la zona de la 79), e2e. No disena mas: la 119 la tomo otra corrida y el papel llego a 3 `disenado`. |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-13 17:20 | (po 20261113T1643Z-c4P1LiD, sigue) Propone 126 (a que operador cambias tras perder, O13; Fuera de alcance de la 113). Ideas nuevas O15 y B22. Espejos: quita el de la 113 (en dev), marca la 114 en curso. Papel en 6 `propuesto` (tope). |
+| po | 2026-11-13 17:20 | (po 20261113T1703Z-ctZvzXQ, sigue) Propone 125 (teamkill marcado en la timeline, F14). Ideas nuevas E20 y F24. |
 
 ## Para el humano
 
