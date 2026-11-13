@@ -1,7 +1,7 @@
 # 130. Saltar a la siguiente ronda perdida
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T22:29Z
 rama: claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida
 tipo: funcionalidad
 epica: revision-de-rondas
