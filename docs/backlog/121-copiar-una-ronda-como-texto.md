@@ -1,15 +1,15 @@
 # 121. Copiar una ronda como texto
 
-estado: propuesto
-candado: arquitecto 2026-11-13T17:07Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: exportar
 area: frontend
 prioridad: 3
 fuente: ALCANCE.md H10
-archivos: -
-turnos: po 20261113T1603Z-cHj1H4k
+archivos: frontend/src/textoRonda.js (nuevo), frontend/src/textoRonda.test.js (nuevo), frontend/src/pages/MatchDetail.jsx (componente CopiarRonda en el encabezado de la ronda), frontend/e2e/humo.spec.js
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1703Z-ctZvzXQ
 
 ## PR
 
@@ -44,6 +44,122 @@ se baja a una ronda.
 - Backend: `/api/matches/<id>/` ya trae todo.
 
 ## Diseno
+
+(arquitecto 20261113T1703Z-ctZvzXQ) Filtros duros: pasa. Solo frontend, sobre
+lo que `/api/matches/<id>/` ya devuelve (`match.map`, `rounds[].label`,
+`my_side`, `site`, `my_team_won`, `players`, `events`); portapapeles local,
+sin red, sin dependencias, sin POST, sin migracion. Una forma obvia y chica
+(~150 lineas) con el patron de "Copiar resumen" (`resumenPartida.js` +
+`copiarResumen` de `MatchDetail.jsx`): sin arena ni consenso.
+
+**`frontend/src/textoRonda.js`** (logica pura, nuevo; sin React):
+
+- `export function textoRonda(ronda, mapa, miEquipo)` -> string, lineas
+  unidas con `\n`, sin espacio al final de ninguna linea.
+- Linea 1: `<mapa> · <ronda.label> · <lado> · sitio <site> · <resultado>`.
+  `lado`: `Attack` -> `ataque`, `Defense` -> `defensa`, otro o vacio ->
+  `lado desconocido`. `site` vacio -> `desconocido` (como la pagina:
+  `Sitio: desconocido`). `resultado`: `my_team_won` `true` -> `ganada`,
+  `false` -> `perdida`, `null`/`undefined` -> `sin resultado`. `mapa` vacio
+  o nulo: la linea arranca en el label (filtrar partes vacias antes de unir).
+- Despues, una linea por evento `Kill` o `Death` de `ronda.events`, ordenados
+  por `order` (copiar `porOrden` de `aperturas.js`; no exportarlo de ahi
+  para no tocar ese archivo). Los demas `kind` (cambio de operador, mensajes
+  del feed) no salen: la ficha pide las bajas.
+  - `Kill`: `<reloj> <actor> mató a <target>`; `Death`:
+    `<reloj> <actor> murió`. Es la misma etiqueta que `Timeline` de la
+    pagina: un teamkill sale como `mató a` (la timeline no lo distingue) y una
+    caida o la bomba como `murió` (criterio 3). `reloj` = `clock_raw` o `—`.
+  - Marcas, en el orden de los chips de la timeline: `apertura` si
+    `order === marcas.apertura`, `entry` si `order === marcas.entry`, `HS`
+    si `headshot`, `tradeada` si `traded`, con
+    `marcas = marcasDeApertura(ronda, miEquipo)` (`aperturas.js`, la misma
+    regla que la pagina). Con alguna marca, la linea termina en
+    ` (apertura, HS)` (unidas con `, `); sin marcas, sin parentesis.
+- Sin ningun `Kill` ni `Death`: segunda y ultima linea `Sin bajas`.
+- Sin `ronda` (nulo): `null`.
+
+**`frontend/src/textoRonda.test.js`** (vitest), con una ronda armada a mano
+(dos jugadores por equipo en `players` con `team_index` 0 y 1, `is_me` en el
+equipo 0):
+- `la primera linea dice mapa, ronda, lado, sitio y resultado`
+  (`Bank · R3 · ataque · sitio CEO Office · ganada`).
+- `una ronda de tres bajas sale en orden con sus marcas`: eventos dados
+  desordenados por `order`; la primera baja (del rival) lleva
+  `(apertura, HS)`, la primera de tu equipo `(entry)`, una con `traded`
+  `(tradeada)`; tres lineas despues de la cabecera, en orden de `order`.
+- `sin bajas dice Sin bajas` (sin eventos, y con solo un evento de otro
+  `kind`: en los dos casos dos lineas, la segunda `Sin bajas`).
+- `un teamkill y una muerte sin autor usan la etiqueta de la timeline`
+  (`A mató a B` con A y B del mismo equipo; `C murió`).
+- `sin resultado ni sitio ni lado lo dice` (`lado desconocido`,
+  `sitio desconocido`, `sin resultado`).
+- `ninguna linea termina en espacio` y `sin ronda no hay texto` (`null`).
+
+**`frontend/src/pages/MatchDetail.jsx`**:
+
+- `import { textoRonda } from '../textoRonda.js'` junto al import de
+  `resumenPartida.js`.
+- Componente nuevo al final del archivo, `function CopiarRonda({ round, mapa,
+  miEquipo })`, con su propio `useState(null)` y `copiar()` igual a
+  `copiarResumen` (sin `navigator.clipboard?.writeText` ->
+  `setCopia('error')`; `try`/`catch` sin `console`). Renderiza el aviso
+  `<span className="note">` (`Ronda copiada` / `No se pudo copiar: el
+  navegador no dio acceso al portapapeles.`) y
+  `<button type="button" className="btn small" onClick={copiar}
+  title="Copia esta ronda y sus bajas en texto plano.">Copiar ronda</button>`.
+  El aviso dice `Ronda copiada` y no `Copiado` para no confundirse con el de
+  la partida (y para que el e2e de "Copiar resumen", que busca `Copiado`
+  exacto, siga encontrando uno solo).
+- Uso: dentro del `<h3>` de la ronda, despues de
+  `<ResultChip won={round.my_team_won} />`:
+  `<CopiarRonda key={round.number} round={round} mapa={match.map} miEquipo={myTeam(round)} />`.
+  El `key` reinicia el aviso al cambiar de ronda (si no, "Ronda copiada"
+  quedaria pegado a la ronda siguiente). El estado vive en el componente y
+  no arriba de `DetallePartida`: asi no hay hook nuevo antes de los returns
+  tempranos y no se toca la zona que modifica la 79 (ver abajo).
+
+**e2e, `frontend/e2e/humo.spec.js`**, test `el detalle de partida copia una
+ronda`, justo despues de `el detalle de partida copia el resumen`:
+`grantPermissions(['clipboard-read', 'clipboard-write'])`; tomar
+`matches[0]` de `/api/matches/?limit=200` y su detalle de
+`/api/matches/<id>/`; `i` = indice de la primera ronda con algun evento
+`Kill`; `page.goto('/partidas/<id>')`; clic en `.round-tab` `nth(i)`; clic en
+`Copiar ronda`; `Ronda copiada` visible (`exact: true`); el texto del
+portapapeles empieza con `` `${detalle.match.map} · ${ronda.label} · ` `` y
+contiene el `actor` del primer `Kill` de esa ronda. Consola limpia
+(`vigilarConsola`). El criterio 4 (sin portapapeles) no se puede forzar en
+Chromium sin borrar `navigator.clipboard`; es la misma rama de una linea que
+`copiarResumen`, que tampoco la prueba el e2e.
+
+**`docs/metricas.md`**: no hay numero nuevo (el texto copia datos de la
+timeline). Nada que agregar.
+
+**Orden.** `textoRonda.js` + vitest, `MatchDetail.jsx`, e2e, `npm run build`.
+
+**Que puede romperse.** Un `useState` de mas en `DetallePartida` despues de
+los returns tempranos romperia el orden de hooks: por eso va en
+`CopiarRonda`. El boton dentro del `<h3>` suma "Copiar ronda" (y el aviso) al texto del
+encabezado de la ronda. Los e2e que lo leen (`humo.spec.js`,
+`#rondas .round-detail h3` con `toHaveText(/^R1\b/)` y con la etiqueta del
+record) anclan solo el comienzo: siguen pasando. No usar `toHaveText` exacto
+sobre ese `h3` en el test nuevo.
+
+**Archivos ocupados.** La 79 (`entregado`, espera al humano) toca
+`MatchDetail.jsx` en el import de `api.js`, los `useState` de
+`DetallePartida` y el `page-head`; este diseno toca otro import, el `<h3>`
+de la ronda y el final del archivo: hunks separados, merge limpio. La 111,
+la 114 y la 116 agregan tests en otros puntos de `humo.spec.js`; ninguna
+toca `MatchDetail.jsx`. No se frena.
+
+**Verificacion manual.** `seed_demo`, abrir una partida, elegir una ronda
+con bajas, `Copiar ronda`, pegar en un editor: cabecera con mapa, ronda,
+lado, sitio y resultado, y una linea por baja con las mismas marcas que la
+timeline; cambiar de ronda y el aviso desaparece.
+
+Skills: no aplica (copiar al portapapeles ya resuelto tres veces en el repo).
+Skills del repo: testing-strategy (vitest para el texto, e2e para el boton y el portapapeles; sin test de Django: no toca el backend).
+OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
