@@ -1,7 +1,7 @@
 # 111. Copiar las señales del Coach como texto
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T00:40Z
 rama: -
 tipo: funcionalidad
 epica: exportar
