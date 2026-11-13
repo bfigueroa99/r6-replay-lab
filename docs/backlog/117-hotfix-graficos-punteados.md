@@ -1,6 +1,6 @@
 # 117. Hotfix: el e2e de las lineas punteadas cae casi siempre
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/117-hotfix-graficos-punteados
 tipo: bug
@@ -9,9 +9,55 @@ area: frontend
 prioridad: 1
 fuente: QA de la 113 (P4, dev rojo reproducido en checkout completo)
 archivos: frontend/e2e/accesibilidad.spec.js
-turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release), revisor 20261113T0804Z-cJw5MQs, qa 20261113T1203Z-cWfR3tT
+turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release), revisor 20261113T0804Z-cJw5MQs, qa 20261113T1203Z-cWfR3tT, release 20261113T1203Z-cWfR3tT
 
 ## PR
+
+Titulo: `[equipo-dev][tests] El e2e de las lineas punteadas espera a que termine la animacion`
+
+### Que cambia
+
+Nada visible en la app. `check.sh` estaba rojo en `dev` por
+`e2e/accesibilidad.spec.js:235`, que caia casi siempre: leia el
+`stroke-dasharray` de las lineas mientras recharts todavia animaba el trazo.
+Las tres lecturas de `punteadas` pasan a `expect.poll`, con las mismas
+expectativas. Destraba la puerta de merge de toda la cola (la 113 espera por esto).
+
+### Por que esto y no otra cosa
+
+Ficha 117, hotfix P4 abierto desde la QA de la 113. Descartado: apagar la
+animacion de recharts en la app (cambia la UI por un test) y relajar las
+expectativas (dejaria de probar que la linea del eje derecho va punteada).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 1119fa2, 1165 tests backend, 334 vitest, 95 e2e.
+- `--repeat-each 12` del test: 12 passed (revisor y QA, en sesiones distintas); con el archivo de dev, 2 de 6 fallan.
+- Mutacion: sin `strokeDasharray="4 3"` en `EvolucionChart.jsx` o en la linea Rating de `Trends.jsx`, el test cae.
+- OMC: plan=— · revisión=— · verificación=— (implementacion)
+- OMC: plan=— · revisión=0 hallazgos · verificación=— (revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+- Skills del repo: ninguna.
+
+### Riesgos y lo que no entra
+
+Solo toca un e2e. `expect.poll` espera hasta 5 s; la animacion dura bastante menos.
+
+### Como probarlo en 2 minutos
+
+```
+cd frontend && npm run build
+npx playwright test e2e/accesibilidad.spec.js -g "eje derecho" --repeat-each 12 --trace off
+```
+Tiene que decir `12 passed`.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -57,30 +103,11 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Revision 2026-11-13 sobre 60252c0
 
-(revisor 20261113T0804Z-cJw5MQs) La rama trae `origin/dev` (96fa2c1, con la 112) sin
-conflictos. verificar.sh: VERDE 60252c015 (1165 backend, 334 vitest, 95 e2e).
-Revision a ciegas, eje de estandares (`omc-code-reviewer`, diff de 6 lineas
-de un e2e: sin eje de intencion ni de seguridad): sin hallazgos. Leyo
-recharts 2.15.0 (`Line.js`): una linea solida anima como
-`"<hecho>px <resto>px"` (sin coma) y nunca empieza con `4px, 3px`, asi que
-el poll no puede dar por punteada una linea que no lo es; si se pierde la
-prop `strokeDasharray="4 3"` el poll agota el tiempo y el test cae.
-
-Criterios, confirmados en este turno:
-- 12 de 12: `E2E_CHROMIUM=<chrome-headless-shell> npx playwright test
-  e2e/accesibilidad.spec.js -g "eje derecho" --repeat-each 12 --trace off`
-  -> `12 passed (45.7s)`. Con el archivo de `origin/dev`, mismo comando con
-  `--repeat-each 6` -> `2 failed, 4 passed`: el arreglo es el que lo
-  estabiliza.
-- Mismas expectativas: `[false, true]`, `[false, false, true]` y
-  `[false, false, false, true]`, solo envueltas en `expect.poll`; nada
-  saltado ni relajado.
-- check.sh completo en verde (arriba).
-
-Reglas: solo toca `frontend/e2e/accesibilidad.spec.js` (en `archivos:`);
-comentario sin tildes y explica el porque. Sin hallazgos.
-
-Veredicto: aprobar -> `revisado`.
+(revisor 20261113T0804Z-cJw5MQs) VERDE 60252c015. Revision a ciegas
+(`omc-code-reviewer`): sin hallazgos; una linea solida de recharts 2.15.0
+nunca anima como `4px, 3px`, asi que el poll no da por punteada una que no
+lo es. 12 de 12 con el arreglo; 2 de 6 fallan con el archivo de dev.
+Veredicto: aprobar -> `revisado`. Detalle en `git log`.
 
 Skills: no aplica.
 OMC: plan=— · revisión=0 hallazgos · verificación=—
