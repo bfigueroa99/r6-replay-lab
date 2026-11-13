@@ -214,13 +214,14 @@ test('Operadores muestra a qué operador cambias tras perder', async ({ page }) 
 test('Operadores filtra por operador desde su propio selector', async ({ page }) => {
   const errores = vigilarConsola(page)
   const datos = await (await page.request.get('/api/operators/after-result/?operator=Ash')).json()
-  await page.goto('/operadores')
-
-  // Ataque y Defensa se piden sin `operator`; mientras recarga, la tabla vieja sigue a la vista
+  // Ataque y Defensa se piden sin `operator`. Se escucha antes del goto: elegir
+  // Ash no repide /api/operators/, y el pedido de la carga puede salir antes
+  // de que goto devuelva el control.
   const pedidosPool = []
   page.on('request', (req) => {
     if (new URL(req.url()).pathname === '/api/operators/') pedidosPool.push(req.url())
   })
+  await page.goto('/operadores')
   const nota = page.getByText('Con Ash elegido')
   await expect(nota).toHaveCount(0)
   const recarga = page.waitForResponse((resp) => resp.url().includes('/api/operators/after-result/?operator=Ash'))
