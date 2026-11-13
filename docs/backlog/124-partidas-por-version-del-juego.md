@@ -153,7 +153,7 @@ Revisión ciega (`omc-code-reviewer`, `revision.md`, eje de estándares): 1 HIGH
 
 P4 en el camino: `verificar.sh` dio ROJO en 69339eb por el e2e de la 126 (`Operadores muestra a qué operador cambias tras perder`, ya en dev): `request fallida: /api/filters/ (net::ERR_ABORTED)`. Causa: el segundo `page.goto('/operadores?side=Attack')` aborta la request de `/api/filters/` que la primera carga todavía tenía en vuelo, y `vigilarConsola` la cuenta; intermitente (pasó en las tres corridas anteriores). Arreglo: `await page.waitForLoadState('networkidle')` antes de ese `goto`, como los tests de las líneas ~1524 y ~1550.
 
-Verificacion: ver el último `verificar.sh` en el informe del turno.
+Verificacion: `verificar.sh` VERDE e4d26b5cb (1266 tests backend, 399 vitest, 109 e2e).
 
 Skills del repo: testing-strategy (Django para la agrupación, el orden y el GROUP BY; e2e para el render y el orden en el cliente; sin vitest: no hay lógica pura nueva fuera del componente). modern-web-guidance: sin guía aplicada, la tabla reusa `DataTable` y `Panel` de `ui.jsx`. ux-copy: "Sin versión" y "Todavía no hay partidas importadas." en el tono de la página.
 Skills: ninguna de afuera.
