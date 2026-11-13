@@ -64,8 +64,8 @@ el aviso de la partida den la misma fecha:
   la misma consulta trae una columna mas.
 - `rival_stacks_de_partida` hereda el campo por `_filas_de_stacks`; su
   record no cambia.
-- `docs/metricas.md`: en las filas de **Rivales repetidos** y **Stacks
-  rivales** (seccion `## Duelos`), sumar: "*Última vez*: la fecha de la
+- `docs/metricas.md`: en las filas **Rival repetido** y **Stack rival
+  repetido** (seccion `## Duelos`), sumar: "*Última vez*: la fecha de la
   partida mas reciente de las que cuenta la fila (con los filtros
   aplicados)." No es un numero nuevo; es una columna de esas tablas.
 
