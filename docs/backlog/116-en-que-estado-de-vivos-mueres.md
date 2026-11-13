@@ -1,7 +1,7 @@
 # 116. En que estado de vivos mueres
 
-estado: en curso 2026-11-13T17:07Z
-candado: dev 2026-11-13T17:07Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/116-en-que-estado-de-vivos-mueres
 tipo: funcionalidad
 epica: impacto
@@ -182,6 +182,50 @@ Skills: ninguna de afuera (sin dominio nuevo: ni tabla, ni migracion, ni flujo e
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Dev 20261113T1703Z-c66ztji, sobre `origin/dev@0293ade`. Diseno completo, sin desvios de fondo.
+
+- `metrics.estado_al_morir(eventos, team_of)`: junto a `_quedar_solo`, mismo recorrido. Anota
+  `(aliados, rivales)` contando a la victima en su primera muerte (`Kill`/`Death`); `PlayerLeave`
+  resta sin anotar; un jugador fuera de `team_of` (id nulo) se salta.
+- `aggregates.death_state(**filters)`: tres consultas fijas (mis muertes, equipos y feed con
+  `Exists` correlacionado, sin `round_id__in`), fijadas con `assertNumQueries(3)`. Salida
+  `deaths, sin_feed, states, groups` como el diseno; `groups` siempre trae las tres filas.
+- `GET /api/duels/death-state/` (`views.death_state`, `name="death-state"`).
+- `frontend/src/estadoAlMorir.js` (+ vitest): etiquetas, `filasDeGrupos`, `filasDeEstados`,
+  `notaSinFeed`, `avisoPocaMuestra` (corte `MUESTRA_CORTE` = 30 sobre `rounds`), `hayMuertes`.
+- `components/EstadoAlMorir.jsx`: panel con su `useApi`, dos `DataTable` (grupos y estado exacto)
+  con CSV, aviso de muestra y nota de muertes no ubicadas; sin muertes, texto. `Duelos.jsx` suma
+  import y una linea, despues de "Stacks rivales que se repiten".
+- e2e `Duelos muestra el estado de vivos al morir`: con `seed_demo`, 173 muertes, 87 con ventaja
+  (4v3) y 86 en paridad (3v3), leidos de la API (`seed_demo` usa 4 contra 3 jugadores).
+- `docs/metricas.md`: fila "Estado al morir" en Duelos y en `## Muestra minima`.
+
+Desvios menores:
+- Las filas llevan `orden` (indice de la API) e `initialSort` por el: sin eso `DataTable` ordenaba
+  por la etiqueta.
+- La nota de `sin_feed` dice "no se pueden ubicar en el feed (sin evento o después de irte)" y no
+  "sin evento": `sin_feed` tambien cuenta la muerte posterior a un `PlayerLeave` propio (hallazgo
+  del revisor ciego).
+- Tests extra: `test_si_te_fuiste_antes_de_morir_no_entra`, `test_si_no_moriste_la_ronda_no_entra`,
+  `test_estados_ordenados_por_tuyos_vivos_y_despues_rivales`,
+  `test_partida_con_menos_jugadores_no_se_normaliza`, `test_endpoint_aplica_los_filtros`,
+  `test_consultas_acotadas` y tres puros mas de `estado_al_morir`.
+
+Criterios -> tests: 5v4 (`test_caes_tras_una_baja_rival_cuenta_en_5v4`); abandono, teamkill y sin
+evento (`test_un_abandono_resta_un_vivo_del_estado`, `test_un_teamkill_resta_un_vivo_de_tu_equipo`,
+`test_una_muerte_sin_evento_no_entra`); grupos (`test_grupos_ventaja_paridad_y_desventaja_con_winrate`);
+filtros (`test_filtro_de_lado_aplica`); UI (vitest `estadoAlMorir.test.js`, e2e de humo, consola limpia).
+
+Verificacion: `verificar.sh` VERDE c8d3560 (1218 tests backend, 356 vitest, 99 e2e).
+
+Skills del repo: statistical-analysis (denominador = rondas con ganador; `n` visible por fila en
+Muertes; sin promedio de promedios), testing-strategy (algoritmo puro en SimpleTestCase, agregado
+y endpoint en TestCase, etiquetas en vitest, humo e2e). modern-web-guidance y ux-copy no leidas
+por reloj de corrida simultanea: el JSX copia los patrones vecinos (`Panel`, `DataTable`, `note`) y
+los textos siguen el voseo y las tildes de la UI.
+Skills: ninguna de afuera.
+OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Revision
 
