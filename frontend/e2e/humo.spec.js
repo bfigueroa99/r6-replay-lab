@@ -503,6 +503,51 @@ test('Duelos muestra el estado de vivos al morir', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra la ventaja numerica tirada', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/duels/thrown-advantage/')).json()
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Ventaja numérica tirada' })
+  await expect(panel.getByRole('heading', { name: 'Ventaja numérica tirada' })).toBeVisible()
+  if (datos.rounds === 0) {
+    await expect(panel).toContainText('No hay rondas con ventaja numérica con estos filtros.')
+    expect(errores).toEqual([])
+    return
+  }
+  await expect(panel).toContainText(`${datos.thrown} de ${datos.rounds} rondas con ventaja tiradas`)
+  const grupos = panel.locator('table').first()
+  await expect(grupos.locator('tbody tr')).toHaveCount(2)
+  for (const [grupo, etiqueta] of [['one', 'Con uno más'], ['two_plus', 'Con dos o más']]) {
+    const g = datos.groups.find((x) => x.group === grupo)
+    const fila = grupos.locator('tbody tr', { hasText: etiqueta })
+    await expect(fila.locator('td').nth(1)).toHaveText(String(g.rounds))
+    await expect(fila.locator('td').nth(2)).toHaveText(String(g.thrown))
+  }
+  const ataque = datos.sides.find((x) => x.side === 'Attack')
+  const filaAtaque = panel.locator('table').nth(1).locator('tbody tr', { hasText: 'Ataque' })
+  await expect(filaAtaque.locator('td').nth(1)).toHaveText(String(ataque.rounds))
+  await expect(filaAtaque.locator('td').nth(2)).toHaveText(String(ataque.thrown))
+  const mapa = datos.maps[0]
+  // celda exacta: "Club House" no tiene que tomar tambien la fila "Club House (Y10)"
+  const filaMapa = panel.locator('table').nth(2).locator('tbody tr')
+    .filter({ has: page.getByRole('cell', { name: mapa.map, exact: true }) })
+  await expect(filaMapa.locator('td').nth(1)).toHaveText(String(mapa.rounds))
+  await expect(filaMapa.locator('td').nth(2)).toHaveText(String(mapa.thrown))
+
+  if (datos.recent.length) {
+    const primera = datos.recent[0]
+    const enlace = panel.locator('table').last().getByRole('link').first()
+    await expect(enlace).toHaveAttribute('href', `/partidas/${primera.match_id}#ronda-${primera.round}`)
+    await enlace.click()
+    await expect(page).toHaveURL(new RegExp(`/partidas/${primera.match_id}#ronda-${primera.round}$`))
+    await expect(page.locator('#rondas .round-tab.active .n')).toHaveText(`R${primera.round}`)
+  }
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra los operadores que te abren', async ({ page }) => {
   const errores = vigilarConsola(page)
   // numeros de la API y no a mano: si cambia seed_demo el test no se toca
