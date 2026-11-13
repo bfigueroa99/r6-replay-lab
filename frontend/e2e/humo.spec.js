@@ -795,7 +795,7 @@ test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
-test('Tendencias muestra la mejor y la peor partida de cada sesion', async ({ page }) => {
+test('Tendencias tiene las columnas Mejor y Peor, con guion en una sesion de una partida', async ({ page }) => {
   const errores = vigilarConsola(page)
   const { sessions } = await (await page.request.get('/api/sessions/')).json()
   // seed_demo con el gap del e2e: cada sesion es una partida, sin extremos que nombrar
@@ -803,6 +803,8 @@ test('Tendencias muestra la mejor y la peor partida de cada sesion', async ({ pa
   await page.goto('/tendencias')
 
   const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
+  // evaluateAll no espera: sin esto lee la pagina mientras dice Cargando...
+  await expect(panel.locator('tbody tr').first()).toBeVisible()
   const cabeceras = await panel.getByRole('columnheader').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
   const mejor = cabeceras.findIndex((t) => t.startsWith('Mejor'))
   const peor = cabeceras.findIndex((t) => t.startsWith('Peor'))

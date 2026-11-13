@@ -167,7 +167,6 @@ function columnaDuracion(lado, label) {
 
 const segundos = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} s`)
 
-/** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
 // la fila trae la partida como objeto: sin `csv` el archivo diria [object Object]
 function columnaPartidaDeSesion(key, label, extremo) {
   return {
@@ -183,6 +182,7 @@ function columnaPartidaDeSesion(key, label, extremo) {
   }
 }
 
+/** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
 function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
   const rows = filasDePartidas(partidas, clave)
   if (!rows.length) return <p className="note">{vacio}</p>
