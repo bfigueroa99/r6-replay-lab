@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
-estado: en curso 2026-11-13T23:45Z
-candado: dev 2026-11-13T23:45Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
@@ -185,6 +185,59 @@ e2e repartidos arriba); dataviz no aplica (tabla, sin grafico).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T2345Z-c5J2BqJ)
+
+Quedo el diseno completo, sin desvios de forma:
+
+- `aggregates.spawn_after_result` (despues de `site_after_loss`), con la
+  regla del par de la 113: las de defensa entre medio no cortan; un numero
+  faltante, una ronda sin lado o una de ataque sin spawn si. `side` no
+  filtra; `operator` y `site` eligen la primera ronda. Devuelve
+  `min_rounds` (el 8 de la 107), `pairs`, `after_loss` y `after_win` con
+  `repeat`/`switch`. Sin filtro de `UNKNOWN_PREFIX`: el parser no produce
+  spawns desconocidos (lo confirmo la revision ciega).
+- Ruta `positioning/spawn-after-result/` y vista plana al lado de
+  `site-after-loss`. La 79 no esta en dev: no hay `test_excluir_partida.py`
+  que clasificar; cuando entre, la ruta va como comparada (pasa por
+  `base_queryset`).
+- `frontend/src/repetirSpawn.js` (reusa `textoWinrate` via
+  `winrateConMuestra` de `Coach.jsx`, sin copiarla) y `PanelRepetirSpawn`
+  debajo de `PanelRepetirSitio`.
+- Fila en `docs/metricas.md` y su linea en la tabla de muestras minimas.
+
+Criterios -> tests:
+- Criterio 1: `test_tras_perder_cuenta_repetir_y_cambiar_con_el_winrate_de_la_segunda`,
+  `test_tras_ganar_va_a_su_propio_bloque`, `test_una_ronda_de_defensa_entre_medio_no_corta_el_par`.
+- Criterio 2: `test_un_hueco_de_numeracion_corta_el_par`,
+  `test_una_ronda_de_ataque_sin_spawn_corta_el_par`, `test_una_ronda_sin_lado_corta_el_par`,
+  `test_los_pares_no_cruzan_partidas`, `test_una_primera_sin_ganador_no_abre_par`,
+  `test_una_segunda_sin_ganador_cuenta_en_rondas_y_no_en_el_winrate`.
+- Criterio 3: `test_el_filtro_de_operador_elige_la_primera_ronda`,
+  `test_el_filtro_de_sitio_elige_la_primera_ronda`, `test_el_filtro_de_mapa_aplica`,
+  `test_el_filtro_de_lado_no_cambia_nada`, `test_el_endpoint_responde_con_base_vacia`.
+- Criterio 4: vitest `repetirSpawn.test.js` (4) y e2e `el Coach muestra si
+  repites el spawn tras perder`. Sobre `seed_demo` son 87 pares, todos tras
+  ganar y repitiendo (100 %); "Tras perder" queda en 0 con "— · pocas
+  rondas". El seed no ejercita "Cambia" con datos; eso lo cubren Django y
+  vitest.
+- Criterio 5: fila "Repetir o cambiar el spawn" en `metricas.md`.
+
+TDD: los 12 tests de Django en rojo (`errors=12`, sin `spawn_after_result`)
+antes del agregado; vitest en rojo (sin modulo) antes de `repetirSpawn.js`.
+
+Revision ciega (`omc-code-reviewer`): aprobar, 4 LOW, los 4 atendidos
+(tests de sitio y de ronda sin lado; nota sin pares reescrita sin el doble
+"con"; hint "cuánto ganaste esa siguiente ronda"). El del e2e que no ve
+"Cambia" queda anotado arriba: es el seed, no el panel.
+
+Skills: no aplica (sin dominio nuevo).
+Skills del repo: test-driven-development (rojo visto en Django y vitest
+antes del codigo), modern-web-guidance (sin CLI: `npx` bloqueado en esta
+sesion; guia local `accessibility/accessibility.md`, tablas con cabecera: se
+reusa `DataTable`, sin JSX ni CSS nuevo fuera de el), ux-copy (estado vacio
+y hint reescritos por claridad, con tildes como el resto de la UI).
+OMC: plan=— · revisión=4 hallazgos (4 arreglados) · verificación=—
 
 ## Revision
 

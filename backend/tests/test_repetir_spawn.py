@@ -95,6 +95,24 @@ class RepetirSpawnTests(TestCase):
         self.assertEqual(datos["after_loss"]["switch"]["rounds"], 1)
         self.assertEqual(datos["after_loss"]["repeat"]["rounds"], 0)
 
+    def test_una_ronda_sin_lado_corta_el_par(self):
+        self._partida([("Attack", A, False), ("", "", True), ("Attack", A, True)])
+        self.assertEqual(agg.spawn_after_result()["pairs"], 0)
+
+    def test_el_filtro_de_sitio_elige_la_primera_ronda(self):
+        # Solo la primera ronda de la primera partida es en Kitchen: si el
+        # filtro mirara la segunda, ningun par entraria.
+        for primera, segunda in (("2F Kitchen", "1F Bar"), ("1F Bar", "1F Bar")):
+            match = make_match(index=self.indice)
+            self.indice += 1
+            for numero, (sitio, spawn, gano) in enumerate(((primera, A, False), (segunda, B, True))):
+                rnd = make_round(match, numero, side="Attack", site=sitio, won=gano)
+                make_round_player(rnd, operator="Ash", spawn=spawn, won=gano)
+        datos = self.client.get(URL, {"site": "2F Kitchen"}).json()
+        self.assertEqual(datos["pairs"], 1)
+        self.assertEqual(datos["after_loss"]["switch"]["rounds"], 1)
+        self.assertEqual(datos["after_loss"]["switch"]["winrate"], 100.0)
+
     def test_el_filtro_de_mapa_aplica(self):
         self._partida([("Attack", A, False), ("Attack", A, True)])
         self._partida([("Attack", "Lakeside", False), ("Attack", "Parking", True)],

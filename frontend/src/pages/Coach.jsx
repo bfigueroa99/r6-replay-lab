@@ -341,7 +341,7 @@ function PanelRepetirSitio({ filters }) {
   )
 }
 
-const SIN_PARES_SPAWN = 'Sin rondas de ataque seguidas de otra con spawn con estos filtros.'
+const SIN_PARES_SPAWN = 'Con estos filtros no hay dos rondas de ataque seguidas con spawn.'
 
 const columnasRepetirSpawn = [
   { key: 'tramo', label: 'Tras', left: true, sortable: false },
@@ -356,7 +356,7 @@ function PanelRepetirSpawn({ filters }) {
   return (
     <Panel
       title="Repetir o cambiar el spawn"
-      hint="En ataque, después de una ronda, si en tu siguiente ronda de ataque de esa partida saliste del mismo spawn o de otro, y cuánto la ganaste. Tras ganar es la base para comparar. Con el filtro de operador o de sitio, solo las rondas que lo cumplen abren el par."
+      hint="Después de una ronda de ataque, si en tu siguiente ronda de ataque de esa partida saliste del mismo spawn o de otro, y cuánto ganaste esa siguiente ronda. Tras ganar es la base para comparar. Con el filtro de operador o de sitio, solo las rondas que lo cumplen abren el par."
     >
       {error ? (
         <ErrorBox error={error} />
