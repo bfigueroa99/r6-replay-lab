@@ -132,6 +132,17 @@ class EstadoAlMorirTests(TestCase):
                          (1, 0, None))
         self.assertEqual(data["deaths"], 3)
 
+    def test_cada_estado_exacto_trae_su_winrate(self):
+        self._ronda([("Kill", "mate0", "rival0"), ("Kill", "rival1", ME)], won=True)
+        self._ronda([("Kill", "rival0", ME)], won=False)
+        self._ronda([("Kill", "rival0", "mate0"), ("Kill", "rival1", ME)], won=None)
+        data = agg.death_state()
+        filas = {estado: _estado(data, estado) for estado in ("5v4", "5v5", "4v5")}
+        self.assertEqual({e: (f["rounds"], f["decided"], f["won"], f["winrate"])
+                          for e, f in filas.items()},
+                         {"5v4": (1, 1, 1, 100.0), "5v5": (1, 1, 0, 0.0),
+                          "4v5": (1, 0, 0, None)})
+
     def test_estados_ordenados_por_tuyos_vivos_y_despues_rivales(self):
         self._ronda([("Kill", "rival0", "mate0"), ("Kill", "rival1", ME)])
         self._ronda([("Kill", "rival0", ME)])

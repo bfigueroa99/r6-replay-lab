@@ -1,7 +1,7 @@
 # 116. En que estado de vivos mueres
 
-estado: implementado
-candado: revisor 2026-11-13T17:17Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/116-en-que-estado-de-vivos-mueres
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md K6
 archivos: backend/replays/analytics/metrics.py (estado_al_morir), backend/replays/analytics/aggregates.py (death_state), backend/replays/views.py (death_state), backend/replays/urls.py, backend/tests/test_estado_al_morir.py (nuevo), frontend/src/estadoAlMorir.js (nuevo), frontend/src/estadoAlMorir.test.js (nuevo), frontend/src/components/EstadoAlMorir.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261113T1649Z-ccPezGq, dev 20261113T1703Z-c66ztji
+turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261113T1649Z-ccPezGq, dev 20261113T1703Z-c66ztji, revisor 20261113T1651Z-cxTme8t
 
 ## PR
 
@@ -56,7 +56,58 @@ con su `0006`) la dejaria frenada. `first_teammate_death`, `site_after_loss` y
 `nemesis` ya leen el feed al consultar. Para que pasar a columna despues sea
 mecanico, el algoritmo vive una sola vez en `metrics.py` (como `_quedar_solo`)
 y el agregado solo lo llama. Si el humano prefiere la columna, va en
-`## Para el humano`; no frena nada.
+`## Revision 2026-11-13 sobre 6fc0a6b
+
+(revisor 20261113T1651Z-cxTme8t) La rama trae `origin/dev` (a6a9fe8, con la
+111 y la 113) sin conflictos. verificar.sh: VERDE 6fc0a6b42 (1218 backend,
+367 vitest, 100 e2e). Revision a ciegas en dos ejes (`omc-code-reviewer`
+estandares e intencion; sin POST, red, parser ni rutas: sin eje de
+seguridad). Los dos: aprobar, 0 CRITICAL/HIGH. Confirmados por el lider:
+
+- [regla] MEDIUM `backend/replays/analytics/aggregates.py` (`death_state`):
+  la metrica se calcula al consultar sobre el feed y no al importar, como pide
+  `CLAUDE.md`. No frena: es la decision explicita del Diseno (para no esperar
+  la migracion de la 79), con precedente en `first_teammate_death` y
+  `nemesis`, la funcion pura ya vive en `metrics.py` y la pregunta esta en
+  `## Para el humano`. `test_consultas_acotadas` fija 3 queries.
+- [test] LOW `backend/tests/test_estado_al_morir.py`: ningun test miraba
+  `won`/`decided`/`winrate` de las filas por estado exacto (`states`).
+  Repro: cambiar `_sumar_caso(caso, ...)` por `caso["rounds"] += 1` deja los
+  18 tests en verde. **Agregado por el Revisor (pasa):**
+  `test_cada_estado_exacto_trae_su_winrate` (5v4 100 %, 5v5 0 %, 4v5 sin
+  ganador `None`); con la mutacion cae.
+- [estilo] LOW `docs/metricas.md` fila **Estado al morir**: "la misma
+  eleccion que `died`" es impreciso (`died` tambien sale de `stats` sin
+  evento); el numero no cambia porque esas van a `sin_feed`. Sugerido: "la
+  primera muerte tuya en el feed".
+- [bug] LOW `frontend/src/pages/Duelos.jsx:49`: con la vista `sin-duelos`
+  (cero duelos contra rivales) la pagina corta antes del panel, aunque haya
+  muertes por teamkill o `Death` que el panel contaria. Caso raro; sugerido
+  renderizar el panel tambien en esa vista.
+- [estilo] LOW `frontend/src/components/EstadoAlMorir.jsx:34`: "...con estos
+  filtros." sale aunque no haya filtros; sugerido variar con `hayFiltros`
+  como `textosSinDuelos`.
+- [formato] LOW: las filas traen el conteo como `rounds` y no `deaths` (el
+  criterio dice `deaths`); mismo numero (una muerte por ronda), nombre de
+  `_caso_vacio`. Sin cambio.
+- Sin confirmar (confianza baja, sin `.rec` real): si el parser deja una
+  fila de `RoundPlayer` para quien se fue en una ronda anterior, contaria
+  como vivo; `clutch_vs` comparte la suposicion.
+
+Criterios: estado exacto con muertes y winrate (`test_cada_estado_exacto_trae_su_winrate`
+y los de estado), `PlayerLeave`/teamkill/sin evento (tests de los tres),
+ahead/even/behind con winrate, filtro de lado (agregado y endpoint), UI con
+aviso de muestra y texto sin muertes, e2e con consola limpia (numeros del
+e2e recalculados contra `seed_demo`: 173 muertes, 87 en 4v3, 86 en 3v3),
+fila en `metricas.md`: cubiertos. Sin dependencias, GET, identificadores sin
+tildes y UI con tildes, sin `print` ni `console.log`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=7 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
+
+## Para el humano`; no frena nada.
 
 ### Archivos y por que
 
