@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
-estado: en curso 2026-11-13T18:50Z
-candado: dev 2026-11-13T18:50Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -156,6 +156,49 @@ Skills del repo: statistical-analysis (winrate con su `n` y `decided` aparte; um
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Dev 20261113T1830Z-cTivbSq, sobre `origin/dev@ed7bb52`. Diseno completo.
+
+- `aggregates.py`: `OPERADOR_CAMBIO_MIN_RONDAS = 5`; en el bucle de
+  `operator_after_result`, el caso `after_loss`/`switch` suma ademas a
+  `cambios[(lado, op_previo, op)]` con las mismas reglas que la celda; la
+  respuesta suma `switches` (ordenadas por lado, desde, -rondas, hacia) y
+  `switch_min_rounds`. La vista no cambia.
+- Tests (`test_operador_tras_resultado.py`): `_partida` sube a un mixin
+  `_ConPartidas` que comparten las dos clases; `AQueOperadorCambiasTests` con
+  los seis del diseno mas `test_repetir_tras_perder_no_entra` y
+  `test_las_filas_van_por_lado_operador_y_rondas`. Vistos en rojo (8 errores,
+  `KeyError: 'switches'`) antes del codigo.
+- `operadorTrasResultado.js`: `filasCambioTrasPerder(data, lado)`; 4 vitest
+  (vistos en rojo: "not a function").
+- `Operators.jsx`: `<h3>` y `DataTable` debajo de la tabla de la 113 dentro
+  del mismo `Panel`, misma request; nota sin filas; el `hint` suma la frase
+  con el `5` de `switch_min_rounds`. No se muestra mientras carga ni con error.
+- e2e: el test de la 113 acota sus filas a la primera tabla del panel (la
+  nueva vive en el mismo `section`); test nuevo `Operadores muestra a qué
+  operador cambias tras perder` (heading, filas = `switches`, primera fila =
+  par de mas rondas de la API, suma = Cambia de defensa, `?side=Attack` da la
+  nota, consola limpia).
+- `metricas.md`: fila y muestra minima.
+
+Desvios: dos tests backend extra (repetir tras perder no entra; orden de las
+filas). Con `pairs == 0` el panel muestra las dos notas seguidas (correcto,
+algo redundante; anotado por la revision ciega, sin cambio).
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares):
+aprobar, sin hallazgos.
+
+Verificacion: `verificar.sh` VERDE 5563bae26 (1247 tests backend, 392 vitest, 106 e2e).
+
+Skills del repo: statistical-analysis (winrate sobre `decided` con `rondas`
+a la vista, umbral avisado, invariante suma == Cambia testeado en Django y en
+el e2e), testing-strategy (Django, vitest, e2e). modern-web-guidance:
+busque `responsive-table` y `accessibility`; ninguna se aplico porque la
+tabla reusa `DataTable` y `Panel` de `ui.jsx`. ux-copy: nota vacia y
+encabezados en el tono de la pagina ("No cambiaste de operador tras perder
+con estos filtros.").
+Skills: ninguna de afuera.
+OMC: plan=— · revisión=0 hallazgos · verificación=—
 
 ## Revision
 
