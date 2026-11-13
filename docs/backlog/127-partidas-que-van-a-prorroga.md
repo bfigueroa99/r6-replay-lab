@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
-estado: revisado
-candado: qa 2026-11-13T23:24Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B22 (salio del Fuera de alcance de la 115)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ, revisor 20261113T2318Z-cpCpgff
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ, revisor 20261113T2318Z-cpCpgff, qa 20261113T2317Z-cBbsozQ
 
 ## PR
 
@@ -190,7 +190,29 @@ OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—
 
 ## Revision
 
-## QA
+## QA 2026-11-13 sobre 6920b8e
+
+(qa 20261113T2317Z-cBbsozQ) Rama al dia con `origin/dev@39e22c0`.
+
+- **check.sh**: verificar.sh VERDE 6920b8eca (1293 backend, 425 vitest, 114 e2e).
+- **Base vacia** (`R6_ENV_FILE` y `SQLITE_PATH` en el scratchpad, `migrate`, `runserver 8761`): `GET /api/trends/` -> `by_overtime_start_side` con Attack y Defense en 0 y `winrate: null`; `/tendencias` en Chromium muestra "Todavía no hay replays importados", 0 errores de consola.
+- **Base sembrada** (`seed_demo`, sin prorrogas, mas 3 partidas con `tests/factories.py` por `manage.py shell`: Oregon con OT [Defense, Attack] ganada, Oregon OT [Defense] perdida, Bank OT [Attack] `won=None`; `runserver 8762`):
+  - `/api/trends/` -> Attack 1 partida, 0 decididas, `winrate null`; Defense 2 partidas, 2 decididas, 1 ganada, 50.0.
+  - `?side=Defense` y `?side=Attack` -> solo esa fila; `?map=bank` -> Attack 1, Defense 0; `?map=oregon` -> Defense 2 (50.0); `?map=oregon&side=Attack` -> solo Attack en 0; `?until=foo`, `?page=-1`, `?match_type=` -> 200 con los mismos numeros; `?side=foo` y `?days=-1` -> 200 y todo en 0, igual que la tabla vecina `by_overtime_side` (115).
+  - **Recalculado a mano** (SQL directo: por partida, lado de la ronda con `overtime_number` minimo > 0): Attack 1 partida / 0 decididas; Defense 2 / 2 decididas / 1 ganada = API.
+- **UI** (Playwright en Chromium, `/tendencias` sobre la sembrada): tabla "Prórroga por lado" con Partidas y Partidas ganadas; "Prórroga en ataque ... 1 | —", "Prórroga en defensa ... 2 | 50%"; avisos de 30 rondas y de "menos de 10 partidas a prórroga"; sin tarjeta nueva; 0 errores de consola.
+- **accessibility-review** (lo que agrego la ficha son dos columnas de una tabla existente): contraste minimo medido en las celdas 5.71:1 (AA); sin controles nuevos, el boton Descargar CSV ya estaba; encabezados no ordenables como el resto de la tabla. Sin Critical ni Major.
+- **validate-data** sobre la fila "Partidas a prórroga por lado" de `metricas.md`: el porcentaje es sobre `decided` y sin decididas da `—` (sin division por cero); cuenta de partidas, no promedio de promedios; el `n` va en la columna Partidas y el aviso corta en 10.
+- **Mutacion** (`tests.test_prorroga_por_lado`, 17 tests): ultima prorroga en vez de la primera -> 2 fallan; sin excluir `won` nulo -> 1; ignorar `?side=` -> 1; `overtime_number__gte=0` -> 1. Revertidas, arbol limpio.
+- **Chunk inicial**: el diff de `frontend/src` vive en `Trends.jsx` (lazy) y `prorrogaPorLado.js`, que solo importa `Trends.jsx`; `index-*.js` no crece por la ficha.
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: nada para `## Verificar en el PC`.
+
+Limite que ya marco la revision: `seed_demo` no trae prorrogas y el e2e no dibuja las columnas nuevas; cubierto aca con la base sembrada. No bloquea.
+
+Veredicto: `aprobado`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major; contraste 5.71:1), validate-data (sin hallazgos; 2 valores recalculados a mano = API).
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5 criterios PASS, 2 huecos menores declarados)
 
 ## Para el humano
 
