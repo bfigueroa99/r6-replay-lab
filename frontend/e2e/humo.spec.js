@@ -795,6 +795,27 @@ test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la mejor y la peor partida de cada sesion', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { sessions } = await (await page.request.get('/api/sessions/')).json()
+  // seed_demo con el gap del e2e: cada sesion es una partida, sin extremos que nombrar
+  expect(sessions[0].best_match).toBeNull()
+  await page.goto('/tendencias')
+
+  const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
+  const cabeceras = await panel.getByRole('columnheader').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
+  const mejor = cabeceras.findIndex((t) => t.startsWith('Mejor'))
+  const peor = cabeceras.findIndex((t) => t.startsWith('Peor'))
+  expect(mejor).toBeGreaterThan(-1)
+  expect(peor).toBe(mejor + 1)
+  const fila = panel.locator('tbody tr').first()
+  await expect(fila.locator('td').nth(mejor)).toHaveText('—')
+  await expect(fila.locator('td').nth(peor)).toHaveText('—')
+  await expect(fila.locator('td').nth(mejor).getByRole('link')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el Resumen muestra tus multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/')

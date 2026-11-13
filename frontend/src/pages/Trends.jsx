@@ -20,7 +20,7 @@ import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFil
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { vistaSinRondas } from '../tipoPartida.js'
-import { textoResumenSesion } from '../resumenSesion.js'
+import { celdaPartidaDeSesion, textoResumenSesion } from '../resumenSesion.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -168,6 +168,21 @@ function columnaDuracion(lado, label) {
 const segundos = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} s`)
 
 /** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
+// la fila trae la partida como objeto: sin `csv` el archivo diria [object Object]
+function columnaPartidaDeSesion(key, label, extremo) {
+  return {
+    key,
+    label,
+    sortable: false,
+    help: `La partida de ${extremo} rating de la sesión, entre las que pasan los filtros. Hace falta más de una partida.`,
+    render: (row) => {
+      const celda = celdaPartidaDeSesion(row[key])
+      return celda ? <Link to={`/partidas/${celda.id}`}>{celda.texto}</Link> : '—'
+    },
+    csv: (row) => celdaPartidaDeSesion(row[key])?.texto ?? '',
+  }
+}
+
 function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
   const rows = filasDePartidas(partidas, clave)
   if (!rows.length) return <p className="note">{vacio}</p>
@@ -510,6 +525,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
               { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
+              columnaPartidaDeSesion('best_match', 'Mejor', 'mayor'),
+              columnaPartidaDeSesion('worst_match', 'Peor', 'menor'),
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
