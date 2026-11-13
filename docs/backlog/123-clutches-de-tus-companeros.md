@@ -1,8 +1,8 @@
 # 123. Clutches de tus companeros
 
-estado: disenado
+estado: en curso 2026-11-13T19:09Z
 candado: -
-rama: -
+rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
 area: backend
