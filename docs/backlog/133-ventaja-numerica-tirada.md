@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: aprobado
-candado: release 2026-11-13T23:32Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,9 +9,49 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md F5
 archivos: backend/replays/analytics/metrics.py (ventaja_maxima), backend/replays/analytics/aggregates.py (thrown_advantage), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_ventaja_tirada.py (nuevo), frontend/src/ventajaTirada.js (nuevo), frontend/src/ventajaTirada.test.js (nuevo), frontend/src/components/VentajaTirada.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH, revisor 20261113T2317Z-cBbsozQ, qa 20261113T2318Z-cpCpgff
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH, revisor 20261113T2317Z-cBbsozQ, qa 20261113T2318Z-cpCpgff, release 20261113T2318Z-cpCpgff
+
 
 ## PR
+
+**Titulo:** [equipo-dev][backend] Ventaja numérica tirada en Duelos
+
+### Que cambia
+
+Duelos suma el panel "Ventaja numérica tirada": cuántas rondas perdió tu equipo después de quedar con uno más (o con dos o más), por lado y por mapa, y las 20 tiradas más recientes con enlace a la partida parada en esa ronda. Es el error que más duele y hasta ahora solo lo contaba la narrativa de una ronda suelta.
+
+### Por que esto y no otra cosa
+
+Ficha 133 (ALCANCE.md F5). Se calcula al consultar sobre el feed, como `death_state` (sin migración ni `recompute`). Descartado: agrupar mapas por nombre (se juntaban las versiones de un rework) y medir cada baja sola (un trade del mismo segundo inventaba un +1).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE f8baaae, 1312 tests backend, 427 vitest, 115 e2e.
+- Tests nuevos: `backend/tests/test_ventaja_tirada.py` (28: regla `ventaja_maxima` con eliminación, clutch, trade del mismo segundo, post-plant, abandono y 5v4 de arranque; agregado con tiradas, grupos, lado, mapa por versión, sin ganador, lista con orden y tope, filtros, consultas fijas), `ventajaTirada.test.js` (etiquetas y enlace), e2e `Duelos muestra la ventaja numerica tirada` (números de la API, enlace que abre la ronda).
+- QA: base sembrada con 8 escenarios, recalculados a mano y comparados con la API; bordes de filtros por `curl`; Chromium claro y oscuro con consola limpia, teclado y contraste; 4 mutaciones, todas caen.
+- OMC: diseño plan=— · implementación revisión=2+2 hallazgos (4 arreglados) · revisión 1 = 8 hallazgos (1 HIGH, 1 MEDIUM arreglados) · revisión 2 = 6 hallazgos (0 HIGH) · QA verificación=PASS
+- Skills del repo: statistical-analysis, testing-strategy, ux-copy, systematic-debugging (Dev); accessibility-review, validate-data y design-critique no disponibles en la QA, equivalentes a mano.
+
+### Riesgos y lo que no entra
+
+Sin migración ni `recompute`. Dos consultas correlacionadas como `death_state`, constantes por número de rondas (`assertNumQueries`). Costo documentado en `metricas.md`: las bajas del último reloj de la ronda se miden de a una (por el reloj congelado tras el plant), así que un trade simultáneo que cierra una ronda sin plant cuenta +1. Fuera: rondas dadas vuelta en inferioridad (F12), quién murió después de la ventaja, señales del Coach.
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+
+Abrir `http://127.0.0.1:8000/duelos`: panel "Ventaja numérica tirada" con el total, las tablas por ventaja, lado y mapa, y "Últimas tiradas". Filtrar por lado cambia los números; un clic en una fecha de "Últimas tiradas" abre la partida en esa ronda.
+
+### Para el humano
+
+- Calibrar con la base real el aviso de muestra (30 rondas con ventaja por fila).
+- Se calcula al consultar, no al importar (precedente `death_state`); si se quiere columna en `RoundPlayer`, ficha propia.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -51,195 +91,27 @@ narrativa de una ronda suelta en el detalle de partida.
 
 ## Diseno
 
-(arquitecto 20261113T1926Z-cq9nfTP, sobre `origin/dev@c332e72`) Filtros duros: pasa (feed de bajas, `PlayerLeave`, `team_index` y `Round.my_team_won`, todo ya importado; sin red, sin dependencias, sin POST, sin migracion: se calcula al consultar, como `death_state`, que es el vecino directo). Una forma obvia que copia `death_state`, ~400 lineas con tests: cabe en un turno de Dev, sin tramos. Sin arena ni consenso (no toca migraciones, `recompute` ni parser).
-
-**Regla (metrics.py, pura y testeable).** `ventaja_maxima(eventos, team_of, equipo) -> int | None` en `backend/replays/analytics/metrics.py`, junto a `estado_al_morir` y con su mismo recorrido: `vivos = set(team_of)`; por cada evento `Kill` (sale `target`), `Death` o `PlayerLeave` (sale `actor`) cuyo jugador sigue vivo, se lo quita y se mide `mios - suyos` (vivos de `equipo` contra el resto). Devuelve el maximo de esas diferencias despues de cada salida, o `None` si el feed no tiene ninguna salida. Un `PlayerLeave` resta un vivo (como en `estado_al_morir`: quien se fue no ayuda); un teamkill tambien. La diferencia **inicial** (un 5v4 de arranque) no cuenta sola: cuenta desde la primera salida, asi "quedar con uno mas" es algo que paso en la ronda. Ventaja = maximo >= 1; *de uno* si es 1, *de dos o mas* si es >= 2.
-
-**Agregado, `backend/replays/analytics/aggregates.py`**: `thrown_advantage(**filters) -> dict`, despues de `death_state`, con su misma forma de consultar:
-- `mias = base_queryset(**filters)` (tu fila de cada ronda: los filtros globales aplican sobre ella, criterio 4); `filas = mias.values("round_id", "team_index", "side", "round__my_team_won", "round__number", "round__match_id", "round__match__map_name", "round__match__played_at")`.
-- Equipos y feeds con `Exists(mias.filter(round_id=OuterRef("round_id")))`, igual que `death_state` (correlacionada por el tope de parametros de SQLite), con `Event.KILL`, `Event.DEATH`, `PLAYER_LEAVE` en orden `("round_id", "order")`, por ids.
-- Por ronda: `ventaja_maxima(feed, equipos[rid], fila["team_index"])`. `None` o `< 1`: no entra. Sin ganador (`my_team_won is None`): no entra (criterio 1). Si entra: `rounds += 1`; `thrown += 1` si `my_team_won is False`; por grupo (`one` / `two_plus`), por lado (`Attack` / `Defense`, otro lado solo en total) y por mapa (`map_name`).
-- Salida: `{"rounds", "thrown", "thrown_pct", "groups": [{"group": "one"|"two_plus", "rounds", "thrown", "thrown_pct"}], "sides": [{"side", ...}], "maps": [{"map", ...}] (orden: `-thrown`, `-rounds`, `map`), "recent": [...]}`. `thrown_pct = _pct(thrown, rounds)`.
-- `recent`: las tiradas, `played_at` desc y `round__number` desc, tope `VENTAJA_TIRADA_TOPE = 20` (constante con comentario: la lista es para abrir rondas, no un historial), cada una `{"match_id", "map", "played_at" (ISO), "round" (number + 1, la etiqueta R<n>), "side", "advantage"}`.
-- `views.py`: `thrown_advantage(request)` como `death_state` (`_ok(agg.thrown_advantage(**_filters(request)))`); `urls.py`: `path("duels/thrown-advantage/", views.thrown_advantage, name="thrown-advantage")`, junto a `death-state`.
-
-**Tests**, `backend/tests/test_ventaja_tirada.py` (nuevo; feeds con `make_event` de `factories.py`, cinco por lado como arman `test_death_state`/`test_estado_al_morir` si existen; si no, `make_round_player` por jugador):
-- `metrics`: `test_una_baja_rival_da_ventaja_de_uno`, `test_un_5v3_da_ventaja_de_dos`, `test_un_abandono_rival_cuenta_como_baja`, `test_un_5v4_de_arranque_sin_bajas_no_es_ventaja` (feed vacio -> `None`), `test_cambiar_bajas_sin_pasar_adelante_no_es_ventaja` (4v5 y despues 4v4: max 0).
-- agregado: `test_cuenta_ventaja_ganada_tirada_y_sin_ventaja` (5v4 ganada, 5v4 perdida, ronda sin ventaja -> rounds 2, thrown 1, 50.0), `test_separa_ventaja_de_uno_y_de_dos` (una llega a 5v3), `test_una_ronda_sin_ganador_no_cuenta`, `test_la_lista_va_de_la_mas_reciente_y_tiene_tope` (21 tiradas -> 20, la primera es la mas reciente), `test_el_filtro_de_lado_aplica_sobre_tu_fila` (`side="Attack"` deja afuera la de defensa), `test_por_mapa` (dos mapas), y un `assertNumQueries` que fije las consultas con 1 y con 3 rondas (no crece por ronda).
-
-**Frontend.**
-- `frontend/src/ventajaTirada.js` (nuevo, puro, como `estadoAlMorir.js`): `hayVentajas(data)`, `filasDeGrupos(data)` (etiquetas "Con uno más" / "Con dos o más"), `filasDeLados(data)` ("Ataque" / "Defensa"), `enlaceDeRonda(fila)` -> `/partidas/<match_id>#ronda-<round>` (la etiqueta R<n> ya es el numero humano que lee `indiceDeAncla`). Vitest `ventajaTirada.test.js`: sin datos / sin rondas, etiquetas y orden de los grupos, enlace.
-- `frontend/src/components/VentajaTirada.jsx` (nuevo, como `EstadoAlMorir.jsx`: panel aparte con su consulta, para que Duelos sume un import y una linea): `Panel title="Ventaja numérica tirada"` con `hint` "Rondas en que tu equipo llegó a tener más vivos que el rival, y cuántas perdió."; tres `DataTable` chicos (por ventaja, por lado, por mapa) con columnas Rondas con ventaja, Tiradas, % tiradas (`pct`); aviso de muestra chica con `MUESTRA_CORTE` (30 rondas con ventaja por fila, no se oculta); lista "Últimas tiradas" (`DataTable`: Partida con `Link` a `enlaceDeRonda`, Mapa, Ronda, Lado, Ventaja `+N`, fecha). Sin rondas: nota "No hay rondas con ventaja numérica con estos filtros.".
-- `frontend/src/pages/Duelos.jsx`: `import VentajaTirada from '../components/VentajaTirada.jsx'` y `<VentajaTirada filters={filters} />` justo despues de `<EstadoAlMorir filters={filters} />`. Duelos no esta en `saturadas` (2 de las ultimas 10).
-
-**e2e, `frontend/e2e/humo.spec.js`**, test `Duelos muestra la ventaja numerica tirada`, junto al de `Estado al morir` (linea ~488): leer `/api/duels/thrown-advantage/`; el panel `section.panel` con "Ventaja numérica tirada" muestra `rounds` y `thrown` del total (o, si `seed_demo` no tiene rondas con ventaja, la nota sin rondas: el test afirma la rama que corresponde segun la API); si hay `recent`, el primer enlace apunta a `/partidas/<id>#ronda-<n>` y al clicarlo la pestaña de esa ronda esta `active`. Consola limpia.
-
-**`docs/metricas.md`**, seccion `## Duelos`, fila nueva **Ventaja numérica tirada**: "Panel de Duelos (`/api/duels/thrown-advantage/`). Rondas en que, despues de alguna baja o abandono del feed, tu equipo tuvo mas vivos que el rival (contandote; una diferencia de arranque sin bajas no cuenta). *Tiradas*: las de esas que tu equipo perdio. % tiradas = tiradas / rondas con ventaja; rondas sin ganador no entran. Se separa la ventaja maxima de la ronda: uno, dos o mas. Un `PlayerLeave` y un teamkill restan su vivo. Todos los filtros globales aplican sobre tu fila. Lista: las 20 tiradas mas recientes." Y en `## Muestra minima`: "Ventaja numérica tirada | 30 rondas con ventaja por fila: no se oculta, se avisa".
-
-**statistical-analysis.** Denominador: rondas con ventaja y con ganador (el `n` va en la tabla, columna Rondas con ventaja). Ponderado por ronda, sin promedio de promedios (por mapa y por lado son cuentas, no medias de partidas). Con `n < 30` la diferencia entre mapas es ruido: aviso, no se oculta. Umbral de 30 calibrado con datos sinteticos: "calibrar con la base real" va a `## Para el humano`.
-
-**Orden.** `ventaja_maxima` + tests (rojo, verde) -> `thrown_advantage` + tests + `assertNumQueries` -> vista y url -> `ventajaTirada.js` + vitest -> `VentajaTirada.jsx` -> Duelos -> e2e -> `metricas.md` -> `npm run build` -> `verificar.sh`.
-
-**Que puede romperse.** Nada existente: endpoint, componente y funcion nuevos; Duelos suma un panel al final (los e2e de Duelos buscan paneles por titulo). Rendimiento: dos consultas correlacionadas como `death_state`, que ya corre en la misma pagina.
-
-**Archivos ocupados.** 123 toca `aggregates.py`, `views.py`, `metricas.md` y `humo.spec.js` en otras zonas (clutches de compañeros); 79 toca `aggregates.py`/`views.py`/`urls.py` (otras funciones y otra ruta). Hunks distintos: no se frena; si `merge-tree` da conflicto en `urls.py`, P3.
-
-**Verificacion manual.** `seed_demo`, `/duelos`: panel "Ventaja numérica tirada"; filtrar por lado cambia los numeros; clic en una fila de "Últimas tiradas" abre la partida en esa ronda.
-
-Skills: no aplica (copia el patron de `death_state` y `EstadoAlMorir`).
-Skills del repo: statistical-analysis (denominador, `n` en la tabla, sin promedio de promedios, muestra 30 avisada), testing-strategy (Django para la regla y el agregado, vitest para las etiquetas y el enlace, e2e para el panel en la app real).
+(arquitecto 20261113T1926Z-cq9nfTP) Regla pura `metrics.ventaja_maxima(eventos, team_of, equipo)` con el recorrido de `estado_al_morir`; agregado `aggregates.thrown_advantage(**filters)` sobre tu fila filtrada, con feeds y equipos por `Exists` correlacionado como `death_state`; vista GET `duels/thrown-advantage/`; panel `VentajaTirada.jsx` en Duelos con lógica pura en `ventajaTirada.js`; e2e con números de la API; fila y muestra mínima en `metricas.md`. Detalle en `git log` de la rama.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261113T2157Z-chbMW9r) Diseno completo, sobre `origin/dev@72df8f9`:
+(dev 20261113T2157Z-chbMW9r y 20261113T2252Z-czjsKrH) Diseño completo. Desvíos: mapas por versión (`map_slug`, `map_id`) con `etiquetas_de_mapas`; tras la primera revisión, la diferencia que deja a un equipo sin vivos no cuenta (eliminación y clutch ganado), las bajas del mismo segundo se miden juntas salvo las del último reloj (post-plant congelado, `pydissect/events.py`), y el 5v4 de arranque cuenta desde la primera salida. Tests vistos en rojo antes del código.
+OMC: plan=— · revisión=4 hallazgos (4 arreglados) · verificación=—
 
-- `metrics.ventaja_maxima(eventos, team_of, equipo)`: mismo recorrido que `estado_al_morir`; `Kill`/`Death`/`PlayerLeave` sacan un vivo (teamkill y abandono incluidos), maximo de `mios - suyos` despues de cada salida, `None` sin salidas (el 5v4 de arranque no cuenta solo).
-- `aggregates.thrown_advantage(**filters)` + `VENTAJA_TIRADA_TOPE = 20`: tu fila filtrada, rondas sin ganador fuera, feeds y equipos con `Exists` correlacionado como `death_state`; total, `groups` (`one`/`two_plus`), `sides`, `maps` y `recent` (fecha desc, ronda desc, tope 20; `round` = `number + 1`, la etiqueta que lee `#ronda-N`). Vista `@require_GET` y ruta `duels/thrown-advantage/`.
-- Frontend: `ventajaTirada.js` (puro: `hayVentajas`, `filasDeGrupos`, `filasDeLados`, `enlaceDeRonda` sobre `anclaDeRonda`), `components/VentajaTirada.jsx` (panel "Ventaja numérica tirada": linea de total, tablas por ventaja, lado y mapa, aviso de muestra con `MUESTRA_CORTE`, "Últimas tiradas" con enlace a la ronda, nota sin rondas) y una linea en `Duelos.jsx` despues de `EstadoAlMorir`.
-- `metricas.md`: fila en `## Duelos` y en `## Muestra minima`.
+## Revision
 
-Desvio del diseno: `maps` agrupa por version (`map_slug`, `map_id`) con `etiquetas_de_mapas`, como Mapas y la conversion de clutch por sitio, y no por `map_name` (hallazgo MEDIUM de la revision ciega: con un rework de Club House las dos versiones se juntaban; un renombre en Datos partia la fila). Suma una consulta: `assertNumQueries(4)`, fija con 1 y con 3 rondas.
-
-Tests vistos en rojo antes del codigo: los 17 iniciales de `test_ventaja_tirada.py` (`AttributeError`, sin `ventaja_maxima` ni `thrown_advantage`). Criterios -> tests: 1 `test_cuenta_ventaja_ganada_tirada_y_sin_ventaja`, `test_una_ronda_sin_ganador_no_cuenta`, `test_un_abandono_rival_cuenta_como_baja`, `test_un_5v4_de_arranque_*`; 2 `test_separa_ventaja_de_uno_y_de_dos`, `test_un_5v3_da_ventaja_de_dos`; 3 `test_la_lista_va_de_la_mas_reciente_y_tiene_tope`, `test_en_la_misma_partida_va_primero_la_ronda_posterior`, vitest `enlaceDeRonda` (cruzado con `indiceDeAncla`); 4 `test_el_filtro_de_lado_aplica_sobre_tu_fila`, `test_la_api_responde_con_los_filtros`; 5 e2e `Duelos muestra la ventaja numerica tirada` (total y grupo "Con uno más" contra la API, primer enlace de "Últimas tiradas" abre la partida con esa pestaña `active`; con `seed_demo` la API trae rondas, respuesta de 2912 bytes en el log), mas `test_por_mapa`, `test_por_mapa_separa_las_versiones_del_mismo_nombre`, `test_por_lado`; 6 `metricas.md`. Mutaciones: `ventaja >= 1` en el grupo cae `test_separa_ventaja_de_uno_y_de_dos`; sacar el `if muerto not in vivos` sobrevivia y se agrego `test_un_5v4_de_arranque_con_una_baja_sin_resolver_no_es_ventaja`, que ahora lo mata.
-
-Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): aprobar, 1 MEDIUM y 1 LOW (el test por mapa que no lo veia); los dos arreglados (desvio de arriba y test nuevo). Nota sin peso del revisor: filas de `RoundPlayer` con un `team_index` ajeno contarian como rivales, igual que en `estado_al_morir`; no lo introduce esta ficha.
-
-verificar.sh: VERDE 4c313f073 (1303 backend, 417 vitest, 113 e2e).
-
-Skills: no aplica.
-Skills del repo: statistical-analysis (denominador = rondas con ventaja y con ganador, `n` en la columna "Rondas con ventaja", cuentas por ronda sin promedio de promedios, muestra 30 avisada), testing-strategy (Django para la regla y el agregado, vitest para etiquetas y enlace, e2e en la app real, mutaciones), ux-copy ("Con uno más", "Últimas tiradas", nota sin rondas, con tildes), modern-web-guidance no leida (sin CSS nuevo: `DataTable` y `Panel` existentes), sql-queries no aplica (sigue el patron vecino de `death_state`, con `assertNumQueries`).
-OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
-
-## Revision 2026-11-13 sobre e1e70af
-
-(revisor 20261113T2156Z-cQ8Kk3s) La rama ya contenia `origin/dev@72df8f9`. verificar.sh: VERDE e1e70af3c (1303 backend, 417 vitest, 113 e2e).
-
-**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`): corregir, 1 HIGH, 1 MEDIUM, 1 LOW.
-- [bug] **HIGH confirmado** `backend/replays/analytics/metrics.py:228-230` (`ventaja_maxima`): la diferencia se mide tambien tras la salida que deja a un equipo en 0, asi que toda ronda ganada por eliminacion entra como "ronda con ventaja" (no tirada) con la ventaja de los vivos finales. Repro (`manage.py shell`, `team_of` 5v5 a0..a4 / r0..r4, equipo 0): cinco `Kill a0 -> r0..r4` -> **5** (cae en "Con dos o más"); clutch 1v1 ganado (r0 mata a1..a4, a0 mata r1..r4 y al final r0) -> **1** (cuenta como "Con uno más" una ronda en la que nunca tuviste mas vivos). Infla el denominador y baja el % tiradas, sobre todo en `two_plus`; en `seed_demo` hoy da 64 con ventaja, 25 tiradas (39,1 %; one 43/18, two_plus 21/7). Ningun test tiene una ronda ganada por eliminacion. Arreglo: no tomar la diferencia cuando un equipo queda sin vivos (cortar el recorrido ahi) y tests: eliminacion 5-0 ganada sin la ventaja de cierre (5v1 -> 4 si paso por ahi, o lo que corresponda antes de la ultima baja) y clutch 1v1 ganado -> `None` o <= 0.
-- [regla] MEDIUM propuesto -> **LOW confirmado** `aggregates.py` (`thrown_advantage`): se calcula al consultar recorriendo el feed, contra "las metricas se calculan al importar" de `CLAUDE.md`. Tiene precedente (`death_state`, `nemesis`) y el docstring lo justifica; consultas constantes (test de queries). No bloquea; si se quiere, columna en `RoundPlayer` en ficha aparte.
-- [test] LOW `backend/tests/test_ventaja_tirada.py` (`test_la_lista_va_de_la_mas_reciente_y_tiene_tope`): una ronda por partida, el desempate por numero no lo prueba ese test (si lo prueba `test_en_la_misma_partida_va_primero_la_ronda_posterior`). Sin arreglo obligatorio.
-
-**Eje de intencion** (`omc-code-reviewer` contra Que gana, Criterios y Fuera de alcance): aprobar; los 6 criterios cubiertos, nada fuera de alcance. Hallazgos:
-- [bug] **MEDIUM confirmado** `metrics.py:217-230`: cada baja actualiza la maxima sola aunque la siguiente tenga el mismo reloj; un trade en el mismo segundo crea un +1 que no existio. Repro: `[Kill a0->r0, Kill r1->a0]` -> **1**. Arreglo: agrupar por `clock` (sumarlo al `.values()` del feed en `thrown_advantage`) y medir al cerrar cada grupo, con test del trade; o documentarlo en `metricas.md` si se decide mantener.
-- [intencion] LOW: ronda que arranca 5v4: primera baja rival -> +2, primera baja tuya -> 0 (la ventaja de arranque cuenta a medias). Elegir la regla, escribirla en `metricas.md` y fijarla con test.
-- [test] LOW `frontend/e2e/humo.spec.js` (bloque de la ventaja tirada): afirma total, "Con uno más" y el primer enlace; no `two_plus` ni una fila de lado y de mapa. Sumarlas con los numeros de la API.
-- [intencion] LOW: `recent[].round` sale en base 1 y otros endpoints (`round_number` de records) en base 0; el frontend lo compensa. Unificar a base 0 si se toca.
-
-Sin eje de seguridad: endpoint GET nuevo, sin red, POST, rutas, parser ni dependencias.
-
-**Ficha.** Criterios 1-6 con test (detalle del eje de intencion: `test_ventaja_tirada.py`, `ventajaTirada.test.js`, e2e en `humo.spec.js`, panel en Duelos, fila y muestra minima en `metricas.md`), pero el criterio 2 ("ventaja de uno y de dos o mas, la maxima de la ronda") da un numero equivocado en toda ronda ganada por eliminacion (HIGH). Identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
-
-Veredicto: corregir (HIGH de `ventaja_maxima`; el MEDIUM del mismo segundo conviene en la misma pasada).
-
-Skills del repo: ninguna (revision con `revision.md`).
-OMC: plan=— · revisión=8 hallazgos (1 HIGH, 1 MEDIUM, 6 LOW; 0 arreglados: los arregla el Dev) · verificación=—
-
-## Implementacion (hallazgos de revision)
-
-(dev 20261113T2252Z-czjsKrH) Arreglados el HIGH y el MEDIUM de la revision 2026-11-13, sobre `origin/dev@39e22c0` (merge limpio):
-
-- HIGH (`ventaja_maxima` contaba la diferencia del cierre): la diferencia que deja a un equipo sin vivos ya no se mide y el recorrido corta ahi. Una eliminacion 5-0 da 4 (paso por 5v1), un clutch 1v1 ganado da 0 (no es ronda con ventaja). Tests: `test_una_eliminacion_ganada_no_cuenta_la_ventaja_del_cierre`, `test_un_clutch_1v1_ganado_no_es_ventaja`, `test_un_clutch_ganado_por_eliminacion_no_es_ronda_con_ventaja` (agregado).
-- MEDIUM (trade en el mismo segundo): las salidas consecutivas con el mismo `clock` se miden juntas; `thrown_advantage` suma `clock` al feed. Sin reloj (0 o ausente) cada una se mide sola. Tests: `test_un_trade_en_el_mismo_segundo_no_da_ventaja`, `test_bajas_en_segundos_distintos_si_dan_ventaja`, `test_sin_reloj_cada_baja_se_mide_sola`, `test_un_trade_en_el_mismo_segundo_no_cuenta_como_ventaja` (agregado). El helper `_ronda` de los tests del agregado separa las bajas un segundo (con el `clock=120` de `make_event` todas serian simultaneas).
-- Desvio por la revision ciega de este turno (HIGH confirmado en `pydissect/events.py`, `_track_clock`): tras el plant el juego deja de emitir el reloj y todo el post-plant hereda el mismo `clock`; agrupar por reloj borraba toda ventaja armada despues del plant. Las salidas con el ultimo reloj del feed se miden de a una. Test: `test_tras_el_plant_el_reloj_congelado_no_junta_las_bajas` (5v2 tras el plant y barrida -> 3; antes `None`). Costo aceptado: un trade justo en el ultimo segundo de una ronda sin plant cuenta como si no fuera simultaneo.
-- LOW de intencion (5v4 de arranque): regla fijada, cuenta desde la primera salida (cae un rival -> +2, cae uno tuyo -> 0); `test_un_5v4_de_arranque_cuenta_desde_la_primera_salida` y frase en `metricas.md`.
-- LOW del e2e: el test de Duelos afirma ahora tambien "Con dos o más", la fila Ataque y la del primer mapa (celda exacta) contra la API.
-- No tomados (LOW, no bloquean): calculo al consultar (precedente `death_state`), desempate por numero en el test del tope (ya lo cubre otro test), `recent[].round` en base 1.
-- `docs/metricas.md`: fila Ventaja numérica tirada con las reglas de cierre, mismo segundo, post-plant y 5v4.
-
-Tests vistos en rojo antes del codigo: los 3 de `ventaja_maxima` (eliminacion, clutch, trade), los 2 del agregado (trade sin `clock` en el feed, clutch) y el del post-plant.
-
-Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): corregir, 1 HIGH (post-plant, arriba) y 1 LOW (docstring "la ronda ya se decidio", falso en Bomb tras el plant); los dos arreglados.
-
-verificar.sh: VERDE dba808e22 (1312 backend, 427 vitest, 115 e2e).
-
-Skills: no aplica.
-Skills del repo: testing-strategy (regla en SimpleTestCase, agregado en TestCase, e2e con numeros de la API), statistical-analysis (el denominador ya no incluye eliminaciones ni clutches ganados), systematic-debugging (causa del post-plant confirmada en el parser antes del arreglo).
-OMC: plan=— · revisión=2 hallazgos (1 HIGH, 1 LOW; 2 arreglados) · verificación=—
-
-## Revision 2026-11-13 sobre 4548f0f
-
-(revisor 20261113T2317Z-cBbsozQ) Segunda pasada. La rama ya contenia `origin/dev@39e22c0`. verificar.sh: VERDE 4548f0fe2 (1312 backend, 427 vitest, 115 e2e).
-
-**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`): aprobar, 2 MEDIUM, 1 LOW. Los hallazgos HIGH y MEDIUM de la primera pasada estan arreglados con tests (eliminacion, clutch ganado, trade del mismo segundo, post-plant).
-- [bug] **MEDIUM confirmado** `backend/replays/analytics/metrics.py` (`ventaja_maxima`, grupo del ultimo reloj): las salidas con el ultimo reloj del feed se miden de a una aunque no haya plant, asi que un trade simultaneo que cierra el feed da +1. Repro (`manage.py shell`, `team_of` me,m1 / r0,r1, equipo 0): `[Kill me->r0 @40, Kill r1->me @40]` -> **1**; el mismo feed con `Kill m1->r1 @20` despues -> **0**. Afecta solo a rondas sin plant cuyo ultimo hecho es un trade en el mismo segundo (perdida por tiempo, por ejemplo). Es el costo que la Implementacion acepto y que `metricas.md` escribe ("salvo las del ultimo reloj de la ronda"), por eso no bloquea. Arreglo sugerido, si se retoma: partir el grupo solo si su reloj es el congelado de la ronda (`Round.clock_end`, pasado como argumento a `ventaja_maxima` y sumado al `values()` de `thrown_advantage`), con test de trade final sin plant -> 0.
-- [regla] MEDIUM propuesto -> **LOW confirmado** `aggregates.py` (`thrown_advantage`): calculo al consultar; mismo juicio que en la primera pasada (precedente `death_state` y `nemesis`, consultas constantes).
-- [bug] LOW: el post-plant medido de a una separa trades post-plant simultaneos; documentado en `metricas.md`.
-- Pregunta abierta, sin confirmar (sin `.rec` reales): un `PlayerLeave` posterior al fin de la ronda contaria como salida; la misma exposicion ya la tienen `clutch_vs` y `one_vx`.
-
-**Eje de intencion** (`omc-code-reviewer` contra Que gana, Criterios y Fuera de alcance): los 6 criterios cubiertos (agregado, uno contra dos o mas, lista con enlace y tope, filtros sobre tu fila, panel en Duelos con e2e sobre `seed_demo` que lee la API, `metricas.md` con muestra minima); nada fuera de alcance. Hallazgos:
-- [bug] MEDIUM: el mismo del trade final (arriba).
-- [intencion] MEDIUM propuesto -> **LOW**: 5v4 de arranque con la primera salida tuya da 0. Es la regla que la primera pasada pidio elegir y que quedo escrita en `metricas.md` y fijada con test.
-- [test] LOW `frontend/e2e/humo.spec.js`: la nota "No hay rondas con ventaja numérica con estos filtros." no se renderiza en ningun test (seed_demo siempre trae 64 rondas con ventaja); solo se prueba `hayVentajas` como logica pura.
-
-Sin eje de seguridad: endpoint GET, sin red, POST, rutas, parser ni dependencias.
-
-**Ficha.** Criterios 1-6 con test. El diff no toca archivos fuera de `archivos:`. Fila en `docs/metricas.md` y en `## Muestra minima`. Identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
-
-Veredicto: aprobar (sin CRITICAL ni HIGH; el MEDIUM del trade final es un costo documentado).
-
-Skills del repo: ninguna (revision con `revision.md`).
-OMC: plan=— · revisión=6 hallazgos (0 HIGH, 1 MEDIUM, 4 LOW, 1 pregunta; 0 arreglados) · verificación=—
-
-## QA
-
-## Para el humano
-
-- (arquitecto 2026-11-13, no bloquea) Calibrar con la base real el aviso de muestra de 30 rondas con ventaja por fila.
-
-(nada)
+- 2026-11-13 sobre e1e70af (revisor 20261113T2156Z-cQ8Kk3s): corregir. HIGH (eliminación ganada contaba la ventaja del cierre) y MEDIUM (trade del mismo segundo daba +1), ambos arreglados con tests; LOW del e2e arreglado.
+- 2026-11-13 sobre 4548f0f (revisor 20261113T2317Z-cBbsozQ): aprobar. MEDIUM aceptado y documentado (trade final sin plant da +1); LOW: cálculo al consultar con precedente.
+OMC: plan=— · revisión=6 hallazgos (0 HIGH) · verificación=—
 
 ## QA 2026-11-13 sobre f8baaae
 
-Scripts en el scratchpad de la sesion (`sembrar.py`, `oregon.py`, `a11y.js`);
-base temporal con `SQLITE_PATH=<tmp>/sembrada.sqlite3`, `migrate`, sembrada con
-`tests/factories.py`, y `runserver 127.0.0.1:8762` (base vacia en 8761).
-
-- `check.sh` completo (verificar.sh): VERDE f8baaae, 1312 tests backend,
-  427 vitest, 115 e2e.
-- Criterios 1 y 2, recalculado a mano: Club House con R0 ataque ganada (rivales
-  caen 5 seguidos, max +4), R1 defensa perdida tras 5v4, R2 ataque perdida tras
-  5v3, R3 trade en el mismo segundo (no entra), R4 sin ganador (no entra), R5
-  `PlayerLeave` de un rival y perdida, R6 sin bajas, R7 todo con el reloj final
-  congelado (rival primero). Esperado: 5 con ventaja, 4 tiradas, 80 %; uno 3/3,
-  dos o mas 2/1; Ataque 2/1, Defensa 3/3. `curl /api/duels/thrown-advantage/`
-  devuelve exactamente eso. Partida de un jugador (Border, baja de alguien
-  fuera de la ronda): no entra, sin error.
-- Criterio 3: `recent` en orden R8, R6, R3, R2 (`round` es la etiqueta R<n>).
-  En Chromium, Tab llega al primer enlace (`/partidas/1#ronda-8`, foco
-  visible) y Enter abre esa ronda.
-- Criterio 4 y bordes (`curl -s '127.0.0.1:8762/api/duels/thrown-advantage/?<q>'`):
-  `side=Attack` 2/1 solo ataque; `side=Defense` 3/3; `side=foo`, `map=zzz`,
-  `match_type=Casual`, `gamemode=Hostage`, `since=2099-01-01` dan 0 con
-  `thrown_pct: null`; `until=foo`, `page=-1`, `days=99999999999`, `side=`,
-  `map=`, `x=%00` responden 200 sin romper. POST 403. Sin `Traceback` en los
-  logs. Base vacia: ceros y listas vacias; `/api/duels/`,
-  `/api/duels/death-state/` y `/api/trends/` 200 en las dos bases.
-- Criterio 5: panel en Duelos, claro y oscuro, consola sin errores ni
-  warnings; con `?map=oregon` (duelos sin ventaja) sale "No hay rondas con
-  ventaja numérica con estos filtros."; base vacia: estado de importar.
-  Chunk inicial `index-*.js`: dev 200451 B, rama 200459 B (+8 B).
-- Criterio 6: filas en `metricas.md` (definicion y Muestra minima, 30 =
-  `MUESTRA_CORTE` de `muestra.js:7`). Datos: sin division por cero
-  (`thrown_pct` nulo con 0), cada tasa con su `n` (`rounds`), cuentas de
-  rondas y no promedio de promedios, redondeo a un decimal (2/3 -> 66.7).
-- Mutaciones (`manage.py test tests.test_ventaja_tirada`): contar la diferencia
-  que deja un equipo sin vivos -> caen 3; no separar las bajas del reloj final
-  -> cae 1; lista vieja primero -> caen 2; dejar entrar rondas sin ganador ->
-  cae 1. Codigo restaurado.
-- Accesibilidad (a mano, en Playwright): 4 tablas con encabezados, contraste
-  minimo del panel 5,71:1, enlaces alcanzables con teclado. Minor: los enlaces
-  de "Últimas tiradas" se llaman todos por la fecha (`2026-09-01`); el
-  contexto de la fila los distingue (WCAG 2.4.4 en contexto), no bloquea.
-
-Veredicto: aprobado.
-
+(qa 20261113T2318Z-cpCpgff) `check.sh` VERDE f8baaae (1312 backend, 427 vitest, 115 e2e). Base temporal (`SQLITE_PATH`, `migrate`, `tests/factories.py`) con R0 eliminación ganada, R1 5v4 perdida, R2 5v3 perdida, R3 trade del mismo segundo, R4 sin ganador, R5 abandono rival, R6 sin bajas, R7 post-plant congelado y una partida de un jugador: la API da 5 con ventaja, 4 tiradas (80 %), uno 3/3, dos o más 2/1, Ataque 2/1, Defensa 3/3, recientes R8, R6, R3, R2, igual que a mano. `curl` con `side=`, `map=zzz`, `until=foo`, `page=-1`, `days=99999999999`, `x=%00`: 200 sin errores; POST 403; base vacía en ceros. Chromium claro y oscuro: consola limpia, contraste mínimo 5,71:1, Tab y Enter abren `/partidas/1#ronda-8`, nota sin rondas con `?map=oregon`. Chunk inicial +8 B. Mutaciones (sin cierre, sin reloj final, orden invertido, sin ganador): las 4 caen. Minor de accesibilidad: los enlaces de "Últimas tiradas" se llaman por la fecha; la fila da el contexto.
 OMC: plan=— · revisión=— · verificación=PASS
-Skills del repo: accessibility-review, validate-data y design-critique no disponibles en esta sesion; equivalentes a mano arriba (0 Critical, 0 Major, 1 Minor; 2 valores recalculados: total 5/4 y grupos 3/3 y 2/1)
+Skills del repo: accessibility-review, validate-data y design-critique no disponibles en esta sesion; equivalentes a mano (0 Critical, 0 Major, 1 Minor; 2 valores recalculados)
 
 ## Para el humano
 
-- Se calcula al consultar sobre el feed, como `death_state` que ya esta en
-  dev, y no al importar como pide `CLAUDE.md`; no hay migracion ni
-  `recompute`. Aviso informativo: si se quiere columna en `RoundPlayer`, va
-  en ficha propia.
+- (arquitecto, no bloquea) Calibrar con la base real el aviso de muestra de 30 rondas con ventaja por fila.
+- (qa, no bloquea) Se calcula al consultar, como `death_state`, y no al importar; columna en `RoundPlayer` iria en ficha propia.
