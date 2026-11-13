@@ -1,7 +1,7 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
-estado: aprobado
-candado: release 2026-11-13T00:09Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,9 +9,69 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S4 (PO 20261105T1759Z-cCJ5erc)
 archivos: backend/replays/analytics/aggregates.py (site_after_loss, REPETIR_SITIO_*), backend/replays/views.py (site_after_loss), backend/replays/urls.py, backend/tests/test_repetir_sitio.py, frontend/src/repetirSitio.js, frontend/src/repetirSitio.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1127Z-cT8M5Vz, arquitecto 20261112T1204Z-chGLrtC, dev 20261112T1603Z-cor3JBP, revisor 20261112T2004Z-cbaTGDt, qa 20261113T0003Z-cVnayJ8
+turnos: po 20261112T1127Z-cT8M5Vz, arquitecto 20261112T1204Z-chGLrtC, dev 20261112T1603Z-cor3JBP, revisor 20261112T2004Z-cbaTGDt, qa 20261113T0003Z-cVnayJ8, release 20261113T0003Z-cVnayJ8
 
 ## PR
+
+Titulo: `[equipo-dev][backend] Repetir el sitio tras perderlo, en el Coach`
+
+### Que cambia
+
+Panel nuevo en el Coach, "Repetir el sitio tras perderlo": despues de perder
+una ronda defendiendo un sitio, cuantas veces tu equipo vuelve a ese sitio en
+la siguiente ronda de defensa de la partida y cuantas cambia, con el winrate
+de cada caso, en total y por mapa (con CSV). Endpoint nuevo
+`GET /api/positioning/site-after-loss/`.
+
+### Por que esto y no otra cosa
+
+Ficha 107 (ALCANCE.md S4, epica `posicionamiento`). Repetir un sitio que el
+rival ya leyo es una decision de la defensa que ninguna tabla mostraba.
+Descartado: el lado de ataque (spawn tras perder, otra idea) y recomendar
+sitio (solo se cuenta).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE (ver el commit de Entrega), 1163 tests backend, 329 vitest, 94 e2e.
+- Tests nuevos: `backend/tests/test_repetir_sitio.py` (17: repeat/switch, ataque
+  entre medio no corta, sitio vacio y numero faltante cortan, no cruza partidas,
+  tras ganar o sin ganador no hay par, winrate sin la sin ganador, filtros de
+  sitio (mira la perdida y no la segunda), lado/operador ignorados, mapa, tipo,
+  fechas, versiones del mapa, vacio sin error); `repetirSitio.test.js` (6);
+  e2e `el Coach muestra si repites el sitio tras perderlo` (56 / 2, Club House 19 y 1).
+- QA: curl con bordes en base vacia y `seed_demo`; recalculo independiente por
+  SQL (56/2, 11/1 con sitio) y con `factories` (2/2 con 50 %); 3 mutaciones caen;
+  chunk inicial igual que dev; accesibilidad del panel en Chromium sin hallazgos.
+- OMC: plan=— · revisión=— · verificación=— (Diseno)
+- OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=— (Implementacion)
+- OMC: plan=— · revisión=4 hallazgos (1 MEDIUM cerrado con test; 3 LOW sin arreglar) · verificación=— (Revision)
+- OMC: plan=— · revisión=— · verificación=PASS (QA)
+- Skills del repo: accessibility-review (0 Critical, 0 Major, 0 Minor), validate-data (0 hallazgos; valores recalculados 56/2, 11/1, 2/2 con 50 %).
+
+### Riesgos y lo que no entra
+
+Sin migracion, sin `recompute`, sin parser, sin POST. Una consulta sobre tus
+rondas, en orden por partida y numero. El par se corta tambien si falta un
+numero de ronda (conservador, documentado en `metricas.md`). Fuera: lado de
+ataque y pares tras ronda ganada.
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+Abrir `http://127.0.0.1:8000/coach`: panel "Repetir el sitio tras perderlo"
+con 56 en "Repite el sitio", 2 en "Cambia de sitio" ("pocas rondas") y la
+tabla por mapa (Bank 19/1, Club House 19/1, Border 18/0). Con `?side=Attack`
+los numeros no cambian; con un sitio de Bank solo cuentan las perdidas ahi.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -47,237 +107,27 @@ equipo, que ninguna tabla muestra hoy.
 
 ## Diseno
 
-(arquitecto 20261112T1204Z-chGLrtC) Filtros duros: pasa. Usa `Round.number`,
-`my_side`, `site` y `my_team_won`, que el `.rec` entrega (el sitio en
-defensa es el de bomba elegido); sin red, sin dependencias, sin POST, sin
-migracion. Una forma obvia y chica (~300 lineas): sin arena ni consenso.
-
-**Pagina: Coach**, panel propio despues de `PanelSalidaSpawn` (la epica
-`posicionamiento` ya vive ahi: "Dónde quedas fuera de posición" y "Salida
-del spawn"). Endpoint propio `GET /api/positioning/site-after-loss/`, pedido
-aparte: un error no tumba el Coach.
-
-**Backend, `aggregates.py`**, despues de `positioning`:
-
-- `REPETIR_SITIO_MIN_RONDAS = 8`, la de "Sitio / spawn" de la tabla de
-  muestra minima: debajo, el winrate se muestra igual con aviso (como los
-  cortes de Tendencias), no se oculta.
-- `site_after_loss(**filters) -> dict`:
-  1. `sitio = filters.get("site")`; `base = {k: v for k, v in filters.items()
-     if k not in ("side", "site", "operator")}`. `side` se ignora (solo hay
-     pares de defensa); `site` no filtra el queryset sino la ronda perdida
-     (paso 4); `operator` tampoco filtra: el par es del equipo, no de tu
-     operador, y filtrarlo cortaria pares a la mitad.
-  2. Rondas de defensa: `base_queryset(**base).filter(side="Defense")
-     .order_by("round__match_id", "round__number").values("round__match_id",
-     "round__number", "round__site", "round__my_team_won", *_MAPA)`
-     (`_MAPA` da slug, version y nombre para la fila por mapa).
-     Por `base_queryset` entran las exclusiones de la 79 cuando se mergee.
-  3. Numeros existentes por partida: `Round.objects.filter(match_id__in=<ids
-     de las partidas del paso 2>).values_list("match_id", "number")` en un
-     `set`. Un par (a, b) son dos rondas de defensa consecutivas de la misma
-     partida; **se corta** si algun numero entre `a.number` y `b.number`
-     falta en ese set (ronda sin `.rec`: no se sabe si fue de defensa) o si
-     `a` o `b` tiene `site=""`. Las de ataque entre medio no cortan.
-  4. Cuenta el par solo si `a.my_team_won is False` (una sin ganador no es
-     derrota) y, con `sitio`, si `a.site == sitio`. `repeat` si
-     `b.site == a.site`, si no `switch`.
-  5. Por caso, en total y por mapa (clave `_MAPA`): `rounds` (pares),
-     `decided` (con `b.my_team_won` no nulo), `won` y `winrate =
-     _pct(won, decided)` (la segunda sin ganador cuenta en `rounds` y no en
-     el winrate, como `operator_by_site`).
-  6. Respuesta:
-     ```
-     {"min_rounds": 8, "pairs": <total de pares>,
-      "total": {"repeat": {...}, "switch": {...}},
-      "maps": [{"slug", "map_id", "map", "repeat": {...}, "switch": {...}}]}
-     ```
-     `maps` pasa por `_etiquetar` (etiqueta de version), ordenado por pares
-     descendente y despues por `map`. Sin pares: `pairs: 0`, casos en 0 con
-     `winrate: None`, `maps: []`.
-
-**`views.py`**: `site_after_loss` con `@require_GET` y
-`_ok(agg.site_after_loss(**_filters(request)))`, junto a `positioning`.
-**`urls.py`**: `path("positioning/site-after-loss/", views.site_after_loss,
-name="site-after-loss")` despues de `positioning/`.
-
-**Frontend.**
-
-- `frontend/src/repetirSitio.js` (logica pura): `casosRepetirSitio(caso,
-  minRondas)` devuelve `[{clave: "repeat", titulo: "Repite el sitio"},
-  {clave: "switch", titulo: "Cambia de sitio"}]` con `rounds`, `winrate` y
-  `poca: rounds < minRondas`; `textoPares(n)` ("1 ronda perdida en defensa
-  seguida de otra" / "N rondas ..."); `hayPares(data)` (`!!data?.pairs`).
-- `repetirSitio.test.js` (vitest): sin datos y `pairs: 0` -> `hayPares`
-  false; `poca` por debajo y en el minimo; singular y plural.
-- `Coach.jsx`: `PanelRepetirSitio({ filters })` con
-  `useApi('/positioning/site-after-loss/', filters)`, ErrorBox / Loading /
-  nota como `PorSitio` de Operadores. `<Panel title="Repetir el sitio tras
-  perderlo" hint="Después de perder una ronda defendiendo un sitio, qué hace
-  tu equipo en la siguiente ronda de defensa de esa partida y cuánto la
-  gana. Con el filtro de sitio, solo las rondas perdidas en ese sitio.">`.
-  Dos tarjetas lado a lado (`stat-grid`/`stat` si existen en `ui.jsx` o
-  `styles.css`; si no, un `DataTable` de dos filas: nada nuevo en
-  `styles.css`) con rondas y winrate (`pct`), y "pocas rondas" en
-  `.note` si `poca`. Debajo un `DataTable` por mapa: Mapa, Repite (rondas),
-  Winrate repitiendo, Cambia (rondas), Winrate cambiando, `csvName=
-  "repetir-sitio-por-mapa"`. Sin pares: `<p className="note">` "Sin rondas
-  de defensa perdidas seguidas de otra con estos filtros.".
-
-**Tests backend, `backend/tests/test_repetir_sitio.py`** (con `factories`):
-
-- `test_perder_y_volver_al_mismo_sitio_cuenta_repeat` ("2F Kitchen" ->
-  "2F Kitchen") y `test_ir_a_otro_sitio_cuenta_switch` ("1F Bar").
-- `test_las_rondas_de_ataque_entre_medio_no_cortan_el_par` (D0 perdida,
-  A1, D2).
-- `test_una_ronda_sin_sitio_corta_el_par` (ni como primera ni como
-  segunda).
-- `test_una_ronda_faltante_entre_medio_corta_el_par` (numeros 0 y 2 sin 1).
-- `test_los_pares_no_cruzan_partidas`.
-- `test_tras_ganar_o_sin_ganador_no_hay_par`.
-- `test_winrate_de_la_segunda_ronda_sin_contar_la_sin_ganador`.
-- `test_el_filtro_de_sitio_mira_la_ronda_perdida`: con `?site=2F Kitchen`
-  cuenta el par Kitchen -> Bar y no el Bar -> Kitchen.
-- `test_el_filtro_de_lado_y_el_de_operador_se_ignoran`: respuesta igual con
-  `?side=Attack&operator=Ash`.
-- `test_el_filtro_de_mapa_aplica` y `test_separa_por_mapa_con_su_version`.
-- `test_sin_pares_responde_vacio_sin_error` (200, `pairs: 0`).
-
-**e2e, `humo.spec.js`**, test `el Coach muestra si repites el sitio tras
-perderlo` junto a los del Coach. Calculado con `seed_demo` en una base
-temporal (toda la defensa del seed se pierde): 58 pares, 56 `repeat` y 2
-`switch`, winrate 0 en los dos; por mapa Club House 19/1, Bank 19/1,
-Border 18/0. Afirmar: el panel dice 56 en "Repite el sitio" y 2 en "Cambia
-de sitio", la fila de Club House tiene 19 y 1, y "pocas rondas" aparece en
-"Cambia" (2 < 8); consola limpia. Si el Dev cambia la regla de corte, los
-numeros cambian: recalcularlos igual que aca.
-
-**`docs/metricas.md`**, tabla de `## Cortes`, fila "**Repetir el sitio
-tras perderlo**" junto a las de posicionamiento: pares de rondas de defensa
-consecutivas de la misma partida (por numero, saltando las de ataque;
-cortado por una ronda sin `.rec` entre medio o sin sitio) cuya primera se
-perdio; *repite* si la segunda es en el mismo sitio, *cambia* si no; winrate
-de la segunda sobre las que tienen ganador. Mapa, tipo, modo, fechas y
-sesion aplican; lado y operador no; sitio elige la ronda perdida. Muestra
-minima 8 (`REPETIR_SITIO_MIN_RONDAS`): debajo se avisa, no se oculta. Y la
-fila en `## Muestra minima`.
-
-**Orden.** aggregates + tests backend, vista + url, `repetirSitio.js` +
-vitest, `Coach.jsx`, e2e, `metricas.md`, `npm run build`.
-
-**Que puede romperse.** Ordenar por `round__number` y no por el orden por
-defecto de `Round` (`match__played_at`, `number`) mezclaria partidas si se
-olvida el `match_id`: el test de partidas cruzadas lo cubre. La prorroga
-sigue la numeracion de `number` (unica por partida), asi que entra sin caso
-aparte. El seed tiene casi solo `repeat`: el e2e no prueba el winrate
-distinto de 0, eso lo hacen los tests backend.
-
-**Archivos ocupados.** La 79 (espera al humano) toca `aggregates.py`,
-`views.py` y `urls.py` en otras funciones; la 102 (`implementado`) agrega
-en `aggregates.py`, `views.py`, `urls.py` y `humo.spec.js` en lugares
-distintos (Operadores). Funciones nuevas en zonas distintas: el merge es
-trivial y no se frena, como no se frenaron la 98, la 100 ni la 103.
-
-**Verificacion manual.** `seed_demo`, `/coach`: panel con 56 y 2;
-`?site=<un sitio de Bank>` solo pares que arrancan ahi; `?side=Attack` igual
-que sin el; base vacia: el Coach muestra el EmptyState de siempre.
-
-Skills: no aplica (panel y tabla en una pagina existente; el repo ya lo resuelve con `PorSitio` y `PanelPosicion`).
+(arquitecto 20261112T1204Z-chGLrtC) Panel propio en el Coach, endpoint aparte, sin migracion; detalle en `git log` de esta ficha.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261112T1603Z-cor3JBP) Diseno completo:
-
-- `aggregates.py`: `REPETIR_SITIO_MIN_RONDAS = 8`, `site_after_loss(**filters)`
-  despues de `positioning`. Vista `site_after_loss` y url
-  `positioning/site-after-loss/`.
-- `repetirSitio.js` (`hayPares`, `casosRepetirSitio`, `textoPares`,
-  `textoWinrate`, `filasPorMapa`) + vitest (6). `PanelRepetirSitio` en el
-  Coach despues de "Salida del spawn": dos `Stat` en `.kpis` (clases
-  existentes; nada nuevo en `styles.css`) y `DataTable` por mapa con
-  `csvName="repetir-sitio-por-mapa"`.
-- e2e `el Coach muestra si repites el sitio tras perderlo` (56 / 2, Club
-  House 19 y 1, "pocas rondas" en Cambia, 3 mapas); numeros recalculados con
-  `seed_demo` en base temporal: 58 pares, Bank 19/1, Club House 19/1, Border
-  18/0, iguales al diseno.
-- Filas en `docs/metricas.md` (`## Cortes` y `## Muestra minima`).
-
-Desvios del diseno:
-- **Huecos sin segunda consulta a `Round`.** Se leen tus rondas de los dos
-  lados del mismo `base_queryset` (sin `side`, `site` ni `operator`) en
-  orden por partida y numero; un numero que no sigue al anterior corta el par.
-  Asi corta tambien una ronda que existe pero sin fila tuya (no se sabe que
-  defendio tu equipo) y una con `side=""`, y es una sola consulta.
-- **"Pocas rondas" tambien por mapa** (revision ciega): la columna de winrate
-  de la tabla lo agrega cuando ese caso del mapa tiene menos de 8 pares; el
-  diseno solo lo pedia en el total. El winrate de las tarjetas se redondea
-  igual que la tabla (sin decimales).
-- Tests backend: los 13 del diseno mas
-  `test_el_filtro_de_tipo_de_partida_aplica` y
-  `test_dos_versiones_del_mapa_son_dos_filas` (15).
-  `test_los_pares_no_cruzan_partidas` arma la segunda partida desde la
-  ronda 2 para que solo el cambio de partida corte (comprobado: sin esa
-  condicion, falla).
-
-Criterios -> tests: repeat/switch (`test_perder_y_volver_...`,
-`test_ir_a_otro_sitio_...`, `test_separa_por_mapa_...`); ataque entre medio
-y partidas (`test_las_rondas_de_ataque_...`, `test_los_pares_no_cruzan_...`);
-`site=""` (`test_una_ronda_sin_sitio_corta_el_par`); filtros (`..._sitio_mira_la_ronda_perdida`,
-`..._lado_y_el_de_operador_se_ignoran`, `..._mapa_aplica`, `..._tipo_de_partida_aplica`);
-UI vacia (`test_sin_pares_responde_vacio_sin_error` y vitest `sin datos o sin
-pares`), muestra minima (vitest y e2e), consola (e2e); metricas (filas
-nuevas).
-
-verificar.sh: VERDE 7aaeb4f (1124 backend, 301 vitest, 85 e2e).
-
-Skills: no aplica (el repo ya lo resuelve con `PorSitio` y `PanelSalidaSpawn`).
+(dev 20261112T1603Z-cor3JBP) `aggregates.site_after_loss` y
+`REPETIR_SITIO_MIN_RONDAS = 8`, vista y url `positioning/site-after-loss/`,
+`repetirSitio.js` + vitest, `PanelRepetirSitio` en el Coach (dos `Stat` y
+`DataTable` por mapa con CSV), e2e, filas en `metricas.md`. Desvios del
+diseno: los huecos se ven en la misma consulta (tus rondas de los dos lados;
+un numero que no sigue al anterior corta), y "pocas rondas" tambien por mapa.
 OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision 2026-11-12 sobre b2c94af
 
-(revisor 20261112T2004Z-cbaTGDt) Rama fusionada con `origin/dev` (entro la 102, sin
-conflictos). Partida de verde: verificar.sh VERDE b2c94af (1137 backend, 309
-vitest, 86 e2e). Revision a ciegas en dos ejes (estandares e intencion,
-`omc-code-reviewer` cada uno); cada hallazgo confirmado por el lider.
-
-Reglas: endpoint `@require_GET`, sin dependencias, sin `pydissect/` ni
-Electron, agrega columnas existentes (sitio, lado, ganador), fila en
-`metricas.md` y en muestras minimas, e2e por el Coach, sin tildes en
-identificadores y con tildes en la UI. Criterios: los cinco cubiertos
-(tests de la Implementacion; numeros del e2e reproducidos sobre `seed_demo`).
-
-Hallazgos (ninguno CRITICAL ni HIGH):
-
-- [test] MEDIUM `backend/tests/test_repetir_sitio.py:93` -> **cerrado con test**
-  Que pasa: `test_el_filtro_de_sitio_mira_la_ronda_perdida` pasa igual si el
-  filtro de sitio mirara la segunda ronda (K->Bar y Bar->K dan los dos
-  pairs=1, switch=1).
-  Por que es cierto: mutacion (filtro movido a la segunda ronda) deja ese
-  test en verde. Agregado `test_el_filtro_de_sitio_no_mira_la_segunda_ronda`
-  (K perdida->Bar y Bar perdida->Bar con `site=K`): pasa con el codigo y cae
-  con la mutacion. Tambien `test_el_filtro_de_fechas_aplica` (`since`), que
-  el criterio nombra y no tenia test.
-- [intencion] LOW `frontend/src/pages/Coach.jsx:262` (hint)
-  Que pasa: el panel ignora los filtros de lado y de operador y el hint solo
-  explica el de sitio; con `operator=Ash` los numeros no son de Ash.
-  Arreglo sugerido: sumar "No depende del filtro de lado ni del de operador."
-- [bug] LOW `frontend/src/pages/Coach.jsx:247`
-  Que pasa: el `csv` propio de `winrateConMuestra` exporta `33.3` con punto;
-  `celdaCsv` (`components/ui.jsx:91`) solo pasa a coma sin `csv:` propio.
-  Mismo patron ya existente en `Trends.jsx:72`.
-  Arreglo sugerido: `csv: (row) => row[k] == null ? '' : String(row[k]).replace('.', ',')`.
-- [intencion] LOW `frontend/src/pages/Coach.jsx:31`: un filtro que este panel
-  ignora y que vacia `/coach/` esconde la pagina entera; coherente con el
-  resto del Coach, solo anotado.
-
-Pregunta no bloqueante: el par tambien se corta si falta un numero de ronda
-(aunque fuera de ataque). Conservador y documentado en el docstring y en
-`metricas.md`; no se pide cambio.
-
-Veredicto: aprobar -> `revisado`. Los LOW quedan para pulir; no frenan.
-
-Skills: no aplica.
+(revisor 20261112T2004Z-cbaTGDt) Aprobar -> `revisado`. MEDIUM corregido: el
+test del filtro de sitio pasaba igual si mirara la segunda ronda; agregados
+`test_el_filtro_de_sitio_no_mira_la_segunda_ronda` y
+`test_el_filtro_de_fechas_aplica`. LOW sin arreglar: hint sin lado/operador;
+CSV con punto (resuelto despues por #109 en `celdaCsv`); un filtro que vacia
+el Coach esconde la pagina (como el resto del Coach).
 OMC: plan=— · revisión=4 hallazgos (1 MEDIUM cerrado con test; 3 LOW sin arreglar) · verificación=—
 
 ## QA 2026-11-13 sobre 22dc59d
