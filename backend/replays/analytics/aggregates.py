@@ -3185,6 +3185,61 @@ def duels_by_operator(min_duels: int = 3, **filters) -> list[dict]:
     return sorted(salida, key=lambda r: (-r["duels"], r["operator"]))
 
 
+def openings_by_operator(min_openings: int = 3, **filters) -> list[dict]:
+    """Que operadores rivales te sacan en el primer duelo de la ronda, por tu lado.
+
+    `duels_by_operator` cuenta todos los duelos; esta solo la apertura, que es
+    la que decide a quien le tienes que aprender a jugar la entrada.
+    """
+    me_ids = _me_ids()
+    if not me_ids:
+        return []
+    contra_mi, a_favor = _duelos(base_queryset(**filters), me_ids)
+    contra_mi = contra_mi.filter(id=_PRIMER_EVENTO)
+    a_favor = a_favor.filter(id=_PRIMER_EVENTO)
+
+    # el denominador incluye las aperturas de operador vacio o desconocido:
+    # sin fila propia, pero te abrieron igual, asi un lado nunca pasa de 100
+    perdidas_por_lado = {
+        raw["round__my_side"]: raw["n"]
+        for raw in contra_mi.values("round__my_side").annotate(n=Count("id"))
+    }
+
+    rows: dict[tuple[str, str], dict] = {}
+
+    def sumar(qs, clave: str) -> None:
+        for raw in qs.values("op_rival", "round__my_side").annotate(n=Count("id")):
+            nombre, lado = raw["op_rival"], raw["round__my_side"]
+            if not nombre or not lado or nombre.startswith(unknowns.UNKNOWN_PREFIX):
+                continue
+            fila = rows.setdefault(
+                (nombre, lado),
+                {"operator": nombre, "side": lado, "opened_you": 0, "you_opened": 0},
+            )
+            fila[clave] += raw["n"]
+
+    sumar(contra_mi, "opened_you")
+    sumar(a_favor, "you_opened")
+
+    salida = []
+    for fila in rows.values():
+        aperturas = fila["opened_you"] + fila["you_opened"]
+        if aperturas < min_openings:
+            continue
+        fila.update(
+            {
+                "openings": aperturas,
+                "balance": fila["you_opened"] - fila["opened_you"],
+                "winrate": _pct(fila["you_opened"], aperturas),
+                "share": _pct(fila["opened_you"], perdidas_por_lado.get(fila["side"], 0)),
+            }
+        )
+        salida.append(fila)
+    return sorted(
+        salida, key=lambda r: (-r["opened_you"], -r["openings"], r["operator"], r["side"])
+    )
+
+
 def rounds_vs_operator(min_rounds: int = 10, **filters) -> dict:
     """Cuanto mueres y cuanto ganas en las rondas con cada operador del otro lado.
 
