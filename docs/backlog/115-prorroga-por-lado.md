@@ -1,8 +1,8 @@
 # 115. Prorroga por lado
 
-estado: disenado
+estado: en curso 2026-11-13T12:23Z
 candado: -
-rama: -
+rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack
