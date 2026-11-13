@@ -1,8 +1,8 @@
 # 126. A qué operador cambias tras perder
 
-estado: disenado
+estado: en curso 2026-11-13T18:50Z
 candado: -
-rama: -
+rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
 area: fullstack
