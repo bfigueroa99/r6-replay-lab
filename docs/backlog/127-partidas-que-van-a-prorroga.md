@@ -184,6 +184,8 @@ Desvios del diseno: ninguno, mas el test de arriba.
 
 Skills: no aplica.
 Skills del repo: statistical-analysis (denominador `decided`, n en Partidas, aviso con menos de 10), testing-strategy (numero en Django con mutante, union en vitest, e2e de humo por la API); modern-web-guidance no leida (sin CSS ni markup nuevo: columnas y una nota con los componentes existentes); ux-copy (ayudas y nota con tildes, como las vecinas).
+verificar.sh: VERDE c7f2142b1 (1293 backend, 425 vitest, 114 e2e).
+
 OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—
 
 ## Revision
