@@ -1,7 +1,7 @@
 # 111. Copiar las señales del Coach como texto
 
-estado: revisado
-candado: qa 2026-11-13T17:00Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/111-copiar-las-senales-del-coach
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H6
 archivos: frontend/src/textoCoach.js (nuevo), frontend/src/textoCoach.test.js (nuevo), frontend/src/pages/Coach.jsx (GROUPS y format se mudan; boton Copiar señales), frontend/e2e/humo.spec.js
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k, revisor 20261113T1647Z-cRa8Bqm
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k, revisor 20261113T1647Z-cRa8Bqm, qa 20261113T1651Z-cxTme8t
 
 ## PR
 
@@ -231,7 +231,25 @@ sin `console.log`. Sin seguridad: no toca POST, red, rutas ni dependencias.
 OMC: plan=— · revisión=4 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
 Skills del repo: ninguna
 
-## QA
+## QA 2026-11-13 sobre 1d1eb81
+
+(qa 20261113T1651Z-cxTme8t) Ejercitado el sistema. La rama trae `origin/dev` (e29393f, con la 115): merge sin conflictos, 030054e.
+
+- `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --` -> `VERDE 030054e7e: 1181 tests backend, 353 vitest, 98 e2e`; tras los tests de borde de abajo, `VERDE 1d1eb81e4 en 192s: 1181 tests backend, 355 vitest, 98 e2e. Todo en verde.`
+- Bases en el scratchpad (`SQLITE_PATH=<tmp>/x.sqlite3 manage.py migrate`): `seed_demo` (29 partidas, 203 rondas) en :8765 y vacia en :8766. `curl /api/coach/?<q>` con `''`, `side=Defense`, `map=bank`, `until=foo`, `page=-1`, `days=-1`, `map=nope`, `side=`, `session=0`, `gamemode=Bomb&ranked_only=1`: todos 200; `side=Defense&map=bank` da 0 señales con 30 rondas.
+- Chromium (Playwright, script en el scratchpad), claro y oscuro, con permiso de portapapeles: `/coach` -> "Copiar señales" -> "Copiado"; el texto copiado empieza `Coach · Sin filtros`, trae `- <titulo>` de las 9 señales de la API, sin HTML ni espacios al final. `?side=Defense` -> `Coach · Filtros: Solo defensa` (7 de 7); `?map=bank&operator=Ash` -> `Coach · Filtros: Mapa: bank · Operador: Ash`; `?gamemode=Bomb&ranked_only=1&session=1` -> `Coach · Filtros: Sesión 2 · Modo: Bomba · Solo ranked`. Con otro filtro el aviso "Copiado" desaparece. Base vacia y `?side=Defense&map=bank` (0 señales): ningun boton. Consola limpia en todo.
+- Sin portapapeles (`addInitScript` con `navigator.clipboard` indefinido) y con `writeText` que rechaza: "No se pudo copiar: el navegador no dio acceso al portapapeles.", consola limpia (criterio 3, a mano: no hay test automatico).
+- `accessibility-review`: el boton es `button` con nombre "Copiar señales", se alcanza con Tab despues de "Importar replays" y Enter copia; contraste boton 6.51:1, aviso 6.45:1. 0 Critical, 0 Major.
+- `vite build`: chunk inicial `index` 199.89 kB en dev -> 199.91 kB en la rama; `Coach` (lazy) 8.61 -> 10.46 kB.
+- Mutacion en `textoCoach.js` (todo restaurado): `if (senal.sample)` -> `if (true)` cae "la referencia y la muestra van solo si existen"; orden de `CLAVES_DE_URL` invertido cae 2 tests. Sobrevivian sin `trimEnd`, umbral `< 10` -> `< 100` y sin `Math.abs`: **agregados por QA** (pasan) "de 10 para arriba el numero va sin decimales, aunque no sea entero" y "una señal sin detalle no deja espacios al final de la linea"; con ellos los tres caen.
+- Fuera de la ficha (ya estaba): la señal de trades dice "El 92%" en el titulo y `untraded_death_pct: 93` en la linea de numeros (redondeo distinto en backend y `formatoCoach`); la pagina muestra lo mismo. Anotado en `ALCANCE.md`.
+- Sin numero nuevo (validate-data no aplica), sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+
+Criterios: 1 a 4 cubiertos con la evidencia de arriba. Veredicto: `aprobado`.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (qa: 0 Critical/Major, contrastes 6.51 y 6.45), validate-data no aplica (sin numero nuevo), design-critique no aplica (boton en un panel existente).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
