@@ -49,6 +49,11 @@ class VentajaMaximaTests(SimpleTestCase):
         team_of = {ME: 0, **dict.fromkeys(MATES, 0), **dict.fromkeys(RIVALES[:4], 1)}
         self.assertIsNone(metrics.ventaja_maxima([], team_of, 0))
 
+    def test_un_5v4_de_arranque_con_una_baja_sin_resolver_no_es_ventaja(self):
+        team_of = {ME: 0, **dict.fromkeys(MATES, 0), **dict.fromkeys(RIVALES[:4], 1)}
+        eventos = [{"kind": "Kill", "actor": "rival0", "target": None}]
+        self.assertIsNone(metrics.ventaja_maxima(eventos, team_of, 0))
+
     def test_cambiar_bajas_sin_pasar_adelante_no_es_ventaja(self):
         eventos = [
             {"kind": "Kill", "actor": "rival0", "target": "mate0"},
