@@ -1,15 +1,15 @@
 # 123. Clutches de tus companeros
 
-estado: propuesto
-candado: arquitecto 2026-11-13T18:58Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: escuadra
 area: backend
 prioridad: 3
 fuente: ALCANCE.md C15
-archivos: -
-turnos: po 20261113T1650Z-c9H2L8Y
+archivos: backend/replays/analytics/aggregates.py (teammate_clutches, CLUTCH_COMPANERO_MIN), backend/replays/views.py (teammates), backend/tests/test_clutch_companeros.py (nuevo), frontend/src/clutchCompaneros.js (nuevo), frontend/src/clutchCompaneros.test.js (nuevo), frontend/src/pages/Teammates.jsx (panel Clutches), frontend/e2e/humo.spec.js, docs/metricas.md
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq
 
 ## PR
 
@@ -50,6 +50,146 @@ la ronda y quien la regala; hoy los clutches de esa pagina son solo tuyos.
 
 ## Diseno
 
+(arquitecto 20261113T1830Z-cTivbSq, sobre `origin/dev@ed7bb52`) Filtros
+duros: pasa. `RoundPlayer.clutch_vs` ya se escribe al importar para **cada**
+jugador de la ronda (`metrics.py:430`, `clutch_vs(events, team_of)` devuelve
+un valor por nick), no solo para vos: no hace falta migracion ni `recompute`.
+Sin red, sin dependencias, sin POST. Una forma obvia, ~300 lineas: sin arena
+ni consenso.
+
+**Muestra.** Dos cortes, los dos ya en uso en la pagina:
+- Quien sale: los **habituales** (`MIN_PARTIDAS_HABITUAL = 5` partidas en tu
+  equipo, sobre todo el historial y sin filtros, la regla de `by_stack`,
+  ficha 54), y de ellos solo los que tienen al menos un intento con los
+  filtros puestos. Un conocido de una noche no es "a quien dejarle la ronda".
+- Que se avisa: `CLUTCH_COMPANERO_MIN = 5` intentos por fila; debajo, `*`
+  "Menos de 5 intentos" como Clutch por mapa y sitio y por operador (sale
+  igual: con 3 intentos el % no dice mucho, pero el `n` esta a la vista).
+
+**Backend, `backend/replays/analytics/aggregates.py`**, funcion nueva
+`teammate_clutches(**filters) -> dict`, despues de `clutch_by_operator` (zona
+que no toca ninguna rama abierta):
+- `CLUTCH_COMPANERO_MIN = 5` arriba de la funcion, con un comentario como los
+  de `CLUTCH_SITIO_MIN`.
+- Habituales: `player_id` con `Count("round__match_id", distinct=True) >=
+  MIN_PARTIDAS_HABITUAL` sobre `RoundPlayer.objects.filter(is_me=False)
+  .filter(Exists(mia))`, con `mia` la correlacionada sin filtros de `by_stack`
+  (misma consulta; se copia en vez de extraer un helper de `by_stack` para no
+  tocar esa funcion: un comentario lo dice).
+- Intentos de compañeros: `RoundPlayer.objects.filter(is_me=False,
+  player_id__in=<habituales>, clutch_vs__gt=0,
+  round__my_team_won__isnull=False).filter(Exists(me_in_round))`, con
+  `me_in_round = base_queryset(**filters).filter(round_id=OuterRef("round_id"),
+  team_index=OuterRef("team_index"))` (el patron de `teammate_synergy`: los
+  filtros de la barra, lado incluido, se aplican sobre tu fila de esa ronda;
+  tu compañero esta del mismo lado). `.values("player_id",
+  "player__username").annotate(attempts=Count("id"),
+  won=Count("id", filter=Q(round__my_team_won=True)))`. El nombre sale de
+  `Player` (un cambio de nick no parte la fila). Ganado = `my_team_won`: es tu
+  equipo, el de el.
+- Tu fila de referencia: `base_queryset(**filters).filter(clutch_vs__gt=0,
+  round__my_team_won__isnull=False)` con `attempts` y `won` (la misma cuenta
+  que la suma de `clutch_conversion`).
+- Devuelve `{"min_attempts": CLUTCH_COMPANERO_MIN, "me": {"attempts", "won",
+  "pct", "low_sample"}, "rows": [{"player_id", "username", "attempts", "won",
+  "pct", "low_sample"}]}`, `pct = _pct(won, attempts)`, `low_sample =
+  attempts < CLUTCH_COMPANERO_MIN`, filas ordenadas por `-attempts`,
+  `username`.
+- `views.teammates` suma `"teammate_clutches": agg.teammate_clutches(**filters)`
+  al final del dict (una linea; la 79 no toca esa vista).
+
+**Tests, `backend/tests/test_clutch_companeros.py`** (nuevo, con
+`factories.py`; un helper que arma N partidas con vos y los compañeros en el
+equipo 0 para que sean habituales, y fija `clutch_vs` y `won` por ronda con
+`make_round_player`, que ya acepta esos campos o se setean despues):
+- `test_cuenta_intentos_y_ganados_por_companero`: dos habituales; uno con un
+  intento ganado y uno perdido (50.0), el otro con un ganado (100.0); orden
+  por intentos.
+- `test_una_ronda_sin_ganador_no_cuenta` (`my_team_won=None` con
+  `clutch_vs=2`: no suma intentos).
+- `test_un_companero_que_no_es_habitual_no_sale` (4 partidas juntas, con
+  intentos: no sale; con 5, si).
+- `test_un_rival_no_cuenta_aunque_clutchee` (fila con `team_index` 1 y
+  `clutch_vs` > 0 en tu ronda: no sale ni suma).
+- `test_el_filtro_de_lado_aplica` (intentos en ataque y en defensa; con
+  `side="Defense"` solo los de defensa).
+- `test_un_cambio_de_nick_no_parte_la_fila` (mismo `Player`, dos `username`
+  de `RoundPlayer`: una fila con el nombre de `Player`).
+- `test_tu_fila_es_tu_conversion` (`me` == suma de `attempts`/`won` de
+  `clutch_conversion` con los mismos datos).
+- `test_marca_muestra_chica_debajo_de_5` (4 intentos `low_sample` true, 5
+  false).
+- `test_la_api_trae_teammate_clutches` (`/api/teammates/` con base vacia:
+  `rows == []`, `min_attempts == 5`, `me.attempts == 0`).
+
+**Frontend.**
+- `frontend/src/clutchCompaneros.js` (logica pura, nuevo):
+  `filasClutchCompaneros(data)` -> `[]` si `data?.rows` vacio o ausente; si no,
+  primero la fila `{clave: 'yo', nombre: 'Vos', esYo: true, ...data.me}` y
+  despues una por compañero `{clave: player_id, nombre: username, playerId,
+  attempts, won, pct, low_sample}`. Vitest
+  `frontend/src/clutchCompaneros.test.js`: sin datos `[]`; con filas, `Vos`
+  primero y despues en el orden de la API; `low_sample` pasa tal cual.
+- `frontend/src/pages/Teammates.jsx`, panel "Clutches", un `<h3>Clutches de
+  tus compañeros</h3>` entre la tabla "Clutch por operador" y "Clutches
+  ganados", con `DataTable` sin `initialSort` (el orden lo da la API, con
+  `Vos` primero): columnas Compañero (enlace a `/jugadores/<playerId>` como
+  la tabla Sinergia; `Vos` en negrita y sin enlace), Intentos, Ganados,
+  Conversión (`pct` con el `*` "Menos de 5 intentos" del mismo markup que
+  Clutch por operador), `csvName="clutch-companeros"`. Sin filas: `<p
+  className="note">Ningún compañero habitual quedó último en una ronda
+  contigo con estos filtros.</p>`. El `hint` del panel suma: "Clutches de tus
+  compañeros: los habituales (5 partidas o más en tu equipo) que quedaron
+  últimos en rondas contigo, con tu conversión arriba para comparar."
+
+**e2e, `frontend/e2e/humo.spec.js`**, dos tests junto a los de `/companeros`:
+- `Compañeros muestra los clutches de tus compañeros`: `seed_demo` da tres
+  habituales (Seba, Nico, Chamo, 29 partidas) y ninguno con `clutch_vs > 0`:
+  heading visible y la nota vacia; consola limpia. (Si un cambio de
+  `seed_demo` les da intentos, el test lee `/api/teammates/` y afirma la
+  tabla en vez de la nota.)
+- `la tabla de clutches de compañeros pone tu fila primero`: `page.route`
+  sobre `**/api/teammates/**` con `route.fetch` + `route.fulfill`, la
+  respuesta con `teammate_clutches` reemplazado por `me` (6 intentos, 3
+  ganados, 50) y dos filas (8/2/25 y 3/3/100 con `low_sample`): filas en
+  orden `Vos`, el de 8, el de 3; el de 3 con `*`; consola limpia.
+
+**`docs/metricas.md`**: fila nueva despues de "Clutch por operador":
+`| **Clutches de tus compañeros** | En Compañeros, panel Clutches (clave `teammate_clutches` de `/api/teammates/`). Por compañero habitual (5 partidas o mas en tu equipo, todo el historial, sin filtros: `MIN_PARTIDAS_HABITUAL`), las rondas en que quedo ultimo vivo de tu equipo con rivales vivos (`clutch_vs > 0` en su fila, el mismo algoritmo que el tuyo) y cuantas gano tu equipo. Agrupado por `Player`: un cambio de nick no parte la fila. Las rondas sin ganador no cuentan. Conversion = ganados / intentos. La fila Vos es tu conversion total con los mismos filtros. Un `*` marca menos de 5 intentos (`CLUTCH_COMPANERO_MIN`): sale igual. Respeta los filtros de la barra, aplicados a tu fila de esa ronda. |`
+y en `## Muestra minima`: `| Clutches de tus compañeros | habitual (5 partidas juntas) para salir; 5 intentos por fila (`CLUTCH_COMPANERO_MIN`): no se oculta, se avisa con * |`.
+
+**Orden.** Tests backend (rojo) -> `teammate_clutches` -> vista -> vitest ->
+`clutchCompaneros.js` -> tabla en `Teammates.jsx` -> e2e -> `metricas.md` ->
+`npm run build` -> `verificar.sh`.
+
+**Que puede romperse.** `/api/teammates/` suma una clave: los consumidores
+existentes no la leen. Rendimiento: dos consultas mas en una pagina que ya
+hace nueve; la de habituales es la de `by_stack` (correlacionada, sin `IN`
+de `round_id`); el `player_id__in` es de habituales (pocos). Un
+`assertNumQueries(3)` en `test_la_api_trae_teammate_clutches` no: la vista
+hace todas; ponerlo sobre `agg.teammate_clutches()` directo (habituales,
+compañeros, vos).
+
+**Archivos ocupados.** 79 (espera al humano): `aggregates.py` (guardia de
+partidas excluidas: al mergearse, su test de guardia puede pedir clasificar
+`teammate_clutches`; lo resuelve quien mergee el segundo, P3), `views.py`
+en otras vistas. 120, 122, 126: `aggregates.py` en otras funciones,
+`humo.spec.js` y `metricas.md` en otras zonas; ninguna toca
+`Teammates.jsx` ni `views.teammates`. No se frena.
+
+**Verificacion manual.** `seed_demo` + `runserver`, `/companeros`: el
+subtitulo y la nota vacia. Con la base real: la tabla con `Vos` arriba;
+`?side=Attack` cambia los numeros; un `*` en las filas con menos de 5.
+
+Skills: no aplica (una tabla mas sobre un campo que ya se calcula).
+Skills del repo: statistical-analysis (conversion con su `n`; dos cortes:
+habitual para salir y 5 intentos para avisar, sin ocultar; tu fila con el
+mismo denominador como referencia, no un promedio de promedios),
+testing-strategy (Django para la cuenta, los cortes y los filtros, vitest
+para el orden de filas, e2e vacio con `seed_demo` y con respuesta
+interceptada para ver filas).
+OMC: plan=— · revisión=— · verificación=—
+
 ## Implementacion
 
 ## Revision
@@ -58,4 +198,4 @@ la ronda y quien la regala; hoy los clutches de esa pagina son solo tuyos.
 
 ## Para el humano
 
-(nada)
+- (arquitecto 2026-11-13, no bloquea) El aviso de 5 intentos por compañero (`CLUTCH_COMPANERO_MIN`) copia el de Clutch por operador, sin calibrar con tu base: mira cuantas filas quedan con `*`.
