@@ -1,7 +1,7 @@
 # 118. "Ver esas rondas" desde las señales del Coach
 
-estado: en curso 2026-11-13T17:26Z
-candado: dev 2026-11-13T17:26Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/118-ver-esas-rondas-desde-el-coach
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -153,6 +153,51 @@ tiene enlace. Con `?days=30` en la barra, el enlace lo conserva.
 Skills: no aplica (enlaces a filtros que la app ya tiene; `filtrosUrl.js` resuelve la query).
 Skills del repo: testing-strategy (Django para el mapeo señal -> filtros, vitest para armar el enlace, e2e para el clic y la barra).
 OMC: plan=— · revisión=— · verificación=—
+
+## Implementacion
+
+(dev 20261113T1651Z-cxTme8t) Diseno completo:
+
+- `coach.py`: `_insight` suma `filters` (por defecto `{}`) y `target` (`"/"`);
+  constante `LADO`; cada regla pasa los filtros que dice el Diseno (lado,
+  mapa por slug, sitio con su mapa, operador con su lado, spawn como mapa en
+  ataque, zonas por la tupla de `_posicion`); `operador-rival` y `nemesis`
+  van a `/duelos`. El texto de las señales no cambia.
+- `enlaceSenal.js`: `enlaceDeSenal` (suma los filtros de la señal a los de
+  la barra, los de la señal pisan; `null` en el Resumen sin filtros propios
+  y con destino desconocido) y `textoDelEnlace` ("Ver esas rondas" / "Ver en
+  Duelos"). `Coach.jsx`: `Link` con `btn small` al final de `.meta`.
+- `metricas.md`: parrafo "Ver esas rondas" bajo la muestra minima.
+
+Desvios del diseno (revision ciega, corregidos):
+- HIGH: ninguna pagina muestra el selector de Sitio, asi que el `site` de
+  `sitio-debil` y de las zonas quedaba puesto y sin verse en todas las
+  paginas. `Filters.jsx` (fuera de `archivos:`) muestra Sitio tambien cuando
+  `value.site` viene puesto; e2e `el sitio que trae una señal del Coach se ve
+  en la barra y se quita` (cae sin el arreglo).
+- MEDIUM: con una version elegida en la barra (`map=<map_id>`) el slug de la
+  señal la pisaba y el enlace abria las dos versiones. `build_insights` quita
+  `map` de los filtros de la señal si la barra ya trae mapa (la señal se
+  calculo dentro de el); test `test_con_mapa_en_la_barra_la_senal_no_lo_pisa`
+  (cae sin el arreglo).
+- LOW: tests de `spawn-debil` y de los valores de `side`; comentarios sin
+  tildes. `test_posicion.py` (fuera de `archivos:`) suma los `filters` de las
+  zonas de sitio y de spawn.
+
+Tests vistos en rojo antes del codigo: backend (7 con `KeyError: 'filters'`),
+vitest `enlaceSenal.test.js` (sin modulo). Criterios -> tests: `filters` por
+señal y `{}` en las generales (`EnlaceDeLasSenalesTests`, 9, y
+`test_posicion.py`); filtros globales conservados (vitest "conserva el
+periodo y el tipo", "pisa el de la barra"); enlace a `/` o `/duelos` o
+ninguno (vitest y `test_las_senales_de_rival_van_a_duelos`); e2e `una señal
+del Coach abre el Resumen filtrado` (operador-debil del seed: URL, `h1` y
+selector de operador; `kst` sin enlace; consola limpia) mas el de sitio.
+
+verificar.sh: VERDE 95c5d88fc (1209 backend, 368 vitest, 101 e2e).
+
+Skills: no aplica.
+Skills del repo: ux-copy (dev: "Ver esas rondas" / "Ver en Duelos" empiezan con verbo y nombran el destino), modern-web-guidance no corrida (pide `npx` con red; el cambio es un `Link` con la clase `btn small` que ya existe, sin CSS nuevo).
+OMC: plan=— · revisión=5 hallazgos (5 arreglados; 1 HIGH) · verificación=—
 
 ## Para el humano
 
