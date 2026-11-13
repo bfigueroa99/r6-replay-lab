@@ -220,10 +220,6 @@ Skills: no aplica.
 Skills del repo: statistical-analysis (cada % con su `n` a la vista, empate definido, conteo de partidas y no promedio de promedios), testing-strategy (Django, vitest, e2e como dice el diseno), ux-copy (etiquetas y nota del diseno, con tildes), modern-web-guidance no leida (un `Panel` y `Stat` que ya existen, sin CSS nuevo), sql-queries (patron vecino de `teammate_synergy`; `assertNumQueries(2)` fijo con 2 y 5 partidas).
 OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 3 arreglados, 1 cubierto con test) · verificación=—
 
-## Revision
-
-## QA
-
 ## Revision 2026-11-13 sobre dc941a9
 
 (revisor 20261113T1830Z-c2rHpej) Punto de partida: la rama chocaba con `origin/dev` (1de3c54..72fad68,
@@ -260,6 +256,9 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados: 1 al humano, 2 decisiones del diseno) · verificación=—
 
+
+
+## QA
 
 ## Para el humano
 
