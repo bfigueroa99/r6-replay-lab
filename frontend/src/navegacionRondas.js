@@ -1,4 +1,4 @@
-/** Cambiar de ronda con las flechas del teclado en el detalle de una partida. */
+/** Cambiar de ronda en el detalle de una partida: flechas del teclado y ancla `#ronda-N`. */
 
 /** Ronda a `paso` de `actual`, sin pasarse de la primera ni de la ultima. */
 export function rondaVecina(actual, total, paso) {
@@ -25,4 +25,21 @@ export function pasoDeTecla(evento) {
   if (evento.key === 'ArrowLeft') return -1
   if (evento.key === 'ArrowRight') return 1
   return 0
+}
+
+const ANCLA = /^#ronda-([1-9]\d*)$/
+
+/** Ancla de una ronda: el numero humano de la etiqueta `R<n>`, no el `number` 0-based. */
+export const anclaDeRonda = (number) => `#ronda-${number + 1}`
+
+/**
+ * Indice en `rounds` de la ronda que pide el hash, o null. Se busca por
+ * `number` y no por posicion: con un `.rec` faltante las dos se separan.
+ */
+export function indiceDeAncla(hash, rounds) {
+  const ancla = ANCLA.exec(hash || '')
+  if (!ancla || !rounds?.length) return null
+  const numero = Number(ancla[1]) - 1
+  const indice = rounds.findIndex((ronda) => ronda.number === numero)
+  return indice === -1 ? null : indice
 }
