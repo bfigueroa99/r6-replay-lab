@@ -1,7 +1,7 @@
 # 125. Teamkill marcado en la timeline de la ronda
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:57Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
