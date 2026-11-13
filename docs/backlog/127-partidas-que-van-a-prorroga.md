@@ -1,8 +1,8 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
-estado: disenado
+estado: en curso 2026-11-13T22:57Z
 candado: -
-rama: -
+rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
 area: fullstack

@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 23:25 UTC por revisor, dev (sesion 20261113T2252Z-czjsKrH; motivo: por estado: 1 implementado; sigue: por estado: 3 disenado, lugar en cola)
+actualizado: 2026-11-13 23:10 UTC por revisor, dev (sesion 20261113T2252Z-cQac5RQ; motivo: por estado: 1 implementado; sigue: por estado: 3 disenado, lugar en cola)
 playbook: origin/dev@39e22c0
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias; sin herramientas para comparar (rol release solo dentro de la QA: pasos 3 a 5)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -13,9 +13,10 @@ pausa: no
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 | claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | con hallazgos (revision: e2e intermitente, listener despues del `goto`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
 | claude/equipo-dev/133-ventaja-numerica-tirada | docs/backlog/133-ventaja-numerica-tirada.md | implementado (HIGH y MEDIUM de la revision arreglados, mas el post-plant) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/133-ventaja-numerica-tirada?expand=1) |
+| claude/equipo-dev/127-partidas-que-van-a-prorroga | docs/backlog/127-partidas-que-van-a-prorroga.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/127-partidas-que-van-a-prorroga?expand=1) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=6 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
 
 
 ## Orden de merge sugerido
@@ -24,13 +25,14 @@ RESUMEN propuesto=6 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 
 
 1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (con hallazgos: vuelve al Dev, arreglo de dos lineas en el e2e): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
 2. `claude/equipo-dev/133-ventaja-numerica-tirada` (implementado: espera revision): `metrics.py`, `aggregates.py`, `views.py`, `urls.py`, `Duelos.jsx`, `humo.spec.js`, `metricas.md`.
-3. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
+3. `claude/equipo-dev/127-partidas-que-van-a-prorroga` (implementado: espera revision de otra sesion): `aggregates.py`, `views.py`, `test_prorroga_por_lado.py`, `prorrogaPorLado.js`, `Trends.jsx`, `humo.spec.js`, `metricas.md`; lineas vecinas a la 133 en `aggregates.py` y `humo.spec.js`.
+4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:21 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 120-puesto-en-el-lobby 121-copiar-una-ronda-como-texto 122-cuando-te-toco-por-ultima-vez 123-clutches-de-tus-companeros 124-partidas-por-version-del-juego 125-teamkill-marcado-en-la-timeline 126-a-que-operador-cambias-tras-perder 130-saltar-a-la-siguiente-ronda-perdida) otros:4 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: escuadra: 123 en dev, 131 disenado, 109 disenado (frenada). operadores: 113 y 126 en dev, 129 con hallazgos. datos: 124 en dev, 79 entregado (PR #81), 83 disenado (frenada). revision-de-rondas: 125 en dev, 130 en dev (PR #128), 133 con hallazgos, 136 propuesto. impacto: 116 en dev, 134 propuesto. progreso: 120 en dev, 135 propuesto. rivales: 122 en dev, 132 y 137 propuesto. lado-y-marcador: 127 disenado. posicionamiento: 128 disenado, 138 propuesto.
+- Epicas en curso: escuadra: 123 en dev, 131 disenado, 109 disenado (frenada). operadores: 113 y 126 en dev, 129 con hallazgos. datos: 124 en dev, 79 entregado (PR #81), 83 disenado (frenada). revision-de-rondas: 125 en dev, 130 en dev (PR #128), 133 con hallazgos, 136 propuesto. impacto: 116 en dev, 134 propuesto. progreso: 120 en dev, 135 propuesto. rivales: 122 en dev, 132 y 137 propuesto. lado-y-marcador: 127 implementado. posicionamiento: 128 disenado, 138 propuesto.
 - Papel: PAPEL_TIPOS=funcionalidad:11 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:3 de 3 ramas de trabajo
 - `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: O17 (el selector de filtro no muestra un valor que no conoce).
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
@@ -44,7 +46,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 
 | 79-excluir-una-partida-de-los-agregados | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | funcionalidad | datos | 3 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado | funcionalidad | datos | 3 | fullstack | - |
 | 109-quien-te-venga | disenado | funcionalidad | escuadra | 3 | fullstack | - |
-| 127-partidas-que-van-a-prorroga | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 127-partidas-que-van-a-prorroga | implementado (en su rama) | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 128-repetir-o-cambiar-el-spawn-tras-perder | disenado | funcionalidad | posicionamiento | 3 | fullstack | - |
 | 129-filtro-de-operador-en-operadores | con hallazgos (en su rama) | funcionalidad | operadores | 3 | frontend | - |
 | 131-rondas-que-el-equipo-gano-sin-ti | disenado | funcionalidad | escuadra | 3 | fullstack | - |
@@ -58,7 +60,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 
 
 FRENADAS=2 (la 109 espera a la 79; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
 
-Espejos: 129 y 133 viven en su rama, que manda.
+Espejos: 127, 129 y 133 viven en su rama, que manda.
 
 
 ## Ultimo turno de cada rol
@@ -67,8 +69,8 @@ Espejos: 129 y 133 viven en su rama, que manda.
 |---|---|---|
 | release | 2026-11-13 22:48 | (release 20261113T2223Z-c24t16L, dentro de la QA) 130 entregada: ficha recortada, VERDE 2eed7d587 sobre el commit final, [PR #128](https://github.com/bfigueroa99/r6-replay-lab/pull/128) **mergeado** en dev (39e22c0); borrado de la rama cortado por el proxy; espejo quitado de backlog. |
 | qa | 2026-11-13 22:48 | (qa 20261113T2223Z-c24t16L) 130 `revisado` -> `aprobado`: VERDE cc63536fc (1284, 421, 114); 609 saltos correctos en la app sembrada (boton, `p`, Enter), bordes interceptados, a11y (contraste 12.92:1), mutaciones 3 de 3, chunk +0.17 %, omc-verifier PASS. |
-| revisor | 2026-11-13 23:15 | (revisor 20261113T2252Z-cSo9yHH) 129 `implementado` -> `con hallazgos`: VERDE 82ad2f319 (1284, 425, 116); revision ciega aprobar con 1 MEDIUM, confirmado: el e2e `Operadores filtra por operador desde su propio selector` registra `page.on('request')` despues del `goto` y cae 6 de 190 con 8 workers (linea 241, `pedidosPool` vacio); listener antes del `goto` -> 150 de 150. |
-| dev | 2026-11-13 23:25 | (dev 20261113T2252Z-czjsKrH, sigue de revisor: la 129 ya la tenia otra corrida) 133 `con hallazgos` -> `implementado`: `ventaja_maxima` no mide la diferencia que deja a un equipo sin vivos (HIGH) y mide juntas las bajas del mismo `clock` (MEDIUM), salvo las del ultimo reloj (tras el plant el reloj queda congelado: HIGH de la revision ciega, confirmado en `_track_clock`); e2e con two_plus, lado y mapa; VERDE dba808e22 (1312, 427, 115). |
+| revisor | 2026-11-13 23:15 | (revisor 20261113T2252Z-cSo9yHH) 129 `implementado` -> `con hallazgos`: VERDE 82ad2f319 (1284, 425, 116); revision ciega aprobar con 1 MEDIUM, confirmado: el e2e `Operadores filtra por operador desde su propio selector` registra `page.on('request')` despues del `goto` y cae 6 de 190 con 8 workers (linea 241, `pedidosPool` vacio); listener antes del `goto` -> 150 de 150. Despues (20261113T2252Z-cQac5RQ): la 129 la reclamo otra corrida un minuto antes (P8); salud de la 79: merge de dev limpio (13 commits), VERDE d3b487fb1 (1305, 421, 115). |
+| dev | 2026-11-13 23:10 | (dev 20261113T2252Z-cQac5RQ, sigue de revisor) 127 `disenado` -> `implementado`: `by_overtime_start_side` (partidas a prorroga y winrate de partida por el lado de la primera ronda de prorroga), columnas Partidas y Partidas ganadas en Prórroga por lado de Tendencias, fila en `metricas.md`; revision ciega aprobar con 2 LOW (1 arreglado con mutante); VERDE c7f2142b1 (1293, 425, 114). |
 | arquitecto | 2026-11-13 19:59 | (arquitecto 20261113T1926Z-cq9nfTP, sigue) Disena 130 (siguiente ronda perdida: `siguientePerdida`/`pideSiguientePerdida` en `navegacionRondas.js`, boton y tecla P en el panel Rondas) y 133 (ventaja numerica tirada: `ventaja_maxima` en `metrics.py`, `/api/duels/thrown-advantage/`, panel en Duelos junto a Estado al morir). |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
 | po | 2026-11-13 22:35 | (po 20261113T2157Z-chbMW9r, sigue) Otra corrida propuso 136-138 a la vez y lleno el papel (6 propuesto): mis tres fichas (H2, G6, O9) se descartaron sin empujar. Ideas nuevas F26 y H15 en `ALCANCE.md`. |
