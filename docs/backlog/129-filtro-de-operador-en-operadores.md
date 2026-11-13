@@ -215,6 +215,7 @@ OMC: plan=— · revisión=— · verificación=— (sin `aprobado`: no se corri
 - Mutante de la QA (nota sin `rows.some`, `Operators.jsx:46`) con el arreglo: 10 failed de 10. Restaurado.
 - Revision ciega (`omc-code-reviewer`, eje de estandares) sobre una primera version (`toHaveCount(2)` atado a Tu pool): aprobar, 3 LOW; arreglados 2 (usar `level: 2` en vez de depender de Tu pool, comentario con el motivo real). No arreglado: los `toHaveCount(0)` siguientes no acotan a la seccion Defensa (ya estaba; hoy esos paneles quedan vacios con Ash en defensa).
 - Los 3 LOW del Revisor (`## Para el humano`) siguen sin tomar: no bloquean.
+- Rama al dia con `origin/dev@39e22c0` (merge). verificar.sh: VERDE 50ddfaaa8 (1284 backend, 425 vitest, 116 e2e).
 
 Skills: no aplica.
 Skills del repo: testing-strategy (repro en paralelo y mutante antes y despues del arreglo).
