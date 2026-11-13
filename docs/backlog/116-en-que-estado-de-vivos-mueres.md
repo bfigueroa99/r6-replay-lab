@@ -1,7 +1,7 @@
 # 116. En que estado de vivos mueres
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T16:49Z
 rama: -
 tipo: funcionalidad
 epica: impacto
