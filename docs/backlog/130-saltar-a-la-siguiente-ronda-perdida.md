@@ -1,7 +1,7 @@
 # 130. Saltar a la siguiente ronda perdida
 
-estado: en curso 2026-11-13T20:37Z
-candado: dev 2026-11-13T20:37Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -98,7 +98,7 @@ Desvio del diseno: `CON_SCROLL` no entra a `teclaLibre`; queda solo en `pasoDeTe
 
 Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): aprobar, 3 LOW. Arreglados 2: el de `CON_SCROLL` (arriba) y el e2e, que con una partida cuya unica perdida fuera R1 esperaba el indice 0 y pasaba sin moverse (ahora busca `k < n`). No arreglado, por decision del diseno: con la elegida como unica perdida el boton queda habilitado y no hace nada visible.
 
-verificar.sh: ver abajo.
+verificar.sh: VERDE 5b41042bf (1284 backend, 421 vitest, 114 e2e). Nota: el commit 5b41042 se empujo minutos antes de que terminara esa corrida; el verde es sobre ese mismo commit.
 
 Skills: no aplica.
 Skills del repo: testing-strategy (vitest para la regla y la tecla, e2e para el boton y la tecla en la app real, mutaciones), ux-copy (boton como "Copiar resumen", `title` y `hint` con tildes), modern-web-guidance no leida (sin CSS ni componente nuevo: `btn small` existente).
