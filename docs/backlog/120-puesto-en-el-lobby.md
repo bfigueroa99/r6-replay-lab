@@ -1,7 +1,7 @@
 # 120. Puesto en el lobby
 
-estado: implementado
-candado: revisor 2026-11-13T18:44Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/120-puesto-en-el-lobby
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E7
 archivos: backend/replays/analytics/aggregates.py (lobby_rank), backend/replays/views.py (trends), backend/tests/test_puesto_en_el_lobby.py (nuevo), frontend/src/puestoLobby.js (nuevo), frontend/src/puestoLobby.test.js (nuevo), frontend/src/pages/Trends.jsx (panel Puesto en el lobby), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1733Z-cudo1Sw, dev 20261113T1802Z-c8dAf7p
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1733Z-cudo1Sw, dev 20261113T1802Z-c8dAf7p, revisor 20261113T1830Z-c2rHpej
 
 ## PR
 
@@ -224,6 +224,45 @@ OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 3 arreglados, 1 cubiert
 
 ## QA
 
+## Revision 2026-11-13 sobre dc941a9
+
+(revisor 20261113T1830Z-c2rHpej) Punto de partida: la rama chocaba con `origin/dev` (1de3c54..72fad68,
+la 119 mergeada) en el import de `resumenSesion.js` en `Trends.jsx`; resuelto
+(P3) juntando los dos imports, merge dc941a9. `verificar.sh`: VERDE dc941a9b0
+(1253 backend, 387 vitest, 105 e2e).
+
+**Eje de estandares** (`omc-code-reviewer`, prompt de `revision.md`, 438 lineas
+de diff): aprobar, 1 LOW **confirmado leyendo el codigo**:
+- L1 [estilo, LOW] `aggregates.py:2135` y `test_puesto_en_el_lobby.py:116`: dos
+  comentarios dicen "compañero" con ñ; `CLAUDE.md` pide comentarios sin tildes
+  (el resto del archivo escribe "companeros"). Arreglo: "companero". No bloquea.
+Verifico ademas: bordes (partida de un jugador, sin compañeros, empates con
+`EMPATE_RATING`, ronda sin bajas sin NULL), tu fila desde `RoundPlayer.is_me`
+con test que cae sin el arreglo, 2 consultas fijas (`assertNumQueries`), sin
+dependencias ni escritura nueva, nada que el `.rec` no traiga.
+
+**Eje de intencion** (`omc-code-reviewer`, contra Que gana, Criterios y Fuera de
+alcance): los 6 criterios cumplidos, nada fuera de alcance; aprobar. 2 LOW que no
+reporto como hallazgo: `matches` va dentro de cada caso (el de equipo cuenta
+partidas con compañero, distinto del de lobby, y `metricas.md` lo dice: es el
+diseno) y el e2e toma los numeros de la API (decision del diseno: sigue al seed).
+
+**Ficha.** Criterio 1: `test_mejor_de_la_partida_y_de_tu_equipo` (10 jugadores);
+2: `test_empatar_con_el_mejor_cuenta_como_mejor` + fila de `metricas.md`; 3:
+`test_partida_con_menos_de_diez...`, `test_partida_solo_con_vos_no_cuenta`; 4:
+`test_filtro_de_mapa_aplica`, `test_filtro_de_lado_recorta...`; 5: vitest
+`puestoLobby.test.js` + e2e `Tendencias muestra el puesto en el lobby`; 6: filas
+en `## Progreso` y `## Muestra minima`. Diff dentro de `archivos:`; UI con tildes;
+sin `print` ni `console.log`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados: 1 al humano, 2 decisiones del diseno) · verificación=—
+
+
 ## Para el humano
+
+- (revisor 2026-11-13, no bloquea) Dos comentarios con "compañero" (ñ) en `aggregates.py:2135` y `test_puesto_en_el_lobby.py:116`; `CLAUDE.md` los quiere sin tildes. Lo puede corregir el Release al entregar o un Dev despues.
 
 (nada)
