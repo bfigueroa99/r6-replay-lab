@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 
 import { useApi } from '../api.js'
+import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
@@ -44,16 +45,6 @@ const VENTANAS = [
   { by: 'days', n: 7, label: '7 días' },
   { by: 'days', n: 30, label: '30 días' },
 ]
-
-/** Flecha con color segun si la metrica mejoro, empeoro o no se movio. */
-function Delta({ metric }) {
-  if (metric.delta === null || metric.delta === undefined) return <span className="dim">—</span>
-  const signo = metric.delta > 0 ? '+' : ''
-  const texto = `${signo}${fmt(metric.delta, Math.abs(metric.delta) < 1 ? 2 : 1)}${metric.suffix}`
-  if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
-  if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
-  return <span className="chip">{texto}</span>
-}
 
 /** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
 function TablaDeCambio({ filas, columna, minRows, csvName }) {

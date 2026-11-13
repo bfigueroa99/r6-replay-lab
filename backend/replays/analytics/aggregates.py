@@ -3272,8 +3272,10 @@ def _corte_por_periodo(actual, previo, baseline, campos, labels, min_rows) -> li
     return filas
 
 
-def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
-    """Ultimas n partidas y las n anteriores."""
+def _periodo_por_partidas(
+    filters: dict, n: int, resto: bool = False
+) -> tuple[list[int], list[int]]:
+    """Ultimas n partidas y las n anteriores, o todas las anteriores con `resto`."""
     ids = list(
         base_queryset(**filters)
         .values_list("round__match_id", flat=True)
@@ -3287,7 +3289,7 @@ def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
         if match_id not in vistos:
             vistos.add(match_id)
             ordenados.append(match_id)
-    return ordenados[:n], ordenados[n : n * 2]
+    return ordenados[:n], (ordenados[n:] if resto else ordenados[n : n * 2])
 
 
 def _resumen(qs, baseline, etiqueta: str) -> dict:
@@ -3316,6 +3318,7 @@ def compare_periods(
     n: int = 10,
     min_rounds: int = COMPARE_MIN_ROUNDS,
     min_rows: int = COMPARE_MIN_ROUNDS_FILA,
+    against: str = "previous",
     **filters,
 ) -> dict:
     """Compara el periodo reciente contra el inmediatamente anterior.
@@ -3325,7 +3328,13 @@ def compare_periods(
     2n partidas, y `days` responde "como vengo este mes" cuando se juega
     seguido. Los filtros de fecha que vengan en la request se ignoran: el
     periodo lo define esta funcion.
+
+    Con `against="rest"` la referencia es todo el historial anterior y no un
+    periodo del mismo largo: el Inicio pregunta si tu forma se sale de lo
+    tuyo de siempre, no de lo del mes pasado.
     """
+    resto = against == "rest"
+    against = "rest" if resto else "previous"
     filters = _sin_filtros_de_tiempo(filters)
     baseline = rating_baseline()
 
@@ -3334,13 +3343,25 @@ def compare_periods(
         inicio_actual = corte - timedelta(days=n)
         inicio_previo = corte - timedelta(days=n * 2)
         actual = base_queryset(since=inicio_actual, **filters)
-        previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
-        etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
+        if resto:
+            previo = base_queryset(until=inicio_actual, **filters)
+            etiquetas = (f"Últimos {n} días", f"Antes de los últimos {n} días")
+        else:
+            previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
+            etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
     else:
-        recientes, anteriores = _periodo_por_partidas(filters, n)
+        recientes, anteriores = _periodo_por_partidas(filters, n, resto=resto)
         actual = base_queryset(**filters).filter(round__match_id__in=recientes)
-        previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
-        etiquetas = (f"Últimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
+        if resto:
+            # exclude y no IN: el resto puede pasar el limite de variables de SQLite
+            previo = base_queryset(**filters).exclude(round__match_id__in=recientes)
+        else:
+            previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
+        if resto:
+            previa = f"El resto ({len(anteriores)} partidas)"
+        else:
+            previa = f"Las {len(anteriores)} anteriores"
+        etiquetas = (f"Últimas {len(recientes)} partidas", previa)
 
     fila_actual = _resumen(actual, baseline, etiquetas[0])
     fila_previa = _resumen(previo, baseline, etiquetas[1])
@@ -3372,6 +3393,7 @@ def compare_periods(
     return {
         "by": by,
         "n": n,
+        "against": against,
         "min_rounds": min_rounds,
         "enough_sample": suficiente,
         "current": fila_actual,
