@@ -452,6 +452,12 @@ def duels(request: HttpRequest) -> JsonResponse:
     )
 
 
+@require_GET
+def death_state(request: HttpRequest) -> JsonResponse:
+    # Endpoint propio y no dentro de `duels`: es un panel aparte de Duelos.
+    return _ok(agg.death_state(**_filters(request)))
+
+
 # --------------------------------------------------------------------- partidas
 
 
