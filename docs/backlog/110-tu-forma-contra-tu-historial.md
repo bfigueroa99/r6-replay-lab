@@ -1,7 +1,7 @@
 # 110. Tu forma contra tu historial
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T12:15Z
 rama: claude/equipo-dev/110-tu-forma-contra-tu-historial
 tipo: funcionalidad
 epica: progreso
