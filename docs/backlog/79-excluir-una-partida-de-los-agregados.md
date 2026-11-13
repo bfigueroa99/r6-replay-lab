@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-13T22:53Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -189,3 +189,5 @@ cae sin el arreglo (FAIL) y pasa con el. La comparacion primaria
 `verificar.sh`: VERDE 34a8bc56d (1305 backend, 411 vitest, 113 e2e). El codigo
 propio de la 79 no cambio: la revision y la QA siguen valiendo; el arreglo toca
 solo codigo que llego de dev. Sigue esperando el merge del humano (toca `CLAUDE.md`).
+
+- 2026-11-13 22:57 (revisor 20261113T2252Z-cQac5RQ, salud de rama): `git merge origin/dev` limpio (13 commits, d3b487f); verificar.sh: VERDE d3b487fb1 (1305 backend, 421 vitest, 115 e2e). Sigue esperando el merge del humano.
