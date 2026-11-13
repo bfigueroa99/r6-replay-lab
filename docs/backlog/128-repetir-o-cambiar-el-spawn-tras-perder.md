@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T22:09Z
 rama: -
 tipo: funcionalidad
 epica: posicionamiento
