@@ -1,7 +1,7 @@
 # 120. Puesto en el lobby
 
-estado: en curso 2026-11-13T18:25Z
-candado: dev 2026-11-13T18:25Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/120-puesto-en-el-lobby
 tipo: funcionalidad
 epica: progreso
@@ -213,6 +213,8 @@ consultas (`test_consultas_acotadas`); clave en la API
 (`test_trends_trae_lobby_rank`); UI: vitest (7) + e2e `Tendencias muestra
 el puesto en el lobby` (etiquetas y `sub` armado con la API, consola
 limpia); fila en `metricas.md`.
+
+verificar.sh: VERDE 8571ad34c (1253 backend, 384 vitest, 104 e2e).
 
 Skills: no aplica.
 Skills del repo: statistical-analysis (cada % con su `n` a la vista, empate definido, conteo de partidas y no promedio de promedios), testing-strategy (Django, vitest, e2e como dice el diseno), ux-copy (etiquetas y nota del diseno, con tildes), modern-web-guidance no leida (un `Panel` y `Stat` que ya existen, sin CSS nuevo), sql-queries (patron vecino de `teammate_synergy`; `assertNumQueries(2)` fijo con 2 y 5 partidas).
