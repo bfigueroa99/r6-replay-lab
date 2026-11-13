@@ -1,8 +1,8 @@
 # 122. Cuando te toco por ultima vez
 
-estado: disenado
+estado: en curso 2026-11-13T18:47Z
 candado: -
-rama: -
+rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
 area: backend
