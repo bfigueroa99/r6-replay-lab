@@ -791,6 +791,8 @@ test('el detalle de partida copia una ronda', async ({ page }) => {
   const texto = await page.evaluate(() => navigator.clipboard.readText())
   expect(texto.startsWith(`${detalle.match.map} · ${ronda.label} · `)).toBe(true)
   expect(texto).toContain(primera.actor)
+  // autor y victima en la misma linea, con su reloj: no alcanza con que el nick aparezca
+  expect(texto).toContain(`${primera.clock_raw || '—'} ${primera.actor} mató a ${primera.target}`)
 
   // Al cambiar de ronda el aviso no queda pegado a la otra
   expect(detalle.rounds.length).toBeGreaterThan(1)
