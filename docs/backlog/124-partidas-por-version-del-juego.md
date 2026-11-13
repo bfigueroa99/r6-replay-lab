@@ -1,7 +1,7 @@
 # 124. Partidas por version del juego en Datos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:59Z
 rama: -
 tipo: funcionalidad
 epica: datos
