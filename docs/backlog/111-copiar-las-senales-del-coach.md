@@ -1,7 +1,7 @@
 # 111. Copiar las señales del Coach como texto
 
-estado: aprobado
-candado: release 2026-11-13T17:13Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/111-copiar-las-senales-del-coach
 tipo: funcionalidad
 epica: exportar
@@ -9,9 +9,63 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H6
 archivos: frontend/src/textoCoach.js (nuevo), frontend/src/textoCoach.test.js (nuevo), frontend/src/pages/Coach.jsx (GROUPS y format se mudan; boton Copiar señales), frontend/e2e/humo.spec.js
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k, revisor 20261113T1647Z-cRa8Bqm, qa 20261113T1651Z-cxTme8t
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k, revisor 20261113T1647Z-cRa8Bqm, qa 20261113T1651Z-cxTme8t, release 20261113T1651Z-cxTme8t
 
 ## PR
+
+Titulo: `[equipo-dev][frontend] Copiar las señales del Coach como texto`
+
+### Que cambia
+
+En Coach, el botón "Copiar señales" copia al portapapeles las señales que
+ves (título, detalle, qué hacer, número, referencia y muestra) en texto
+plano, agrupadas como en la página y con los filtros activos en la primera
+línea, para pegarlas en el chat del equipo. Nada sale del PC. Sin señales no
+hay botón; sin portapapeles, avisa en vez de romper.
+
+### Por que esto y no otra cosa
+
+Ficha 111 (ALCANCE.md H6, épica exportar). Exportar a archivo o imagen y
+copiar las señales del Inicio quedaron fuera. Grupos y formato del número se
+mudan a `textoCoach.js` para que lo copiado no se desalinee de la página.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): ver la última línea de la QA y el commit de entrega.
+- Tests nuevos: `frontend/src/textoCoach.test.js` (11: sin señales `null`, sin y con filtros en orden, todos los filtros, dos señales en orden de grupo, referencia y muestra solo si existen, formato del número, umbral de decimales, sin espacios al final, orden de los grupos); e2e `el Coach copia sus señales` (sin filtros y con `?side=Defense`, consola limpia).
+- Verificación manual (QA): Chromium claro y oscuro sobre `seed_demo`, texto copiado contra `/api/coach/` con 4 combinaciones de filtros, sin portapapeles y con `writeText` que rechaza, teclado, contrastes 6.51:1 y 6.45:1; base vacía sin botón.
+- OMC: plan=— · revisión=— · verificación=—
+- OMC: plan=— · revisión=5 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
+- OMC: plan=— · revisión=4 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
+- OMC: plan=— · revisión=— · verificación=PASS
+- Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: boton y aviso copian el patron y los textos de "Copiar resumen" de la partida, sin CSS nuevo).
+- Skills del repo: accessibility-review (qa: 0 Critical/Major, contrastes 6.51 y 6.45), validate-data no aplica (sin numero nuevo), design-critique no aplica (boton en un panel existente).
+
+### Riesgos y lo que no entra
+
+Sin backend, migración ni dependencias. El caso sin portapapeles no tiene
+test automático (probado a mano). El mapa sale por su slug y la sesión como
+"Sesión N" contando desde la más reciente.
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd frontend; npx vitest run src/textoCoach.test.js; npm run build
+cd ..\backend; python manage.py runserver
+```
+
+Abrir `/coach`, apretar "Copiar señales" y pegar: primera línea
+`Coach · Sin filtros`, después los grupos. Con `?side=Defense`, la primera
+línea dice `Coach · Filtros: Solo defensa`.
+
+### Para el humano
+
+Aviso, no frena: si preferís el nombre del mapa y la fecha de la sesión en el
+texto copiado, es otra ficha chica.
+
+### Candidatos descubiertos
+
+Ninguno
 
 ## Que gana quien usa la app
 
@@ -46,106 +100,11 @@ partida y de la sesion.
 
 ## Diseno
 
-(arquitecto 20261113T0003Z-cVnayJ8) Filtros duros: pasa. Solo frontend, sobre lo que
-`/api/coach/` ya devuelve; el portapapeles es local (sin red, sin
-dependencias, sin POST, sin migracion). Una forma obvia y chica (~150
-lineas), con el patron de "Copiar resumen" de la partida (`MatchDetail.jsx`
-`copiarResumen`) y de la sesion (`Trends.jsx` `copiarSesion`): sin arena ni
-consenso.
-
-**`frontend/src/textoCoach.js`** (logica pura, nuevo):
-
-- `export const GRUPOS_COACH`: mover aca el arreglo `GROUPS` de `Coach.jsx`
-  (clave, titulo, hint) y que `Coach.jsx` lo importe: el texto sale en el
-  mismo orden que la pagina sin una segunda lista que se desalinee.
-- `export function formatoCoach(value)`: mover aca `format` de `Coach.jsx`
-  (misma regla: `—` para nulo, 2 decimales debajo de 10 si no es entero) y que
-  la pagina lo importe: el numero copiado es el que se ve.
-- `export function lineaDeFiltros(filtros)`: `"Sin filtros"` si
-  `hayFiltros(filtros)` (de `tipoPartida.js`) es falso; si no, `"Filtros: "` y
-  las partes no vacias unidas por `" · "`, en el orden de `CLAVES_DE_URL`
-  (`filtrosUrl.js`): `side` -> `Solo ataque` / `Solo defensa`; `map` ->
-  `Mapa: <valor>`; `operator` -> `Operador: <valor>`; `site` ->
-  `Sitio: <valor>`; `session` -> `Sesión <valor + 1>`; `days` ->
-  `Últimos <n> días`; `since` -> `Desde <valor>`; `until` -> `Hasta <valor>`;
-  `match_type` -> `Tipo: <valor>`; `gamemode` -> `Modo: <nombreDeModo(valor)>`
-  (`modoDeJuego.js`); `ranked_only` -> `Solo ranked`. El mapa va con el valor
-  del filtro tal cual (la barra no expone el nombre fuera de su select): el
-  slug se entiende y no hace falta otra request.
-- `export function textoCoach(insights, filtros)`: `null` si no hay
-  `insights` (lista vacia o indefinida). Si no, lineas:
-  1. `Coach · <lineaDeFiltros>`;
-  2. por cada grupo de `GRUPOS_COACH` con señales (mismo filtro por
-     `severity` que la pagina), una linea en blanco, el titulo del grupo en
-     mayusculas (`PRIORIDAD ALTA`) y por señal:
-     `- <title>` / `  <detail>` / `  Qué hacer: <action>` / y, si hay algo,
-     `  <metric>: <formatoCoach(value)>[ (referencia <formatoCoach(baseline)>)] · muestra: <sample> rondas · alcance: <scope>`
-     con las mismas condiciones que `.meta` de la pagina (sin `metric` no va
-     esa parte; sin `sample` tampoco; `scope` solo si no es `general`).
-  Sin HTML; salto `\n`; sin espacio al final de linea.
-- `frontend/src/textoCoach.test.js` (vitest):
-  `sin señales no hay texto` (`[]` e `undefined` -> `null`);
-  `sin filtros la primera linea lo dice`; `con filtros los nombra en orden`
-  (lado, mapa, dias y ranked -> `Filtros: Solo defensa · Mapa: bank · Últimos 30 días · Solo ranked`);
-  `dos señales salen en el orden de los grupos` (una `positivo` antes en el
-  array y una `alta`: sale primero la alta); `la referencia y la muestra van
-  solo si existen`; `el numero se formatea como en la pagina` (0.456 -> `0.46`, 55 -> `55`).
-
-**`frontend/src/pages/Coach.jsx`**:
-
-- Importar `GRUPOS_COACH`, `formatoCoach` y `textoCoach`; borrar `GROUPS` y
-  `format` locales (los usos pasan a los importados).
-- `const [copia, setCopia] = useState(null)` (importar `useState`), **antes**
-  de los returns tempranos. `copiarSenales` igual a `copiarResumen`: sin
-  `navigator.clipboard?.writeText` -> `setCopia('error')`; `try` / `catch`
-  sin `console`.
-- En el `page-head`, a la derecha del titulo (como en la partida), solo si
-  `textoCoach(insights, filters)` no es `null`: el aviso `<span className="note">`
-  (`Copiado` / `No se pudo copiar: el navegador no dio acceso al
-  portapapeles.`, el texto de la partida) y
-  `<button type="button" className="btn small" onClick={copiarSenales}>Copiar señales</button>`
-  con `title="Copia las señales que ves, con los filtros, en texto plano."`.
-  (Identificador sin tilde; el texto del boton, con tilde.)
-- Sin señales el boton no aparece (criterio 2, variante "no aparece").
-
-**e2e, `frontend/e2e/humo.spec.js`**, test `el Coach copia sus señales`
-junto a `el Coach muestra si repites el sitio tras perderlo`:
-`grantPermissions(['clipboard-read', 'clipboard-write'])` como
-`Tendencias copia el resumen de una sesion`; leer `/api/coach/` y tomar
-`insights[0].title`; `page.goto('/coach')`; clic en `Copiar señales`;
-`Copiado` visible; `navigator.clipboard.readText()` empieza con
-`Coach · Sin filtros` y contiene `- <title>`; despues
-`page.goto('/coach?side=Defense')` (filtros en la URL, ficha 96), copiar otra
-vez y el texto empieza con `Coach · Filtros: Solo defensa`. Consola limpia.
-El criterio 3 (sin portapapeles) lo cubre el mismo camino que la partida y
-su rama no se puede forzar en Chromium sin quitar `navigator.clipboard`:
-el e2e no lo prueba, como no lo prueba el de la partida; la logica de la
-rama es una linea.
-
-**`docs/metricas.md`**: no hay numero nuevo (copia los de las señales, que ya
-tienen definicion). Nada que agregar.
-
-**Orden.** `textoCoach.js` + vitest (mover `GROUPS` y `format`), `Coach.jsx`,
-e2e, `npm run build`.
-
-**Que puede romperse.** Mover `GROUPS`/`format` cambia imports de
-`Coach.jsx`; el e2e del Coach existente cubre que la pagina siga igual. El
-`useState` nuevo tiene que ir antes de `if (error) return`, o React rompe el
-orden de hooks al pasar de cargando a datos.
-
-**Archivos ocupados.** La 113 (`revisado`) toca `Operators.jsx`,
-`aggregates.py`, `views.py`, `urls.py` y `humo.spec.js` (otro test); la 112
-(`implementado`) toca `MatchDetail.jsx`, `ui.jsx`, `records.js`,
-`navegacionRondas.js` y `humo.spec.js` (otro test). Ninguna toca `Coach.jsx`
-ni `textoCoach.js`; `humo.spec.js` es un test nuevo en otro lugar: merge
-trivial. No se frena.
-
-**Verificacion manual.** `seed_demo`, `/coach`, `Copiar señales`, pegar en un
-editor: primera linea `Coach · Sin filtros`, grupos en el orden de la pagina;
-con `Solo defensa` en la barra la primera linea lo dice.
-
-Skills: no aplica (copiar al portapapeles ya resuelto dos veces en el repo).
-Skills del repo: testing-strategy (vitest para el texto, e2e para el boton y el portapapeles; sin test de Django: no toca el backend).
+(arquitecto 20261113T0003Z-cVnayJ8) Solo frontend, con el patron de "Copiar
+resumen" de la partida: `textoCoach.js` (pura) con `GRUPOS_COACH` y
+`formatoCoach` mudados de `Coach.jsx`, `lineaDeFiltros` en el orden de
+`CLAVES_DE_URL` y `textoCoach`; boton en el `page-head` del Coach; vitest y
+e2e `el Coach copia sus señales`. Detalle en `git log`.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
@@ -190,44 +149,11 @@ OMC: plan=— · revisión=5 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verifi
 
 ## Revision 2026-11-13 sobre dd2cc0c
 
-(revisor 20261113T1647Z-cRa8Bqm) Veredicto: **aprobar** -> `revisado`.
-
-Partida de verde: `verificar.sh` VERDE dd2cc0ca9 (1173 tests backend, 348
-vitest, 97 e2e). Rama al dia con dev (`git merge-base --is-ancestor
-origin/dev HEAD`).
-
-Revision a ciegas, dos ejes (`omc-code-reviewer` estandares e intencion),
-ambos `aprobar`, 0 CRITICAL/HIGH. Confirmados por el lider:
-
-- [bug/intencion] MEDIUM `frontend/src/textoCoach.js:27` y `:30`: la linea
-  de filtros copia el valor crudo. Repro (vitest temporal, borrado):
-  `textoCoach([{severity:'high',title:'T',detail:'d'}], {map:'214',
-  session:'0'})` -> `Coach · Filtros: Mapa: 214 · Sesión 1`. Con un mapa
-  rehecho sale el `map_id`; con el mapa entero, el slug (`bank`); `session=0`
-  es la mas reciente (`aggregates.py:2492`, `sesiones.reverse()`) y el
-  indice se corre al importar. No frena: es lo que fijo el Diseno y el Dev
-  ya lo anoto en `## Para el humano`; dos ejes independientes lo pusieron en
-  MEDIUM porque el texto se lee sin la barra al lado. Arreglo sugerido (ficha
-  chica aparte): pasarle a `lineaDeFiltros` las opciones de `/api/filters/`
-  y usar `opcionesDeMapa(...).label` (sin la sangria) y `etiquetaSesion`.
-- [test] LOW `frontend/src/pages/Coach.jsx:40-49`: el criterio "sin
-  `navigator.clipboard` avisa" no lo ejercita ningun test (la ficha ya
-  explica que no es forzable sin `addInitScript`). Sugerido: e2e con
-  `page.addInitScript(() => Object.defineProperty(navigator, 'clipboard',
-  { value: undefined }))` que espere "No se pudo copiar". No frena.
-- [test] LOW `textoCoach.test.js`: el criterio pide "dos señales, con y sin
-  filtros" y el caso con filtros usaba una. **Agregado** el vitest `con
-  filtros y dos señales la linea de filtros va una vez, arriba de los
-  grupos` (pasa; mutacion `lineaDeFiltros(filtros)` -> `lineaDeFiltros({})`
-  en `textoCoach.js:64` lo tumba junto con "con filtros los nombra en orden").
-
-Ficha: los 4 criterios cubiertos (vitest de la funcion pura con y sin
-filtros y con lista vacia; boton condicionado a `texto`; aviso sin
-portapapeles por la misma rama que la partida, sin test; e2e `el Coach copia
-sus señales` con consola limpia). Diff dentro de `archivos:`. Sin numero
-nuevo (nada para `metricas.md`). Identificadores sin tildes, UI con tildes,
-sin `console.log`. Sin seguridad: no toca POST, red, rutas ni dependencias.
-
+(revisor 20261113T1647Z-cRa8Bqm) Dos ejes de `omc-code-reviewer`: aprobar,
+0 CRITICAL/HIGH. MEDIUM sin cambio (lo fijo el Diseno, va a `## Para el
+humano`): el mapa sale como slug/`map_id` y la sesion como indice. LOW: sin
+test automatico del caso sin portapapeles. Agregado por el Revisor: vitest
+con filtros y dos señales. Veredicto: `revisado`.
 OMC: plan=— · revisión=4 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
 Skills del repo: ninguna
 
