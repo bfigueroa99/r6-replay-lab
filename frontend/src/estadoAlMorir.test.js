@@ -26,8 +26,8 @@ describe('estadoAlMorir', () => {
   it('la nota de muertes sin feed solo sale si hay alguna', () => {
     expect(notaSinFeed(0)).toBeNull()
     expect(notaSinFeed(undefined)).toBeNull()
-    expect(notaSinFeed(1)).toBe('1 muerte sin evento en el feed no entra.')
-    expect(notaSinFeed(4)).toBe('4 muertes sin evento en el feed no entran.')
+    expect(notaSinFeed(1)).toBe('1 muerte no se puede ubicar en el feed (sin evento o después de irte) y no entra.')
+    expect(notaSinFeed(4)).toBe('4 muertes no se pueden ubicar en el feed (sin evento o después de irte) y no entran.')
   })
 
   it('avisa con 29 muertes en una fila y no con 30', () => {
