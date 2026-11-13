@@ -98,7 +98,8 @@ C14 -> ficha 109; nuevas S6 y D17.
 Reconciliado el 2026-11-12 (sesion 20261112T1128Z-cKKCvKD) contra `dev` 5a76618:
 ficha 106 (bug, sin idea) en dev; E16 -> ficha 110, H6 -> ficha 111, F6 -> ficha 112
 (el PR #14 que la frenaba se cerro); nuevas E18 y H12.
-Reconciliado el 2026-11-12 (sesion 20261112T1204Z-chGLrtC) contra `dev` 5a76618: 102 implementada en su rama, 107 disenada; D11 descartada (ficha 108, ya en Duelos); O10 -> ficha 113, D7 -> ficha 114; nuevas O11 y S7.Reconciliado el 2026-11-13 (sesion 20261113T1603Z-cHj1H4k) contra `dev` 16d3986:
+Reconciliado el 2026-11-12 (sesion 20261112T1204Z-chGLrtC) contra `dev` 5a76618: 102 implementada en su rama, 107 disenada; D11 descartada (ficha 108, ya en Duelos); O10 -> ficha 113, D7 -> ficha 114; nuevas O11 y S7.
+Reconciliado el 2026-11-13 (sesion 20261113T1603Z-cHj1H4k) contra `dev` 16d3986:
 E16 (110, PR #114) en dev; E7 -> ficha 120, H10 -> ficha 121; nuevas E19 y H13,
 mas T4 (deuda de accesibilidad que vio la QA de la 110).
 
