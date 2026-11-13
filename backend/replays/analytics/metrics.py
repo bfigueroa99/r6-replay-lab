@@ -213,10 +213,18 @@ def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | Non
 
     Las salidas con el mismo `clock` se miden juntas: un trade en el mismo
     segundo no dejo a nadie con uno mas. Sin reloj (0 o ausente) cada salida
-    se mide sola. Cuando un equipo queda sin vivos la ronda ya se decidio: esa
-    diferencia no cuenta, si no toda eliminacion ganada seria "ventaja".
+    se mide sola, y tambien las del ultimo reloj del feed: al plantar el juego
+    deja de emitir el reloj y todo el post-plant hereda el mismo valor
+    (`pydissect/events.py`, `_track_clock`), asi que ahi el reloj igual no dice
+    que fueran simultaneas. Con un equipo sin vivos ya no hay duelo que medir:
+    esa diferencia no cuenta, si no toda eliminacion ganada seria "ventaja".
     `None` si el feed no saca a nadie.
     """
+    reloj_final = next(
+        (e.get("clock") for e in reversed(eventos)
+         if e.get("clock") and e.get("kind") in (KILL, DEATH, PLAYER_LEAVE)),
+        None,
+    )
     vivos = set(team_of)
     maxima = None
     pendiente = False
@@ -243,6 +251,8 @@ def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | Non
         if muerto not in vivos:
             continue
         reloj = e.get("clock") or None
+        if reloj == reloj_final:
+            reloj = None
         if pendiente and (reloj is None or reloj != reloj_pendiente):
             if not medir():
                 return maxima

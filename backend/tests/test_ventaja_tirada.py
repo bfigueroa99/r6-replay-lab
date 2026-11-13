@@ -78,19 +78,31 @@ class VentajaMaximaTests(SimpleTestCase):
         ]
         self.assertEqual(self._max(eventos), 0)
 
-    def test_un_trade_en_el_mismo_segundo_no_da_ventaja(self):
-        eventos = [
-            {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0},
-            {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 100.0},
-        ]
-        self.assertEqual(self._max(eventos), 0)
-
     def test_bajas_en_segundos_distintos_si_dan_ventaja(self):
         eventos = [
             {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0},
             {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 99.0},
         ]
         self.assertEqual(self._max(eventos), 1)
+
+    def test_tras_el_plant_el_reloj_congelado_no_junta_las_bajas(self):
+        # al plantar el juego deja de emitir el reloj: todo lo de despues lleva el mismo
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": f"rival{i}", "clock": 70.0}
+            for i in range(3)
+        ] + [
+            {"kind": "Kill", "actor": "rival4", "target": nick, "clock": 70.0}
+            for nick in [*MATES, ME]
+        ]
+        self.assertEqual(self._max(eventos), 3)
+
+    def test_un_trade_en_el_mismo_segundo_no_da_ventaja(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": "rival0", "clock": 100.0},
+            {"kind": "Kill", "actor": "rival1", "target": ME, "clock": 100.0},
+            {"kind": "Kill", "actor": "rival1", "target": "mate0", "clock": 80.0},
+        ]
+        self.assertEqual(self._max(eventos), 0)
 
     def test_sin_reloj_cada_baja_se_mide_sola(self):
         eventos = [
@@ -159,6 +171,7 @@ class VentajaTiradaTests(TestCase):
         rnd = self._ronda([], won=False)
         make_event(rnd, 0, ME, "rival0", clock=100.0)
         make_event(rnd, 1, "rival1", ME, clock=100.0)
+        make_event(rnd, 2, "rival1", "mate0", clock=80.0)
         data = agg.thrown_advantage()
         self.assertEqual((data["rounds"], data["thrown"]), (0, 0))
 
