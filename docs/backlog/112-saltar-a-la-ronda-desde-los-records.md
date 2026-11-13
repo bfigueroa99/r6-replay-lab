@@ -1,7 +1,7 @@
 # 112. Saltar a la ronda desde los records
 
-estado: revisado
-candado: qa 2026-11-13T08:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/112-saltar-a-la-ronda-desde-los-records
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F6 (el PR #14 que lo frenaba se cerro sin merge el 2026-11-05)
 archivos: backend/replays/analytics/aggregates.py (_record_de_ronda, record de racha), backend/tests/test_records.py, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md, frontend/src/components/ui.jsx (Panel acepta id)
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T0003Z-cVnayJ8, revisor 20261113T0404Z-cnRfz4a
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T0003Z-cVnayJ8, revisor 20261113T0404Z-cnRfz4a, qa 20261113T0804Z-cJw5MQs
 
 ## PR
 
@@ -209,7 +209,57 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 3627c3c
+
+(qa 20261113T0804Z-cJw5MQs) Se ejercito el sistema: base vacia y base `seed_demo` en
+`runserver`, Chromium con Playwright, mutaciones. Scripts en el scratchpad
+(no van al repo).
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 3627c3c39 en 191s: 1165 tests backend, 334 vitest, 95 e2e` (el
+  `accesibilidad.spec.js` que cae a veces en dev paso esta vez).
+- **API, base vacia** (`SQLITE_PATH=<tmp> manage.py migrate; runserver`):
+  `curl /api/overview/` -> los cinco records y `best_day` en `null`, 200.
+- **API, base sembrada** (`manage.py seed_demo`: 29 partidas, 203 rondas):
+  `most_kills_round` = partida 28, 2, R7, `round_number` 6; `biggest_clutch`
+  = 22, 1, R7, 6; `longest_round_streak` = 29, R1, 0. `?until=foo`,
+  `?page=-1`, `?days=`, `?since=2099-01-01` -> 200; con `since=2099` los
+  records quedan en `null`.
+- **Recalculo a mano** (SQLite sobre la base sembrada): max de `kills` por
+  ronda del jugador `is_me` = 2 en la partida 28, rondas `number` 1 y 6
+  (empate; el record toma la 6 y su `round_label` R7 coincide); `one_vx > 0`:
+  (15, 4) y (22, 6) con 1 -> coincide con `biggest_clutch` 22/6.
+  `/api/matches/28/` y `/22/` traen `number` 0..6 = R1..R7.
+- **Navegador** (Chromium, base sembrada): el Inicio tiene 3 enlaces con
+  ancla (`/partidas/28#ronda-7`, `/partidas/22#ronda-7`,
+  `/partidas/29#ronda-1`) y 22 a partidas sin ancla. Solo con Tab el foco
+  llega a `/partidas/28#ronda-7`; Enter abre el detalle con la pestaña activa
+  R7, `h3` "R7 Ataque Ganada" y `#rondas` en la vista. `#ronda-abc`,
+  `#ronda-0`, `#ronda-007`, `#ronda-999`, `#ronda-`, `#ronda-3.5`,
+  `#ronda--2` y `#RONDA-3` -> R1; `#ronda-3` -> R3. Clic en R2 no reescribe
+  el hash. `/partidas/99999#ronda-2` -> "Esa partida no existe". Consola:
+  solo el 404 esperado de esa partida inexistente.
+- **Accesibilidad** (skill `accessibility-review`, lo que agrego la ficha):
+  el enlace es un `<a>` alcanzable por teclado, con nombre "ronda R7 · Bank ·
+  2026-08-05"; contraste del enlace 14.17:1, pestaña activa 4.61:1. Sin
+  Critical ni Major. Previo a la ficha: las pestañas de ronda son `<button>`
+  sin `aria-selected`/`aria-pressed` (WCAG 4.1.2), va como idea a `ALCANCE.md`.
+- **Chunk inicial** (`vite build` de dev y de la rama): 196.87 kB -> 197.63 kB
+  (+0.4 %).
+- **Mutaciones** (las 3 caen y se restauraron): `indiceDeAncla` por posicion
+  -> cae vitest "busca la ronda por su numero y no por la posicion";
+  `records.js` sin ancla -> cae "un record de ronda enlaza a su ronda y uno de
+  partida no"; `round_number + 1` en `aggregates.py` -> `tests.test_records`
+  FAILED (failures=1).
+- Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+- `validate-data`: no aplica, no hay numero nuevo en la UI (la frase de
+  `metricas.md` linea 149 describe el enlace).
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (0 Critical, 0 Major en lo nuevo; 1 Minor previo a ALCANCE), validate-data (no aplica: sin numero nuevo); valores recalculados: most_kills_round 28/R7 y biggest_clutch 22/R7.
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
