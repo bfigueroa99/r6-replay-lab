@@ -1,7 +1,7 @@
 # 121. Copiar una ronda como texto
 
-estado: en curso 2026-11-13T17:55Z
-candado: dev 2026-11-13T17:55Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/121-copiar-una-ronda-como-texto
 tipo: funcionalidad
 epica: exportar
@@ -162,6 +162,46 @@ Skills del repo: testing-strategy (vitest para el texto, e2e para el boton y el 
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Dev 20261113T1733Z-cudo1Sw, sobre `origin/dev@7892cc3`. Diseno completo, sin desvios de fondo.
+
+- `frontend/src/textoRonda.js`: `textoRonda(ronda, mapa, miEquipo)`, cabecera
+  `<mapa> · <label> · <lado> · sitio <site> · <resultado>` y una linea por
+  `Kill`/`Death` ordenada por `order`, con las marcas de `marcasDeApertura`
+  (apertura, entry, HS, tradeada) en el orden de los chips; `Sin bajas` si no
+  hay; `null` sin ronda. `porOrden` copiada de `aperturas.js` como dice el diseno.
+- `MatchDetail.jsx`: `CopiarRonda` al final del archivo, con su propio estado y
+  `key={round.number}` dentro del `<h3>` de la ronda; aviso `Ronda copiada` o
+  el de portapapeles negado de "Copiar resumen".
+- e2e `el detalle de partida copia una ronda` en `humo.spec.js`, despues del de
+  "copia el resumen": cabecera y nick de la primera baja leidos de la API, y
+  ademas que el aviso desaparece al cambiar de ronda.
+
+Desvios menores: un test vitest extra (`un evento sin reloj usa la raya de la
+timeline`); el aviso dentro del `h3` lleva `fontWeight: normal`.
+
+Criterios -> tests: texto y tres bajas con marcas (`la primera linea dice...`,
+`una ronda de tres bajas sale en orden con sus marcas`, `ninguna linea termina
+en espacio`); sin bajas (`sin bajas dice Sin bajas`); teamkill y muerte sin
+autor (`un teamkill y una muerte sin autor usan la etiqueta de la timeline`);
+sin portapapeles: misma rama que `copiarResumen` (el diseno ya dice que
+Chromium no la puede forzar); e2e con consola limpia. Tests vistos en rojo
+antes del codigo (`npx vitest run src/textoRonda.test.js`: modulo inexistente).
+
+Revision ciega (`omc-code-reviewer`, eje de estandares): aprobar, 3 LOW.
+Arreglado: el e2e pide de forma explicita dos rondas antes de cambiar de
+pestaña. Sin cambio: `porOrden` duplicada (decision del diseno para no tocar
+`aperturas.js`); el tooltip de la pestaña dice "defensa" con lado vacio y el
+texto "lado desconocido" (ya estaba en la pagina; el texto coincide con el
+`SideChip` "?").
+
+Verificacion: `verificar.sh` VERDE 389abb4cb (1230 tests backend, 378 vitest, 102 e2e).
+
+Skills del repo: testing-strategy (vitest para el texto, e2e para boton,
+portapapeles y aviso; sin backend). modern-web-guidance y ux-copy no leidas: el
+JSX y los textos copian el patron de "Copiar resumen" de la misma pagina.
+Skills: ninguna de afuera.
+OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado) · verificación=—
 
 ## Revision
 
