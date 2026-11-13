@@ -1,7 +1,7 @@
 # 114. Qué operadores te abren
 
-estado: en curso 2026-11-13T17:03Z
-candado: dev 2026-11-13T17:03Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/114-que-operadores-te-abren
 tipo: funcionalidad
 epica: rivales
@@ -217,6 +217,9 @@ muerte sin autor y operador vacio/desconocido
 (`test_la_api_devuelve_opening_operators_con_la_muestra_del_selector`);
 panel y consola (e2e `Duelos muestra los operadores que te abren`); fila en
 `metricas.md`.
+
+verificar.sh: VERDE ea46a9942 (1210 backend, 354 vitest, 99 e2e; el commit
+siguiente solo toca esta ficha).
 
 Revision ciega (`omc-code-reviewer`, estandares): aprobar, 3 LOW, los 3
 arreglados (voseo en un docstring, el hint y el `help` del % ahora dicen
