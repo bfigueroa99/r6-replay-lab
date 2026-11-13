@@ -200,7 +200,10 @@ test('Operadores muestra a qué operador cambias tras perder', async ({ page }) 
     '0%',
   ])
 
-  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe
+  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe.
+  // Antes de navegar, que termine lo que pidio la primera carga: un goto con
+  // /api/filters/ en vuelo la aborta y la consola la cuenta como fallida.
+  await page.waitForLoadState('networkidle')
   await page.goto('/operadores?side=Attack')
   await expect(panel.getByText('No cambiaste de operador tras perder con estos filtros.')).toBeVisible()
 
