@@ -460,6 +460,11 @@ def death_state(request: HttpRequest) -> JsonResponse:
     return _ok(agg.death_state(**_filters(request)))
 
 
+@require_GET
+def thrown_advantage(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.thrown_advantage(**_filters(request)))
+
+
 # --------------------------------------------------------------------- partidas
 
 

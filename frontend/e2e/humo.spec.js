@@ -502,6 +502,39 @@ test('Duelos muestra el estado de vivos al morir', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra la ventaja numerica tirada', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/duels/thrown-advantage/')).json()
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Ventaja numérica tirada' })
+  await expect(panel.getByRole('heading', { name: 'Ventaja numérica tirada' })).toBeVisible()
+  if (datos.rounds === 0) {
+    await expect(panel).toContainText('No hay rondas con ventaja numérica con estos filtros.')
+    expect(errores).toEqual([])
+    return
+  }
+  await expect(panel).toContainText(`${datos.thrown} de ${datos.rounds} rondas con ventaja tiradas`)
+  const grupos = panel.locator('table').first()
+  await expect(grupos.locator('tbody tr')).toHaveCount(2)
+  const uno = datos.groups.find((g) => g.group === 'one')
+  const filaUno = grupos.locator('tbody tr', { hasText: 'Con uno más' })
+  await expect(filaUno.locator('td').nth(1)).toHaveText(String(uno.rounds))
+  await expect(filaUno.locator('td').nth(2)).toHaveText(String(uno.thrown))
+
+  if (datos.recent.length) {
+    const primera = datos.recent[0]
+    const enlace = panel.locator('table').last().getByRole('link').first()
+    await expect(enlace).toHaveAttribute('href', `/partidas/${primera.match_id}#ronda-${primera.round}`)
+    await enlace.click()
+    await expect(page).toHaveURL(new RegExp(`/partidas/${primera.match_id}#ronda-${primera.round}$`))
+    await expect(page.locator('#rondas .round-tab.active .n')).toHaveText(`R${primera.round}`)
+  }
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra los operadores que te abren', async ({ page }) => {
   const errores = vigilarConsola(page)
   // numeros de la API y no a mano: si cambia seed_demo el test no se toca

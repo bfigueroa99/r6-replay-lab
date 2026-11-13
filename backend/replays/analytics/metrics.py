@@ -203,6 +203,34 @@ def estado_al_morir(eventos: list[dict], team_of: dict) -> dict:
     return estado
 
 
+def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | None:
+    """Mayor diferencia de vivos de `equipo` contra el resto tras cada salida del feed.
+
+    Mismo recorrido que `estado_al_morir`, pero aca un `PlayerLeave` y un
+    teamkill tambien restan: quien se fue no ayuda a convertir la ventaja. La
+    diferencia de arranque (un 5v4 de entrada) no cuenta sola: se mide recien
+    despues de la primera salida, asi la ventaja es algo que paso en la ronda.
+    `None` si el feed no saca a nadie.
+    """
+    vivos = set(team_of)
+    maxima = None
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        vivos.discard(muerto)
+        mios = sum(1 for j in vivos if team_of[j] == equipo)
+        diferencia = mios - (len(vivos) - mios)
+        maxima = diferencia if maxima is None else max(maxima, diferencia)
+    return maxima
+
+
 def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
     """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
 
