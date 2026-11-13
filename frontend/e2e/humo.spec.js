@@ -207,6 +207,65 @@ test('Operadores muestra a qué operador cambias tras perder', async ({ page }) 
   expect(errores).toEqual([])
 })
 
+test('Operadores filtra por operador desde su propio selector', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const datos = await (await page.request.get('/api/operators/after-result/?operator=Ash')).json()
+  await page.goto('/operadores')
+
+  // Ataque y Defensa se piden sin `operator`; mientras recarga, la tabla vieja sigue a la vista
+  const pedidosPool = []
+  page.on('request', (req) => {
+    if (new URL(req.url()).pathname === '/api/operators/') pedidosPool.push(req.url())
+  })
+  const nota = page.getByText('Con Ash elegido')
+  await expect(nota).toHaveCount(0)
+  const recarga = page.waitForResponse((resp) => resp.url().includes('/api/operators/after-result/?operator=Ash'))
+  await page.getByLabel('Operador').selectOption('Ash')
+  await recarga
+  await expect(page).toHaveURL(/operator=Ash/)
+
+  // seed: 3 operadores por lado; Ataque y Defensa no se vacian, la fila de Ash se resalta
+  const ataque = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Ataque', exact: true }) })
+  const defensa = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Defensa', exact: true }) })
+  await expect(ataque.locator('tbody tr')).toHaveCount(3)
+  await expect(defensa.locator('tbody tr')).toHaveCount(3)
+  const ash = ataque.locator('tbody tr', { has: page.getByRole('cell', { name: 'Ash', exact: true }) })
+  await expect(ash).toHaveClass(/\bme\b/)
+  await expect(ash.locator('[aria-current="true"]')).toHaveText('Ash')
+  await expect(ataque.locator('tbody tr.me')).toHaveCount(1)
+  await expect(defensa.locator('tbody tr.me')).toHaveCount(0)
+  await expect(nota).toBeVisible()
+  expect(pedidosPool.length).toBeGreaterThan(0)
+  expect(pedidosPool.filter((url) => url.includes('operator='))).toEqual([])
+
+  // Repetir o cambiar si se filtra a Ash: el Cambia de ataque es el de la API
+  const repetir = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
+  })
+  const filaAtaque = repetir.locator('table').first().locator('tr', { hasText: 'Ataque' })
+  await expect(filaAtaque.locator('td').nth(4)).toHaveText(String(datos.sides.Attack.after_win.switch.rounds))
+
+  await page.getByLabel('Operador').selectOption('')
+  await expect(page).not.toHaveURL(/operator=/)
+  await expect(page.locator('tbody tr.me')).toHaveCount(0)
+  await expect(nota).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores sin rondas deja quitar el operador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores?operator=Ash&until=2000-01-01')
+
+  await expect(page.getByText('0 rondas con estos filtros')).toBeVisible()
+  const selector = page.getByLabel('Operador')
+  await expect(selector).toHaveValue('Ash')
+  await selector.selectOption('')
+  await expect(page).not.toHaveURL(/operator=/)
+
+  expect(errores).toEqual([])
+})
+
 test('Operadores muestra el operador por sitio', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/operadores')
