@@ -1,7 +1,7 @@
 # 124. Partidas por version del juego en Datos
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T20:12Z
 rama: claude/equipo-dev/124-partidas-por-version-del-juego
 tipo: funcionalidad
 epica: datos
