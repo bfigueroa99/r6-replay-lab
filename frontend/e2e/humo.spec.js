@@ -177,9 +177,9 @@ test('Operadores muestra si repites o cambias de operador', async ({ page }) => 
   expect(errores).toEqual([])
 })
 
-test('Operadores muestra a qué operador cambias tras perder', async ({ page, request }) => {
+test('Operadores muestra a qué operador cambias tras perder', async ({ page }) => {
   const errores = vigilarConsola(page)
-  const datos = await (await request.get('/api/operators/after-result/')).json()
+  const datos = await (await page.request.get('/api/operators/after-result/')).json()
   // seed: la defensa pierde todo y rota Jager -> Mute -> Rook; la suma de los
   // pares es el «Cambia» de defensa tras perder (58). Mas rondas, primero
   const mayor = [...datos.switches].sort((x, y) => y.rounds - x.rounds)[0]
