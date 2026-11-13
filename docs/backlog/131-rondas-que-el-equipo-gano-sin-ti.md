@@ -1,7 +1,7 @@
 # 131. Rondas que el equipo gano sin ti
 
-estado: en curso 2026-11-13T23:46Z
-candado: dev 2026-11-13T23:46Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti
 tipo: funcionalidad
 epica: escuadra
@@ -176,6 +176,61 @@ repartidos arriba); dataviz no aplica (tablas).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Quedo el diseno completo, sin desvios de alcance:
+
+- `aggregates.won_without_me` (despues de `teammate_clutches`) con la constante
+  `GANADA_SIN_TI_MIN = 5`; lados con la regla de `by_overtime_side`
+  (`PRORROGA_LADOS`), fila `total`; `habituales` copiada tal cual de
+  `teammate_clutches` (la 79 no esta en dev); `mia_ganada` correlacionada por
+  `round_id` y `team_index`.
+- `/api/teammates/` suma `won_without_me`. Sin ruta nueva.
+- `frontend/src/ganadasSinTi.js` (`filasPorLadoSinTi`, `filasSostienen`) y el
+  panel "Rondas que tu equipo ganó sin ti" en `Teammates.jsx`, debajo de
+  "Primero en caer", con la tabla por lado y "Quién la sostiene" (enlace al
+  perfil, `*` debajo de 5 rondas).
+- `docs/metricas.md`: fila debajo de "Primero de tu equipo en caer" y fila en
+  `## Muestra minima`.
+
+Desvios menores del diseno:
+
+- Tests: la factory ya deriva `survived = not died`, asi que los companeros
+  vivos se arman con `died=False` en vez de `update(survived=True)`; no se toca
+  `factories.py`.
+- Test extra `test_un_habitual_que_juega_de_rival_no_suma_esa_ronda` (pedido por
+  la revision ciega): `test_un_rival_que_sobrevive_no_cuenta` lo cubria la regla
+  de habitual, no la correlacion por `team_index`. Con la correlacion quitada a
+  mano, el test nuevo falla (visto); restaurada, pasa.
+- Filtro de mapa probado (`test_el_filtro_de_mapa_va_sobre_tu_fila`) en vez de
+  solo el de lado.
+- Hint del panel suma "Seguir vivo no es haber hecho las bajas" (lo que el
+  diseno pone en "Que puede romperse").
+
+Criterios -> tests: (1) `test_cuenta_las_rondas_en_que_caiste_y_cuantas_gano_tu_equipo_por_lado`,
+`test_una_ronda_sin_ganador_no_cuenta`, `test_una_ronda_en_que_sobreviviste_no_cuenta`,
+`test_la_fila_total_suma_los_dos_lados`; (2) `test_cuenta_que_companero_habitual_seguia_vivo`,
+`test_un_companero_no_habitual_no_sale`, `test_un_rival_que_sobrevive_no_cuenta`,
+`test_un_habitual_que_juega_de_rival_no_suma_esa_ronda`, `test_una_ronda_perdida_no_suma_al_companero`,
+`test_marca_muestra_chica_debajo_de_cinco_rondas`; (3) `test_con_filtro_de_lado_sale_ese_lado_y_el_total`,
+`test_el_filtro_de_mapa_va_sobre_tu_fila`; (4) `test_teammates_devuelve_ganadas_sin_ti`,
+`ganadasSinTi.test.js` (4 tests) y e2e `Compañeros muestra las rondas que el equipo ganó sin ti`
+(seed_demo: Total 173 rondas, 98 ganadas, 57 %; Seba 98 juntos, 38 vivo);
+(5) `docs/metricas.md`.
+
+TDD: los tests Django se escribieron antes del agregado (primera corrida en
+rojo por un `won=None` en la factory del test, corregido en el helper); el
+vitest antes de usarlo en el panel.
+
+Verificacion manual sugerida: `/companeros` sobre el seed, con lado Ataque
+(sale Ataque y Total) y el enlace de Seba al perfil.
+
+Skills: no aplica (sin dominio nuevo).
+Skills del repo: testing-strategy (numero en Django, forma en vitest, pantalla
+en e2e), statistical-analysis (denominador = rondas en que caiste con ganador,
+`n` por compañero a la vista, `*` debajo de 5), ux-copy (textos en voseo
+neutro con tildes, como el resto de la pagina); modern-web-guidance no se
+consulto: el JSX copia el patron vecino de la misma pagina (DataTable, Panel).
+OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
 
 ## Revision
 

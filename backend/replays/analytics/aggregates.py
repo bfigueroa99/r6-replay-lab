@@ -2932,7 +2932,7 @@ def teammate_clutches(**filters) -> dict:
     }
 
 
-# la de CLUTCH_COMPANERO_MIN: misma pagina y misma marca `*`, asi un compañero
+# la de CLUTCH_COMPANERO_MIN: misma pagina y misma marca `*`, asi un companero
 # no sale marcado en una tabla y limpio en la de al lado con el mismo n
 GANADA_SIN_TI_MIN = 5
 
@@ -2940,7 +2940,7 @@ GANADA_SIN_TI_MIN = 5
 def won_without_me(**filters) -> dict:
     """Rondas en que caiste y tu equipo igual gano, por lado, y quien seguia vivo.
 
-    Cuentan tus filas con `died=True` y ganador conocido. Por compañero
+    Cuentan tus filas con `died=True` y ganador conocido. Por companero
     habitual, de esas rondas ganadas con el en tu equipo, en cuantas seguia
     vivo al final (`survived` en su fila). Vivo no es que haya hecho las bajas:
     eso pide el feed y es otro tramo.

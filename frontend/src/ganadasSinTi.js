@@ -3,7 +3,7 @@
  * `/api/teammates/`.
  */
 
-/** Filas por lado con el total al final, o `[]` si no caíste en ninguna ronda con ganador. */
+/** Filas por lado con el total al final, o `[]` si no caiste en ninguna ronda con ganador. */
 export function filasPorLadoSinTi(data) {
   const sides = data?.sides || []
   const total = sides.find((f) => f.side === 'total')
@@ -12,7 +12,7 @@ export function filasPorLadoSinTi(data) {
   return sides.map((fila, orden) => ({ ...fila, orden }))
 }
 
-/** Compañeros habituales de esas rondas ganadas, con su enlace y su marca de muestra. */
+/** Companeros habituales de esas rondas ganadas, con su enlace y su marca de muestra. */
 export function filasSostienen(data) {
   return (data?.mates || []).map((f, orden) => ({
     clave: f.player_id,

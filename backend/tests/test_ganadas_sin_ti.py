@@ -108,6 +108,14 @@ class GanadasSinTiTests(TestCase):
             ronda(won=True, vivos=("Seba",), rivales_vivos=("Rival",))
         self.assertEqual(list(por_nombre(agg.won_without_me())), ["Seba"])
 
+    def test_un_habitual_que_juega_de_rival_no_suma_esa_ronda(self):
+        partidas_juntas(("Seba",))
+        ronda(won=True, vivos=("Seba",))
+        # misma ronda que ganaste sin ti, pero Seba esta en el otro equipo
+        ronda(won=True, rivales_vivos=("Seba",))
+        seba = por_nombre(agg.won_without_me())["Seba"]
+        self.assertEqual((seba["rounds"], seba["survived"]), (1, 1))
+
     def test_una_ronda_perdida_no_suma_al_companero(self):
         partidas_juntas(("Seba",))
         ronda(won=False, vivos=("Seba",))
