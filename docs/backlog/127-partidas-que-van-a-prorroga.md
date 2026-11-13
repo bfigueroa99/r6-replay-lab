@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
-estado: implementado
-candado: revisor 2026-11-13T23:18Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B22 (salio del Fuera de alcance de la 115)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ, revisor 20261113T2318Z-cpCpgff
 
 ## PR
 
@@ -195,3 +195,41 @@ OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—
 ## Para el humano
 
 (nada)
+
+## Revision 2026-11-13 sobre 45551f5
+
+Revision a ciegas en dos ejes (receta 2 de OMC): estandares (`omc-code-reviewer`
+con `revision.md`) e intencion (diff de 219 lineas, contra Que gana, Criterios y
+Fuera de alcance). Sin eje de seguridad: no toca POST, `.rec`, rutas ni
+dependencias.
+
+- Estandares: 0 hallazgos. `by_overtime_start_side` sigue la forma de
+  `by_start_side` (mismas claves, `_pct` sobre decididas); el lado sale de la
+  partida entera, asi `?side=` elige fila sin mudar partidas de lado.
+- [intencion] [MEDIUM] `frontend/e2e/humo.spec.js:85-98` — confirmado.
+  Que pasa: `seed_demo` no tiene prorrogas, asi que `filasProrrogaPorLado`
+  devuelve `[]` (`prorrogaPorLado.js:16`) y las columnas nuevas nunca se
+  dibujan en Chromium; el e2e pasa por la pagina y por la nota, no por la tabla.
+  Es el mismo limite que dejo la 115. Arreglo sugerido (no bloquea): un
+  `page.route` sobre `/api/trends/` con filas de prorroga, o prorrogas en
+  `seed_demo` en una ficha propia (cambia numeros de otros e2e). QA: mirar la
+  tabla con datos que tengan prorroga.
+- [intencion] [LOW] `Trends.jsx:121-128`: la columna dice "Partidas ganadas"
+  y el criterio "% ganadas"; UI y `metricas.md` coinciden entre si. Sin cambio.
+- [intencion] [LOW] `prorrogaPorLado.js:11`: `PARTIDAS_CORTE = 10` duplica
+  `MUESTRA_PARTIDAS` de `margen.js:7`; un lado sin partidas muestra `0` en
+  Partidas y `—` en el porcentaje. Lectura razonable del criterio. Sin cambio.
+
+Criterios: agregado y caso 2/1 (`test_prorroga_por_lado.py:100`), sin prorroga
+no entra (`:117`), `won` nulo (`:133`), filtros y `?side=` (`:124`, `:142`,
+`:150`), columnas sin tarjeta nueva (`prorrogaPorLado.test.js:35-56`), aviso de
+muestra (`:58-65`), fila en `metricas.md:83`. Diff dentro de `archivos:`.
+Identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
+
+Verificacion: verificar.sh VERDE d0f606a86 (1293 tests backend, 425 vitest,
+114 e2e), rama al dia con dev.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=3 hallazgos (0 arreglados; 0 CRITICAL/HIGH) · verificación=—
+Skills del repo: ninguna
