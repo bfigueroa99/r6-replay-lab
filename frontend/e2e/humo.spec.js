@@ -423,6 +423,43 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra el estado de vivos al morir', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Estado al morir' })
+  await expect(panel).toBeVisible()
+  // seed_demo: 173 muertes con evento, 87 con ventaja (4v3) y 86 en paridad (3v3)
+  const grupos = panel.locator('table').first()
+  await expect(grupos.locator('tbody tr')).toHaveCount(3)
+  const ventaja = grupos.locator('tbody tr', { hasText: 'Con ventaja' })
+  await expect(ventaja.getByRole('cell', { name: '87', exact: true })).toBeVisible()
+  const estados = panel.locator('table').nth(1)
+  await expect(estados.locator('tbody tr').first()).toContainText('4v3')
+  await expect(estados.locator('tbody tr', { hasText: '3v3' }).getByRole('cell', { name: '86', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
+test('Duelos muestra los operadores que te abren', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/duels/?min_duels=3')).json()
+  const filas = datos.opening_operators
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Operadores que te abren' })
+  await expect(panel.getByRole('heading', { name: 'Operadores que te abren' })).toBeVisible()
+  // seed_demo trae aperturas por operador: sin filas, el test no estaria mirando la tabla
+  expect(filas.length).toBeGreaterThan(0)
+  await expect(panel.locator('table tbody tr')).toHaveCount(filas.length)
+  const primera = panel.locator('table tbody tr').first()
+  await expect(primera.locator('td').nth(0)).toHaveText(filas[0].operator)
+  await expect(primera.locator('td').nth(2)).toHaveText(String(filas[0].opened_you))
+
+  expect(errores).toEqual([])
+})
+
 test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')
@@ -1286,6 +1323,32 @@ test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
   await expect(club.locator('td').nth(1)).toHaveText('19')
   await expect(club.locator('td').nth(3)).toHaveText('1')
   await expect(panel.locator('tbody tr')).toHaveCount(3)
+
+  expect(errores).toEqual([])
+})
+
+test('el Coach copia sus señales', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  expect(insights.length).toBeGreaterThan(0)
+  await page.goto('/coach')
+
+  await page.getByRole('button', { name: 'Copiar señales' }).click()
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
+  let texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith('Coach · Sin filtros\n')).toBe(true)
+  expect(texto).toContain(`- ${insights[0].title}`)
+
+  // los filtros de la URL (ficha 96) llegan a la primera linea
+  const conLado = await (await page.request.get('/api/coach/?side=Defense')).json()
+  expect(conLado.insights.length).toBeGreaterThan(0)
+  await page.goto('/coach?side=Defense')
+  await page.getByRole('button', { name: 'Copiar señales' }).click()
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
+  texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith('Coach · Filtros: Solo defensa\n')).toBe(true)
+  expect(texto).toContain(`- ${conLado.insights[0].title}`)
 
   expect(errores).toEqual([])
 })

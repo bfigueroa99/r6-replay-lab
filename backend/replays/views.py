@@ -447,6 +447,8 @@ def duels(request: HttpRequest) -> JsonResponse:
             "rounds": agg.base_queryset(**filters).count(),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
+            # el mismo selector de muestra manda en las dos tablas de operador
+            "opening_operators": agg.openings_by_operator(min_openings=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
                 **filters,
@@ -455,6 +457,12 @@ def duels(request: HttpRequest) -> JsonResponse:
             "rival_stacks": agg.rival_stacks(min_matches=min_matches, **filters),
         }
     )
+
+
+@require_GET
+def death_state(request: HttpRequest) -> JsonResponse:
+    # Endpoint propio y no dentro de `duels`: es un panel aparte de Duelos.
+    return _ok(agg.death_state(**_filters(request)))
 
 
 # --------------------------------------------------------------------- partidas

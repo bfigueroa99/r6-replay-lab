@@ -384,3 +384,123 @@ class RondasSinDuelosTests(TestCase):
         self.assertEqual(data["rounds"], 1)
         self.assertEqual(data["totals"]["duels"], 0)
         self.assertEqual(self.client.get("/api/duels/").json()["rounds"], 2)
+
+
+class OperadoresQueTeAbrenTests(TestCase):
+    """La primera baja de la ronda, por operador rival y por tu lado."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+
+    def _ronda(self, numero, operador_rival="Ash", side="Attack", rival="rival"):
+        rnd = make_round(self.match, numero, side=side)
+        make_round_player(rnd, side=side)
+        lado_rival = "Defense" if side == "Attack" else "Attack"
+        make_round_player(
+            rnd, username=rival, is_me=False, team_index=1, side=lado_rival, operator=operador_rival
+        )
+        return rnd
+
+    def _por_operador(self, filas):
+        return {(f["operator"], f["side"]): f for f in filas}
+
+    def test_ash_te_abre_en_dos_y_tu_le_abres_en_una(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+        make_event(self._ronda(1), 0, "rival", ME)
+        make_event(self._ronda(2), 0, ME, "rival")
+
+        filas = agg.openings_by_operator(min_openings=1)
+        self.assertEqual(len(filas), 1)
+        fila = filas[0]
+        self.assertEqual((fila["operator"], fila["side"]), ("Ash", "Attack"))
+        self.assertEqual(fila["opened_you"], 2)
+        self.assertEqual(fila["you_opened"], 1)
+        self.assertEqual(fila["openings"], 3)
+        self.assertEqual(fila["balance"], -1)
+        self.assertEqual(fila["share"], 100.0)
+        self.assertEqual(fila["winrate"], 33.3)
+
+    def test_solo_cuenta_la_primera_baja_de_la_ronda(self):
+        rnd = self._ronda(0)
+        make_round_player(rnd, username="otro", is_me=False, team_index=1, side="Defense", operator="Mira")
+        make_event(rnd, 0, ME, "otro")  # la apertura es contra Mira
+        make_event(rnd, 1, "rival", ME)  # Ash me mata despues
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertNotIn(("Ash", "Attack"), filas)
+        self.assertEqual(filas[("Mira", "Attack")]["you_opened"], 1)
+
+    def test_teamkill_que_abre_no_suma_a_ningun_operador(self):
+        rnd = make_round(self.match, 0)
+        make_round_player(rnd)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, operator="Ash")
+        make_event(rnd, 0, "amigo", ME)
+
+        self.assertEqual(agg.openings_by_operator(min_openings=1), [])
+
+    def test_muerte_sin_autor_que_abre_no_suma(self):
+        rnd = self._ronda(0)
+        make_event(rnd, 0, "", ME, kind="Death")
+        make_event(rnd, 1, "rival", ME)
+
+        self.assertEqual(agg.openings_by_operator(min_openings=1), [])
+
+    def test_un_teamkill_de_apertura_no_pesa_en_el_share(self):
+        # El % es sobre tus muertes de apertura contra rivales: un teamkill que
+        # abre otra ronda del mismo lado no lo baja de 100
+        make_event(self._ronda(0), 0, "rival", ME)
+        rnd = self._ronda(1)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, side="Attack", operator="Thermite")
+        make_event(rnd, 0, "amigo", ME)
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertEqual(list(filas), [("Ash", "Attack")])
+        self.assertEqual(filas[("Ash", "Attack")]["share"], 100.0)
+
+    def test_operador_vacio_o_desconocido_no_tiene_fila_pero_pesa_en_el_share(self):
+        make_event(self._ronda(0, "Ash"), 0, "rival", ME)
+        make_event(self._ronda(1, ""), 0, "rival", ME)
+        make_event(self._ronda(2, "Unknown(123)"), 0, "rival", ME)
+
+        filas = agg.openings_by_operator(min_openings=1)
+        self.assertEqual([f["operator"] for f in filas], ["Ash"])
+        self.assertEqual(filas[0]["share"], 33.3)
+
+    def test_separa_por_tu_lado(self):
+        make_event(self._ronda(0, "Thorn", side="Attack"), 0, "rival", ME)
+        make_event(self._ronda(1, "Thorn", side="Defense"), 0, "rival", ME)
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertEqual(set(filas), {("Thorn", "Attack"), ("Thorn", "Defense")})
+        self.assertEqual(filas[("Thorn", "Attack")]["opened_you"], 1)
+        self.assertEqual(filas[("Thorn", "Defense")]["opened_you"], 1)
+
+    def test_el_filtro_de_lado_deja_solo_ese(self):
+        make_event(self._ronda(0, "Thorn", side="Attack"), 0, "rival", ME)
+        make_event(self._ronda(1, "Thorn", side="Defense"), 0, "rival", ME)
+
+        filas = agg.openings_by_operator(min_openings=1, side="Defense")
+        self.assertEqual([(f["operator"], f["side"]) for f in filas], [("Thorn", "Defense")])
+
+    def test_el_filtro_de_mapa_aplica(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+        self.assertEqual(len(agg.openings_by_operator(min_openings=1, map="club-house")), 1)
+        self.assertEqual(agg.openings_by_operator(min_openings=1, map="border"), [])
+
+    def test_muestra_minima_y_orden(self):
+        for n in range(3):
+            make_event(self._ronda(n, "Ash"), 0, ME, "rival")
+        make_event(self._ronda(3, "Thorn"), 0, "rival", ME)
+
+        self.assertEqual([f["operator"] for f in agg.openings_by_operator(min_openings=3)], ["Ash"])
+        # con muestra 1 manda Te abre: Thorn (1) antes que Ash (0)
+        self.assertEqual(
+            [f["operator"] for f in agg.openings_by_operator(min_openings=1)], ["Thorn", "Ash"]
+        )
+
+    def test_la_api_devuelve_opening_operators_con_la_muestra_del_selector(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+
+        con_uno = self.client.get("/api/duels/?min_duels=1").json()
+        self.assertEqual(con_uno["opening_operators"][0]["operator"], "Ash")
+        self.assertEqual(self.client.get("/api/duels/").json()["opening_operators"], [])
