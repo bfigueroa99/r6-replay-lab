@@ -345,6 +345,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),
+            "teammate_clutches": agg.teammate_clutches(**filters),
         }
     )
 
