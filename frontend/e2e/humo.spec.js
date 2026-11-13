@@ -230,6 +230,25 @@ test('Operadores muestra el operador por sitio', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra el puesto en el lobby', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { lobby_rank: puesto } = await (await page.request.get('/api/trends/')).json()
+  expect(puesto.best_in_lobby.matches).toBeGreaterThan(0)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Puesto en el lobby' })
+  await expect(panel).toBeVisible()
+  for (const etiqueta of ['Mejor de la partida', 'Mejor de tu equipo', 'Último de la partida']) {
+    await expect(panel.getByText(etiqueta, { exact: true })).toBeVisible()
+  }
+  // los numeros salen de la API, no a mano: si cambia el seed el test sigue al dato
+  const { count, matches } = puesto.best_in_lobby
+  const sub = `${count} de ${matches} ${matches === 1 ? 'partida' : 'partidas'}`
+  await expect(panel.locator('.stat', { hasText: 'Mejor de la partida' }).locator('.sub')).toHaveText(sub)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra la inercia entre rondas', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
