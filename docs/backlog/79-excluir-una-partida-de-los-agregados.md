@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-13T21:58Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -172,3 +172,20 @@ conflicto (`git merge-tree`). `git merge origin/dev` limpio; la guardia de
 agregados de excluidas no pidio clasificar nada nuevo. `verificar.sh`: VERDE
 ef17b0c86 (1259 backend, 388 vitest, 106 e2e). Sigue esperando el merge del
 humano (toca `CLAUDE.md`).
+
+## Mantenimiento 2026-11-13 22:10 (revisor 20261113T2157Z-cG2vDSe, salud de rama entregada)
+
+Rama 76 commits atras de `origin/dev` (entraron de la 120 a la 126), sin
+conflicto textual (`git merge-tree`). Tras `git merge origin/dev`, rojo:
+`GuardiaEstaticaTests.test_tus_rondas_salen_de_rondas_contables` marco
+`[(2754, 'teammate_clutches')]`. La 123 copio la regla de habituales de
+`by_stack` tal como estaba antes de la 79 (`RoundPlayer.objects.filter(is_me=True)`),
+asi que una partida excluida seguia haciendo habitual a un companero en
+"Clutches de tus compañeros". Conflicto semantico del merge (P3): mismo arreglo
+que `by_stack` en esta rama, `rondas_contables()`, una linea. Test nuevo
+`ClutchesDeCompanerosConExcluidasTests.test_un_habitual_solo_por_partidas_excluidas_no_sale`:
+cae sin el arreglo (FAIL) y pasa con el. La comparacion primaria
+(`/api/teammates/`) no lo veia porque su seed no tiene clutches de habituales.
+`verificar.sh`: VERDE 34a8bc56d (1305 backend, 411 vitest, 113 e2e). El codigo
+propio de la 79 no cambio: la revision y la QA siguen valiendo; el arreglo toca
+solo codigo que llego de dev. Sigue esperando el merge del humano (toca `CLAUDE.md`).
