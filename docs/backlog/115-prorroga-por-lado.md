@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
-estado: implementado
-candado: revisor 2026-11-13T16:13Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B18
 archivos: backend/replays/analytics/aggregates.py (by_overtime_side, PRORROGA_LADOS), backend/replays/views.py (trends), backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT
+turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT, revisor 20261113T1603Z-cHj1H4k
 
 ## PR
 
@@ -168,7 +168,37 @@ Skills: no aplica.
 Skills del repo: modern-web-guidance (leida; ninguna guia aplica: tabla con `DataTable` y `h3` existentes, sin CSS ni componente nuevo), ux-copy no leida (los dos textos nuevos son los del diseno y siguen a "Primera ronda de cada lado").
 OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 LOW de comentario sin cambio; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 85d4b1d
+
+(20261113T1603Z-cHj1H4k) La rama trae `origin/dev` (16d3986, con la 110) sin
+conflictos. verificar.sh: VERDE 85d4b1de6 (1181 backend, 344 vitest, 97
+e2e). Revision a ciegas en dos ejes (`omc-code-reviewer` estandares y
+`omc-code-reviewer` intencion; sin POST, red, parser ni rutas: sin eje de
+seguridad). Los dos: aprobar, 0 CRITICAL/HIGH/MEDIUM. Confirmados por el lider:
+
+- [test] LOW `backend/tests/test_prorroga_por_lado.py` (`test_by_half_no_cambia`):
+  el criterio 2 pide que las filas de mitad no cambien y el test solo miraba
+  `rounds`. **Agregado por el Revisor (test que pasa):**
+  `test_by_half_no_cambia_ni_winrate_ni_rating` (winrate 100/100/66.7, rating
+  presente, la fila de prorroga sigue juntando los dos lados); y
+  `test_parte_la_prorroga_por_lado` ahora exige `rating` no nulo en vez de
+  solo la clave. Sin mutacion limpia: el intento sobre `by_half` rompia la
+  query (errores, no fallos) y no se cuenta.
+- [test] LOW, no frena: `seed_demo` no tiene prorroga, asi que el e2e solo
+  recorre la nota vacia; la tabla con filas la cubren vitest (funcion pura) y
+  los tests backend. Cambiar el seed moveria los numeros de otros e2e.
+
+Criterios: filas por lado con 100 % y 0 % (`test_parte_la_prorroga_por_lado`),
+mitades intactas (`by_half` sin tocar + los dos tests), filtros
+(`?side=Defense` y `?map=`), Tendencias con aviso de muestra y nota (vitest +
+e2e con consola limpia), fila en `metricas.md`: cubiertos. Reglas: GET,
+agregacion de columnas de import, sin dependencias, identificadores sin
+tildes y UI con tildes, sin `console.log`. Diff dentro de `archivos:`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=4 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
 
 ## QA
 
