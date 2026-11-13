@@ -945,6 +945,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
             "log": [_import_log_row(e) for e in ImportLog.objects.all()[:25]],
+            "versions": unknowns.partidas_por_version(),
         }
     )
 

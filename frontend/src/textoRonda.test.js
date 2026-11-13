@@ -71,7 +71,7 @@ describe('textoRonda', () => {
       { order: 2, kind: 'Death', actor: 'Otro', target: '', clock_raw: '1:10', headshot: false, traded: false },
     ]
     const lineas = textoRonda(ronda({ events: eventos }), 'Bank', 0).split('\n')
-    expect(lineas[1]).toBe('2:49 Yo mató a Socio (apertura)')
+    expect(lineas[1]).toBe('2:49 Yo mató a Socio (apertura, TK)')
     expect(lineas[2]).toBe('1:10 Otro murió')
   })
 

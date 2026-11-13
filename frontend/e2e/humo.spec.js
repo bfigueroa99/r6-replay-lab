@@ -200,7 +200,10 @@ test('Operadores muestra a qué operador cambias tras perder', async ({ page }) 
     '0%',
   ])
 
-  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe
+  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe.
+  // Antes de navegar, que termine lo que pidio la primera carga: un goto con
+  // /api/filters/ en vuelo la aborta y la consola la cuenta como fallida.
+  await page.waitForLoadState('networkidle')
   await page.goto('/operadores?side=Attack')
   await expect(panel.getByText('No cambiaste de operador tras perder con estos filtros.')).toBeVisible()
 
@@ -854,6 +857,60 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('la timeline marca un teamkill con TK', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene teamkills: se cambia la victima de una baja por un compañero del autor
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id } = matches[0]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  let indice = -1
+  let baja = null
+  let companero = ''
+  for (const [i, ronda] of detalle.rounds.entries()) {
+    const kill = ronda.events.find((e) => e.kind === 'Kill')
+    if (!kill) continue
+    const autor = ronda.players.find((p) => p.username === kill.actor)
+    const otro = autor && ronda.players.find((p) => p.team_index === autor.team_index && p.username !== kill.actor)
+    if (otro) {
+      indice = i
+      baja = kill
+      companero = otro.username
+      break
+    }
+  }
+  expect(indice).toBeGreaterThanOrEqual(0)
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const ronda = json.rounds[indice]
+    ronda.events = ronda.events.map((e) => (e.order === baja.order ? { ...e, target: companero } : e))
+    await route.fulfill({ response: respuesta, json })
+  })
+  await page.goto(`/partidas/${id}`)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
+  const pestanas = panel.locator('.round-tab')
+  await pestanas.nth(indice).click()
+  await expect(pestanas.nth(indice)).toHaveClass(/active/)
+  const tk = panel.locator('.timeline .chip', { hasText: /^TK$/ })
+  await expect(tk).toHaveCount(1)
+  await expect(tk).toHaveAttribute('title', 'Baja entre compañeros: no suma a las bajas')
+  const linea = panel.locator('.timeline li', { has: page.locator('.chip', { hasText: /^TK$/ }) })
+  await expect(linea).toContainText(`${baja.actor} mató a ${companero}`)
+  await expect(linea).not.toHaveClass(/mine|against/)
+
+  // en otra ronda, sin la baja cambiada, ningun TK
+  const otra = indice === 0 ? 1 : 0
+  await pestanas.nth(otra).click()
+  await expect(pestanas.nth(otra)).toHaveClass(/active/)
+  await expect(panel.locator('.timeline .chip', { hasText: /^TK$/ })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo: demo-17 tiene dos rondas tuyas de 2 bajas; la primera de la lista no tiene ninguna
@@ -1313,6 +1370,50 @@ test('Datos muestra Sin identificar sin pendientes', async ({ page }) => {
   // seed_demo no tiene IDs desconocidos: el panel se renderiza con las cuatro listas vacias
   const panel = page.locator('.panel', { hasText: 'Sin identificar' })
   await expect(panel).toContainText('no hay mapas, operadores, modos ni tipos de partida sin nombre')
+
+  expect(errores).toEqual([])
+})
+
+test('Datos muestra las partidas por version del juego', async ({ page, request }) => {
+  const errores = vigilarConsola(page)
+  const { versions } = await (await request.get('/api/import/status/')).json()
+  expect(versions.length).toBeGreaterThan(0)
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  await expect(titulo).toBeVisible()
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(versions.length)
+  // la primera fila es la version mas nueva; sin version, el rotulo de la UI
+  const primera = filas.first()
+  await expect(primera).toContainText(versions[0].game_version || 'Sin versión')
+  await expect(primera).toContainText(String(versions[0].matches))
+
+  expect(errores).toEqual([])
+})
+
+test('Datos ordena las versiones del juego como la API, no como texto', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no trae game_version: las versiones se inyectan sobre la respuesta real
+  await page.route('**/api/import/status/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const fila = (game_version, code_version, matches) => ({
+      game_version, code_version, matches, first: '2026-06-01T20:00:00', last: '2026-09-01T20:00:00',
+    })
+    await route.fulfill({
+      response: respuesta,
+      json: { ...json, versions: [fila('Y10S4', 30, 4), fila('Y9S4', 10, 7), fila('', 0, 2)] },
+    })
+  })
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toContainText('Y10S4')
+  await expect(filas.nth(1)).toContainText('Y9S4')
+  await expect(filas.nth(2)).toContainText('Sin versión')
 
   expect(errores).toEqual([])
 })
