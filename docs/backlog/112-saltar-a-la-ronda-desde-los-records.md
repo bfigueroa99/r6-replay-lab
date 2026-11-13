@@ -1,7 +1,7 @@
 # 112. Saltar a la ronda desde los records
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T04:23Z
 rama: claude/equipo-dev/112-saltar-a-la-ronda-desde-los-records
 tipo: funcionalidad
 epica: revision-de-rondas
