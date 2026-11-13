@@ -22,6 +22,7 @@ el item #N del roadmap) y que alternativas se descartaron en una linea cada una.
 - Verificacion manual: que comando o URL, que se vio.
 - OMC: las lineas `OMC:` de `## Diseno`, `## Implementacion`, `## Revision`
   y `## QA` de la ficha, tal cual, una por etapa.
+- Skills del repo: las lineas `Skills del repo:` de la ficha, tal cual.
 
 ## Riesgos y lo que no entra
 

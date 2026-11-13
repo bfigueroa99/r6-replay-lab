@@ -34,6 +34,7 @@ from django.db.models.functions import Cast, Floor
 from pydissect.constants import MAPS, Y9S4
 from pydissect.header import etiqueta_de_version
 
+from .. import unknowns
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
 from .metrics import trade_window
@@ -331,8 +332,11 @@ def derive(row: dict, baseline: float | None = None) -> dict:
 
 
 def totals(qs: QuerySet[RoundPlayer], baseline: float | None = None) -> dict:
-    row = dict(qs.aggregate(**AGGREGATES))
-    row["matches"] = qs.values("round__match_id").distinct().count()
+    # Las partidas van en el mismo aggregate y no en un `values().distinct()
+    # .count()` aparte: esa segunda consulta recorria las mismas filas otra
+    # vez, y Tendencias llama a totals() una vez por tramo (8 por hora, 7 por
+    # dia...). Con 870 partidas /api/trends/ bajo de 2,1 s a 1,4 s (mejor de 7).
+    row = dict(qs.aggregate(**AGGREGATES, matches=Count("round__match_id", distinct=True)))
     return derive(row, baseline if baseline is not None else rating_baseline())
 
 
@@ -456,6 +460,8 @@ def _record_de_ronda(rp: RoundPlayer | None, valor: str) -> dict | None:
         "map": rp.round.match.map_name,
         "value": getattr(rp, valor),
         "round_label": f"R{rp.round.number + 1}",
+        # el `number` del detalle: el enlace del record abre esa ronda
+        "round_number": rp.round.number,
     }
 
 
@@ -518,6 +524,7 @@ def _record_de_racha(qs) -> dict | None:
         "map": match.map_name,
         "value": racha["length"],
         "round_label": f"R{racha['from_number'] + 1}",
+        "round_number": racha["from_number"],
     }
 
 
@@ -773,6 +780,177 @@ def operator_by_site(min_rounds: int = OPERADOR_SITIO_MIN_RONDAS, **filters) -> 
     return {"rows": filas, "min_rounds": min_rounds, "bands": POSICION_BANDAS}
 
 
+#: Partidas que cuentan como "lo que jugas hoy" en el pool: suficientes para
+#: que un operador de rotacion aparezca, pocas para que no pese lo de hace meses.
+POOL_PARTIDAS_RECIENTES = 20
+
+#: Dias sin un operador para decir que lo dejaste. Se cuentan desde tu partida
+#: mas nueva y no desde hoy: quien no juega dos meses no lo dejo todo.
+POOL_DIAS_SIN_JUGAR = 30
+
+
+def operator_pool(catalogo: list[dict], **filters) -> dict:
+    """Operadores distintos por lado, los que dejaste y los que nunca jugaste.
+
+    El catalogo entra como argumento porque se arma en las vistas. `operator`
+    no filtra (no hay "tu pool de Ash") y `side` tampoco: filtrar por lado
+    dejaria el otro entero en `never`, asi que salen siempre los dos y la UI
+    muestra el del filtro. `site` tampoco, por lo mismo: con un sitio puesto,
+    todo operador que no jugaste ahi pasaria por "nunca jugado".
+    """
+    filtros = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
+    qs = (
+        base_queryset(**filtros)
+        .exclude(operator="")
+        .exclude(operator__startswith=unknowns.UNKNOWN_PREFIX)
+        .exclude(side="")
+    )
+    ids: list[int] = []
+    referencia = None
+    for fila in (
+        qs.order_by("-round__match__played_at", "-round__match_id")
+        .values_list("round__match_id", "round__match__played_at")
+        .distinct()
+        .iterator()
+    ):
+        if referencia is None:
+            referencia = fila[1]
+        ids.append(fila[0])
+        if len(ids) >= POOL_PARTIDAS_RECIENTES:
+            break
+    partidas = qs.values("round__match_id").distinct().count()
+
+    filas = list(
+        qs.order_by()
+        .values("operator", "side")
+        .annotate(
+            rounds=Count("id"),
+            last=Max("round__match__played_at"),
+            recent=Count("id", filter=Q(round__match_id__in=ids)),
+        )
+    )
+    corte = referencia - timedelta(days=POOL_DIAS_SIN_JUGAR) if referencia else None
+
+    lados = {}
+    for lado in ("Attack", "Defense"):
+        propias = [f for f in filas if f["side"] == lado]
+        jugados = {f["operator"] for f in propias}
+        # Por nombre primero y despues por fecha (sort estable): dos operadores
+        # de la misma partida salen siempre en el mismo orden.
+        viejos = sorted(
+            (f for f in propias if corte is not None and f["last"] < corte),
+            key=lambda f: f["operator"].lower(),
+        )
+        viejos.sort(key=lambda f: f["last"], reverse=True)
+        lados[lado] = {
+            "distinct_recent": sum(1 for f in propias if f["recent"] > 0),
+            "distinct_all": len(jugados),
+            "never": sorted(
+                (
+                    o["name"] for o in catalogo
+                    if o["side"] == lado and o["name"] not in jugados
+                    and o["name"] and not o["name"].startswith(unknowns.UNKNOWN_PREFIX)
+                ),
+                key=str.lower,
+            ),
+            "stale": [
+                {"operator": f["operator"], "last_played": f["last"].isoformat(),
+                 "rounds": f["rounds"]}
+                for f in viejos
+            ],
+        }
+    return {
+        "matches": partidas,
+        "recent_matches": len(ids),
+        "reference": referencia.isoformat() if referencia else None,
+        "recent_window": POOL_PARTIDAS_RECIENTES,
+        "stale_days": POOL_DIAS_SIN_JUGAR,
+        "sides": lados,
+    }
+
+
+#: La muestra minima de "Operador" (tabla de muestra minima): debajo se avisa
+#: "pocas rondas" pero no se oculta, porque el par repetir/cambiar se lee junto.
+OPERADOR_TRAS_RESULTADO_MIN_RONDAS = 12
+OPERADOR_TRAS_RESULTADO = ("after_loss", "after_win")
+OPERADOR_TRAS_RESULTADO_CASOS = ("repeat", "switch")
+
+
+def _bloque_tras_resultado() -> dict:
+    return {
+        tras: {caso: {"rounds": 0, "decided": 0, "won": 0, "winrate": None}
+               for caso in OPERADOR_TRAS_RESULTADO_CASOS}
+        for tras in OPERADOR_TRAS_RESULTADO
+    }
+
+
+def operator_after_result(**filters) -> dict:
+    """Tras una ronda tuya, si en la siguiente del mismo lado repetiste operador.
+
+    El par es tu ronda y tu siguiente ronda del mismo lado en la partida: las
+    del otro lado en medio no lo cortan (el medio tiempo separa ataque y
+    defensa), pero un numero faltante si, porque no se sabe que jugaste ahi.
+    `side` no filtra el queryset: sin las rondas del otro lado no se distingue
+    un hueco de un cambio de lado; la UI elige el bloque. `operator` y `site`
+    eligen la primera ronda del par: filtrar las filas dejaria solo los pares
+    que repiten (o que vuelven al mismo sitio) y cortaria el resto.
+    """
+    operador = filters.get("operator")
+    sitio = filters.get("site")
+    base = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
+    filas = (
+        base_queryset(**base)
+        .order_by("round__match_id", "round__number")
+        .values_list("round__match_id", "round__number", "side", "operator",
+                     "round__site", "round__my_team_won")
+    )
+    lados = {lado: _bloque_tras_resultado() for lado in ("Attack", "Defense")}
+    pendiente: dict[str, tuple] = {}
+    anterior = None
+    pares = 0
+    for partida, numero, lado, op, sitio_ronda, gano in filas.iterator():
+        if anterior is None or anterior[0] != partida or numero != anterior[1] + 1 or not lado:
+            pendiente.clear()
+        anterior = (partida, numero)
+        if lado not in lados:
+            continue
+        if not op or op.startswith(unknowns.UNKNOWN_PREFIX):
+            pendiente.pop(lado, None)
+            continue
+        previa = pendiente.pop(lado, None)
+        if previa is not None:
+            op_previo, gano_previo = previa
+            caso = "repeat" if op == op_previo else "switch"
+            tras = "after_win" if gano_previo else "after_loss"
+            celda = lados[lado][tras][caso]
+            celda["rounds"] += 1
+            if gano is not None:
+                celda["decided"] += 1
+                celda["won"] += int(gano)
+            pares += 1
+        # Sin ganador no hay "tras perder" ni "tras ganar": no abre par.
+        if gano is not None and (not operador or op == operador) \
+                and (not sitio or sitio_ronda == sitio):
+            pendiente[lado] = (op, gano)
+
+    total = _bloque_tras_resultado()
+    for bloque in lados.values():
+        for tras in OPERADOR_TRAS_RESULTADO:
+            for caso in OPERADOR_TRAS_RESULTADO_CASOS:
+                for campo in ("rounds", "decided", "won"):
+                    total[tras][caso][campo] += bloque[tras][caso][campo]
+    for bloque in (*lados.values(), total):
+        for tras in OPERADOR_TRAS_RESULTADO:
+            for celda in bloque[tras].values():
+                celda["winrate"] = _pct(celda["won"], celda["decided"])
+    return {
+        "min_rounds": OPERADOR_TRAS_RESULTADO_MIN_RONDAS,
+        "pairs": pares,
+        "sides": lados,
+        "total": total,
+    }
+
+
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     """Solo tiene sentido en ataque: el spawn es la posicion de inicio."""
     qs = base_queryset(**filters).filter(side="Attack").exclude(spawn="")
@@ -1004,6 +1182,91 @@ def positioning(min_rounds: int = POSICION_MIN_RONDAS, **filters) -> dict:
     }
 
 
+#: Muestra minima de la tabla "Sitio / spawn" de metricas.md: debajo el winrate
+#: se muestra con aviso, no se oculta.
+REPETIR_SITIO_MIN_RONDAS = 8
+REPETIR_SITIO_CASOS = ("repeat", "switch")
+
+
+def _caso_vacio() -> dict:
+    return {"rounds": 0, "decided": 0, "won": 0, "winrate": None}
+
+
+def _sumar_caso(caso: dict, ganada: bool | None) -> None:
+    caso["rounds"] += 1
+    if ganada is not None:
+        caso["decided"] += 1
+        caso["won"] += int(ganada)
+
+
+def site_after_loss(**filters) -> dict:
+    """Tras perder una ronda de defensa, si tu equipo vuelve a ese sitio en la siguiente.
+
+    El par son dos rondas de defensa seguidas de la misma partida; las de
+    ataque entre medio no lo cortan, pero un numero que falta (ronda sin
+    `.rec`, o una en la que no estas) o una ronda sin lado o sin sitio si:
+    ahi no se sabe que defendio tu equipo. Se leen tus rondas de los dos
+    lados para ver esos huecos. `side` y `operator` no filtran (el par es de
+    la defensa y del equipo, no de tu operador) y `site` elige el sitio de la
+    ronda perdida, no el de las dos.
+    """
+    sitio = filters.get("site")
+    base = {k: v for k, v in filters.items() if k not in ("side", "site", "operator")}
+    filas = (
+        base_queryset(**base)
+        .order_by("round__match_id", "round__number")
+        .values("round__match_id", "round__number", "side", "round__site",
+                "round__my_team_won", *_MAPA)
+    )
+
+    total = {caso: _caso_vacio() for caso in REPETIR_SITIO_CASOS}
+    por_mapa: dict[tuple, dict] = {}
+    pares = 0
+    anterior = None  # ultima fila vista de la partida en curso
+    perdida = None  # ultima ronda de defensa perdida, con sitio, sin hueco despues
+    for fila in filas:
+        if anterior is None or (
+            fila["round__match_id"] != anterior["round__match_id"]
+            or fila["round__number"] != anterior["round__number"] + 1
+            or not fila["side"]
+        ):
+            perdida = None
+        anterior = fila
+        if fila["side"] != "Defense":
+            continue
+        if not fila["round__site"]:
+            perdida = None
+            continue
+        if perdida is not None:
+            caso = "repeat" if fila["round__site"] == perdida["round__site"] else "switch"
+            clave = tuple(perdida[campo] for campo in _MAPA)
+            mapa = por_mapa.setdefault(clave, {
+                **{etiqueta: perdida[campo]
+                   for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+                **{c: _caso_vacio() for c in REPETIR_SITIO_CASOS},
+            })
+            _sumar_caso(total[caso], fila["round__my_team_won"])
+            _sumar_caso(mapa[caso], fila["round__my_team_won"])
+            pares += 1
+        # Sin ganador no es derrota: no abre par.
+        perdio = fila["round__my_team_won"] is False
+        perdida = fila if perdio and (not sitio or fila["round__site"] == sitio) else None
+
+    mapas = list(por_mapa.values())
+    for caso_dict in [total, *mapas]:
+        for caso in REPETIR_SITIO_CASOS:
+            c = caso_dict[caso]
+            c["winrate"] = _pct(c["won"], c["decided"])
+    mapas = _etiquetar(mapas)
+    mapas.sort(key=lambda m: (-(m["repeat"]["rounds"] + m["switch"]["rounds"]), m["map"]))
+    return {
+        "min_rounds": REPETIR_SITIO_MIN_RONDAS,
+        "pairs": pares,
+        "total": total,
+        "maps": mapas,
+    }
+
+
 def by_round_number(**filters) -> list[dict]:
     qs = base_queryset(**filters)
     return group_by(qs, "round__number", labels=("round_number",), order="round__number")
@@ -1043,6 +1306,22 @@ def by_half(**filters) -> list[dict]:
         "overtime": qs.filter(round__overtime_number__gt=0),
     }
     return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
+
+
+#: Orden fijo de las filas de `by_overtime_side`.
+PRORROGA_LADOS = ("Attack", "Defense")
+
+
+def by_overtime_side(**filters) -> list[dict]:
+    """Rondas de prorroga partidas por el lado que te toco en cada una.
+
+    La fila `overtime` de `by_half` no se toca: esto la abre en dos. Se lee
+    `round__my_side`, el mismo campo de `by_half`.
+    """
+    qs = base_queryset(**filters).filter(round__overtime_number__gt=0)
+    # con ?side= la otra fila saldria siempre en cero: no se devuelve
+    lados = (filters["side"],) if filters.get("side") in PRORROGA_LADOS else PRORROGA_LADOS
+    return _filas_por_tramo("side", {lado: qs.filter(round__my_side=lado) for lado in lados})
 
 
 #: Orden fijo de las filas de `by_half_opener`.
@@ -3123,8 +3402,10 @@ def _corte_por_periodo(actual, previo, baseline, campos, labels, min_rows) -> li
     return filas
 
 
-def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
-    """Ultimas n partidas y las n anteriores."""
+def _periodo_por_partidas(
+    filters: dict, n: int, resto: bool = False
+) -> tuple[list[int], list[int]]:
+    """Ultimas n partidas y las n anteriores, o todas las anteriores con `resto`."""
     ids = list(
         base_queryset(**filters)
         .values_list("round__match_id", flat=True)
@@ -3138,7 +3419,7 @@ def _periodo_por_partidas(filters: dict, n: int) -> tuple[list[int], list[int]]:
         if match_id not in vistos:
             vistos.add(match_id)
             ordenados.append(match_id)
-    return ordenados[:n], ordenados[n : n * 2]
+    return ordenados[:n], (ordenados[n:] if resto else ordenados[n : n * 2])
 
 
 def _resumen(qs, baseline, etiqueta: str) -> dict:
@@ -3167,6 +3448,7 @@ def compare_periods(
     n: int = 10,
     min_rounds: int = COMPARE_MIN_ROUNDS,
     min_rows: int = COMPARE_MIN_ROUNDS_FILA,
+    against: str = "previous",
     **filters,
 ) -> dict:
     """Compara el periodo reciente contra el inmediatamente anterior.
@@ -3176,7 +3458,13 @@ def compare_periods(
     2n partidas, y `days` responde "como vengo este mes" cuando se juega
     seguido. Los filtros de fecha que vengan en la request se ignoran: el
     periodo lo define esta funcion.
+
+    Con `against="rest"` la referencia es todo el historial anterior y no un
+    periodo del mismo largo: el Inicio pregunta si tu forma se sale de lo
+    tuyo de siempre, no de lo del mes pasado.
     """
+    resto = against == "rest"
+    against = "rest" if resto else "previous"
     filters = _sin_filtros_de_tiempo(filters)
     baseline = rating_baseline()
 
@@ -3185,13 +3473,25 @@ def compare_periods(
         inicio_actual = corte - timedelta(days=n)
         inicio_previo = corte - timedelta(days=n * 2)
         actual = base_queryset(since=inicio_actual, **filters)
-        previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
-        etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
+        if resto:
+            previo = base_queryset(until=inicio_actual, **filters)
+            etiquetas = (f"Últimos {n} días", f"Antes de los últimos {n} días")
+        else:
+            previo = base_queryset(since=inicio_previo, until=inicio_actual, **filters)
+            etiquetas = (f"Últimos {n} días", f"Los {n} días anteriores")
     else:
-        recientes, anteriores = _periodo_por_partidas(filters, n)
+        recientes, anteriores = _periodo_por_partidas(filters, n, resto=resto)
         actual = base_queryset(**filters).filter(round__match_id__in=recientes)
-        previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
-        etiquetas = (f"Últimas {len(recientes)} partidas", f"Las {len(anteriores)} anteriores")
+        if resto:
+            # exclude y no IN: el resto puede pasar el limite de variables de SQLite
+            previo = base_queryset(**filters).exclude(round__match_id__in=recientes)
+        else:
+            previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
+        if resto:
+            previa = f"El resto ({len(anteriores)} partidas)"
+        else:
+            previa = f"Las {len(anteriores)} anteriores"
+        etiquetas = (f"Últimas {len(recientes)} partidas", previa)
 
     fila_actual = _resumen(actual, baseline, etiquetas[0])
     fila_previa = _resumen(previo, baseline, etiquetas[1])
@@ -3223,6 +3523,7 @@ def compare_periods(
     return {
         "by": by,
         "n": n,
+        "against": against,
         "min_rounds": min_rounds,
         "enough_sample": suficiente,
         "current": fila_actual,

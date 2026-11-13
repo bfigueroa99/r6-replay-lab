@@ -24,6 +24,14 @@ const PAGINAS = [
   ['/ajustes', 'Ajustes'],
 ]
 
+// Una ruta interceptada que sigue en vuelo cuando el test termina (la app
+// vuelve a pedir /api/filters/ despues de la ultima asercion) tumbaba al worker
+// con "route.fetch: Test ended". Lo que se pide despues de las aserciones no es
+// parte de la prueba.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
+
 test.describe('todas las paginas cargan', () => {
   for (const [ruta, titulo] of PAGINAS) {
     test(`${titulo} (${ruta}) renderiza y no ensucia la consola`, async ({ page }) => {
@@ -74,6 +82,21 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la prórroga por lado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene prorrogas: la API da las dos filas en cero y la UI una nota, no ceros
+  const datos = await (await page.request.get('/api/trends/')).json()
+  expect(datos.by_overtime_side.map((f) => [f.side, f.rounds])).toEqual([['Attack', 0], ['Defense', 0]])
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Por mitad de la partida' })
+  await expect(panel.getByRole('heading', { name: 'Prórroga por lado', exact: true })).toBeVisible()
+  await expect(panel.getByText('Sin rondas de prórroga con estos filtros.')).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Prórroga en ataque', exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
@@ -101,6 +124,54 @@ test('Operadores muestra presencia y delta', async ({ page }) => {
   const ash = panel.locator('tr', { has: page.getByRole('cell', { name: 'Ash', exact: true }) })
   await expect(ash.locator('td').nth(3)).toHaveText('34%')
   await expect(ash.locator('td').nth(5)).toHaveText('0')
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra tu pool por lado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: 3 operadores por lado, todos en las ultimas 20 partidas y ninguno viejo
+  const panel = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Tu pool', exact: true }) })
+  const ataque = panel.locator('div:has(> h3:text-is("Ataque"))')
+  const defensa = panel.locator('div:has(> h3:text-is("Defensa"))')
+  await expect(ataque).toContainText('3 operadores distintos')
+  await expect(defensa).toContainText('3 operadores distintos')
+  await expect(ataque).toContainText('Sin jugar hace más de 30 días: ninguno')
+  await expect(ataque.locator('.chip', { hasText: /^Sledge$/ })).toHaveCount(1)
+  await expect(ataque.locator('.chip', { hasText: /^Thermite$/ })).toHaveCount(0)
+
+  await page.goto('/operadores?side=Attack')
+  await expect(panel.locator('h3:text-is("Ataque")')).toBeVisible()
+  await expect(panel.locator('h3:text-is("Defensa")')).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra si repites o cambias de operador', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/operadores')
+
+  // seed: rota operador cada ronda, gana todo el ataque y pierde toda la
+  // defensa. 145 pares, todos cambian: 87 de ataque tras ganar, 58 de defensa
+  // tras perder. Columnas: lado, tras, repite, winrate, cambia, winrate
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
+  })
+  const filas = panel.locator('tbody tr')
+  await expect(filas).toHaveCount(4)
+  await expect(filas.nth(0).locator('td')).toHaveText(['Total', 'Tras perder', '0', '—', '58', '0%'])
+  await expect(filas.nth(1).locator('td')).toHaveText(['Total', 'Tras ganar', '0', '—', '87', '100%'])
+  await expect(filas.nth(2).locator('td')).toHaveText(['Ataque', 'Tras ganar', '0', '—', '87', '100%'])
+  await expect(filas.nth(3).locator('td')).toHaveText(['Defensa', 'Tras perder', '0', '—', '58', '0%'])
+
+  await page.goto('/operadores?side=Defense')
+  await expect(filas).toHaveCount(1)
+  await expect(filas.nth(0).locator('td').first()).toHaveText('Defensa')
+
+  await page.goto('/operadores?operator=Ash')
+  await expect(panel.locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
 
   expect(errores).toEqual([])
 })
@@ -366,9 +437,10 @@ test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page 
   const [cabecera, ...filas] = texto.split('\r\n').map((linea) => linea.split(';'))
   const col = (nombre) => cabecera.indexOf(nombre)
   expect(filas.length).toBeGreaterThan(0)
-  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia
+  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia.
+  // Va con raya (–) y no con guion: "3-1" Excel lo abre como el 3 de enero
   for (const fila of filas) {
-    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}-${fila[col('Perdidas')]}`)
+    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}–${fila[col('Perdidas')]}`)
   }
 
   expect(errores).toEqual([])
@@ -391,6 +463,71 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   await fila.getByRole('link').click()
   await expect(page).toHaveURL(new RegExp(`/partidas/${matchId}$`))
   await expect(page.locator('h1')).toContainText(map)
+
+  expect(errores).toEqual([])
+})
+
+test('el Inicio compara tu forma con tu historial', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // las etiquetas salen de la API: con otro seed cambia el tamano del resto
+  const respuesta = await page.request.get('/api/compare/?by=matches&n=10&against=rest')
+  const datos = await respuesta.json()
+  expect(datos.against).toBe('rest')
+  expect(datos.previous.rounds).toBeGreaterThan(0)
+  await page.goto('/')
+
+  const panel = page.locator('section.panel', { hasText: 'Tu forma contra tu historial' })
+  await expect(panel).toBeVisible()
+  const cabeceras = panel.locator('thead th')
+  await expect(cabeceras.nth(1)).toContainText(datos.previous.label)
+  await expect(cabeceras.nth(2)).toContainText(datos.current.label)
+  await expect(panel.locator('tbody tr td:first-child')).toHaveText([
+    'Rondas ganadas',
+    'Rating',
+    'KST',
+    'Muertes sin trade',
+  ])
+  // los numeros de cada lado y su ruido, no solo las cabeceras: con las
+  // columnas cruzadas o en cero el test tiene que caer
+  const celdas = (m) => {
+    const decimales = m.suffix === '' ? 2 : 0
+    const valor = (v) => `${Number(v).toFixed(decimales)}${m.suffix}`
+    return [valor(m.previous), valor(m.current), m.noise === null ? '—' : `±${Number(m.noise).toFixed(1)}`]
+  }
+  for (const [fila, clave] of [[0, 'winrate'], [1, 'rating']]) {
+    const tds = panel.locator('tbody tr').nth(fila).locator('td')
+    const [previo, actual, ruido] = celdas(datos.metrics.find((m) => m.key === clave))
+    await expect(tds.nth(1)).toHaveText(previo)
+    await expect(tds.nth(2)).toHaveText(actual)
+    await expect(tds.nth(4)).toHaveText(ruido)
+  }
+
+  expect(errores).toEqual([])
+})
+
+test('un record de ronda abre la partida en esa ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // los valores salen de la API: el test no depende de que partida o ronda sea
+  const respuesta = await page.request.get('/api/overview/')
+  const record = (await respuesta.json()).records.most_kills_round
+  const etiqueta = `R${record.round_number + 1}`
+  expect(etiqueta).toBe(record.round_label)
+  // con R1 activa por defecto el test no distingue el salto de no hacer nada
+  expect(record.round_number).toBeGreaterThan(0)
+
+  await page.goto('/')
+  const panel = page.locator('section.panel', { hasText: 'Tus récords' })
+  await panel.locator('tr', { hasText: 'Más bajas en una ronda' }).getByRole('link').click()
+  await expect(page).toHaveURL(new RegExp(`/partidas/${record.match_id}#ronda-${record.round_number + 1}$`))
+  await expect(page.locator('#rondas .round-tab.active')).toContainText(etiqueta)
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(new RegExp(`^${etiqueta}\\b`))
+
+  // un ancla que no existe deja el detalle como siempre, en la primera ronda;
+  // about:blank para que sea una carga nueva y no solo un cambio de hash
+  await page.goto('about:blank')
+  await page.goto(`/partidas/${record.match_id}#ronda-999`)
+  await expect(page.locator('#rondas .round-tab.active')).toContainText('R1')
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(/^R1\b/)
 
   expect(errores).toEqual([])
 })
@@ -828,7 +965,8 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel).toContainText('2950 MMR')
   await expect(panel).toContainText('Consultado el 01-09-2026 12:00 · temporada Y10S2.')
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
-  await expect(panel.getByRole('button')).toHaveCount(0)
+  // las cabeceras de la tabla de playlists son botones (ordenan); ningun otro
+  await expect(panel.locator('button:not(.th-orden)')).toHaveCount(0)
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {
@@ -1127,6 +1265,31 @@ test('el Coach muestra la salida del spawn', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir el sitio tras perderlo' }),
+  })
+  // seed_demo pierde toda su defensa: 58 pares, 56 vuelven al mismo sitio y 2
+  // cambian (uno en Bank y uno en Club House), winrate 0 en los dos.
+  await expect(panel).toContainText('58 rondas perdidas en defensa seguidas de otra')
+  const repite = panel.locator('.stat', { hasText: 'Repite el sitio' })
+  await expect(repite.locator('.value')).toHaveText('56')
+  await expect(repite.locator('.sub')).toHaveText('winrate 0%')
+  const cambia = panel.locator('.stat', { hasText: 'Cambia de sitio' })
+  await expect(cambia.locator('.value')).toHaveText('2')
+  await expect(cambia.locator('.sub')).toContainText('pocas rondas')
+  // Columnas: mapa, repite, winrate repitiendo, cambia, winrate cambiando.
+  const club = panel.locator('tr', { has: page.getByRole('cell', { name: 'Club House', exact: true }) })
+  await expect(club.locator('td').nth(1)).toHaveText('19')
+  await expect(club.locator('td').nth(3)).toHaveText('1')
+  await expect(panel.locator('tbody tr')).toHaveCount(3)
+
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
@@ -1165,6 +1328,10 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   respuesta = page.waitForResponse(/\/api\/matches\/\?.*map=/)
   await mapa.selectOption(valor)
   await respuesta
+  // la respuesta llega antes de que React la pinte: hasta entonces el
+  // subtitulo ya dice "con estos filtros" pero con el total de antes (29), y
+  // leerlo ahi hacia fallar el `< 29` de abajo cuando la maquina va cargada
+  await expect(subtitulo).not.toHaveText('29 partidas con estos filtros.')
   await expect(subtitulo).toHaveText(/^\d+ partidas? con estos filtros\.$/)
   const n = Number((await subtitulo.textContent()).split(' ')[0])
   expect(n).toBeGreaterThan(0)

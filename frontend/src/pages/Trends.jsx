@@ -14,9 +14,11 @@ import {
 } from 'recharts'
 
 import { useApi } from '../api.js'
+import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 import { textoResumenSesion } from '../resumenSesion.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
@@ -44,16 +46,6 @@ const VENTANAS = [
   { by: 'days', n: 7, label: '7 días' },
   { by: 'days', n: 30, label: '30 días' },
 ]
-
-/** Flecha con color segun si la metrica mejoro, empeoro o no se movio. */
-function Delta({ metric }) {
-  if (metric.delta === null || metric.delta === undefined) return <span className="dim">—</span>
-  const signo = metric.delta > 0 ? '+' : ''
-  const texto = `${signo}${fmt(metric.delta, Math.abs(metric.delta) < 1 ? 2 : 1)}${metric.suffix}`
-  if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
-  if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
-  return <span className="chip">{texto}</span>
-}
 
 /** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
 function TablaDeCambio({ filas, columna, minRows, csvName }) {
@@ -275,6 +267,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     tramo: MITADES[row.half] || row.half,
   }))
+  const prorrogaPorLado = filasProrrogaPorLado(data.by_overtime_side)
   const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
     ...row,
     orden,
@@ -438,7 +431,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line yAxisId="pct" type="monotone" dataKey="winrate" name="Rondas ganadas %" stroke="#ff8a3d" strokeWidth={2} dot={false} />
               <Line yAxisId="pct" type="monotone" dataKey="kst_pct" name="KST %" stroke="#3fb950" strokeWidth={2} dot={false} />
-              <Line yAxisId="rating" type="monotone" dataKey="rating" name="Rating" stroke="#d29922" strokeWidth={2} dot={false} />
+              <Line yAxisId="rating" type="monotone" dataKey="rating" name="Rating" stroke="#d29922" strokeWidth={2} strokeDasharray="4 3" dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -522,7 +515,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
               {
                 key: 'copiar',
-                label: '',
+                label: 'Copiar',
+                soloLector: true,
                 sortable: false,
                 csv: false,
                 render: (row) => (
@@ -697,6 +691,25 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.half}
             csvName="por-mitad"
           />
+          <h3 style={{ margin: '16px 0 8px' }}>Prórroga por lado</h3>
+          {prorrogaPorLado.length ? (
+            <>
+              <DataTable
+                columns={COLUMNAS_POR_TRAMO}
+                rows={prorrogaPorLado}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.side}
+                csvName="prorroga-por-lado"
+              />
+              {filasConPocaMuestra(prorrogaPorLado).length ? (
+                <p className="note">
+                  Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Sin rondas de prórroga con estos filtros.</p>
+          )}
           {porApertura.length ? (
             <>
               <h3 style={{ margin: '16px 0 8px' }}>Primera ronda de cada lado</h3>

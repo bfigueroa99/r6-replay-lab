@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, Stat } from '../components/ui.jsx'
 import {
   claseSalida,
   claseVeredicto,
@@ -14,6 +14,7 @@ import {
   notaDeMuestra,
   textoSinSalidas,
 } from '../posicion.js'
+import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 const GROUPS = [
@@ -83,6 +84,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
 
       <PanelPosicion {...posicion} />
       <PanelSalidaSpawn {...posicion} />
+      <PanelRepetirSitio filters={filters} />
 
       <p className="note">
         Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
@@ -230,6 +232,63 @@ function PanelSalidaSpawn({ data, error, loading }) {
             initialSort={{ key: 'early_death_pct', dir: 'desc' }}
             csvName="salida-del-spawn"
             empty={textoSinSalidas(data)}
+          />
+        </>
+      )}
+    </Panel>
+  )
+}
+
+const SIN_PARES = 'Sin rondas de defensa perdidas seguidas de otra con estos filtros.'
+
+const winrateConMuestra = (caso, label) => ({
+  key: `${caso}_winrate`,
+  label,
+  csv: (row) => row[`${caso}_winrate`],
+  render: (row) => textoWinrate(row[`${caso}_winrate`], row[`${caso}_poca`]),
+})
+
+const columnasRepetirSitio = [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que tu equipo volvió al sitio que acababa de perder.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que tu equipo defendió otro sitio.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+function PanelRepetirSitio({ filters }) {
+  const { data, error, loading } = useApi('/positioning/site-after-loss/', filters)
+  return (
+    <Panel
+      title="Repetir el sitio tras perderlo"
+      hint="Después de perder una ronda defendiendo un sitio, qué hace tu equipo en la siguiente ronda de defensa de esa partida y cuánto la gana. Con el filtro de sitio, solo las rondas perdidas en ese sitio."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !hayPares(data) ? (
+        <p className="note">{SIN_PARES}</p>
+      ) : (
+        <>
+          <p className="note">{textoPares(data.pairs)}.</p>
+          <div className="kpis repetir-sitio">
+            {casosRepetirSitio(data.total, data.min_rounds).map((caso) => (
+              <Stat
+                key={caso.clave}
+                label={caso.titulo}
+                value={caso.rounds}
+                sub={`winrate ${textoWinrate(caso.winrate, caso.poca)}`}
+              />
+            ))}
+          </div>
+          <DataTable
+            columns={columnasRepetirSitio}
+            rows={filasPorMapa(data)}
+            rowKey={(row) => `${row.slug}-${row.map_id}`}
+            initialSort={{ key: 'repeat_rounds', dir: 'desc' }}
+            csvName="repetir-sitio-por-mapa"
+            empty={SIN_PARES}
           />
         </>
       )}

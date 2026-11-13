@@ -80,6 +80,22 @@ class QuerysetTests(TestCase):
         self.assertEqual(row["survival_pct"], 66.7)
         self.assertEqual(row["matches"], 1)
 
+    def test_totales_en_una_sola_consulta(self):
+        # Cada tramo de Tendencias (hora, dia, marcador, ronda anterior...) es
+        # un totals(). Contar las partidas en una consulta aparte volvia a
+        # recorrer las mismas filas: con 870 partidas era un tercio del tiempo
+        # de /api/trends/.
+        otra = make_match(map_name="Bank", index=1)
+        for n in range(3):
+            make_round_player(make_round(otra, n, side="Attack", won=True), kills=1)
+        with self.assertNumQueries(1):
+            row = agg.totals(agg.base_queryset(), baseline=1.0)
+        self.assertEqual((row["rounds"], row["matches"]), (9, 2))
+        # las partidas se cuentan una vez aunque tengan varias rondas en el corte
+        with self.assertNumQueries(1):
+            row = agg.totals(agg.base_queryset(side="Attack"), baseline=1.0)
+        self.assertEqual((row["rounds"], row["matches"]), (7, 2))
+
     def test_filtro_por_lado(self):
         self.assertEqual(agg.base_queryset(side="Defense").count(), 2)
         self.assertEqual(agg.totals(agg.base_queryset(side="Defense"))["winrate"], 0.0)

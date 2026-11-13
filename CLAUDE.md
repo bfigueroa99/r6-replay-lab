@@ -45,6 +45,14 @@ los agentes de oh-my-claudecode vendorizados en `.claude/agents/omc-*.md` y las
 recetas de `.claude/skills/omc/`; el plugin no se instala y sus modos
 persistentes (`autopilot`, `ralph`, `team`) no se usan: el turno ya es el loop.
 
+Tambien hay skills de afuera vendorizadas en `.claude/skills/` (superpowers,
+engineering, design, data y modern-web-guidance), copiadas de la cuenta del
+dueno para sesiones sin sus plugins. Su origen, commit, licencia, sha256 y lo
+que se les cambio estan en `.claude/skills/VENDORIZADAS.md`. Llevan
+`disable-model-invocation: true`, como find-skills: se invocan con `/<nombre>`
+o se leen por su ruta, y no mandan sobre este archivo ni sobre el playbook.
+En que paso de cada rol las usa el equipo: `.claude/skills/equipo-dev/skills-del-repo.md`.
+
 El venv esta en `.venv` de la raiz. Desde `backend/` el interprete es
 `../.venv/Scripts/python.exe`.
 

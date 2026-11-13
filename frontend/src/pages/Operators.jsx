@@ -14,6 +14,8 @@ import {
   pct,
 } from '../components/ui.jsx'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
+import { filasTrasResultado, textoWinrate, winrateCsv } from '../operadorTrasResultado.js'
+import { bloquesDelPool, fechaCorta, textoHintPool, textoRondas } from '../poolOperadores.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
@@ -63,7 +65,11 @@ export default function Operators({ filters, setFilters, runImport, importing })
         </Panel>
       ) : null}
 
+      <TuPool filters={filters} />
+
       <PorSitio filters={filters} />
+
+      <TrasResultado filters={filters} />
     </>
   )
 }
@@ -112,6 +118,47 @@ function Table({ rows, nombre }) {
       rowKey={(row) => `${row.operator}-${row.side}`}
       csvName={nombre}
     />
+  )
+}
+
+// Request aparte, como PorSitio: un error del panel no tumba la pagina.
+function TuPool({ filters }) {
+  const { data, error, loading } = useApi('/operators/pool/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else {
+    const bloques = bloquesDelPool(data, filters?.side)
+    cuerpo = bloques.length ? (
+      bloques.map((b) => (
+        <div key={b.lado}>
+          <h3>{b.titulo}</h3>
+          <p>{b.resumen}</p>
+          <p>
+            Sin jugar hace más de {data.stale_days} días:{' '}
+            {b.stale.length
+              ? b.stale.map((s) => `${s.operator} (último: ${fechaCorta(s.last_played)}, ${textoRondas(s.rounds)})`).join(', ')
+              : 'ninguno'}
+          </p>
+          <p>Nunca jugados ({b.never.length}):</p>
+          <div>
+            {b.never.map((nombre) => (
+              <span key={nombre} className="chip">{nombre}</span>
+            ))}
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="note">Sin partidas con estos filtros.</p>
+    )
+  }
+  return (
+    <Panel
+      title="Tu pool"
+      hint={textoHintPool(data?.stale_days)}
+    >
+      {cuerpo}
+    </Panel>
   )
 }
 
@@ -184,5 +231,50 @@ function DeltaLado({ valor }) {
       {puntos > 0 ? '+' : ''}
       {puntos}
     </span>
+  )
+}
+
+const winrateConMuestra = (caso, label) => ({
+  key: `${caso}_winrate`,
+  label,
+  csv: (row) => winrateCsv(row[`${caso}_winrate`]),
+  render: (row) => textoWinrate(row[`${caso}_winrate`], row[`${caso}_poca`]),
+})
+
+const COLUMNAS_TRAS_RESULTADO = [
+  { key: 'lado', label: 'Lado', left: true },
+  { key: 'tras', label: 'Tras', left: true },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que volviste a jugar el mismo operador.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que jugaste otro operador.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+function TrasResultado({ filters }) {
+  const { data, error, loading } = useApi('/operators/after-result/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else {
+    const filas = filasTrasResultado(data, filters?.side)
+    cuerpo = filas.length ? (
+      <DataTable
+        columns={COLUMNAS_TRAS_RESULTADO}
+        rows={filas}
+        rowKey={(row) => row.clave}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        csvName="operador-tras-resultado"
+      />
+    ) : (
+      <p className="note">Sin rondas seguidas del mismo lado con estos filtros.</p>
+    )
+  }
+  return (
+    <Panel
+      title="Repetir o cambiar tras perder"
+      hint={`Tu siguiente ronda del mismo lado en la partida: si repetiste el operador o cambiaste, y cuánto la ganaste. «Tras ganar» es la base para comparar. Con el filtro de operador o de sitio, solo los pares que empiezan en una ronda con ese operador o en ese sitio. Con menos de ${data?.min_rounds ?? 12} rondas se avisa «pocas rondas».`}
+    >
+      {cuerpo}
+    </Panel>
   )
 }

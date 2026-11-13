@@ -26,13 +26,26 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
   curso`, `rama:`); si ese push falla, no importa.
 - **Trabajo:** implementar el diseno completo: backend + frontend + tests +
-  fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
-  con `tipo: bug`, el test que falla primero (receta 4 de OMC):
+  fila de `docs/metricas.md` si corresponde; tests primero en logica pura,
+  con el ciclo de la skill `test-driven-development` (el test visto en rojo
+  antes del codigo, despues lo minimo para el verde); con `tipo: bug`,
+  primero la causa con la skill `systematic-debugging` (fases 1 a 3; con
+  tres arreglos fallidos no hay cuarto: `## Pendiente` con lo probado) y el
+  test que falla primero (receta 4 de OMC):
   `omc-test-engineer` lo propone antes de tocar el codigo, el Dev lo escribe
   y lo ve fallar (comando y falla en `## Implementacion`) y recien entonces
   arregla; migracion + `metrics.py` + `recompute` si hay columna nueva;
   estilo del repo (espanol sin tildes en codigo, con tildes en la UI,
-  comentarios que explican por que). Dos subagentes para backend y frontend
+  comentarios que explican por que). Antes de escribir JSX o CSS en
+  `frontend/src`, la skill `modern-web-guidance` (su CLI fija y sin
+  telemetria; sin red, sus `guides/` por nombre), y los ids de las guias que
+  se aplicaron son su evidencia; si agrega o cambia texto que ve el usuario
+  (boton, aviso, estado vacio, error), la skill `ux-copy`, en voseo y con
+  tildes como el resto de la UI. Un agregado de `aggregates.py` que no sigue
+  un patron vecino (`Subquery` correlacionada, una consulta por fila): la
+  skill `sql-queries`, y un `assertNumQueries` como los de
+  `test_aggregates.py` que fije cuantas consultas hace. Las skills que cita
+  el `## Diseno` se leen igual. Dos subagentes para backend y frontend
   si son independientes. Si un punto cae en un dominio que ni el diseno ni el repo
   resuelven y el Arquitecto no busco para esa ficha (su linea `Skills:`),
   una busqueda de skills de afuera (`.claude/skills/equipo-dev/skills.md`):
@@ -49,7 +62,8 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   es el plan); un CRITICAL o HIGH confirmado que no alcanza a corregirse
   deja la ficha `en curso` con `## Pendiente`, nunca `implementado`.
   `check.sh` en `Todo en verde.`. `## Implementacion`:
-  que quedo, que no, desvios del diseno. `estado: implementado`,
+  que quedo, que no, desvios del diseno, y `Skills del repo:` con la
+  evidencia de cada una. `estado: implementado`,
   `candado: -`, push.
 - **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
   `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,

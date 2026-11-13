@@ -121,6 +121,25 @@ def _es_json(request: HttpRequest) -> bool:
     return request.content_type == "application/json"
 
 
+def _cuerpo_json(request: HttpRequest) -> tuple[object, JsonResponse | None]:
+    """El JSON del cuerpo de un POST, o la respuesta 400 que lo rechaza.
+
+    `ValueError` y no solo `JSONDecodeError`: un cuerpo con bytes que no son
+    UTF-8 falla antes, al decodificar. Y un `"\\ud800"` es JSON valido que al
+    cargarlo deja un surrogate suelto: no se puede escribir en el `.env` ni
+    devolver en el mensaje de error (la respuesta daba 500), asi que se corta
+    aca para todos los POST.
+    """
+    try:
+        payload = json.loads(request.body or b"{}")
+        json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    except UnicodeEncodeError:
+        return None, _ok({"error": "el cuerpo trae texto que no es Unicode válido"}, status=400)
+    except ValueError:
+        return None, _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    return payload, None
+
+
 # --------------------------------------------------------------------- generales
 
 
@@ -234,6 +253,11 @@ def positioning(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def site_after_loss(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.site_after_loss(**_filters(request)))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
@@ -244,6 +268,16 @@ def operators_by_site(request: HttpRequest) -> JsonResponse:
     return _ok(agg.operator_by_site(
         min_rounds=_min_rounds(request, agg.OPERADOR_SITIO_MIN_RONDAS), **_filters(request)
     ))
+
+
+@require_GET
+def operators_pool(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_pool(_catalogo_operadores(), **_filters(request)))
+
+
+@require_GET
+def operators_after_result(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_after_result(**_filters(request)))
 
 
 def _catalogo_operadores() -> list[dict]:
@@ -281,6 +315,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_match": agg.trend_by_match(limit=limit, **filters),
             "by_round_number": agg.by_round_number(**filters),
             "by_half": agg.by_half(**filters),
+            "by_overtime_side": agg.by_overtime_side(**filters),
             "by_half_opener": agg.by_half_opener(**filters),
             "by_previous_round": agg.by_previous_round(**filters),
             "by_score_state": agg.by_score_state(**filters),
@@ -363,7 +398,7 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
 
 @require_GET
 def compare(request: HttpRequest) -> JsonResponse:
-    """Progreso: el periodo reciente contra el inmediatamente anterior."""
+    """Progreso: el periodo reciente contra el anterior, o contra todo el resto."""
     by = "days" if request.GET.get("by") == "days" else "matches"
     n = _int_param(request, "n", 30 if by == "days" else 10, minimum=1, maximum=365)
     min_rounds = _int_param(
@@ -372,9 +407,15 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rows = _int_param(
         request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
     )
+    against = "rest" if request.GET.get("against") == "rest" else "previous"
     return _ok(
         agg.compare_periods(
-            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+            by=by,
+            n=n,
+            min_rounds=min_rounds,
+            min_rows=min_rows,
+            against=against,
+            **_filters(request),
         )
     )
 
@@ -794,10 +835,9 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     """
     if not _es_json(request):
         return _ok({"error": "se esperaba application/json"}, status=415)
-    try:
-        payload = json.loads(request.body or b"{}")
-    except json.JSONDecodeError:
-        return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    payload, rechazo = _cuerpo_json(request)
+    if rechazo is not None:
+        return rechazo
     if not isinstance(payload, dict):
         return _ok({"error": "se esperaba un objeto JSON"}, status=400)
 
@@ -848,10 +888,9 @@ def app_settings(request: HttpRequest) -> JsonResponse:
     if request.method == "POST":
         if not _es_json(request):
             return _ok({"error": "se esperaba application/json"}, status=415)
-        try:
-            payload = json.loads(request.body or b"{}")
-        except json.JSONDecodeError:
-            return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+        payload, rechazo = _cuerpo_json(request)
+        if rechazo is not None:
+            return rechazo
         try:
             ajustes.aplicar(payload)
         except ajustes.AjusteInvalido as exc:

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { post, useApi } from '../api.js'
 import {
@@ -21,7 +21,7 @@ import { textoResumenPartida } from '../resumenPartida.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
-import { pasoDeTecla, rondaVecina } from '../navegacionRondas.js'
+import { indiceDeAncla, pasoDeTecla, rondaVecina } from '../navegacionRondas.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -48,6 +48,17 @@ function DetallePartida({ id }) {
     window.addEventListener('keydown', alApretar)
     return () => window.removeEventListener('keydown', alApretar)
   }, [total])
+
+  // `#ronda-N` (los records del Resumen) abre la partida parada en esa ronda;
+  // espera a los datos, y un ancla que no es de una ronda deja el detalle como siempre
+  // con `key` volver a clicar el mismo record re-aplica el ancla aunque el hash no cambie
+  const { hash, key: navegacion } = useLocation()
+  useEffect(() => {
+    const indice = indiceDeAncla(hash, data?.rounds)
+    if (indice === null) return
+    setSelected(indice)
+    document.getElementById('rondas')?.scrollIntoView({ block: 'start' })
+  }, [hash, navegacion, data])
 
   if (status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
   if (error) return <ErrorBox error={error} />
@@ -158,7 +169,7 @@ function DetallePartida({ id }) {
       <StacksRivales stacks={data.rival_stacks} />
 
       {round ? (
-        <Panel title="Rondas" hint="Clic en una ronda o ← → para ver su timeline.">
+        <Panel id="rondas" title="Rondas" hint="Clic en una ronda o ← → para ver su timeline.">
           <div className="round-tabs">
             {rounds.map((r, i) => (
               <button
