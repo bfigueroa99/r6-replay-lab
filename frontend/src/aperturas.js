@@ -29,3 +29,17 @@ export function marcasDeApertura(ronda, miEquipo) {
   const entry = primera ? primera.order : null
   return { apertura, entry: entry === apertura ? null : entry }
 }
+
+/**
+ * Baja entre compañeros: `Kill` con autor y victima en la ronda y del mismo
+ * equipo. Es la regla de `_teamkills` en `aggregates.py` (un suicidio no
+ * cuenta), pero para los dos equipos: el feed muestra los dos y un teamkill
+ * rival tampoco es una baja tuya.
+ */
+export function esTeamkill(ronda, evento) {
+  if (evento?.kind !== 'Kill' || !evento.actor || !evento.target) return false
+  if (evento.actor === evento.target) return false
+  const equipo = new Map((ronda?.players || []).map((p) => [p.username, p.team_index]))
+  if (!equipo.has(evento.actor) || !equipo.has(evento.target)) return false
+  return equipo.get(evento.actor) === equipo.get(evento.target)
+}
