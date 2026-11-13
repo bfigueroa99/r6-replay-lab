@@ -845,6 +845,11 @@ def operator_pool(catalogo: list[dict], **filters) -> dict:
 #: La muestra minima de "Operador" (tabla de muestra minima): debajo se avisa
 #: "pocas rondas" pero no se oculta, porque el par repetir/cambiar se lee junto.
 OPERADOR_TRAS_RESULTADO_MIN_RONDAS = 12
+#: Muestra minima por par de "A que operador cambias tras perder" (ficha 126):
+#: cada fila es un par de operadores, una celda mucho mas fina que repetir o
+#: cambiar, asi que con 12 casi todas dirian "pocas rondas". Debajo de 5, una
+#: ronda mueve 20 puntos el winrate: se avisa, no se oculta.
+OPERADOR_CAMBIO_MIN_RONDAS = 5
 OPERADOR_TRAS_RESULTADO = ("after_loss", "after_win")
 OPERADOR_TRAS_RESULTADO_CASOS = ("repeat", "switch")
 
@@ -867,6 +872,7 @@ def operator_after_result(**filters) -> dict:
     un hueco de un cambio de lado; la UI elige el bloque. `operator` y `site`
     eligen la primera ronda del par: filtrar las filas dejaria solo los pares
     que repiten (o que vuelven al mismo sitio) y cortaria el resto.
+    `switches` parte "tras perder, cambia" por par de operadores (ficha 126).
     """
     operador = filters.get("operator")
     sitio = filters.get("site")
@@ -878,6 +884,9 @@ def operator_after_result(**filters) -> dict:
                      "round__site", "round__my_team_won")
     )
     lados = {lado: _bloque_tras_resultado() for lado in ("Attack", "Defense")}
+    # El desglose de "tras perder, cambia" por par de operadores sale del mismo
+    # bucle: asi sus filas suman exactamente la celda de arriba.
+    cambios: dict[tuple, dict] = {}
     pendiente: dict[str, tuple] = {}
     anterior = None
     pares = 0
@@ -896,10 +905,15 @@ def operator_after_result(**filters) -> dict:
             caso = "repeat" if op == op_previo else "switch"
             tras = "after_win" if gano_previo else "after_loss"
             celda = lados[lado][tras][caso]
-            celda["rounds"] += 1
-            if gano is not None:
-                celda["decided"] += 1
-                celda["won"] += int(gano)
+            celdas = [celda]
+            if tras == "after_loss" and caso == "switch":
+                celdas.append(cambios.setdefault(
+                    (lado, op_previo, op), {"rounds": 0, "decided": 0, "won": 0}))
+            for c in celdas:
+                c["rounds"] += 1
+                if gano is not None:
+                    c["decided"] += 1
+                    c["won"] += int(gano)
             pares += 1
         # Sin ganador no hay "tras perder" ni "tras ganar": no abre par.
         if gano is not None and (not operador or op == operador) \
@@ -916,11 +930,19 @@ def operator_after_result(**filters) -> dict:
         for tras in OPERADOR_TRAS_RESULTADO:
             for celda in bloque[tras].values():
                 celda["winrate"] = _pct(celda["won"], celda["decided"])
+    switches = [
+        {"side": lado, "from_operator": desde, "to_operator": hacia, **c,
+         "winrate": _pct(c["won"], c["decided"])}
+        for (lado, desde, hacia), c in cambios.items()
+    ]
+    switches.sort(key=lambda f: (f["side"], f["from_operator"], -f["rounds"], f["to_operator"]))
     return {
         "min_rounds": OPERADOR_TRAS_RESULTADO_MIN_RONDAS,
         "pairs": pares,
         "sides": lados,
         "total": total,
+        "switches": switches,
+        "switch_min_rounds": OPERADOR_CAMBIO_MIN_RONDAS,
     }
 
 
@@ -3193,7 +3215,12 @@ def _rivales_por_ronda(me_ids: list[int], **filters) -> dict[tuple[int, int], se
 _MAX_RIVALES_POR_RONDA = 10
 
 
-def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
+def _resultados_y_fechas(match_ids: set[int]) -> tuple[dict[int, bool | None], dict[int, datetime]]:
+    filas = Match.objects.filter(id__in=match_ids).values_list("id", "won", "played_at")
+    return {mid: won for mid, won, _ in filas}, {mid: fecha for mid, _, fecha in filas}
+
+
+def _record(ids: set[int], resultado: dict[int, bool | None], fechas: dict[int, datetime]) -> dict:
     wins = sum(1 for mid in ids if resultado.get(mid) is True)
     losses = sum(1 for mid in ids if resultado.get(mid) is False)
     return {
@@ -3202,6 +3229,8 @@ def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
         "losses": losses,
         # las partidas sin resultado no ensucian el winrate
         "winrate": _pct(wins, wins + losses),
+        # sale de las mismas partidas que la fila: con filtros, la ultima que pasa
+        "last_played": max(fechas[mid] for mid in ids).isoformat(),
     }
 
 
@@ -3222,11 +3251,11 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
         return []
 
     match_ids = set().union(*partidas.values())
-    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    resultado, fechas = _resultados_y_fechas(match_ids)
     nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
 
     salida = [
-        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado)}
+        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado, fechas)}
         for pid, ids in partidas.items()
     ]
     return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
@@ -3294,7 +3323,7 @@ def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list
         return []
 
     match_ids = set().union(*(ids for ids, _ in mejor))
-    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    resultado, fechas = _resultados_y_fechas(match_ids)
     nicks = dict(
         Player.objects.filter(id__in=set().union(*(g for _, g in mejor))).values_list(
             "id", "username"
@@ -3307,7 +3336,9 @@ def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list
             ({"player_id": pid, "username": nicks.get(pid, "")} for pid in grupo),
             key=lambda j: (j["username"].lower(), j["player_id"]),
         )
-        salida.append({"players": jugadores, "size": len(grupo), **_record(set(ids), resultado)})
+        salida.append(
+            {"players": jugadores, "size": len(grupo), **_record(set(ids), resultado, fechas)}
+        )
     return sorted(
         salida,
         key=lambda r: (

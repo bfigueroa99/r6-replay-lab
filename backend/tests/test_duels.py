@@ -326,6 +326,36 @@ class RivalesRepetidosTests(TestCase):
         self.assertEqual(fila["wins"] + fila["losses"], 1)
         self.assertEqual(fila["winrate"], 100.0)
 
+    def test_la_ultima_vez_es_la_partida_mas_reciente(self):
+        self._partida(0)
+        reciente = self._partida(5)
+        self._partida(2)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["last_played"], reciente.played_at.isoformat())
+
+    def test_la_ultima_vez_respeta_el_filtro_de_fechas(self):
+        self._partida(0)
+        anterior = self._partida(2)
+        afuera = self._partida(5)
+
+        fila = agg.repeated_rivals(until=anterior.played_at)[0]
+        self.assertLess(anterior.played_at, afuera.played_at)
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(fila["last_played"], anterior.played_at.isoformat())
+
+    def test_la_ultima_vez_de_cada_rival_sale_de_sus_propias_partidas(self):
+        # la consulta de fechas junta las partidas de todos los rivales: la
+        # fila de uno no puede tomar la fecha de una partida en la que no estuvo
+        self._partida(0, rival="viejo")
+        suya = self._partida(1, rival="viejo")
+        self._partida(2, rival="nuevo")
+        ajena = self._partida(5, rival="nuevo")
+
+        filas = {f["username"]: f for f in agg.repeated_rivals()}
+        self.assertEqual(filas["viejo"]["last_played"], suya.played_at.isoformat())
+        self.assertEqual(filas["nuevo"]["last_played"], ajena.played_at.isoformat())
+
     def test_un_cambio_de_nick_no_parte_la_fila_de_rivales(self):
         self._partida(0)
         self._partida(1)
