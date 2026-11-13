@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: implementado
-candado: revisor 2026-11-13T22:53Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -220,6 +220,23 @@ OMC: plan=— · revisión=— · verificación=— (sin `aprobado`: no se corri
 Skills: no aplica.
 Skills del repo: testing-strategy (repro en paralelo y mutante antes y despues del arreglo).
 OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
+
+## Revision 2026-11-13 sobre 82ad2f3
+
+(revisor 20261113T2252Z-cSo9yHH) Segunda revision, despues de los hallazgos de QA. La rama ya contiene `origin/dev@39e22c0`. verificar.sh: VERDE 82ad2f319 (1284 backend, 425 vitest, 116 e2e).
+
+**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`, sin leer la ficha): aprobar, 1 MEDIUM. Lo reproduje y lo subo a bloqueante, con el mismo criterio que la QA aplico al otro e2e intermitente.
+
+- [test] MEDIUM **confirmado, bloquea** `frontend/e2e/humo.spec.js:216-222` y `:241`: en `Operadores filtra por operador desde su propio selector`, `page.on('request')` se registra despues de `page.goto('/operadores')`. Elegir Ash no genera un pedido nuevo a `/api/operators/` (`sinOperador` deja la misma query y `useApi` no vuelve a pedir). Entonces el unico pedido que se cuenta es el de la carga inicial, y si sale antes de que `goto` devuelva el control, `pedidosPool` queda vacio y `expect(pedidosPool.length).toBeGreaterThan(0)` cae sin que haya un bug. La revision anterior no lo pudo reproducir con 4 workers.
+  - Repro, desde `frontend/` con el build de la rama: `E2E_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell npx playwright test -g "filtra por operador desde su propio selector" --trace off --repeat-each 50 --workers 8`. Cayo 6 veces en 190 corridas, en cinco tandas (2/40, 0/40, 1/50, 1/50, 2/50); las 6 en la linea 241 (`Received: 0`). Con 5 corridas simultaneas en la nube o un PC lento es un rojo al azar en `check.sh`.
+  - Arreglo, verificado aca y no empujado (el Revisor no arregla): mover `const pedidosPool = []` y `page.on('request', ...)` antes de `await page.goto('/operadores')`, y sacar el comentario "mientras recarga, la tabla vieja sigue a la vista", que ya no describe nada. Con el arreglo, el mismo comando dio 50/50 tres veces (150 de 150). Sigue detectando la regresion: con `operator` en el pedido, la ultima asercion (`pedidosPool` sin `operator=`) cae.
+
+**Ficha.** Los criterios siguen cubiertos como en la primera revision (los dos e2e, el vitest `operadorElegido.test.js` y el diff sin `backend/`). El arreglo de la QA (`level: 2` en el encabezado Defensa) es correcto: el e2e `sin rondas deja quitar el operador` pasa dentro de `check.sh`. El diff no se sale de `archivos:`. Identificadores sin tildes, UI con tildes, sin `console.log`.
+
+Veredicto: corregir (el MEDIUM de arriba: e2e intermitente en `check.sh`).
+
+Skills del repo: testing-strategy (repro en paralelo antes y despues del arreglo).
+OMC: plan=— · revisión=1 hallazgo (1 MEDIUM confirmado, 0 arreglados: lo arregla el Dev) · verificación=—
 
 ## Para el humano
 
