@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
+import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, pct } from '../components/ui.jsx'
+import { filasOperadoresQueTeAbren } from '../operadoresQueTeAbren.js'
 import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
 
 const MUESTRAS = [
@@ -58,6 +59,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const base = totals.winrate
   const nemesis = data.nemesis || []
   const operators = data.operators || []
+  const aperturasPorOperador = filasOperadoresQueTeAbren(data.opening_operators)
   const faced = data.faced || { base: {}, operators: [] }
   const rivals = data.rivals ?? []
   const stacks = data.rival_stacks ?? []
@@ -138,6 +140,37 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.operator}
           csvName="duelos-por-operador"
           empty={`Ningún operador llega a ${minDuels} duelos con estos filtros.`}
+        />
+      </Panel>
+
+      <Panel
+        title="Operadores que te abren"
+        hint={
+          'La primera baja de la ronda, por operador rival y por tu lado. Te abre: te sacó a ti ' +
+          'en el primer duelo; Le abres: lo sacaste tú. El % es sobre todas tus muertes de ' +
+          'apertura de ese lado. Usa la muestra mínima de arriba, contada en aperturas.'
+        }
+      >
+        <DataTable
+          columns={[
+            { key: 'operator', label: 'Operador', left: true },
+            { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
+            { key: 'opened_you', label: 'Te abre' },
+            { key: 'you_opened', label: 'Le abres' },
+            { key: 'balance', label: 'Balance', render: (row) => <Balance value={row.balance} /> },
+            { key: 'winrate', label: 'Ganas', render: (row) => pct(row.winrate) },
+            {
+              key: 'share',
+              label: 'De tus aperturas perdidas',
+              render: (row) => pct(row.share),
+              help: 'Te abre sobre todas tus muertes de apertura de ese lado, también las de operador desconocido.',
+            },
+          ]}
+          rows={aperturasPorOperador}
+          initialSort={{ key: 'opened_you', dir: 'desc' }}
+          rowKey={(row) => row.key}
+          csvName="operadores-que-te-abren"
+          empty={`Ningún operador llega a ${minDuels} aperturas con estos filtros.`}
         />
       </Panel>
 
