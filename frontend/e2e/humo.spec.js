@@ -792,6 +792,35 @@ test('el detalle de partida copia el resumen', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el detalle de partida copia una ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const { matches } = await (await page.request.get('/api/matches/?limit=200')).json()
+  const detalle = await (await page.request.get(`/api/matches/${matches[0].id}/`)).json()
+  // la primera ronda con una baja, para que el texto tenga una linea de la timeline
+  const i = detalle.rounds.findIndex((r) => r.events.some((e) => e.kind === 'Kill'))
+  expect(i).toBeGreaterThanOrEqual(0)
+  const ronda = detalle.rounds[i]
+  const primera = ronda.events.filter((e) => e.kind === 'Kill').sort((a, b) => a.order - b.order)[0]
+  await page.goto(`/partidas/${matches[0].id}`)
+
+  await page.locator('.round-tab').nth(i).click()
+  await page.getByRole('button', { name: 'Copiar ronda' }).click()
+  await expect(page.getByText('Ronda copiada', { exact: true })).toBeVisible()
+  const texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith(`${detalle.match.map} · ${ronda.label} · `)).toBe(true)
+  expect(texto).toContain(primera.actor)
+  // autor y victima en la misma linea, con su reloj: no alcanza con que el nick aparezca
+  expect(texto).toContain(`${primera.clock_raw || '—'} ${primera.actor} mató a ${primera.target}`)
+
+  // Al cambiar de ronda el aviso no queda pegado a la otra
+  expect(detalle.rounds.length).toBeGreaterThan(1)
+  await page.locator('.round-tab').nth(i === 0 ? 1 : 0).click()
+  await expect(page.getByText('Ronda copiada', { exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias copia el resumen de una sesion', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
