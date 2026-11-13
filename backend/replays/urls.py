@@ -13,6 +13,8 @@ urlpatterns = [
     path("coach/", views.coach, name="coach"),
     path("positioning/", views.positioning, name="positioning"),
     path("positioning/site-after-loss/", views.site_after_loss, name="site-after-loss"),
+    path("positioning/spawn-after-result/", views.spawn_after_result,
+         name="spawn-after-result"),
     path("operators/", views.operators, name="operators"),
     path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
     path("operators/sites/", views.operators_by_site, name="operators-by-site"),

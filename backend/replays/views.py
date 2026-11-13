@@ -251,6 +251,11 @@ def site_after_loss(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def spawn_after_result(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.spawn_after_result(**_filters(request)))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
