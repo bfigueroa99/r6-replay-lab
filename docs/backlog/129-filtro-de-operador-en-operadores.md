@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: con hallazgos
-candado: dev 2026-11-13T23:41Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
 archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s, dev 20261113T2223Z-c24t16L, revisor 20261113T2252Z-cSo9yHH
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s, dev 20261113T2223Z-c24t16L, revisor 20261113T2252Z-cSo9yHH, dev 20261113T2318Z-cpCpgff
 
 ## PR
 
@@ -237,6 +237,20 @@ Veredicto: corregir (el MEDIUM de arriba: e2e intermitente en `check.sh`).
 
 Skills del repo: testing-strategy (repro en paralelo antes y despues del arreglo).
 OMC: plan=— · revisión=1 hallazgo (1 MEDIUM confirmado, 0 arreglados: lo arregla el Dev) · verificación=—
+
+## Implementacion (hallazgos de la segunda revision)
+
+(dev 20261113T2318Z-cpCpgff) Sobre `origin/dev@2b7f715` (merge limpio, 31 commits).
+
+- MEDIUM bloqueante (e2e intermitente): en `Operadores filtra por operador desde su propio selector`, `pedidosPool` y `page.on('request')` se registran antes de `page.goto('/operadores')`; fuera el comentario de la tabla vieja. Repro de la revision, antes del arreglo cayo 6 de 190; despues: `E2E_CHROMIUM=<headless shell> npx playwright test -g "filtra por operador desde su propio selector" --trace off --repeat-each 50 --workers 8` -> 50/50, y con `--repeat-each 100` -> 100/100.
+- LOW del filtro ciego de este turno: la fila "Ataque" de Repetir o cambiar se fija tambien con `hasText: 'Tras ganar'` y `toHaveCount(1)`; si `seed_demo` diera a Ash pares tras perder, la de Ataque ya no seria una sola y el test leia la fila equivocada sin avisar. 20/20 repetido.
+- No tomados (LOW de la primera revision, no bloquean): operador sin rondas sin aviso, `aria-current` en una celda.
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): aprobar, 1 LOW (arriba, arreglado).
+
+Skills: no aplica.
+Skills del repo: testing-strategy (repro en paralelo antes y despues, 170 corridas del e2e).
+OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
 ## Para el humano
 

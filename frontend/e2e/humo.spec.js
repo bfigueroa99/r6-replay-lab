@@ -247,7 +247,9 @@ test('Operadores filtra por operador desde su propio selector', async ({ page })
   const repetir = page.locator('section.panel', {
     has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
   })
-  const filaAtaque = repetir.locator('table').first().locator('tr', { hasText: 'Ataque' })
+  // con hasText 'Tras ganar' tambien: si Ash suma pares tras perder, la de Ataque no es una sola
+  const filaAtaque = repetir.locator('table').first().locator('tr', { hasText: 'Ataque' }).filter({ hasText: 'Tras ganar' })
+  await expect(filaAtaque).toHaveCount(1)
   await expect(filaAtaque.locator('td').nth(4)).toHaveText(String(datos.sides.Attack.after_win.switch.rounds))
 
   await page.getByLabel('Operador').selectOption('')
