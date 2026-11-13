@@ -1,7 +1,7 @@
 # 110. Tu forma contra tu historial
 
-estado: implementado
-candado: revisor 2026-11-13T12:15Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/110-tu-forma-contra-tu-historial
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E16
 archivos: backend/replays/analytics/aggregates.py (compare_periods against, _periodo_por_partidas), backend/replays/views.py (compare), backend/tests/test_compare.py, frontend/src/components/Delta.jsx (nuevo, sale de Trends.jsx), frontend/src/pages/Trends.jsx (import), frontend/src/formaHistorial.js (nuevo), frontend/src/formaHistorial.test.js (nuevo), frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T0804Z-cJw5MQs
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T0804Z-cJw5MQs, revisor 20261113T1203Z-cWfR3tT
 
 ## PR
 
@@ -225,7 +225,43 @@ Skills: no aplica (la comparacion y su banda ya estaban en `compare_periods`).
 Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: el panel reusa `Panel`, `DataTable` y `Delta` sin CSS nuevo, y los textos son los del diseno en voseo y con tildes).
 OMC: plan=— · revisión=5 hallazgos (5 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 5c49845
+
+(revisor 20261113T1203Z-cWfR3tT) La rama trae `origin/dev` (e7cd7b1, con la
+117) sin conflictos. verificar.sh: VERDE 5c49845a7 (1173 backend, 340
+vitest, 96 e2e). Revision a ciegas en dos ejes (`omc-code-reviewer`
+estandares y `omc-code-reviewer` intencion; sin POST, red ni parser: sin
+eje de seguridad). Confirmados por el lider:
+
+- [test] MEDIUM `frontend/e2e/humo.spec.js` (el Inicio compara tu forma):
+  el criterio 4 pide afirmar el panel con los numeros del seed y el test
+  solo miraba cabeceras y nombres de fila; con las columnas cruzadas pasaba
+  igual. **Corregido por el Revisor (test que pasa):** afirma valor previo,
+  actual y ruido de "Rondas ganadas" y "Rating", sacados de la API.
+  Mutacion: con `previous` y `current` cruzados en `PanelForma`, el test
+  cae (`1 failed`); restaurado, `1 passed`.
+- [intencion] MEDIUM, no frena: con fecha o sesion en la barra, el panel
+  ignora esos filtros y "Ultimas partidas" no (`_FILTROS_DE_TIEMPO` en
+  `compare_periods`). Es la decision del diseno, igual que Progreso, y el
+  hint y `metricas.md` lo dicen; sigue en `## Para el humano`.
+- LOW, no frenan: etiqueta `El resto (1 partidas)` con 11 partidas (mismo
+  patron que `Las 1 anteriores` de Progreso);
+  `test_diez_recientes_ganadas_contra_diez_viejas_perdidas_salen_del_ruido`
+  usa 10 contra 10, donde resto y anteriores coinciden (el modo resto lo
+  fijan los otros tests); con `against=rest` se calculan `by_map` y
+  `by_operator` que el panel no usa; sin desempate por `played_at` igual en
+  `recent_form` y `_periodo_por_partidas`.
+
+Criterios: bloque con delta y banda (tests de `ContraElRestoTests`), sin
+resto (backend + vitest `sin-resto`), `?map=` a los dos lados, panel en el
+Inicio con numeros (e2e, ahora con valores), fila en `metricas.md`: cubiertos.
+Reglas: GET, sin dependencias, identificadores sin tildes y UI con tildes,
+sin `console.log`. Diff dentro de `archivos:`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=8 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
 
 ## QA
 
