@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: revisado
-candado: qa 2026-11-13T22:00Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
 archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s
 
 ## PR
 
@@ -175,7 +175,37 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=3 hallazgos (1 MEDIUM rebajado a LOW, 2 LOW; 0 arreglados: no bloquean) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 5c4006a
+
+(qa 20261113T2156Z-cQ8Kk3s) Con hallazgos: 1 MEDIUM (test e2e intermitente). Todo lo demas pasa.
+
+**Hallazgo (MEDIUM, bloquea): el e2e `Operadores sin rondas deja quitar el operador` es intermitente.** En `frontend/e2e/humo.spec.js:271`, `page.getByRole('heading', { name: 'Defensa', exact: true })` resuelve a **dos** encabezados con `side=Defense` (el `h2` del panel Defensa y el `h3` Defensa de Tu pool). Pasa solo si la aserción corre antes de que llegue el segundo; si llegan los dos, strict mode violation. Ademas, cuando gana la carrera, la linea siguiente (`Con Ash elegido` en 0) se mira con un solo panel cargado.
+- Repro (desde `frontend/`, con el build de la rama): `E2E_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell npx playwright test -g "sin rondas deja quitar el operador" --trace off --repeat-each 30 --workers 4` -> **6 failed, 24 passed** (`Error: strict mode violation: getByRole('heading', { name: 'Defensa', exact: true }) resolved to 2 elements`). Con `--workers 1` (lo de `playwright.config.js` y `check.sh`): 30 passed; depende de la carga de la maquina, y con 5 corridas simultaneas o un PC lento es un rojo al azar.
+- Arreglo verificado aca (no empujado: QA no arregla): cambiar esa linea por `await expect(page.locator('section.panel h2', { hasText: /^Defensa$/ })).toBeVisible()`. Con el: `--repeat-each 40 --workers 4` -> 40 passed; con el mutante de abajo (nota sin la condicion `rows.some`) -> 10 failed de 10.
+
+**Criterios de aceptacion** (sobre el build de la rama y `seed_demo`, `runserver` en 127.0.0.1:8129; script Playwright en el scratchpad):
+1. Selector y URL: elegir Ash -> `/operadores?operator=Ash`; Repetir o cambiar filtrado (e2e "propio selector" verde). Pasa.
+2. Tablas sin vaciarse: con `?operator=Ash`, `tbody tr.me` = 1, `[aria-current="true"]` = `["Ash"]`, Ataque y Defensa con sus 3 filas. Pasa.
+3. Todos: `selectOption('')` -> `/operadores`, `tr.me` = 0. Pasa.
+4. Vista sin rondas: `?operator=Ash&until=2000-01-01` -> selector con `Ash`. Pasa.
+5. Consola limpia en las 7 URLs de abajo y el recorrido: `consola: limpia`. Diff sin `backend/`. Pasa.
+
+**Bordes en la UI** (`sel` = valor del selector): `?operator=NoExiste` -> sel `''` (Todos), sin resaltado ni nota; `?operator=Ash&side=Defense` -> sel Ash, sin `tr.me` ni nota; `?operator=Ash&until=foo` -> igual que sin `until`; `?operator=%3Cb%3Ex%3C%2Fb%3E` -> sin resaltado, texto escapado, sin errores.
+
+**API** (sin cambios de backend; vecinos con bordes, base sembrada y base vacia en :8130): `/api/operators/?operator=` , `?operator=NoExiste`, `?operator=Ash&until=foo`, `?page=-1&operator=Ash`, `?operator=Ash%00`, `/operators/after-result/?operator=NoExiste`, `/operators/sites/?operator=Ash`, `/operators/pool/?operator=Ash`: todos HTTP 200 con JSON; base vacia: `{"operators": []}` HTTP 200.
+
+**Chunk inicial**: `index-*.js` 200116 bytes en la rama y en `origin/dev` (build en worktree): +0 %. `Operators-*.js` 9946 -> 10474 (lazy).
+
+**Accesibilidad** (skill accessibility-review, Chromium sobre la base sembrada): teclado: Tab 15 llega a `SELECT` con label "Operador", ArrowDown -> `?operator=Ash`. Nombre y rol: selector con `label`; el resaltado no depende del color (`strong` con `aria-current`, LOW del Revisor sobre ese uso sigue en pie). Contraste: nota 6.45:1 (`rgb(139,152,169)` sobre `rgb(13,17,23)`); fila `me` 13.19:1 (texto `rgb(230,237,243)` sobre `rgba(255,138,61,.133)` compuesto con el fondo = `rgb(45,33,28)`). Sin Critical ni Major.
+
+**Mutaciones**: (a) `claseFilaOperador` devuelve `me` con cualquier operador -> vitest `marca solo la fila elegida` cae; (b) `sinOperador` devuelve los filtros enteros -> vitest `quita operator y deja el resto` cae; (c) nota sin `rows.some(...)` -> e2e `sin rondas deja quitar el operador` cae 5 de 5 (el test lo cubre cuando no se rompe por la carrera de arriba).
+
+**Observado de paso, no es de la ficha**: un e2e viejo (`Operadores muestra tu pool por lado`) fallo 1 vez con 4 workers y no se reprodujo en 3x40 corridas mas; sin causa.
+
+verificar.sh: VERDE 5c4006af3 (1284 backend, 415 vitest, 114 e2e).
+
+Skills del repo: accessibility-review (0 Critical, 0 Major; contraste medido 6.45 y 13.19), testing-strategy (mutaciones: 3 de 3 caen; un test intermitente con repro), validate-data no aplica (sin numero nuevo: `metricas.md` solo aclara Presencia y vs. tu lado), design-critique no aplica (sin pagina ni panel nuevo).
+OMC: plan=— · revisión=— · verificación=— (sin `aprobado`: no se corrio omc-verifier)
 
 ## Para el humano
 
