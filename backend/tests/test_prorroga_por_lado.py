@@ -32,7 +32,8 @@ class ProrrogaPorLadoTests(TestCase):
         ataque, defensa = filas
         self.assertEqual((ataque["rounds"], ataque["winrate"]), (2, 100.0))
         self.assertEqual((defensa["rounds"], defensa["winrate"]), (1, 0.0))
-        self.assertIn("rating", ataque)
+        self.assertIsNotNone(ataque["rating"])
+        self.assertIsNotNone(defensa["rating"])
 
     def test_las_rondas_sin_prorroga_no_entran(self):
         _partida_con_prorroga()
@@ -44,6 +45,16 @@ class ProrrogaPorLadoTests(TestCase):
         _partida_con_prorroga()
         mitades = {f["half"]: f["rounds"] for f in agg.by_half()}
         self.assertEqual(mitades, {"first": 2, "second": 1, "overtime": 3})
+
+    def test_by_half_no_cambia_ni_winrate_ni_rating(self):
+        _partida_con_prorroga()
+        filas = {f["half"]: f for f in agg.by_half()}
+        winrates = {mitad: fila["winrate"] for mitad, fila in filas.items()}
+        self.assertEqual(winrates, {"first": 100.0, "second": 100.0, "overtime": 66.7})
+        # la fila de prorroga sigue juntando los dos lados, no es ninguna de las nuevas
+        por_lado = agg.by_overtime_side()
+        self.assertNotIn(filas["overtime"]["winrate"], [f["winrate"] for f in por_lado])
+        self.assertTrue(all(fila["rating"] is not None for fila in filas.values()))
 
     def test_con_filtro_de_lado_sale_solo_ese(self):
         _partida_con_prorroga()
