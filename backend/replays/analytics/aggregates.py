@@ -1320,6 +1320,51 @@ def by_overtime_side(**filters) -> list[dict]:
     return _filas_por_tramo("side", {lado: qs.filter(round__my_side=lado) for lado in lados})
 
 
+def _lado_de_prorroga(match_ref: str) -> Subquery:
+    """Lado de la primera ronda de prorroga de la partida.
+
+    Como `_lado_inicial`, se lee de la partida entera: con `?side=` el filtro
+    elige la fila, no cambia con que lado arrancaste la prorroga.
+    """
+    return Subquery(
+        Round.objects.filter(match_id=OuterRef(match_ref), overtime_number__gt=0)
+        .order_by("overtime_number", "number")
+        .values("my_side")[:1]
+    )
+
+
+def by_overtime_start_side(**filters) -> list[dict]:
+    """Partidas que llegaron a prorroga y su winrate de partida, por el lado con que la arrancaste.
+
+    Es `by_start_side` leyendo la primera ronda de prorroga: en la prorroga se
+    juega la partida, no una ronda. Un lado vacio no cae en ninguna fila.
+    """
+    ids = (
+        base_queryset(**filters)
+        .filter(round__overtime_number__gt=0)
+        .values_list("round__match_id", flat=True)
+        .distinct()
+    )
+    partidas = Match.objects.filter(id__in=ids).annotate(lado=_lado_de_prorroga("id"))
+    lados = (filters["side"],) if filters.get("side") in PRORROGA_LADOS else PRORROGA_LADOS
+    filas = []
+    for lado in lados:
+        suyas = partidas.filter(lado=lado)
+        decididas = suyas.exclude(won__isnull=True)
+        wins = decididas.filter(won=True).count()
+        n_decididas = decididas.count()
+        filas.append(
+            {
+                "side": lado,
+                "matches": suyas.count(),
+                "decided": n_decididas,
+                "wins": wins,
+                "winrate": _pct(wins, n_decididas),
+            }
+        )
+    return filas
+
+
 #: Orden fijo de las filas de `by_half_opener`.
 APERTURAS_DE_MITAD = ("match_start", "side_switch", "rest")
 
