@@ -159,7 +159,8 @@ test('Operadores muestra si repites o cambias de operador', async ({ page }) => 
   const panel = page.locator('section.panel', {
     has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
   })
-  const filas = panel.locator('tbody tr')
+  // La primera tabla del panel; la segunda es la de la ficha 126
+  const filas = panel.locator('table').first().locator('tbody tr')
   await expect(filas).toHaveCount(4)
   await expect(filas.nth(0).locator('td')).toHaveText(['Total', 'Tras perder', '0', '—', '58', '0%'])
   await expect(filas.nth(1).locator('td')).toHaveText(['Total', 'Tras ganar', '0', '—', '87', '100%'])
@@ -171,7 +172,37 @@ test('Operadores muestra si repites o cambias de operador', async ({ page }) => 
   await expect(filas.nth(0).locator('td').first()).toHaveText('Defensa')
 
   await page.goto('/operadores?operator=Ash')
-  await expect(panel.locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
+  await expect(panel.locator('table').first().locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra a qué operador cambias tras perder', async ({ page, request }) => {
+  const errores = vigilarConsola(page)
+  const datos = await (await request.get('/api/operators/after-result/')).json()
+  // seed: la defensa pierde todo y rota Jager -> Mute -> Rook; la suma de los
+  // pares es el «Cambia» de defensa tras perder (58). Mas rondas, primero
+  const mayor = [...datos.switches].sort((x, y) => y.rounds - x.rounds)[0]
+  expect(datos.switches.reduce((n, f) => n + f.rounds, 0)).toBe(datos.sides.Defense.after_loss.switch.rounds)
+  await page.goto('/operadores')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'A qué operador cambias tras perder' })).toBeVisible()
+  const filas = panel.locator('table').nth(1).locator('tbody tr')
+  await expect(filas).toHaveCount(datos.switches.length)
+  await expect(filas.nth(0).locator('td')).toHaveText([
+    'Defensa',
+    mayor.from_operator,
+    mayor.to_operator,
+    String(mayor.rounds),
+    '0%',
+  ])
+
+  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe
+  await page.goto('/operadores?side=Attack')
+  await expect(panel.getByText('No cambiaste de operador tras perder con estos filtros.')).toBeVisible()
 
   expect(errores).toEqual([])
 })

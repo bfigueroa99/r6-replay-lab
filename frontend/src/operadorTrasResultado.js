@@ -47,6 +47,28 @@ export function filasTrasResultado(data, lado) {
   return filas
 }
 
+const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
+
+// "A que operador cambias tras perder" (ficha 126): los pares de "Tras perder
+// · Cambia" partidos por operador. Mismo criterio de lado que el panel de arriba.
+export function filasCambioTrasPerder(data, lado) {
+  const cambios = data?.switches
+  if (!cambios?.length) return []
+  const conLado = lado === 'Attack' || lado === 'Defense'
+  const minimo = data.switch_min_rounds || 0
+  return cambios
+    .filter((c) => (conLado ? c.side === lado : true))
+    .map((c) => ({
+      clave: `${c.side}-${c.from_operator}-${c.to_operator}`,
+      lado: LADOS[c.side] || c.side,
+      desde: c.from_operator,
+      hacia: c.to_operator,
+      rondas: c.rounds,
+      winrate: c.winrate ?? null,
+      poca: c.rounds < minimo,
+    }))
+}
+
 export function textoWinrate(winrate, poca) {
   if (winrate === null || winrate === undefined) return '—'
   const texto = `${Math.round(winrate)}%`
