@@ -7,6 +7,7 @@ import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, pct } from '../components/ui.jsx'
 import { filasOperadoresQueTeAbren } from '../operadoresQueTeAbren.js'
 import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
+import { fechaCorta, fechaCsv } from '../ultimaVez.js'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
@@ -276,6 +277,13 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
             },
             { key: 'matches', label: 'Partidas' },
+            {
+              key: 'last_played',
+              label: 'Última vez',
+              help: 'La partida más reciente contra esa persona entre las que cuenta la fila.',
+              render: (row) => fechaCorta(row.last_played),
+              csv: (row) => fechaCsv(row.last_played),
+            },
             { key: 'wins', label: 'Ganadas' },
             { key: 'losses', label: 'Perdidas' },
             {
@@ -329,6 +337,13 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
             },
             { key: 'size', label: 'Juntos' },
             { key: 'matches', label: 'Partidas' },
+            {
+              key: 'last_played',
+              label: 'Última vez',
+              help: 'La partida más reciente contra ese grupo entre las que cuenta la fila.',
+              render: (row) => fechaCorta(row.last_played),
+              csv: (row) => fechaCsv(row.last_played),
+            },
             { key: 'wins', label: 'Ganadas' },
             { key: 'losses', label: 'Perdidas' },
             {
