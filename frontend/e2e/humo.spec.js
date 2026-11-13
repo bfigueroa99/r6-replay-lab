@@ -200,7 +200,10 @@ test('Operadores muestra a qué operador cambias tras perder', async ({ page }) 
     '0%',
   ])
 
-  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe
+  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe.
+  // Antes de navegar, que termine lo que pidio la primera carga: un goto con
+  // /api/filters/ en vuelo la aborta y la consola la cuenta como fallida.
+  await page.waitForLoadState('networkidle')
   await page.goto('/operadores?side=Attack')
   await expect(panel.getByText('No cambiaste de operador tras perder con estos filtros.')).toBeVisible()
 
@@ -1099,6 +1102,62 @@ test('Compañeros muestra el clutch por operador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra los clutches de tus compañeros', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { teammate_clutches: datos } = await (await page.request.get('/api/teammates/')).json()
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutches de tus compañeros' })).toBeVisible()
+  // seed_demo hoy no deja a ningun habitual ultimo vivo: sale la nota. Si la semilla
+  // cambia y da intentos, se afirma la tabla con los numeros de la API
+  if (datos.rows.length) {
+    const tabla = panel.locator('table', { has: page.getByRole('cell', { name: datos.rows[0].username }) })
+    await expect(tabla.locator('tbody tr')).toHaveCount(datos.rows.length + 1)
+    await expect(tabla.locator('tbody tr').first()).toContainText('Tú')
+  } else {
+    await expect(panel).toContainText('Ningún compañero habitual quedó último en una ronda contigo con estos filtros.')
+  }
+
+  expect(errores).toEqual([])
+})
+
+test('la tabla de clutches de compañeros pone tu fila primero', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.route('**/api/teammates/**', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const teammate_clutches = {
+      min_attempts: 5,
+      me: { attempts: 6, won: 3, pct: 50, low_sample: false },
+      rows: [
+        { player_id: json.synergy[0]?.player_id ?? 1, username: 'Ocho', attempts: 8, won: 2, pct: 25, low_sample: false },
+        { player_id: 999999, username: 'Tres', attempts: 3, won: 3, pct: 100, low_sample: true },
+      ],
+    }
+    await route.fulfill({ response: respuesta, json: { ...json, teammate_clutches } })
+  })
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  const tabla = panel.locator('table', { has: page.getByRole('cell', { name: 'Ocho' }) })
+  const filas = tabla.locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toHaveText(/^Tú\s*6\s*3\s*50%/)
+  await expect(filas.nth(1)).toHaveText(/^Ocho\s*8\s*2\s*25%/)
+  await expect(filas.nth(2)).toHaveText(/^Tres\s*3\s*3\s*100%/)
+  await expect(filas.nth(0).getByRole('link')).toHaveCount(0)
+  await expect(filas.nth(1).getByRole('link', { name: 'Ocho' })).toBeVisible()
+  await expect(filas.nth(1).locator('.muestra-chica')).toHaveCount(0)
+  await expect(filas.nth(2).locator('.muestra-chica')).toHaveCount(1)
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra el panel de teamkills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
@@ -1246,6 +1305,50 @@ test('Datos muestra Sin identificar sin pendientes', async ({ page }) => {
   // seed_demo no tiene IDs desconocidos: el panel se renderiza con las cuatro listas vacias
   const panel = page.locator('.panel', { hasText: 'Sin identificar' })
   await expect(panel).toContainText('no hay mapas, operadores, modos ni tipos de partida sin nombre')
+
+  expect(errores).toEqual([])
+})
+
+test('Datos muestra las partidas por version del juego', async ({ page, request }) => {
+  const errores = vigilarConsola(page)
+  const { versions } = await (await request.get('/api/import/status/')).json()
+  expect(versions.length).toBeGreaterThan(0)
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  await expect(titulo).toBeVisible()
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(versions.length)
+  // la primera fila es la version mas nueva; sin version, el rotulo de la UI
+  const primera = filas.first()
+  await expect(primera).toContainText(versions[0].game_version || 'Sin versión')
+  await expect(primera).toContainText(String(versions[0].matches))
+
+  expect(errores).toEqual([])
+})
+
+test('Datos ordena las versiones del juego como la API, no como texto', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no trae game_version: las versiones se inyectan sobre la respuesta real
+  await page.route('**/api/import/status/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const fila = (game_version, code_version, matches) => ({
+      game_version, code_version, matches, first: '2026-06-01T20:00:00', last: '2026-09-01T20:00:00',
+    })
+    await route.fulfill({
+      response: respuesta,
+      json: { ...json, versions: [fila('Y10S4', 30, 4), fila('Y9S4', 10, 7), fila('', 0, 2)] },
+    })
+  })
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toContainText('Y10S4')
+  await expect(filas.nth(1)).toContainText('Y9S4')
+  await expect(filas.nth(2)).toContainText('Sin versión')
 
   expect(errores).toEqual([])
 })

@@ -345,6 +345,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),
+            "teammate_clutches": agg.teammate_clutches(**filters),
         }
     )
 
@@ -944,6 +945,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
             "log": [_import_log_row(e) for e in ImportLog.objects.all()[:25]],
+            "versions": unknowns.partidas_por_version(),
         }
     )
 
