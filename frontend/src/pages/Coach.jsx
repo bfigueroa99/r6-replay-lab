@@ -38,14 +38,14 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
   async function copiarSenales() {
     // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
     if (!navigator.clipboard?.writeText) {
-      setCopia('error')
+      setCopia({ estado: 'error', texto })
       return
     }
     try {
       await navigator.clipboard.writeText(texto)
-      setCopia('ok')
+      setCopia({ estado: 'ok', texto })
     } catch {
-      setCopia('error')
+      setCopia({ estado: 'error', texto })
     }
   }
 
@@ -61,15 +61,20 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         </div>
         {texto ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            {copia && (
+            {/* el aviso es del texto que se copio: con otros filtros ya no vale */}
+            {copia?.texto === texto && (
               <span className="note">
-                {copia === 'ok' ? 'Copiado' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+                {copia.estado === 'ok'
+                  ? 'Copiado'
+                  : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
               </span>
             )}
             <button
               type="button"
               className="btn small"
               onClick={copiarSenales}
+              // mientras llega la respuesta de los filtros nuevos, las señales en pantalla son las viejas
+              disabled={loading}
               title="Copia las señales que ves, con los filtros, en texto plano."
             >
               Copiar señales

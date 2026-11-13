@@ -1,7 +1,7 @@
 # 111. Copiar las señales del Coach como texto
 
-estado: en curso 2026-11-13T16:20Z
-candado: dev 2026-11-13T16:20Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/111-copiar-las-senales-del-coach
 tipo: funcionalidad
 epica: exportar
@@ -150,10 +150,52 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
+(dev 20261113T1603Z-cHj1H4k) Diseno completo:
+
+- `textoCoach.js`: `GRUPOS_COACH` y `formatoCoach` se mudan de
+  `Coach.jsx` (que los importa); `lineaDeFiltros` (orden de
+  `CLAVES_DE_URL`, "Sin filtros" si no hay) y `textoCoach` (`null` sin
+  señales; grupos en el orden de la pagina; titulo, detalle, "Qué hacer" y
+  la linea de numeros con las condiciones de `.meta`; sin espacios al final).
+- `Coach.jsx`: boton "Copiar señales" en el `page-head` solo con señales,
+  aviso "Copiado" / "No se pudo copiar: ..." como la partida; `useState`
+  antes de los returns tempranos.
+- `docs/metricas.md`: nada (no hay numero nuevo).
+
+Desvios del diseno (revision ciega):
+- MEDIUM corregido: mientras `/api/coach/` trae los filtros nuevos la
+  pagina muestra las señales viejas, y copiar mezclaba la linea de filtros
+  nueva con señales viejas: el boton queda `disabled` con `loading`.
+- LOW corregido: el aviso "Copiado" se guarda junto al texto copiado y solo
+  se ve mientras ese sea el texto actual (al cambiar filtros desaparece).
+- LOW corregido: el vitest del modo compara contra `nombreDeModo('Bomb')`.
+- LOW sin cambio (sigue el diseno): el mapa sale como el valor del filtro
+  (slug, o `map_id` para una version) y la sesion como `Sesión N` (indice
+  desde la mas reciente, cambia al importar una nueva). Va a `## Para el
+  humano`.
+
+Tests: vitest `textoCoach.test.js` (8; en rojo antes del modulo: "Failed to
+load url ./textoCoach.js"). Mutaciones: `nombreDeModo(v)` -> `v` tumba
+"nombra el resto de los filtros"; `!insights?.length` -> `!insights` tumba
+"sin señales no hay texto". e2e `el Coach copia sus señales`: sin filtros
+(`Coach · Sin filtros` y el titulo de `insights[0]` de la API) y con
+`/coach?side=Defense` (`Coach · Filtros: Solo defensa`), consola limpia.
+Criterios -> tests: funcion pura con y sin filtros (vitest); sin señales
+(vitest `null`; el boton depende de eso); sin portapapeles (misma rama que
+la partida, no forzable en Chromium, como dice el diseno); e2e.
+
+Skills: no aplica (copiar al portapapeles ya resuelto dos veces en el repo).
+Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: boton y aviso copian el patron y los textos de "Copiar resumen" de la partida, sin CSS nuevo).
+OMC: plan=— · revisión=5 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
+
 ## Revision
 
 ## QA
 
 ## Para el humano
 
-(nada)
+- Aviso, no frena (dev): el texto copiado nombra el mapa por el valor del
+  filtro (\`bank\`, o el numero de version) y la sesion como \`Sesión N\`
+  contando desde la mas reciente, como dijo el diseno. Si preferis el nombre
+  del mapa y la fecha de la sesion, es otra ficha chica (necesita los datos de
+  \`/api/filters/\` y \`/api/sessions/\`).

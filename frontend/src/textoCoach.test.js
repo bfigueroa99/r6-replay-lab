@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { nombreDeModo } from './modoDeJuego.js'
 import { GRUPOS_COACH, formatoCoach, lineaDeFiltros, textoCoach } from './textoCoach.js'
 
 const alta = {
@@ -20,7 +21,7 @@ const positivo = {
   severity: 'positivo',
   title: 'Cierras clutches',
   detail: 'Ganas 1v1 seguido.',
-  action: 'Quedate de ancla.',
+  action: 'Quédate de ancla.',
   metric: 'Rating',
   value: 1.234,
   baseline: null,
@@ -60,7 +61,7 @@ describe('textoCoach', () => {
     }
     const linea = lineaDeFiltros(filtros)
     expect(linea.startsWith('Filtros: Solo ataque · Operador: Ash · Sitio: 2F Office · Sesión 1 · ')).toBe(true)
-    expect(linea).toContain('Desde 2026-10-01 · Hasta 2026-10-31 · Tipo: Ranked · Modo: ')
+    expect(linea.endsWith(`Desde 2026-10-01 · Hasta 2026-10-31 · Tipo: Ranked · Modo: ${nombreDeModo('Bomb')}`)).toBe(true)
   })
 
   it('dos señales salen en el orden de los grupos', () => {
