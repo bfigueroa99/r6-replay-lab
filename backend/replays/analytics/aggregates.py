@@ -2132,7 +2132,7 @@ def lobby_rank(**filters) -> dict:
             points=Avg(rating_points_expr()),
             # tu fila es la que la ronda marca como tuya, como en `base_queryset`:
             # `Player.is_me` puede faltar (import sin `recordingProfileID`) o
-            # quedar en un compañero que grabo replays
+            # quedar en un companero que grabo replays
             mine=Count("id", filter=Q(is_me=True)),
         )
     )

@@ -113,7 +113,7 @@ class PuestoEnElLobbyTests(TestCase):
 
     def test_tu_fila_sale_de_la_ronda_y_no_de_la_marca_del_jugador(self):
         # Un import sin `recordingProfileID` deja `RoundPlayer.is_me` sin marcar
-        # el `Player`; y un compañero que grabo replays queda marcado para siempre.
+        # el `Player`; y un companero que grabo replays queda marcado para siempre.
         partida({ME: 1, "Comp0": 3, "Rival0": 0}, rivales=("Rival0",))
         Player.objects.filter(username=ME).update(is_me=False)
         Player.objects.filter(username="Comp0").update(is_me=True)
