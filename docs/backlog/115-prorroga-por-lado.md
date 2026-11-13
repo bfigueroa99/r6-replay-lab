@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
-estado: en curso 2026-11-13T12:23Z
-candado: dev 2026-11-13T12:23Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -136,6 +136,37 @@ Skills: no aplica (tabla en un panel existente con las columnas de siempre).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T1203Z-cWfR3tT) Diseno completo, sin desvios de forma:
+
+- `aggregates.py`: `PRORROGA_LADOS` y `by_overtime_side(**filters)` despues
+  de `by_half` (que no cambia), con `_filas_por_tramo("side", ...)` sobre
+  `round__my_side`; con `?side=` sale solo esa fila. `views.trends` suma
+  `by_overtime_side`.
+- `prorrogaPorLado.js`: `filasProrrogaPorLado` (`[]` sin filas o todo en 0;
+  `tramo` "Prórroga en ataque" / "en defensa" y `orden`).
+- `Trends.jsx`: `h3` "Prórroga por lado" despues de la tabla de mitades,
+  `DataTable` con `COLUMNAS_POR_TRAMO`, CSV `prorroga-por-lado`, aviso de
+  `MUESTRA_CORTE`; sin filas, la nota "Sin rondas de prórroga con estos filtros."
+- `metricas.md`: la fila Prorroga suma el corte por lado, y (revision ciega,
+  LOW) que las rondas de prorroga sin lado no entran en ninguna de las dos.
+
+Tests, vistos en rojo antes del codigo: backend `test_prorroga_por_lado.py`
+(7; 6 caian con `AttributeError`, el de `by_half` pasaba como debe), vitest
+`prorrogaPorLado.test.js` (4; sin modulo no corrian). e2e `Tendencias
+muestra la prórroga por lado` (API con las dos filas en 0, `h3`, nota, sin
+filas en la tabla, consola limpia). Criterios -> tests: filas por lado con
+100 % y 0 % (`test_parte_la_prorroga_por_lado`); mitades intactas
+(`test_by_half_no_cambia`, mas `test_mitades.py` sin tocar); filtros
+(`test_con_filtro_de_lado_sale_solo_ese`, `test_el_filtro_de_mapa_aplica`);
+Tendencias con aviso y nota (vitest + e2e); fila en `metricas.md`.
+
+verificar.sh: VERDE 21b599c79 (1172 backend, 338 vitest, 96 e2e; el commit
+siguiente solo toca esta ficha).
+
+Skills: no aplica.
+Skills del repo: modern-web-guidance (leida; ninguna guia aplica: tabla con `DataTable` y `h3` existentes, sin CSS ni componente nuevo), ux-copy no leida (los dos textos nuevos son los del diseno y siguen a "Primera ronda de cada lado").
+OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 LOW de comentario sin cambio; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision
 
