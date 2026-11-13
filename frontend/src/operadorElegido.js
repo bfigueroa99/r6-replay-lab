@@ -14,5 +14,5 @@ export function claseFilaOperador(fila, operador) {
 
 export function textoOperadorElegido(operador) {
   if (!operador) return ''
-  return `Con ${operador} elegido, Ataque y Defensa siguen mostrando todo tu pool y lo resaltan; los paneles de abajo se filtran a ${operador}.`
+  return `Con ${operador} elegido, Ataque y Defensa siguen mostrando todo tu pool y lo resaltan; Por sitio y Repetir o cambiar tras perder se filtran a ${operador}, Tu pool no cambia.`
 }

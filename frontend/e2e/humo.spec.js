@@ -263,6 +263,12 @@ test('Operadores sin rondas deja quitar el operador', async ({ page }) => {
   await selector.selectOption('')
   await expect(page).not.toHaveURL(/operator=/)
 
+  // Ash es de ataque: con defensa no hay fila que resaltar y la nota no aparece
+  await page.goto('/operadores?side=Defense&operator=Ash')
+  await expect(page.getByRole('heading', { name: 'Defensa', exact: true })).toBeVisible()
+  await expect(page.getByText('Con Ash elegido')).toHaveCount(0)
+  await expect(page.locator('tbody tr.me')).toHaveCount(0)
+
   expect(errores).toEqual([])
 })
 

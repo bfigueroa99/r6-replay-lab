@@ -31,5 +31,6 @@ describe('textoOperadorElegido', () => {
     const texto = textoOperadorElegido('Ash')
     expect(texto).toContain('Con Ash elegido')
     expect(texto).toContain('se filtran a Ash')
+    expect(texto).toContain('Tu pool no cambia')
   })
 })

@@ -42,7 +42,8 @@ export default function Operators({ filters, setFilters, runImport, importing })
   const attack = rows.filter((r) => r.side === 'Attack')
   const defense = rows.filter((r) => r.side === 'Defense')
   const operador = filters.operator
-  const notaOperador = textoOperadorElegido(operador)
+  // Con un lado filtrado que no es el del operador no hay fila que resaltar: la nota no lo promete
+  const notaOperador = rows.some((r) => r.operator === operador) ? textoOperadorElegido(operador) : ''
 
   return (
     <>
