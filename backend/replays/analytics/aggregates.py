@@ -842,6 +842,88 @@ def operator_pool(catalogo: list[dict], **filters) -> dict:
     }
 
 
+#: La muestra minima de "Operador" (tabla de muestra minima): debajo se avisa
+#: "pocas rondas" pero no se oculta, porque el par repetir/cambiar se lee junto.
+OPERADOR_TRAS_RESULTADO_MIN_RONDAS = 12
+OPERADOR_TRAS_RESULTADO = ("after_loss", "after_win")
+OPERADOR_TRAS_RESULTADO_CASOS = ("repeat", "switch")
+
+
+def _bloque_tras_resultado() -> dict:
+    return {
+        tras: {caso: {"rounds": 0, "decided": 0, "won": 0, "winrate": None}
+               for caso in OPERADOR_TRAS_RESULTADO_CASOS}
+        for tras in OPERADOR_TRAS_RESULTADO
+    }
+
+
+def operator_after_result(**filters) -> dict:
+    """Tras una ronda tuya, si en la siguiente del mismo lado repetiste operador.
+
+    El par es tu ronda y tu siguiente ronda del mismo lado en la partida: las
+    del otro lado en medio no lo cortan (el medio tiempo separa ataque y
+    defensa), pero un numero faltante si, porque no se sabe que jugaste ahi.
+    `side` no filtra el queryset: sin las rondas del otro lado no se distingue
+    un hueco de un cambio de lado; la UI elige el bloque. `operator` y `site`
+    eligen la primera ronda del par: filtrar las filas dejaria solo los pares
+    que repiten (o que vuelven al mismo sitio) y cortaria el resto.
+    """
+    operador = filters.get("operator")
+    sitio = filters.get("site")
+    base = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
+    filas = (
+        base_queryset(**base)
+        .order_by("round__match_id", "round__number")
+        .values_list("round__match_id", "round__number", "side", "operator",
+                     "round__site", "round__my_team_won")
+    )
+    lados = {lado: _bloque_tras_resultado() for lado in ("Attack", "Defense")}
+    pendiente: dict[str, tuple] = {}
+    anterior = None
+    pares = 0
+    for partida, numero, lado, op, sitio_ronda, gano in filas.iterator():
+        if anterior is None or anterior[0] != partida or numero != anterior[1] + 1 or not lado:
+            pendiente.clear()
+        anterior = (partida, numero)
+        if lado not in lados:
+            continue
+        if not op or op.startswith(unknowns.UNKNOWN_PREFIX):
+            pendiente.pop(lado, None)
+            continue
+        previa = pendiente.pop(lado, None)
+        if previa is not None:
+            op_previo, gano_previo = previa
+            caso = "repeat" if op == op_previo else "switch"
+            tras = "after_win" if gano_previo else "after_loss"
+            celda = lados[lado][tras][caso]
+            celda["rounds"] += 1
+            if gano is not None:
+                celda["decided"] += 1
+                celda["won"] += int(gano)
+            pares += 1
+        # Sin ganador no hay "tras perder" ni "tras ganar": no abre par.
+        if gano is not None and (not operador or op == operador) \
+                and (not sitio or sitio_ronda == sitio):
+            pendiente[lado] = (op, gano)
+
+    total = _bloque_tras_resultado()
+    for bloque in lados.values():
+        for tras in OPERADOR_TRAS_RESULTADO:
+            for caso in OPERADOR_TRAS_RESULTADO_CASOS:
+                for campo in ("rounds", "decided", "won"):
+                    total[tras][caso][campo] += bloque[tras][caso][campo]
+    for bloque in (*lados.values(), total):
+        for tras in OPERADOR_TRAS_RESULTADO:
+            for celda in bloque[tras].values():
+                celda["winrate"] = _pct(celda["won"], celda["decided"])
+    return {
+        "min_rounds": OPERADOR_TRAS_RESULTADO_MIN_RONDAS,
+        "pairs": pares,
+        "sides": lados,
+        "total": total,
+    }
+
+
 def by_spawn(min_rounds: int = 1, **filters) -> list[dict]:
     """Solo tiene sentido en ataque: el spawn es la posicion de inicio."""
     qs = base_queryset(**filters).filter(side="Attack").exclude(spawn="")
