@@ -195,7 +195,7 @@ OMC: plan=— · revisión=5 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verifi
 ## Para el humano
 
 - Aviso, no frena (dev): el texto copiado nombra el mapa por el valor del
-  filtro (\`bank\`, o el numero de version) y la sesion como \`Sesión N\`
+  filtro (`bank`, o el numero de version) y la sesion como `Sesión N`
   contando desde la mas reciente, como dijo el diseno. Si preferis el nombre
   del mapa y la fecha de la sesion, es otra ficha chica (necesita los datos de
-  \`/api/filters/\` y \`/api/sessions/\`).
+  `/api/filters/` y `/api/sessions/`).
