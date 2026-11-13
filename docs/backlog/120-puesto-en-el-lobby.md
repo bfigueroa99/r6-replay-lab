@@ -173,6 +173,51 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
+(dev 20261113T1802Z-c8dAf7p) Diseno completo, sobre `origin/dev@1de3c54`:
+
+- `aggregates.py`: `lobby_rank(**filters)` despues de `trend_by_match`. Una
+  consulta agrupada por partida y jugador sobre las rondas que dejan los
+  filtros (`Exists` correlacionado con `base_queryset`, sin `IN`), con
+  `Avg(rating_points_expr())`; otra con los compañeros (mismo `team_index`
+  en alguna de esas rondas). Mejor/ultimo con tolerancia `EMPATE_RATING`
+  (`1e-9`); salida `{count, matches, pct}` por caso. 2 consultas fijas.
+- `views.py`: `"lobby_rank"` al final de `trends`.
+- `puestoLobby.js`: `statsDePuesto` (tres filas en orden; `[]` sin partidas
+  con otro jugador; "partida" en singular con 1) y `avisoPuesto` (menos de
+  `MUESTRA_PARTIDAS`).
+- `Trends.jsx`: panel "Puesto en el lobby" despues de "Por partida", tres
+  `Stat` sin `tone`, nota sin partidas y aviso de muestra.
+- `metricas.md`: fila en `## Progreso` (texto del diseno) y en
+  `## Muestra minima`.
+
+Desvio del diseno (revision ciega, MEDIUM, corregido): el diseno tomaba "vos"
+de `Player.is_me`; `base_queryset` usa `RoundPlayer.is_me`, y las dos pueden
+no coincidir (import sin `recordingProfileID` deja el `Player` sin marcar;
+un compañero que grabo replays queda marcado). Ahora tu fila es la que tiene
+rondas `is_me=True` en la partida (`mine` en la misma consulta), y sobra la
+consulta de `Player`. Test `test_tu_fila_sale_de_la_ronda_y_no_de_la_marca_del_jugador`
+(cae sin el arreglo). LOW corregido: el aviso interpola `MUESTRA_PARTIDAS`.
+
+Tests vistos en rojo antes del codigo: backend (13 con `AttributeError:
+lobby_rank`), vitest (`puestoLobby.js` inexistente); despues, el de la
+marca y `assertNumQueries(2)`. Criterios -> tests: agregado con 10
+jugadores (`test_mejor_de_la_partida_y_de_tu_equipo`,
+`..._sin_ser_mejor_de_la_partida`, `test_ultimo_de_la_partida`); empates
+(`test_empatar_con_el_mejor_cuenta_como_mejor`,
+`test_empatar_con_todos_es_mejor_y_ultimo`); menos de 10 y solo vos
+(`test_partida_con_menos_de_diez_entra_con_los_que_hay`,
+`test_partida_solo_con_vos_no_cuenta`,
+`test_sin_companeros_no_entra_en_mejor_de_tu_equipo`); filtros
+(`test_filtro_de_mapa_aplica`, `test_filtro_de_lado_recorta_las_rondas_de_todos`);
+consultas (`test_consultas_acotadas`); clave en la API
+(`test_trends_trae_lobby_rank`); UI: vitest (7) + e2e `Tendencias muestra
+el puesto en el lobby` (etiquetas y `sub` armado con la API, consola
+limpia); fila en `metricas.md`.
+
+Skills: no aplica.
+Skills del repo: statistical-analysis (cada % con su `n` a la vista, empate definido, conteo de partidas y no promedio de promedios), testing-strategy (Django, vitest, e2e como dice el diseno), ux-copy (etiquetas y nota del diseno, con tildes), modern-web-guidance no leida (un `Panel` y `Stat` que ya existen, sin CSS nuevo), sql-queries (patron vecino de `teammate_synergy`; `assertNumQueries(2)` fijo con 2 y 5 partidas).
+OMC: plan=— · revisión=4 hallazgos (1 MEDIUM, 3 LOW; 3 arreglados, 1 cubierto con test) · verificación=—
+
 ## Revision
 
 ## QA

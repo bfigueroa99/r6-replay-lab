@@ -2128,7 +2128,13 @@ def lobby_rank(**filters) -> dict:
     filas = (
         RoundPlayer.objects.filter(Exists(mias.filter(round_id=OuterRef("round_id"))))
         .values("round__match_id", "player_id")
-        .annotate(points=Avg(rating_points_expr()), rounds=Count("id"))
+        .annotate(
+            points=Avg(rating_points_expr()),
+            # tu fila es la que la ronda marca como tuya, como en `base_queryset`:
+            # `Player.is_me` puede faltar (import sin `recordingProfileID`) o
+            # quedar en un compañero que grabo replays
+            mine=Count("id", filter=Q(is_me=True)),
+        )
     )
     companeros = set(
         RoundPlayer.objects.filter(is_me=False)
@@ -2137,20 +2143,18 @@ def lobby_rank(**filters) -> dict:
         .values_list("round__match_id", "player_id")
         .distinct()
     )
-    yo = set(Player.objects.filter(is_me=True).values_list("id", flat=True))
-
     por_partida: dict[int, list[dict]] = {}
     for fila in filas:
         por_partida.setdefault(fila["round__match_id"], []).append(fila)
 
     cuentas = Counter()
     for match_id, jugadores in por_partida.items():
-        mios = [j for j in jugadores if j["player_id"] in yo]
+        mios = [j for j in jugadores if j["mine"]]
         if not mios:
             continue
-        # Dos filas "yo" en una partida no las produce el import; si pasara,
-        # vale la de mas rondas y la otra es un jugador mas.
-        mio = max(mios, key=lambda j: (j["rounds"], -j["player_id"]))
+        # Dos jugadores "yo" en una partida no los produce el import; si pasara,
+        # vale el de mas rondas y el otro es un jugador mas.
+        mio = max(mios, key=lambda j: (j["mine"], -j["player_id"]))
         otros = [j for j in jugadores if j is not mio]
         if not otros:
             continue

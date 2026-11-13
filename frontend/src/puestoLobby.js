@@ -29,5 +29,5 @@ export function statsDePuesto(data) {
 export function avisoPuesto(data) {
   const n = data?.best_in_lobby?.matches ?? 0
   if (!n || n >= MUESTRA_PARTIDAS) return null
-  return 'Pocas partidas: con menos de 10 el porcentaje se mueve mucho por azar.'
+  return `Pocas partidas: con menos de ${MUESTRA_PARTIDAS} el porcentaje se mueve mucho por azar.`
 }

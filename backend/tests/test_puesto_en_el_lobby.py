@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
-from replays.models import Match
+from replays.models import Match, Player
 
 from .factories import ME, make_match, make_round, make_round_player
 
@@ -111,14 +111,22 @@ class PuestoEnElLobbyTests(TestCase):
         partida({ME: 2, "Comp0": 1, "Rival0": 4}, rivales=("Rival0",))
         self.assertEqual(agg.lobby_rank()["best_in_team"]["count"], 1)
 
+    def test_tu_fila_sale_de_la_ronda_y_no_de_la_marca_del_jugador(self):
+        # Un import sin `recordingProfileID` deja `RoundPlayer.is_me` sin marcar
+        # el `Player`; y un compañero que grabo replays queda marcado para siempre.
+        partida({ME: 1, "Comp0": 3, "Rival0": 0}, rivales=("Rival0",))
+        Player.objects.filter(username=ME).update(is_me=False)
+        Player.objects.filter(username="Comp0").update(is_me=True)
+        self.assertEqual(conteos(agg.lobby_rank()), ((0, 1), (0, 1), (0, 1)))
+
     def test_consultas_acotadas(self):
         for i in range(2):
             diez(i, [1, 1, 1, 1], [1, 1, 1, 1, 1], index=i)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2):
             agg.lobby_rank()
         for i in range(2, 5):
             diez(i, [1, 1, 1, 1], [1, 1, 1, 1, 1], index=i)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2):
             agg.lobby_rank()
 
     def test_trends_trae_lobby_rank(self):
