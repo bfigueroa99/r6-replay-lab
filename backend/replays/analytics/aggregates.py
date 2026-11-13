@@ -2109,6 +2109,77 @@ def trend_by_match(limit: int = 40, **filters) -> list[dict]:
     return list(reversed(rows))
 
 
+#: Dos promedios de float que deberian ser iguales pueden diferir en el ultimo
+#: bit segun el orden en que SQLite los sumo: por debajo de esto es empate.
+EMPATE_RATING = 1e-9
+
+
+def lobby_rank(**filters) -> dict:
+    """En cuantas partidas fuiste el mejor, el mejor de tu equipo y el ultimo.
+
+    Se compara el rating de la partida de cada jugador (promedio de sus puntos
+    por ronda) en las rondas que dejan los filtros: un filtro de ronda (lado,
+    operador, sitio) recorta las mismas rondas para todos. No se divide por
+    `rating_baseline()`: no cambia el orden.
+    """
+    mias = base_queryset(**filters)
+    # Correlacionadas en vez de un IN con los round_id, como `teammate_synergy`
+    # (tope de parametros de SQLite).
+    filas = (
+        RoundPlayer.objects.filter(Exists(mias.filter(round_id=OuterRef("round_id"))))
+        .values("round__match_id", "player_id")
+        .annotate(points=Avg(rating_points_expr()), rounds=Count("id"))
+    )
+    companeros = set(
+        RoundPlayer.objects.filter(is_me=False)
+        .filter(Exists(mias.filter(round_id=OuterRef("round_id"),
+                                   team_index=OuterRef("team_index"))))
+        .values_list("round__match_id", "player_id")
+        .distinct()
+    )
+    yo = set(Player.objects.filter(is_me=True).values_list("id", flat=True))
+
+    por_partida: dict[int, list[dict]] = {}
+    for fila in filas:
+        por_partida.setdefault(fila["round__match_id"], []).append(fila)
+
+    cuentas = Counter()
+    for match_id, jugadores in por_partida.items():
+        mios = [j for j in jugadores if j["player_id"] in yo]
+        if not mios:
+            continue
+        # Dos filas "yo" en una partida no las produce el import; si pasara,
+        # vale la de mas rondas y la otra es un jugador mas.
+        mio = max(mios, key=lambda j: (j["rounds"], -j["player_id"]))
+        otros = [j for j in jugadores if j is not mio]
+        if not otros:
+            continue
+        puntos = mio["points"]
+        cuentas["lobby"] += 1
+        if all(o["points"] <= puntos + EMPATE_RATING for o in otros):
+            cuentas["best_in_lobby"] += 1
+        if all(o["points"] >= puntos - EMPATE_RATING for o in otros):
+            cuentas["last_in_lobby"] += 1
+        equipo = [o for o in otros if (match_id, o["player_id"]) in companeros]
+        if equipo:
+            cuentas["team"] += 1
+            if all(o["points"] <= puntos + EMPATE_RATING for o in equipo):
+                cuentas["best_in_team"] += 1
+
+    def caso(clave: str, total: str) -> dict:
+        return {
+            "count": cuentas[clave],
+            "matches": cuentas[total],
+            "pct": _pct(cuentas[clave], cuentas[total]),
+        }
+
+    return {
+        "best_in_lobby": caso("best_in_lobby", "lobby"),
+        "best_in_team": caso("best_in_team", "team"),
+        "last_in_lobby": caso("last_in_lobby", "lobby"),
+    }
+
+
 def teammate_synergy(min_rounds: int = 10, **filters) -> list[dict]:
     """Winrate de rondas segun con quien las jugaste (solo companeros).
 

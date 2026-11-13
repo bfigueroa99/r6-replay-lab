@@ -16,11 +16,12 @@ import {
 import { useApi } from '../api.js'
 import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, Stat, fmt, pct } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 import { textoResumenSesion } from '../resumenSesion.js'
+import { avisoPuesto, statsDePuesto } from '../puestoLobby.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -436,6 +437,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
           </ResponsiveContainer>
         </div>
       </Panel>
+
+      <PuestoEnElLobby data={data.lobby_rank} />
 
       {porPosicion.length > 2 ? (
         <Panel
@@ -1089,5 +1092,27 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         />
       </Panel>
     </>
+  )
+}
+
+function PuestoEnElLobby({ data }) {
+  const filas = statsDePuesto(data)
+  const aviso = avisoPuesto(data)
+  return (
+    <Panel
+      title="Puesto en el lobby"
+      hint="Tu rating en cada partida contra el de los demás jugadores, y contra tus compañeros. Empatar con el mejor cuenta como ser el mejor."
+    >
+      {filas.length ? (
+        <div className="kpis">
+          {filas.map((fila) => (
+            <Stat key={fila.key} label={fila.label} value={pct(fila.pct)} sub={fila.sub} />
+          ))}
+        </div>
+      ) : (
+        <p className="note">No hay partidas con otros jugadores con estos filtros.</p>
+      )}
+      {aviso ? <p className="note">{aviso}</p> : null}
+    </Panel>
   )
 }
