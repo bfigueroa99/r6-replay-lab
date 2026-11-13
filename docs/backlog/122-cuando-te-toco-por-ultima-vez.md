@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
-estado: implementado
-candado: revisor 2026-11-13T18:58Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
@@ -172,10 +172,23 @@ Skills: no aplica.
 Skills del repo: testing-strategy (Django para el max y el filtro, vitest para el formato, e2e para la columna), ux-copy (`help` con tildes, `—` como el resto), modern-web-guidance (no aplica: columna de un `DataTable` existente, sin CSS ni componente nuevo).
 OMC: plan=— · revisión=0 hallazgos · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 5dd09ad
+
+(qa 20261113T1858Z-cxdASk3, revisor en el fallback de QA: la 120 la tomo otra corrida) Punto de partida: la rama ya contenia `origin/dev`; `verificar.sh`: VERDE 5dd09adb9 (1243 backend, 391 vitest, 105 e2e).
+
+**Eje de estandares** (`omc-code-reviewer`, prompt de `revision.md`, 106 lineas de diff; un solo tema y menos de 150 lineas: sin eje de intencion ni seguridad): aprobar, 1 LOW **confirmado leyendo el codigo**:
+- L1 [estilo, LOW] `frontend/src/ultimaVez.js:6-8`: `fechaCorta` es identica a `fecha` de `frontend/src/pages/Jugador.jsx:21`; si una cambia, la otra queda desalineada. Arreglo: que `Jugador.jsx` importe `fechaCorta`. No bloquea (el diseno pidio "el formato de `Jugador.jsx`" y `Jugador.jsx` esta fuera de `archivos:`).
+Verifico ademas: `Match.played_at` no admite nulos (`models.py:74`), `ids` nunca vacio, una sola consulta (`_resultados_y_fechas` reemplaza la que habia), `USE_TZ = False` (ISO sin desfase, `slice(0, 10)` da la fecha local), sin dependencias ni escritura nueva, nada que el `.rec` no traiga. Los tests caerian con el bug: indices 0, 5, 2 (ni primera ni ultima creada) y `until` que deja afuera la mas reciente.
+
+**Ficha.** Criterio 1: `test_la_ultima_vez_es_la_partida_mas_reciente`; 2: `test_la_ultima_vez_respeta_el_filtro_de_fechas`; 3: `test_el_aviso_de_la_partida_da_la_misma_ultima_vez_que_duelos` (record igual); 4: columna en las dos tablas de `Duelos.jsx`, ordenable, vitest `ultimaVez.test.js` + e2e; 5: e2e `Duelos muestra rivales repetidos con enlace al perfil` (cabecera y fecha de la API, consola limpia). Diff dentro de `archivos:`; `metricas.md` con *Última vez* en Rival repetido y Stack rival repetido; identificadores sin tildes, UI con tildes; sin `print` ni `console.log`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados: al humano) · verificación=—
 
 ## QA
 
 ## Para el humano
 
-(nada)
+- (revisor 2026-11-13, no bloquea) `fechaCorta` de `ultimaVez.js` duplica `fecha` de `Jugador.jsx:21`; que `Jugador.jsx` la importe. Lo puede hacer un Dev despues.
