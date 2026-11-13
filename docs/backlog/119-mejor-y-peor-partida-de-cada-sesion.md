@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T17:08Z
 rama: -
 tipo: funcionalidad
 epica: progreso
