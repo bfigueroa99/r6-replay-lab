@@ -762,7 +762,39 @@ vend=$(grep -oE '^\| `[a-z0-9-]+` \|' "$vm" 2>/dev/null | tr -d '|` ')
 for nom in $vend; do
     case "$mapa" in *" $nom "*) ;; *) det="$det $nom esta vendorizada y el mapa no dice en que paso se usa ni por que queda a mano;" ;; esac
 done
+# Las que el diff obliga: medido el 2026-11-13 sobre las fichas 107 a 126,
+# 17 tocaban JSX y ninguna anoto un id de guia de modern-web-guidance, y
+# ninguna anoto test-driven-development. El Dev las saca del diff, el
+# Revisor las mira y el mapa dice por que.
+plano "$ro/dev.md" | grep -qF -- 'git diff --name-only origin/dev...HEAD' || det="$det roles/dev.md no saca del diff las skills obligadas;"
+plano "$ro/dev.md" | grep -qF -- 'nunca es `no aplica`' || det="$det roles/dev.md deja anotar no aplica con JSX en el diff;"
+plano "$ro/revisor.md" | grep -qF -- 'Skills del repo:' || det="$det roles/revisor.md no mira el Skills del repo: de Implementacion;"
+plano "$sr" | grep -qF -- 'Las que el diff obliga' || det="$det skills-del-repo.md no dice cuales obliga el diff;"
 cierra skills "$det"
+
+# 15. compactar: tras una compactacion la sesion pierde lo que leyo con
+# `git show` (playbook, rol, ficha), y nada lo vuelve a adjuntar porque la
+# rutina lo lee por Bash y no con la herramienta Skill. El hook de
+# SessionStart corre tambien ahi ("source": "compact"): dice el rol y el
+# playbook del turno y que releer, sin reinstalar nada. La rutina y SKILL.md
+# lo piden igual, para OpenCode y para una sesion sin hooks.
+det=""
+hk=$base/.claude/hooks/session-start.sh
+tmp=$(mktemp -d)
+if git -C "$tmp" init -q 2>/dev/null; then
+    printf 'export EQUIPO_ROL=qa\nexport EQUIPO_SESION=20261101T0000Z-cPrueba\nexport EQUIPO_CIERRE=02:15\nexport EQUIPO_REF=origin/dev\nexport EQUIPO_ROLES="qa"\n' > "$tmp/.git/equipo-dev.env"
+    s=$(printf '{"session_id":"x","source":"compact"}' | CLAUDE_CODE_REMOTE=true CLAUDE_PROJECT_DIR="$tmp" bash "$hk" 2>&1); c=$?
+    [ "$c" -eq 0 ] || det="$det el hook tras compactar sale $c;"
+    for t in '20261101T0000Z-cPrueba' 'equipo-dev.env' 'git show origin/dev:.claude/skills/equipo-dev/SKILL.md' 'git show origin/dev:.claude/skills/equipo-dev/roles/qa.md'; do
+        grep -qF -- "$t" <<< "$s" || det="$det el hook tras compactar no dice '$t';"
+    done
+    grep -qF '=> dependencias' <<< "$s" && det="$det el hook reinstala dependencias tras compactar;"
+else det="$det sin git init para probar el hook;"
+fi
+rm -rf "$tmp"
+grep -qF 'Tras una compactacion' "$ru" 2>/dev/null || det="$det rutina.md no pide releer tras una compactacion;"
+grep -qF 'Tras una compactacion' "$sk" || det="$det SKILL.md no pide releer tras una compactacion;"
+cierra compactar "$det"
 
 if [ "$fallos" -gt 0 ]; then echo "PRUEBAS_FALLAN: $fallos"; exit 1; fi
 echo "PRUEBAS_OK ($n)"

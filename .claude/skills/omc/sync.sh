@@ -15,7 +15,7 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/Yeachan-Heo/oh-my-claudecode.git"
-TAG_POR_DEFECTO="v5.7.23"
+TAG_POR_DEFECTO="v5.8.6"
 AGENTES=(planner architect critic code-reviewer security-reviewer verifier tracer debugger test-engineer)
 
 DIR_SKILL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

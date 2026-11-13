@@ -21,7 +21,10 @@ Cuando el estado lo pide (regla 3); por reloj, franja 4 y la 7 de los dias impar
   cubierto por un test o por una verificacion anotada; el diff no toca
   archivos fuera de `archivos:` sin explicacion en Implementacion; fila en
   `docs/metricas.md` por cada numero nuevo; identificadores sin tildes, UI
-  con tildes; sin `print` ni `console.log`. Puede empujar tests de casos
+  con tildes; sin `print` ni `console.log`; `Skills del repo:` de
+  `## Implementacion` con las que el diff obliga (`roles/dev.md`: `.jsx` o
+  `.css` en `frontend/src`, tests nuevos), cada una con su evidencia: si
+  falta, hallazgo MEDIUM que no frena el veredicto. Puede empujar tests de casos
   borde que pasan; un test que falla nunca se empuja: va como hallazgo con
   el test exacto a agregar. `## Revision <fecha> sobre <sha corto>` con el
   formato de `revision.md` y el veredicto: `aprobar` -> `revisado`;

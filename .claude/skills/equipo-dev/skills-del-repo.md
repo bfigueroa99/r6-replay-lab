@@ -23,13 +23,13 @@ el que no entra al loop.
 | `replica-recon` | propia | `replica.md` | Investigador, familia 8: mapa de la referencia |
 | `replica-diff` | propia | `replica.md` | Investigador, familia 8: `parity.py` |
 | `replica-entrepreneur` | propia | `replica.md` | Investigador, familia 8: resenas |
-| `test-driven-development` | vendorizada | `roles/dev.md` | Dev: el test de la logica pura, en rojo antes del codigo |
+| `test-driven-development` | vendorizada | `roles/dev.md` | Dev: el test de la logica pura, en rojo antes del codigo (obligada si el diff trae tests nuevos o cambiados) |
 | `systematic-debugging` | vendorizada | `SKILL.md`, `roles/dev.md` | P4 (rojo sin causa obvia, primer intento) y Dev con `tipo: bug` |
 | `verification-before-completion` | vendorizada | `SKILL.md` | principio 3: todo `estado:` que avanza y toda linea del informe |
 | `testing-strategy` | vendorizada | `roles/arquitecto.md` | `## Diseno` de `tipo: tests` o con pagina, flujo o endpoint nuevo |
 | `statistical-analysis` | vendorizada | `roles/arquitecto.md` | `## Diseno` con un numero o un umbral nuevo |
 | `dataviz` | incorporada | `roles/arquitecto.md` | `## Diseno` con un grafico nuevo o cambiado |
-| `modern-web-guidance` | vendorizada | `roles/dev.md` | Dev que escribe JSX o CSS en `frontend/src` |
+| `modern-web-guidance` | vendorizada | `roles/dev.md` | Dev que escribe JSX o CSS en `frontend/src` (obligada: una busqueda por primitiva de interfaz, tambien si reusa un componente) |
 | `ux-copy` | vendorizada | `roles/dev.md` | Dev que agrega o cambia texto que ve el usuario |
 | `sql-queries` | vendorizada | `roles/dev.md` | Dev con un agregado que no sigue un patron vecino |
 | `accessibility-review` | vendorizada | `roles/qa.md` | QA de una ficha que toca `frontend/src` |
@@ -81,6 +81,21 @@ La evidencia es lo que otro puede repetir: el comando que se vio en rojo
 severidad (`accessibility-review`), los valores recalculados contra la API
 (`validate-data`). Una que se leyo y no cambio nada se anota igual, como
 `<skill> (sin cambios: <por que>)`; `ninguna` es que no se leyo ninguna.
+
+Las que el diff obliga no admiten `no aplica` ni `ninguna`: `.jsx` o `.css`
+en `frontend/src` obligan `modern-web-guidance` (ids aplicados, o las
+consultas hechas y por que ninguna guia sirvio) y un test nuevo o cambiado
+obliga `test-driven-development` (cuantos se vieron en rojo y con que
+comando). Lo agrega el Dev (`roles/dev.md`) y lo mira el Revisor
+(`roles/revisor.md`, hallazgo MEDIUM si falta). Medido el 2026-11-13 sobre
+las 18 fichas con registro (107 a 126): 17 tocaban `.jsx` o `.css` y
+ninguna anoto un id de guia de `modern-web-guidance` (11 no la nombraban,
+4 decian `no aplica` o `no se leyo`, 1 `ninguna aplica` sin consultas y 1
+la nombraba sin evidencia), y
+ninguna anoto `test-driven-development`, aunque 6 contaban en prosa los
+tests vistos en rojo. Las guias de 1.0.0 cubren lo que esas fichas hicieron
+sin consultarlas: `copy-button` (111, 121) y `sortable-table`, que pide el
+`aria-sort` que la QA de la 124 encontro faltando en `DataTable`.
 
 ## Cambiar el mapa
 

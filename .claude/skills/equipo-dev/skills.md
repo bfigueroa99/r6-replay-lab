@@ -43,12 +43,15 @@ frena el turno: si falla, se sigue como siempre.
 ## Buscar
 
 ```bash
-DISABLE_TELEMETRY=1 npx -y skills@1.7.4 find <consulta>
+DISABLE_TELEMETRY=1 npx -y skills@1.8.1 find <consulta>
 ```
 
 De 1 a 3 palabras, en ingles, que es el idioma del indice: `django migrations`,
 `recharts`, `playwright e2e`. La version va fija: si la CLI cambia, no cambia
-bajo el equipo. `DISABLE_TELEMETRY=1` siempre: el equipo no manda telemetria, y
+bajo el equipo. Se subio de 1.7.4 a 1.8.1 el 2026-11-13: con varias palabras
+cae a coincidencias parciales en vez de devolver nada (#2731), y verifica lo
+que baja contra el arbol de GitHub (#2354, #2386); `find`, `use` y `add` con
+estas opciones siguen igual. `DISABLE_TELEMETRY=1` siempre: el equipo no manda telemetria, y
 apaga tambien la consulta de auditoria a skills.sh. No escribe en el checkout.
 
 ## Filtrar
@@ -62,7 +65,7 @@ y `playwright-stealth-verify` (103K) por encima de skills legitimas. En orden:
 2. Se lee **entera** antes de usarla, sin instalarla:
 
    ```bash
-   DISABLE_TELEMETRY=1 npx -y skills@1.7.4 use <owner/repo>@<skill>
+   DISABLE_TELEMETRY=1 npx -y skills@1.8.1 use <owner/repo>@<skill>
    ```
 
    Imprime su SKILL.md y deja los archivos de apoyo en un temporal
@@ -96,7 +99,7 @@ El commit sale de `git ls-remote https://github.com/<owner>/<repo> HEAD`. Como
 se instala, para el humano o para una sesion que el inicie:
 
 ```bash
-DISABLE_TELEMETRY=1 npx -y skills@1.7.4 add <owner/repo> --skill <skill> -a claude-code --copy -y
+DISABLE_TELEMETRY=1 npx -y skills@1.8.1 add <owner/repo> --skill <skill> -a claude-code --copy -y
 rm skills-lock.json
 ```
 

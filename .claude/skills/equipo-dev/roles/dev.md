@@ -28,7 +28,8 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
 - **Trabajo:** implementar el diseno completo: backend + frontend + tests +
   fila de `docs/metricas.md` si corresponde; tests primero en logica pura,
   con el ciclo de la skill `test-driven-development` (el test visto en rojo
-  antes del codigo, despues lo minimo para el verde); con `tipo: bug`,
+  antes del codigo, despues lo minimo para el verde; su evidencia: cuantos
+  se vieron en rojo y con que comando); con `tipo: bug`,
   primero la causa con la skill `systematic-debugging` (fases 1 a 3; con
   tres arreglos fallidos no hay cuarto: `## Pendiente` con lo probado) y el
   test que falla primero (receta 4 de OMC):
@@ -38,9 +39,13 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   estilo del repo (espanol sin tildes en codigo, con tildes en la UI,
   comentarios que explican por que). Antes de escribir JSX o CSS en
   `frontend/src`, la skill `modern-web-guidance` (su CLI fija y sin
-  telemetria; sin red, sus `guides/` por nombre), y los ids de las guias que
-  se aplicaron son su evidencia; si agrega o cambia texto que ve el usuario
-  (boton, aviso, estado vacio, error), la skill `ux-copy`, en voseo y con
+  telemetria; sin red, sus `guides/` por nombre): una busqueda de 2 a 5
+  palabras por cada primitiva de interfaz que el diff toca (`copy button`,
+  `sortable table`, `tabs`), tambien si reusa un componente del repo; su
+  evidencia son los ids de las guias que se aplicaron o, si ninguna aplico,
+  las consultas y por que (con JSX o CSS en el diff nunca es `no aplica`);
+  si agrega o cambia texto que ve el usuario (boton, aviso, estado vacio,
+  error), la skill `ux-copy`, en voseo y con
   tildes como el resto de la UI. Un agregado de `aggregates.py` que no sigue
   un patron vecino (`Subquery` correlacionada, una consulta por fila): la
   skill `sql-queries`, y un `assertNumQueries` como los de
@@ -63,8 +68,11 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   deja la ficha `en curso` con `## Pendiente`, nunca `implementado`.
   `check.sh` en `Todo en verde.`. `## Implementacion`:
   que quedo, que no, desvios del diseno, y `Skills del repo:` con la
-  evidencia de cada una. `estado: implementado`,
-  `candado: -`, push.
+  evidencia de cada una. Cuales van si o si lo dice
+  `git diff --name-only origin/dev...HEAD`: `.jsx` o `.css` en
+  `frontend/src` -> `modern-web-guidance`; un test nuevo o cambiado ->
+  `test-driven-development`; texto nuevo de la UI -> `ux-copy`.
+  `estado: implementado`, `candado: -`, push.
 - **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
   `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,
   `candado: -`. No se tira trabajo parcial verde.
