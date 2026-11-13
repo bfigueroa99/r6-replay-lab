@@ -1,8 +1,8 @@
 # 116. En que estado de vivos mueres
 
-estado: disenado
+estado: en curso 2026-11-13T17:07Z
 candado: -
-rama: -
+rama: claude/equipo-dev/116-en-que-estado-de-vivos-mueres
 tipo: funcionalidad
 epica: impacto
 area: fullstack
