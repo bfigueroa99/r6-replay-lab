@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
-estado: en curso 2026-11-13T22:57Z
-candado: dev 2026-11-13T22:57Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -168,6 +168,23 @@ grafico).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T2252Z-cQac5RQ) Diseno completo, sobre `origin/dev@39e22c0`:
+
+- `aggregates.py`: `_lado_de_prorroga` (Subquery, primera ronda con `overtime_number > 0` por `overtime_number`, `number`) y `by_overtime_start_side`, con la forma de `by_start_side` y el `?side=` de `by_overtime_side`. `views.py`: clave `by_overtime_start_side` en `/api/trends/`.
+- `prorrogaPorLado.js`: `filasProrrogaPorLado(rows, partidas)` agrega `matches` y `match_winrate` solo si viene el segundo argumento; `PARTIDAS_CORTE = 10` y `conPocasPartidas`.
+- `Trends.jsx`: `COLUMNAS_PRORROGA_POR_LADO` (Partidas, Partidas ganadas, con las ayudas del diseno; `COLUMNAS_POR_TRAMO` sin tocar) y la nota de varianza de partidas debajo de la de rondas.
+- e2e de humo: `by_overtime_start_side` en cero en el seed. `metricas.md`: fila "Partidas a prórroga por lado" debajo de "Prorroga".
+
+Tests vistos en rojo antes del codigo: Django `PartidasAProrrogaPorLadoTests` (8 errores, funcion inexistente) y vitest (3 fallas). Criterios -> tests: 1 `test_cuenta_partidas_y_ganadas_por_el_lado_de_la_primera_ronda_de_prorroga` y `test_el_lado_es_el_de_la_primera_ronda_de_prorroga_y_no_el_de_la_mayoria`; 2 `test_una_partida_sin_prorroga_no_entra`, `test_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje`; 3 `test_con_filtro_de_lado_sale_solo_esa_fila`, `test_el_filtro_de_mapa_aplica`; 4 vitest `une las partidas por lado`, `un lado sin partidas queda en 0 y sin porcentaje`, `conPocasPartidas avisa entre 1 y 9...` y e2e de humo (consola limpia); 5 la fila de `metricas.md`.
+
+Revision ciega (`omc-code-reviewer`, eje de estandares): aprobar, 2 LOW. Arreglado 1: test nuevo `test_con_un_filtro_que_solo_deja_rondas_normales_la_partida_no_entra` (sin el `.filter(round__overtime_number__gt=0)` de los `ids` el test cae; mutante visto y restaurado). No arreglado: el e2e no renderiza las columnas nuevas porque `seed_demo` no tiene prorroga (el diseno ya lo preveia: e2e solo de humo por la API; cambiar el seed cambia los numeros de otras pruebas).
+
+Desvios del diseno: ninguno, mas el test de arriba.
+
+Skills: no aplica.
+Skills del repo: statistical-analysis (denominador `decided`, n en Partidas, aviso con menos de 10), testing-strategy (numero en Django con mutante, union en vitest, e2e de humo por la API); modern-web-guidance no leida (sin CSS ni markup nuevo: columnas y una nota con los componentes existentes); ux-copy (ayudas y nota con tildes, como las vecinas).
+OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—
 
 ## Revision
 

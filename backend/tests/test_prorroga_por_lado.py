@@ -121,6 +121,15 @@ class PartidasAProrrogaPorLadoTests(TestCase):
         lados = _por_lado(agg.by_overtime_start_side())
         self.assertEqual((lados["Attack"]["matches"], lados["Defense"]["matches"]), (1, 0))
 
+    def test_con_un_filtro_que_solo_deja_rondas_normales_la_partida_no_entra(self):
+        match = make_match(index=0)
+        make_round_player(make_round(match, 1, side="Attack"), operator="Ash")
+        make_round_player(make_round(match, 2, side="Defense", overtime_number=1), operator="Mute")
+        filas = agg.by_overtime_start_side(operator="Ash")
+        self.assertEqual([f["matches"] for f in filas], [0, 0])
+        # sin el filtro la misma partida si entra: el cero de arriba es por el filtro
+        self.assertEqual(_por_lado(agg.by_overtime_start_side())["Defense"]["matches"], 1)
+
     def test_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje(self):
         _a_prorroga(0, ["Defense"], gano=True)
         _a_prorroga(1, ["Defense"], gano=None)
