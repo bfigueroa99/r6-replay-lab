@@ -1158,6 +1158,31 @@ test('el Coach muestra la salida del spawn', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir el sitio tras perderlo' }),
+  })
+  // seed_demo pierde toda su defensa: 58 pares, 56 vuelven al mismo sitio y 2
+  // cambian (uno en Bank y uno en Club House), winrate 0 en los dos.
+  await expect(panel).toContainText('58 rondas perdidas en defensa seguidas de otra')
+  const repite = panel.locator('.stat', { hasText: 'Repite el sitio' })
+  await expect(repite.locator('.value')).toHaveText('56')
+  await expect(repite.locator('.sub')).toHaveText('winrate 0%')
+  const cambia = panel.locator('.stat', { hasText: 'Cambia de sitio' })
+  await expect(cambia.locator('.value')).toHaveText('2')
+  await expect(cambia.locator('.sub')).toContainText('pocas rondas')
+  // Columnas: mapa, repite, winrate repitiendo, cambia, winrate cambiando.
+  const club = panel.locator('tr', { has: page.getByRole('cell', { name: 'Club House', exact: true }) })
+  await expect(club.locator('td').nth(1)).toHaveText('19')
+  await expect(club.locator('td').nth(3)).toHaveText('1')
+  await expect(panel.locator('tbody tr')).toHaveCount(3)
+
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

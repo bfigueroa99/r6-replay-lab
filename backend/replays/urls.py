@@ -12,6 +12,7 @@ urlpatterns = [
     path("overview/", views.overview, name="overview"),
     path("coach/", views.coach, name="coach"),
     path("positioning/", views.positioning, name="positioning"),
+    path("positioning/site-after-loss/", views.site_after_loss, name="site-after-loss"),
     path("operators/", views.operators, name="operators"),
     path("operators/catalog/", views.operator_catalog, name="operator-catalog"),
     path("operators/sites/", views.operators_by_site, name="operators-by-site"),
