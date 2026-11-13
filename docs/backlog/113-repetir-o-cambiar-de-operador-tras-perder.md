@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: implementado
-candado: revisor 2026-11-13T00:13Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O10
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_TRAS_RESULTADO_*), backend/replays/views.py (operators_after_result), backend/replays/urls.py, backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js, frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt
+turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8
 
 ## PR
 
@@ -280,6 +280,55 @@ Skills: no aplica (el repo ya lo resuelve con `PorSitio`).
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Revision
+
+## Revision 2026-11-13 sobre 4a8ec36
+
+(revisor 20261113T0003Z-cVnayJ8) Rama fusionada con `origin/dev` (entraron #109 y #110, sin
+conflictos). Partida de verde: verificar.sh VERDE 4a8ec36 (1181 backend, 336
+vitest, 95 e2e). Una primera corrida dio rojo en
+`e2e/accesibilidad.spec.js:226` ("los graficos dicen ...", punteadas
+`[false, false]`) con dos subagentes corriendo `seed_demo` a la vez; con
+`--de-nuevo` y la maquina libre, verde. Es de #109, ya en dev, y no toca
+Operadores: anotado en `ESTADO.md`. Revision a ciegas en dos ejes
+(estandares e intencion, `omc-code-reviewer` cada uno); cada hallazgo
+confirmado por el lider.
+
+Reglas: endpoint `@require_GET`, sin dependencias, sin `pydissect/` ni
+Electron, agrega columnas existentes (lado, operador, ganador), filas en
+`metricas.md` (Cortes y Muestra minima), e2e por Operadores, sin tildes en
+identificadores y con tildes en la UI, sin `print` ni `console.log`.
+Criterios: los seis cubiertos (los dos revisores corrieron `seed_demo`
+aparte y reprodujeron los numeros del e2e: 145 pares, 58 cambia tras perder
+0 %, 87 cambia tras ganar 100 %, `operator=Ash` 29).
+
+Hallazgos (ninguno CRITICAL ni HIGH):
+
+- [test] MEDIUM `backend/tests/test_operador_tras_resultado.py:99` -> **cerrado con test**
+  Que pasa: `test_el_filtro_de_operador_elige_la_primera_ronda` pasa igual si
+  el filtro de operador mirara la segunda ronda (Ash->Thermite y
+  Thermite->Ash caen los dos en `after_loss/switch`).
+  Por que es cierto: mutacion (filtro movido a la segunda ronda) deja ese test
+  en verde. Agregado `test_el_filtro_de_operador_no_mira_la_segunda_ronda`
+  (Ash ganada->Thermite, Thermite perdida->Ash, `operator=Ash`:
+  `after_win/switch=1`, `after_loss/switch=0`): pasa con el codigo y cae con
+  la mutacion.
+- [estilo] LOW `backend/replays/analytics/aggregates.py:849` y `:896`
+  Que pasa: la celda y su suma a mano duplican `_caso_vacio()` y
+  `_sumar_caso()` de la 107, y `OPERADOR_TRAS_RESULTADO_CASOS` repite
+  `REPETIR_SITIO_CASOS`. Arreglo sugerido: usar los helpers.
+- [bug] LOW `frontend/src/operadorTrasResultado.js:58` (`winrateCsv`)
+  Que pasa: repite lo que `celdaCsv` ya hace desde #109 (coma decimal y `''`
+  para `null`). Arreglo sugerido: quitar `csv:` de la columna y `winrateCsv`.
+- [intencion] LOW `frontend/src/operadorTrasResultado.js:51`
+  Que pasa: "pocas rondas" se mide sobre `rounds` y el winrate sobre
+  `decided`; fiel a la letra de la ficha y de `metricas.md`. Sin cambio.
+- [estilo] LOW `frontend/src/pages/Operators.jsx:548`: el `?? 12` del hint
+  copia la constante del backend mientras `data` no cargo. Sin efecto en datos.
+
+Veredicto: aprobar -> `revisado`. Los LOW quedan para pulir; no frenan.
+
+Skills: no aplica.
+OMC: plan=— · revisión=5 hallazgos (1 MEDIUM cerrado con test; 4 LOW sin arreglar) · verificación=—
 
 ## QA
 

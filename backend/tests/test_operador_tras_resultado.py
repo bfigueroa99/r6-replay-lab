@@ -106,6 +106,18 @@ class OperadorTrasResultadoTests(TestCase):
         self.assertEqual(self._celda(datos, "after_loss", "switch")["rounds"], 1)
         self.assertEqual(self._celda(datos, "after_loss", "repeat")["rounds"], 0)
 
+    def test_el_filtro_de_operador_no_mira_la_segunda_ronda(self):
+        # Ash->Thermite cae en after_win y Thermite->Ash en after_loss: si el
+        # filtro mirara la segunda ronda, los numeros saldrian al reves
+        self._partida([
+            (A, "Ash", True), (A, "Thermite", False),
+            (A, "Thermite", False), (A, "Ash", False),
+        ])
+        datos = self.client.get(URL, {"operator": "Ash"}).json()
+        self.assertEqual(datos["pairs"], 1)
+        self.assertEqual(self._celda(datos, "after_win", "switch")["rounds"], 1)
+        self.assertEqual(self._celda(datos, "after_loss", "switch")["rounds"], 0)
+
     def test_el_filtro_de_sitio_elige_la_primera_ronda(self):
         self._partida([
             (A, "Ash", False, "2F Kitchen"), (A, "Thermite", True, "1F Bar"),
