@@ -1,7 +1,7 @@
 # 127. Partidas que van a prorroga: cuantas ganas
 
-estado: aprobado
-candado: release 2026-11-13T23:31Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/127-partidas-que-van-a-prorroga
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,9 +9,48 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B22 (salio del Fuera de alcance de la 115)
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ, revisor 20261113T2318Z-cpCpgff, qa 20261113T2317Z-cBbsozQ
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2252Z-cQac5RQ, revisor 20261113T2318Z-cpCpgff, qa 20261113T2317Z-cBbsozQ, release 20261113T2317Z-cBbsozQ
 
 ## PR
+
+Titulo: `[equipo-dev][fullstack] Partidas que van a prorroga: cuantas ganas por lado`
+
+### Que cambia
+
+En Tendencias, la tabla "Prórroga por lado" suma dos columnas: Partidas (las que llegaron a prórroga, por el lado con el que la arrancaste) y Partidas ganadas (% sobre las que tienen resultado). Responde "cuando llego a prórroga en defensa, ¿la gano?", que el winrate de ronda de la 115 no contesta.
+
+### Por que esto y no otra cosa
+
+Ficha 127, del Fuera de alcance de la 115 (ALCANCE.md B22). Sin tarjeta nueva porque Tendencias esta saturada; no duplica "Margen final", que junta todas las prorrogas.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 6920b8eca, 1293 tests backend, 425 vitest, 114 e2e.
+- Tests nuevos: `PartidasAProrrogaPorLadoTests` en `backend/tests/test_prorroga_por_lado.py` (caso 2/1 del criterio, primera ronda de prorroga y no la mayoria, sin prorroga no entra, `won` nulo, filtro de lado, de mapa, de operador que deja solo rondas normales, sin prorrogas, clave en `/api/trends/`); vitest de `prorrogaPorLado.js` (union por lado, lado sin partidas, compatibilidad, `conPocasPartidas`); e2e de humo de la clave.
+- Verificacion manual (QA): base sembrada con 3 partidas a prorroga; API y SQL a mano coinciden (Defensa 2 partidas, 50 %; Ataque 1 sin resultado, `—`); tabla vista en Chromium con avisos y consola limpia; 4 mutaciones atrapadas.
+- OMC: Diseno `plan=— · revisión=— · verificación=—`; Implementacion `plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—`; Revision `plan=— · revisión=3 hallazgos (0 arreglados; 0 CRITICAL/HIGH) · verificación=—`; QA `plan=— · revisión=— · verificación=PASS`.
+- Skills del repo: statistical-analysis, testing-strategy (diseno e implementacion); ux-copy (implementacion); accessibility-review y validate-data (QA).
+
+### Riesgos y lo que no entra
+
+Sin migracion ni `recompute`. `seed_demo` no trae prorrogas: el e2e no dibuja las columnas (cubierto por la QA manual). Fuera: winrate de ronda en prorroga (ya esta), partir por cantidad de prorrogas, señal del Coach.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py test tests.test_prorroga_por_lado
+cd frontend; npm test -- prorrogaPorLado
+cd backend; python manage.py runserver   # abrir /tendencias con replays que tengan prorroga
+```
+Tiene que verse en "Prórroga por lado" las columnas Partidas y Partidas ganadas; con Lado = Defensa, una sola fila.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno.
 
 ## Que gana quien usa la app
 
@@ -48,147 +87,24 @@ Responde "cuando llego a prorroga en defensa, ¿la gano?".
 
 ## Diseno
 
-Una sola forma obvia: es `by_start_side` (lado inicial, partidas y winrate de
-partida) leyendo la primera ronda de prorroga en vez de la primera sin
-prorroga, pegado a la tabla de la 115. Sin arena ni consenso (chica, sin
-migracion, sin `recompute`, sin parser). No duplica "Margen final" (tramo
-`Prorroga`, todas las partidas a prorroga juntas): esto las parte por lado.
+(arquitecto 20261113T2157Z-cG2vDSe) Una sola forma: `by_start_side` leyendo la primera ronda de prorroga. `_lado_de_prorroga` (Subquery, menor `overtime_number` y despues `number`) y `by_overtime_start_side` en `aggregates.py` (`matches`, `decided`, `wins`, `winrate`; con `?side=` solo esa fila); clave `by_overtime_start_side` en `/api/trends/`; `filasProrrogaPorLado(rows, partidas)` y `conPocasPartidas` (corte 10, el de Margen final) en `prorrogaPorLado.js`; `COLUMNAS_PRORROGA_POR_LADO` en `Trends.jsx` sin tocar `COLUMNAS_POR_TRAMO`; fila en `metricas.md`. Detalle completo en `git log` de esta ficha.
 
-**Backend** (`backend/replays/analytics/aggregates.py`, justo despues de
-`by_overtime_side`):
-
-- `_lado_de_prorroga(match_ref: str) -> Subquery`: `Round.objects.filter(
-  match_id=OuterRef(match_ref), overtime_number__gt=0).order_by(
-  "overtime_number", "number").values("my_side")[:1]`. Docstring: se lee de
-  la partida entera, como `_lado_inicial`; con `?side=` el filtro limita las
-  rondas, no cambia con que lado arrancaste la prorroga. Lado vacio: la
-  partida no cae en ninguna fila (igual que `_lado_inicial`).
-- `by_overtime_start_side(**filters) -> list[dict]`, copia de la forma de
-  `by_start_side`: `ids = base_queryset(**filters).filter(
-  round__overtime_number__gt=0).values_list("round__match_id",
-  flat=True).distinct()`; `partidas = Match.objects.filter(id__in=ids)
-  .annotate(lado=_lado_de_prorroga("id"))`; filas en el orden de
-  `PRORROGA_LADOS`, o solo `(filters["side"],)` si viene y es un lado (la
-  misma linea que `by_overtime_side`). Cada fila: `side`, `matches`,
-  `decided` (`won` no nulo), `wins`, `winrate` (`_pct(wins, decided)`, `None`
-  sin decididas). Con `?side=Attack` los `ids` ya son solo partidas con alguna
-  ronda de prorroga en ataque, y toda partida cuya primera ronda de prorroga
-  fue en ataque esta ahi: la fila no pierde partidas.
-- Si cuando se implemente la 79 ya esta en dev, `Match.objects.filter(id__in=ids)`
-  es igual de valido (asi quedo `by_start_side` en esa rama: los `ids` ya
-  salen de `base_queryset`, que excluye); no hace falta `partidas_contables`.
-
-**API** (`backend/replays/views.py`, vista `trends`): clave nueva
-`"by_overtime_start_side": agg.by_overtime_start_side(**filters)`, debajo de
-`by_overtime_side`. Sin ruta nueva.
-
-**Frontend:**
-
-- `frontend/src/prorrogaPorLado.js`: `filasProrrogaPorLado(rows, partidas)`
-  (segundo argumento opcional; los llamados viejos siguen andando). Por cada
-  fila de ronda busca la de `partidas` con el mismo `side` y agrega
-  `matches` (0 si no hay) y `match_winrate` (`winrate` de la fila de
-  partidas, `null` si no hay). La regla de "todo en cero es `[]`" sigue
-  mirando solo `rounds`. Constante `PARTIDAS_CORTE = 10` (la de "Margen
-  final") y `conPocasPartidas(filas)`: `true` si alguna fila tiene
-  `0 < matches < PARTIDAS_CORTE`.
-- `frontend/src/pages/Trends.jsx`: `filasProrrogaPorLado(data.by_overtime_side,
-  data.by_overtime_start_side)`. La tabla "Prórroga por lado" pasa a usar
-  `COLUMNAS_PRORROGA_POR_LADO = [...COLUMNAS_POR_TRAMO, { key: 'matches',
-  label: 'Partidas', sortable: false, help: 'Partidas que llegaron a prórroga y la arrancaste de este lado (el de tu primera ronda de prórroga).' },
-  { key: 'match_winrate', label: 'Partidas ganadas', digits: 0, suffix: '%', sortable: false, help: 'Sobre las que tienen resultado; las incompletas cuentan en Partidas pero no acá.' }]`
-  (no tocar `COLUMNAS_POR_TRAMO`: la usan las otras tablas). `null` ya sale
-  `—` (`components/ui.jsx`). Debajo del aviso de rondas que ya existe, otro
-  `<p className="note">` si `conPocasPartidas(prorrogaPorLado)`: "Ojo: algún
-  lado tiene menos de {PARTIDAS_CORTE} partidas a prórroga; el porcentaje de
-  partidas puede ser varianza." El CSV (`csvName="prorroga-por-lado"`) lleva
-  las columnas nuevas solo por estar en `columns`.
-
-**Tests** (Django para el numero, vitest para la union de filas, e2e solo de
-humo: `seed_demo` no tiene prorroga):
-
-- `backend/tests/test_prorroga_por_lado.py`, clase nueva
-  `PartidasAProrrogaPorLadoTests`:
-  `test_cuenta_partidas_y_ganadas_por_el_lado_de_la_primera_ronda_de_prorroga`
-  (el caso del criterio: defensa 2 partidas 50 %, ataque 1 partida 100 %),
-  `test_el_lado_es_el_de_la_primera_ronda_de_prorroga_y_no_el_de_la_mayoria`
-  (prorroga D, A, A -> cuenta en defensa),
-  `test_una_partida_sin_prorroga_no_entra`,
-  `test_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje`,
-  `test_con_filtro_de_lado_sale_solo_esa_fila`,
-  `test_el_filtro_de_mapa_aplica`,
-  `test_sin_prorrogas_las_dos_filas_en_cero_y_winrate_nulo`, y
-  `test_trends_devuelve_partidas_a_prorroga_por_lado` (clave en `/api/trends/`).
-  Las partidas con prorroga se arman con `make_round(..., )` y
-  `overtime_number` como ya hace la clase de la 115 en ese archivo.
-- `frontend/src/prorrogaPorLado.test.js`: `une las partidas por lado`,
-  `un lado sin partidas queda en 0 y sin porcentaje`, `sin el segundo
-  argumento las filas no cambian` (los tests viejos siguen igual),
-  `conPocasPartidas avisa entre 1 y 9 partidas y no con 0 ni con 10`.
-- `frontend/e2e/humo.spec.js`, junto a la linea de `by_overtime_side`:
-  `expect(datos.by_overtime_start_side.map((f) => [f.side, f.matches])).toEqual([['Attack', 0], ['Defense', 0]])`.
-
-**`docs/metricas.md`**, tabla "Mitades y prorroga", fila nueva debajo de
-"Prorroga": **Partidas a prórroga por lado** = partidas con al menos una
-ronda de prorroga (`overtime_number > 0`) entre tus rondas filtradas,
-partidas por el lado de tu primera ronda de prorroga (menor
-`overtime_number`, despues menor `number`); Partidas ganadas = ganadas sobre
-las que tienen resultado (`won` no nulo), las incompletas cuentan en
-Partidas y no en el porcentaje; se lee de la partida entera (el filtro de lado
-elige la fila, no cambia el lado de arranque); lado vacio no entra en
-ninguna; aviso de varianza con menos de 10 partidas en un lado; no es el
-winrate de ronda de las columnas de la izquierda, que parten cada ronda por
-su propio lado.
-
-**Orden:** agregado y tests Django -> clave en `trends` -> `prorrogaPorLado.js`
-y vitest -> `Trends.jsx` -> e2e -> `metricas.md` -> `npm run build`.
-
-**Que puede romperse:** la tabla mezcla dos unidades (ronda a la izquierda,
-partida a la derecha): las ayudas de columna lo dicen, y la fila de
-`metricas.md` tambien. `COLUMNAS_POR_TRAMO` es compartida: tocarla cambiaria
-cuatro tablas. Archivos compartidos con ramas abiertas: `aggregates.py` y
-`views.py` con la 133 y la 79, `humo.spec.js` con la 129, la 130 y la 133,
-`metricas.md` con la 129, la 133 y la 79; son funciones y filas distintas, sin
-migracion: no hace falta esperar a ninguna, el conflicto (si sale) es de
-lineas vecinas.
-
-**Verificacion manual:** `/tendencias` con una base con prorrogas: la tabla
-"Prórroga por lado" tiene las columnas Partidas y Partidas ganadas; con el
-filtro de lado en Defensa, una sola fila; con un mapa sin prorrogas, la nota
-"Sin rondas de prórroga con estos filtros." como hoy. Umbral de 10 partidas:
-el mismo de "Margen final", no requiere calibracion nueva.
-
-Skills: no aplica (sin dominio nuevo: tabla existente, agregado con forma ya
-usada).
-Skills del repo: statistical-analysis (denominador `decided`, `n` a la vista
-en Partidas, aviso con menos de 10 partidas como "Margen final"),
-testing-strategy (numero en Django, union de filas en vitest, e2e de humo por
-la API porque el seed no tiene prorroga); dataviz no aplica (tabla, sin
-grafico).
+Skills del repo: statistical-analysis, testing-strategy; dataviz no aplica.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261113T2252Z-cQac5RQ) Diseno completo, sobre `origin/dev@39e22c0`:
+(dev 20261113T2252Z-cQac5RQ) Diseno completo sobre `origin/dev@39e22c0`, sin desvios; tests vistos en rojo antes del codigo. Revision ciega: 2 LOW, arreglado uno con `test_con_un_filtro_que_solo_deja_rondas_normales_la_partida_no_entra`. verificar.sh: VERDE c7f2142b1.
 
-- `aggregates.py`: `_lado_de_prorroga` (Subquery, primera ronda con `overtime_number > 0` por `overtime_number`, `number`) y `by_overtime_start_side`, con la forma de `by_start_side` y el `?side=` de `by_overtime_side`. `views.py`: clave `by_overtime_start_side` en `/api/trends/`.
-- `prorrogaPorLado.js`: `filasProrrogaPorLado(rows, partidas)` agrega `matches` y `match_winrate` solo si viene el segundo argumento; `PARTIDAS_CORTE = 10` y `conPocasPartidas`.
-- `Trends.jsx`: `COLUMNAS_PRORROGA_POR_LADO` (Partidas, Partidas ganadas, con las ayudas del diseno; `COLUMNAS_POR_TRAMO` sin tocar) y la nota de varianza de partidas debajo de la de rondas.
-- e2e de humo: `by_overtime_start_side` en cero en el seed. `metricas.md`: fila "Partidas a prórroga por lado" debajo de "Prorroga".
-
-Tests vistos en rojo antes del codigo: Django `PartidasAProrrogaPorLadoTests` (8 errores, funcion inexistente) y vitest (3 fallas). Criterios -> tests: 1 `test_cuenta_partidas_y_ganadas_por_el_lado_de_la_primera_ronda_de_prorroga` y `test_el_lado_es_el_de_la_primera_ronda_de_prorroga_y_no_el_de_la_mayoria`; 2 `test_una_partida_sin_prorroga_no_entra`, `test_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje`; 3 `test_con_filtro_de_lado_sale_solo_esa_fila`, `test_el_filtro_de_mapa_aplica`; 4 vitest `une las partidas por lado`, `un lado sin partidas queda en 0 y sin porcentaje`, `conPocasPartidas avisa entre 1 y 9...` y e2e de humo (consola limpia); 5 la fila de `metricas.md`.
-
-Revision ciega (`omc-code-reviewer`, eje de estandares): aprobar, 2 LOW. Arreglado 1: test nuevo `test_con_un_filtro_que_solo_deja_rondas_normales_la_partida_no_entra` (sin el `.filter(round__overtime_number__gt=0)` de los `ids` el test cae; mutante visto y restaurado). No arreglado: el e2e no renderiza las columnas nuevas porque `seed_demo` no tiene prorroga (el diseno ya lo preveia: e2e solo de humo por la API; cambiar el seed cambia los numeros de otras pruebas).
-
-Desvios del diseno: ninguno, mas el test de arriba.
-
-Skills: no aplica.
-Skills del repo: statistical-analysis (denominador `decided`, n en Partidas, aviso con menos de 10), testing-strategy (numero en Django con mutante, union en vitest, e2e de humo por la API); modern-web-guidance no leida (sin CSS ni markup nuevo: columnas y una nota con los componentes existentes); ux-copy (ayudas y nota con tildes, como las vecinas).
-verificar.sh: VERDE c7f2142b1 (1293 backend, 425 vitest, 114 e2e).
-
+Skills del repo: statistical-analysis, testing-strategy, ux-copy.
 OMC: plan=— · revisión=2 hallazgos LOW (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 45551f5
+
+(revisor 20261113T2318Z-cpCpgff) Dos ejes, sin seguridad. Estandares: 0 hallazgos. Intencion: MEDIUM confirmado, el e2e no dibuja las columnas porque `seed_demo` no tiene prorrogas (no bloquea; lo cubrio la QA a mano); 2 LOW sin cambio (rotulo "Partidas ganadas", corte 10 duplicado de `margen.js`). verificar.sh: VERDE d0f606a86. Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=3 hallazgos (0 arreglados; 0 CRITICAL/HIGH) · verificación=—
+Skills del repo: ninguna
 
 ## QA 2026-11-13 sobre 6920b8e
 
@@ -217,41 +133,3 @@ OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5 criterios 
 ## Para el humano
 
 (nada)
-
-## Revision 2026-11-13 sobre 45551f5
-
-Revision a ciegas en dos ejes (receta 2 de OMC): estandares (`omc-code-reviewer`
-con `revision.md`) e intencion (diff de 219 lineas, contra Que gana, Criterios y
-Fuera de alcance). Sin eje de seguridad: no toca POST, `.rec`, rutas ni
-dependencias.
-
-- Estandares: 0 hallazgos. `by_overtime_start_side` sigue la forma de
-  `by_start_side` (mismas claves, `_pct` sobre decididas); el lado sale de la
-  partida entera, asi `?side=` elige fila sin mudar partidas de lado.
-- [intencion] [MEDIUM] `frontend/e2e/humo.spec.js:85-98` — confirmado.
-  Que pasa: `seed_demo` no tiene prorrogas, asi que `filasProrrogaPorLado`
-  devuelve `[]` (`prorrogaPorLado.js:16`) y las columnas nuevas nunca se
-  dibujan en Chromium; el e2e pasa por la pagina y por la nota, no por la tabla.
-  Es el mismo limite que dejo la 115. Arreglo sugerido (no bloquea): un
-  `page.route` sobre `/api/trends/` con filas de prorroga, o prorrogas en
-  `seed_demo` en una ficha propia (cambia numeros de otros e2e). QA: mirar la
-  tabla con datos que tengan prorroga.
-- [intencion] [LOW] `Trends.jsx:121-128`: la columna dice "Partidas ganadas"
-  y el criterio "% ganadas"; UI y `metricas.md` coinciden entre si. Sin cambio.
-- [intencion] [LOW] `prorrogaPorLado.js:11`: `PARTIDAS_CORTE = 10` duplica
-  `MUESTRA_PARTIDAS` de `margen.js:7`; un lado sin partidas muestra `0` en
-  Partidas y `—` en el porcentaje. Lectura razonable del criterio. Sin cambio.
-
-Criterios: agregado y caso 2/1 (`test_prorroga_por_lado.py:100`), sin prorroga
-no entra (`:117`), `won` nulo (`:133`), filtros y `?side=` (`:124`, `:142`,
-`:150`), columnas sin tarjeta nueva (`prorrogaPorLado.test.js:35-56`), aviso de
-muestra (`:58-65`), fila en `metricas.md:83`. Diff dentro de `archivos:`.
-Identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
-
-Verificacion: verificar.sh VERDE d0f606a86 (1293 tests backend, 425 vitest,
-114 e2e), rama al dia con dev.
-
-Veredicto: aprobar -> `revisado`.
-
-OMC: plan=— · revisión=3 hallazgos (0 arreglados; 0 CRITICAL/HIGH) · verificación=—
-Skills del repo: ninguna
