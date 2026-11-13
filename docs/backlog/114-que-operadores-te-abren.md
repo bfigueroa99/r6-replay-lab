@@ -1,7 +1,7 @@
 # 114. Qué operadores te abren
 
-estado: implementado
-candado: revisor 2026-11-13T17:10Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/114-que-operadores-te-abren
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D7
 archivos: backend/replays/analytics/aggregates.py (openings_by_operator), backend/replays/views.py (duels), backend/tests/test_duels.py, frontend/src/operadoresQueTeAbren.js (nuevo), frontend/src/operadoresQueTeAbren.test.js (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261113T1203Z-cWfR3tT, dev 20261113T1643Z-c4P1LiD
+turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261113T1203Z-cWfR3tT, dev 20261113T1643Z-c4P1LiD, revisor 20261113T1703Z-ctZvzXQ
 
 ## PR
 
@@ -231,7 +231,48 @@ Skills: no aplica.
 Skills del repo: modern-web-guidance (leida; ninguna guia aplica: `Panel` y `DataTable` existentes, sin CSS ni componente nuevo), ux-copy (hint, vacio y `help` con la estructura que que es + por que; tuteo como el resto de Duelos).
 OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre f0be4ed
+
+(revisor 20261113T1703Z-ctZvzXQ) Punto de partida: la rama ya contiene
+`origin/dev` (0293ade); `verificar.sh`: VERDE f0be4ed66 (1210 backend, 354
+vitest, 99 e2e).
+
+**Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
+`revision.md`, solo el diff): sin hallazgos. Confirmado leyendo el codigo:
+reusa `_duelos`, `_solo_rivales` y `_PRIMER_EVENTO` como `nemesis`; un
+`Death` sin autor que abre la ronda queda como primer evento y no matchea
+ningun `Kill`; `share` con denominador 0 da `None` (`_pct`).
+
+**Eje de intencion** (`omc-code-reviewer`, diff contra Que gana, Criterios y
+Fuera de alcance; diff de ~340 lineas): aprobar, 4 LOW.
+- L1 (denominador "contra rivales" y no todas las `opening_death`): es lo que
+  dice el diseno y `metricas.md`; no es hallazgo.
+- L2 (la muestra reusa `min_duels`): decision del diseno, documentada en el
+  hint y en `metricas.md`; no es hallazgo.
+- L3 (ningun test fija que un teamkill de apertura no infla el `share`):
+  **confirmado y cubierto** con el test nuevo
+  `test_un_teamkill_de_apertura_no_pesa_en_el_share` (Ash te abre una ronda,
+  un compañero te mata abriendo otra del mismo lado -> solo la fila Ash,
+  `share=100.0`). Verde; mutacion: sumar 1 al denominador por lado lo hace
+  caer (`AssertionError: 50.0 != 100.0`).
+- L4 (`openings` y `winrate` de mas): definidos en `metricas.md`; no es
+  hallazgo.
+- Pregunta abierta del revisor (filtro `side` sobre `RoundPlayer.side` y
+  agrupado por `Round.my_side`): mismo patron que el resto de Duelos; tus dos
+  lados coinciden por construccion al importar. Sin hallazgo.
+
+**Ficha.** Criterio 1: `test_ash_te_abre_en_dos_y_tu_le_abres_en_una` y el
+de la API. Criterio 2: tests de teamkill, muerte sin autor y operador vacio
+o desconocido, mas el nuevo. Criterio 3: tests de lado, filtro de lado, de
+mapa, muestra y orden. Criterio 4: e2e `Duelos muestra los operadores que te
+abren` y `empty` en `Duelos.jsx`. Criterio 5: fila en `metricas.md` (seccion
+Duelos). El diff no sale de `archivos:`; identificadores y comentarios sin
+tildes, UI con tildes; sin `print` ni `console.log`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=4 hallazgos LOW (1 cubierto con test; 3 no son hallazgo) · verificación=—
 
 ## QA
 

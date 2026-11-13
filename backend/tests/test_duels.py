@@ -445,6 +445,18 @@ class OperadoresQueTeAbrenTests(TestCase):
 
         self.assertEqual(agg.openings_by_operator(min_openings=1), [])
 
+    def test_un_teamkill_de_apertura_no_pesa_en_el_share(self):
+        # El % es sobre tus muertes de apertura contra rivales: un teamkill que
+        # abre otra ronda del mismo lado no lo baja de 100
+        make_event(self._ronda(0), 0, "rival", ME)
+        rnd = self._ronda(1)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, side="Attack", operator="Thermite")
+        make_event(rnd, 0, "amigo", ME)
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertEqual(list(filas), [("Ash", "Attack")])
+        self.assertEqual(filas[("Ash", "Attack")]["share"], 100.0)
+
     def test_operador_vacio_o_desconocido_no_tiene_fila_pero_pesa_en_el_share(self):
         make_event(self._ronda(0, "Ash"), 0, "rival", ME)
         make_event(self._ronda(1, ""), 0, "rival", ME)
