@@ -42,7 +42,8 @@ Solo frontend: sin migracion, `recompute`, parser ni POST. El salto, como las pe
 ### Como probarlo en 2 minutos
 
 ```powershell
-cd backend; python manage.py seed_demo; python manage.py runserver
+cd backend; $env:SQLITE_PATH="$env:TEMP\r6-demo.sqlite3"   # base aparte: seed_demo pisa la base
+python manage.py migrate; python manage.py seed_demo; python manage.py runserver
 ```
 Abrir una partida en `http://127.0.0.1:8000/partidas/<id>`, elegir R1 y apretar "Siguiente ronda perdida": la pestaña elegida pasa a la proxima roja; repetir hasta que vuelva al principio. Con `p` igual. El hint del panel dice "P para la siguiente perdida".
 
