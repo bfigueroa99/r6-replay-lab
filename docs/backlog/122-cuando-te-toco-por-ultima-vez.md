@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:34Z
 rama: -
 tipo: funcionalidad
 epica: rivales

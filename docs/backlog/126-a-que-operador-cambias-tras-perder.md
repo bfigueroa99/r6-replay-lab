@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T18:34Z
 rama: -
 tipo: funcionalidad
 epica: operadores
