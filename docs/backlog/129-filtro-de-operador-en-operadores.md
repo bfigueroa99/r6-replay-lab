@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T19:31Z
 rama: -
 tipo: funcionalidad
 epica: operadores
