@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 19:33 UTC por qa, release, dev y po (sesion 20261113T1858Z-cxQ3TuB; motivo: por estado: 1 revisado; sigue: 3 disenado, lugar en cola; sigue: papel corto)
+actualizado: 2026-11-13 19:36 UTC por qa, arquitecto, release y po (sesion 20261113T1926Z-ce4Pmp6; motivo: por estado: 2 revisado (las dos tomadas por otras corridas: revisa la 123 como fallback); sigue: 5 propuesto, 2 disenado de 3; sigue: 1 aprobado (ya con candado de otra corrida); sigue: papel corto)
 playbook: origin/dev@84c575b
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 14 de 41 en 7 dias; sin herramientas para comparar (la tanda simultanea prohibe tocar Routines)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 29 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -10,29 +10,29 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/122-cuando-te-toco-por-ultima-vez | docs/backlog/122-cuando-te-toco-por-ultima-vez.md | revisado (QA de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/122-cuando-te-toco-por-ultima-vez?expand=1) |
-| claude/equipo-dev/126-a-que-operador-cambias-tras-perder | docs/backlog/126-a-que-operador-cambias-tras-perder.md | revisado (QA de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/126-a-que-operador-cambias-tras-perder?expand=1) |
-| claude/equipo-dev/123-clutches-de-tus-companeros | docs/backlog/123-clutches-de-tus-companeros.md | implementado (revisor de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/123-clutches-de-tus-companeros?expand=1) |
+| claude/equipo-dev/122-cuando-te-toco-por-ultima-vez | docs/backlog/122-cuando-te-toco-por-ultima-vez.md | entregado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/122-cuando-te-toco-por-ultima-vez?expand=1) |
+| claude/equipo-dev/123-clutches-de-tus-companeros | docs/backlog/123-clutches-de-tus-companeros.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/123-clutches-de-tus-companeros?expand=1) |
+| claude/equipo-dev/126-a-que-operador-cambias-tras-perder | docs/backlog/126-a-que-operador-cambias-tras-perder.md | entregado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/126-a-que-operador-cambias-tras-perder?expand=1) |
+| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=5 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=2 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=100 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=6 disenado=2 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=2 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=100 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
 
 ## Orden de merge sugerido
 
-La 120 entro a dev (PR #122, 84c575b). Ningun par de la cola choca conocido; cada Release vuelve a traer dev antes de mergear.
+`git merge-tree` de las cuatro ramas contra `origin/dev`: ninguna en conflicto. 122 y 126 estan `entregado` por las corridas que las probaron; cada Release vuelve a traer dev antes de mergear.
 
-1. `claude/equipo-dev/122-cuando-te-toco-por-ultima-vez` (revisado): QA, toca `aggregates.py` (`_record`), `Duelos.jsx`.
-2. `claude/equipo-dev/126-a-que-operador-cambias-tras-perder` (revisado): QA, toca `aggregates.py` (`operator_after_result`), `Operators.jsx`.
-3. `claude/equipo-dev/123-clutches-de-tus-companeros` (implementado): revision, toca `aggregates.py` (`teammate_clutches`), `Teammates.jsx`, `views.teammates`.
+1. `claude/equipo-dev/122-cuando-te-toco-por-ultima-vez` (entregado): `aggregates.py` (`_record`), `Duelos.jsx`.
+2. `claude/equipo-dev/126-a-que-operador-cambias-tras-perder` (entregado): `aggregates.py` (`operator_after_result`), `Operators.jsx`. Libera la 129.
+3. `claude/equipo-dev/123-clutches-de-tus-companeros` (revisado, falta QA de otro contexto): `aggregates.py` (`teammate_clutches`), `Teammates.jsx`, `views.teammates`.
 4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:15 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 120-puesto-en-el-lobby 121-copiar-una-ronda-como-texto) otros:4 (fichas que llegaron a dev en 7 dias)
 - Epicas en curso: operadores: 113 en dev, 126 revisado, 129 propuesto. rivales: 114 en dev, 122 revisado. progreso: 110, 119 y 120 en dev. escuadra: 123 implementado, 131 propuesto, 109 disenado (frenada). datos: 79 entregado (PR #81), 83 disenado (frenada), 124 disenado. revision-de-rondas: 125 disenado. lado-y-marcador: 115 en dev, 127 propuesto. posicionamiento: 107 en dev, 128 propuesto.
-- Papel: PAPEL_TIPOS=funcionalidad:9 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
-- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: C17 clutches de un compañero en su perfil, E21 puesto en el lobby en el detalle de partida (antes, otra corrida: S9 y F25).
+- Papel: PAPEL_TIPOS=funcionalidad:11 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
+- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: D19 stacks rivales que vuelven la misma noche, O16 operador elegido resaltado en Duelos y Compañeros, T6 (tests) `seed_demo` con clutches de compañeros.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): pagina Trends.jsx | sin entrega: ninguna
 - Ciclo: CICLO=0h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 120:0 121:0 119:0 118:0 116:0 114:0 111:0 113:20 115:4 110:7)
@@ -41,19 +41,21 @@ La 120 entro a dev (PR #122, 84c575b). Ningun par de la cola choca conocido; cad
 
 | ficha | estado | tipo | epica | prioridad | area | candado |
 |---|---|---|---|---|---|---|
-| 109 quien te venga | disenado (frenada: espera a la 79) | funcionalidad | escuadra | 3 | fullstack | - |
-| 83 partidas excluidas en partidas y datos | disenado (frenada: espera a la 79) | funcionalidad | datos | 3 | fullstack | - |
-| 124 partidas por version del juego en Datos | disenado | funcionalidad | datos | 3 | backend | - |
-| 125 teamkill marcado en la timeline | disenado | funcionalidad | revision-de-rondas | 3 | frontend | - |
-| 127 partidas que van a prorroga | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
-| 128 repetir o cambiar el spawn tras perder | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
-| 129 filtro de operador en Operadores | propuesto | funcionalidad | operadores | 3 | frontend | - |
-| 130 saltar a la siguiente ronda perdida | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
-| 131 rondas que el equipo gano sin ti | propuesto | funcionalidad | escuadra | 3 | fullstack | - |
+| 109 Quien te venga | disenado (frenada: espera a la 79) | funcionalidad | escuadra | 3 | fullstack | - |
+| 124 Partidas por version del juego en Datos | disenado | funcionalidad | datos | 3 | backend | - |
+| 125 Teamkill marcado en la timeline de la ronda | disenado | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 127 Partidas que van a prorroga: cuantas ganas | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 128 Repetir o cambiar el spawn tras perder | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
+| 129 Filtro de operador en la pagina Operadores | disenado (frenada: espera a la 126) | funcionalidad | operadores | 3 | frontend | - |
+| 130 Saltar a la siguiente ronda perdida | propuesto | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 131 Rondas que el equipo gano sin ti | propuesto | funcionalidad | escuadra | 3 | fullstack | - |
+| 132 Rivales que se repiten en la misma noche | propuesto | funcionalidad | rivales | 3 | fullstack | - |
+| 133 Ventaja numerica tirada | propuesto | funcionalidad | revision-de-rondas | 3 | fullstack | - |
+| 83 Partidas excluidas a la vista en Partidas y en Datos | disenado (frenada: espera a la 79) | funcionalidad | datos | 3 | fullstack | - |
 
-FRENADAS=2 (la 109 espera a la 79; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
+FRENADAS=3 (la 109 espera a la 79; la 129 espera a la 126; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
 
-Espejos: 120 quitado (en dev); 122, 123 y 126 viven en su rama, que manda (123 en curso con `rama:` en el espejo).
+Espejos: 122, 123 y 126 viven en su rama, que manda.
 
 ## Ultimo turno de cada rol
 
@@ -61,11 +63,11 @@ Espejos: 120 quitado (en dev); 122, 123 y 126 viven en su rama, que manda (123 e
 |---|---|---|
 | release | 2026-11-13 19:08 | (release 20261113T1858Z-cxQ3TuB, sigue de QA) 120: comentarios sin ñ (L1 de la revision), ficha recortada, VERDE 853419d56 (1253, 395, 106), [PR #122](https://github.com/bfigueroa99/r6-replay-lab/pull/122) abierto y **mergeado** en dev (84c575b). Borrar la rama: el proxy lo corta (queda en BORRAR). Sin pasos 8 y 9. |
 | qa | 2026-11-13 19:05 | (qa 20261113T1858Z-cxQ3TuB, por estado: 1 revisado) 120 `revisado` -> `aprobado`: dev fusionado (la 121), VERDE aec18f7fe (1253, 395, 106); base vacia y sembrada con 6 partidas, valores recalculados a mano iguales a la API; bordes en 200; chunk inicial 0 %; contraste >= 5.21; mutacion 3/3; omc-verifier PASS. |
-| revisor | 2026-11-13 19:10 | (revisor 20261113T1858Z-cxdASk3, como fallback de QA) Revisa 122 y 126 a `revisado`; ver fila qa. |
+| revisor | 2026-11-13 19:36 | (revisor 20261113T1926Z-ce4Pmp6, fallback de QA: las dos `revisado` las tomaron otras corridas) Revisa 123 a `revisado`: VERDE b871565e2 (1266, 398, 108); dos ejes ciegos (`omc-code-reviewer` estandares e intencion) aprueban; 3 LOW confirmados sin cambio pedido (e2e de seed_demo solo ve la nota vacia, 5 a mano como las tablas vecinas, consulta de habituales copiada de `by_stack`). |
 | dev | 2026-11-13 19:30 | (dev 20261113T1858Z-cxQ3TuB, sigue) Implementa 123 (`disenado` -> `implementado`): `teammate_clutches` (2 consultas), tabla en Compañeros con tu fila primero (dice "Tú", no "Vos": la UI habla de tú), 13 tests Django y 3 vitest vistos en rojo, 2 e2e. Ciega: 5 hallazgos (1 MEDIUM, 4 LOW), los 5 arreglados. VERDE 6438bcd22 (1266, 398, 108). |
-| arquitecto | 2026-11-13 19:01 | (arquitecto 20261113T1830Z-cTivbSq, sigue) Disena 125 (`esTeamkill` en `aperturas.js`, chip TK en la timeline y en Copiar ronda), 123 (`teammate_clutches`: habituales con `clutch_vs`, fila Vos, aviso 5 intentos) y 124 (`partidas_por_version` en `unknowns.py`, clave `versions` de `/api/import/status/`, tabla en Datos). Ninguna frenada. |
+| arquitecto | 2026-11-13 19:36 | (arquitecto 20261113T1926Z-ce4Pmp6, sigue) Disena 129 (filtro de operador en Operadores: `/operators/` sin `operator`, fila resaltada con `tr.me` y `aria-current`, selector tambien en la vista sin rondas). Frenada: implementar despues de la 126. |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-13 19:33 | (po 20261113T1858Z-cxQ3TuB, sigue) Propone 130 (saltar a la siguiente ronda perdida, F24) y 131 (rondas que el equipo gano sin ti, C13). Ideas nuevas C17 y E21. Reconcilia: 123 en curso en el espejo. |
+| po | 2026-11-13 19:36 | (po 20261113T1926Z-ce4Pmp6, sigue) Propone 132 (rivales que se repiten en la misma noche, D13) y 133 (ventaja numerica tirada, F5). Ideas nuevas D19, O16 y T6 (tests). |
 
 
 ## Para el humano
@@ -89,7 +91,7 @@ Espejos: 120 quitado (en dev); 122, 123 y 126 viven en su rama, que manda (123 e
 - PRs que esperan merge contra dev: tuyo, [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) (ficha 79, toca `CLAUDE.md`; libera la 83 y la 109). La 113 (PR #111), la 115 (PR #115), la 111 (PR #116), la 114 (PR #117), la 116 (PR #118) la 118 (PR #119) y la 119 (PR #120) y la 121 (PR #121) y la 120 (PR #122) ya estan en dev. Avisos que no frenan: 111: "Copiar señales" nombra el mapa por slug y la sesion por indice (idea H13); 116: el estado al morir se calcula al consultar y no al importar (decision del Diseno para no esperar la migracion de la 79; si preferis columnas, decilo en la ficha).
 - Verificar en el PC (34, 38, 47, 55; ya en main desde el PR #62): `manage.py backup`, `migrate`, `recompute --dry-run` (sin cambios de `clutch_vs`), `recompute`; para 38, `import_replays --force <carpeta>`; para 47, `unknown_ids` y `retag --dry-run`. Detalle en cada ficha.
 - Verificar en el PC (Investigador, r6-dissect #130 e idea P5): replays Y11S3 con los dos equipos ganadores en una ronda (`my_team_won` podria salir al reves) y Y11S2 con jugadores duplicados o bajas de gente que no esta. Si tenes esos `.rec`, importalos y avisa. Idea P7: con un replay posterior al parche Y11S3.3, mira en Partidas o Rivales si algun rival sale con nick generico. **Pregunta (P10, regla de `CLAUDE.md`):** el fork prestonwillis10 de r6-dissect (commits 63149de, 807d93f y d8a0d4d, 2026-10) lee el arma o gadget de cada baja, el loadout por ronda y el dano recibido (Y10S4+), verificado por su autor en Y8 a Y11S3 y sin nombres para los IDs. `CLAUDE.md` dice que armas y dano no estan en el formato. ¿Queres que el equipo lo trate como dato nuevo (idea en `datos-nuevos-del-parser`, verificar con tus `.rec`) o sigue fuera? Hasta que respondas queda en "Ideas descartadas" de `ALCANCE.md`.
-- Calibrar con la base real (umbrales solo probados con datos sinteticos): 126, 5 rondas por par en Operadores > A qué operador cambias tras perder (`OPERADOR_CAMBIO_MIN_RONDAS`); 123 (implementado), 5 intentos por compañero (`CLUTCH_COMPANERO_MIN`); minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`); 5 rondas por par en "A qué operador cambias tras perder" (126, disenado, `OPERADOR_CAMBIO_MIN_RONDAS`).
+- Calibrar con la base real (umbrales solo probados con datos sinteticos): 126, 5 rondas por par en Operadores > A qué operador cambias tras perder (`OPERADOR_CAMBIO_MIN_RONDAS`); 123 (revisado), 5 intentos por compañero (`CLUTCH_COMPANERO_MIN`); minimo 3 partidas por lado en Tendencias > Lado inicial por mapa (98, `MIN_PARTIDAS_LADO_INICIAL`; si casi todo sale "Poca muestra", bajarlo); minimo 10 rondas del operador y 10 del resto en Operadores > Por sitio (93, `OPERADOR_SITIO_MIN_RONDAS`; si la tabla queda vacia, bajarlo); corte de 15 s de "Salida del spawn" (89, `SALIDA_SPAWN_SEGUNDOS`: si el % del ataque entero queda ~0 %, subir a 20 s); 30 rondas de Tendencias (39), 10 rondas por fila de Progreso (56, bajar `COMPARE_MIN_ROUNDS_FILA` a 8 si casi nada sale), records 6/20 (44), tramos de 45 s (52), 5 partidas para "habitual" (54), `CLUTCH_SITIO_MIN` (59) y `CLUTCH_OPERADOR_MIN` (61), 5 cada uno; cortes 30/90 s de "Cuándo llega la apertura" (63); 3 partidas por mapa para mejor y peor mapa del Inicio (64, `MIN_PARTIDAS_MAPA`, quiza 5); margen de 2 errores estandar y 5/8 rondas por zona de "fuera de posicion" (80, `POSICION_BANDAS`); 5 rondas por par en "A qué operador cambias tras perder" (126, disenado, `OPERADOR_CAMBIO_MIN_RONDAS`).
 - Verificar en el PC (106, en dev por PR #107; el arreglo de seguridad de la SPA, todavia no en main): `curl -s -o NUL -w "%{http_code}" http://127.0.0.1:8000/%5C%5C127.0.0.1%5Cc$%5Cnada` da 200 al instante y la app carga sus `assets/`; en la suite de Windows, `test_un_bucle_de_symlinks_devuelve_el_index` sale `skipped` sin modo de desarrollador. Hasta promover dev a main, el `.exe` publicado sigue con el agujero UNC: no dejes ese servidor levantado al navegar.
 - CI remota: GitHub Actions no ejecuta pasos desde 2026-09-11. Lo que vale es `check.sh` local. (Aviso unico.) Entorno cloud: `check.sh` elige solo el Chromium de la imagen (`E2E_CHROMIUM`); `npx playwright test` suelto sin esa variable falla con `Executable doesn't exist`.
 
