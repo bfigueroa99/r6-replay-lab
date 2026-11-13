@@ -234,6 +234,8 @@ vacia; si la semilla da intentos, tabla con los numeros de la API) y `la tabla
 de clutches de compañeros pone tu fila primero` (respuesta interceptada: orden,
 enlaces, `*`, consola limpia). Fila en `metricas.md`.
 
+verificar.sh: VERDE 6438bcd22 (1266 backend, 398 vitest, 108 e2e).
+
 Skills: no aplica.
 Skills del repo: statistical-analysis (conversion con su `n`, dos cortes sin ocultar, tu fila con el mismo denominador), testing-strategy (Django, vitest y e2e como dice el diseno, mas el e2e interceptado), ux-copy (tú como el resto de la UI, nota y hint del diseno con tildes), sql-queries (patron vecino de `teammate_synergy` y `by_stack`; `assertNumQueries(2)`), modern-web-guidance no leida (tabla con `DataTable`, `Bar` y markup de `*` ya existentes, sin CSS nuevo).
 OMC: plan=— · revisión=5 hallazgos (1 MEDIUM, 4 LOW; 5 arreglados) · verificación=—
