@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
-estado: en curso 2026-11-13T17:52Z
-candado: dev 2026-11-13T17:52Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion
 tipo: funcionalidad
 epica: progreso
@@ -22,20 +22,20 @@ sesion esconden.
 
 ## Criterios de aceptacion
 
-- [ ] `sessions()` (`aggregates.py`) suma a cada sesion `best_match` y
+- [x] `sessions()` (`aggregates.py`) suma a cada sesion `best_match` y
       `worst_match` (`id`, `map`, marcador, `rating`), por el rating de
       la partida calculado como `trend_by_match` (`totals()` por partida);
       test con una sesion de 3 partidas de rating conocido.
-- [ ] Una sesion de una sola partida trae `best_match` y `worst_match`
+- [x] Una sesion de una sola partida trae `best_match` y `worst_match`
       `null` (no hay reparto que mostrar); test. Empate de rating: gana la
       partida mas vieja, determinista; test.
-- [ ] Los filtros que ya aplican a `sessions()` aplican igual (la partida
+- [x] Los filtros que ya aplican a `sessions()` aplican igual (la partida
       mejor y peor sale de las rondas filtradas); test con filtro de mapa.
-- [ ] En Tendencias, la tabla de sesiones muestra "Mejor" y "Peor" con mapa,
+- [x] En Tendencias, la tabla de sesiones muestra "Mejor" y "Peor" con mapa,
       marcador y rating, cada una enlazada a `/partidas/<id>`; con una sola
       partida, `—`. e2e sobre `seed_demo` con el numero de una fila y la
       consola limpia.
-- [ ] Fila nueva en `docs/metricas.md` ("Mejor y peor partida de la
+- [x] Fila nueva en `docs/metricas.md` ("Mejor y peor partida de la
       sesion").
 
 ## Fuera de alcance
@@ -130,6 +130,45 @@ muestra `—`; "Descargar CSV" trae el texto, no `[object Object]`.
 Skills: no aplica (frontend chico, sin dominio nuevo).
 Skills del repo: dataviz (no aplica: no hay grafico), statistical-analysis (no aplica: la metrica ya esta definida en `metricas.md`), testing-strategy (vitest para el helper, e2e para que la pantalla renderice las columnas).
 OMC: plan=— · revisión=— · verificación=—
+
+## Implementacion
+
+(dev 20261113T1732Z-cdpsq83) Diseno completo, solo frontend (el backend ya
+traia `best_match`/`worst_match` desde la ficha 99):
+
+- `resumenSesion.js`: `celdaPartidaDeSesion(partida)` -> `null` sin partida;
+  si no, `{ id, texto: "<map> · <score> · <rating 2 decimales>" }` (rating
+  nulo `—`). `lineaPartida` y el texto copiado no cambian.
+- `Trends.jsx`, tabla Sesiones: columnas "Mejor" y "Peor" despues de
+  "Rating" (`columnaPartidaDeSesion`), `sortable: false`, `help` del
+  diseno, `<Link to="/partidas/<id>">` con valor y `—` sin el; `csv` con el
+  texto (sin el, el CSV decia `[object Object]`).
+- `docs/metricas.md`: la fila "Mejor / peor partida de la sesion" dice que
+  se ve en esas columnas y en "Copiar". Ningun numero nuevo.
+- e2e nuevo `Tendencias tiene las columnas Mejor y Peor, con guion en una
+  sesion de una partida` (en `seed_demo` toda sesion es de una partida,
+  como dice el diseno): cabeceras contiguas en `thead`, `—` en las dos y
+  sin enlace. Dos rojos del propio test antes del verde: `evaluateAll` leia
+  la pagina en "Cargando..." (ahora espera la primera fila) y las `th` de
+  `DataTable` no tienen rol `columnheader` (ahora `thead th`).
+
+Tests vistos en rojo antes del codigo: vitest `celdaPartidaDeSesion da
+texto e id de la partida`, `... sin partida da null`, `... con rating nulo
+muestra guion` (los 3 caian con `celdaPartidaDeSesion is not a function`);
+los de `textoResumenSesion` siguen igual. Criterios -> tests: 1, 2 y 3 ya
+cubiertos en `backend/tests/test_sessions.py` (ficha 99); 4: vitest + e2e;
+5: fila en `metricas.md`. Chunk inicial: `index-*.js` 199.99 kB (Trends es
+lazy).
+
+verificar.sh: VERDE 2acad9bed (1230 backend, 373 vitest, 102 e2e).
+
+Revision ciega (`omc-code-reviewer`, estandares): aprobar, 2 LOW, los 2
+arreglados (la funcion nueva habia separado el JSDoc de `TablaDePartidas`;
+el nombre del e2e prometia una partida que el seed no tiene).
+
+Skills: no aplica.
+Skills del repo: modern-web-guidance (no aplica: columnas de un `DataTable` existente, sin CSS ni componente nuevo), ux-copy (`help` del diseno, con tildes; `—` como el resto de las tablas).
+OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Para el humano
 
