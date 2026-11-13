@@ -1,15 +1,15 @@
 # 120. Puesto en el lobby
 
-estado: propuesto
-candado: arquitecto 2026-11-13T18:03Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: progreso
 area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E7
-archivos: -
-turnos: po 20261113T1603Z-cHj1H4k
+archivos: backend/replays/analytics/aggregates.py (lobby_rank), backend/replays/views.py (trends), backend/tests/test_puesto_en_el_lobby.py (nuevo), frontend/src/puestoLobby.js (nuevo), frontend/src/puestoLobby.test.js (nuevo), frontend/src/pages/Trends.jsx (panel Puesto en el lobby), frontend/e2e/humo.spec.js, docs/metricas.md
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1733Z-cudo1Sw
 
 ## PR
 
@@ -49,6 +49,127 @@ a los diez jugadores.
 - Puesto por score de la partida: el `.rec` ya no lo atribuye.
 
 ## Diseno
+
+Arquitecto 20261113T1733Z-cudo1Sw, sobre `origin/dev@7892cc3`. Una forma obvia
+(sin arena ni consenso): sin migracion, sin `recompute`, sin parser, sin ruta
+nueva. Filtros duros: pasa (los diez jugadores ya estan en `RoundPlayer` con
+las columnas del rating; sin red, sin dependencias).
+
+**Decision: se calcula al consultar, con `rating_points_expr` sobre las filas de
+todos**, como `trend_by_match` lo hace sobre las tuyas. Guardar el puesto al
+importar pediria migracion y lo dejaria detras de la 79. El rating de cada
+jugador en la partida es el promedio de sus puntos por ronda en las rondas
+filtradas; dividir por `rating_baseline()` no cambia el orden, asi que se
+ordena por los puntos y no se divide.
+
+### Archivos y por que
+
+1. `backend/replays/analytics/aggregates.py`: `lobby_rank(**filters) -> dict`,
+   despues de `trend_by_match` (es el mismo dato, partido por jugador).
+   - `mias = base_queryset(**filters)`: las rondas que dejan los filtros, de
+     partida y de ronda (los de ronda recortan las rondas de todos por igual).
+   - Lobby: `RoundPlayer.objects.filter(Exists(mias.filter(round_id=OuterRef("round_id"))))
+     .values("round__match_id", "player_id").annotate(points=Avg(rating_points_expr()), rounds=Count("id"))`.
+     Correlacionada, sin `round_id__in` (tope de SQLite), como `teammate_synergy`.
+   - Compañeros: la misma base con `is_me=False` y un `Exists` sobre
+     `mias.filter(round_id=OuterRef("round_id"), team_index=OuterRef("team_index"))`,
+     solo `values_list("round__match_id", "player_id").distinct()` a un set:
+     compañero = estuvo en tu equipo en alguna ronda filtrada de esa partida.
+   - Vos: `set(Player.objects.filter(is_me=True).values_list("id", flat=True))`.
+     Si en una partida hubiera dos jugadores `is_me`, se toma el de mas rondas
+     filtradas y el otro cuenta como uno mas del lobby (el import no lo produce
+     hoy; basta con que no rompa).
+   - Por partida con vos y al menos otro jugador: *mejor de la partida* si ningun
+     otro tiene `points` mayor que los tuyos (empate cuenta como mejor);
+     *ultimo de la partida* si ningun otro tiene `points` menor (empate cuenta;
+     con dos empatados sos mejor y ultimo a la vez). *Mejor de tu equipo* solo
+     en las partidas con al menos un compañero, si ninguno tiene `points`
+     mayor. Partida con solo vos: no entra en ninguno. Comparar con tolerancia
+     `1e-9` (promedios en float de SQLite: dos iguales no se desempatan por
+     redondeo).
+   - Salida: `{"best_in_lobby": caso, "best_in_team": caso, "last_in_lobby": caso}`
+     con `caso = {"count": c, "matches": n, "pct": _pct(c, n)}`; `matches` del
+     lobby es el mismo en sus dos casos (partidas con otro jugador), el del
+     equipo son las partidas con compañero.
+2. `backend/replays/views.py`: clave `"lobby_rank": agg.lobby_rank(**filters)`
+   al final del dict de `trends`. Sin ruta nueva: la guardia de la 79
+   (`test_toda_ruta_esta_clasificada`) no cambia, `trends` ya esta en sus
+   `COMPARADAS` y la exclusion le llega sola por `base_queryset`.
+3. `frontend/src/puestoLobby.js` (logica pura, vitest): `statsDePuesto(data)`
+   -> `[]` sin `data` o con `best_in_lobby.matches` 0; si no, tres filas en este
+   orden: `best_in_lobby` "Mejor de la partida", `best_in_team` "Mejor de tu
+   equipo", `last_in_lobby` "Último de la partida"; cada una `{key, label, pct,
+   sub}` con `sub` = `"<count> de <matches> partidas"`. `avisoPuesto(data)`:
+   `"Pocas partidas: con menos de 10 el porcentaje se mueve mucho por azar."`
+   si `best_in_lobby.matches < MUESTRA_PARTIDAS` (de `margen.js`), si no `null`.
+4. `frontend/src/pages/Trends.jsx`: `Panel` "Puesto en el lobby" justo despues
+   del panel "Por partida", hint "Tu rating en cada partida contra el de los
+   demás jugadores, y contra tus compañeros. Empatar con el mejor cuenta como
+   ser el mejor.", y una `div className="kpis"` con un `Stat` de `ui.jsx` por
+   fila (`value={pct(fila.pct)}`, `sub={fila.sub}`), sin `tone`: un puesto no
+   es bueno o malo sin el resto. Sin filas: `<p className="note">No hay
+   partidas con otros jugadores con estos filtros.</p>`. El aviso, como `note`
+   debajo.
+5. `frontend/e2e/humo.spec.js`: test `Tendencias muestra el puesto en el lobby`:
+   leer `/api/trends/`, `expect(lobby_rank.best_in_lobby.matches).toBeGreaterThan(0)`,
+   y en el panel los tres label y el `sub` de `best_in_lobby` armado con los
+   numeros de la API (no a mano). Consola limpia (`vigilarConsola`).
+6. `docs/metricas.md`: fila en `## Progreso` (texto abajo) y en
+   `## Muestra minima` ("Puesto en el lobby | 10 partidas: no se oculta, se avisa").
+
+### Tests (`backend/tests/test_puesto_en_el_lobby.py`, con `factories`)
+
+Partidas armadas (5 por `team_index` salvo donde se dice) con `kills`, `died`,
+`opening_*` elegidos para un orden de puntos conocido.
+- `test_mejor_de_la_partida_y_de_tu_equipo`: vos arriba de los nueve.
+- `test_mejor_de_tu_equipo_sin_ser_mejor_de_la_partida`: solo un rival te supera.
+- `test_ultimo_de_la_partida`: todos te superan.
+- `test_empatar_con_el_mejor_cuenta_como_mejor`.
+- `test_partida_con_menos_de_diez_entra_con_los_que_hay`: vos, un compañero y un rival.
+- `test_partida_solo_con_vos_no_cuenta`: `matches` 0 y `pct` None en los tres.
+- `test_sin_companeros_no_entra_en_mejor_de_tu_equipo`: vos y un rival.
+- `test_filtro_de_mapa_aplica`: dos partidas en mapas distintos.
+- `test_filtro_de_lado_recorta_las_rondas_de_todos`: en ataque ganas, en
+  defensa un rival te supera por mucho; `side=Attack` te deja mejor, sin filtro no.
+- `test_consultas_acotadas`: `assertNumQueries` fijo con dos partidas y el mismo con cinco.
+- `test_trends_trae_lobby_rank`: base vacia, la clave con los tres casos en 0.
+
+vitest `puestoLobby.test.js`: tres filas en orden con label y sub; `[]` sin
+datos y con `matches` 0; aviso con 9 partidas y sin aviso con 10.
+
+### Orden
+
+aggregates + tests -> clave en `trends` + test -> `puestoLobby.js` + vitest ->
+panel en Trends -> humo -> `metricas.md` -> `verificar.sh`.
+
+### Que puede romperse
+
+- Rendimiento: una consulta agrupada sobre las filas de todos en tus rondas
+  filtradas (10 por ronda), la escala de `teammate_synergy`.
+- Archivos de otras ramas: la 119 (`en curso`) toca `Trends.jsx` en la tabla
+  Sesiones y `humo.spec.js`; la 79 toca `aggregates.py` (`base_queryset`) y
+  `views.py` (ruta nueva). Zonas distintas: hunks separados, P3 si aparece
+  algo; no se frena (mismo criterio que la 116 y la 121). `metricas.md` lo
+  tocan todas, cada una con su fila.
+
+### Verificacion manual
+
+`seed_demo`, `runserver`, `curl -s localhost:8000/api/trends/` y mirar
+`lobby_rank`; abrir `/tendencias`, panel despues de "Por partida"; con
+`?map=<slug>` cambian los numeros; con un filtro sin partidas, la vista vacia
+de siempre.
+
+### Fila de `docs/metricas.md` (## Progreso)
+
+| **Puesto en el lobby** | Panel de Tendencias (`lobby_rank` en `/api/trends/`). En cada partida, el rating de cada jugador es el promedio de sus puntos por ronda (los de **Rating**) en las rondas que dejan los filtros; los de ronda (lado, operador, sitio) recortan las mismas rondas para todos. *Mejor de la partida*: ningun otro jugador tiene mas; *Último de la partida*: ninguno tiene menos; empatar cuenta (con dos empatados sos mejor y ultimo). *Mejor de tu equipo*: ningun compañero (estuvo en tu equipo en alguna de esas rondas) tiene mas. Porcentaje sobre las partidas con al menos otro jugador (con al menos un compañero, en el de equipo); una partida con solo tu fila no cuenta. Partidas con menos de 10 jugadores entran con los que hay. Muestra minima 10 partidas: no se oculta, se avisa. |
+
+Skills del repo: statistical-analysis (cada porcentaje con su `n` propio y a la
+vista; empates definidos; el porcentaje es un conteo de partidas, no un
+promedio de promedios), testing-strategy (Django para el agregado y la clave de
+`trends`, vitest para las filas y el aviso, humo e2e para el panel). dataviz no
+aplica: tres stats, sin grafico.
+Skills: no aplica (sin tabla, migracion ni flujo e2e nuevos).
+OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
