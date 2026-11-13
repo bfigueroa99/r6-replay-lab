@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: en curso 2026-11-13T22:53Z
-candado: dev 2026-11-13T22:53Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -134,6 +134,28 @@ Veredicto: corregir (HIGH de `ventaja_maxima`; el MEDIUM del mismo segundo convi
 
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=8 hallazgos (1 HIGH, 1 MEDIUM, 6 LOW; 0 arreglados: los arregla el Dev) · verificación=—
+
+## Implementacion (hallazgos de revision)
+
+(dev 20261113T2252Z-czjsKrH) Arreglados el HIGH y el MEDIUM de la revision 2026-11-13, sobre `origin/dev@39e22c0` (merge limpio):
+
+- HIGH (`ventaja_maxima` contaba la diferencia del cierre): la diferencia que deja a un equipo sin vivos ya no se mide y el recorrido corta ahi. Una eliminacion 5-0 da 4 (paso por 5v1), un clutch 1v1 ganado da 0 (no es ronda con ventaja). Tests: `test_una_eliminacion_ganada_no_cuenta_la_ventaja_del_cierre`, `test_un_clutch_1v1_ganado_no_es_ventaja`, `test_un_clutch_ganado_por_eliminacion_no_es_ronda_con_ventaja` (agregado).
+- MEDIUM (trade en el mismo segundo): las salidas consecutivas con el mismo `clock` se miden juntas; `thrown_advantage` suma `clock` al feed. Sin reloj (0 o ausente) cada una se mide sola. Tests: `test_un_trade_en_el_mismo_segundo_no_da_ventaja`, `test_bajas_en_segundos_distintos_si_dan_ventaja`, `test_sin_reloj_cada_baja_se_mide_sola`, `test_un_trade_en_el_mismo_segundo_no_cuenta_como_ventaja` (agregado). El helper `_ronda` de los tests del agregado separa las bajas un segundo (con el `clock=120` de `make_event` todas serian simultaneas).
+- Desvio por la revision ciega de este turno (HIGH confirmado en `pydissect/events.py`, `_track_clock`): tras el plant el juego deja de emitir el reloj y todo el post-plant hereda el mismo `clock`; agrupar por reloj borraba toda ventaja armada despues del plant. Las salidas con el ultimo reloj del feed se miden de a una. Test: `test_tras_el_plant_el_reloj_congelado_no_junta_las_bajas` (5v2 tras el plant y barrida -> 3; antes `None`). Costo aceptado: un trade justo en el ultimo segundo de una ronda sin plant cuenta como si no fuera simultaneo.
+- LOW de intencion (5v4 de arranque): regla fijada, cuenta desde la primera salida (cae un rival -> +2, cae uno tuyo -> 0); `test_un_5v4_de_arranque_cuenta_desde_la_primera_salida` y frase en `metricas.md`.
+- LOW del e2e: el test de Duelos afirma ahora tambien "Con dos o más", la fila Ataque y la del primer mapa (celda exacta) contra la API.
+- No tomados (LOW, no bloquean): calculo al consultar (precedente `death_state`), desempate por numero en el test del tope (ya lo cubre otro test), `recent[].round` en base 1.
+- `docs/metricas.md`: fila Ventaja numérica tirada con las reglas de cierre, mismo segundo, post-plant y 5v4.
+
+Tests vistos en rojo antes del codigo: los 3 de `ventaja_maxima` (eliminacion, clutch, trade), los 2 del agregado (trade sin `clock` en el feed, clutch) y el del post-plant.
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): corregir, 1 HIGH (post-plant, arriba) y 1 LOW (docstring "la ronda ya se decidio", falso en Bomb tras el plant); los dos arreglados.
+
+verificar.sh: VERDE dba808e22 (1312 backend, 427 vitest, 115 e2e).
+
+Skills: no aplica.
+Skills del repo: testing-strategy (regla en SimpleTestCase, agregado en TestCase, e2e con numeros de la API), statistical-analysis (el denominador ya no incluye eliminaciones ni clutches ganados), systematic-debugging (causa del post-plant confirmada en el parser antes del arreglo).
+OMC: plan=— · revisión=2 hallazgos (1 HIGH, 1 LOW; 2 arreglados) · verificación=—
 
 ## QA
 
