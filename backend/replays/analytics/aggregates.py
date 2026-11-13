@@ -3189,7 +3189,7 @@ def openings_by_operator(min_openings: int = 3, **filters) -> list[dict]:
     """Que operadores rivales te sacan en el primer duelo de la ronda, por tu lado.
 
     `duels_by_operator` cuenta todos los duelos; esta solo la apertura, que es
-    la que decide a quien le tenes que aprender a jugar la entrada.
+    la que decide a quien le tienes que aprender a jugar la entrada.
     """
     me_ids = _me_ids()
     if not me_ids:

@@ -185,6 +185,49 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
+(dev 20261113T1643Z-c4P1LiD) Diseno completo, sin desvios de forma:
+
+- `aggregates.py`: `openings_by_operator(min_openings=3, **filters)` despues de
+  `duels_by_operator`, sobre `_duelos` + `_PRIMER_EVENTO` (como `nemesis`):
+  agrupa por `op_rival` y `round__my_side`, salta lado vacio, operador vacio y
+  `Unknown(...)`; `share` sobre todas tus muertes de apertura contra rivales
+  del lado (incluidas las sin fila). 3 consultas agregadas, sin N+1.
+  `views.duels` suma `opening_operators` con la misma `min_duels` del selector.
+- `operadoresQueTeAbren.js`: `filasOperadoresQueTeAbren` (clave
+  `operador-lado`, no reordena). `Duelos.jsx`: panel "Operadores que te abren"
+  despues de "Por operador rival", con Lado (`SideChip`), Te abre, Le abres,
+  Balance, Ganas y "De tus aperturas perdidas" (con `help`); CSV
+  `operadores-que-te-abren`; vacio "Ningún operador llega a N aperturas con
+  estos filtros.".
+- Desvio menor de texto: el hint del diseno decia "te sacó a vos"; la pagina
+  tutea ("Le ganas", "Te gana"), asi que va "te sacó a ti" / "lo sacaste tú".
+- e2e: el seed trae 6 filas con muestra 3 (Rook/Attack 39 primero), asi que el
+  test exige filas y compara la primera con la API (sin rama del texto vacio).
+
+Tests, vistos en rojo antes del codigo: backend `OperadoresQueTeAbrenTests`
+(10; los 10 caian con `AttributeError`), vitest `operadoresQueTeAbren.test.js`
+(3; sin modulo no corrian). Criterios -> tests: Ash 2/1 con share 100 y
+winrate 33.3 (`test_ash_te_abre_en_dos_y_tu_le_abres_en_una`); solo la
+primera baja (`test_solo_cuenta_la_primera_baja_de_la_ronda`); teamkill,
+muerte sin autor y operador vacio/desconocido
+(`test_teamkill_...`, `test_muerte_sin_autor_...`,
+`test_operador_vacio_o_desconocido_...`); lado, filtros, muestra y orden
+(`test_separa_por_tu_lado`, `test_el_filtro_de_lado_deja_solo_ese`,
+`test_el_filtro_de_mapa_aplica`, `test_muestra_minima_y_orden`); API
+(`test_la_api_devuelve_opening_operators_con_la_muestra_del_selector`);
+panel y consola (e2e `Duelos muestra los operadores que te abren`); fila en
+`metricas.md`.
+
+Revision ciega (`omc-code-reviewer`, estandares): aprobar, 3 LOW, los 3
+arreglados (voseo en un docstring, el hint y el `help` del % ahora dicen
+"contra rivales", e2e sin rama silenciosa). Pregunta que no bloquea:
+`duels_by_operator` no descarta `Unknown(...)` y esta si; es anterior a esta
+ficha.
+
+Skills: no aplica.
+Skills del repo: modern-web-guidance (leida; ninguna guia aplica: `Panel` y `DataTable` existentes, sin CSS ni componente nuevo), ux-copy (hint, vacio y `help` con la estructura que que es + por que; tuteo como el resto de Duelos).
+OMC: plan=— · revisión=3 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
+
 ## Revision
 
 ## QA

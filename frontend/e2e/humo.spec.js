@@ -432,14 +432,12 @@ test('Duelos muestra los operadores que te abren', async ({ page }) => {
 
   const panel = page.locator('section.panel', { hasText: 'Operadores que te abren' })
   await expect(panel.getByRole('heading', { name: 'Operadores que te abren' })).toBeVisible()
-  if (filas.length) {
-    await expect(panel.locator('table tbody tr')).toHaveCount(filas.length)
-    const primera = panel.locator('table tbody tr').first()
-    await expect(primera.locator('td').nth(0)).toHaveText(filas[0].operator)
-    await expect(primera.locator('td').nth(2)).toHaveText(String(filas[0].opened_you))
-  } else {
-    await expect(panel.getByText('Ningún operador llega a 3 aperturas con estos filtros.')).toBeVisible()
-  }
+  // seed_demo trae aperturas por operador: sin filas, el test no estaria mirando la tabla
+  expect(filas.length).toBeGreaterThan(0)
+  await expect(panel.locator('table tbody tr')).toHaveCount(filas.length)
+  const primera = panel.locator('table tbody tr').first()
+  await expect(primera.locator('td').nth(0)).toHaveText(filas[0].operator)
+  await expect(primera.locator('td').nth(2)).toHaveText(String(filas[0].opened_you))
 
   expect(errores).toEqual([])
 })

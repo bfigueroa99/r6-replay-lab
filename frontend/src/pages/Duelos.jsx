@@ -147,8 +147,8 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
         title="Operadores que te abren"
         hint={
           'La primera baja de la ronda, por operador rival y por tu lado. Te abre: te sacó a ti ' +
-          'en el primer duelo; Le abres: lo sacaste tú. El % es sobre todas tus muertes de ' +
-          'apertura de ese lado. Usa la muestra mínima de arriba, contada en aperturas.'
+          'en el primer duelo; Le abres: lo sacaste tú. El % es sobre tus muertes de apertura ' +
+          'contra rivales de ese lado. Usa la muestra mínima de arriba, contada en aperturas.'
         }
       >
         <DataTable
@@ -163,7 +163,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               key: 'share',
               label: 'De tus aperturas perdidas',
               render: (row) => pct(row.share),
-              help: 'Te abre sobre todas tus muertes de apertura de ese lado, también las de operador desconocido.',
+              help: 'Te abre sobre tus muertes de apertura contra rivales de ese lado, también las de operador desconocido.',
             },
           ]}
           rows={aperturasPorOperador}
