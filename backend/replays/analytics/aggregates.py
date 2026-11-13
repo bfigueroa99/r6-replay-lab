@@ -3050,7 +3050,12 @@ def _rivales_por_ronda(me_ids: list[int], **filters) -> dict[tuple[int, int], se
 _MAX_RIVALES_POR_RONDA = 10
 
 
-def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
+def _resultados_y_fechas(match_ids: set[int]) -> tuple[dict[int, bool | None], dict[int, datetime]]:
+    filas = Match.objects.filter(id__in=match_ids).values_list("id", "won", "played_at")
+    return {mid: won for mid, won, _ in filas}, {mid: fecha for mid, _, fecha in filas}
+
+
+def _record(ids: set[int], resultado: dict[int, bool | None], fechas: dict[int, datetime]) -> dict:
     wins = sum(1 for mid in ids if resultado.get(mid) is True)
     losses = sum(1 for mid in ids if resultado.get(mid) is False)
     return {
@@ -3059,6 +3064,8 @@ def _record(ids: set[int], resultado: dict[int, bool | None]) -> dict:
         "losses": losses,
         # las partidas sin resultado no ensucian el winrate
         "winrate": _pct(wins, wins + losses),
+        # sale de las mismas partidas que la fila: con filtros, la ultima que pasa
+        "last_played": max(fechas[mid] for mid in ids).isoformat(),
     }
 
 
@@ -3079,11 +3086,11 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
         return []
 
     match_ids = set().union(*partidas.values())
-    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    resultado, fechas = _resultados_y_fechas(match_ids)
     nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
 
     salida = [
-        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado)}
+        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado, fechas)}
         for pid, ids in partidas.items()
     ]
     return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))
@@ -3151,7 +3158,7 @@ def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list
         return []
 
     match_ids = set().union(*(ids for ids, _ in mejor))
-    resultado = dict(Match.objects.filter(id__in=match_ids).values_list("id", "won"))
+    resultado, fechas = _resultados_y_fechas(match_ids)
     nicks = dict(
         Player.objects.filter(id__in=set().union(*(g for _, g in mejor))).values_list(
             "id", "username"
@@ -3164,7 +3171,9 @@ def _filas_de_stacks(mejor: list[tuple[frozenset[int], frozenset[int]]]) -> list
             ({"player_id": pid, "username": nicks.get(pid, "")} for pid in grupo),
             key=lambda j: (j["username"].lower(), j["player_id"]),
         )
-        salida.append({"players": jugadores, "size": len(grupo), **_record(set(ids), resultado)})
+        salida.append(
+            {"players": jugadores, "size": len(grupo), **_record(set(ids), resultado, fechas)}
+        )
     return sorted(
         salida,
         key=lambda r: (

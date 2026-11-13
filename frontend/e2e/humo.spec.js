@@ -414,6 +414,14 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
 
   const panel = page.locator('section.panel', { hasText: 'Rivales repetidos' })
   await expect(panel).toBeVisible()
+  // la ultima vez de la primera fila es la de la API: el orden inicial (partidas) es estable
+  const { rivals } = await (await page.request.get('/api/duels/')).json()
+  const [anio, mes, dia] = rivals[0].last_played.slice(0, 10).split('-')
+  await expect(panel.locator('tbody tr').first()).toBeVisible()
+  const cabeceras = await panel.locator('thead th').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
+  const ultima = cabeceras.findIndex((t) => t.startsWith('Última vez'))
+  expect(ultima).toBeGreaterThan(-1)
+  await expect(panel.locator('tbody tr').first().locator('td').nth(ultima)).toHaveText(`${dia}-${mes}-${anio}`)
   // seed_demo repite los mismos rivales en todas las partidas
   const enlace = panel.locator('table tbody tr').first().getByRole('link').first()
   await expect(enlace).toHaveAttribute('href', /\/jugadores\/\d+$/)
