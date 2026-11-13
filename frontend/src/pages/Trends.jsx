@@ -18,6 +18,7 @@ import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 import { textoResumenSesion } from '../resumenSesion.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
@@ -266,6 +267,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     tramo: MITADES[row.half] || row.half,
   }))
+  const prorrogaPorLado = filasProrrogaPorLado(data.by_overtime_side)
   const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
     ...row,
     orden,
@@ -689,6 +691,25 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.half}
             csvName="por-mitad"
           />
+          <h3 style={{ margin: '16px 0 8px' }}>Prórroga por lado</h3>
+          {prorrogaPorLado.length ? (
+            <>
+              <DataTable
+                columns={COLUMNAS_POR_TRAMO}
+                rows={prorrogaPorLado}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.side}
+                csvName="prorroga-por-lado"
+              />
+              {filasConPocaMuestra(prorrogaPorLado).length ? (
+                <p className="note">
+                  Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Sin rondas de prórroga con estos filtros.</p>
+          )}
           {porApertura.length ? (
             <>
               <h3 style={{ margin: '16px 0 8px' }}>Primera ronda de cada lado</h3>
