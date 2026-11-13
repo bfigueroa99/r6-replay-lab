@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: entregado (PR pendiente de merge: check.sh rojo por e2e/accesibilidad.spec.js:235, que tambien cae en dev; lo arregla el hotfix 117)
-candado: release 2026-11-13T16:52Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O10
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_TRAS_RESULTADO_*), backend/replays/views.py (operators_after_result), backend/replays/urls.py, backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js, frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8, qa 20261113T0404Z-cnRfz4a, release 20261113T0404Z-cnRfz4a
+turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8, qa 20261113T0404Z-cnRfz4a, release 20261113T0404Z-cnRfz4a, release 20261113T1643Z-c4P1LiD
 
 ## PR
 
@@ -166,3 +166,7 @@ OMC: plan=— · revisión=— · verificación=PASS
 ## Para el humano
 
 (nada)
+
+## Entrega 2026-11-13 sobre cf77c90
+
+(release 20261113T1643Z-c4P1LiD) Reintento de la puerta: el rojo de `e2e/accesibilidad.spec.js:235` lo arreglo el hotfix 117, ya en dev. Mezclado `origin/dev` (16d3986) sin conflictos; verificar.sh: VERDE cf77c905a (1192 tests backend, 347 vitest, 97 e2e). Independencia OK, sin commits ni comentarios humanos en el PR #111, diff fuera de lo que mergea el humano.
