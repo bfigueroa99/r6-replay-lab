@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 22:48 UTC por qa, release, dev (sesion 20261113T2223Z-c24t16L; motivo: por estado: 1 revisado; sigue: por estado: con hallazgos)
-playbook: origin/dev@72df8f9
+actualizado: 2026-11-13 23:15 UTC por revisor (sesion 20261113T2252Z-cSo9yHH; motivo: por estado: 1 implementado)
+playbook: origin/dev@39e22c0
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias; sin herramientas para comparar (rol release solo dentro de la QA: pasos 3 a 5)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
 pausa: no
@@ -11,18 +11,18 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | implementado (hallazgo de QA arreglado) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
+| claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | con hallazgos (revision: e2e intermitente, listener despues del `goto`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
 | claude/equipo-dev/133-ventaja-numerica-tirada | docs/backlog/133-ventaja-numerica-tirada.md | con hallazgos (revision: HIGH en `ventaja_maxima`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/133-ventaja-numerica-tirada?expand=1) |
 
 COLA=3 (tope 4)  TOTAL=3 (tope 6)
-RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=3 total=3 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=0
 
 
 ## Orden de merge sugerido
 
 `git merge-tree` de las tres ramas contra `origin/dev@39e22c0` y por pares: ninguna choca.
 
-1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (implementado: vuelve al Revisor y a la QA de otros contextos): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
+1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (con hallazgos: vuelve al Dev, arreglo de dos lineas en el e2e): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
 2. `claude/equipo-dev/133-ventaja-numerica-tirada` (con hallazgos: vuelve al Dev): `metrics.py`, `aggregates.py`, `views.py`, `urls.py`, `Duelos.jsx`, `humo.spec.js`, `metricas.md`.
 3. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
@@ -30,7 +30,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:21 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 120-puesto-en-el-lobby 121-copiar-una-ronda-como-texto 122-cuando-te-toco-por-ultima-vez 123-clutches-de-tus-companeros 124-partidas-por-version-del-juego 125-teamkill-marcado-en-la-timeline 126-a-que-operador-cambias-tras-perder 130-saltar-a-la-siguiente-ronda-perdida) otros:4 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: escuadra: 123 en dev, 131 disenado, 109 disenado (frenada). operadores: 113 y 126 en dev, 129 implementado. datos: 124 en dev, 79 entregado (PR #81), 83 disenado (frenada). revision-de-rondas: 125 en dev, 130 en dev (PR #128), 133 con hallazgos, 136 propuesto. impacto: 116 en dev, 134 propuesto. progreso: 120 en dev, 135 propuesto. rivales: 122 en dev, 132 y 137 propuesto. lado-y-marcador: 127 disenado. posicionamiento: 128 disenado, 138 propuesto.
+- Epicas en curso: escuadra: 123 en dev, 131 disenado, 109 disenado (frenada). operadores: 113 y 126 en dev, 129 con hallazgos. datos: 124 en dev, 79 entregado (PR #81), 83 disenado (frenada). revision-de-rondas: 125 en dev, 130 en dev (PR #128), 133 con hallazgos, 136 propuesto. impacto: 116 en dev, 134 propuesto. progreso: 120 en dev, 135 propuesto. rivales: 122 en dev, 132 y 137 propuesto. lado-y-marcador: 127 disenado. posicionamiento: 128 disenado, 138 propuesto.
 - Papel: PAPEL_TIPOS=funcionalidad:11 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:3 de 3 ramas de trabajo
 - `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: O17 (el selector de filtro no muestra un valor que no conoce).
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
@@ -46,7 +46,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | 109-quien-te-venga | disenado | funcionalidad | escuadra | 3 | fullstack | - |
 | 127-partidas-que-van-a-prorroga | disenado | funcionalidad | lado-y-marcador | 3 | fullstack | - |
 | 128-repetir-o-cambiar-el-spawn-tras-perder | disenado | funcionalidad | posicionamiento | 3 | fullstack | - |
-| 129-filtro-de-operador-en-operadores | implementado (en su rama) | funcionalidad | operadores | 3 | frontend | - |
+| 129-filtro-de-operador-en-operadores | con hallazgos (en su rama) | funcionalidad | operadores | 3 | frontend | - |
 | 131-rondas-que-el-equipo-gano-sin-ti | disenado | funcionalidad | escuadra | 3 | fullstack | - |
 | 132-rivales-que-se-repiten-en-la-misma-noche | propuesto | funcionalidad | rivales | 3 | fullstack | - |
 | 133-ventaja-numerica-tirada | en curso 2026-11-13T22:01Z | funcionalidad | revision-de-rondas | 3 | backend | - |
@@ -67,7 +67,7 @@ Espejos: 129 y 133 viven en su rama, que manda.
 |---|---|---|
 | release | 2026-11-13 22:48 | (release 20261113T2223Z-c24t16L, dentro de la QA) 130 entregada: ficha recortada, VERDE 2eed7d587 sobre el commit final, [PR #128](https://github.com/bfigueroa99/r6-replay-lab/pull/128) **mergeado** en dev (39e22c0); borrado de la rama cortado por el proxy; espejo quitado de backlog. |
 | qa | 2026-11-13 22:48 | (qa 20261113T2223Z-c24t16L) 130 `revisado` -> `aprobado`: VERDE cc63536fc (1284, 421, 114); 609 saltos correctos en la app sembrada (boton, `p`, Enter), bordes interceptados, a11y (contraste 12.92:1), mutaciones 3 de 3, chunk +0.17 %, omc-verifier PASS. |
-| revisor | 2026-11-13 22:25 | (revisor 20261113T2156Z-cQ8Kk3s, sigue) 133 `implementado` -> `con hallazgos`: VERDE e1e70af3c (1303, 417, 113); dos ejes; HIGH confirmado: `ventaja_maxima` cuenta la ventaja tras la ultima baja (clutch 1v1 ganado = ventaja de uno, eliminacion 5-0 = dos o mas); MEDIUM confirmado: trade en el mismo segundo crea +1. |
+| revisor | 2026-11-13 23:15 | (revisor 20261113T2252Z-cSo9yHH) 129 `implementado` -> `con hallazgos`: VERDE 82ad2f319 (1284, 425, 116); revision ciega aprobar con 1 MEDIUM, confirmado: el e2e `Operadores filtra por operador desde su propio selector` registra `page.on('request')` despues del `goto` y cae 6 de 190 con 8 workers (linea 241, `pedidosPool` vacio); listener antes del `goto` -> 150 de 150. |
 | dev | 2026-11-13 22:48 | (dev 20261113T2223Z-c24t16L, sigue) 129 `con hallazgos` -> `implementado`: e2e `Operadores sin rondas deja quitar el operador` con `level: 2` (40 de 40 con 4 workers; el mutante de la QA cae 10 de 10); revision ciega 3 LOW (2 arreglados); merge de dev; VERDE 50ddfaaa8 (1284, 425, 116). |
 | arquitecto | 2026-11-13 19:59 | (arquitecto 20261113T1926Z-cq9nfTP, sigue) Disena 130 (siguiente ronda perdida: `siguientePerdida`/`pideSiguientePerdida` en `navegacionRondas.js`, boton y tecla P en el panel Rondas) y 133 (ventaja numerica tirada: `ventaja_maxima` en `metrics.py`, `/api/duels/thrown-advantage/`, panel en Duelos junto a Estado al morir). |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
