@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
 estado: entregado (PR pendiente de merge: check.sh rojo por e2e/accesibilidad.spec.js:235, que tambien cae en dev; lo arregla el hotfix 117)
-candado: -
+candado: release 2026-11-13T16:52Z
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
