@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
-estado: aprobado
-candado: release 2026-11-13T16:51Z
+estado: entregado
+candado: -
 rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,9 +9,61 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B18
 archivos: backend/replays/analytics/aggregates.py (by_overtime_side, PRORROGA_LADOS), backend/replays/views.py (trends), backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT, revisor 20261113T1603Z-cHj1H4k, qa 20261113T1643Z-c4P1LiD
+turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT, revisor 20261113T1603Z-cHj1H4k, qa 20261113T1643Z-c4P1LiD, release 20261113T1651Z-cxTme8t
+
 
 ## PR
+
+Titulo: `[equipo-dev][frontend] Prórroga por lado en Tendencias`
+
+### Que cambia
+
+En Tendencias, el panel "Por mitad de la partida" suma la tabla "Prórroga
+por lado": rondas, winrate y rating de tus rondas de prórroga en ataque y en
+defensa. La fila única de prórroga de hoy no cambia. Con el filtro de lado
+sale solo esa fila; sin prórrogas, una nota en vez de una tabla de ceros.
+
+### Por que esto y no otra cosa
+
+Ficha 115 (ALCANCE.md B18, épica lado-y-marcador). Partir la fila
+`overtime` de `by_half` se descartó: cambiaba una métrica que ya se muestra.
+El lado inicial de la prórroga no lo trae el `.rec`.
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE fd2df6c07, 1181 tests backend, 344 vitest, 97 e2e.
+- Tests nuevos: `backend/tests/test_prorroga_por_lado.py` (8: partir por lado con 100 % y 0 %, rondas sin prórroga fuera, `by_half` intacto en rondas, winrate y rating, filtro de lado, filtro de mapa, sin prórroga en cero); `frontend/src/prorrogaPorLado.test.js` (4); e2e `Tendencias muestra la prórroga por lado` en `humo.spec.js`.
+- Verificacion manual (QA): base sembrada con prórrogas en Club House y Border, `curl /api/trends/` con `side`, `map` y filtros raros; Chromium claro y oscuro, contrastes 14.17:1 y 5.71:1, consola limpia; mutaciones caen en sus tests.
+- OMC: plan=— · revisión=— · verificación=—
+- OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 LOW de comentario sin cambio; 0 CRITICAL/HIGH) · verificación=—
+- OMC: plan=— · revisión=4 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
+- OMC: plan=— · revisión=— · verificación=PASS
+- Skills del repo: modern-web-guidance (leida; ninguna guia aplica: tabla con `DataTable` y `h3` existentes, sin CSS ni componente nuevo), ux-copy no leida (los dos textos nuevos son los del diseno y siguen a "Primera ronda de cada lado").
+- Skills del repo: accessibility-review (qa: 0 Critical/Major, contrastes 14.17 y 5.71), validate-data (qa: 3 valores recalculados coinciden), design-critique no aplica (tabla dentro de un panel existente).
+
+### Riesgos y lo que no entra
+
+Sin migración ni `recompute`: agrega sobre columnas que ya existen. Dos
+`totals()` más por request de Tendencias, solo sobre rondas de prórroga.
+Fuera: winrate de partida de las que fueron a prórroga según el lado.
+
+### Como probarlo en 2 minutos
+
+```powershell
+cd backend; python manage.py test tests.test_prorroga_por_lado
+cd frontend; npm run build; cd ..\backend; python manage.py runserver
+```
+
+Abrir `/tendencias`: bajo la tabla de mitades, "Prórroga por lado" con dos
+filas (o la nota si tu base no tiene prórrogas); `?side=Defense` deja una.
+
+### Para el humano
+
+Nada
+
+### Candidatos descubiertos
+
+Ninguno
 
 ## Que gana quien usa la app
 
@@ -46,180 +98,37 @@ no separa.
 
 ## Diseno
 
-(arquitecto 20261112T2004Z-cbaTGDt) Filtros duros: pasa. Usa `Round.overtime_number`
-y `Round.my_side`, que el `.rec` entrega; sin red, sin dependencias, sin
-POST, sin migracion. Una forma obvia (~150 lineas): sin arena ni consenso.
-
-**Forma.** Clave nueva `by_overtime_side` en la respuesta de
-`/api/trends/` (la vista que hoy arma `by_half`, `views.py` ~linea 281).
-`by_half` **no se toca**: sus tres filas siguen identicas (criterio 2).
-
-**Backend, `backend/replays/analytics/aggregates.py`**, despues de `by_half`:
-- `PRORROGA_LADOS = ("Attack", "Defense")`.
-- `by_overtime_side(**filters) -> list[dict]`:
-  `qs = base_queryset(**filters).filter(round__overtime_number__gt=0)`;
-  lados = `(filters["side"],)` si `filters.get("side")` esta en
-  `PRORROGA_LADOS`, si no los dos; `return _filas_por_tramo("side", {lado:
-  qs.filter(round__my_side=lado) for lado in lados})`. Mismas columnas que
-  las filas de mitad (`totals()`: rondas, ganadas, rating, KPR, aperturas):
-  la tabla del frontend reusa `COLUMNAS_POR_TRAMO`.
-  `round__my_side` y no `side` de `RoundPlayer`: es el mismo campo que usa
-  `by_half`. Con `?side=` el filtro ya recorta `qs` por `side`; la otra
-  fila no se devuelve (saldria en 0).
-- Sin prorrogas: dos filas con `rounds: 0` (como hoy la fila `overtime`).
-
-**`views.py`**: `"by_overtime_side": agg.by_overtime_side(**filters),`
-justo despues de `"by_half"`.
-
-**Frontend.**
-- `frontend/src/prorrogaPorLado.js` (logica pura):
-  `filasProrrogaPorLado(rows)`: `[]` si no hay filas o todas tienen
-  `rounds === 0`; si no, cada fila con `orden`, `tramo` (`Prórroga en
-  ataque` / `Prórroga en defensa`) y el resto de la fila tal cual.
-- `frontend/src/prorrogaPorLado.test.js` (vitest): vacio y todo en 0 dan
-  `[]`; con una sola fila (filtro de lado) sale una; textos y orden.
-- `frontend/src/pages/Trends.jsx`, dentro del panel "Por mitad de la
-  partida", despues de la tabla de mitades y antes de "Primera ronda de cada
-  lado": `<h3>Prórroga por lado</h3>` y `DataTable` con
-  `COLUMNAS_POR_TRAMO`, `initialSort={{ key: 'orden', dir: 'asc' }}`,
-  `rowKey={(row) => row.side}`, `csvName="prorroga-por-lado"`; debajo el
-  mismo aviso que "Primera ronda de cada lado" con
-  `filasConPocaMuestra(...)` y `MUESTRA_CORTE` (30 rondas: se avisa, no se
-  oculta). Sin filas: `<p className="note">Sin rondas de prórroga con estos
-  filtros.</p>` (el seed no tiene prorroga: es lo que ve el e2e).
-
-**Tests backend, `backend/tests/test_prorroga_por_lado.py`** (con
-`factories`; `make_round(..., overtime_number=1)` ya existe):
-- `test_parte_la_prorroga_por_lado`: partida con dos rondas de prorroga en
-  ataque ganadas y una en defensa perdida -> Attack 2 rondas 100 %, Defense
-  1 ronda 0 %.
-- `test_las_rondas_sin_prorroga_no_entran`.
-- `test_by_half_no_cambia`: con la misma partida, `by_half` da sus tres
-  filas con las rondas esperadas armadas a mano (first, second y overtime
-  con 3 rondas): falla si alguien cambia la fila `overtime` al partirla.
-- `test_con_filtro_de_lado_sale_solo_ese`: `/api/trends/?side=Defense` ->
-  `by_overtime_side` con una fila `Defense`.
-- `test_el_filtro_de_mapa_aplica`.
-- `test_sin_prorroga_las_filas_salen_en_cero`.
-
-**e2e, `frontend/e2e/humo.spec.js`**: test `Tendencias muestra la prórroga
-por lado`: el seed no tiene prorroga (sus partidas son 4-3 sin
-`overtime_number`), asi que el panel "Por mitad de la partida" muestra el
-`h3` "Prórroga por lado" y la nota "Sin rondas de prórroga con estos
-filtros."; consola limpia. Las filas con datos las cubren vitest y los tests
-backend.
-
-**`docs/metricas.md`**, `## Mitades y prorroga`: la fila **Prorroga** suma
-"Partida por lado (*Prórroga en ataque* / *en defensa*): el lado de tu
-ronda de prorroga (`Round.my_side`); los filtros globales aplican y con el
-de lado sale solo esa fila. Aviso de muestra con 30 rondas, como los cortes
-de Tendencias."
-
-**Orden.** aggregates + tests, vista, `prorrogaPorLado.js` + vitest,
-`Trends.jsx`, e2e, metricas, `npm run build`.
-
-**Que puede romperse.** `_filas_por_tramo` calcula el baseline una vez; dos
-filas mas son dos `totals()` mas por request de Tendencias, barato (solo
-rondas de prorroga). Ningun test existente lee la lista de claves de
-`/api/trends/` entera (verificar con `grep -rn by_half backend/tests`; si
-alguno compara claves, sumarle `by_overtime_side`).
-
-**Archivos ocupados.** `aggregates.py`, `views.py` y `humo.spec.js` los
-tocan la 107 y la 113 en otras funciones y otros tests; `Trends.jsx` no lo
-toca ninguna rama abierta. No se frena.
-
-**Verificacion manual.** Base con alguna partida con prorroga (real):
-Tendencias, "Prórroga por lado" con dos filas que suman la fila Prórroga de
-arriba; `?side=Attack` una fila.
-
-Skills: no aplica (tabla en un panel existente con las columnas de siempre).
+(arquitecto 20261112T2004Z-cbaTGDt) Clave nueva `by_overtime_side` en
+`/api/trends/` con `_filas_por_tramo("side", ...)` sobre `round__my_side` y
+`overtime_number > 0`; `by_half` no se toca. Tabla en Tendencias con
+`COLUMNAS_POR_TRAMO` y aviso de `MUESTRA_CORTE`. Detalle en `git log`.
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-(dev 20261113T1203Z-cWfR3tT) Diseno completo, sin desvios de forma:
-
-- `aggregates.py`: `PRORROGA_LADOS` y `by_overtime_side(**filters)` despues
-  de `by_half` (que no cambia), con `_filas_por_tramo("side", ...)` sobre
-  `round__my_side`; con `?side=` sale solo esa fila. `views.trends` suma
-  `by_overtime_side`.
-- `prorrogaPorLado.js`: `filasProrrogaPorLado` (`[]` sin filas o todo en 0;
-  `tramo` "Prórroga en ataque" / "en defensa" y `orden`).
-- `Trends.jsx`: `h3` "Prórroga por lado" despues de la tabla de mitades,
-  `DataTable` con `COLUMNAS_POR_TRAMO`, CSV `prorroga-por-lado`, aviso de
-  `MUESTRA_CORTE`; sin filas, la nota "Sin rondas de prórroga con estos filtros."
-- `metricas.md`: la fila Prorroga suma el corte por lado, y (revision ciega,
-  LOW) que las rondas de prorroga sin lado no entran en ninguna de las dos.
-
-Tests, vistos en rojo antes del codigo: backend `test_prorroga_por_lado.py`
-(7; 6 caian con `AttributeError`, el de `by_half` pasaba como debe), vitest
-`prorrogaPorLado.test.js` (4; sin modulo no corrian). e2e `Tendencias
-muestra la prórroga por lado` (API con las dos filas en 0, `h3`, nota, sin
-filas en la tabla, consola limpia). Criterios -> tests: filas por lado con
-100 % y 0 % (`test_parte_la_prorroga_por_lado`); mitades intactas
-(`test_by_half_no_cambia`, mas `test_mitades.py` sin tocar); filtros
-(`test_con_filtro_de_lado_sale_solo_ese`, `test_el_filtro_de_mapa_aplica`);
-Tendencias con aviso y nota (vitest + e2e); fila en `metricas.md`.
-
-verificar.sh: VERDE 21b599c79 (1172 backend, 338 vitest, 96 e2e; el commit
-siguiente solo toca esta ficha).
-
+(dev 20261113T1203Z-cWfR3tT) Diseno completo, sin desvios: `PRORROGA_LADOS`
+y `by_overtime_side` en `aggregates.py`, clave en `views.trends`,
+`prorrogaPorLado.js`, tabla en `Trends.jsx`, fila en `metricas.md` (las
+rondas de prorroga sin lado no entran en ninguna). Tests vistos en rojo
+antes del codigo. verificar.sh: VERDE 21b599c79.
 Skills: no aplica.
 Skills del repo: modern-web-guidance (leida; ninguna guia aplica: tabla con `DataTable` y `h3` existentes, sin CSS ni componente nuevo), ux-copy no leida (los dos textos nuevos son los del diseno y siguen a "Primera ronda de cada lado").
 OMC: plan=— · revisión=2 hallazgos (1 arreglado, 1 LOW de comentario sin cambio; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision 2026-11-13 sobre 85d4b1d
 
-(20261113T1603Z-cHj1H4k) La rama trae `origin/dev` (16d3986, con la 110) sin
-conflictos. verificar.sh: VERDE 85d4b1de6 (1181 backend, 344 vitest, 97
-e2e). Revision a ciegas en dos ejes (`omc-code-reviewer` estandares y
-`omc-code-reviewer` intencion; sin POST, red, parser ni rutas: sin eje de
-seguridad). Los dos: aprobar, 0 CRITICAL/HIGH/MEDIUM. Confirmados por el lider:
-
-- [test] LOW `backend/tests/test_prorroga_por_lado.py` (`test_by_half_no_cambia`):
-  el criterio 2 pide que las filas de mitad no cambien y el test solo miraba
-  `rounds`. **Agregado por el Revisor (test que pasa):**
-  `test_by_half_no_cambia_ni_winrate_ni_rating` (winrate 100/100/66.7, rating
-  presente, la fila de prorroga sigue juntando los dos lados); y
-  `test_parte_la_prorroga_por_lado` ahora exige `rating` no nulo en vez de
-  solo la clave. Sin mutacion limpia: el intento sobre `by_half` rompia la
-  query (errores, no fallos) y no se cuenta.
-- [test] LOW, no frena: `seed_demo` no tiene prorroga, asi que el e2e solo
-  recorre la nota vacia; la tabla con filas la cubren vitest (funcion pura) y
-  los tests backend. Cambiar el seed moveria los numeros de otros e2e.
-
-Criterios: filas por lado con 100 % y 0 % (`test_parte_la_prorroga_por_lado`),
-mitades intactas (`by_half` sin tocar + los dos tests), filtros
-(`?side=Defense` y `?map=`), Tendencias con aviso de muestra y nota (vitest +
-e2e con consola limpia), fila en `metricas.md`: cubiertos. Reglas: GET,
-agregacion de columnas de import, sin dependencias, identificadores sin
-tildes y UI con tildes, sin `console.log`. Diff dentro de `archivos:`.
-
-Veredicto: aprobar -> `revisado`.
-
-Skills: no aplica.
+(20261113T1603Z-cHj1H4k) Dos ejes de `omc-code-reviewer`: aprobar, 0
+CRITICAL/HIGH/MEDIUM. Corregido por el Revisor: `test_by_half_no_cambia_ni_winrate_ni_rating`
+y `rating` no nulo en `test_parte_la_prorroga_por_lado`. LOW sin cambio: el
+seed no tiene prórroga, el e2e solo ve la nota vacía. Veredicto: `revisado`.
 OMC: plan=— · revisión=4 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
 
 ## QA 2026-11-13 sobre 5b06539
 
-(qa 20261113T1643Z-c4P1LiD) Ejercitado el sistema, no el diff. La rama ya trae `origin/dev` (16d3986).
-
-- `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --` -> `VERDE 5b0653965 en 192s: 1181 tests backend, 344 vitest, 97 e2e. Todo en verde.`
-- Bases en el scratchpad (`SQLITE_PATH=<tmp>/x.sqlite3 python3 manage.py migrate`), sembrada con `factories.build_dataset(matches=6, rounds_per_match=6)` mas Club House con prorroga Attack ganada, Attack ganada, Defense perdida, y Border con prorroga Defense ganada y una ronda de prorroga con `my_side` vacio perdida. `runserver` y `curl /api/trends/?<q>`, todos 200:
-  - base vacia: `by_overtime_side` Attack 0 y Defense 0, winrate y rating `null`.
-  - `''`: Attack 2 rondas 100.0 rating 1.17; Defense 2 rondas 50.0; fila `overtime` de `by_half` 5 rondas 60.0 (la ronda sin lado queda fuera de las dos, como dice `metricas.md`).
-  - `side=Attack` solo Attack 2/100.0; `side=Defense` solo Defense 2/50.0; `side=foo` dos filas en 0 (igual que `by_half`); `side=`, `map=`, `until=foo`, `page=-1`, `days=99999999999` igual que sin filtros; `days=-1` ceros.
-  - `map=border` Attack 0, Defense 1/100.0; `map=club-house` Attack 2/100.0, Defense 1/0.0; `map=border&side=Defense` solo Defense 1/100.0; `map=nope` ceros.
-- Valores recalculados a mano (skill `validate-data` sobre la fila Prorroga de `metricas.md`): ataque 2 ganadas de 2 = 100 %, defensa 1 de 2 = 50 %, Border defensa 1 de 1 = 100 %. Division por cero: 0 rondas da `null` y la UI muestra la nota, no ceros; la tasa va con su `n` (columna Rondas); sin promedio de promedios (`totals()` sobre las rondas).
-- `vite build`: chunk inicial `index` 199.89 kB en dev -> 200.00 kB en la rama (+0.06 %); `Trends` (lazy) 31.71 -> 32.52 kB.
-- `accessibility-review` en Chromium (Playwright, script en el scratchpad) sobre `/tendencias` con la base sembrada, claro y oscuro: `h3` "Prórroga por lado" con rol heading y contraste 14.17:1; filas "Prórroga en ataque | 2 | 100% | 1.17" y "Prórroga en defensa | 2 | 50% | 1.17"; nota de muestra (menos de 30 rondas) contraste 5.71:1; `?side=Defense` una fila; `?map=border&side=Attack` la nota "Sin rondas de prórroga con estos filtros."; "Descargar CSV" alcanzable con Tab; columnas `sortable: false`, como la tabla de mitades. Consola sin errores ni warnings. 0 Critical, 0 Major.
-- Mutacion (todo restaurado): sin el recorte por `?side=` cae `test_con_filtro_de_lado_sale_solo_ese`; `overtime_number__gte=0` hace caer 5 tests; `exclude` en vez de `filter` por lado hace caer 3; sin el corte de ceros en `prorrogaPorLado.js` cae el vitest "todo en cero no es una tabla de ceros".
-- Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
-
-Criterios: 1 a 5 cubiertos con la evidencia de arriba. Veredicto: `aprobado`.
-
-Skills: no aplica.
-Skills del repo: accessibility-review (qa: 0 Critical/Major, contrastes 14.17 y 5.71), validate-data (qa: 3 valores recalculados coinciden), design-critique no aplica (tabla dentro de un panel existente).
+(qa 20261113T1643Z-c4P1LiD) verificar.sh VERDE 5b0653965. API con base
+sembrada (vacía, filtros de lado y mapa, filtros raros) recalculada a mano;
+Chromium claro y oscuro, 0 Critical/Major; cuatro mutaciones caen en sus
+tests. Nada para verificar en el PC. Veredicto: `aprobado`.
 OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
