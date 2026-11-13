@@ -423,6 +423,24 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra el estado de vivos al morir', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Estado al morir' })
+  await expect(panel).toBeVisible()
+  // seed_demo: 173 muertes con evento, 87 con ventaja (4v3) y 86 en paridad (3v3)
+  const grupos = panel.locator('table').first()
+  await expect(grupos.locator('tbody tr')).toHaveCount(3)
+  const ventaja = grupos.locator('tbody tr', { hasText: 'Con ventaja' })
+  await expect(ventaja.getByRole('cell', { name: '87', exact: true })).toBeVisible()
+  const estados = panel.locator('table').nth(1)
+  await expect(estados.locator('tbody tr').first()).toContainText('4v3')
+  await expect(estados.locator('tbody tr', { hasText: '3v3' }).getByRole('cell', { name: '86', exact: true })).toBeVisible()
+
+  expect(errores).toEqual([])
+})
+
 test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')

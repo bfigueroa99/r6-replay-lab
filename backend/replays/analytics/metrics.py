@@ -175,6 +175,34 @@ def _quedar_solo(
     return valor, desde
 
 
+def estado_al_morir(eventos: list[dict], team_of: dict) -> dict:
+    """Vivos de su equipo y rivales, contandose, justo antes de la muerte de cada jugador.
+
+    Se anota la primera muerte del feed de cada uno (`Kill` sobre el o
+    `Death` suyo), la misma eleccion que `analyse_round`. Un `PlayerLeave`
+    resta un vivo pero no es una muerte: quien se fue no aparece, ni aunque
+    el feed lo mate despues. Las claves son las de `team_of` (nick o id).
+    """
+    vivos = set(team_of)
+    estado: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        if kind != PLAYER_LEAVE:
+            equipo = team_of[muerto]
+            aliados = sum(1 for j in vivos if team_of[j] == equipo)
+            estado[muerto] = (aliados, len(vivos) - aliados)
+        vivos.discard(muerto)
+    return estado
+
+
 def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
     """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
 

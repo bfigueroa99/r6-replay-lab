@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import EstadoAlMorir from '../components/EstadoAlMorir.jsx'
 import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
 import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
@@ -318,6 +319,8 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           empty="Ningún grupo de rivales se repitió en 2 o más partidas con estos filtros."
         />
       </Panel>
+
+      <EstadoAlMorir filters={filters} />
     </>
   )
 }
