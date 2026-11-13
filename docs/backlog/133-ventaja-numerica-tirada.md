@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: implementado
-candado: revisor 2026-11-13T23:18Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md F5
 archivos: backend/replays/analytics/metrics.py (ventaja_maxima), backend/replays/analytics/aggregates.py (thrown_advantage), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_ventaja_tirada.py (nuevo), frontend/src/ventajaTirada.js (nuevo), frontend/src/ventajaTirada.test.js (nuevo), frontend/src/components/VentajaTirada.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH, revisor 20261113T2317Z-cBbsozQ
 
 ## PR
 
@@ -156,6 +156,30 @@ verificar.sh: VERDE dba808e22 (1312 backend, 427 vitest, 115 e2e).
 Skills: no aplica.
 Skills del repo: testing-strategy (regla en SimpleTestCase, agregado en TestCase, e2e con numeros de la API), statistical-analysis (el denominador ya no incluye eliminaciones ni clutches ganados), systematic-debugging (causa del post-plant confirmada en el parser antes del arreglo).
 OMC: plan=— · revisión=2 hallazgos (1 HIGH, 1 LOW; 2 arreglados) · verificación=—
+
+## Revision 2026-11-13 sobre 4548f0f
+
+(revisor 20261113T2317Z-cBbsozQ) Segunda pasada. La rama ya contenia `origin/dev@39e22c0`. verificar.sh: VERDE 4548f0fe2 (1312 backend, 427 vitest, 115 e2e).
+
+**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`): aprobar, 2 MEDIUM, 1 LOW. Los hallazgos HIGH y MEDIUM de la primera pasada estan arreglados con tests (eliminacion, clutch ganado, trade del mismo segundo, post-plant).
+- [bug] **MEDIUM confirmado** `backend/replays/analytics/metrics.py` (`ventaja_maxima`, grupo del ultimo reloj): las salidas con el ultimo reloj del feed se miden de a una aunque no haya plant, asi que un trade simultaneo que cierra el feed da +1. Repro (`manage.py shell`, `team_of` me,m1 / r0,r1, equipo 0): `[Kill me->r0 @40, Kill r1->me @40]` -> **1**; el mismo feed con `Kill m1->r1 @20` despues -> **0**. Afecta solo a rondas sin plant cuyo ultimo hecho es un trade en el mismo segundo (perdida por tiempo, por ejemplo). Es el costo que la Implementacion acepto y que `metricas.md` escribe ("salvo las del ultimo reloj de la ronda"), por eso no bloquea. Arreglo sugerido, si se retoma: partir el grupo solo si su reloj es el congelado de la ronda (`Round.clock_end`, pasado como argumento a `ventaja_maxima` y sumado al `values()` de `thrown_advantage`), con test de trade final sin plant -> 0.
+- [regla] MEDIUM propuesto -> **LOW confirmado** `aggregates.py` (`thrown_advantage`): calculo al consultar; mismo juicio que en la primera pasada (precedente `death_state` y `nemesis`, consultas constantes).
+- [bug] LOW: el post-plant medido de a una separa trades post-plant simultaneos; documentado en `metricas.md`.
+- Pregunta abierta, sin confirmar (sin `.rec` reales): un `PlayerLeave` posterior al fin de la ronda contaria como salida; la misma exposicion ya la tienen `clutch_vs` y `one_vx`.
+
+**Eje de intencion** (`omc-code-reviewer` contra Que gana, Criterios y Fuera de alcance): los 6 criterios cubiertos (agregado, uno contra dos o mas, lista con enlace y tope, filtros sobre tu fila, panel en Duelos con e2e sobre `seed_demo` que lee la API, `metricas.md` con muestra minima); nada fuera de alcance. Hallazgos:
+- [bug] MEDIUM: el mismo del trade final (arriba).
+- [intencion] MEDIUM propuesto -> **LOW**: 5v4 de arranque con la primera salida tuya da 0. Es la regla que la primera pasada pidio elegir y que quedo escrita en `metricas.md` y fijada con test.
+- [test] LOW `frontend/e2e/humo.spec.js`: la nota "No hay rondas con ventaja numérica con estos filtros." no se renderiza en ningun test (seed_demo siempre trae 64 rondas con ventaja); solo se prueba `hayVentajas` como logica pura.
+
+Sin eje de seguridad: endpoint GET, sin red, POST, rutas, parser ni dependencias.
+
+**Ficha.** Criterios 1-6 con test. El diff no toca archivos fuera de `archivos:`. Fila en `docs/metricas.md` y en `## Muestra minima`. Identificadores sin tildes, UI con tildes, sin `print` ni `console.log`.
+
+Veredicto: aprobar (sin CRITICAL ni HIGH; el MEDIUM del trade final es un costo documentado).
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=6 hallazgos (0 HIGH, 1 MEDIUM, 4 LOW, 1 pregunta; 0 arreglados) · verificación=—
 
 ## QA
 
