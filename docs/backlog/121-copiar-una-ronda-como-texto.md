@@ -1,7 +1,7 @@
 # 121. Copiar una ronda como texto
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T18:18Z
 rama: claude/equipo-dev/121-copiar-una-ronda-como-texto
 tipo: funcionalidad
 epica: exportar
