@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T16:51Z
 rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
