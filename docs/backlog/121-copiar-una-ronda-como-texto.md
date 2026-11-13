@@ -1,7 +1,7 @@
 # 121. Copiar una ronda como texto
 
-estado: implementado
-candado: revisor 2026-11-13T18:18Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/121-copiar-una-ronda-como-texto
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H10
 archivos: frontend/src/textoRonda.js (nuevo), frontend/src/textoRonda.test.js (nuevo), frontend/src/pages/MatchDetail.jsx (componente CopiarRonda en el encabezado de la ronda), frontend/e2e/humo.spec.js
-turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1703Z-ctZvzXQ, dev 20261113T1733Z-cudo1Sw
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1703Z-ctZvzXQ, dev 20261113T1733Z-cudo1Sw, revisor 20261113T1802Z-c8dAf7p
 
 ## PR
 
@@ -203,7 +203,47 @@ JSX y los textos copian el patron de "Copiar resumen" de la misma pagina.
 Skills: ninguna de afuera.
 OMC: plan=— · revisión=3 hallazgos LOW (1 arreglado) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 6c4a6a5
+
+(revisor 20261113T1802Z-c8dAf7p) Punto de partida: merge de `origin/dev`
+(1de3c54, con la 118; sin conflictos); `verificar.sh`: VERDE bfa74506d
+(1239 backend, 385 vitest, 104 e2e).
+
+**Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
+`revision.md`, solo el diff): aprobar, sin hallazgos (casos borde mirados:
+ronda sin bajas, sin `round`, partida sin "yo", mapa y lado vacios, aviso al
+cambiar de ronda).
+
+**Eje de intencion** (`omc-code-reviewer`, diff contra Que gana, Criterios y
+Fuera de alcance; el diff pasa de 150 lineas): aprobar, los 5 criterios
+cumplidos, 2 LOW:
+- B1 [bug, LOW] el texto ordena por `order` y la timeline usa el orden de la
+  API. **No se reproduce**: `Event.Meta.ordering = ["round", "order"]`
+  (`models.py:231`), la API ya entrega en ese orden.
+- T1 [test, LOW] el e2e solo exigia el nick del autor: un texto sin
+  victimas seguia en verde. **Confirmado y cubierto por el revisor**: el e2e
+  exige la linea `<reloj> <autor> mató a <victima>` de la primera baja.
+
+Sin `omc-security-reviewer`: el diff no toca red, POST, `.rec` ni rutas.
+
+**Ficha.** Criterio 1: vitest `la primera linea dice...`, `una ronda de
+tres bajas sale en orden con sus marcas` (eventos desordenados, igualdad
+exacta), `ninguna linea termina en espacio`. Criterio 2: `sin bajas dice Sin
+bajas`. Criterio 3: `un teamkill y una muerte sin autor usan la etiqueta de
+la timeline` (misma etiqueta que `Timeline`, `MatchDetail.jsx`). Criterio 4:
+misma rama y aviso que `copiarResumen` (Chromium no puede forzar la falta de
+portapapeles; verificacion de lectura). Criterio 5: e2e `el detalle de
+partida copia una ronda` (cabecera, autor y victima, consola limpia). El
+diff no sale de `archivos:`; sin numero nuevo (no pide `metricas.md`);
+identificadores sin tildes, UI con tildes; sin `console.log`.
+
+`verificar.sh` con el test del revisor: VERDE 6c4a6a575 (1239 backend,
+385 vitest, 104 e2e).
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=2 hallazgos LOW (1 cubierto con test, 1 refutado) · verificación=—
 
 ## QA
 
