@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 22:25 UTC por qa y revisor (sesion 20261113T2156Z-cQ8Kk3s; motivo: por estado: 1 revisado; sigue: por estado: 1 implementado)
+actualizado: 2026-11-13 22:27 UTC por qa (sesion 20261113T2223Z-cnEAwE8; motivo: por estado: 1 revisado)
 playbook: origin/dev@72df8f9
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 41 en 7 dias; sin herramientas para comparar (esta sesion no tiene las herramientas de Routines)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -12,7 +12,7 @@ pausa: no
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 | claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | con hallazgos (QA: e2e intermitente) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
-| claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida | docs/backlog/130-saltar-a-la-siguiente-ronda-perdida.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida?expand=1) |
+| claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida | docs/backlog/130-saltar-a-la-siguiente-ronda-perdida.md | revisado (QA en curso en otra corrida, candado 22:23Z) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida?expand=1) |
 | claude/equipo-dev/133-ventaja-numerica-tirada | docs/backlog/133-ventaja-numerica-tirada.md | con hallazgos (revision: HIGH en `ventaja_maxima`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/133-ventaja-numerica-tirada?expand=1) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
@@ -69,7 +69,7 @@ Espejos: 129, 130 y 133 viven en su rama, que manda.
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-13 20:50 | (release 20261113T2003Z-c3vr7mZ) La 123 ya la habia mergeado la otra corrida (f6cd92d): sin PR que abrir. Siguiendo de QA, 124 y 125 entregadas: fichas recortadas, VERDE 8e732e187 y 3a87f8d30 sobre el commit final, [PR #126](https://github.com/bfigueroa99/r6-replay-lab/pull/126) y [PR #127](https://github.com/bfigueroa99/r6-replay-lab/pull/127) **mergeados** en dev (d5595cb, 72df8f9); borrado de las ramas cortado por el proxy. merge-tree sin choques; pruebas.sh PRUEBAS_OK (23); sin herramientas de Routines. |
-| qa | 2026-11-13 22:25 | (qa 20261113T2156Z-cQ8Kk3s) 129 `revisado` -> `con hallazgos`: VERDE 5c4006af3 (1284, 415, 114); criterios, API con bordes, a11y (contraste 6.45 y 13.19, teclado) y 3 mutaciones pasan, pero el e2e `Operadores sin rondas deja quitar el operador` falla 6 de 30 con 4 workers (strict mode: dos encabezados Defensa); arreglo verificado en la ficha. Idea O17. |
+| qa | 2026-11-13 22:27 | (20261113T2223Z-cnEAwE8) La QA de la 130 la reclamo otra corrida en el mismo minuto (P8, soltada); sin otra `revisado` ni `implementado`: fallback sobre dev, VERDE 72df8f93f (1284, 411, 112), deriva de docs (.env.example, comandos del README, scripts npm) sin hallazgos. Anterior: (qa 20261113T2156Z-cQ8Kk3s) 129 `revisado` -> `con hallazgos`: VERDE 5c4006af3 (1284, 415, 114); criterios, API con bordes, a11y (contraste 6.45 y 13.19, teclado) y 3 mutaciones pasan, pero el e2e `Operadores sin rondas deja quitar el operador` falla 6 de 30 con 4 workers (strict mode: dos encabezados Defensa); arreglo verificado en la ficha. Idea O17. |
 | revisor | 2026-11-13 22:25 | (revisor 20261113T2156Z-cQ8Kk3s, sigue) 133 `implementado` -> `con hallazgos`: VERDE e1e70af3c (1303, 417, 113); dos ejes; HIGH confirmado: `ventaja_maxima` cuenta la ventaja tras la ultima baja (clutch 1v1 ganado = ventaja de uno, eliminacion 5-0 = dos o mas); MEDIUM confirmado: trade en el mismo segundo crea +1. |
 | dev | 2026-11-13 22:35 | (dev 20261113T2157Z-chbMW9r, sigue) Implementa 133 (`disenado` -> `implementado`): `ventaja_maxima`, `/api/duels/thrown-advantage/`, panel "Ventaja numérica tirada" en Duelos, e2e, `metricas.md`. Desvio: por mapa agrupa por version (MEDIUM de la ciega, arreglado). Mutaciones: un test nuevo mata la que sobrevivia. VERDE 4c313f073 (1303, 417, 113). |
 | arquitecto | 2026-11-13 19:59 | (arquitecto 20261113T1926Z-cq9nfTP, sigue) Disena 130 (siguiente ronda perdida: `siguientePerdida`/`pideSiguientePerdida` en `navegacionRondas.js`, boton y tecla P en el panel Rondas) y 133 (ventaja numerica tirada: `ventaja_maxima` en `metrics.py`, `/api/duels/thrown-advantage/`, panel en Duelos junto a Estado al morir). |
