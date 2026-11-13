@@ -1,8 +1,8 @@
 # 124. Partidas por version del juego en Datos
 
-estado: disenado
+estado: en curso 2026-11-13T19:37Z
 candado: -
-rama: -
+rama: claude/equipo-dev/124-partidas-por-version-del-juego
 tipo: funcionalidad
 epica: datos
 area: backend
