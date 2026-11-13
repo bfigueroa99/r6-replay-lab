@@ -420,4 +420,6 @@ sumados a los de la barra; los de la señal pisan a los de la barra. No hay
 filtro de spawn: una señal de spawn abre su mapa en ataque. Las señales de
 rival (operador rival, nemesis) abren Duelos con los filtros de la barra, y
 las generales no tienen enlace. El mapa va por slug: en un mapa rehecho el
-enlace junta las dos versiones.
+enlace junta las dos versiones, salvo que la barra ya tenga un mapa (o una
+version), que la señal respeta. Un sitio que llega por el enlace aparece en
+la barra aunque la pagina no tenga selector de sitio, para poder quitarlo.

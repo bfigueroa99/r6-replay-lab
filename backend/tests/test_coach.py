@@ -281,6 +281,30 @@ class EnlaceDeLasSenalesTests(TestCase):
         for insight in insights:
             self.assertIn(insight["target"], ("/", "/duelos"), insight["key"])
             self.assertTrue(set(insight["filters"]) <= set(agg.FILTER_KEYS), insight["key"])
+            if "side" in insight["filters"]:
+                self.assertIn(insight["filters"]["side"], ("Attack", "Defense"), insight["key"])
+        lados = {i["key"]: i["filters"] for i in insights if i["key"].endswith("-defensa")}
+        self.assertTrue(lados)
+        self.assertTrue(all(f == {"side": "Defense"} for f in lados.values()), lados)
+
+    def test_la_senal_de_spawn_abre_el_mapa_en_ataque(self):
+        for indice, (spawn, ganadas) in enumerate((("Warehouse", 8), ("Construction Site", 8),
+                                                   ("Yard", 0))):
+            match = make_match(map_name="Border", index=indice)
+            for n in range(10):
+                rnd = make_round(match, n, won=n < ganadas)
+                make_round_player(rnd, spawn=spawn)
+        insight = find(build_insights(), "spawn-debil")
+        self.assertEqual(insight["filters"], {"map": "border", "side": "Attack"})
+
+    def test_con_mapa_en_la_barra_la_senal_no_lo_pisa(self):
+        match = make_match(map_name="Border", index=0)
+        for n in range(10):
+            make_round_player(make_round(match, n, site="1F Armory", won=False))
+        for n in range(10, 40):
+            make_round_player(make_round(match, n, site="2F Workshop", won=True))
+        insight = find(build_insights(map=str(match.map_id)), "sitio-debil")
+        self.assertEqual(insight["filters"], {"site": "1F Armory"})
 
     def test_las_senales_de_rival_van_a_duelos(self):
         match = make_match(index=0, my_score=4, opponent_score=4)

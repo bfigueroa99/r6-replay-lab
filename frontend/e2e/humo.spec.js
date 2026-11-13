@@ -1342,6 +1342,27 @@ test('una señal del Coach abre el Resumen filtrado', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el sitio que trae una señal del Coach se ve en la barra y se quita', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  const senal = insights.find((i) => i.filters?.site)
+  expect(senal).toBeTruthy()
+  await page.goto('/coach')
+
+  const tarjeta = page.locator('.insight').filter({ has: page.getByRole('heading', { name: senal.title }) })
+  await tarjeta.getByRole('link', { name: 'Ver esas rondas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Resumen' })).toBeVisible()
+  expect(new URL(page.url()).searchParams.get('site')).toBe(senal.filters.site)
+  // el Resumen no tiene selector de sitio: sin esto el filtro quedaria puesto y sin verse
+  const sitio = page.getByLabel('Sitio')
+  await expect(sitio).toHaveValue(senal.filters.site)
+  await sitio.selectOption('')
+  await expect(page).not.toHaveURL(/site=/)
+  await expect(page.getByLabel('Sitio')).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

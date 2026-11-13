@@ -11,7 +11,7 @@ from . import aggregates as agg
 
 SEVERITY_ORDER = {"alta": 0, "media": 1, "baja": 2, "positivo": 3}
 
-#: Del lado como lo nombra la señal al valor que acepta el filtro `side`.
+#: Del lado como lo nombra la senal al valor que acepta el filtro `side`.
 LADO = {"ataque": "Attack", "defensa": "Defense"}
 
 
@@ -30,7 +30,7 @@ def _insight(
     filters: dict | None = None,
     target: str = "/",
 ) -> dict:
-    # `filters` son los que definen la señal, en los nombres de la API: la UI
+    # `filters` son los que definen la senal, en los nombres de la API: la UI
     # los suma a los de la barra para abrir `target` con esas rondas
     return {
         "key": key,
@@ -93,6 +93,11 @@ def build_insights(**filters) -> dict:
     insights += _nemesis(**filters)
     insights += _form(overall, **filters)
 
+    if filters.get("map"):
+        # la senal ya salio dentro del mapa de la barra; su slug pisaria una
+        # version elegida (`map_id`) y el enlace abriria las dos versiones
+        for insight in insights:
+            insight["filters"].pop("map", None)
     insights.sort(key=lambda i: (SEVERITY_ORDER.get(i["severity"], 9), -(i["sample"] or 0)))
     return {"insights": insights, "totals": overall}
 
@@ -568,7 +573,7 @@ def _spawns(overall, **filters) -> list[dict]:
     ]
 
 
-#: Muestra minima de una zona para la señal del Coach, igual que sitio y spawn.
+#: Muestra minima de una zona para la senal del Coach, igual que sitio y spawn.
 POSICION_MIN_RONDAS_COACH = 8
 
 
