@@ -67,7 +67,7 @@ def _excluir(client, pk: int, valor: bool = True):
 COMPARADAS = {
     "filters", "overview", "coach", "positioning", "operators", "trends", "teammates",
     "duels", "sessions", "compare", "player-detail", "export", "operators-by-site",
-    "site-after-loss", "operators-pool", "operators-after-result",
+    "site-after-loss", "operators-pool", "operators-after-result", "death-state",
 }
 
 #: Rutas que muestran partidas o inventario, no numeros agregados.
@@ -164,6 +164,7 @@ class _ConPartidaX(TestCase):
             "trends mapa": "/api/trends/?map=club-house&side=Attack",
             "teammates": "/api/teammates/",
             "duels": "/api/duels/",
+            "death-state": "/api/duels/death-state/",
             "sessions": "/api/sessions/",
             "compare matches": "/api/compare/?by=matches&n=2",
             "compare days": "/api/compare/?by=days&n=1",
