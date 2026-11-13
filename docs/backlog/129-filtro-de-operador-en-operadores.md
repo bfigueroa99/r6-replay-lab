@@ -1,14 +1,14 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: en curso 2026-11-13T20:05Z
-candado: dev 2026-11-13T20:05Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
 area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
-archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js
+archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
 turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE
 
 ## PR
@@ -140,6 +140,22 @@ accessibility-review (el resaltado no depende solo del color: `strong` con
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T1954Z-cfZTvvE) Diseno completo, sobre `origin/dev@c332e72`:
+
+- `operadorElegido.js` (nuevo): `sinOperador`, `claseFilaOperador` (clase `me`, el estilo de tu fila en MatchDetail, sin CSS nuevo) y `textoOperadorElegido`.
+- `Operators.jsx`: `/api/operators/` se pide con `sinOperador(filters)`; las dos `<Filters>` (pagina y `SinRondasFiltradas`) sin `showOperator={false}`; `Table` resalta la fila elegida con `rowClass` y un `<strong aria-current="true">` en la celda; nota de operador elegido en el `page-head`. `vistaSinRondas`, Tu pool, Por sitio y Repetir o cambiar siguen con los filtros enteros.
+- e2e `Operadores filtra por operador desde su propio selector` (elegir Ash -> URL, Ataque y Defensa con 3 filas, solo la de Ash con `me` y `aria-current`, ningun pedido a `/api/operators/` con `operator=`, "Cambia" de ataque igual a `/api/operators/after-result/?operator=Ash`, volver a Todos sin resaltado ni nota, y con `side=Defense&operator=Ash` sin nota) y `Operadores sin rondas deja quitar el operador`.
+
+Desvios del diseno, por la revision ciega (3 LOW, los 3 arreglados): la nota nombra los paneles que se filtran (Por sitio y Repetir o cambiar) y dice que Tu pool no cambia (`operator_pool` ignora `operator`); la nota solo sale si el operador esta en las filas (con `side=Defense&operator=Ash` prometia un resaltado que no hay); `docs/metricas.md`, filas Presencia y vs. tu lado: el "100 %" y el "0" con filtro de operador valen para `/api/operators/`, no para la pagina (archivo sumado a `archivos:`).
+
+Tests vistos en rojo antes del codigo: vitest `operadorElegido.test.js` (4, modulo inexistente). Criterios -> tests: selector y URL, paneles filtrados y tablas sin vaciarse con resaltado (e2e "propio selector"), Todos (mismo e2e), vista sin rondas (e2e "sin rondas deja quitar"), consola limpia (los dos), sin backend (diff). Mutaciones: sin `sinOperador` cae el e2e (toHaveCount 3; antes de esperar la recarga el mutante sobrevivia, por eso el test espera la respuesta y vigila los pedidos), sin `rowClass` cae (toHaveClass), con `showOperator={false}` en la vista vacia cae (toHaveValue).
+
+verificar.sh: VERDE 15345ab1c (1279 backend, 409 vitest, 111 e2e).
+
+Skills: no aplica.
+Skills del repo: testing-strategy (logica pura en vitest, selector -> URL -> paneles en e2e con numeros de la API y mutaciones), accessibility-review (resaltado con `aria-current`, no solo color; selector con su `label`), ux-copy (nota con tildes, nombra los paneles reales), modern-web-guidance no leida (sin CSS nuevo; clase y markup existentes).
+OMC: plan=— · revisión=3 hallazgos (3 LOW; 3 arreglados) · verificación=—
 
 ## Revision
 
