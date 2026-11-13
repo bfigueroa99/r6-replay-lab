@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
-estado: implementado
-candado: revisor 2026-11-13T19:03Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -200,10 +200,28 @@ con estos filtros.").
 Skills: ninguna de afuera.
 OMC: plan=— · revisión=0 hallazgos · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 8932c28
+
+(revisor 20261113T1858Z-cxdASk3, en el fallback de QA) Punto de partida: la rama ya contenia `origin/dev`; `verificar.sh`: VERDE 8932c2833 (1247 backend, 392 vitest, 106 e2e).
+
+**Eje de estandares** (`omc-code-reviewer`, prompt de `revision.md`, 252 lineas de diff): aprobar, 1 LOW **confirmado con mutacion**:
+- L1 [test, LOW] `backend/tests/test_operador_tras_resultado.py:230`: `test_las_filas_van_por_lado_operador_y_rondas` pasa aunque se quite `-f["rounds"]` del `sort` de `aggregates.py:938` (Thermite < Zofia ya da ese orden). El orden por rondas si queda cubierto: con esa mutacion cae `test_ash_a_thermite_y_a_sledge` (`[Sledge 1, Thermite 2] != [Thermite 2, Sledge 1]`). Arreglo: Ash->Zofia x2 y Ash->Thermite x1 en ese test, esperando Zofia primero. No bloquea.
+Verifico ademas: las filas salen del mismo bucle y rama que la celda `after_loss.switch` (heredan hueco, lado, operador vacio/`Unknown`), segunda sin ganador cuenta en rondas y no en winrate, sin dependencias ni escritura nueva (clave `switches` en un GET existente), identificadores sin tildes, UI con tildes, sin `print`/`console.log`.
+
+**Eje de intencion** (`omc-code-reviewer`, contra Que gana, Criterios y Fuera de alcance): los 5 criterios cumplidos, nada fuera de alcance; el umbral `OPERADOR_CAMBIO_MIN_RONDAS` no oculta filas (solo marca `poca`, vitest "marca pocas rondas debajo del minimo..."), asi que la suma por lado no depende de el. 1 LOW **confirmado leyendo el test**:
+- L2 [intencion, LOW] `test_la_suma_de_las_filas_es_el_switch_de_la_113` comprueba la suma solo sin filtros; el criterio dice "con los mismos filtros". La igualdad vale por construccion (mismo incremento), riesgo bajo. Arreglo: repetir el assert con `operator="Ash"`. No bloquea.
+Descartado: la posible fragilidad del e2e por empate en el par de mas rondas del seed; `seed_demo` es deterministico y el e2e pasa.
+
+**Ficha.** Criterio 1: `test_ash_a_thermite_y_a_sledge`; 2: `test_la_suma_de_las_filas_es_el_switch_de_la_113` + suma en el e2e; 3: `test_el_filtro_de_operador_elige_desde_donde`; 4: `Operators.jsx` (tabla debajo de la de la 113 en el mismo `Panel`, aviso "· pocas rondas", nota sin cambios) + e2e `Operadores muestra a qué operador cambias tras perder` (consola limpia, `?side=Attack` da la nota); 5: fila en `metricas.md` y en muestra minima. Diff dentro de `archivos:`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=—
 
 ## QA
 
 ## Para el humano
 
 - (arquitecto 2026-11-13, no bloquea) El umbral de 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`) se fijo sin una base real: calibrar con la tuya (cuantos pares pasan de 5).
+- (revisor 2026-11-13, no bloquea) Dos LOW de tests en la 126 (orden por rondas y suma con filtros, detalle en `## Revision`): los puede sumar un Dev despues.
