@@ -1152,6 +1152,28 @@ test('Compañeros muestra quien cae primero', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra las rondas que el equipo ganó sin ti', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas que tu equipo ganó sin ti' }),
+  })
+  await expect(panel).toBeVisible()
+  // seed_demo (/api/teammates/ -> won_without_me): caiste en 173 rondas con
+  // ganador y tu equipo gano 98; Seba siguio vivo en 38 de esas 98
+  const total = panel.locator('tbody tr', { hasText: 'Total' })
+  await expect(total).toContainText('173')
+  await expect(total).toContainText('98')
+  await expect(total).toContainText('57%')
+  await expect(panel.getByRole('heading', { name: 'Quién la sostiene' })).toBeVisible()
+  const seba = panel.getByRole('row', { name: /^Seba 98 38/ })
+  await expect(seba).toBeVisible()
+  await expect(seba.getByRole('link', { name: 'Seba' })).toHaveAttribute('href', /\/jugadores\/\d+$/)
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra la conversion de clutch', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')

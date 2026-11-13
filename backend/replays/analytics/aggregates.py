@@ -2932,6 +2932,68 @@ def teammate_clutches(**filters) -> dict:
     }
 
 
+# la de CLUTCH_COMPANERO_MIN: misma pagina y misma marca `*`, asi un compañero
+# no sale marcado en una tabla y limpio en la de al lado con el mismo n
+GANADA_SIN_TI_MIN = 5
+
+
+def won_without_me(**filters) -> dict:
+    """Rondas en que caiste y tu equipo igual gano, por lado, y quien seguia vivo.
+
+    Cuentan tus filas con `died=True` y ganador conocido. Por compañero
+    habitual, de esas rondas ganadas con el en tu equipo, en cuantas seguia
+    vivo al final (`survived` en su fila). Vivo no es que haya hecho las bajas:
+    eso pide el feed y es otro tramo.
+    """
+    caidas = base_queryset(**filters).filter(died=True, round__my_team_won__isnull=False)
+    # con ?side= la otra fila saldria siempre en cero: no se devuelve
+    lados = (filters["side"],) if filters.get("side") in PRORROGA_LADOS else PRORROGA_LADOS
+
+    def fila(lado: str, qs) -> dict:
+        n = qs.aggregate(rounds=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+        return {"side": lado, "rounds": n["rounds"], "won": n["won"],
+                "pct": _pct(n["won"], n["rounds"])}
+
+    sides = [fila(lado, caidas.filter(side=lado)) for lado in lados]
+    sides.append(fila("total", caidas))
+
+    # Habitual con la regla de `by_stack`, copiada de `teammate_clutches` en vez
+    # de extraerla: la ficha 79 toca esa consulta y un helper chocaria.
+    mia = RoundPlayer.objects.filter(
+        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    habituales = (
+        RoundPlayer.objects.filter(is_me=False)
+        .filter(Exists(mia))
+        .values("player_id")
+        .annotate(n=Count("round__match_id", distinct=True))
+        .filter(n__gte=MIN_PARTIDAS_HABITUAL)
+        .values("player_id")
+    )
+    # correlacionada por el tope de parametros de SQLite, como teammate_clutches
+    mia_ganada = caidas.filter(
+        round__my_team_won=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    filas = (
+        RoundPlayer.objects.filter(is_me=False, player_id__in=habituales)
+        .filter(Exists(mia_ganada))
+        .values("player_id", "player__username")
+        .annotate(rounds=Count("id"), survived=Count("id", filter=Q(survived=True)))
+        .order_by("-survived", "-rounds", "player__username")
+    )
+    return {
+        "min_rounds": GANADA_SIN_TI_MIN,
+        "sides": sides,
+        "mates": [
+            {"player_id": f["player_id"], "username": f["player__username"],
+             "rounds": f["rounds"], "survived": f["survived"],
+             "pct": _pct(f["survived"], f["rounds"]),
+             "low_sample": f["rounds"] < GANADA_SIN_TI_MIN}
+            for f in filas
+        ],
+    }
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [
