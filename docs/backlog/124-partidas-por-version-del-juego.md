@@ -1,7 +1,7 @@
 # 124. Partidas por version del juego en Datos
 
-estado: en curso 2026-11-13T19:37Z
-candado: dev 2026-11-13T19:37Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/124-partidas-por-version-del-juego
 tipo: funcionalidad
 epica: datos
@@ -22,16 +22,16 @@ temporadas cubre el historial y si una version nueva entro sin nombre
 
 ## Criterios de aceptacion
 
-- [ ] Una funcion de agregado agrupa `Match` por `game_version` (y
+- [x] Una funcion de agregado agrupa `Match` por `game_version` (y
       `code_version` como orden) con `Count`, `Min(played_at)` y
       `Max(played_at)`; ordenada de la version mas nueva a la mas vieja.
       Test con tres partidas en dos versiones.
-- [ ] Las partidas con `game_version` vacio o nulo salen en una fila
+- [x] Las partidas con `game_version` vacio o nulo salen en una fila
       "Sin versión", al final. Test.
-- [ ] La tabla va en un endpoint que Datos ya consulta
+- [x] La tabla va en un endpoint que Datos ya consulta
       (`/api/import/status/` o `/api/unknown/`, lo elige el diseno), sin
       POST nuevo y sin columna ni migracion. Base vacia: lista vacia, 200.
-- [ ] `Datos.jsx` muestra la tabla (versión, partidas, primera, última)
+- [x] `Datos.jsx` muestra la tabla (versión, partidas, primera, última)
       con el estado vacio del resto de la pagina; e2e en `seed_demo` que
       ve al menos una fila y consola limpia.
 
@@ -138,6 +138,24 @@ GROUP BY que el `ordering` del modelo partiria; e2e para la tabla con
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Dev 20261113T1926Z-cNCxUZs, sobre `origin/dev@9ed994a`. Diseño completo.
+
+- `unknowns.py`: `partidas_por_version()` al final de `# --- descubrimiento`; `order_by()` vacío antes del GROUP BY; orden por `-code_version` y, a igual código, por la última partida; las de `game_version` vacío al final. `views.import_status` suma `versions`.
+- Tests (`test_versiones_del_juego.py`, vistos en rojo por `ImportError` antes del código): `test_agrupa_por_version_con_primera_y_ultima`, `test_sin_version_va_al_final`, `test_a_igual_codigo_va_primero_la_usada_mas_tarde` (extra), `test_el_orden_del_modelo_no_parte_las_filas`, `test_import_status_trae_versions_y_base_vacia_da_lista_vacia`.
+- `Datos.jsx`: `<h3>Partidas por versión del juego</h3>` y `DataTable` (Versión, Partidas, Primera, Última; CSV `partidas-por-version`) al final del panel Importación.
+- e2e: `Datos muestra las partidas por version del juego` (filas == `versions` de la API, primera fila = `versions[0]`) y `Datos ordena las versiones del juego como la API, no como texto` (respuesta con Y10S4, Y9S4 y sin versión inyectada sobre la real).
+- `metricas.md`: sección `## Datos` con la fila.
+
+Desvío del diseño: el diseño decía "sin `initialSort`, el orden lo da la API", pero `DataTable` siempre ordena (sin `initialSort`, por la primera columna como texto: "Y9S4" antes que "Y10S4"). Cada fila lleva `posicion` (índice de la API) y la tabla arranca con `initialSort` por ella. El segundo e2e lo fija: con el `initialSort` quitado cae (`toContainText` en la primera fila) y con él pasa.
+
+Revisión ciega (`omc-code-reviewer`, `revision.md`, eje de estándares): 1 HIGH (el orden de arriba) y 1 MEDIUM (el e2e con `seed_demo` no podía verlo: una sola fila "Sin versión"), los dos corregidos como dice el desvío. `seed_demo` no se tocó: cambiaría los números de otros e2e.
+
+Verificacion: ver el último `verificar.sh` en el informe del turno.
+
+Skills del repo: testing-strategy (Django para la agrupación, el orden y el GROUP BY; e2e para el render y el orden en el cliente; sin vitest: no hay lógica pura nueva fuera del componente). modern-web-guidance: sin guía aplicada, la tabla reusa `DataTable` y `Panel` de `ui.jsx`. ux-copy: "Sin versión" y "Todavía no hay partidas importadas." en el tono de la página.
+Skills: ninguna de afuera.
+OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
 ## Revision
 
