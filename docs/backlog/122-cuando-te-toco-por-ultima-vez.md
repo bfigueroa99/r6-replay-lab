@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
-estado: en curso 2026-11-13T18:47Z
-candado: dev 2026-11-13T18:47Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
@@ -22,20 +22,20 @@ esta semana del que fue de una racha de hace meses, sin abrir su perfil.
 
 ## Criterios de aceptacion
 
-- [ ] Cada fila de `repeated_rivals` y de `rival_stacks`
+- [x] Cada fila de `repeated_rivals` y de `rival_stacks`
       (`replays/analytics/aggregates.py`) trae `last_played` en ISO 8601:
       el `max(Match.played_at)` de las partidas que ya cuenta la fila.
       Test con un rival en tres partidas de fechas distintas: sale la mas
       reciente.
-- [ ] Con filtros globales (`since`/`until`), `last_played` sale de las
+- [x] Con filtros globales (`since`/`until`), `last_played` sale de las
       partidas que pasan el filtro, igual que `matches`; test con un
       `until` que deja afuera la ultima partida.
-- [ ] `rival_stacks_de_partida` (el aviso del detalle, ficha 92) no cambia
+- [x] `rival_stacks_de_partida` (el aviso del detalle, ficha 92) no cambia
       su record; si suma `last_played`, es el mismo valor que la fila de
       Duelos. Test.
-- [ ] En `Duelos.jsx` las dos tablas muestran la columna "Última vez" con
+- [x] En `Duelos.jsx` las dos tablas muestran la columna "Última vez" con
       la fecha corta del resto de la app y se ordenan por ella; vitest o e2e.
-- [ ] e2e: en `seed_demo`, Duelos muestra "Última vez" en Rivales
+- [x] e2e: en `seed_demo`, Duelos muestra "Última vez" en Rivales
       repetidos con una fecha no vacia; consola limpia.
 
 ## Fuera de alcance
@@ -130,6 +130,47 @@ Skills del repo: testing-strategy (Django para el max y el filtro, vitest para e
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T1830Z-c2rHpej) Diseno completo, sobre `origin/dev@72fad68`:
+
+- `aggregates.py`: `_resultados_y_fechas(match_ids)` (una sola consulta con
+  `id`, `won`, `played_at`, la misma que habia con una columna mas) y
+  `_record(ids, resultado, fechas)` con `last_played` = `max(played_at)` de
+  las partidas de la fila, en ISO. Lo usan `repeated_rivals` y
+  `_filas_de_stacks`, asi que `rival_stacks_de_partida` lo hereda con el
+  mismo valor que Duelos. Sin consultas nuevas.
+- `ultimaVez.js`: `fechaCorta` (DD-MM-AAAA, como `Jugador.jsx`; `—` sin
+  fecha) y `fechaCsv` (AAAA-MM-DD).
+- `Duelos.jsx`: columna "Última vez" despues de "Partidas" en Rivales
+  repetidos y Stacks rivales que se repiten, ordenable (ISO como texto con
+  `localeCompare`), `help` y `csv`.
+- `metricas.md`: *Última vez* en las filas Rival repetido y Stack rival repetido.
+- e2e: en `Duelos muestra rivales repetidos con enlace al perfil`, la
+  cabecera "Última vez" existe y la celda de la primera fila es la fecha de
+  `rivals[0].last_played` de `/api/duels/` (el orden inicial es estable).
+
+Tests vistos en rojo antes del codigo (`KeyError: 'last_played'`):
+`test_la_ultima_vez_es_la_partida_mas_reciente`,
+`test_la_ultima_vez_respeta_el_filtro_de_fechas` (`test_duels.py`),
+`test_el_stack_trae_la_ultima_vez`,
+`test_el_aviso_de_la_partida_da_la_misma_ultima_vez_que_duelos`
+(`test_stacks_rivales.py`, con el record 2-1-1-50.0 igual que antes); vitest
+`ultimaVez.test.js` (3, rojo por modulo inexistente). Criterios -> tests: 1 y
+2 los dos de `test_duels`; 3 el del aviso; 4 e2e + vitest; 5 e2e. Chunk
+inicial `index-*.js` 200.00 kB (Duelos es lazy, 11.58 kB).
+
+Desvio menor: en la fila de stacks, `salida.append(...)` partido en tres
+lineas por el limite de 100 de ruff.
+
+verificar.sh: VERDE 8aa8d4de8 (1243 backend, 391 vitest, 105 e2e).
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, 237 lineas): aprobar, 0
+hallazgos (miro `max` sobre vacio, `KeyError`, zona horaria con
+`USE_TZ = False`, doble consulta, orden de la columna).
+
+Skills: no aplica.
+Skills del repo: testing-strategy (Django para el max y el filtro, vitest para el formato, e2e para la columna), ux-copy (`help` con tildes, `—` como el resto), modern-web-guidance (no aplica: columna de un `DataTable` existente, sin CSS ni componente nuevo).
+OMC: plan=— · revisión=0 hallazgos · verificación=—
 
 ## Revision
 
