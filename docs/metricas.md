@@ -147,7 +147,7 @@ lo mueve a la partida nueva. Sin candidato el record no aparece; nunca se
 muestra un 0 inventado.
 Cada record enlaza a su partida; los de ronda (mas bajas en una ronda, clutch
 mas grande y racha de rondas) abren el detalle parado en esa ronda
-(`/partidas/<id>#ronda-<n>`, la ronda donde empieza en la racha).
+(`/partidas/<id>#ronda-<n>`, la ronda donde empieza la racha).
 
 | Metrica | Definicion |
 |---|---|

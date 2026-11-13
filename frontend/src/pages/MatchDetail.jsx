@@ -50,13 +50,14 @@ function DetallePartida({ id }) {
 
   // `#ronda-N` (los records del Resumen) abre la partida parada en esa ronda;
   // espera a los datos, y un ancla que no es de una ronda deja el detalle como siempre
-  const { hash } = useLocation()
+  // con `key` volver a clicar el mismo record re-aplica el ancla aunque el hash no cambie
+  const { hash, key: navegacion } = useLocation()
   useEffect(() => {
     const indice = indiceDeAncla(hash, data?.rounds)
     if (indice === null) return
     setSelected(indice)
     document.getElementById('rondas')?.scrollIntoView({ block: 'start' })
-  }, [hash, data])
+  }, [hash, navegacion, data])
 
   if (status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
   if (error) return <ErrorBox error={error} />
