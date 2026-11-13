@@ -1,7 +1,7 @@
 # 125. Teamkill marcado en la timeline de la ronda
 
-estado: implementado
-candado: revisor 2026-11-13T19:51Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/125-teamkill-marcado-en-la-timeline
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F14
 archivos: frontend/src/aperturas.js (esTeamkill), frontend/src/aperturas.test.js, frontend/src/pages/MatchDetail.jsx (Timeline), frontend/src/textoRonda.js, frontend/src/textoRonda.test.js, frontend/e2e/humo.spec.js
-turnos: po 20261113T1703Z-ctZvzXQ, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cq9nfTP
+turnos: po 20261113T1703Z-ctZvzXQ, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cq9nfTP, revisor 20261113T1926Z-cNCxUZs
 
 ## PR
 
@@ -181,10 +181,29 @@ Skills: no aplica.
 Skills del repo: testing-strategy (vitest para la regla y el texto, e2e con respuesta interceptada), ux-copy (`title` con tildes, chip corto como `HS`), modern-web-guidance (no aplica: un `.chip` existente, sin CSS ni componente nuevo).
 OMC: plan=— · revisión=0 hallazgos · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 0de38f5
+
+(revisor 20261113T1926Z-cNCxUZs) Punto de partida: la rama ya contenía `origin/dev@c332e72`; `verificar.sh`: VERDE 0de38f53f (1266 backend, 408 vitest, 108 e2e).
+
+**Eje de estándares** (`omc-code-reviewer`, prompt de `revision.md`, 229 líneas de diff): aprobar, 1 LOW **confirmado leyendo el código**:
+- L1 [bug, LOW] `frontend/src/aperturas.js:42`: `esTeamkill` arma un `Map` nick -> `team_index`; si el mismo nick está en los dos equipos de una ronda, se queda con el último y una baja a ese homónimo puede salir `TK` (sin color y con "(TK)" en el texto copiado), mientras `_teamkills` del backend compara por id. Es la misma limitación de `marcasDeApertura` (el evento solo trae el nick). Arreglo: con un nick presente en los dos equipos, devolver `false`. No bloquea.
+
+**Eje de intención** (`omc-code-reviewer`, contra Que gana, Criterios y Fuera de alcance; diff de más de 150 líneas): los 5 criterios cumplidos, nada fuera de alcance (sin backend, sin tocar la 67 ni la matriz; `textoRonda` lo pide el criterio 5). 1 LOW **confirmado leyendo el test**:
+- L2 [test, LOW] `frontend/e2e/humo.spec.js:836`: "en ninguna otra línea" se comprueba en la ronda alterada (conteo 1) y en una sola ronda más. Arreglo: recorrer todas las pestañas menos la alterada. No bloquea.
+
+Sin `omc-security-reviewer`: el diff no toca red, POST, `.rec`, rutas ni dependencias.
+
+**Ficha.** Criterio 1: los 6 vitest de `esTeamkill` (teamkill, rival, nick ausente en los dos sentidos, `Death`, suicidio, ronda sin players); 2 y 4: e2e `la timeline marca un teamkill con TK`; 3: `el timeline marca la apertura de cada ronda` sin cambios; 5: vitest de `textoRonda` con `(apertura, TK)`. Diff dentro de `archivos:`; sin número nuevo (TK es una marca; la regla ya está en la fila *Teamkills* de `metricas.md`); identificadores sin tildes, UI con tildes, sin `console.log`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revisión con `revision.md`).
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=—
 
 ## QA
 
 ## Para el humano
 
 - (arquitecto 2026-11-13, no bloquea) Se marcan con `TK` los teamkills de los dos equipos (el feed muestra los dos); el panel de teamkills sigue contando solo los de tu equipo.
+
+- (revisor 2026-11-13, no bloquea) Dos LOW en la 125 (nick repetido en los dos equipos; e2e que mira una sola ronda más, detalle en `## Revision`): los puede sumar un Dev después.
