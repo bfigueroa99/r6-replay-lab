@@ -22,7 +22,7 @@ import { textoRonda } from '../textoRonda.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
-import { indiceDeAncla, pasoDeTecla, rondaVecina } from '../navegacionRondas.js'
+import { indiceDeAncla, pasoDeTecla, pideSiguientePerdida, rondaVecina, siguientePerdida } from '../navegacionRondas.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -40,6 +40,11 @@ function DetallePartida({ id }) {
 
   useEffect(() => {
     function alApretar(e) {
+      if (pideSiguientePerdida(e) && total) {
+        e.preventDefault()
+        setSelected((s) => siguientePerdida(s, data.rounds) ?? s)
+        return
+      }
       const paso = pasoDeTecla(e)
       if (!paso || !total) return
       // sin esto la flecha ademas desplaza la pagina
@@ -48,7 +53,7 @@ function DetallePartida({ id }) {
     }
     window.addEventListener('keydown', alApretar)
     return () => window.removeEventListener('keydown', alApretar)
-  }, [total])
+  }, [total, data])
 
   // `#ronda-N` (los records del Resumen) abre la partida parada en esa ronda;
   // espera a los datos, y un ancla que no es de una ronda deja el detalle como siempre
@@ -170,7 +175,20 @@ function DetallePartida({ id }) {
       <StacksRivales stacks={data.rival_stacks} />
 
       {round ? (
-        <Panel id="rondas" title="Rondas" hint="Clic en una ronda o ← → para ver su timeline.">
+        <Panel
+          id="rondas"
+          title="Rondas"
+          hint="Clic en una ronda, ← → para moverte o P para la siguiente perdida."
+        >
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => setSelected((s) => siguientePerdida(s, rounds) ?? s)}
+            disabled={siguientePerdida(selected, rounds) === null}
+            title="Próxima ronda que tu equipo perdió (tecla P)"
+          >
+            Siguiente ronda perdida
+          </button>
           <div className="round-tabs">
             {rounds.map((r, i) => (
               <button

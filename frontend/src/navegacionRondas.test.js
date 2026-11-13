@@ -2,7 +2,14 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { anclaDeRonda, indiceDeAncla, pasoDeTecla, rondaVecina } from './navegacionRondas.js'
+import {
+  anclaDeRonda,
+  indiceDeAncla,
+  pasoDeTecla,
+  pideSiguientePerdida,
+  rondaVecina,
+  siguientePerdida,
+} from './navegacionRondas.js'
 
 describe('rondaVecina', () => {
   it('avanza y retrocede una ronda', () => {
@@ -96,5 +103,71 @@ describe('anclaDeRonda', () => {
   it('usa el numero humano de la ronda, el de la etiqueta R<n>', () => {
     expect(anclaDeRonda(0)).toBe('#ronda-1')
     expect(anclaDeRonda(6)).toBe('#ronda-7')
+  })
+})
+
+const ronda = (my_team_won) => ({ my_team_won })
+
+describe('siguientePerdida', () => {
+  it('salta a la proxima perdida despues de la elegida', () => {
+    const rounds = [ronda(false), ronda(true), ronda(true), ronda(false), ronda(false)]
+    expect(siguientePerdida(0, rounds)).toBe(3)
+    expect(siguientePerdida(3, rounds)).toBe(4)
+  })
+
+  it('da la vuelta al final', () => {
+    const rounds = [ronda(true), ronda(false), ronda(true), ronda(true)]
+    expect(siguientePerdida(2, rounds)).toBe(1)
+    expect(siguientePerdida(3, rounds)).toBe(1)
+  })
+
+  it('una ronda sin ganador no cuenta como perdida', () => {
+    const rounds = [ronda(true), ronda(null), { }, ronda(false)]
+    expect(siguientePerdida(0, rounds)).toBe(3)
+  })
+
+  it('sin perdidas devuelve null', () => {
+    expect(siguientePerdida(0, [ronda(true), ronda(null)])).toBeNull()
+    expect(siguientePerdida(0, [])).toBeNull()
+    expect(siguientePerdida(0, undefined)).toBeNull()
+  })
+
+  it('con la elegida como unica perdida devuelve la misma', () => {
+    expect(siguientePerdida(1, [ronda(true), ronda(false), ronda(true)])).toBe(1)
+  })
+
+  it('un indice fuera de rango se acota como en rondaVecina', () => {
+    const rounds = [ronda(false), ronda(true), ronda(false)]
+    expect(siguientePerdida(9, rounds)).toBe(0)
+    expect(siguientePerdida(-3, rounds)).toBe(2)
+  })
+})
+
+describe('pideSiguientePerdida', () => {
+  it('la p pide el salto', () => {
+    expect(pideSiguientePerdida({ key: 'p', target: cuerpo })).toBe(true)
+    // Bloq Mayus: Shift ya queda afuera por los modificadores
+    expect(pideSiguientePerdida({ key: 'P', target: cuerpo })).toBe(true)
+  })
+
+  it('con modificadores, en un campo o con la tecla tomada no', () => {
+    for (const mod of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey']) {
+      expect(pideSiguientePerdida({ key: 'p', target: cuerpo, [mod]: true })).toBe(false)
+    }
+    for (const tagName of ['INPUT', 'SELECT', 'TEXTAREA']) {
+      expect(pideSiguientePerdida({ key: 'p', target: { tagName } })).toBe(false)
+    }
+    expect(pideSiguientePerdida({ key: 'p', target: { tagName: 'DIV', isContentEditable: true } })).toBe(false)
+    expect(pideSiguientePerdida({ key: 'p', target: cuerpo, defaultPrevented: true })).toBe(false)
+  })
+
+  it('dentro de una tabla con scroll la p igual pide el salto', () => {
+    const celda = { tagName: 'TD', closest: (sel) => (sel.includes('.table-wrap') ? {} : null) }
+    expect(pideSiguientePerdida({ key: 'p', target: celda })).toBe(true)
+  })
+
+  it('otra tecla no', () => {
+    expect(pideSiguientePerdida({ key: 'o', target: cuerpo })).toBe(false)
+    expect(pideSiguientePerdida({ key: 'ArrowRight', target: cuerpo })).toBe(false)
   })
 })
