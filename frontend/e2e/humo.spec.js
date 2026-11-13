@@ -793,6 +793,7 @@ test('el detalle de partida copia una ronda', async ({ page }) => {
   expect(texto).toContain(primera.actor)
 
   // Al cambiar de ronda el aviso no queda pegado a la otra
+  expect(detalle.rounds.length).toBeGreaterThan(1)
   await page.locator('.round-tab').nth(i === 0 ? 1 : 0).click()
   await expect(page.getByText('Ronda copiada', { exact: true })).toHaveCount(0)
 
