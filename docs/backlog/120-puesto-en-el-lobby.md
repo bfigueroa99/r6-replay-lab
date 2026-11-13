@@ -1,7 +1,7 @@
 # 120. Puesto en el lobby
 
-estado: revisado
-candado: qa 2026-11-13T18:58Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/120-puesto-en-el-lobby
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E7
 archivos: backend/replays/analytics/aggregates.py (lobby_rank), backend/replays/views.py (trends), backend/tests/test_puesto_en_el_lobby.py (nuevo), frontend/src/puestoLobby.js (nuevo), frontend/src/puestoLobby.test.js (nuevo), frontend/src/pages/Trends.jsx (panel Puesto en el lobby), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1733Z-cudo1Sw, dev 20261113T1802Z-c8dAf7p, revisor 20261113T1830Z-c2rHpej
+turnos: po 20261113T1603Z-cHj1H4k, arquitecto 20261113T1733Z-cudo1Sw, dev 20261113T1802Z-c8dAf7p, revisor 20261113T1830Z-c2rHpej, qa 20261113T1858Z-cxQ3TuB
 
 ## PR
 
@@ -258,7 +258,57 @@ OMC: plan=— · revisión=3 hallazgos LOW (0 arreglados: 1 al humano, 2 decisio
 
 
 
-## QA
+## QA 2026-11-13 sobre aec18f7
+
+(qa 20261113T1858Z-cxQ3TuB) Rama fusionada con `origin/dev@ed7bb52` (la 121 mergeada) sin
+conflictos, merge aec18f7. Script de siembra y de accesibilidad en el
+scratchpad (`sembrar.py`, `a11y.js`); sin `.rec` ni `.sqlite3` en el repo.
+
+- **check.sh**: `verificar.sh` -> `VERDE aec18f7fe en 196s: 1253 tests backend, 395 vitest, 106 e2e. Todo en verde.`
+- **Base vacia** (`SQLITE_PATH=<tmp>/vacia.sqlite3 manage.py migrate`, `runserver 8761`):
+  `curl -s localhost:8761/api/trends/` -> `lobby_rank` con `count 0, matches 0, pct None` en los tres; `/tendencias` muestra el vacio de la pagina, consola limpia.
+- **Base sembrada** (`manage.py shell < sembrar.py` con `factories`): 0 Club House vos mejor de 10;
+  1 Border vos ultimo de 10; 2 Club House vos + un rival que te supera, sin compañeros;
+  3 Oregon solo vos; 4 Border empatas con un rival el mejor; 5 Bank vos = compañero,
+  dos rivales con el mismo nick "Repetido" (profiles distintos, 2 y 0 kills).
+  Recalculado a mano: lobby 5 partidas (la 3 no entra), mejor 2 (0 y 4) = 40 %,
+  ultimo 2 (1 y 2) = 40 %, equipo 4 partidas (0, 1, 4, 5), mejor de tu equipo 3
+  (0, 4, 5) = 75 %. API: `best_in_lobby (2,5,40.0)`, `best_in_team (3,4,75.0)`,
+  `last_in_lobby (2,5,40.0)`: igual. El nick repetido cuenta como dos jugadores
+  (si se juntaran, empatarias con el mejor y el peor de la 5).
+- **Filtros y bordes** (`curl "localhost:8762/api/trends/?<q>"`, todos 200):
+  `map=club-house` -> (1,2,50) (1,1,100) (1,2,50) y `map=border` -> (1,2,50) x3,
+  los dos iguales a mano; `map=oregon`, `map=nada`, `side=Defense`,
+  `since=2030-01-01`, `operator=Ash`, `match_type=Casual` -> ceros con `pct None`;
+  `until=foo`, `page=-1`, `map=` -> sin filtro (como el resto de `trends`).
+- **Bundle**: chunk inicial `index-*.js` 200116 bytes en dev y en la rama (0 %);
+  `Trends-*.js` 33030 -> 34185 (+3,5 %).
+- **accessibility-review** (Playwright sobre la base sembrada): `heading "Puesto en el lobby" [level=2]`,
+  hint, aviso y nota como `paragraph`; contraste medido h2 5.71, hint 5.71, label
+  5.21, valor 12.92, sub 5.21, nota 5.71 (todos >= 4.5:1, WCAG 1.4.3); el panel no
+  agrega controles y Tab recorre la pagina sin trampas; consola limpia. Con
+  `?map=oregon`, "No hay partidas con otros jugadores con estos filtros.". Sin
+  Critical ni Major. Menor ya existente: las `kpis` de `Stat` no son lista (patron
+  de toda la app; no es de esta ficha).
+- **design-critique**: tres stats sin tono, con su `n` en el sub, despues de "Por
+  partida": legible; nada que llevar a `ALCANCE.md`.
+- **validate-data** sobre la fila de `metricas.md` (367 y 418): division por cero
+  -> `pct None` y la UI muestra la nota; no hay promedio de promedios en el
+  porcentaje (conteo de partidas); cada tasa con su `n` propio a la vista;
+  redondeo: API 1 decimal, UI `pct` sin decimales.
+- **Mutacion** (`manage.py test tests.test_puesto_en_el_lobby`, codigo restaurado,
+  `git status` limpio): empate estricto (`<` sin tolerancia) -> caen 2 tests de
+  empate; compañero sin `team_index` -> caen 6; quitar `if not otros: continue` ->
+  cae `test_partida_solo_con_vos_no_cuenta`.
+- **omc-verifier**: PASS, confianza alta, 6/6 criterios VERIFIED; gap LOW: los dos
+  comentarios con ñ que ya anoto el revisor.
+
+Sin migracion, `recompute`, parser, Electron ni `.ps1`: nada para verificar en el PC.
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (sin Critical/Major; contrastes 5.21 a 12.92), design-critique (sin hallazgos), validate-data (2 valores recalculados a mano por filtro + total, iguales a la API), testing-strategy (mutacion 3/3 detectadas).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
