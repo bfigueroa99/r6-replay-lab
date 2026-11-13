@@ -309,6 +309,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_round_number": agg.by_round_number(**filters),
             "by_half": agg.by_half(**filters),
             "by_overtime_side": agg.by_overtime_side(**filters),
+            "by_overtime_start_side": agg.by_overtime_start_side(**filters),
             "by_half_opener": agg.by_half_opener(**filters),
             "by_previous_round": agg.by_previous_round(**filters),
             "by_score_state": agg.by_score_state(**filters),

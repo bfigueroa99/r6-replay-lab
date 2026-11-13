@@ -87,6 +87,7 @@ test('Tendencias muestra la prórroga por lado', async ({ page }) => {
   // seed_demo no tiene prorrogas: la API da las dos filas en cero y la UI una nota, no ceros
   const datos = await (await page.request.get('/api/trends/')).json()
   expect(datos.by_overtime_side.map((f) => [f.side, f.rounds])).toEqual([['Attack', 0], ['Defense', 0]])
+  expect(datos.by_overtime_start_side.map((f) => [f.side, f.matches])).toEqual([['Attack', 0], ['Defense', 0]])
   await page.goto('/tendencias')
 
   const panel = page.locator('section.panel', { hasText: 'Por mitad de la partida' })
