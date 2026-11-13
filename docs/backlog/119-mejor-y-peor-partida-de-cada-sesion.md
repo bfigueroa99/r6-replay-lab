@@ -208,4 +208,4 @@ OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: 1 decision del diseno,
 
 ## Para el humano
 
-- (revisor 2026-11-13, no bloquea) La ayuda de la columna Peor en Tendencias no dice que Peor queda en  si todas las partidas de la sesion empatan en rating ( si). Arreglo de una linea en  si se quiere.
+- (revisor 2026-11-13, no bloquea) La ayuda de la columna Peor en Tendencias no dice que Peor queda en `—` si todas las partidas de la sesion empatan en rating (`metricas.md` si). Arreglo de una linea en `Trends.jsx` si se quiere.
