@@ -268,9 +268,9 @@ test('Operadores sin rondas deja quitar el operador', async ({ page }) => {
 
   // Ash es de ataque: con defensa no hay fila que resaltar y la nota no aparece
   await page.goto('/operadores?side=Defense&operator=Ash')
-  // dos encabezados Defensa: el h2 del panel y el h3 de Tu pool; esperar a los dos
-  // evita la carrera en la que la nota se miraba con un solo panel cargado
-  await expect(page.getByRole('heading', { name: 'Defensa', exact: true })).toHaveCount(2)
+  // level 2: el h3 Defensa de Tu pool se llama igual y, si ya cargo, el locator
+  // sin nivel cae en strict mode. La nota sale de la misma respuesta que el h2
+  await expect(page.getByRole('heading', { level: 2, name: 'Defensa', exact: true })).toBeVisible()
   await expect(page.getByText('Con Ash elegido')).toHaveCount(0)
   await expect(page.locator('tbody tr.me')).toHaveCount(0)
 

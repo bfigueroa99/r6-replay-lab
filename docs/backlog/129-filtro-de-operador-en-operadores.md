@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: con hallazgos
-candado: dev 2026-11-13T22:37Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
 archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s, dev 20261113T2223Z-c24t16L
 
 ## PR
 
@@ -206,6 +206,19 @@ verificar.sh: VERDE 5c4006af3 (1284 backend, 415 vitest, 114 e2e).
 
 Skills del repo: accessibility-review (0 Critical, 0 Major; contraste medido 6.45 y 13.19), testing-strategy (mutaciones: 3 de 3 caen; un test intermitente con repro), validate-data no aplica (sin numero nuevo: `metricas.md` solo aclara Presencia y vs. tu lado), design-critique no aplica (sin pagina ni panel nuevo).
 OMC: plan=— · revisión=— · verificación=— (sin `aprobado`: no se corrio omc-verifier)
+
+## Implementacion (hallazgos de QA)
+
+(dev 20261113T2223Z-c24t16L) Arreglado el MEDIUM de la QA 2026-11-13: en `frontend/e2e/humo.spec.js` (`Operadores sin rondas deja quitar el operador`), el encabezado se busca con `getByRole('heading', { level: 2, name: 'Defensa', exact: true })`: sin el nivel resolvia tambien al h3 Defensa de Tu pool y caia en strict mode cuando ya habian cargado los dos. La segunda carrera que anotaba la QA no existe: la nota sale de la misma respuesta (`/operators/`) que el h2 (lo marco la revision ciega).
+
+- Repro de la QA con el arreglo, desde `frontend/`: `E2E_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell npx playwright test -g "sin rondas deja quitar el operador" --trace off --repeat-each 40 --workers 4` -> 40 passed (antes 6 de 30 caian).
+- Mutante de la QA (nota sin `rows.some`, `Operators.jsx:46`) con el arreglo: 10 failed de 10. Restaurado.
+- Revision ciega (`omc-code-reviewer`, eje de estandares) sobre una primera version (`toHaveCount(2)` atado a Tu pool): aprobar, 3 LOW; arreglados 2 (usar `level: 2` en vez de depender de Tu pool, comentario con el motivo real). No arreglado: los `toHaveCount(0)` siguientes no acotan a la seccion Defensa (ya estaba; hoy esos paneles quedan vacios con Ash en defensa).
+- Los 3 LOW del Revisor (`## Para el humano`) siguen sin tomar: no bloquean.
+
+Skills: no aplica.
+Skills del repo: testing-strategy (repro en paralelo y mutante antes y despues del arreglo).
+OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Para el humano
 
