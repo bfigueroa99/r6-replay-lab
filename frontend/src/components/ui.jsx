@@ -25,9 +25,9 @@ export function Stat({ label, value, sub, tone, help }) {
   )
 }
 
-export function Panel({ title, hint, children, right }) {
+export function Panel({ id, title, hint, children, right }) {
   return (
-    <section className="panel">
+    <section className="panel" id={id}>
       {title ? (
         <div className="page-head" style={{ marginBottom: hint ? 0 : 12 }}>
           <h2 style={{ margin: 0, fontSize: 15, letterSpacing: '0.6px', color: 'var(--muted)', textTransform: 'uppercase' }}>
