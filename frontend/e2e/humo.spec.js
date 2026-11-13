@@ -440,14 +440,14 @@ test('un record de ronda abre la partida en esa ronda', async ({ page }) => {
   await panel.locator('tr', { hasText: 'Más bajas en una ronda' }).getByRole('link').click()
   await expect(page).toHaveURL(new RegExp(`/partidas/${record.match_id}#ronda-${record.round_number + 1}$`))
   await expect(page.locator('#rondas .round-tab.active')).toContainText(etiqueta)
-  await expect(page.locator('#rondas .round-detail h3')).toHaveText(new RegExp(`^${etiqueta}\\b`))
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(new RegExp(`^${etiqueta}\\b`))
 
   // un ancla que no existe deja el detalle como siempre, en la primera ronda;
   // about:blank para que sea una carga nueva y no solo un cambio de hash
   await page.goto('about:blank')
   await page.goto(`/partidas/${record.match_id}#ronda-999`)
   await expect(page.locator('#rondas .round-tab.active')).toContainText('R1')
-  await expect(page.locator('#rondas .round-detail h3')).toHaveText(/^R1\b/)
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(/^R1\b/)
 
   expect(errores).toEqual([])
 })
