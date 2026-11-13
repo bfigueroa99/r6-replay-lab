@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: implementado
-candado: revisor 2026-11-13T23:55Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -252,6 +252,24 @@ Skills: no aplica.
 Skills del repo: testing-strategy (repro en paralelo antes y despues, 170 corridas del e2e).
 OMC: plan=— · revisión=1 hallazgo (1 arreglado) · verificación=—
 
+## Revision 2026-11-13 sobre 5a72366
+
+(revisor 20261113T2345Z-c5J2BqJ) Tercera pasada. La rama contiene `origin/dev@2b7f715`. verificar.sh: VERDE 5a72366b6 (1321 backend, 435 vitest, 117 e2e).
+
+**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`, sin leer la ficha): aprobar, 2 LOW, los dos confirmados leyendo el codigo; ninguno bloquea.
+- [test] LOW `frontend/e2e/humo.spec.js:226`: `expect(nota).toHaveCount(0)` justo despues del `goto` corre con la pagina en `<Loading />` y pasaria aunque la nota saliera sin operador. Arreglo: esperar las 3 filas de Ataque antes de afirmarlo.
+- [bug] LOW `frontend/src/operadorElegido.js:17`: con `?side=Attack&operator=Ash` la nota dice "Ataque y Defensa siguen mostrando todo tu pool" pero solo se ve Ataque. Arreglo: pasar `filters.side` a `textoOperadorElegido` y nombrar solo la tabla visible.
+
+**Arreglo del MEDIUM anterior** (listener antes del `goto`): confirmado. Repro en paralelo de los dos e2e de la ficha, desde `frontend/`: `E2E_CHROMIUM=<headless shell> npx playwright test -g "Operadores (filtra por operador desde su propio selector|sin rondas deja quitar)" --trace off --repeat-each 30 --workers 8` -> 60 passed.
+
+**Ficha.** Criterios cubiertos como en las revisiones anteriores (los dos e2e, vitest `operadorElegido.test.js`, diff sin `backend/`). Diff dentro de `archivos:`; identificadores sin tildes, UI con tildes; sin `console.log`. Sin eje de seguridad (no toca red, POST, rutas ni dependencias); sin eje de intencion aparte (diff de un tema, 147 lineas).
+
+Veredicto: aprobar. Tercera pasada con solo LOW: `revisado`, los LOW a `## Para el humano`.
+
+Skills del repo: testing-strategy (repro en paralelo del e2e antes intermitente).
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: no bloquean) · verificación=—
+
 ## Para el humano
 
 - (revisor 2026-11-13, no bloquea) Tres LOW en la 129 (listener del e2e despues del `goto`, operador sin rondas sin aviso, `aria-current` en una celda; detalle en `## Revision`): los puede sumar un Dev despues.
+- (revisor 2026-11-13, tercera pasada, no bloquea) Dos LOW mas: nota de operador que nombra Defensa con `side=Attack`, y un `toHaveCount(0)` del e2e que corre antes de la carga.
