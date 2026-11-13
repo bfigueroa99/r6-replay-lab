@@ -32,32 +32,67 @@ STR_SEP = b"\x00" * 7
 Listener = Callable[["Reader"], None]
 
 
-def _decompress_chunks(raw: bytes, start: int) -> bytes:
+#: Tope de lo que puede descomprimir un .rec. Uno real ocupa 40-60 MB (ver
+#: docs/formato-rec.md): con diez veces eso de margen, lo que lo pasa no es un
+#: replay. zstd comprime 32.000 a 1 (3 KB de ceros son 100 MB), asi que sin
+#: tope un archivo de pocos MB se lleva toda la memoria del equipo.
+MAX_DESCOMPRIMIDO = 512 * 1024 * 1024
+
+#: Bytes comprimidos que se le pasan a zstd por llamada. El tope se revisa
+#: entre llamadas, y un tramo no puede expandirse a mas de 32.000 veces su
+#: tamano: con 4 KB el tope se pasa, como mucho, por 128 MB.
+_TRAMO = 4 * 1024
+
+
+def _decompress_chunks(raw: bytes, start: int, limite: int | None = None) -> bytes:
     """Descomprime todos los frames zstd desde `start` y los concatena.
 
     Los .rec traen datos no comprimidos al final, asi que un error de magic
-    mismatch es esperado y se trata como fin de datos.
+    mismatch es esperado y se trata como fin de datos. Un frame cortado (el
+    juego se cerro a mitad de ronda) entrega lo que alcanzo a leer.
+
+    Lee de a tramos sobre un `memoryview`: pasarle a zstd `raw[pos:]` copiaba
+    lo que quedaba del archivo en cada frame (y `unused_data` otra vez), y no
+    dejaba cortar una bomba antes de tenerla entera en memoria. Si la salida
+    pasa de `limite` (por defecto `MAX_DESCOMPRIMIDO`) lanza `InvalidFile`.
     """
-    out = bytearray()
+    if limite is None:
+        limite = MAX_DESCOMPRIMIDO
+    partes: list[bytes] = []
+    total = 0
+    vista = memoryview(raw)
+    fin = len(raw)
     pos = raw.find(ZSTD_MAGIC, start)
     sections = 0
     while pos != -1:
         dobj = zstandard.ZstdDecompressor().decompressobj()
-        window = raw[pos:]
+        del_frame: list[bytes] = []
+        i = pos
         try:
-            out += dobj.decompress(window)
+            while i < fin and not dobj.eof:
+                parte = dobj.decompress(vista[i : i + _TRAMO])
+                i = min(i + _TRAMO, fin)
+                if parte:
+                    del_frame.append(parte)
+                    total += len(parte)
+                    if total > limite:
+                        raise InvalidFile(
+                            # lo lee el usuario en Datos (el detalle del import)
+                            f"el archivo se descomprime a más de {limite // (1024 * 1024)} MB: "
+                            "no es un replay"
+                        )
         except zstandard.ZstdError as exc:  # frame corrupto o basura final
+            # lo que el frame roto alcanzo a entregar no se usa, como antes
+            total -= sum(len(parte) for parte in del_frame)
             log.debug("zstd corto la descompresion en %d: %s", pos, exc)
             break
+        partes.extend(del_frame)
         sections += 1
-        try:
-            unused = len(dobj.unused_data)
-        except Exception:  # pragma: no cover - depende de la version
-            unused = 0
-        consumed = max(len(window) - unused, len(ZSTD_MAGIC))
-        pos = raw.find(ZSTD_MAGIC, pos + consumed)
-    log.debug("zstd_sections=%d bytes=%d", sections, len(out))
-    return bytes(out)
+        # lo que sobro del ultimo tramo despues del fin del frame
+        usado = i - len(dobj.unused_data)
+        pos = raw.find(ZSTD_MAGIC, max(usado, pos + len(ZSTD_MAGIC)))
+    log.debug("zstd_sections=%d bytes=%d", sections, total)
+    return b"".join(partes)
 
 
 class Reader:

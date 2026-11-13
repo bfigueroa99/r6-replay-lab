@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { post, useApi } from '../api.js'
-import { DataTable, ErrorBox, Loading, Panel } from '../components/ui.jsx'
+import { Aviso, DataTable, ErrorBox, Loading, Panel } from '../components/ui.jsx'
 
 /**
  * Lo que antes pedia editar un .env o abrir una consola: la carpeta de
@@ -113,7 +113,7 @@ export default function Ajustes({ onCambio }) {
         </div>
       </div>
 
-      {flash ? <div className={`flash ${flash.ok ? '' : 'bad'}`}>{flash.text}</div> : null}
+      <Aviso flash={flash} />
 
       <Panel
         title="Carpeta de replays"

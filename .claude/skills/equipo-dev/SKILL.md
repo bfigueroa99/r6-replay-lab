@@ -23,20 +23,23 @@ playbook (como trabaja el equipo), las fichas (que hay que hacer). Si algo de
 aca contradice `CLAUDE.md`, gana `CLAUDE.md`.
 
 El turno tambien corre en OpenCode (`scripts/equipo-dev/opencode.sh`, con
-el comando `.opencode/commands/equipo-dev.md`, que dice que herramienta
-reemplaza a cada una de Claude Code). Sus commits firman `OpenCode`: tambien
-es el equipo.
+el comando `.opencode/commands/equipo-dev.md`, que dice que reemplaza a cada
+herramienta). Sus commits firman `OpenCode`: tambien es el equipo.
 
-Los roles se apoyan en los agentes de oh-my-claudecode (OMC),
-`.claude/agents/omc-*.md`, con las recetas de `.claude/skills/omc/SKILL.md`
-(leerla de `$REF`): plan por consenso (receta 1), revision en dos ejes (2),
-verificacion con evidencia (3) y diagnostico (4); cada `roles/<rol>.md` dice
-en que paso. Sus modos persistentes (`autopilot`, `ralph`, `team`) no se
-usan: el turno ya es el loop. Si `subagent_type: "omc-<x>"` no existe en el
-checkout, el fallback de la skill (`general-purpose` con el cuerpo de
-`git show $EQUIPO_REF:.claude/agents/omc-<x>.md` desde `<Adaptacion_Loop>`).
-OMC nunca frena un turno: si falla o el reloj no alcanza (P9), se sigue sin
-el y se anota en `**OMC:**` del informe.
+Skills de apoyo, cada una en el paso que dice `roles/<rol>.md`. Los agentes
+de oh-my-claudecode (OMC), `.claude/agents/omc-*.md`, con las recetas de
+`.claude/skills/omc/SKILL.md` (leerla de `$REF`): plan por consenso
+(receta 1), revision en dos ejes (2), verificacion con evidencia (3) y
+diagnostico (4); sin sus modos persistentes (`autopilot`, `ralph`, `team`);
+si el tipo `omc-<x>` no existe, su fallback con
+`git show $EQUIPO_REF:.claude/agents/omc-<x>.md`. Y las que un paso cita como
+skill `<nombre>` (mapa: `skills-del-repo.md`), que no se activan solas: se
+leen enteras ahi, una vez por turno, con
+`git show $EQUIPO_REF:.claude/skills/<nombre>/SKILL.md` (o del plugin de la
+cuenta: `superpowers:<nombre>`, `design:<nombre>`). Son guia: lo que mandan
+preguntar a una persona va a `## Para el humano` (P10). Ninguna frena un
+turno: si falla o el reloj no alcanza (P9), se sigue sin ella y se anota en
+`**OMC:**` o `**Skills del repo:**`.
 
 ## Principios
 
@@ -47,6 +50,8 @@ el y se anota en `**OMC:**` del informe.
 3. **Verde o no se empuja codigo.** `check.sh` tiene que terminar en
    `Todo en verde.` con todos sus pasos (lint, tests, build, e2e), corrido
    con `verificar.sh` (ver "Comandos largos"). Un verde a medias no es verde.
+   Y nada se afirma sin su salida a la vista en este turno (skill
+   `verification-before-completion`): ni un `estado:` ni el informe.
 4. **Independencia.** Un mismo contexto firma como mucho una de estas
    etapas sobre la misma ficha: implementar, revisar, probar. El contexto es
    el sufijo de `EQUIPO_SESION` en `turnos:`; lo verifica
@@ -99,8 +104,8 @@ nada; si una salida igual sale cortada ("Output too large"), se lee el
 archivo que la herramienta indica, entero.
 
 La cadena prueba `rutina.md`, que solo este playbook tiene, y va primero a
-`dev`, donde el equipo integra: `main` (release) y la rama del playbook son
-respaldo y no ganan mientras `dev` lo tenga. Si el `git show` de `turno.sh` falla
+`dev`, donde el equipo integra; `main` y la rama del playbook son respaldo.
+Si el `git show` de `turno.sh` falla
 o `turno.sh` imprime `SIN_PLAYBOOK` (ninguna ref de la cadena tiene el
 playbook), el turno termina con un informe de una linea. Antes de trabajar,
 probar el acceso con `git push --dry-run origin HEAD:refs/heads/claude/equipo-dev/prueba-acceso`
@@ -121,7 +126,6 @@ argumento de `turno.sh`, en minuscula. El contexto es fijo para una misma
 sesion de la nube; un orquestador que lanza cada turno en un subagente nuevo
 le pasa a cada uno el suyo (`turno.sh --contexto <id>`), si no todos cuentan
 como uno (`independencia.sh` explica por que).
-`estado.sh` imprime, solo desde git, todo lo que hace falta para decidir.
 
 Entorno incompleto: `python3 -m pip install -r requirements.txt
 -r requirements-dev.txt` y `npm install` en `frontend/`. Si sigue incompleto,
@@ -187,8 +191,8 @@ env y en `ESTADO.md`.
 
 ### Seguir: una sesion, varios roles
 
-Un rol usa pocos minutos del turno (mediana, 6). Al terminar el suyo
-(fichas empujadas, `candado: -`) y **antes del cierre comun**, la sesion
+Al terminar su rol (fichas empujadas, `candado: -`) y **antes del cierre
+comun**, la sesion
 corre `git show $EQUIPO_REF:scripts/equipo-dev/turno.sh | bash -s -- --seguir`:
 
 - `# turno: sigue como <rol>`: leer sus lineas `# leer:` (el estado de nuevo
@@ -255,7 +259,8 @@ por candado (P8).
   `0002_*`: la mas nueva renumera despues de mergear dev.
 - **P4. check.sh rojo reproducido localmente** en una rama del equipo: si el
   turno es Dev lo arregla primero; si no, `con hallazgos` con el error
-  exacto. Sin causa obvia tras un intento: receta 4 de OMC (`omc-tracer`, u
+  exacto. El intento sigue la skill `systematic-debugging` (la causa antes
+  del arreglo); sin causa tras el: receta 4 de OMC (`omc-tracer`, u
   `omc-debugger` si hay traza) con el sintoma, la salida y lo ya descartado,
   y su causa probable va junto al error. Un rojo de GitHub Actions con verde
   local **no cuenta**: se anota una vez en `ESTADO.md` y nadie toca el
@@ -283,8 +288,7 @@ por candado (P8).
   los commits de `ESTADO.md` no cuentan) = sesion muerta: se retoma.
 - **P9. Reloj.** `turno.sh` fija la hora de cierre: 135 minutos desde el
   arranque o 15 minutos antes del disparo de la franja siguiente, lo que
-  llegue primero (`EQUIPO_MINUTOS` dice cuantos quedaron). Turnos largos
-  dejan que un tramo de funcionalidad quepa en un solo Dev. Antes de cada
+  llegue primero (`EQUIPO_MINUTOS` dice cuantos quedaron). Antes de cada
   `check.sh`, cada subagente y cada fase nueva (una llamada a
   `verificar.sh` que sale 124 no es fase nueva: se repite): `source "$(git rev-parse --git-dir)/equipo-dev.env"
   && echo "minuto $(( ($(date -u +%s) - EQUIPO_INICIO) / 60 )) de $EQUIPO_MINUTOS, cierre a las
@@ -438,6 +442,7 @@ Antes, `--seguir` (ver "Seguir") hasta que diga `# fin:`.
 **Para el humano:** <lo de `DESTRABA` primero; decision, pregunta o rama para mergear/borrar> | nada
 **Verificacion:** verificar.sh: VERDE <sha> (<n> tests backend, <n> vitest, <n> e2e) | sin pushes de codigo
 **OMC:** plan=<APPROVE|ITERATE|REJECT|—> · revisión=<N hallazgos (M arreglados)|—> · verificación=<PASS|FAIL|INCOMPLETE|—> | no disponible (<motivo>)
+**Skills del repo:** <skill> (<rol>: <evidencia>), ... | ninguna
 ```
 
 Con varios roles, un solo informe: `**Turno:**` los nombra en orden, cada
@@ -447,7 +452,7 @@ el Release (pasos 8 y 9 de `roles/release.md`). `**OMC:**` es la linea de regist
 `.claude/skills/omc/SKILL.md`, con `—` en lo que el turno no uso (PO e
 Investigador, las tres); la misma linea, como `OMC: ...`, cierra la seccion
 de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
-`## Revision`, `## QA`), igual que `Skills:`.
+`## Revision`, `## QA`), igual que `Skills:` y `Skills del repo:`.
 
 
 ## Transicion
@@ -458,8 +463,6 @@ de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
   empuja a esa rama sin `bash scripts/equipo-dev/pruebas.sh` en
   `PRUEBAS_OK`. Lo diferido de la maquinaria vive en
   `docs/backlog/MAQUINARIA.md`.
-- Las ramas del playbook anterior (reclamo en el roadmap, sin ficha) las
-  atiende el Revisor: `roles/revisor.md`, al final.
 
 ## Lo que el equipo nunca hace
 

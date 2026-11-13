@@ -134,7 +134,7 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         <Panel title="Ataque vs defensa">
           <DataTable
             columns={[
-              { key: 'name', label: '', sortable: false },
+              { key: 'name', label: 'Lado', sortable: false },
               { key: 'rounds', label: 'Rondas' },
               {
                 key: 'winrate',

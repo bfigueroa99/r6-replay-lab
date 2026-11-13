@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { post, useApi } from '../api.js'
-import { DataTable, ErrorBox, Loading, Panel, SideChip } from '../components/ui.jsx'
+import { Aviso, DataTable, ErrorBox, Loading, Panel, SideChip } from '../components/ui.jsx'
 
 const fecha = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().slice(0, 2).join('-') : '—')
 
@@ -85,7 +85,7 @@ export default function Datos() {
         </div>
       </div>
 
-      {flash ? <div className={`flash ${flash.ok ? '' : 'bad'}`}>{flash.text}</div> : null}
+      <Aviso flash={flash} />
 
       {maps.length || operators.length || gamemodes.length || matchTypes.length ? (
         <Panel

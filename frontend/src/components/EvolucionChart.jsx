@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -38,6 +39,9 @@ export default function EvolucionChart({ series }) {
             labelFormatter={(n) => series[n - 1]?.label || ''}
             formatter={(value, name) => [fmt(value, name === 'KPR' ? 2 : 0), name]}
           />
+          {/* dos lineas con dos escalas: la leyenda dice cual es cual y la
+              del eje derecho va punteada, como en Tendencias */}
+          <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line
             yAxisId="wr"
             type="monotone"
@@ -54,6 +58,7 @@ export default function EvolucionChart({ series }) {
             name="KPR"
             stroke="#4aa8ff"
             strokeWidth={2}
+            strokeDasharray="4 3"
             dot={false}
           />
         </LineChart>

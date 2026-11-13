@@ -4,6 +4,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationTy
 import { get, post, useApi } from './api.js'
 import { conFiltros, filtrosDeUrl, mismosFiltros, queryDeFiltros, usaFiltros } from './filtrosUrl.js'
 import { avisoAutomatico, etiquetaImportacion } from './importacion.js'
+import { tituloDePagina } from './titulo.js'
 import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
 
@@ -127,6 +128,10 @@ export default function App() {
     }
   }, [health])
 
+  useEffect(() => {
+    document.title = tituloDePagina(location.pathname, LINKS)
+  }, [location.pathname])
+
   // replace siempre: cada cambio de select no tiene que ser una entrada de historial
   const cambiarFiltros = useCallback(
     (nuevos) => {
@@ -207,7 +212,11 @@ export default function App() {
             {enCurso.total} listas.
           </div>
         ) : null}
-        {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        {/* el contenedor esta siempre: un lector de pantalla anuncia lo que
+            cambia dentro de una region que ya existia, no una que aparece */}
+        <div role="status">
+          {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        </div>
         <Suspense fallback={<Loading />}>
           <Routes>
           <Route path="/" element={<Dashboard {...context} />} />
