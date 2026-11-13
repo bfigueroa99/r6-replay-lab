@@ -16,7 +16,7 @@ turnos: po 20261113T1858Z-cxdASk3
 ## Que gana quien usa la app
 
 En Tendencias, junto a la prorroga por lado de la 115 (winrate de ronda), el
-winrate de partida de las que llegaron a prorroga, partido por el lado con el
+winrate de partida de las que llegaron a prorroga, en la misma tabla,, partido por el lado con el
 que la arrancaste: lo que se juega en la prorroga es la partida, no una ronda.
 Responde "cuando llego a prorroga en defensa, ¿la gano?".
 
@@ -33,9 +33,11 @@ Responde "cuando llego a prorroga en defensa, ¿la gano?".
       `matches` y no en `decided` ni en el winrate. Test.
 - [ ] Los filtros globales de partida (mapa, tipo, modo, fechas) aplican; con
       `?side=` solo sale la fila de ese lado (como `by_overtime_side`). Test.
-- [ ] Se ve en Tendencias junto a la tabla de prorroga por lado, con el aviso
-      de muestra de la pagina (se avisa, no se oculta) y un texto sin
-      partidas a prorroga; e2e de humo pasa por ahi con la consola limpia.
+- [ ] Se ve en Tendencias como columnas nuevas (Partidas, % ganadas) de la
+      tabla de prorroga por lado de la 115, sin tarjeta nueva (la pagina esta
+      en `saturadas` de `ROTACION`), con el aviso de muestra de la pagina (se
+      avisa, no se oculta); un lado sin partidas a prorroga muestra `—`. e2e
+      de humo pasa por ahi con la consola limpia.
 - [ ] Fila nueva en `docs/metricas.md` ("Partidas a prorroga por lado").
 
 ## Fuera de alcance
