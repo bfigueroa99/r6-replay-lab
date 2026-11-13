@@ -801,7 +801,8 @@ test('el detalle salta a la siguiente ronda perdida', async ({ page }) => {
   for (const m of matches) {
     const { rounds } = await (await page.request.get(`/api/matches/${m.id}/`)).json()
     const n = rounds.length
-    for (let k = 1; k <= n && esperado === -1; k++) {
+    // k < n: una partida cuya unica perdida es la R1 dejaria el boton sin moverse y el test no veria nada
+    for (let k = 1; k < n && esperado === -1; k++) {
       if (rounds[k % n].my_team_won === false) esperado = k % n
     }
     if (esperado !== -1) {

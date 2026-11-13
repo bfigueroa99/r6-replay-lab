@@ -21,13 +21,14 @@ function teclaLibre(evento) {
   if (evento.altKey || evento.ctrlKey || evento.metaKey || evento.shiftKey) return false
   const destino = evento.target
   if (destino && (CAMPOS.has(destino.tagName) || destino.isContentEditable)) return false
-  if (destino?.closest?.(CON_SCROLL)) return false
   return true
 }
 
 /** -1, 1 o 0 (no tomar la tecla). */
 export function pasoDeTecla(evento) {
   if (!teclaLibre(evento)) return 0
+  // en una tabla con scroll la flecha la desplaza; la `p` no desplaza nada y ahi si vale
+  if (evento.target?.closest?.(CON_SCROLL)) return 0
   if (evento.key === 'ArrowLeft') return -1
   if (evento.key === 'ArrowRight') return 1
   return 0

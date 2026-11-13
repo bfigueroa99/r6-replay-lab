@@ -161,6 +161,11 @@ describe('pideSiguientePerdida', () => {
     expect(pideSiguientePerdida({ key: 'p', target: cuerpo, defaultPrevented: true })).toBe(false)
   })
 
+  it('dentro de una tabla con scroll la p igual pide el salto', () => {
+    const celda = { tagName: 'TD', closest: (sel) => (sel.includes('.table-wrap') ? {} : null) }
+    expect(pideSiguientePerdida({ key: 'p', target: celda })).toBe(true)
+  })
+
   it('otra tecla no', () => {
     expect(pideSiguientePerdida({ key: 'o', target: cuerpo })).toBe(false)
     expect(pideSiguientePerdida({ key: 'ArrowRight', target: cuerpo })).toBe(false)
