@@ -1,7 +1,7 @@
 # 118. "Ver esas rondas" desde las señales del Coach
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T08:30Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
