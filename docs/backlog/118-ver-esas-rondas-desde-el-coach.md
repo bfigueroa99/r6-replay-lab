@@ -1,7 +1,7 @@
 # 118. "Ver esas rondas" desde las señales del Coach
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T18:02Z
 rama: claude/equipo-dev/118-ver-esas-rondas-desde-el-coach
 tipo: funcionalidad
 epica: revision-de-rondas
