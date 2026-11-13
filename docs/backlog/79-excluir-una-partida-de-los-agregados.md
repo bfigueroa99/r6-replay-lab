@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-13T17:10Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -141,3 +141,15 @@ Mezclado `origin/dev` (89 commits, sin conflictos; la migracion sigue en
 `0006_match_excluded`, despues de la `0005` de dev). verificar.sh: VERDE
 654b742 (1125 tests backend, 295 vitest, 85 e2e). Sigue esperando el merge
 del humano: toca `CLAUDE.md`.
+
+## Mantenimiento 2026-11-13 (20261113T1704Z-ctPFErG, revisor sin trabajo: salud de rama entregada)
+
+Mezclado `origin/dev` (118 commits, sin conflictos de git). La guardia
+`test_toda_ruta_esta_clasificada` caia: `site-after-loss`, `operators-pool` y
+`operators-after-result` llegaron a dev despues de la 79. Las tres pasan por
+`base_queryset`; van a `COMPARADAS` y a `_rutas()`, y dan lo mismo con la
+partida excluida que borrada (`tests.test_excluir_partida`: 20 OK). Solo cambio
+el test, no el codigo de la 79: la revision y la QA siguen valiendo.
+verificar.sh: VERDE 52093dac1 (1220 tests backend, 351 vitest, 99 e2e).
+Para el humano: si el PR se mergea despues de que entre otra ruta GET a dev,
+esta guardia la va a pedir clasificada; es el comportamiento buscado.
