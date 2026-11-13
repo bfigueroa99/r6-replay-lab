@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T19:26Z
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
