@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
-estado: implementado
-candado: revisor 2026-11-13T18:14Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md E18
 archivos: frontend/src/resumenSesion.js (celdaPartidaDeSesion), frontend/src/resumenSesion.test.js, frontend/src/pages/Trends.jsx (tabla Sesiones: columnas Mejor y Peor), frontend/e2e/humo.spec.js, docs/metricas.md (fila Mejor / peor partida de la sesion)
-turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83
+turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83, revisor 20261113T1802Z-c8dAf7p
 
 ## PR
 
@@ -170,6 +170,42 @@ Skills: no aplica.
 Skills del repo: modern-web-guidance (no aplica: columnas de un `DataTable` existente, sin CSS ni componente nuevo), ux-copy (`help` del diseno, con tildes; `—` como el resto de las tablas).
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
+## Revision 2026-11-13 sobre 102c3e9
+
+(revisor 20261113T1802Z-c8dAf7p) Punto de partida: merge de `origin/dev`
+(1de3c54, con la 118; sin conflictos); `verificar.sh`: VERDE 102c3e91a
+(1239 backend, 380 vitest, 104 e2e).
+
+**Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
+`revision.md`, solo el diff de 70 lineas; un tema, sin eje de intencion ni
+de seguridad): aprobar, 2 LOW, los dos **confirmados leyendo el codigo**:
+- L1 [test, LOW] `humo.spec.js` (test nuevo): solo renderiza la celda sin
+  partida (`—`); con `SESSION_GAP_MINUTES=120` (`e2e/entorno.js:52`) y el
+  seed cada 3 h ninguna sesion tiene dos partidas, asi que el `<Link>` no lo
+  monta ningun e2e. Es lo que decidio el diseno (no mover el seed ni el
+  gap); lo cubre el vitest de `celdaPartidaDeSesion` (texto e id). No
+  bloquea.
+- L2 [estilo, LOW] `Trends.jsx:176`: la ayuda dice "Hace falta más de una
+  partida." pero Peor tambien queda en `—` cuando todas empatan en rating
+  (`aggregates.py:2753`). `metricas.md` si lo dice. Arreglo sugerido:
+  sumar "Si todas tienen el mismo rating, no hay peor." a la ayuda de Peor.
+  No bloquea: va a `## Para el humano`.
+
+**Ficha.** Criterios 1, 2, 3 (backend): ya en dev desde la 99,
+`backend/tests/test_sessions.py` (`_extremos_de_sesion`: tres partidas,
+una sola, empate, filtro). Criterio 4: vitest `celdaPartidaDeSesion` (3) +
+e2e `Tendencias tiene las columnas Mejor y Peor...` (cabeceras, `—`, sin
+enlace, consola limpia); el enlace con valor solo por vitest (L1).
+Criterio 5: fila de `metricas.md` actualizada. El diff no sale de
+`archivos:`; sin numero nuevo; identificadores sin tildes, UI con tildes
+("sesión", "más"); sin `print` ni `console.log`; `csv` propio (no
+`[object Object]`).
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: 1 decision del diseno, 1 al humano) · verificación=—
+
 ## Para el humano
 
-(nada)
+- (revisor 2026-11-13, no bloquea) La ayuda de la columna Peor en Tendencias no dice que Peor queda en  si todas las partidas de la sesion empatan en rating ( si). Arreglo de una linea en  si se quiere.
