@@ -2687,6 +2687,74 @@ def clutch_by_operator(**filters) -> list[dict]:
     return salida
 
 
+# propio, como los de sitio y operador: se calibra por separado. Por debajo,
+# la conversion de un companero es anecdota y la fila sale marcada (no oculta)
+CLUTCH_COMPANERO_MIN = 5
+
+
+def teammate_clutches(**filters) -> dict:
+    """Clutches de tus companeros habituales en rondas contigo, con tu conversion al lado.
+
+    Mismo intento y ganado que `clutch_conversion`, leidos de la fila del
+    companero: `clutch_vs` se escribe al importar para cada jugador de la
+    ronda. Ganado es `my_team_won`: su equipo es el tuyo.
+    """
+    # Habitual con la regla de `by_stack` (todo el historial, sin filtros). Se
+    # copia la consulta en vez de extraerla para no tocar esa funcion.
+    mia = RoundPlayer.objects.filter(
+        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    habituales = (
+        RoundPlayer.objects.filter(is_me=False)
+        .filter(Exists(mia))
+        .values("player_id")
+        .annotate(n=Count("round__match_id", distinct=True))
+        .filter(n__gte=MIN_PARTIDAS_HABITUAL)
+        .values("player_id")
+    )
+    # Los filtros de la barra van sobre tu fila de la ronda, como en
+    # `teammate_synergy`; correlacionada por el tope de parametros de SQLite.
+    me_in_round = base_queryset(**filters).filter(
+        round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    )
+    # sin ganador conocido no es intento (mismo motivo que clutch_conversion)
+    filas = (
+        RoundPlayer.objects.filter(
+            is_me=False,
+            player_id__in=habituales,
+            clutch_vs__gt=0,
+            round__my_team_won__isnull=False,
+        )
+        .filter(Exists(me_in_round))
+        .values("player_id", "player__username")
+        .annotate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+        .order_by("-attempts", "player__username")
+    )
+    yo = (
+        base_queryset(**filters)
+        .filter(clutch_vs__gt=0, round__my_team_won__isnull=False)
+        .aggregate(attempts=Count("id"), won=Count("id", filter=Q(round__my_team_won=True)))
+    )
+
+    def caso(attempts: int, won: int) -> dict:
+        return {
+            "attempts": attempts,
+            "won": won,
+            "pct": _pct(won, attempts),
+            "low_sample": attempts < CLUTCH_COMPANERO_MIN,
+        }
+
+    return {
+        "min_attempts": CLUTCH_COMPANERO_MIN,
+        "me": caso(yo["attempts"] or 0, yo["won"] or 0),
+        "rows": [
+            {"player_id": f["player_id"], "username": f["player__username"],
+             **caso(f["attempts"], f["won"])}
+            for f in filas
+        ],
+    }
+
+
 def clutch_detail(**filters) -> list[dict]:
     qs = base_queryset(**filters).filter(one_vx__gt=0).order_by("-round__match__played_at")
     return [
