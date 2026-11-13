@@ -46,6 +46,18 @@ describe('filasDeRecords', () => {
     expect(filas.find((f) => f.clave === 'most_kills_round').href).toBe('/partidas/7')
   })
 
+  it('un record de ronda enlaza a su ronda y uno de partida no', () => {
+    const filas = filasDeRecords({
+      most_kills_round: partida({ value: 4, round_label: 'R7', round_number: 6 }),
+      longest_round_streak: partida({ value: 3, round_label: 'R1', round_number: 0 }),
+      most_kills_match: partida({ value: 9 }),
+    })
+    const href = Object.fromEntries(filas.map((f) => [f.clave, f.href]))
+    expect(href.most_kills_round).toBe('/partidas/7#ronda-7')
+    expect(href.longest_round_streak).toBe('/partidas/7#ronda-1')
+    expect(href.most_kills_match).toBe('/partidas/7')
+  })
+
   it('formatea cada valor', () => {
     const valores = Object.fromEntries(filasDeRecords(RECORDS).map((f) => [f.clave, f.valor]))
     expect(valores).toEqual({

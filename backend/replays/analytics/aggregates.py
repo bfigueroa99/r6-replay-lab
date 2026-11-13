@@ -438,6 +438,8 @@ def _record_de_ronda(rp: RoundPlayer | None, valor: str) -> dict | None:
         "map": rp.round.match.map_name,
         "value": getattr(rp, valor),
         "round_label": f"R{rp.round.number + 1}",
+        # el `number` del detalle: el enlace del record abre esa ronda
+        "round_number": rp.round.number,
     }
 
 
@@ -500,6 +502,7 @@ def _record_de_racha(qs) -> dict | None:
         "map": match.map_name,
         "value": racha["length"],
         "round_label": f"R{racha['from_number'] + 1}",
+        "round_number": racha["from_number"],
     }
 
 

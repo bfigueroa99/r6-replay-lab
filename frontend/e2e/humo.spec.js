@@ -425,6 +425,33 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   expect(errores).toEqual([])
 })
 
+test('un record de ronda abre la partida en esa ronda', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // los valores salen de la API: el test no depende de que partida o ronda sea
+  const respuesta = await page.request.get('/api/overview/')
+  const record = (await respuesta.json()).records.most_kills_round
+  const etiqueta = `R${record.round_number + 1}`
+  expect(etiqueta).toBe(record.round_label)
+  // con R1 activa por defecto el test no distingue el salto de no hacer nada
+  expect(record.round_number).toBeGreaterThan(0)
+
+  await page.goto('/')
+  const panel = page.locator('section.panel', { hasText: 'Tus récords' })
+  await panel.locator('tr', { hasText: 'Más bajas en una ronda' }).getByRole('link').click()
+  await expect(page).toHaveURL(new RegExp(`/partidas/${record.match_id}#ronda-${record.round_number + 1}$`))
+  await expect(page.locator('#rondas .round-tab.active')).toContainText(etiqueta)
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(new RegExp(`^${etiqueta}\\b`))
+
+  // un ancla que no existe deja el detalle como siempre, en la primera ronda;
+  // about:blank para que sea una carga nueva y no solo un cambio de hash
+  await page.goto('about:blank')
+  await page.goto(`/partidas/${record.match_id}#ronda-999`)
+  await expect(page.locator('#rondas .round-tab.active')).toContainText('R1')
+  await expect(page.locator('#rondas .round-detail h3').first()).toHaveText(/^R1\b/)
+
+  expect(errores).toEqual([])
+})
+
 test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
