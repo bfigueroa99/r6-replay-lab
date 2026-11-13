@@ -1,15 +1,15 @@
 # 110. Tu forma contra tu historial
 
-estado: propuesto
-candado: arquitecto 2026-11-13T00:41Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: progreso
 area: fullstack
 prioridad: 3
 fuente: ALCANCE.md E16
-archivos: -
-turnos: po 20261112T1128Z-cKKCvKD
+archivos: backend/replays/analytics/aggregates.py (compare_periods against, _periodo_por_partidas), backend/replays/views.py (compare), backend/tests/test_compare.py, frontend/src/components/Delta.jsx (nuevo, sale de Trends.jsx), frontend/src/pages/Trends.jsx (import), frontend/src/formaHistorial.js (nuevo), frontend/src/formaHistorial.test.js (nuevo), frontend/src/pages/Dashboard.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8
 
 ## PR
 
@@ -47,6 +47,136 @@ mas que el resultado.
 
 ## Diseno
 
+(arquitecto 20261113T0003Z-cVnayJ8) Filtros duros: pasa. Agrega columnas que ya existen
+(`winrate`, `rating`, `kst_pct`, `untraded_death_pct` de `derive`); sin red,
+sin dependencias, sin POST, sin migracion. Una forma obvia (~250 lineas):
+sin arena ni consenso.
+
+**Correccion de premisa.** La comparacion con delta y banda de ruido ya
+existe: `compare_periods` (`aggregates.py`, `GET /api/compare/`), panel
+**Progreso** de Tendencias, que pone las ultimas N partidas contra las **N
+anteriores**. Lo nuevo de esta ficha es la referencia (**todo el resto** de
+tu historial, no las N anteriores) y el lugar (el Inicio). Asi que no hay
+bloque `form` aparte en `/api/overview/`: se extiende `compare_periods` con
+`against="rest"` y el Inicio lo pide aparte, con su propia request (un error
+no tumba el Inicio). El criterio 1 queda cumplido con esa forma: `current` =
+las mismas partidas que `recent_form()` (mismo orden por `played_at`),
+`previous` = el resto, `metrics` con `delta` y `noise` (la banda de `_ruido`,
+la que la ficha llama `_ruido_combinado`) y `verdict`.
+
+**Backend, `backend/replays/analytics/aggregates.py`.**
+- `_periodo_por_partidas(filters, n, resto=False)`: con `resto=True` devuelve
+  `ordenados[:n], ordenados[n:]` (todas las anteriores) en vez de
+  `ordenados[n : n * 2]`.
+- `compare_periods(..., against: str = "previous", **filters)`: con
+  `against == "rest"`:
+  - `by="matches"`: `_periodo_por_partidas(filters, n, resto=True)`;
+    etiquetas `f"Ultimas {len(recientes)} partidas"` y
+    `f"El resto ({len(anteriores)} partidas)"`.
+  - `by="days"`: `previo = base_queryset(until=inicio_actual, **filters)`
+    (sin `since`); etiqueta `f"Antes de los ultimos {n} dias"`.
+  - Todo lo demas igual (`enough_sample`, `metrics`, filtros de tiempo
+    ignorados como hoy: el periodo lo define la comparacion). La respuesta
+    suma `"against": against`.
+  Cualquier otro valor de `against` es `"previous"` (el comportamiento de hoy).
+- Con 10 partidas o menos el resto queda vacio: `previous.rounds == 0`,
+  metricas `previous`/`delta` en `None`, `enough_sample` false. Es el
+  `rest: null` del criterio 2 con la forma existente; la UI lo lee asi.
+
+**`backend/replays/views.py`, `compare`**: `against = "rest" if
+request.GET.get("against") == "rest" else "previous"` y pasarlo.
+
+**Tests backend, `backend/tests/test_compare.py`**, clase nueva
+`ContraElRestoTests` (con el helper `partida` del archivo):
+- `test_contra_el_resto_toma_todas_las_partidas_anteriores`: 25 partidas ->
+  `current.matches == 10`, `previous.matches == 15`, etiqueta
+  `El resto (15 partidas)`.
+- `test_las_recientes_son_las_de_la_forma_reciente`: los `match_id` de
+  `current` (por `round__match_id` del queryset, o comparando `matches` y el
+  rango `from`/`to`) coinciden con los `id` de `recent_form()`.
+- `test_diez_recientes_ganadas_contra_diez_viejas_perdidas_salen_del_ruido`:
+  10 viejas `ganadas=0`, 10 recientes `ganadas=6` (6 rondas): `delta` de
+  `winrate` positivo, `verdict == "mejor"`, `abs(delta) > noise`.
+- `test_con_diez_partidas_o_menos_no_hay_resto`: 10 partidas ->
+  `previous.rounds == 0`, `delta` de winrate `None`, `enough_sample` false.
+- `test_el_filtro_de_mapa_aplica_a_los_dos_lados`: partidas en dos mapas;
+  con `map=` solo cuentan las de ese mapa en `current` y en `previous`.
+- `test_sin_against_sigue_comparando_contra_las_anteriores`: 25 partidas sin
+  `against` -> `previous.matches == 10` (regresion del modo de hoy).
+- `test_la_vista_acepta_against_rest_e_ignora_otro_valor`: `GET
+  /api/compare/?against=rest` 15 en `previous.matches`; `?against=foo` 10.
+
+**Frontend.**
+- `frontend/src/components/Delta.jsx` (nuevo): mover `Delta` de
+  `Trends.jsx` tal cual (export default) y que Tendencias lo importe; el
+  Inicio usa el mismo chip.
+- `frontend/src/formaHistorial.js` (logica pura, nuevo):
+  `METRICAS_FORMA = ['winrate', 'rating', 'kst_pct', 'untraded_death_pct']`;
+  `filasDeForma(data)` -> las metricas de `data.metrics` con esas claves y
+  en ese orden (las demas no; `[]` sin datos); `estadoDeForma(data)` ->
+  `'sin-datos'` si no hay `data` o `current.rounds` es 0, `'sin-resto'` si
+  `previous.rounds` es 0, `'poca-muestra'` si `!enough_sample`, si no `null`.
+- `frontend/src/formaHistorial.test.js` (vitest): orden y filtro de
+  metricas; cada estado (`sin-datos`, `sin-resto`, `poca-muestra`, `null`).
+- `frontend/src/pages/Dashboard.jsx`: componente `PanelForma({ filters })`
+  con `useApi('/compare/', { ...filters, by: 'matches', n: 10, against: 'rest' })`,
+  despues del panel "Ultimas partidas". `ErrorBox` / `Loading` como los
+  paneles del Coach. `<Panel title="Tu forma contra tu historial"
+  hint="Tus últimas 10 partidas contra todas las anteriores, con los filtros de
+  mapa, lado, tipo y modo. Si el cambio no pasa la banda de ruido, no es un
+  cambio.">`. Estados: `sin-datos` -> nada (el Inicio ya muestra su vacio);
+  `sin-resto` -> `<p className="note">Todavía no hay historial para comparar:
+  hacen falta más de 10 partidas.</p>`; `poca-muestra` -> la tabla igual con
+  la nota `Muestra chica: los números están, pero no alcanzan para decir que
+  algo cambió.` (como Progreso, aviso y no recorte). Tabla `DataTable` con
+  `filasDeForma`: Métrica, `previous.label`, `current.label`, Cambio
+  (`<Delta>`), Ruido (`±x` o `—`), con el mismo `fmt` de Progreso; sin CSV
+  (son 4 filas; Progreso ya exporta la tabla completa).
+
+**e2e, `frontend/e2e/humo.spec.js`**, test `el Inicio compara tu forma con tu
+historial` junto a `el Resumen muestra tus records y enlaza a la partida`:
+leer `/api/compare/?by=matches&n=10&against=rest` (seed: 29 partidas -> 10
+contra 19); en `/`, el panel "Tu forma contra tu historial" muestra las
+cabeceras `Ultimas 10 partidas` y `El resto (19 partidas)` (de la API, no a
+mano) y 4 filas (`Rondas ganadas`, `Rating`, `KST`, `Muertes sin trade`).
+Consola limpia. Recalcular los numeros con `seed_demo` si cambia el seed.
+
+**`docs/metricas.md`**, seccion `## Progreso`: fila **Forma contra tu
+historial**: las ultimas 10 partidas contra todas las anteriores con los
+filtros activos salvo fechas y sesion (el periodo lo define la comparacion);
+mismo cambio, banda de ruido y veredicto que Progreso; las rondas de cada
+lado son el `n` de la banda; con 10 partidas o menos no hay resto y no se
+compara.
+
+**Orden.** aggregates + tests backend, vista, `Delta.jsx` (mover y probar que
+Tendencias sigue), `formaHistorial.js` + vitest, `Dashboard.jsx`, e2e,
+`metricas.md`, `npm run build`.
+
+**Que puede romperse.** El modo de hoy de `/api/compare/` (Progreso):
+`test_sin_against_sigue_comparando_contra_las_anteriores` y los tests
+existentes de `test_compare.py` lo fijan. El resto puede tener cientos de
+partidas contra 10: la banda la domina el lado chico, que es lo correcto
+(no promedio de promedios: son totales de rondas). Mover `Delta` cambia un
+import de `Trends.jsx`: lo cubre el e2e de Tendencias.
+
+**Archivos ocupados.** La 112 (`implementado`) toca `humo.spec.js` (otro
+test) y `aggregates.py` (records, otra funcion); la 113 (`revisado`)
+`aggregates.py`, `views.py` (otras funciones) y `humo.spec.js`. Ninguna toca
+`compare_periods`, `Dashboard.jsx`, `Trends.jsx` ni `test_compare.py`. Merge
+trivial; no se frena.
+
+**Verificacion manual.** `seed_demo`, `/`: panel con "Ultimas 10 partidas"
+contra "El resto (19 partidas)"; `?map=bank` cambia los dos lados; Tendencias
+-> Progreso sigue diciendo "Las 10 anteriores".
+
+Para el humano (no frena): las fechas y la sesion de la barra no aplican a
+esta comparacion, igual que en Progreso (el periodo lo define ella). Si
+preferis que "el resto" respete "Desde/Hasta", es un cambio de una linea.
+
+Skills: no aplica (el repo ya resuelve la comparacion y su banda en `compare_periods`).
+Skills del repo: statistical-analysis (denominador: rondas de cada lado; banda `_ruido` sobre totales, no promedio de promedios; sin `n` minimo nuevo: usa `COMPARE_MIN_ROUNDS`), testing-strategy (Django para el corte y la vista, vitest para filas y estados, e2e para el panel).
+OMC: plan=— · revisión=— · verificación=—
+
 ## Implementacion
 
 ## Revision
@@ -55,4 +185,6 @@ mas que el resultado.
 
 ## Para el humano
 
-(nada)
+- Aviso, no frena (arquitecto): las fechas y la sesion de la barra no aplican a
+  esta comparacion, igual que en Progreso. Si preferis que "el resto" respete
+  "Desde/Hasta", es un cambio de una linea.
