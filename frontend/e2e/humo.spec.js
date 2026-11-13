@@ -82,6 +82,21 @@ test('Tendencias muestra la tabla por mitad', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la prórroga por lado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene prorrogas: la API da las dos filas en cero y la UI una nota, no ceros
+  const datos = await (await page.request.get('/api/trends/')).json()
+  expect(datos.by_overtime_side.map((f) => [f.side, f.rounds])).toEqual([['Attack', 0], ['Defense', 0]])
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Por mitad de la partida' })
+  await expect(panel.getByRole('heading', { name: 'Prórroga por lado', exact: true })).toBeVisible()
+  await expect(panel.getByText('Sin rondas de prórroga con estos filtros.')).toBeVisible()
+  await expect(panel.getByRole('cell', { name: 'Prórroga en ataque', exact: true })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
