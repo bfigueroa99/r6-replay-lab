@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T19:03Z
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O13 (Fuera de alcance de la ficha 113)
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_CAMBIO_MIN_RONDAS), backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js (filasCambioTrasPerder), frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx (TrasResultado), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq
+turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq, revisor 20261113T1858Z-cxdASk3
 
 ## PR
 
