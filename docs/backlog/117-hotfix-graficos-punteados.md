@@ -1,7 +1,7 @@
 # 117. Hotfix: el e2e de las lineas punteadas cae casi siempre
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T12:04Z
 rama: claude/equipo-dev/117-hotfix-graficos-punteados
 tipo: bug
 epica: -
