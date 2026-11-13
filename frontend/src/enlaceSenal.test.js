@@ -19,6 +19,15 @@ describe('enlaceDeSenal', () => {
     })
   })
 
+  it('conserva las fechas y el modo de la barra', () => {
+    const { search } = enlaceDeSenal(mapa, { since: '2026-09-01', until: '2026-09-30', gamemode: 'Bomb' })
+    const params = new URLSearchParams(search)
+    expect(params.get('map')).toBe('kafe')
+    expect(params.get('since')).toBe('2026-09-01')
+    expect(params.get('until')).toBe('2026-09-30')
+    expect(params.get('gamemode')).toBe('Bomb')
+  })
+
   it('el filtro de la señal pisa el de la barra', () => {
     expect(enlaceDeSenal(mapa, { map: 'bank', side: 'Defense' })).toEqual({
       pathname: '/',

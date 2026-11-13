@@ -1371,7 +1371,12 @@ test('el sitio que trae una señal del Coach se ve en la barra y se quita', asyn
   const tarjeta = page.locator('.insight').filter({ has: page.getByRole('heading', { name: senal.title }) })
   await tarjeta.getByRole('link', { name: 'Ver esas rondas' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Resumen' })).toBeVisible()
-  expect(new URL(page.url()).searchParams.get('site')).toBe(senal.filters.site)
+  const destino = new URL(page.url())
+  expect(destino.searchParams.get('site')).toBe(senal.filters.site)
+  // la señal de sitio es tambien la de mapa que pide la ficha: el mapa llega a la URL y al selector
+  expect(senal.filters.map).toBeTruthy()
+  expect(destino.searchParams.get('map')).toBe(senal.filters.map)
+  await expect(page.getByLabel('Mapa')).toHaveValue(senal.filters.map)
   // el Resumen no tiene selector de sitio: sin esto el filtro quedaria puesto y sin verse
   const sitio = page.getByLabel('Sitio')
   await expect(sitio).toHaveValue(senal.filters.site)
