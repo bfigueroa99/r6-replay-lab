@@ -1,8 +1,8 @@
 # 130. Saltar a la siguiente ronda perdida
 
-estado: disenado
+estado: en curso 2026-11-13T20:37Z
 candado: -
-rama: -
+rama: claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida
 tipo: funcionalidad
 epica: revision-de-rondas
 area: frontend
