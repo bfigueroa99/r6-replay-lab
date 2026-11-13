@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T04:04Z
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
