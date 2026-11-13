@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 23:15 UTC por revisor (sesion 20261113T2252Z-cSo9yHH; motivo: por estado: 1 implementado)
+actualizado: 2026-11-13 23:25 UTC por revisor, dev (sesion 20261113T2252Z-czjsKrH; motivo: por estado: 1 implementado; sigue: por estado: 3 disenado, lugar en cola)
 playbook: origin/dev@39e22c0
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias; sin herramientas para comparar (rol release solo dentro de la QA: pasos 3 a 5)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -12,10 +12,10 @@ pausa: no
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 | claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | con hallazgos (revision: e2e intermitente, listener despues del `goto`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
-| claude/equipo-dev/133-ventaja-numerica-tirada | docs/backlog/133-ventaja-numerica-tirada.md | con hallazgos (revision: HIGH en `ventaja_maxima`) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/133-ventaja-numerica-tirada?expand=1) |
+| claude/equipo-dev/133-ventaja-numerica-tirada | docs/backlog/133-ventaja-numerica-tirada.md | implementado (HIGH y MEDIUM de la revision arreglados, mas el post-plant) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/133-ventaja-numerica-tirada?expand=1) |
 
-COLA=3 (tope 4)  TOTAL=3 (tope 6)
-RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=0
+COLA=4 (tope 4)  TOTAL=4 (tope 6)
+RESUMEN propuesto=6 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
 
 
 ## Orden de merge sugerido
@@ -23,7 +23,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 
 `git merge-tree` de las tres ramas contra `origin/dev@39e22c0` y por pares: ninguna choca.
 
 1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (con hallazgos: vuelve al Dev, arreglo de dos lineas en el e2e): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
-2. `claude/equipo-dev/133-ventaja-numerica-tirada` (con hallazgos: vuelve al Dev): `metrics.py`, `aggregates.py`, `views.py`, `urls.py`, `Duelos.jsx`, `humo.spec.js`, `metricas.md`.
+2. `claude/equipo-dev/133-ventaja-numerica-tirada` (implementado: espera revision): `metrics.py`, `aggregates.py`, `views.py`, `urls.py`, `Duelos.jsx`, `humo.spec.js`, `metricas.md`.
 3. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 
@@ -49,7 +49,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 
 | 129-filtro-de-operador-en-operadores | con hallazgos (en su rama) | funcionalidad | operadores | 3 | frontend | - |
 | 131-rondas-que-el-equipo-gano-sin-ti | disenado | funcionalidad | escuadra | 3 | fullstack | - |
 | 132-rivales-que-se-repiten-en-la-misma-noche | propuesto | funcionalidad | rivales | 3 | fullstack | - |
-| 133-ventaja-numerica-tirada | en curso 2026-11-13T22:01Z | funcionalidad | revision-de-rondas | 3 | backend | - |
+| 133-ventaja-numerica-tirada | implementado (en su rama) | funcionalidad | revision-de-rondas | 3 | backend | - |
 | 134-en-que-estado-de-vivos-matas | propuesto | funcionalidad | impacto | 3 | backend | - |
 | 135-partida-despues-de-perder-seguido | propuesto | funcionalidad | progreso | 3 | backend | - |
 | 136-prorroga-marcada-en-el-detalle | propuesto | funcionalidad | revision-de-rondas | 3 | fullstack | - |
@@ -68,7 +68,7 @@ Espejos: 129 y 133 viven en su rama, que manda.
 | release | 2026-11-13 22:48 | (release 20261113T2223Z-c24t16L, dentro de la QA) 130 entregada: ficha recortada, VERDE 2eed7d587 sobre el commit final, [PR #128](https://github.com/bfigueroa99/r6-replay-lab/pull/128) **mergeado** en dev (39e22c0); borrado de la rama cortado por el proxy; espejo quitado de backlog. |
 | qa | 2026-11-13 22:48 | (qa 20261113T2223Z-c24t16L) 130 `revisado` -> `aprobado`: VERDE cc63536fc (1284, 421, 114); 609 saltos correctos en la app sembrada (boton, `p`, Enter), bordes interceptados, a11y (contraste 12.92:1), mutaciones 3 de 3, chunk +0.17 %, omc-verifier PASS. |
 | revisor | 2026-11-13 23:15 | (revisor 20261113T2252Z-cSo9yHH) 129 `implementado` -> `con hallazgos`: VERDE 82ad2f319 (1284, 425, 116); revision ciega aprobar con 1 MEDIUM, confirmado: el e2e `Operadores filtra por operador desde su propio selector` registra `page.on('request')` despues del `goto` y cae 6 de 190 con 8 workers (linea 241, `pedidosPool` vacio); listener antes del `goto` -> 150 de 150. |
-| dev | 2026-11-13 22:48 | (dev 20261113T2223Z-c24t16L, sigue) 129 `con hallazgos` -> `implementado`: e2e `Operadores sin rondas deja quitar el operador` con `level: 2` (40 de 40 con 4 workers; el mutante de la QA cae 10 de 10); revision ciega 3 LOW (2 arreglados); merge de dev; VERDE 50ddfaaa8 (1284, 425, 116). |
+| dev | 2026-11-13 23:25 | (dev 20261113T2252Z-czjsKrH, sigue de revisor: la 129 ya la tenia otra corrida) 133 `con hallazgos` -> `implementado`: `ventaja_maxima` no mide la diferencia que deja a un equipo sin vivos (HIGH) y mide juntas las bajas del mismo `clock` (MEDIUM), salvo las del ultimo reloj (tras el plant el reloj queda congelado: HIGH de la revision ciega, confirmado en `_track_clock`); e2e con two_plus, lado y mapa; VERDE dba808e22 (1312, 427, 115). |
 | arquitecto | 2026-11-13 19:59 | (arquitecto 20261113T1926Z-cq9nfTP, sigue) Disena 130 (siguiente ronda perdida: `siguientePerdida`/`pideSiguientePerdida` en `navegacionRondas.js`, boton y tecla P en el panel Rondas) y 133 (ventaja numerica tirada: `ventaja_maxima` en `metrics.py`, `/api/duels/thrown-advantage/`, panel en Duelos junto a Estado al morir). |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
 | po | 2026-11-13 22:35 | (po 20261113T2157Z-chbMW9r, sigue) Otra corrida propuso 136-138 a la vez y lleno el papel (6 propuesto): mis tres fichas (H2, G6, O9) se descartaron sin empujar. Ideas nuevas F26 y H15 en `ALCANCE.md`. |
