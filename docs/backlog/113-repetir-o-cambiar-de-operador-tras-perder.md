@@ -1,6 +1,6 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: entregado
+estado: entregado (PR pendiente de merge: check.sh rojo por e2e/accesibilidad.spec.js:235, que tambien cae en dev; lo arregla el hotfix 117)
 candado: -
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
@@ -12,6 +12,8 @@ archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERAD
 turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8, qa 20261113T0404Z-cnRfz4a, release 20261113T0404Z-cnRfz4a
 
 ## PR
+
+PR #111: https://github.com/bfigueroa99/r6-replay-lab/pull/111
 
 Titulo: `[equipo-dev][backend] Repetir o cambiar de operador tras perder, en Operadores`
 
