@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
-estado: implementado
-candado: revisor 2026-11-13T19:26Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md C15
 archivos: backend/replays/analytics/aggregates.py (teammate_clutches, CLUTCH_COMPANERO_MIN), backend/replays/views.py (teammates), backend/tests/test_clutch_companeros.py (nuevo), frontend/src/clutchCompaneros.js (nuevo), frontend/src/clutchCompaneros.test.js (nuevo), frontend/src/pages/Teammates.jsx (panel Clutches), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1858Z-cxQ3TuB
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1858Z-cxQ3TuB, revisor 20261113T1926Z-ce4Pmp6
 
 ## PR
 
@@ -240,7 +240,47 @@ Skills: no aplica.
 Skills del repo: statistical-analysis (conversion con su `n`, dos cortes sin ocultar, tu fila con el mismo denominador), testing-strategy (Django, vitest y e2e como dice el diseno, mas el e2e interceptado), ux-copy (tú como el resto de la UI, nota y hint del diseno con tildes), sql-queries (patron vecino de `teammate_synergy` y `by_stack`; `assertNumQueries(2)`), modern-web-guidance no leida (tabla con `DataTable`, `Bar` y markup de `*` ya existentes, sin CSS nuevo).
 OMC: plan=— · revisión=5 hallazgos (1 MEDIUM, 4 LOW; 5 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre b871565
+
+(revisor 20261113T1926Z-ce4Pmp6; rama al dia con `origin/dev@84c575b`, sin merge necesario)
+
+verificar.sh: VERDE b871565e2 (1266 backend, 398 vitest, 108 e2e).
+
+Revision a ciegas (`omc-code-reviewer`, eje de estandares, con el prompt de
+`revision.md` sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'`,
+492 lineas) y eje de intencion (otro `omc-code-reviewer`, solo contra Que
+gana, Criterios y Fuera de alcance): los dos `aprobar`. Seguridad: no aplica
+(sin POST, sin `externo/`, sin parser ni rutas de archivos).
+
+Hallazgos, confirmados por el lider:
+
+- [test] LOW `frontend/e2e/humo.spec.js:1020` (test `Compañeros muestra los
+  clutches de tus compañeros`): contra la app real solo corre la rama vacia.
+  Confirmado: `seed_demo.py:243` pone `clutch_vs` solo en tu fila, asi que
+  `datos.rows` llega vacio y la tabla con numeros del backend no la afirma
+  ningun e2e (la cubre el test interceptado y los 13 de Django). Es lo que
+  preveia el diseno. Arreglo sugerido, como tramo aparte: un habitual con
+  `clutch_vs > 0` en `seed_demo` y numeros fijos sin el `if` (cambia numeros
+  de otras pruebas: va con su propia ficha).
+- [estilo] LOW `frontend/src/pages/Teammates.jsx` (titles "Menos de 5
+  intentos" y hint): el 5 escrito a mano aunque la API manda `min_attempts`.
+  Confirmado, pero es la convencion de las tres tablas de clutch vecinas
+  (`Teammates.jsx:321,358,396`); no se pide cambio.
+- [estilo] LOW `backend/replays/analytics/aggregates.py` (`teammate_clutches`):
+  la consulta de habituales copia la de `by_stack`. Confirmado; la copia la
+  pidio el diseno para no tocar `by_stack` y el comentario lo dice. Si la
+  regla de habitual cambia, cambiar las dos.
+
+Criterios: los cinco cubiertos (tests listados en Implementacion; el eje de
+intencion los recorrio uno por uno). `archivos:` coincide con el diff. Fila
+en `metricas.md` y en `## Muestra minima`. Identificadores sin tildes, UI con
+tildes, sin `print` ni `console.log`.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision de codigo con el prompt de `revision.md`).
+OMC: plan=— · revisión=3 hallazgos (0 arreglados, todos LOW) · verificación=—
 
 ## QA
 
