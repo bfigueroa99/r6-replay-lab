@@ -1,7 +1,7 @@
 # 125. Teamkill marcado en la timeline de la ronda
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T19:51Z
 rama: claude/equipo-dev/125-teamkill-marcado-en-la-timeline
 tipo: funcionalidad
 epica: revision-de-rondas
