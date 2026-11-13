@@ -1,7 +1,7 @@
 # 130. Saltar a la siguiente ronda perdida
 
-estado: implementado
-candado: revisor 2026-11-13T21:58Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/130-saltar-a-la-siguiente-ronda-perdida
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F24
 archivos: frontend/src/navegacionRondas.js (siguientePerdida, pideSiguientePerdida), frontend/src/navegacionRondas.test.js, frontend/src/pages/MatchDetail.jsx (DetallePartida: teclado y panel Rondas), frontend/e2e/humo.spec.js
-turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2003Z-c3vr7mZ
+turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2003Z-c3vr7mZ, revisor 20261113T2157Z-chbMW9r
 
 ## PR
 
@@ -104,10 +104,30 @@ Skills: no aplica.
 Skills del repo: testing-strategy (vitest para la regla y la tecla, e2e para el boton y la tecla en la app real, mutaciones), ux-copy (boton como "Copiar resumen", `title` y `hint` con tildes), modern-web-guidance no leida (sin CSS ni componente nuevo: `btn small` existente).
 OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 1b1b2bc
+
+(revisor 20261113T2157Z-chbMW9r, rol del turno qa en su fallback "sin trabajo": la 129 tenia candado de otra corrida de QA) Rama al dia con `origin/dev@72df8f9` (nada que mergear).
+
+verificar.sh: VERDE 1b1b2bcb5 en 155s (1284 backend, 421 vitest, 114 e2e).
+
+Revision a ciegas, dos ejes (`omc-code-reviewer` con `revision.md`; diff de 200 lineas, por eso tambien el eje de intencion). `omc-security-reviewer` no aplica: solo frontend, sin POST, red ni rutas.
+
+- Estandares: aprobar, 2 LOW.
+  - [bug] LOW `MatchDetail.jsx:167`: con la elegida como unica perdida el boton queda habilitado y no mueve nada. Confirmado leyendo `disabled={siguientePerdida(selected, rounds) === null}`. No se corrige: es la decision explicita del Diseno ("devuelve la misma ... no es un error"), que el criterio 1 permite.
+  - [bug] LOW `navegacionRondas.js`: `pideSiguientePerdida` no mira `isComposing`. Descartado: fuera de un campo no hay composicion de IME y los campos ya quedan afuera por `teclaLibre`.
+- Intencion: aprobar, 1 MEDIUM y el mismo LOW.
+  - MEDIUM criterio 3, "el salto actualiza el ancla `#ronda-N` como cambiar de ronda a mano": la implementacion no toca el hash y el e2e afirma que la URL no cambia. Confirmado: la pestaña hace solo `setSelected(i)` (`MatchDetail.jsx:178`) y en `frontend/src` nadie escribe `location.hash`. Rebajado a no-hallazgo: el Diseno fijo esta lectura ("hoy un clic o una flecha no tocan el hash ... el salto hace lo mismo"), y es la que mantiene el salto igual que el cambio a mano. Si el humano quiere el hash vivo, es una ficha aparte para pestañas, flechas y salto juntos (va a `## Para el humano`).
+  - Criterios 1, 2 y 4 cumplidos con evidencia; nada fuera de alcance.
+
+Ficha contra el diff: los 4 archivos son los de `archivos:`; el desvio (`CON_SCROLL` fuera de `teclaLibre`) esta explicado en Implementacion y tiene test. Sin numero nuevo en la UI (no hace falta fila en `metricas.md`). Identificadores y comentarios sin tildes; `title` y `hint` con tildes. Sin `console.log`. Criterios: 1 -> `describe('siguientePerdida')` (6 tests); 2 -> `describe('pideSiguientePerdida')` (4); 3 -> los dos e2e (`el detalle salta a la siguiente ronda perdida`, `sin rondas perdidas el boton ... deshabilitado`); 4 -> `hint` y `title`, afirmados en el primer e2e.
+
+Veredicto: aprobar -> `revisado`.
+
+OMC: plan=— · revisión=4 hallazgos (0 arreglados: 2 decisiones del diseno, 1 descartado, 1 duplicado) · verificación=—
+Skills del repo: ninguna (revision de codigo con `revision.md`)
 
 ## QA
 
 ## Para el humano
 
-(nada)
+- (revisor 2026-11-13) Ancla `#ronda-N`: hoy ni las pestañas, ni las flechas, ni este salto la actualizan; la URL solo sirve para entrar parado en una ronda. Si se quiere que la URL siga a la ronda elegida (para recargar o compartir), es una ficha aparte que cambia los tres caminos juntos.
