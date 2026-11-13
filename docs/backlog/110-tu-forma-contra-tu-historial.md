@@ -219,7 +219,7 @@ filtros (`test_el_filtro_de_mapa_aplica_a_los_dos_lados`); panel en el Inicio
 `test_sin_against_sigue_comparando_contra_las_anteriores` y
 `test_la_vista_acepta_against_rest_e_ignora_otro_valor`.
 
-verificar.sh: VERDE_SHA
+verificar.sh: VERDE 86e38cc12 (1173 backend, 340 vitest, 96 e2e; el commit siguiente solo toca esta ficha).
 
 Skills: no aplica (la comparacion y su banda ya estaban en `compare_periods`).
 Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: el panel reusa `Panel`, `DataTable` y `Delta` sin CSS nuevo, y los textos son los del diseno en voseo y con tildes).
