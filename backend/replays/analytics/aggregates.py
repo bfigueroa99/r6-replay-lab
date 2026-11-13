@@ -3352,7 +3352,11 @@ def compare_periods(
     else:
         recientes, anteriores = _periodo_por_partidas(filters, n, resto=resto)
         actual = base_queryset(**filters).filter(round__match_id__in=recientes)
-        previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
+        if resto:
+            # exclude y no IN: el resto puede pasar el limite de variables de SQLite
+            previo = base_queryset(**filters).exclude(round__match_id__in=recientes)
+        else:
+            previo = base_queryset(**filters).filter(round__match_id__in=anteriores)
         if resto:
             previa = f"El resto ({len(anteriores)} partidas)"
         else:

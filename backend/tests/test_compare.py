@@ -322,10 +322,13 @@ class ContraElRestoTests(TestCase):
         self.assertEqual(recientes, [p["id"] for p in agg.recent_form(10)])
 
     def test_diez_recientes_ganadas_contra_diez_viejas_perdidas_salen_del_ruido(self):
-        self.historial(10, 10, ganadas_viejas=0, ganadas_recientes=6)
+        # 2 de 6 contra 5 de 6, 60 rondas por lado: banda distinta de cero
+        self.historial(10, 10, ganadas_viejas=2, ganadas_recientes=5)
         d = agg.compare_periods(by="matches", n=10, against="rest")
         winrate = metrica(d, "winrate")
-        self.assertGreater(winrate["delta"], 0)
+        self.assertAlmostEqual(winrate["delta"], 50.0, places=0)
+        # sqrt(p1(1-p1)/60 + p2(1-p2)/60) en puntos
+        self.assertAlmostEqual(winrate["noise"], 7.8, places=1)
         self.assertEqual(winrate["verdict"], "mejor")
         self.assertGreater(abs(winrate["delta"]), winrate["noise"])
 

@@ -292,8 +292,9 @@ function PanelForma({ filters }) {
     <Panel
       title="Tu forma contra tu historial"
       hint={
-        'Tus últimas 10 partidas contra todas las anteriores, con los filtros de mapa, lado, ' +
-        'tipo y modo. Si el cambio no pasa la banda de ruido, no es un cambio.'
+        'Tus últimas 10 partidas contra todas las anteriores, con tus filtros salvo fecha y ' +
+        'sesión (con esos, las 10 no son las de arriba). Si el cambio no pasa la banda de ' +
+        'ruido, no es un cambio.'
       }
     >
       {estado === 'sin-resto' ? (

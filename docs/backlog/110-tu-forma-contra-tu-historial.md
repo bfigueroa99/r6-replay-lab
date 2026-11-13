@@ -1,7 +1,7 @@
 # 110. Tu forma contra tu historial
 
-estado: en curso 2026-11-13T08:21Z
-candado: dev 2026-11-13T08:21Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/110-tu-forma-contra-tu-historial
 tipo: funcionalidad
 epica: progreso
@@ -178,6 +178,52 @@ Skills del repo: statistical-analysis (denominador: rondas de cada lado; banda `
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T0804Z-cJw5MQs) Diseno completo:
+
+- `aggregates.py`: `_periodo_por_partidas(..., resto=False)` y
+  `compare_periods(..., against="previous")`; con `against="rest"` la
+  referencia es todo lo anterior (por partidas: etiqueta `El resto (N
+  partidas)`; por dias: `Antes de los últimos N días`). La respuesta suma
+  `against`; cualquier otro valor es `previous`. `views.compare` lo pasa.
+- `components/Delta.jsx`: `Delta` sale de `Trends.jsx` tal cual.
+- `formaHistorial.js`: `METRICAS_FORMA`, `filasDeForma` (las 4 metricas en
+  orden fijo) y `estadoDeForma` (`sin-datos`, `sin-resto`,
+  `poca-muestra`, `null`).
+- `Dashboard.jsx`: `PanelForma`, con su propia request, despues del bloque
+  de "Últimas partidas". Fila "Forma contra tu historial" en `metricas.md`
+  (seccion Progreso).
+
+Desvios del diseno:
+- Etiquetas con tildes (`Últimas 10 partidas`, `Antes de los últimos N
+  días`), como las de Progreso: son texto de UI.
+- Con `resto`, el periodo previo es `exclude(match_id__in=recientes)` y no
+  `IN` con todo el historial (revision ciega, LOW: limite de variables de
+  SQLite con miles de partidas).
+- Hint del panel: "con tus filtros salvo fecha y sesión (con esos, las 10 no
+  son las de arriba)", y `metricas.md` lo dice igual (revision ciega,
+  MEDIUM: `recent_form` respeta fecha y sesion y `compare_periods` no).
+- Test extra `test_contra_el_resto_por_dias_toma_todo_lo_anterior`.
+
+Tests: backend `ContraElRestoTests` (8; vistos en rojo antes del codigo:
+5 de 8 caian). El de "sale del ruido" usa 2/6 contra 5/6 y fija la banda en
+7.8 (con 0 % contra 100 % la banda era 0 y no probaba nada). vitest
+`formaHistorial.test.js` (6, en rojo antes del modulo). e2e `el Inicio
+compara tu forma con tu historial` (etiquetas de la API, 4 filas en orden,
+consola limpia). Criterios -> tests: bloque con delta y banda
+(`test_contra_el_resto_toma_todas...`, `test_diez_recientes...`,
+`test_las_recientes_son_las_de_la_forma_reciente`); sin resto
+(`test_con_diez_partidas_o_menos_no_hay_resto` + vitest `sin-resto`);
+filtros (`test_el_filtro_de_mapa_aplica_a_los_dos_lados`); panel en el Inicio
+(e2e); fila en `metricas.md`. Regresion de Progreso:
+`test_sin_against_sigue_comparando_contra_las_anteriores` y
+`test_la_vista_acepta_against_rest_e_ignora_otro_valor`.
+
+verificar.sh: VERDE_SHA
+
+Skills: no aplica (la comparacion y su banda ya estaban en `compare_periods`).
+Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: el panel reusa `Panel`, `DataTable` y `Delta` sin CSS nuevo, y los textos son los del diseno en voseo y con tildes).
+OMC: plan=— · revisión=5 hallazgos (5 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision
 
