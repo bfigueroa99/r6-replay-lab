@@ -1,7 +1,7 @@
 # 114. Qué operadores te abren
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T12:31Z
 rama: -
 tipo: funcionalidad
 epica: rivales
