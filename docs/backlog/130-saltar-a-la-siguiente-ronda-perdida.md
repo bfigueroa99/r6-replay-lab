@@ -1,7 +1,7 @@
 # 130. Saltar a la siguiente ronda perdida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T19:51Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
