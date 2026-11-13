@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
-estado: revisado
-candado: qa 2026-11-13T19:26Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md D10
 archivos: backend/replays/analytics/aggregates.py (_record, repeated_rivals, _filas_de_stacks), backend/tests/test_duels.py, backend/tests/test_stacks_rivales.py, frontend/src/ultimaVez.js (nuevo), frontend/src/ultimaVez.test.js (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-c2rHpej, revisor 20261113T1858Z-cxdASk3
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-c2rHpej, revisor 20261113T1858Z-cxdASk3, qa 20261113T1926Z-cq9nfTP
 
 ## PR
 
@@ -187,7 +187,28 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=1 hallazgo LOW (0 arreglados: al humano) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre c7a8e7a
+
+(qa 20261113T1926Z-cq9nfTP) La rama no contenia `origin/dev`: `git merge origin/dev` limpio (db4f5b4), `verificar.sh`: VERDE db4f5b4ec (1257 backend, 398 vitest, 106 e2e). Con el test de borde agregado: VERDE c7a8e7a25 (1258 backend, 398 vitest, 106 e2e).
+
+Base temporal en el scratchpad (`SQLITE_PATH=<scratch>/qa122.sqlite3 R6_ENV_FILE=<scratch>/qa.env`, `manage.py migrate`, `runserver 8122`):
+
+- Base vacia: `curl localhost:8122/api/duels/` -> 200, `rivals` 0, `rival_stacks` 0.
+- `manage.py seed_demo` (29 partidas): `/api/duels/` -> Kaid_, Mozzie99, Thorn.exe con 29 partidas y `last_played` `2026-08-05T08:00:00`; stack de los tres igual.
+- **Recalculado a mano** (ORM, `played_at` de las partidas de cada rival): ultima `2026-08-05T08:00:00` (coincide). Con `?until=2026-08-03`: la API da 18 partidas y `2026-08-03T23:00:00`; a mano, 2 del 01 + 8 del 02 + 8 del 03 = 18, ultima 23:00 (coincide). `since=2026-08-02&until=2026-08-03`: 16, `2026-08-03T23:00:00`. `until=2026-08-01`: 2, `2026-08-01T23:00:00`.
+- Bordes: `until=2000-01-01` -> 200 y listas vacias; `until=foo`, `since=2026-13-40`, `page=-1`, `map=` -> 200, igual que sin filtro (comportamiento previo de los filtros, no regresion).
+- Aviso del detalle: `/api/matches/29/` `rival_stacks` -> (29 partidas, 29-0, `2026-08-05T08:00:00`), el mismo `last_played` que Duelos.
+- Chunk inicial `index-*.js` 200116 B (el Dev midio 200.00 kB); `ultimaVez.js` va en el chunk lazy de Duelos (11.6 kB).
+- **accessibility-review** (Playwright sobre `/duelos`, base sembrada): 2 cabeceras "Última vez", `<button class="th-orden">` con `title`; foco + Enter -> `aria-sort="descending"`; celdas `05-08-2026`; contraste del texto de la celda 14.17:1; consola sin errores. Sin Critical ni Major.
+- **validate-data** (fila Rival repetido / Stack rival repetido de `metricas.md`): es una fecha, no una tasa: sin division ni promedio; `ids` nunca vacio (la fila existe con `min_matches`), `played_at` no nulo.
+- **Mutacion:** `max` -> `min` en `_record`: caen los 3 tests nuevos de fecha. `max(fechas.values())` (fecha de cualquier partida de la consulta conjunta) **sobrevivia** a todos; agregue `test_la_ultima_vez_de_cada_rival_sale_de_sus_propias_partidas` (`backend/tests/test_duels.py`: dos rivales en partidas distintas), que cae con ese mutante y pasa con el codigo.
+
+Criterios: 1 VERIFIED (API + recalculo + 3 tests), 2 VERIFIED (until/since contra calculo a mano), 3 VERIFIED (detalle = Duelos), 4 VERIFIED (Playwright: dos tablas, orden por teclado), 5 VERIFIED (e2e verde, consola limpia).
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data (fecha sin tasa; 2 valores recalculados: 2026-08-05T08:00:00 y 18 partidas/2026-08-03T23:00:00).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
