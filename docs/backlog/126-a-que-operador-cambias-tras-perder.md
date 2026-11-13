@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T19:32Z
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
