@@ -1,7 +1,7 @@
 # 114. Qué operadores te abren
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T17:33Z
 rama: claude/equipo-dev/114-que-operadores-te-abren
 tipo: funcionalidad
 epica: rivales
