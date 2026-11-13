@@ -440,6 +440,44 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   expect(errores).toEqual([])
 })
 
+test('el Inicio compara tu forma con tu historial', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // las etiquetas salen de la API: con otro seed cambia el tamano del resto
+  const respuesta = await page.request.get('/api/compare/?by=matches&n=10&against=rest')
+  const datos = await respuesta.json()
+  expect(datos.against).toBe('rest')
+  expect(datos.previous.rounds).toBeGreaterThan(0)
+  await page.goto('/')
+
+  const panel = page.locator('section.panel', { hasText: 'Tu forma contra tu historial' })
+  await expect(panel).toBeVisible()
+  const cabeceras = panel.locator('thead th')
+  await expect(cabeceras.nth(1)).toContainText(datos.previous.label)
+  await expect(cabeceras.nth(2)).toContainText(datos.current.label)
+  await expect(panel.locator('tbody tr td:first-child')).toHaveText([
+    'Rondas ganadas',
+    'Rating',
+    'KST',
+    'Muertes sin trade',
+  ])
+  // los numeros de cada lado y su ruido, no solo las cabeceras: con las
+  // columnas cruzadas o en cero el test tiene que caer
+  const celdas = (m) => {
+    const decimales = m.suffix === '' ? 2 : 0
+    const valor = (v) => `${Number(v).toFixed(decimales)}${m.suffix}`
+    return [valor(m.previous), valor(m.current), m.noise === null ? '—' : `±${Number(m.noise).toFixed(1)}`]
+  }
+  for (const [fila, clave] of [[0, 'winrate'], [1, 'rating']]) {
+    const tds = panel.locator('tbody tr').nth(fila).locator('td')
+    const [previo, actual, ruido] = celdas(datos.metrics.find((m) => m.key === clave))
+    await expect(tds.nth(1)).toHaveText(previo)
+    await expect(tds.nth(2)).toHaveText(actual)
+    await expect(tds.nth(4)).toHaveText(ruido)
+  }
+
+  expect(errores).toEqual([])
+})
+
 test('un record de ronda abre la partida en esa ronda', async ({ page }) => {
   const errores = vigilarConsola(page)
   // los valores salen de la API: el test no depende de que partida o ronda sea

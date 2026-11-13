@@ -386,7 +386,7 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
 
 @require_GET
 def compare(request: HttpRequest) -> JsonResponse:
-    """Progreso: el periodo reciente contra el inmediatamente anterior."""
+    """Progreso: el periodo reciente contra el anterior, o contra todo el resto."""
     by = "days" if request.GET.get("by") == "days" else "matches"
     n = _int_param(request, "n", 30 if by == "days" else 10, minimum=1, maximum=365)
     min_rounds = _int_param(
@@ -395,9 +395,15 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rows = _int_param(
         request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
     )
+    against = "rest" if request.GET.get("against") == "rest" else "previous"
     return _ok(
         agg.compare_periods(
-            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+            by=by,
+            n=n,
+            min_rounds=min_rounds,
+            min_rows=min_rows,
+            against=against,
+            **_filters(request),
         )
     )
 
