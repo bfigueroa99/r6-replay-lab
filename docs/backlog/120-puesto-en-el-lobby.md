@@ -1,8 +1,8 @@
 # 120. Puesto en el lobby
 
-estado: disenado
+estado: en curso 2026-11-13T18:25Z
 candado: -
-rama: -
+rama: claude/equipo-dev/120-puesto-en-el-lobby
 tipo: funcionalidad
 epica: progreso
 area: fullstack
