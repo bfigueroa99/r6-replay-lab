@@ -1,7 +1,7 @@
 # 116. En que estado de vivos mueres
 
-estado: revisado
-candado: qa 2026-11-13T17:33Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/116-en-que-estado-de-vivos-mueres
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md K6
 archivos: backend/replays/analytics/metrics.py (estado_al_morir), backend/replays/analytics/aggregates.py (death_state), backend/replays/views.py (death_state), backend/replays/urls.py, backend/tests/test_estado_al_morir.py (nuevo), frontend/src/estadoAlMorir.js (nuevo), frontend/src/estadoAlMorir.test.js (nuevo), frontend/src/components/EstadoAlMorir.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261113T1649Z-ccPezGq, dev 20261113T1703Z-c66ztji, revisor 20261113T1651Z-cxTme8t
+turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261113T1649Z-ccPezGq, dev 20261113T1703Z-c66ztji, revisor 20261113T1651Z-cxTme8t, qa 20261113T1733Z-cudo1Sw
 
 ## PR
 
@@ -278,7 +278,65 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=7 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 16066a1
+
+(qa 20261113T1733Z-cudo1Sw) Rama al dia con `origin/dev` (a6a9fe8), sin
+migracion, sin parser, sin `recompute`. Scripts en el scratchpad de la sesion
+(`sembrar.py`, `a11y.cjs`, `teclado.cjs`, `vacia.cjs`); se repiten asi:
+
+- `verificar.sh` -> `VERDE 16066a14c en 185s: 1219 tests backend, 367 vitest, 100 e2e. Todo en verde.`
+- Base vacia (`SQLITE_PATH=<tmp>/vacia.sqlite3 manage.py migrate && runserver 8761`):
+  `curl -s localhost:8761/api/duels/death-state/` -> 200, `deaths 0`, tres grupos en 0 con `winrate: null`.
+  `/duelos` muestra la bienvenida de siempre, consola limpia.
+- Base sembrada con `factories.py` (Club House, 5 contra 5, siete rondas armadas):
+  R0 cae un rival y despues yo; R1 `PlayerLeave` de un aliado + teamkill + yo;
+  R2 `Kill` sobre mi y despues `Death` mio; R3 `died` sin evento; R4 `PlayerLeave`
+  mio y el feed me mata despues; R5 no muero; R6 `Death` mio con dos rivales
+  caidos, ronda sin ganador. **Recalculado a mano:** 4 muertes (5v4 ganada,
+  3v5 perdida, 5v5 perdida, 5v3 sin ganador), `sin_feed` 2; ahead 2 rondas /
+  1 decidida / 1 ganada = 100 %, even 1/1/0 = 0 %, behind 1/1/0 = 0 %; orden
+  5v3, 5v4, 5v5, 3v5. `curl .../api/duels/death-state/` devolvio exactamente eso.
+- Bordes, todos 200: `side=Attack` 3 (5v3, 5v4, 3v5); `side=Defense` 1 (5v5) +
+  `sin_feed` 2; `side=foo` 0; `until=foo` y `page=-1` ignorados; `map=` vacio
+  ignorado; `map=border` (ronda sin muerte mia) 0; `map=oregon` (muerte sin
+  evento) 0 + `sin_feed` 1; `operator=Nadie` 0; `days=99999999999` sin 500;
+  `session=abc` 0. POST -> 403 (CSRF), como el resto de los GET. Vecino
+  `/api/duels/` sin cambios (200).
+- Chunk inicial de `vite build`: `index` 199.91 kB en `origin/dev` -> 200.10 kB
+  (+0.1 %). `Duelos` (lazy) 7.92 -> 10.09 kB.
+- accessibility-review en Chromium sobre `/duelos` sembrada: `h2` "Estado al
+  morir", dos `table` con `columnheader` (Situación/Muertes/Winrate de la
+  ronda; Estado/...), filas iguales a la API ("5v3 1 —"). Contraste medido
+  5.71:1 (titulo, hint y cabeceras, `--muted`) a 14.17:1 (celdas): todo >= 4.5.
+  Teclado: los dos "Descargar CSV" y las cabeceras ordenables se alcanzan con
+  Tab con foco visible (outline 2px); Enter ordena y pone `aria-sort`; Enter en
+  CSV baja `estado-al-morir-<fecha>.csv` con BOM y `;`. Consola limpia.
+  0 Critical, 0 Major. Con `map=border` el panel muestra "No hay muertes tuyas
+  con evento en el feed con estos filtros." (texto, no error).
+- design-critique (panel nuevo, no frena): jerarquia y patrones iguales a los
+  paneles vecinos (`Panel`, `DataTable`, `note`). Lo unico: con `map=oregon`
+  (muertes sin evento y 0 duelos) la pagina cae en su vista sin-duelos y no
+  muestra el panel; es el LOW que ya anoto el Revisor, fuera de los criterios.
+- validate-data sobre la fila "Estado al morir" de `metricas.md`: winrate sobre
+  `decided` (`_pct` devuelve `None` con 0: sin division por cero), `n` visible
+  en Muertes, grupos sumados de conteos (sin promedio de promedios), redondeo a
+  un decimal. Valores recalculados: arriba (ahead 100 %, 5v4 100 %).
+- Mutacion (`manage.py test tests.test_estado_al_morir`, revertida cada una):
+  `PlayerLeave` no resta -> caen 3; `PlayerLeave` anota estado -> caen 2;
+  paridad como ventaja (`>=`) -> cae `test_grupos_ventaja_paridad_y_desventaja_con_winrate`;
+  no contar a la victima -> caen 12.
+
+Criterios: los cinco verificados (estado exacto con winrate, abandono /
+teamkill / sin evento, grupos, filtros, UI con aviso, texto vacio, e2e y
+`metricas.md`).
+
+Veredicto: `aprobado`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major; contraste 5.71-14.17),
+design-critique (0 nuevos; repite el LOW del Revisor), validate-data (sin
+hallazgos; 2 valores recalculados a mano iguales a la API).
+Skills: ninguna de afuera.
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier, 5/5 criterios)
 
 ## Para el humano
 
