@@ -279,8 +279,6 @@ metricas (filas nuevas).
 Skills: no aplica (el repo ya lo resuelve con `PorSitio`).
 OMC: plan=— · revisión=2 hallazgos LOW (2 arreglados) · verificación=—
 
-## Revision
-
 ## Revision 2026-11-13 sobre 4a8ec36
 
 (revisor 20261113T0003Z-cVnayJ8) Rama fusionada con `origin/dev` (entraron #109 y #110, sin
@@ -324,6 +322,8 @@ Hallazgos (ninguno CRITICAL ni HIGH):
   `decided`; fiel a la letra de la ficha y de `metricas.md`. Sin cambio.
 - [estilo] LOW `frontend/src/pages/Operators.jsx:548`: el `?? 12` del hint
   copia la constante del backend mientras `data` no cargo. Sin efecto en datos.
+
+Con el test nuevo: verificar.sh VERDE f30df34 (1182 backend, 336 vitest, 95 e2e).
 
 Veredicto: aprobar -> `revisado`. Los LOW quedan para pulir; no frenan.
 
