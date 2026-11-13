@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: implementado
-candado: revisor 2026-11-13T20:32Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
 archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ
 
 ## PR
 
@@ -157,10 +157,26 @@ Skills: no aplica.
 Skills del repo: testing-strategy (logica pura en vitest, selector -> URL -> paneles en e2e con numeros de la API y mutaciones), accessibility-review (resaltado con `aria-current`, no solo color; selector con su `label`), ux-copy (nota con tildes, nombra los paneles reales), modern-web-guidance no leida (sin CSS nuevo; clase y markup existentes).
 OMC: plan=— · revisión=3 hallazgos (3 LOW; 3 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre fe2b837
+
+(revisor 20261113T2003Z-c3vr7mZ) Punto de partida: la rama no contenia `origin/dev` (entraron 123, 124 y 125); `git merge origin/dev` limpio (fe2b837) y `verificar.sh`: VERDE fe2b83780 (1284 backend, 415 vitest, 114 e2e).
+
+**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`, sin leer la ficha): aprobar, 1 MEDIUM y 2 LOW propuestos.
+- [test] MEDIUM propuesto -> **LOW confirmado a medias** `frontend/e2e/humo.spec.js:218-223`: el listener de `pedidosPool` se registra despues de `page.goto`, y elegir Ash no cambia el `serialized` de `useApi` (`sinOperador` quita `operator`), asi que `pedidosPool.length > 0` podria depender de una carrera. No se reproduce: `E2E_CHROMIUM=<headless_shell> npx playwright test -g "filtra por operador desde su propio selector" --repeat-each 25 --workers 4` -> 25 passed. Arreglo sugerido: registrar `page.on('request')` antes de `goto` y ajustar el comentario "mientras recarga". No bloquea.
+- [bug] LOW `frontend/src/pages/Operators.jsx:44-46`: con un operador sin rondas bajo los demas filtros (ej. `?operator=Zofia&map=<mapa donde no la jugaste>`) no hay nota ni fila resaltada y Por sitio / Repetir o cambiar se vacian sin decir por que. Arreglo: nota corta "Sin rondas con <op> con estos filtros", excluyendo el lado filtrado que no es el del operador.
+- [estilo] LOW `frontend/src/pages/Operators.jsx:97-98`: `aria-current="true"` en un `<strong>` dentro de una celda no es el uso tipico de `aria-current` (item actual de un conjunto). Alternativa: texto oculto "elegido". Confianza baja.
+
+Sin eje de seguridad: el diff no toca red, POST, rutas ni dependencias. Sin eje de intencion aparte: los criterios se contrastaron abajo.
+
+**Ficha.** Criterio 1 (selector, URL, Repetir o cambiar con numeros de la API): e2e `Operadores filtra por operador desde su propio selector`; 2 (tablas sin vaciarse, resaltado con clase y `aria-current`): mismo e2e (3 filas por lado, una sola `tr.me`) y vitest `operadorElegido.test.js`; 3 (Todos): mismo e2e; 4 (vista sin rondas con selector): e2e `Operadores sin rondas deja quitar el operador`; 5 (consola limpia, sin backend): `vigilarConsola` en los dos y diff sin `backend/`. Diff dentro de `archivos:` (`metricas.md` sumado y explicado en Implementacion); identificadores sin tildes, UI con tildes; sin `console.log`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=3 hallazgos (1 MEDIUM rebajado a LOW, 2 LOW; 0 arreglados: no bloquean) · verificación=—
 
 ## QA
 
 ## Para el humano
 
-(nada)
+- (revisor 2026-11-13, no bloquea) Tres LOW en la 129 (listener del e2e despues del `goto`, operador sin rondas sin aviso, `aria-current` en una celda; detalle en `## Revision`): los puede sumar un Dev despues.
