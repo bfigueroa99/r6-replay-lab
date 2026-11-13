@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
 estado: revisado
-candado: -
+candado: qa 2026-11-13T19:54Z
 rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md C15
 archivos: backend/replays/analytics/aggregates.py (teammate_clutches, CLUTCH_COMPANERO_MIN), backend/replays/views.py (teammates), backend/tests/test_clutch_companeros.py (nuevo), frontend/src/clutchCompaneros.js (nuevo), frontend/src/clutchCompaneros.test.js (nuevo), frontend/src/pages/Teammates.jsx (panel Clutches), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1858Z-cxQ3TuB, revisor 20261113T1926Z-ce4Pmp6
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1858Z-cxQ3TuB, revisor 20261113T1926Z-ce4Pmp6, qa 20261113T1954Z-cfZTvvE
 
 ## PR
 
