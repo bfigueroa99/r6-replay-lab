@@ -156,13 +156,26 @@ class VentajaTiradaTests(TestCase):
                          (2, 1, 50.0))
         self.assertEqual((mapas[1]["rounds"], mapas[1]["thrown"]), (1, 0))
 
+    def test_por_mapa_separa_las_versiones_del_mismo_nombre(self):
+        vieja = make_match(map_name="Club House", map_id=1, index=8)
+        nueva = make_match(map_name="Club House", map_id=2, index=9)
+        self._ronda([("Kill", ME, "rival0")], won=False, match=vieja)
+        self._ronda([("Kill", ME, "rival0")], won=True, match=nueva)
+        mapas = agg.thrown_advantage()["maps"]
+        self.assertEqual(len(mapas), 2)
+        etiquetas = {m["map"] for m in mapas}
+        self.assertEqual(len(etiquetas), 2)
+        self.assertEqual(sum(m["rounds"] for m in mapas), 2)
+        recientes = agg.thrown_advantage()["recent"]
+        self.assertIn(recientes[0]["map"], etiquetas)
+
     def test_las_consultas_no_crecen_con_las_rondas(self):
         self._ronda([("Kill", ME, "rival0")], won=False)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             agg.thrown_advantage()
         self._ronda([("Kill", ME, "rival0")], won=False)
         self._ronda([("Kill", "rival0", ME)], won=True)
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             agg.thrown_advantage()
 
     def test_la_api_responde_con_los_filtros(self):

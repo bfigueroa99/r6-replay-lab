@@ -2542,9 +2542,13 @@ def thrown_advantage(**filters) -> dict:
     filas = list(
         mias.filter(round__my_team_won__isnull=False).values(
             "round_id", "team_index", "side", "round__my_team_won", "round__number",
-            "round__match_id", "round__match__map_name", "round__match__played_at",
+            "round__match_id", "round__match__map_slug", "round__match__map_id",
+            "round__match__played_at",
         )
     )
+    # Por version, como Mapas: un rework se cuenta aparte aunque se llame igual,
+    # y un renombre en Datos no parte la fila.
+    etiquetas = etiquetas_de_mapas({f["round__match__map_slug"] for f in filas})
 
     # Correlacionadas por el tope de parametros de SQLite, como death_state.
     en_mis_rondas = Exists(mias.filter(round_id=OuterRef("round_id")))
@@ -2566,7 +2570,7 @@ def thrown_advantage(**filters) -> dict:
     total = _fila_tirada()
     grupos = {g: _fila_tirada() for g in ("one", "two_plus")}
     lados = {lado: _fila_tirada() for lado in ("Attack", "Defense")}
-    mapas: dict[str, dict] = {}
+    mapas: dict[tuple[str, int], dict] = {}
     tiradas = []
     for fila in filas:
         round_id = fila["round_id"]
@@ -2580,8 +2584,9 @@ def thrown_advantage(**filters) -> dict:
         _sumar_tirada(grupos["one" if ventaja == 1 else "two_plus"], tirada)
         if fila["side"] in lados:
             _sumar_tirada(lados[fila["side"]], tirada)
-        mapa = fila["round__match__map_name"]
-        _sumar_tirada(mapas.setdefault(mapa, {"map": mapa, **_fila_tirada()}), tirada)
+        clave = (fila["round__match__map_slug"], fila["round__match__map_id"])
+        mapa = etiquetas.get(clave, clave[0])
+        _sumar_tirada(mapas.setdefault(clave, {"map": mapa, **_fila_tirada()}), tirada)
         if tirada:
             tiradas.append({
                 "match_id": fila["round__match_id"],
