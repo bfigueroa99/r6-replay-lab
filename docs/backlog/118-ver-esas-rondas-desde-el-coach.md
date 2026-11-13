@@ -1,7 +1,7 @@
 # 118. "Ver esas rondas" desde las señales del Coach
 
-estado: revisado
-candado: qa 2026-11-13T18:02Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/118-ver-esas-rondas-desde-el-coach
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F15 (salio del PR #14, cerrado sin merge el 2026-11-05; complementa la 112, que salta a una ronda puntual)
 archivos: backend/replays/analytics/coach.py (_insight, reglas), backend/tests/test_coach.py, frontend/src/enlaceSenal.js (nuevo), frontend/src/enlaceSenal.test.js (nuevo), frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T0804Z-cJw5MQs, dev 20261113T1651Z-cxTme8t, revisor 20261113T1732Z-cdpsq83
+turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T0804Z-cJw5MQs, dev 20261113T1651Z-cxTme8t, revisor 20261113T1732Z-cdpsq83, qa 20261113T1802Z-c8dAf7p
 
 ## PR
 
@@ -249,6 +249,60 @@ Veredicto: aprobar.
 
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=3 hallazgos MEDIUM (1 cubierto con test, 1 decision del diseno al humano) y 2 LOW (1 cubierto) · verificación=—
+
+## QA 2026-11-13 sobre f106044
+
+(qa 20261113T1802Z-c8dAf7p) Punto de partida: merge de `origin/dev`
+(7892cc3, sin conflictos) sobre la rama.
+
+- **check.sh** (`verificar.sh`): VERDE f10604491 en 177 s (1239 backend,
+  377 vitest, 103 e2e).
+- **Base sembrada** (script en el scratchpad con `factories.py`: Club House
+  fuerte, Border flojo con 1F Armory y Mute en defensa, Consulate con
+  `map_id` 1 y 2, un rival; `migrate` + `recompute`) en `runserver :8118`, y
+  base vacia en `:8119`. `curl /api/coach/`: 11 señales; con `filters`:
+  `mapa-debil {map: border}`, `sitio-debil {map: border, site: 1F Armory}`,
+  `operador-debil {operator: Mute, side: Defense}`, `zona-dormidero` y
+  `zona-solida {map, side: Attack}`, `mapa-fuerte {map: club-house}`;
+  `nemesis {}` a `/duelos`; `kst`, `muertes-sin-trade`, `rondas-finales`,
+  `bajon` con `{}` y `/`. Base vacia: 200, `sin-datos` con `{}` y `/`.
+- **El enlace abre lo que la señal dice** (script `cruzar.py`: cada señal
+  contra `/api/overview/?<sus filters>`, solos y con
+  `days=99999&match_type=Ranked`): rondas == `sample` y winrate == `value`
+  en `mapa-debil` (30, 20.0), `sitio-debil` (30, 20.0), `operador-debil`
+  (15, 20.0), `mapa-fuerte` (40, 70.0). A mano en la base: Border/1F Armory
+  30 rondas 6 ganadas; Mute en defensa 15 rondas 3 ganadas.
+- **Bordes** `/api/coach/?`: `until=foo`, `page=-1`, `map=`, `side=`,
+  `operator=`, `site=`, `days=abc` -> 200 con señales; `map=nope`,
+  `side=Nada`, `since=2030-01-01`, `session=999` -> 200 `sin-datos`. Con
+  `map=border` en la barra ninguna señal trae `map`. Con `map=consulate`
+  (slug de dos versiones) `sitio-debil` trae `{site: 2F Workshop}` con
+  `sample` 10 y su Resumen da 20 rondas 40 %: es el M1 del revisor
+  (decision del diseno, ya en `## Para el humano`); no bloquea.
+- **UI** (Playwright sobre la base sembrada): `/coach?match_type=Ranked`
+  -> 7 `<a>` (6 "Ver esas rondas", 1 "Ver en Duelos") con `match_type` en
+  el href; `since`/`until`/`gamemode` se conservan. Clic en 1F Armory ->
+  `/?map=border&site=1F+Armory`, `h1` Resumen, Mapa=border, Sitio=1F
+  Armory. "Ver en Duelos" -> `/duelos`. Consola sin errores ni warnings.
+  (`days` fuera de 7/30/90 no viaja: lo descarta `filtrosUrl.js`, previo.)
+- **Accesibilidad** (`accessibility-review`): enlace alcanzable con Tab,
+  foco visible (`outline auto`), Enter navega; nombre accesible = texto;
+  rol link; contraste 12.92:1 (rgb 230,237,243 sobre 29,38,50) a 12 px.
+  Sin Critical ni Major.
+- **Chunk inicial** `index-*.js`: dev 200100 B -> rama 200116 B (+0,008 %).
+- **Mutaciones** (restauradas, `git status` limpio): sin el `pop("map")` ->
+  cae `test_con_mapa_en_la_barra_la_senal_no_lo_pisa`; `sitio-debil` sin
+  `site` -> caen 2; `nemesis`/`operador-rival` a `/` -> cae
+  `test_las_senales_de_rival_van_a_duelos`; la barra pisando a la señal ->
+  cae 1 vitest; sin filtros globales -> caen 4 vitest.
+- **validate-data**: no hay numero nuevo; el parrafo de `metricas.md`
+  describe el enlace, y el cruce de arriba prueba que el Resumen abierto
+  tiene la misma `n` y el mismo winrate que la señal.
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (qa: teclado, nombre, contraste 12.92:1; 0 hallazgos), validate-data (qa: 2 valores recalculados a mano, n de la señal == n del Resumen), design-critique no aplica (sin pagina ni panel nuevo).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
