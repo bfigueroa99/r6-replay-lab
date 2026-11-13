@@ -1,8 +1,8 @@
 # 133. Ventaja numerica tirada
 
-estado: disenado
+estado: en curso 2026-11-13T22:01Z
 candado: -
-rama: -
+rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
 area: backend
