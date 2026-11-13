@@ -1,7 +1,7 @@
 # 122. Cuando te toco por ultima vez
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T19:34Z
 rama: claude/equipo-dev/122-cuando-te-toco-por-ultima-vez
 tipo: funcionalidad
 epica: rivales
