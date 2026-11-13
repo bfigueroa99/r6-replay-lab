@@ -792,6 +792,72 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el detalle salta a la siguiente ronda perdida', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // la primera partida del seed con alguna ronda perdida; el indice esperado con la misma regla
+  const { matches } = await (await page.request.get('/api/matches/?limit=50')).json()
+  let id = null
+  let esperado = -1
+  for (const m of matches) {
+    const { rounds } = await (await page.request.get(`/api/matches/${m.id}/`)).json()
+    const n = rounds.length
+    for (let k = 1; k <= n && esperado === -1; k++) {
+      if (rounds[k % n].my_team_won === false) esperado = k % n
+    }
+    if (esperado !== -1) {
+      id = m.id
+      break
+    }
+  }
+  expect(id).not.toBeNull()
+
+  await page.goto(`/partidas/${id}`)
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  const pestanas = panel.locator('.round-tab')
+  const boton = panel.getByRole('button', { name: 'Siguiente ronda perdida' })
+  await pestanas.first().click()
+  await expect(boton).toBeEnabled()
+  const url = page.url()
+  await boton.click()
+  await expect(pestanas.nth(esperado)).toHaveClass(/active/)
+  await expect(pestanas.nth(esperado)).toHaveClass(/loss/)
+
+  // con la tecla igual, desde la primera; el foco queda en la pestaña, no en un campo
+  await pestanas.first().click()
+  await expect(pestanas.first()).toHaveClass(/active/)
+  await page.keyboard.press('p')
+  await expect(pestanas.nth(esperado)).toHaveClass(/active/)
+  // el salto no toca el hash, como cambiar de ronda a mano
+  expect(page.url()).toBe(url)
+  await expect(panel).toContainText('P para la siguiente perdida')
+
+  expect(errores).toEqual([])
+})
+
+test('sin rondas perdidas el boton de la siguiente perdida queda deshabilitado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id } = matches[0]
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const rounds = json.rounds.map((r) => ({ ...r, my_team_won: true }))
+    await route.fulfill({ response: respuesta, json: { ...json, rounds } })
+  })
+  await page.goto(`/partidas/${id}`)
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  await expect(panel.locator('.round-tab').first()).toHaveClass(/active/)
+  await expect(panel.getByRole('button', { name: 'Siguiente ronda perdida' })).toBeDisabled()
+  await page.keyboard.press('p')
+  await expect(panel.locator('.round-tab').first()).toHaveClass(/active/)
+
+  expect(errores).toEqual([])
+})
+
 test('la timeline marca un teamkill con TK', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo no tiene teamkills: se cambia la victima de una baja por un compañero del autor
