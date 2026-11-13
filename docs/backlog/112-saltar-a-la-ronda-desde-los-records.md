@@ -1,14 +1,14 @@
 # 112. Saltar a la ronda desde los records
 
-estado: en curso 2026-11-13T00:29Z
-candado: dev 2026-11-13T00:29Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/112-saltar-a-la-ronda-desde-los-records
 tipo: funcionalidad
 epica: revision-de-rondas
 area: frontend
 prioridad: 3
 fuente: ALCANCE.md F6 (el PR #14 que lo frenaba se cerro sin merge el 2026-11-05)
-archivos: backend/replays/analytics/aggregates.py (_record_de_ronda, record de racha), backend/tests/test_records.py, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
+archivos: backend/replays/analytics/aggregates.py (_record_de_ronda, record de racha), backend/tests/test_records.py, frontend/src/navegacionRondas.js, frontend/src/navegacionRondas.test.js, frontend/src/records.js, frontend/src/records.test.js, frontend/src/pages/MatchDetail.jsx, frontend/e2e/humo.spec.js, docs/metricas.md, frontend/src/components/ui.jsx (Panel acepta id)
 turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T0003Z-cVnayJ8
 
 ## PR
@@ -133,6 +133,44 @@ tiene la seleccion de ronda y la navegacion por teclado).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T0003Z-cVnayJ8) Diseno completo:
+
+- `aggregates.py`: `round_number` (el `Round.number` 0-based del detalle) en
+  `_record_de_ronda` (mas bajas en una ronda, clutch mas grande) y en el record
+  de racha (`from_number`, la ronda donde empieza).
+- `navegacionRondas.js`: `anclaDeRonda(number)` (`#ronda-<number+1>`) e
+  `indiceDeAncla(hash, rounds)` (busca por `number`, no por posicion; `null`
+  con hash vacio, no entero positivo, ceros a la izquierda, ronda inexistente
+  o sin rondas). `records.js`: `href` con ancla si `round_number` es entero.
+- `MatchDetail.jsx`: `useEffect` con `[hash, location.key, data]` que elige la
+  ronda del ancla y lleva el panel a la vista; un ancla invalida no hace nada.
+- e2e `un record de ronda abre la partida en esa ronda` (valores de
+  `/api/overview/`, exige `round_number > 0` para que el salto se distinga de
+  R1; `#ronda-999` tras `about:blank` deja R1). Frase en `metricas.md` (Records).
+
+Desvios del diseno:
+- **`id` en `Panel`** (`components/ui.jsx`, fuera de `archivos:`): el panel de
+  Rondas recibe `id="rondas"` en vez de envolverse en un `div`, para no
+  alterar el espaciado entre paneles. Prop opcional; el resto no cambia.
+- **`location.key` en las dependencias** (revision ciega, LOW): volver a clicar
+  el mismo record tras cambiar de ronda re-aplica el ancla.
+- El e2e acota los locators a `#rondas`: "Fases de la ronda" tambien tiene una
+  `.round-tab.active` ("Todas") y el detalle otro `h3`.
+
+Tests: backend `test_los_records_de_ronda_traen_el_numero_de_ronda`,
+`test_la_racha_trae_el_numero_de_su_primera_ronda` (vistos en rojo antes del
+codigo); vitest `indiceDeAncla` (3), `anclaDeRonda` (1) y `un record de ronda
+enlaza a su ronda y uno de partida no` (vistos en rojo); e2e (arriba).
+Criterios -> tests: `round_number` (los dos backend); ancla en el detalle y
+anclas invalidas (vitest `indiceDeAncla` + e2e `#ronda-999`); enlaces del
+Inicio (vitest de `records.js` + e2e); e2e con consola limpia.
+
+verificar.sh: VERDE 140e5fd (1165 backend, 334 vitest, 95 e2e).
+
+Skills: no aplica (seleccion de ronda y navegacion ya resueltas en el repo).
+Skills del repo: ninguna (sin texto nuevo para el usuario; JSX minimo sobre un componente existente).
+OMC: plan=— · revisión=2 hallazgos (2 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
 ## Revision
 
