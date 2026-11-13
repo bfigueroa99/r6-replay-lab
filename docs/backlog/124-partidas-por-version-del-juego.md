@@ -1,7 +1,7 @@
 # 124. Partidas por version del juego en Datos
 
-estado: implementado
-candado: revisor 2026-11-13T19:53Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/124-partidas-por-version-del-juego
 tipo: funcionalidad
 epica: datos
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md G8
 archivos: backend/replays/unknowns.py (partidas_por_version), backend/replays/views.py (import_status), backend/tests/test_versiones_del_juego.py (nuevo), frontend/src/pages/Datos.jsx (panel Importación), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cNCxUZs
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cNCxUZs, revisor 20261113T1926Z-cq9nfTP
 
 ## PR
 
@@ -159,7 +159,20 @@ Skills del repo: testing-strategy (Django para la agrupación, el orden y el GRO
 Skills: ninguna de afuera.
 OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre 0bd7e6f
+
+(revisor 20261113T1926Z-cq9nfTP) Punto de partida: la rama no contenia `origin/dev` (entraron 122 y 126); `git merge origin/dev` limpio (0bd7e6f) y `verificar.sh`: VERDE 0bd7e6f46 (1271 backend, 402 vitest, 109 e2e).
+
+**Eje de estandares** (`omc-code-reviewer` ciego, prompt de `revision.md`, 192 lineas en 6 archivos; un solo tema, sin POST ni red: sin eje de seguridad): aprobar, 0 hallazgos. Confirmado leyendo el codigo: `game_version` y `code_version` no admiten nulos (`models.py:81-82`), asi que no hay grupo `NULL` junto al `""` ni `None` contra `int` en el `sorted`; el `order_by()` vacio evita que `ordering = ["-played_at"]` parta el GROUP BY (lo fija `test_el_orden_del_modelo_no_parte_las_filas`); el sort estable deja "Sin versión" al final aun con codigo alto; `USE_TZ = False`, el `slice(0, 10)` no corre el dia.
+
+**Ficha.** Criterio 1: `test_agrupa_por_version_con_primera_y_ultima` (+ `test_a_igual_codigo_va_primero_la_usada_mas_tarde`); 2: `test_sin_version_va_al_final`; 3: `test_import_status_trae_versions_y_base_vacia_da_lista_vacia` (`/api/import/status/`, sin POST ni migracion); 4: e2e `Datos muestra las partidas por version del juego` y `Datos ordena las versiones del juego como la API, no como texto`. Diff dentro de `archivos:`; el `waitForLoadState('networkidle')` en el e2e de Operadores (126) esta explicado como P4 en Implementacion. `metricas.md` con la fila en `## Datos`; identificadores sin tildes, UI con tildes; sin `print` ni `console.log`.
+
+Nota menor, no es hallazgo: la tabla nueva muestra las fechas `AAAA-MM-DD` y el resto de Datos `DD-MM` (`Datos.jsx:7`); si se quiere uniformar, reusar `fecha`.
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=0 hallazgos · verificación=—
 
 ## QA
 
