@@ -19,7 +19,7 @@ describe('filasClutchCompaneros', () => {
 
   it('pone tu fila primero y despues las de la API en su orden', () => {
     const filas = filasClutchCompaneros(data)
-    expect(filas.map((f) => f.nombre)).toEqual(['Vos', 'Seba', 'Nico'])
+    expect(filas.map((f) => f.nombre)).toEqual(['Tú', 'Seba', 'Nico'])
     expect(filas.map((f) => f.orden)).toEqual([0, 1, 2])
     expect(filas[0]).toMatchObject({ clave: 'yo', esYo: true, attempts: 6, won: 3, pct: 50 })
     expect(filas[1]).toMatchObject({ clave: 7, playerId: 7, esYo: false, attempts: 8, won: 2, pct: 25 })

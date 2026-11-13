@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
-estado: en curso 2026-11-13T19:09Z
-candado: dev 2026-11-13T19:09Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
@@ -191,6 +191,52 @@ interceptada para ver filas).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T1858Z-cxQ3TuB) Diseno completo, sobre `origin/dev@84c575b`:
+
+- `aggregates.py`: `CLUTCH_COMPANERO_MIN = 5` y `teammate_clutches(**filters)`
+  despues de `clutch_by_operator`. Habituales con la regla de `by_stack`
+  (copiada, sin tocar esa funcion) como subconsulta del `player_id__in`;
+  intentos del compañero con `Exists` correlacionado sobre tu fila de
+  `base_queryset` con el mismo `team_index`; tu fila con la misma cuenta que
+  `clutch_conversion`. **2 consultas** (el diseno estimaba 3: los habituales van
+  como subconsulta y no como lista).
+- `views.teammates`: clave `teammate_clutches` al final.
+- `clutchCompaneros.js`: `filasClutchCompaneros` (tu fila primero, `[]` sin
+  compañeros con intentos) con un campo `orden` que la tabla usa de
+  `initialSort` (patron de `EstadoAlMorir`): sin el, `DataTable` ordena por la
+  primera columna y tu fila dejaba de ir arriba.
+- `Teammates.jsx`: `<h3>Clutches de tus compañeros</h3>` entre "Clutch por
+  operador" y "Clutches ganados", columnas Compañero (enlace al perfil; tu
+  fila en negrita sin enlace), Intentos, Ganados, Conversión con `Bar` y `*`;
+  nota sin filas; hint del panel extendido.
+- `metricas.md`: fila despues de "Clutch por operador" y en `## Muestra minima`.
+
+Desvio del diseno: la fila propia dice **"Tú"** y no "Vos" (revision ciega,
+MEDIUM): la UI habla de tú (`resumenPartida.js` usa `'Tú'`, la nota de esta
+tabla dice "contigo").
+
+Tests vistos en rojo antes del codigo: backend (10 con `AttributeError:
+teammate_clutches`), vitest (`clutchCompaneros.js` inexistente). Criterios ->
+tests (`backend/tests/test_clutch_companeros.py`, 13): intentos y ganados por
+compañero (`test_cuenta_intentos_y_ganados_por_companero`), rondas sin ganador
+(`test_una_ronda_sin_ganador_no_cuenta`); muestra (`test_un_companero_que_no_es_habitual_no_sale`,
+`test_marca_muestra_chica_debajo_de_5`); rivales
+(`test_un_rival_no_cuenta_aunque_clutchee`, `test_un_habitual_que_clutchea_como_rival_no_cuenta`,
+que cae si se quita el `team_index` de la correlacion); filtros
+(`test_el_filtro_de_lado_aplica`); agrupado (`test_un_cambio_de_nick_no_parte_la_fila`,
+`test_dos_jugadores_con_el_mismo_nick_son_dos_filas`); tu fila
+(`test_tu_fila_es_tu_conversion`, `test_tu_fila_sin_intentos_sale_en_cero`);
+consultas (`test_consultas_acotadas`, `assertNumQueries(2)` con 1 y 5 rondas);
+API (`test_la_api_trae_teammate_clutches`). vitest `clutchCompaneros.test.js`
+(3). e2e: `Compañeros muestra los clutches de tus compañeros` (seed_demo: nota
+vacia; si la semilla da intentos, tabla con los numeros de la API) y `la tabla
+de clutches de compañeros pone tu fila primero` (respuesta interceptada: orden,
+enlaces, `*`, consola limpia). Fila en `metricas.md`.
+
+Skills: no aplica.
+Skills del repo: statistical-analysis (conversion con su `n`, dos cortes sin ocultar, tu fila con el mismo denominador), testing-strategy (Django, vitest y e2e como dice el diseno, mas el e2e interceptado), ux-copy (tú como el resto de la UI, nota y hint del diseno con tildes), sql-queries (patron vecino de `teammate_synergy` y `by_stack`; `assertNumQueries(2)`), modern-web-guidance no leida (tabla con `DataTable`, `Bar` y markup de `*` ya existentes, sin CSS nuevo).
+OMC: plan=— · revisión=5 hallazgos (1 MEDIUM, 4 LOW; 5 arreglados) · verificación=—
 
 ## Revision
 

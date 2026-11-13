@@ -1018,9 +1018,9 @@ test('Compañeros muestra los clutches de tus compañeros', async ({ page }) => 
   // seed_demo hoy no deja a ningun habitual ultimo vivo: sale la nota. Si la semilla
   // cambia y da intentos, se afirma la tabla con los numeros de la API
   if (datos.rows.length) {
-    const tabla = panel.locator('table').nth(3)
+    const tabla = panel.locator('table', { has: page.getByRole('cell', { name: datos.rows[0].username }) })
     await expect(tabla.locator('tbody tr')).toHaveCount(datos.rows.length + 1)
-    await expect(tabla.locator('tbody tr').first()).toContainText('Vos')
+    await expect(tabla.locator('tbody tr').first()).toContainText('Tú')
   } else {
     await expect(panel).toContainText('Ningún compañero habitual quedó último en una ronda contigo con estos filtros.')
   }
@@ -1051,7 +1051,7 @@ test('la tabla de clutches de compañeros pone tu fila primero', async ({ page }
   const tabla = panel.locator('table', { has: page.getByRole('cell', { name: 'Ocho' }) })
   const filas = tabla.locator('tbody tr')
   await expect(filas).toHaveCount(3)
-  await expect(filas.nth(0)).toHaveText(/^Vos\s*6\s*3\s*50%/)
+  await expect(filas.nth(0)).toHaveText(/^Tú\s*6\s*3\s*50%/)
   await expect(filas.nth(1)).toHaveText(/^Ocho\s*8\s*2\s*25%/)
   await expect(filas.nth(2)).toHaveText(/^Tres\s*3\s*3\s*100%/)
   await expect(filas.nth(0).getByRole('link')).toHaveCount(0)

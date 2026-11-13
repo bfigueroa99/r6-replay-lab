@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
+from replays.models import Player
 
 from .factories import ME, make_match, make_round, make_round_player
 
@@ -78,6 +79,31 @@ class ClutchesDeCompanerosTests(TestCase):
             ronda_de_clutch({}, companeros=("Seba",), rivales={"Rival": 2})
         data = agg.teammate_clutches()
         self.assertEqual(data["rows"], [])
+
+    def test_un_habitual_que_clutchea_como_rival_no_cuenta(self):
+        partidas_juntas(("Seba",))
+        # Seba es habitual de tu equipo, pero esta ronda la jugo contra vos
+        ronda_de_clutch({}, rivales={"Seba": 2})
+        self.assertEqual(agg.teammate_clutches()["rows"], [])
+
+    def test_dos_jugadores_con_el_mismo_nick_son_dos_filas(self):
+        partidas_juntas(("Seba",))
+        otro = Player.objects.create(profile_id="pid-otro-seba", username="Seba")
+        for _ in range(agg.MIN_PARTIDAS_HABITUAL):
+            fila = ronda_de_clutch({"Clon": 1})["Clon"]
+            fila.player = otro
+            fila.username = "Seba"
+            fila.save()
+        ronda_de_clutch({"Seba": 1}, won=False)
+        filas = agg.teammate_clutches()["rows"]
+        self.assertEqual(len(filas), 2)
+        self.assertEqual(sorted((f["attempts"], f["won"]) for f in filas), [(1, 0), (5, 5)])
+
+    def test_tu_fila_sin_intentos_sale_en_cero(self):
+        partidas_juntas(("Seba",))
+        ronda_de_clutch({"Seba": 1})
+        yo = agg.teammate_clutches()["me"]
+        self.assertEqual((yo["attempts"], yo["won"], yo["pct"]), (0, 0, None))
 
     def test_el_filtro_de_lado_aplica(self):
         partidas_juntas(("Seba",))

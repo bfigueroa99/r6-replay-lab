@@ -2687,8 +2687,8 @@ def clutch_by_operator(**filters) -> list[dict]:
     return salida
 
 
-# propio, como los de sitio y operador: se calibra por separado. Por debajo,
-# la conversion de un companero es anecdota y la fila sale marcada (no oculta)
+# propio y no CLUTCH_OPERADOR_MIN: se calibran por separado. Por debajo, la
+# conversion de un companero es anecdota y la fila sale marcada (no oculta)
 CLUTCH_COMPANERO_MIN = 5
 
 
