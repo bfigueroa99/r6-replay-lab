@@ -423,6 +423,25 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra los operadores que te abren', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/duels/?min_duels=3')).json()
+  const filas = datos.opening_operators
+  await page.goto('/duelos')
+
+  const panel = page.locator('section.panel', { hasText: 'Operadores que te abren' })
+  await expect(panel.getByRole('heading', { name: 'Operadores que te abren' })).toBeVisible()
+  // seed_demo trae aperturas por operador: sin filas, el test no estaria mirando la tabla
+  expect(filas.length).toBeGreaterThan(0)
+  await expect(panel.locator('table tbody tr')).toHaveCount(filas.length)
+  const primera = panel.locator('table tbody tr').first()
+  await expect(primera.locator('td').nth(0)).toHaveText(filas[0].operator)
+  await expect(primera.locator('td').nth(2)).toHaveText(String(filas[0].opened_you))
+
+  expect(errores).toEqual([])
+})
+
 test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')
