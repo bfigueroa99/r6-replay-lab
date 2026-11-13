@@ -805,7 +805,7 @@ test('Tendencias tiene las columnas Mejor y Peor, con guion en una sesion de una
   const panel = page.locator('.panel', { has: page.getByRole('heading', { name: 'Sesiones', exact: true }) })
   // evaluateAll no espera: sin esto lee la pagina mientras dice Cargando...
   await expect(panel.locator('tbody tr').first()).toBeVisible()
-  const cabeceras = await panel.getByRole('columnheader').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
+  const cabeceras = await panel.locator('thead th').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
   const mejor = cabeceras.findIndex((t) => t.startsWith('Mejor'))
   const peor = cabeceras.findIndex((t) => t.startsWith('Peor'))
   expect(mejor).toBeGreaterThan(-1)
