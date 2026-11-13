@@ -1,7 +1,7 @@
 # 113. Repetir o cambiar de operador después de perder
 
-estado: revisado
-candado: qa 2026-11-13T04:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O10
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_TRAS_RESULTADO_*), backend/replays/views.py (operators_after_result), backend/replays/urls.py, backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js, frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8
+turnos: po 20261112T1204Z-chGLrtC, arquitecto 20261112T1603Z-cor3JBP, dev 20261112T2004Z-cbaTGDt, revisor 20261113T0003Z-cVnayJ8, qa 20261113T0404Z-cnRfz4a
 
 ## PR
 
@@ -330,7 +330,52 @@ Veredicto: aprobar -> `revisado`. Los LOW quedan para pulir; no frenan.
 Skills: no aplica.
 OMC: plan=— · revisión=5 hallazgos (1 MEDIUM cerrado con test; 4 LOW sin arreglar) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 268c81b
+
+(qa 20261113T0404Z-cnRfz4a) Scripts temporales en el scratchpad (sembrado con
+`factories.py`, Playwright); nada de `.rec` ni `.sqlite3` al repo.
+
+- **check.sh**: `verificar.sh` -> `VERDE 268c81b33 en 177s: 1182 tests backend, 336 vitest, 95 e2e`.
+- **Base vacia** (`SQLITE_PATH=<tmp> manage.py migrate`, `runserver`):
+  `curl /api/operators/after-result/` con `''`, `until=foo`, `page=-1`,
+  `side=`, `operator=`, `map=`, `side=Attack`, `operator=Unknown(3)`,
+  `days=999999999999`, `since=2026-13-45`: todos 200, `pairs: 0`,
+  `winrate: null`. POST -> 403 (CSRF). Log sin tracebacks.
+- **Base sembrada** (`manage.py shell < sembrar113.py`): partida 0 Club House
+  [A0 Ash L, D1 Mute W, A2 Ash W, D3 Jager L, A4 Thermite sin ganador, A5
+  Thermite L, D6 Jager W]; partida 1 Oregon [A0 Ash L, A1 Ash L, (falta 2),
+  A3 Ash W, A4 Unknown(7) L, A5 Ash W]. Calculado a mano y devuelto por la
+  API, identico: `pairs 5`; Ataque tras perder repite 2/2/1 -> 50.0;
+  Ataque tras ganar cambia 1/0/0 -> null (segunda sin ganador); Defensa tras
+  perder repite 1/1/1 -> 100.0; Defensa tras ganar cambia 1/1/0 -> 0.0.
+  `operator=Ash` 3 pares (solo ataque), `map=oregon` 1 (repite 0.0),
+  `side=Defense` igual que sin filtro, `operator=Nadie` 0. Vecinos
+  `operators/`, `operators/sites/`, `operators/pool/` -> 200.
+- **validate-data** sobre la fila de `metricas.md`: division por cero ->
+  `_pct` da `None` (se ve `—`); Total suma numeradores y denominadores
+  (tras perder repite 3/3/2 = 66.7, no el 75 del promedio de promedios); cada
+  winrate va junto a su n de rondas y con aviso bajo 12; redondeo 1 decimal en
+  la API y entero en la UI. Sin hallazgos.
+- **Chunk inicial**: Operadores es lazy; "Tras perder" aparece 0 veces en
+  `index-2JPF6dan.js` (196964 B) y 1 en `Operators-*.js`: no crece.
+- **accessibility-review** (Chromium, `seed_demo`, `/operadores`): 6
+  `columnheader` con nombre, 6 botones de orden enfocables, Enter ordena y
+  pone `aria-sort`; contraste minimo medido 5.71:1 (hint); filas
+  `Total/Tras perder 0 — 58 0%`, `Total/Tras ganar 0 — 87 100%`,
+  `Ataque/Tras ganar 0 — 87 100%`, `Defensa/Tras perder 0 — 58 0%`;
+  `?side=Defense` una fila; 0 errores de consola. Sin Critical ni Major.
+- **Mutacion** (aggregates.py, restaurado): sin corte por hueco -> cae
+  `test_una_ronda_faltante_entre_medio_corta_el_par`; sin corte por partida
+  -> cae `test_los_pares_no_cruzan_partidas`; repeat/switch invertido -> caen
+  11; abrir par sin ganador -> cae `test_primera_sin_ganador_no_abre_par`.
+- Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+
+Veredicto: `aprobado`.
+
+Skills del repo: validate-data (0 hallazgos; recalculados 66.7 y 50.0),
+accessibility-review (0 Critical, 0 Major), design-critique no aplica (panel
+en pagina existente, mismo patron que `PorSitio`).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
