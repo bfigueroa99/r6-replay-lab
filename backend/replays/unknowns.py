@@ -153,6 +153,38 @@ def unknown_match_types() -> list[dict]:
     return _desconocidos_de_partida("match_type", overrides.extra_match_type, "gamemode")
 
 
+def partidas_por_version() -> list[dict]:
+    """Partidas importadas por version del juego, la mas nueva arriba.
+
+    Es el inventario de lo importado, no una metrica: cuenta todas las
+    partidas, tambien las que se excluyan de los agregados.
+    """
+    # order_by() vacio: el ordering del Meta meteria played_at en el GROUP BY
+    # y partiria cada version en una fila por partida.
+    filas = (
+        Match.objects.order_by()
+        .values("game_version")
+        .annotate(
+            partidas=Count("id"), code=Max("code_version"),
+            primera=Min("played_at"), ultima=Max("played_at"),
+        )
+    )
+    filas = sorted(filas, key=lambda f: (f["code"], f["ultima"]), reverse=True)
+    # Las partidas sin version van al final aunque su codigo sea alto: no se
+    # sabe de que temporada son.
+    filas.sort(key=lambda f: not f["game_version"])
+    return [
+        {
+            "game_version": f["game_version"],
+            "code_version": f["code"],
+            "matches": f["partidas"],
+            "first": _iso(f["primera"]),
+            "last": _iso(f["ultima"]),
+        }
+        for f in filas
+    ]
+
+
 # ------------------------------------------------------------------- etiquetas
 
 

@@ -1188,6 +1188,24 @@ test('Datos muestra Sin identificar sin pendientes', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Datos muestra las partidas por version del juego', async ({ page, request }) => {
+  const errores = vigilarConsola(page)
+  const { versions } = await (await request.get('/api/import/status/')).json()
+  expect(versions.length).toBeGreaterThan(0)
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  await expect(titulo).toBeVisible()
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(versions.length)
+  // la primera fila es la version mas nueva; sin version, el rotulo de la UI
+  const primera = filas.first()
+  await expect(primera).toContainText(versions[0].game_version || 'Sin versión')
+  await expect(primera).toContainText(String(versions[0].matches))
+
+  expect(errores).toEqual([])
+})
+
 test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo no trae desconocidos y no se toca: la respuesta se arma aca

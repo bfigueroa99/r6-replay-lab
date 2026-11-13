@@ -16,6 +16,22 @@ const rango = (row) =>
     ? fecha(row.first_seen)
     : `${fecha(row.first_seen)} a ${fecha(row.last_seen)}`
 
+const fechaCorta = (iso) => (iso ? iso.slice(0, 10) : '—')
+
+// El orden lo da la API (la version mas nueva arriba, "Sin versión" al final).
+const COLUMNAS_VERSIONES = [
+  {
+    key: 'game_version',
+    label: 'Versión',
+    left: true,
+    render: (row) => row.game_version || 'Sin versión',
+    csv: (row) => row.game_version || 'Sin versión',
+  },
+  { key: 'matches', label: 'Partidas' },
+  { key: 'first', label: 'Primera', render: (row) => fechaCorta(row.first), csv: (row) => fechaCorta(row.first) },
+  { key: 'last', label: 'Última', render: (row) => fechaCorta(row.last), csv: (row) => fechaCorta(row.last) },
+]
+
 export default function Datos() {
   const unknown = useApi('/unknown/')
   const status = useApi('/import/status/')
@@ -267,6 +283,15 @@ export default function Datos() {
           initialSort={{ key: 'started_at', dir: 'desc' }}
           rowKey={(row) => `${row.folder}-${row.started_at}`}
           empty="Todavía no hay importaciones registradas."
+        />
+
+        <h3>Partidas por versión del juego</h3>
+        <DataTable
+          columns={COLUMNAS_VERSIONES}
+          rows={status.data?.versions || []}
+          rowKey={(row) => row.game_version || 'sin-version'}
+          csvName="partidas-por-version"
+          empty="Todavía no hay partidas importadas."
         />
       </Panel>
     </>

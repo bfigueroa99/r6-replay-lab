@@ -397,6 +397,14 @@ Cubre todas sus partidas, no solo las que jugo contigo.
 | **Nivel** | Nivel de la cuenta (`rewards/public_profile`). Si Ubisoft no lo devuelve, sale `—`. |
 | **Horas jugadas** | `PTotalTimePlayed` en horas, redondeado. Incluye todos los modos de la cuenta. |
 
+## Datos
+
+En la pagina Datos, panel Importación.
+
+| Metrica | Definicion |
+|---|---|
+| **Partidas por versión del juego** | Clave `versions` de `/api/import/status/`. Partidas importadas agrupadas por `Match.game_version` tal como viene del replay, con la fecha de la primera y la última. Orden: la versión con `code_version` más alto primero (a igual código, la usada más tarde); las partidas sin versión, en la fila "Sin versión", al final. Sin filtros de la barra y con todas las partidas importadas, también las que se excluyan de los agregados: es el inventario de lo importado, no una métrica de rendimiento. |
+
 ## Muestra minima
 
 Los agregados de la UI filtran por `min_rounds` y el coach exige muestra antes de
