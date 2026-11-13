@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 19:01 UTC por qa, release, revisor, dev y arquitecto (sesion 20261113T1830Z-cTivbSq; motivo: por estado: 2 revisado)
-playbook: origin/dev@ed7bb52
+actualizado: 2026-11-13 19:10 UTC por qa, release y po (sesion 20261113T1858Z-cxdASk3; motivo: por estado: 1 revisado)
+playbook: origin/dev@84c575b
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 14 de 41 en 7 dias; sin herramientas para comparar (la tanda simultanea prohibe tocar Routines)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 29 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
 pausa: no
@@ -11,31 +11,31 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/120-puesto-en-el-lobby | docs/backlog/120-puesto-en-el-lobby.md | revisado (QA de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/120-puesto-en-el-lobby?expand=1) |
-| claude/equipo-dev/122-cuando-te-toco-por-ultima-vez | docs/backlog/122-cuando-te-toco-por-ultima-vez.md | implementado (revisor de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/122-cuando-te-toco-por-ultima-vez?expand=1) |
-| claude/equipo-dev/126-a-que-operador-cambias-tras-perder | docs/backlog/126-a-que-operador-cambias-tras-perder.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/126-a-que-operador-cambias-tras-perder?expand=1) |
+| claude/equipo-dev/122-cuando-te-toco-por-ultima-vez | docs/backlog/122-cuando-te-toco-por-ultima-vez.md | revisado (QA de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/122-cuando-te-toco-por-ultima-vez?expand=1) |
+| claude/equipo-dev/126-a-que-operador-cambias-tras-perder | docs/backlog/126-a-que-operador-cambias-tras-perder.md | revisado (QA de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/126-a-que-operador-cambias-tras-perder?expand=1) |
+| claude/equipo-dev/123-clutches-de-tus-companeros | docs/backlog/123-clutches-de-tus-companeros.md | en curso (dev de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/123-clutches-de-tus-companeros?expand=1) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=0 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=1 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=3 disenado=3 en_curso=1 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=100 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=2
 
 ## Orden de merge sugerido
 
-Ningun par choca (`git merge-tree` entre las cuatro ramas y contra dev: salida 0). La 121 entro a dev (PR #121).
+La 120 entro a dev (84c575b). Ningun par de la cola choca conocido; cada Release vuelve a traer dev antes de mergear.
 
-1. `claude/equipo-dev/120-puesto-en-el-lobby` (revisado): QA.
-2. `claude/equipo-dev/122-cuando-te-toco-por-ultima-vez` (implementado): revisor.
-3. `claude/equipo-dev/126-a-que-operador-cambias-tras-perder` (implementado): revisor de otro contexto.
-4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109; al entrar, su guardia de agregados puede pedir clasificar los agregados nuevos (126, y la 123 cuando se implemente).
+1. `claude/equipo-dev/122-cuando-te-toco-por-ultima-vez` (revisado): QA, toca `aggregates.py` (`_record`), `Duelos.jsx`.
+2. `claude/equipo-dev/126-a-que-operador-cambias-tras-perder` (revisado): QA, toca `aggregates.py` (`operator_after_result`), `Operators.jsx`.
+3. `claude/equipo-dev/123-clutches-de-tus-companeros` (en curso).
+4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 ## Alcance
 
-- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:14 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 121-copiar-una-ronda-como-texto) otros:4 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: operadores: 113 en dev, 126 implementado. rivales: 114 en dev, 122 implementado. exportar: 111 y 121 en dev. revision-de-rondas: 112 y 118 en dev, 125 disenado. progreso: 110 y 119 en dev, 120 revisado. escuadra: 123 disenado, 109 disenado (frenada). datos: 79 entregado (PR #81), 83 disenado (frenada), 124 disenado.
-- Papel: PAPEL_TIPOS=funcionalidad:5 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
-- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 101. Ideas nuevas de este turno: H14 avisos de copiado anunciados al lector de pantalla.
+- Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:15 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 120-puesto-en-el-lobby 121-copiar-una-ronda-como-texto) otros:4 (fichas que llegaron a dev en 7 dias)
+- Epicas en curso: operadores: 113 en dev, 126 revisado, 129 propuesto. rivales: 114 en dev, 122 revisado. progreso: 110, 119 y 120 en dev. escuadra: 123 en curso, 109 disenado (frenada). datos: 79 entregado (PR #81), 83 disenado (frenada), 124 disenado. revision-de-rondas: 125 disenado. lado-y-marcador: 115 en dev, 127 propuesto. posicionamiento: 107 en dev, 128 propuesto.
+- Papel: PAPEL_TIPOS=funcionalidad:8 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
+- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: S9 el spawn que eliges segun el marcador, F25 la prorroga marcada en la tira de rondas.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
-- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
-- Ciclo: CICLO=0h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 121:0 119:0 118:0 116:0 114:0 111:0 113:20 115:4 110:7 112:7)
+- Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): pagina Trends.jsx | sin entrega: ninguna
+- Ciclo: CICLO=0h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 120:0 121:0 119:0 118:0 116:0 114:0 111:0 113:20 115:4 110:7)
 
 ## Papel (rama backlog)
 
@@ -43,25 +43,27 @@ Ningun par choca (`git merge-tree` entre las cuatro ramas y contra dev: salida 0
 |---|---|---|---|---|---|---|
 | 109 quien te venga | disenado (frenada: espera a la 79) | funcionalidad | escuadra | 3 | fullstack | - |
 | 83 partidas excluidas en partidas y datos | disenado (frenada: espera a la 79) | funcionalidad | datos | 3 | fullstack | - |
-| 123 clutches de tus companeros | disenado | funcionalidad | escuadra | 3 | backend | - |
 | 124 partidas por version del juego en Datos | disenado | funcionalidad | datos | 3 | backend | - |
 | 125 teamkill marcado en la timeline | disenado | funcionalidad | revision-de-rondas | 3 | frontend | - |
+| 127 partidas que van a prorroga | propuesto | funcionalidad | lado-y-marcador | 3 | fullstack | - |
+| 128 repetir o cambiar el spawn tras perder | propuesto | funcionalidad | posicionamiento | 3 | fullstack | - |
+| 129 filtro de operador en Operadores | propuesto | funcionalidad | operadores | 3 | frontend | - |
 
 FRENADAS=2 (la 109 espera a la 79; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
 
-Espejos: 121 quitado (en dev); 120, 122 y 126 `en curso` con su rama; la rama de trabajo manda. Papel sin `propuesto`: el proximo PO.
+Espejos: 120 quitado (en dev); 122, 123 y 126 viven en su rama, que manda.
 
 ## Ultimo turno de cada rol
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
 | release | 2026-11-13 19:01 | (release 20261113T1830Z-cTivbSq, sigue de QA) 121: PR #121 abierto y **mergeado** en dev (ed7bb52) tras volver a traer dev, fusionar la 119 y VERDE 5f47ca752 (1239, 388, 105). Sin pasos 8 y 9 (QA que sigue como Release: solo pasos 3 a 5). |
-| qa | 2026-11-13 19:01 | (qa 20261113T1830Z-cTivbSq, por estado: 2 revisado; la 119 la tomo otra corrida) Prueba 121 (`revisado` -> `aprobado`): VERDE 50c6ac708 (1239, 385, 104); base vacia y `seed_demo` + rondas de `factories` (sin bajas, teamkill, `Death`, traded); Chromium: texto = timeline, sin portapapeles avisa, teclado, contraste 12.92/5.71; 4 de 4 mutantes muertos; omc-verifier PASS. Sigue como release: VERDE 5f47ca752 tras fusionar dev (con la 119), **mergeado** PR #121 (ed7bb52); espejo quitado; idea H14 (avisos de copiado sin `aria-live`). |
-| revisor | 2026-11-13 19:01 | (revisor 20261113T1830Z-cTivbSq, sigue; la 120 ya tenia candado de otra corrida) Salud de la 79 (entregado): 41 commits atras, `merge origin/dev` limpio, VERDE ef17b0c86 (1259, 388, 106), candado suelto. |
+| qa | 2026-11-13 19:10 | (qa 20261113T1858Z-cxdASk3, por estado: 1 revisado; la 120 la tomo otra corrida al mismo minuto) Fallback de revisor: revisa 122 y 126 (`implementado` -> `revisado`). 122: VERDE 5dd09adb9 (1243, 391, 105), ciega aprueba, 1 LOW (`fechaCorta` duplica `fecha` de `Jugador.jsx`). 126: VERDE 8932c2833 (1247, 392, 106), dos ejes aprueban, 2 LOW de tests (orden por rondas confirmado por mutacion, suma sin filtros). |
+| revisor | 2026-11-13 19:10 | (revisor 20261113T1858Z-cxdASk3, como fallback de QA) Revisa 122 y 126 a `revisado`; ver fila qa. |
 | dev | 2026-11-13 19:01 | (dev 20261113T1830Z-cTivbSq, sigue) Implementa 126 (`disenado` -> `implementado`): `switches` del mismo bucle de la 113, tabla "A qué operador cambias tras perder" en Operadores, 8 tests Django y 4 vitest vistos en rojo, e2e (el de la 113 acotado a su tabla). Ciega: 0 hallazgos. VERDE 5563bae26 (1247, 392, 106). |
 | arquitecto | 2026-11-13 19:01 | (arquitecto 20261113T1830Z-cTivbSq, sigue) Disena 125 (`esTeamkill` en `aperturas.js`, chip TK en la timeline y en Copiar ronda), 123 (`teammate_clutches`: habituales con `clutch_vs`, fila Vos, aviso 5 intentos) y 124 (`partidas_por_version` en `unknowns.py`, clave `versions` de `/api/import/status/`, tabla en Datos). Ninguna frenada. |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-13 17:20 | (po 20261113T1703Z-ctZvzXQ, sigue) Propone 125 (teamkill marcado en la timeline, F14). Ideas nuevas E20 y F24. |
+| po | 2026-11-13 19:10 | (po 20261113T1858Z-cxdASk3, sigue) Propone 127 (partidas a prorroga por lado, en la tabla de la 115: Trends.jsx saturada), 128 (repetir o cambiar el spawn tras perder) y 129 (filtro de operador en Operadores). Ideas nuevas S9 y F25. Reconcilia: 120 en dev. |
 
 
 ## Para el humano
@@ -70,7 +72,7 @@ Espejos: 121 quitado (en dev); 120, 122 y 126 `en curso` con su rama; la rama de
 
 - DESTRABA: ficha 79, entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano), 0 h sin commits | frena a: 109 83 | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/79-excluir-una-partida-de-los-agregados?expand=1
 - Ramas borrables (el proxy de la nube corta `git push --delete`; pegar en tu PC): BORRAR: git push origin --delete claude/confident-feynman-dc9apf claude/equipo-dev/30-tests-ganador-de-ronda claude/equipo-dev/31-tests-stats-por-jugador claude/equipo-dev/32-days-enorme-da-500 claude/equipo-dev/33-fecha-con-zona-da-500 claude/equipo-dev/34-trade-kill-contado-doble claude/equipo-dev/35-tests-lado-de-los-equipos claude/equipo-dev/36-mitades-y-prorroga claude/equipo-dev/37-rivales-repetidos claude/equipo-dev/38-dos-ganadores-por-ronda claude/equipo-dev/39-inercia-entre-rondas claude/equipo-dev/40-hora-y-dia-de-la-semana claude/equipo-dev/41-ronda-segun-el-marcador claude/equipo-dev/42-como-se-cierran-tus-rondas claude/equipo-dev/43-match-point claude/equipo-dev/44-records-personales claude/equipo-dev/45-remontadas-y-derrumbes claude/equipo-dev/46-primero-de-tu-equipo-en-caer claude/equipo-dev/47-modos-desconocidos-en-datos claude/equipo-dev/48-posts-sin-json-desde-otra-pagina claude/equipo-dev/50-partidas-cerradas-y-holgadas claude/equipo-dev/51-matriz-de-duelos-de-la-partida claude/equipo-dev/52-rondas-cortas-y-largas claude/equipo-dev/53-multikills-por-tamano claude/equipo-dev/54-solo-duo-o-stack claude/equipo-dev/55-clutch-intentos-y-conversion claude/equipo-dev/56-mapas-y-operadores-que-mejoran claude/equipo-dev/57-teamkills claude/equipo-dev/58-primera-ronda-de-cada-mitad claude/equipo-dev/59-clutch-por-mapa-y-sitio claude/equipo-dev/60-racha-de-rondas claude/equipo-dev/61-clutch-por-operador claude/equipo-dev/62-cuando-matas claude/equipo-dev/63-cuando-llega-la-apertura claude/equipo-dev/64-partidas-en-el-inicio claude/equipo-dev/65-presencia-y-delta-por-operador claude/equipo-dev/66-copiar-resumen-de-partida claude/equipo-dev/67-teamkills-fuera-de-las-bajas claude/equipo-dev/68-partidas-sin-cerrar-sin-resultado claude/equipo-dev/69-clutch-cuenta-con-abandonos claude/equipo-dev/70-mapas-por-version claude/equipo-dev/71-version-del-mapa-en-la-partida claude/equipo-dev/72-apertura-marcada-en-la-timeline claude/equipo-dev/73-catalogo-y10s4-a-y11s1 claude/equipo-dev/74-version-del-mapa-en-el-resto-de-pantallas claude/equipo-dev/75-trades-de-los-dos-equipos claude/equipo-dev/76-aperturas-sin-trade claude/equipo-dev/77-selector-de-tipo-de-partida claude/equipo-dev/78-filtros-en-el-listado-de-partidas claude/equipo-dev/80-donde-quedas-fuera-de-posicion claude/equipo-dev/81-textos-de-la-ui-sin-tildes claude/equipo-dev/82-partida-sin-rondas-rompe-el-detalle claude/equipo-dev/84-enlace-a-partida-inexistente-culpa-a-django claude/equipo-dev/85-filtro-sin-rondas-esconde-la-barra claude/equipo-dev/86-duelos-dice-0-rondas-con-rondas-sin-duelos claude/equipo-dev/87-readme-con-conteos-de-tests-viejos claude/equipo-dev/88-textos-del-backend-sin-tildes claude/equipo-dev/89-salida-del-spawn-por-mapa claude/equipo-dev/90-stacks-rivales-repetidos claude/equipo-dev/91-fases-de-la-ronda-en-la-partida claude/equipo-dev/92-stack-rival-en-la-partida claude/equipo-dev/93-operador-por-sitio claude/equipo-dev/94-racha-actual-de-partidas claude/equipo-dev/95-partida-anterior-y-siguiente claude/equipo-dev/96-filtros-en-la-url claude/equipo-dev/97-clutches-silenciosos claude/equipo-dev/98-lado-inicial-por-mapa claude/equipo-dev/99-copiar-resumen-de-sesion claude/equipo-dev/100-modo-de-juego-como-dimension claude/equipo-dev/101-dos-partidas-lado-a-lado claude/equipo-dev/102-pool-de-operadores-por-lado claude/equipo-dev/103-tira-de-rondas-en-partidas claude/equipo-dev/104-hilo-de-importacion-ensucia-otros-tests claude/equipo-dev/105-url-con-byte-nulo-tumba-la-spa claude/equipo-dev/106-ruta-unc-en-la-spa claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo claude/equipo-dev/110-tu-forma-contra-tu-historial claude/equipo-dev/111-copiar-las-senales-del-coach claude/equipo-dev/112-saltar-a-la-ronda-desde-los-records claude/equipo-dev/113-repetir-o-cambiar-de-operador-tras-perder claude/equipo-dev/114-que-operadores-te-abren claude/equipo-dev/115-prorroga-por-lado claude/equipo-dev/116-en-que-estado-de-vivos-mueres claude/equipo-dev/117-hotfix-graficos-punteados claude/equipo-dev/118-ver-esas-rondas-desde-el-coach claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion claude/equipo-dev/121-copiar-una-ronda-como-texto
-- Release: RELEASE=dev lleva 285 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1). Al publicar: en el PC `cd frontend; npm run build`, la lista "Verificar en el PC" de abajo y `.\scripts\release.ps1`.
+- Release: RELEASE=dev lleva 299 commits que main no tiene (promover: https://github.com/bfigueroa99/r6-replay-lab/compare/main...dev?expand=1). Al publicar: en el PC `cd frontend; npm run build`, la lista "Verificar en el PC" de abajo y `.\scripts\release.ps1`.
 - Verificar en el PC (97): `manage.py backup`, `migrate` (0005_roundplayer_clutch_kills), `recompute --dry-run` sin filas nuevas por `clutch_kills`; en Compañeros, Silenciosos con numeros creibles (no 100 % en todas las filas). Sus dos preguntas (silencioso muerto o vivo; peso en el Rating, P10) no bloquean y quedan en la ficha.
 - Verificar en el PC (79, al mergear el PR #81): `manage.py backup`, `migrate` (`0006_match_excluded`), `showmigrations replays`; excluir una custom y volver a contarla; `import_replays --force` conserva la marca.
 - Verificar en el PC (76): respaldo, `manage.py migrate` (migracion 0004; antes de migrar, `recompute` falla con `no such column`), `recompute --dry-run` y, si N > 0, `recompute`; en el Inicio, el panel *Aperturas que pesan* suma las aperturas de la tarjeta.
