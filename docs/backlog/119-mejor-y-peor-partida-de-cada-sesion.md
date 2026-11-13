@@ -1,7 +1,7 @@
 # 119. Mejor y peor partida de cada sesion
 
-estado: revisado
-candado: qa 2026-11-13T18:33Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md E18
 archivos: frontend/src/resumenSesion.js (celdaPartidaDeSesion), frontend/src/resumenSesion.test.js, frontend/src/pages/Trends.jsx (tabla Sesiones: columnas Mejor y Peor), frontend/e2e/humo.spec.js, docs/metricas.md (fila Mejor / peor partida de la sesion)
-turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83, revisor 20261113T1802Z-c8dAf7p
+turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T1704Z-ctPFErG, dev 20261113T1732Z-cdpsq83, revisor 20261113T1802Z-c8dAf7p, qa 20261113T1830Z-c2rHpej
 
 ## PR
 
@@ -205,6 +205,46 @@ Veredicto: aprobar.
 
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: 1 decision del diseno, 1 al humano) · verificación=—
+
+## QA 2026-11-13 sobre 412b323
+
+(qa 20261113T1830Z-c2rHpej) Ejercite el sistema; scripts temporales en el scratchpad, nada al repo.
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 412b32333 en 189s: 1239 tests backend, 380 vitest, 104 e2e`. `origin/dev` (1de3c54) ya fusionado.
+- **Base sembrada con `factories.py`** (`SQLITE_PATH=<tmp> python manage.py migrate` y
+  `manage.py shell < sembrar.py`): sesion A de 3 partidas (Bank kills 3, Oregon 0, Kafe 1),
+  B de 1 (Villa), C de 2 empatadas (Chalet y Border, kills 1); `runserver` con gap 120.
+  `curl /api/sessions/` -> A: mejor Bank id 1 (1.86), peor Oregon id 2 (0.31); B: `null`/`null`;
+  C: mejor Chalet id 5 (0.83, la jugada antes), peor `null`. Criterios 1 y 2: ok.
+- **Valores recalculados contra otra vista** (`validate-data`): `curl /api/trends/` `by_match`
+  da Bank 1.86, Oregon 0.31, Kafe 0.83, Chalet 0.83, Border 0.83: los extremos salen del mismo
+  rating por partida que Tendencias. Sin division nueva ni promedio de promedios: la celda es
+  un rating que ya existia.
+- **Parametros borde** (`seed_demo` con gap 600, una sesion de 29): `?map=bank` -> 10 partidas,
+  mejor id 28 (1.89), peor id 21 (0.38), las dos de Bank (criterio 3); `?until=foo` y
+  `?player=zzz` -> 200 sin cambio; `?days=-1` -> 200, 0 sesiones. Base vacia -> `{"sessions": []}`.
+- **Pantalla en Chromium** (Playwright sobre la base de `factories.py`, `/tendencias`): cabeceras
+  `Rating, Mejor, Peor, K/D`; filas `Chalet · 4-3 · 0.83` -> `/partidas/5` y `—`; `—`/`—` sin
+  enlace; `Bank · 4-3 · 1.86` -> `/partidas/1`, `Oregon · 2-4 · 0.31` -> `/partidas/2`
+  (criterio 4). Consola sin errores ni warnings.
+- **CSV** ("Descargar CSV" de Sesiones): `Mejor;Peor` trae `Bank · 4-3 · 1.86;Oregon · 2-4 · 0.31`
+  y vacio sin partida; nada de `[object Object]`.
+- **Accesibilidad** (`accessibility-review`): el enlace toma foco con teclado y Enter abre
+  `/partidas/1`; nombre accesible = su texto; `th` con `title` de ayuda; contraste del enlace
+  rgb(230,237,243) sobre rgb(23,30,41), ~14:1 (AA pide 4.5). A 390 px la tabla Sesiones queda
+  dentro de `.table-wrap` (`overflow-x: auto`) y "Cuando" se ve. Sin Critical ni Major.
+- **Chunk inicial**: `index-*.js` 200116 B (la implementacion midio 199.99 kB); Trends es lazy.
+- **Mutacion** (`npx vitest run src/resumenSesion.test.js`): `if (partida === undefined)` ->
+  cae `sin partida da null`; `numero(rating, 1)` -> cae `da texto e id`; `id: partida.match_id`
+  -> caen 2. Codigo restaurado, arbol limpio.
+- Criterio 5: fila de `metricas.md` al dia (ya revisada).
+
+Veredicto: **aprobado**. Los dos LOW del Revisor siguen como avisos (el e2e no monta el
+enlace con valor; la ayuda de Peor no nombra el empate); lo primero lo cubrio esta corrida a mano.
+
+Skills del repo: accessibility-review (sin hallazgos Critical/Major), validate-data (rating 1.86 y 0.31 recalculados contra `by_match`).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
