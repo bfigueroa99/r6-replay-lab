@@ -1,7 +1,7 @@
 # 111. Copiar las señales del Coach como texto
 
-estado: implementado
-candado: revisor 2026-11-13T16:47Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/111-copiar-las-senales-del-coach
 tipo: funcionalidad
 epica: exportar
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md H6
 archivos: frontend/src/textoCoach.js (nuevo), frontend/src/textoCoach.test.js (nuevo), frontend/src/pages/Coach.jsx (GROUPS y format se mudan; boton Copiar señales), frontend/e2e/humo.spec.js
-turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k
+turnos: po 20261112T1128Z-cKKCvKD, arquitecto 20261113T0003Z-cVnayJ8, dev 20261113T1603Z-cHj1H4k, revisor 20261113T1647Z-cRa8Bqm
 
 ## PR
 
@@ -188,7 +188,48 @@ Skills: no aplica (copiar al portapapeles ya resuelto dos veces en el repo).
 Skills del repo: ninguna (modern-web-guidance y ux-copy no se leyeron: boton y aviso copian el patron y los textos de "Copiar resumen" de la partida, sin CSS nuevo).
 OMC: plan=— · revisión=5 hallazgos (3 arreglados; 0 CRITICAL/HIGH) · verificación=—
 
-## Revision
+## Revision 2026-11-13 sobre dd2cc0c
+
+(revisor 20261113T1647Z-cRa8Bqm) Veredicto: **aprobar** -> `revisado`.
+
+Partida de verde: `verificar.sh` VERDE dd2cc0ca9 (1173 tests backend, 348
+vitest, 97 e2e). Rama al dia con dev (`git merge-base --is-ancestor
+origin/dev HEAD`).
+
+Revision a ciegas, dos ejes (`omc-code-reviewer` estandares e intencion),
+ambos `aprobar`, 0 CRITICAL/HIGH. Confirmados por el lider:
+
+- [bug/intencion] MEDIUM `frontend/src/textoCoach.js:27` y `:30`: la linea
+  de filtros copia el valor crudo. Repro (vitest temporal, borrado):
+  `textoCoach([{severity:'high',title:'T',detail:'d'}], {map:'214',
+  session:'0'})` -> `Coach · Filtros: Mapa: 214 · Sesión 1`. Con un mapa
+  rehecho sale el `map_id`; con el mapa entero, el slug (`bank`); `session=0`
+  es la mas reciente (`aggregates.py:2492`, `sesiones.reverse()`) y el
+  indice se corre al importar. No frena: es lo que fijo el Diseno y el Dev
+  ya lo anoto en `## Para el humano`; dos ejes independientes lo pusieron en
+  MEDIUM porque el texto se lee sin la barra al lado. Arreglo sugerido (ficha
+  chica aparte): pasarle a `lineaDeFiltros` las opciones de `/api/filters/`
+  y usar `opcionesDeMapa(...).label` (sin la sangria) y `etiquetaSesion`.
+- [test] LOW `frontend/src/pages/Coach.jsx:40-49`: el criterio "sin
+  `navigator.clipboard` avisa" no lo ejercita ningun test (la ficha ya
+  explica que no es forzable sin `addInitScript`). Sugerido: e2e con
+  `page.addInitScript(() => Object.defineProperty(navigator, 'clipboard',
+  { value: undefined }))` que espere "No se pudo copiar". No frena.
+- [test] LOW `textoCoach.test.js`: el criterio pide "dos señales, con y sin
+  filtros" y el caso con filtros usaba una. **Agregado** el vitest `con
+  filtros y dos señales la linea de filtros va una vez, arriba de los
+  grupos` (pasa; mutacion `lineaDeFiltros(filtros)` -> `lineaDeFiltros({})`
+  en `textoCoach.js:64` lo tumba junto con "con filtros los nombra en orden").
+
+Ficha: los 4 criterios cubiertos (vitest de la funcion pura con y sin
+filtros y con lista vacia; boton condicionado a `texto`; aviso sin
+portapapeles por la misma rama que la partida, sin test; e2e `el Coach copia
+sus señales` con consola limpia). Diff dentro de `archivos:`. Sin numero
+nuevo (nada para `metricas.md`). Identificadores sin tildes, UI con tildes,
+sin `console.log`. Sin seguridad: no toca POST, red, rutas ni dependencias.
+
+OMC: plan=— · revisión=4 hallazgos (1 arreglado, test; 0 CRITICAL/HIGH) · verificación=—
+Skills del repo: ninguna
 
 ## QA
 

@@ -48,6 +48,14 @@ describe('textoCoach', () => {
     )
   })
 
+  it('con filtros y dos señales la linea de filtros va una vez, arriba de los grupos', () => {
+    const lineas = textoCoach([positivo, alta], { side: 'Attack' }).split('\n')
+    expect(lineas[0]).toBe('Coach · Filtros: Solo ataque')
+    expect(lineas.filter((l) => l.startsWith('Coach ·'))).toHaveLength(1)
+    expect(lineas.indexOf('PRIORIDAD ALTA')).toBeGreaterThan(0)
+    expect(lineas.indexOf('PRIORIDAD ALTA')).toBeLessThan(lineas.indexOf('TUS FORTALEZAS'))
+  })
+
   it('nombra el resto de los filtros', () => {
     const filtros = {
       side: 'Attack',
