@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-13T17:48Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -115,6 +115,17 @@ QA 20261105T1358Z-ckVhKLL. Aprobo: los 6 criterios estan probados, no hay hallaz
 ## Verificar en el PC
 
 Trae migracion: `python manage.py backup`, `migrate` y `showmigrations replays`. Despues seguir los pasos de "Verificar en el PC" del PR.
+
+
+## Mantenimiento 2026-11-13 (revisor 20261113T1733Z-cudo1Sw, salud de rama entregada)
+
+Mezcla `origin/dev` (41 commits, con la 114 y la 116). Sin conflicto de texto,
+pero `test_toda_ruta_esta_clasificada` cayo: la ruta `death-state` de la 116
+no estaba en ninguna lista. Va a `COMPARADAS` con su URL en `_rutas`, y
+`test_cada_get_agregado_da_lo_mismo_que_sin_la_partida` pasa con ella
+(`death_state` sale de `base_queryset`). verificar.sh: VERDE 4c23b07e6
+(1250 tests backend, 370 vitest, 102 e2e). Estado sin cambio: sigue esperando
+el merge del humano.
 
 ## Para el humano
 
