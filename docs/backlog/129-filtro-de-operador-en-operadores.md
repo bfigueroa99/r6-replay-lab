@@ -1,8 +1,8 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: disenado
+estado: en curso 2026-11-13T20:05Z
 candado: -
-rama: -
+rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
 area: frontend
