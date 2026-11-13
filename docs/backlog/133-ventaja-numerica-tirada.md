@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: en curso 2026-11-13T22:01Z
-candado: dev 2026-11-13T22:01Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -91,6 +91,25 @@ Skills del repo: statistical-analysis (denominador, `n` en la tabla, sin promedi
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T2157Z-chbMW9r) Diseno completo, sobre `origin/dev@72df8f9`:
+
+- `metrics.ventaja_maxima(eventos, team_of, equipo)`: mismo recorrido que `estado_al_morir`; `Kill`/`Death`/`PlayerLeave` sacan un vivo (teamkill y abandono incluidos), maximo de `mios - suyos` despues de cada salida, `None` sin salidas (el 5v4 de arranque no cuenta solo).
+- `aggregates.thrown_advantage(**filters)` + `VENTAJA_TIRADA_TOPE = 20`: tu fila filtrada, rondas sin ganador fuera, feeds y equipos con `Exists` correlacionado como `death_state`; total, `groups` (`one`/`two_plus`), `sides`, `maps` y `recent` (fecha desc, ronda desc, tope 20; `round` = `number + 1`, la etiqueta que lee `#ronda-N`). Vista `@require_GET` y ruta `duels/thrown-advantage/`.
+- Frontend: `ventajaTirada.js` (puro: `hayVentajas`, `filasDeGrupos`, `filasDeLados`, `enlaceDeRonda` sobre `anclaDeRonda`), `components/VentajaTirada.jsx` (panel "Ventaja numérica tirada": linea de total, tablas por ventaja, lado y mapa, aviso de muestra con `MUESTRA_CORTE`, "Últimas tiradas" con enlace a la ronda, nota sin rondas) y una linea en `Duelos.jsx` despues de `EstadoAlMorir`.
+- `metricas.md`: fila en `## Duelos` y en `## Muestra minima`.
+
+Desvio del diseno: `maps` agrupa por version (`map_slug`, `map_id`) con `etiquetas_de_mapas`, como Mapas y la conversion de clutch por sitio, y no por `map_name` (hallazgo MEDIUM de la revision ciega: con un rework de Club House las dos versiones se juntaban; un renombre en Datos partia la fila). Suma una consulta: `assertNumQueries(4)`, fija con 1 y con 3 rondas.
+
+Tests vistos en rojo antes del codigo: los 17 iniciales de `test_ventaja_tirada.py` (`AttributeError`, sin `ventaja_maxima` ni `thrown_advantage`). Criterios -> tests: 1 `test_cuenta_ventaja_ganada_tirada_y_sin_ventaja`, `test_una_ronda_sin_ganador_no_cuenta`, `test_un_abandono_rival_cuenta_como_baja`, `test_un_5v4_de_arranque_*`; 2 `test_separa_ventaja_de_uno_y_de_dos`, `test_un_5v3_da_ventaja_de_dos`; 3 `test_la_lista_va_de_la_mas_reciente_y_tiene_tope`, `test_en_la_misma_partida_va_primero_la_ronda_posterior`, vitest `enlaceDeRonda` (cruzado con `indiceDeAncla`); 4 `test_el_filtro_de_lado_aplica_sobre_tu_fila`, `test_la_api_responde_con_los_filtros`; 5 e2e `Duelos muestra la ventaja numerica tirada` (total y grupo "Con uno más" contra la API, primer enlace de "Últimas tiradas" abre la partida con esa pestaña `active`; con `seed_demo` la API trae rondas, respuesta de 2912 bytes en el log), mas `test_por_mapa`, `test_por_mapa_separa_las_versiones_del_mismo_nombre`, `test_por_lado`; 6 `metricas.md`. Mutaciones: `ventaja >= 1` en el grupo cae `test_separa_ventaja_de_uno_y_de_dos`; sacar el `if muerto not in vivos` sobrevivia y se agrego `test_un_5v4_de_arranque_con_una_baja_sin_resolver_no_es_ventaja`, que ahora lo mata.
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): aprobar, 1 MEDIUM y 1 LOW (el test por mapa que no lo veia); los dos arreglados (desvio de arriba y test nuevo). Nota sin peso del revisor: filas de `RoundPlayer` con un `team_index` ajeno contarian como rivales, igual que en `estado_al_morir`; no lo introduce esta ficha.
+
+verificar.sh: VERDE 4c313f073 (1303 backend, 417 vitest, 113 e2e).
+
+Skills: no aplica.
+Skills del repo: statistical-analysis (denominador = rondas con ventaja y con ganador, `n` en la columna "Rondas con ventaja", cuentas por ronda sin promedio de promedios, muestra 30 avisada), testing-strategy (Django para la regla y el agregado, vitest para etiquetas y enlace, e2e en la app real, mutaciones), ux-copy ("Con uno más", "Últimas tiradas", nota sin rondas, con tildes), modern-web-guidance no leida (sin CSS nuevo: `DataTable` y `Panel` existentes), sql-queries no aplica (sigue el patron vecino de `death_state`, con `assertNumQueries`).
+OMC: plan=— · revisión=2 hallazgos (2 arreglados) · verificación=—
 
 ## Revision
 
