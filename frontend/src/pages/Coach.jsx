@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
@@ -14,19 +14,15 @@ import {
   notaDeMuestra,
   textoSinSalidas,
 } from '../posicion.js'
+import { GRUPOS_COACH, formatoCoach, textoCoach } from '../textoCoach.js'
 import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
 import { vistaSinRondas } from '../tipoPartida.js'
-
-const GROUPS = [
-  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
-  { key: 'media', title: 'Para trabajar', hint: 'Patrones claros con muestra suficiente.' },
-  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales más débiles o de contexto.' },
-  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apóyate en esto al elegir rol y picks.' },
-]
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/coach/', filters)
   const posicion = useApi('/positioning/', filters)
+  // antes de los returns tempranos: si no, React cambia el orden de los hooks al llegar los datos
+  const [copia, setCopia] = useState(null)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -37,6 +33,21 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
   }
 
   const insights = data.insights || []
+  const texto = textoCoach(insights, filters)
+
+  async function copiarSenales() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia({ estado: 'error', texto })
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopia({ estado: 'ok', texto })
+    } catch {
+      setCopia({ estado: 'error', texto })
+    }
+  }
 
   return (
     <>
@@ -48,11 +59,33 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
             y cuántas rondas lo respaldan.
           </p>
         </div>
+        {texto ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* el aviso es del texto que se copio: con otros filtros ya no vale */}
+            {copia?.texto === texto && (
+              <span className="note">
+                {copia.estado === 'ok'
+                  ? 'Copiado'
+                  : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn small"
+              onClick={copiarSenales}
+              // mientras llega la respuesta de los filtros nuevos, las señales en pantalla son las viejas
+              disabled={loading}
+              title="Copia las señales que ves, con los filtros, en texto plano."
+            >
+              Copiar señales
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <Filters value={filters} onChange={setFilters} />
 
-      {GROUPS.map((group) => {
+      {GRUPOS_COACH.map((group) => {
         const rows = insights.filter((i) => i.severity === group.key)
         if (!rows.length) return null
         return (
@@ -67,9 +100,9 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
                 <div className="meta">
                   {insight.metric ? (
                     <span>
-                      {insight.metric}: <b>{format(insight.value)}</b>
+                      {insight.metric}: <b>{formatoCoach(insight.value)}</b>
                       {insight.baseline !== null && insight.baseline !== undefined
-                        ? ` (referencia ${format(insight.baseline)})`
+                        ? ` (referencia ${formatoCoach(insight.baseline)})`
                         : ''}
                     </span>
                   ) : null}
@@ -295,10 +328,3 @@ function PanelRepetirSitio({ filters }) {
     </Panel>
   )
 }
-
-const format = (value) =>
-  value === null || value === undefined
-    ? '—'
-    : typeof value === 'number'
-      ? Number(value).toFixed(Math.abs(value) < 10 && !Number.isInteger(value) ? 2 : 0)
-      : value
