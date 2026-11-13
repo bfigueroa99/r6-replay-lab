@@ -1,8 +1,8 @@
 # 110. Tu forma contra tu historial
 
-estado: disenado
+estado: en curso 2026-11-13T08:21Z
 candado: -
-rama: -
+rama: claude/equipo-dev/110-tu-forma-contra-tu-historial
 tipo: funcionalidad
 epica: progreso
 area: fullstack
