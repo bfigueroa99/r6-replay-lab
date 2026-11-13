@@ -1,7 +1,7 @@
 # 124. Partidas por version del juego en Datos
 
-estado: revisado
-candado: qa 2026-11-13T20:12Z
+estado: aprobado
+candado: release 2026-11-13T20:30Z
 rama: claude/equipo-dev/124-partidas-por-version-del-juego
 tipo: funcionalidad
 epica: datos
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md G8
 archivos: backend/replays/unknowns.py (partidas_por_version), backend/replays/views.py (import_status), backend/tests/test_versiones_del_juego.py (nuevo), frontend/src/pages/Datos.jsx (panel Importación), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cNCxUZs, revisor 20261113T1926Z-cq9nfTP
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cNCxUZs, revisor 20261113T1926Z-cq9nfTP, qa 20261113T2003Z-c3vr7mZ
 
 ## PR
 
@@ -174,7 +174,23 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=0 hallazgos · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 2cdd4b8
+
+(qa 20261113T2003Z-c3vr7mZ) Rama con `origin/dev@f6cd92d` fusionado (entro la 123), merge limpio.
+
+- `verificar.sh`: VERDE 2cdd4b862 en 196 s (1284 tests backend, 405 vitest, 111 e2e).
+- Base vacia (`SQLITE_PATH` y `R6_ENV_FILE` temporales, `migrate`, `runserver 8124`): `curl -s localhost:8124/api/import/status/` -> 200, `versions == []`.
+- Base sembrada con `make_match` (script en el scratchpad): Y10S3 code 20 x2 (2026-09-01 y 09-05), Y10S4 code 30 x1, `""` code 99 x1, Y9S4 code 10 x1. La API: Y10S4 1, Y10S3 2 (first 2026-09-01T20:00, last 2026-09-05T21:00), Y9S4 1, `""` 1 al final pese al code 99. Recalculado a mano: coincide.
+- Borde: `?until=foo`, `?page=-1`, `?side=`, `?x=%00` -> 200; vecino `/api/unknown/` 200; `POST /api/import/status/` -> 403; `/datos` -> 200.
+- Playwright en `/datos` (accessibility-review): heading presente; filas en el orden de la API (Y10S4, Y10S3, Y9S4, Sin versión), no por texto; encabezados botones alcanzables con Tab y Enter ordena; contraste de celda 14.17:1; consola sin errores ni warnings. 0 Critical, 0 Major en lo nuevo. Ya estaba: `DataTable` no pone `aria-sort` en los encabezados (WCAG 4.1.2), va como idea.
+- Chunk inicial `index-*.js` 200116 bytes; Datos es chunk lazy propio: sin crecimiento del inicial atribuible.
+- validate-data sobre la fila de `metricas.md`: conteo y fechas min/max, sin division ni promedio; sin redondeo.
+- Mutacion (`tests.test_versiones_del_juego`): quitar el `sort` de "sin version al final" -> FAILED (1); `reverse=False` -> FAILED (2); quitar `versions` de la vista -> FAILED (errors=1); quitar el `order_by()` vacio -> OK. Sobrevive porque en Django 5.2.19 `values().annotate()` ya no mete `Meta.ordering` en el GROUP BY (`str(q.query)`: `GROUP BY 1`): el `order_by()` es defensivo y su comentario sobreestima. LOW, no es criterio.
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major; aria-sort preexistente), validate-data (Y10S3 2 partidas 09-01 a 09-05, recalculado).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
