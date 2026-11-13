@@ -163,4 +163,4 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Para el humano
 
-(nada)
+- (arquitecto 2026-11-13, no bloquea) El umbral de 5 rondas por par (`OPERADOR_CAMBIO_MIN_RONDAS`) se fijo sin una base real: calibrar con la tuya (cuantos pares pasan de 5).
