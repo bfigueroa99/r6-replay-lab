@@ -98,6 +98,16 @@ describe('textoCoach', () => {
     expect(formatoCoach('A')).toBe('A')
   })
 
+  it('de 10 para arriba el numero va sin decimales, aunque no sea entero', () => {
+    expect(formatoCoach(12.345)).toBe('12')
+    expect(formatoCoach(-12.25)).toBe('-12')
+  })
+
+  it('una señal sin detalle no deja espacios al final de la linea', () => {
+    const texto = textoCoach([{ ...alta, detail: '' }], {})
+    expect(texto.split('\n').filter((linea) => linea !== linea.trimEnd())).toEqual([])
+  })
+
   it('los grupos siguen el orden de la pagina', () => {
     expect(GRUPOS_COACH.map((g) => g.key)).toEqual(['alta', 'media', 'baja', 'positivo'])
   })
