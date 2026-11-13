@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
-estado: revisado
-candado: qa 2026-11-13T23:24Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/133-ventaja-numerica-tirada
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md F5
 archivos: backend/replays/analytics/metrics.py (ventaja_maxima), backend/replays/analytics/aggregates.py (thrown_advantage), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_ventaja_tirada.py (nuevo), frontend/src/ventajaTirada.js (nuevo), frontend/src/ventajaTirada.test.js (nuevo), frontend/src/components/VentajaTirada.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH, revisor 20261113T2317Z-cBbsozQ
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T1926Z-cq9nfTP, dev 20261113T2157Z-chbMW9r, revisor 20261113T2156Z-cQ8Kk3s, dev 20261113T2252Z-czjsKrH, revisor 20261113T2317Z-cBbsozQ, qa 20261113T2318Z-cpCpgff
 
 ## PR
 
@@ -188,3 +188,58 @@ OMC: plan=— · revisión=6 hallazgos (0 HIGH, 1 MEDIUM, 4 LOW, 1 pregunta; 0 a
 - (arquitecto 2026-11-13, no bloquea) Calibrar con la base real el aviso de muestra de 30 rondas con ventaja por fila.
 
 (nada)
+
+## QA 2026-11-13 sobre f8baaae
+
+Scripts en el scratchpad de la sesion (`sembrar.py`, `oregon.py`, `a11y.js`);
+base temporal con `SQLITE_PATH=<tmp>/sembrada.sqlite3`, `migrate`, sembrada con
+`tests/factories.py`, y `runserver 127.0.0.1:8762` (base vacia en 8761).
+
+- `check.sh` completo (verificar.sh): VERDE f8baaae, 1312 tests backend,
+  427 vitest, 115 e2e.
+- Criterios 1 y 2, recalculado a mano: Club House con R0 ataque ganada (rivales
+  caen 5 seguidos, max +4), R1 defensa perdida tras 5v4, R2 ataque perdida tras
+  5v3, R3 trade en el mismo segundo (no entra), R4 sin ganador (no entra), R5
+  `PlayerLeave` de un rival y perdida, R6 sin bajas, R7 todo con el reloj final
+  congelado (rival primero). Esperado: 5 con ventaja, 4 tiradas, 80 %; uno 3/3,
+  dos o mas 2/1; Ataque 2/1, Defensa 3/3. `curl /api/duels/thrown-advantage/`
+  devuelve exactamente eso. Partida de un jugador (Border, baja de alguien
+  fuera de la ronda): no entra, sin error.
+- Criterio 3: `recent` en orden R8, R6, R3, R2 (`round` es la etiqueta R<n>).
+  En Chromium, Tab llega al primer enlace (`/partidas/1#ronda-8`, foco
+  visible) y Enter abre esa ronda.
+- Criterio 4 y bordes (`curl -s '127.0.0.1:8762/api/duels/thrown-advantage/?<q>'`):
+  `side=Attack` 2/1 solo ataque; `side=Defense` 3/3; `side=foo`, `map=zzz`,
+  `match_type=Casual`, `gamemode=Hostage`, `since=2099-01-01` dan 0 con
+  `thrown_pct: null`; `until=foo`, `page=-1`, `days=99999999999`, `side=`,
+  `map=`, `x=%00` responden 200 sin romper. POST 403. Sin `Traceback` en los
+  logs. Base vacia: ceros y listas vacias; `/api/duels/`,
+  `/api/duels/death-state/` y `/api/trends/` 200 en las dos bases.
+- Criterio 5: panel en Duelos, claro y oscuro, consola sin errores ni
+  warnings; con `?map=oregon` (duelos sin ventaja) sale "No hay rondas con
+  ventaja numérica con estos filtros."; base vacia: estado de importar.
+  Chunk inicial `index-*.js`: dev 200451 B, rama 200459 B (+8 B).
+- Criterio 6: filas en `metricas.md` (definicion y Muestra minima, 30 =
+  `MUESTRA_CORTE` de `muestra.js:7`). Datos: sin division por cero
+  (`thrown_pct` nulo con 0), cada tasa con su `n` (`rounds`), cuentas de
+  rondas y no promedio de promedios, redondeo a un decimal (2/3 -> 66.7).
+- Mutaciones (`manage.py test tests.test_ventaja_tirada`): contar la diferencia
+  que deja un equipo sin vivos -> caen 3; no separar las bajas del reloj final
+  -> cae 1; lista vieja primero -> caen 2; dejar entrar rondas sin ganador ->
+  cae 1. Codigo restaurado.
+- Accesibilidad (a mano, en Playwright): 4 tablas con encabezados, contraste
+  minimo del panel 5,71:1, enlaces alcanzables con teclado. Minor: los enlaces
+  de "Últimas tiradas" se llaman todos por la fecha (`2026-09-01`); el
+  contexto de la fila los distingue (WCAG 2.4.4 en contexto), no bloquea.
+
+Veredicto: aprobado.
+
+OMC: plan=— · revisión=— · verificación=PASS
+Skills del repo: accessibility-review, validate-data y design-critique no disponibles en esta sesion; equivalentes a mano arriba (0 Critical, 0 Major, 1 Minor; 2 valores recalculados: total 5/4 y grupos 3/3 y 2/1)
+
+## Para el humano
+
+- Se calcula al consultar sobre el feed, como `death_state` que ya esta en
+  dev, y no al importar como pide `CLAUDE.md`; no hay migracion ni
+  `recompute`. Aviso informativo: si se quiere columna en `RoundPlayer`, va
+  en ficha propia.
