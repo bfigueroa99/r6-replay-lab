@@ -1,7 +1,7 @@
 # 117. Hotfix: el e2e de las lineas punteadas cae casi siempre
 
-estado: implementado
-candado: revisor 2026-11-13T08:15Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/117-hotfix-graficos-punteados
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 1
 fuente: QA de la 113 (P4, dev rojo reproducido en checkout completo)
 archivos: frontend/e2e/accesibilidad.spec.js
-turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release)
+turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release), revisor 20261113T0804Z-cJw5MQs
 
 ## PR
 
@@ -54,6 +54,36 @@ caian en medio de la animacion. Arreglo: las tres con
 `origin/dev`, despues 12 de 12 (`--repeat-each 12`, 38.5 s).
 
 OMC: plan=— · revisión=— · verificación=—
+
+## Revision 2026-11-13 sobre 60252c0
+
+(revisor 20261113T0804Z-cJw5MQs) La rama trae `origin/dev` (96fa2c1, con la 112) sin
+conflictos. verificar.sh: VERDE 60252c015 (1165 backend, 334 vitest, 95 e2e).
+Revision a ciegas, eje de estandares (`omc-code-reviewer`, diff de 6 lineas
+de un e2e: sin eje de intencion ni de seguridad): sin hallazgos. Leyo
+recharts 2.15.0 (`Line.js`): una linea solida anima como
+`"<hecho>px <resto>px"` (sin coma) y nunca empieza con `4px, 3px`, asi que
+el poll no puede dar por punteada una linea que no lo es; si se pierde la
+prop `strokeDasharray="4 3"` el poll agota el tiempo y el test cae.
+
+Criterios, confirmados en este turno:
+- 12 de 12: `E2E_CHROMIUM=<chrome-headless-shell> npx playwright test
+  e2e/accesibilidad.spec.js -g "eje derecho" --repeat-each 12 --trace off`
+  -> `12 passed (45.7s)`. Con el archivo de `origin/dev`, mismo comando con
+  `--repeat-each 6` -> `2 failed, 4 passed`: el arreglo es el que lo
+  estabiliza.
+- Mismas expectativas: `[false, true]`, `[false, false, true]` y
+  `[false, false, false, true]`, solo envueltas en `expect.poll`; nada
+  saltado ni relajado.
+- check.sh completo en verde (arriba).
+
+Reglas: solo toca `frontend/e2e/accesibilidad.spec.js` (en `archivos:`);
+comentario sin tildes y explica el porque. Sin hallazgos.
+
+Veredicto: aprobar -> `revisado`.
+
+Skills: no aplica.
+OMC: plan=— · revisión=0 hallazgos · verificación=—
 
 ## Para el humano
 
