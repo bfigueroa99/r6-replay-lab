@@ -1,7 +1,7 @@
 # 107. Sitio que tu equipo repite tras perderlo
 
 estado: aprobado
-candado: -
+candado: release 2026-11-13T00:09Z
 rama: claude/equipo-dev/107-sitio-que-tu-equipo-repite-tras-perderlo
 tipo: funcionalidad
 epica: posicionamiento
