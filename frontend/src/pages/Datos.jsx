@@ -18,7 +18,11 @@ const rango = (row) =>
 
 const fechaCorta = (iso) => (iso ? iso.slice(0, 10) : '—')
 
-// El orden lo da la API (la version mas nueva arriba, "Sin versión" al final).
+// El orden lo da la API (la version mas nueva arriba, "Sin versión" al final):
+// DataTable ordena siempre, y por texto "Y9S4" quedaria antes que "Y10S4", asi
+// que cada fila lleva su posicion y la tabla arranca ordenada por ella.
+const conPosicion = (versiones) => (versiones || []).map((v, i) => ({ ...v, posicion: i }))
+
 const COLUMNAS_VERSIONES = [
   {
     key: 'game_version',
@@ -288,7 +292,8 @@ export default function Datos() {
         <h3>Partidas por versión del juego</h3>
         <DataTable
           columns={COLUMNAS_VERSIONES}
-          rows={status.data?.versions || []}
+          rows={conPosicion(status.data?.versions)}
+          initialSort={{ key: 'posicion', dir: 'asc' }}
           rowKey={(row) => row.game_version || 'sin-version'}
           csvName="partidas-por-version"
           empty="Todavía no hay partidas importadas."

@@ -1206,6 +1206,32 @@ test('Datos muestra las partidas por version del juego', async ({ page, request 
   expect(errores).toEqual([])
 })
 
+test('Datos ordena las versiones del juego como la API, no como texto', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no trae game_version: las versiones se inyectan sobre la respuesta real
+  await page.route('**/api/import/status/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const fila = (game_version, code_version, matches) => ({
+      game_version, code_version, matches, first: '2026-06-01T20:00:00', last: '2026-09-01T20:00:00',
+    })
+    await route.fulfill({
+      response: respuesta,
+      json: { ...json, versions: [fila('Y10S4', 30, 4), fila('Y9S4', 10, 7), fila('', 0, 2)] },
+    })
+  })
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toContainText('Y10S4')
+  await expect(filas.nth(1)).toContainText('Y9S4')
+  await expect(filas.nth(2)).toContainText('Sin versión')
+
+  expect(errores).toEqual([])
+})
+
 test('Datos lista modos y tipos de partida sin nombre', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo no trae desconocidos y no se toca: la respuesta se arma aca
