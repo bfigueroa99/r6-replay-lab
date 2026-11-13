@@ -1,7 +1,7 @@
 # 126. A qué operador cambias tras perder
 
-estado: revisado
-candado: qa 2026-11-13T19:26Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/126-a-que-operador-cambias-tras-perder
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md O13 (Fuera de alcance de la ficha 113)
 archivos: backend/replays/analytics/aggregates.py (operator_after_result, OPERADOR_CAMBIO_MIN_RONDAS), backend/tests/test_operador_tras_resultado.py, frontend/src/operadorTrasResultado.js (filasCambioTrasPerder), frontend/src/operadorTrasResultado.test.js, frontend/src/pages/Operators.jsx (TrasResultado), frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq, revisor 20261113T1858Z-cxdASk3
+turnos: po 20261113T1643Z-c4P1LiD, arquitecto 20261113T1802Z-c8dAf7p, dev 20261113T1830Z-cTivbSq, revisor 20261113T1858Z-cxdASk3, qa 20261113T1926Z-cNCxUZs
 
 ## PR
 
@@ -219,7 +219,26 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revision con `revision.md`).
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 5e1b906
+
+(qa 20261113T1926Z-cNCxUZs) Rama + merge limpio de `origin/dev@84c575b` (5e1b906).
+
+- **check.sh**: `verificar.sh` -> `VERDE 5e1b906ba en 150s: 1261 tests backend, 399 vitest, 107 e2e. Todo en verde.`
+- **Base vacia** (`migrate`, `runserver`): `curl -s localhost:8000/api/operators/after-result/` -> `switches []`, `switch_min_rounds 5`, `pairs 0`; `/operadores` muestra el estado sin replays, consola limpia.
+- **Base `seed_demo`** (29 partidas, 203 rondas): 3 filas, todas Defensa (Jager->Mute 20, Mute->Rook 19, Rook->Jager 19, 0 %). Suma Defensa 58/58/0 == `after_loss.switch` Defensa; Ataque 0 == 0.
+- **Parametros borde** (todos 200): `until=foo`, `page=-1`, `operator=`, `side=`, `site=`, `days=99999999999`, `player=%00` -> las mismas 3 filas; `operator=Jager` -> solo Jager->Mute; `operator=NoExiste` -> `[]` (la pagina muestra "0 rondas con estos filtros"); `since=2099-01-01` -> `[]`; `side=Attack` devuelve todo (por diseno lo filtra la UI).
+- **Valores recalculados a mano** (base de `factories.py`, script en el scratchpad): partida A ataque r1 Ash L, r2 Thermite W, r3 Ash L, r4 Thermite L, r5 Thermite W, r6 Sledge W; defensa r8 Jager L, r9 Mute sin ganador, r10 Mute L, r11 Jager L, r13 Mute W (hueco); partida B r1 Rook W. A mano: Ash->Thermite 2 rondas, 1 ganada, **50 %**; Jager->Mute 1 ronda, 0 decididas, **—**; Mute->Jager 1 ronda **0 %**; sin par 11->13 ni entre partidas. La API dio exactamente eso; por lado, suma == `after_loss.switch` (Ataque 2/2/1, Defensa 2/1/0). `operator=Jager` -> solo Jager->Mute y Defensa switch 1/0/0 (suma con filtro == celda).
+- **Build**: chunk inicial `index-*.js` 200116 B en dev y en la rama (0 %); `Operators-*.js` (lazy) 8695 -> 9946 B.
+- **Accesibilidad** (Playwright, Chromium, `/operadores`): h3 "A qué operador cambias tras perder" debajo de la tabla de la 113 en el mismo panel; cabeceras como botones con `aria-sort` (Rondas `descending`); Tab alcanza "Descargar CSV" y las 5 cabeceras; contraste celda 14,17:1, nota vacia (`?operator=Thermite`: "No cambiaste de operador tras perder con estos filtros.") 5,71:1; "50% · pocas rondas" visible; `?side=Attack` deja solo la fila de ataque; consola sin errores ni warnings. Sin Critical ni Major.
+- **CSV**: `operador-cambio-tras-perder-2026-11-13.csv` -> `Lado;Perdiste con;Cambiaste a;Rondas;Winrate` / `Ataque;Ash;Thermite;2;50` / `Defensa;Jager;Mute;1;` / `Defensa;Mute;Jager;1;0`.
+- **Mutacion** (revertidas, arbol limpio): sumar tambien tras ganar -> caen `test_la_suma_de_las_filas_es_el_switch_de_la_113` y `test_repetir_o_cambiar_tras_ganar_no_entra`; winrate sobre `rounds` -> cae `test_una_segunda_sin_ganador_no_entra_al_winrate`; desde/hacia cruzados -> caen 3; vitest `poca: <=` -> cae "marca pocas rondas..."; sin filtro de lado -> cae "con lado sale solo ese".
+- **validate-data** sobre la fila de `metricas.md` (282 y muestra minima 418): winrate sobre decididas con `_pct` (sin division por cero: `decided 0` -> `None` -> "—"), `n` a la vista (Rondas), sin promedio de promedios, redondeo entero en la UI.
+- Sin migracion, sin parser, sin Electron ni `.ps1`: no hay "Verificar en el PC".
+
+Veredicto: aprobado. Los 2 LOW del revisor siguen sin bloquear.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data (2 valores recalculados: 50 % y —; invariante suma == celda con y sin filtro), design-critique (la tabla reusa `DataTable`/`Panel`; nada nuevo para `ALCANCE.md`).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
