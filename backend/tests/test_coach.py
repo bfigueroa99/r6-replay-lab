@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from django.test import TestCase
 
+from replays.analytics import aggregates as agg
 from replays.analytics.coach import build_insights
 
-from .factories import make_match, make_round, make_round_player
+from .factories import ME, make_event, make_match, make_round, make_round_player
 
 
 def keys(payload: dict) -> set[str]:
@@ -212,3 +213,93 @@ class OrderingTests(TestCase):
         for insight in build_insights()["insights"]:
             self.assertTrue(insight["action"], insight["key"])
             self.assertTrue(insight["title"], insight["key"])
+
+
+class EnlaceDeLasSenalesTests(TestCase):
+    """Cada señal trae los filtros que la definen y a que pagina abrirlos."""
+
+    def _mapas(self):
+        good = make_match(map_name="Club House", index=0)
+        for n in range(18):
+            make_round_player(make_round(good, n, won=True))
+        bad = make_match(map_name="Border", index=1)
+        for n in range(18):
+            make_round_player(make_round(bad, n, won=False))
+
+    def test_la_senal_de_mapa_trae_el_slug(self):
+        self._mapas()
+        payload = build_insights()
+        debil = find(payload, "mapa-debil")
+        self.assertEqual((debil["filters"], debil["target"]), ({"map": "border"}, "/"))
+        self.assertEqual(find(payload, "mapa-fuerte")["filters"], {"map": "club-house"})
+
+    def test_la_senal_de_operador_trae_operador_y_lado(self):
+        good = make_match(index=0)
+        for n in range(15):
+            make_round_player(make_round(good, n, won=True), operator="Ela", kills=2)
+        bad = make_match(index=1)
+        for n in range(15):
+            rnd = make_round(bad, n, side="Defense", won=False)
+            make_round_player(rnd, side="Defense", operator="Kaid", kills=0)
+        payload = build_insights()
+        self.assertEqual(find(payload, "operador-debil")["filters"],
+                         {"operator": "Kaid", "side": "Defense"})
+        self.assertEqual(find(payload, "operador-fuerte")["filters"],
+                         {"operator": "Ela", "side": "Attack"})
+
+    def test_la_senal_de_sitio_trae_mapa_y_sitio(self):
+        match = make_match(map_name="Border", index=0)
+        for n in range(10):
+            make_round_player(make_round(match, n, site="1F Armory", won=False))
+        for n in range(10, 40):
+            make_round_player(make_round(match, n, site="2F Workshop", won=True))
+        insight = find(build_insights(), "sitio-debil")
+        self.assertEqual(insight["filters"], {"map": "border", "site": "1F Armory"})
+
+    def test_el_desbalance_de_lados_filtra_el_lado_flojo(self):
+        match = make_match(index=0)
+        for n in range(30):
+            make_round_player(make_round(match, n, side="Attack", won=True), side="Attack")
+        for n in range(30, 60):
+            make_round_player(make_round(match, n, side="Defense", won=False), side="Defense")
+        insight = find(build_insights(), "desbalance-lados")
+        self.assertEqual((insight["filters"], insight["target"]), ({"side": "Defense"}, "/"))
+
+    def test_una_senal_general_no_trae_filtros(self):
+        seed(45, kills=0, died=True, was_traded=False)
+        insight = find(build_insights(), "kst")
+        self.assertEqual((insight["filters"], insight["target"]), ({}, "/"))
+        sin_datos = find(build_insights(map="nope"), "sin-datos")
+        self.assertEqual((sin_datos["filters"], sin_datos["target"]), ({}, "/"))
+
+    def test_todas_las_senales_traen_filters_y_target(self):
+        self._mapas()
+        seed(45, index=2, kills=1, died=True, was_traded=False, opening_death=True,
+             side="Defense")
+        insights = build_insights()["insights"]
+        self.assertGreater(len(insights), 4)
+        for insight in insights:
+            self.assertIn(insight["target"], ("/", "/duelos"), insight["key"])
+            self.assertTrue(set(insight["filters"]) <= set(agg.FILTER_KEYS), insight["key"])
+
+    def test_las_senales_de_rival_van_a_duelos(self):
+        match = make_match(index=0, my_score=4, opponent_score=4)
+        for n in range(11):
+            rnd = make_round(match, n)
+            make_round_player(rnd)
+            make_round_player(rnd, username="rival", is_me=False, team_index=1,
+                              operator="Thorn")
+            if n < 10:
+                make_event(rnd, 0, "rival", ME)
+            else:
+                make_event(rnd, 0, ME, "rival")
+        otro = make_match(index=1)
+        for i in range(60):
+            rnd = make_round(otro, i)
+            make_round_player(rnd)
+            make_round_player(rnd, username=f"r{i}", is_me=False, team_index=1, operator="Ash")
+            make_event(rnd, 0, *((f"r{i}", ME) if i % 2 else (ME, f"r{i}")))
+        payload = build_insights()
+        for key in ("operador-rival", "nemesis"):
+            insight = find(payload, key)
+            self.assertEqual((insight["filters"], insight["target"]), ({}, "/duelos"), key)

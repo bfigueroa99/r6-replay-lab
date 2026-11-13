@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
+import { enlaceDeSenal, textoDelEnlace } from '../enlaceSenal.js'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, Stat } from '../components/ui.jsx'
 import {
   claseSalida,
@@ -90,27 +92,35 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
         if (!rows.length) return null
         return (
           <Panel key={group.key} title={group.title} hint={group.hint}>
-            {rows.map((insight) => (
-              <div key={insight.key} className={`insight ${insight.severity}`}>
-                <h3>{insight.title}</h3>
-                <p>{insight.detail}</p>
-                <div className="action">
-                  <b>Qué hacer:</b> {insight.action}
+            {rows.map((insight) => {
+              const enlace = enlaceDeSenal(insight, filters)
+              return (
+                <div key={insight.key} className={`insight ${insight.severity}`}>
+                  <h3>{insight.title}</h3>
+                  <p>{insight.detail}</p>
+                  <div className="action">
+                    <b>Qué hacer:</b> {insight.action}
+                  </div>
+                  <div className="meta">
+                    {insight.metric ? (
+                      <span>
+                        {insight.metric}: <b>{formatoCoach(insight.value)}</b>
+                        {insight.baseline !== null && insight.baseline !== undefined
+                          ? ` (referencia ${formatoCoach(insight.baseline)})`
+                          : ''}
+                      </span>
+                    ) : null}
+                    {insight.sample ? <span>muestra: {insight.sample} rondas</span> : null}
+                    {insight.scope && insight.scope !== 'general' ? <span>alcance: {insight.scope}</span> : null}
+                    {enlace ? (
+                      <Link className="btn small" to={enlace}>
+                        {textoDelEnlace(insight)}
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="meta">
-                  {insight.metric ? (
-                    <span>
-                      {insight.metric}: <b>{formatoCoach(insight.value)}</b>
-                      {insight.baseline !== null && insight.baseline !== undefined
-                        ? ` (referencia ${formatoCoach(insight.baseline)})`
-                        : ''}
-                    </span>
-                  ) : null}
-                  {insight.sample ? <span>muestra: {insight.sample} rondas</span> : null}
-                  {insight.scope && insight.scope !== 'general' ? <span>alcance: {insight.scope}</span> : null}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </Panel>
         )
       })}

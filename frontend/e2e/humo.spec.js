@@ -1316,6 +1316,32 @@ test('el Coach copia sus señales', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('una señal del Coach abre el Resumen filtrado', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  const senal = insights.find((i) => i.key === 'operador-debil')
+  expect(senal.filters.operator).toBeTruthy()
+  const general = insights.find((i) => i.key === 'kst')
+  expect(general).toBeTruthy()
+  await page.goto('/coach')
+
+  // una señal general no ofrece enlace
+  const suya = page.locator('.insight').filter({ has: page.getByRole('heading', { name: general.title }) })
+  await expect(suya).toBeVisible()
+  await expect(suya.getByRole('link')).toHaveCount(0)
+
+  const tarjeta = page.locator('.insight').filter({ has: page.getByRole('heading', { name: senal.title }) })
+  await tarjeta.getByRole('link', { name: 'Ver esas rondas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Resumen' })).toBeVisible()
+  const destino = new URL(page.url())
+  expect(destino.pathname).toBe('/')
+  expect(destino.searchParams.get('operator')).toBe(senal.filters.operator)
+  expect(destino.searchParams.get('side')).toBe(senal.filters.side)
+  await expect(page.getByLabel('Operador')).toHaveValue(senal.filters.operator)
+  await page.waitForLoadState('networkidle')
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')

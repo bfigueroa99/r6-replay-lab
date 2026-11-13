@@ -413,3 +413,11 @@ opinar:
 | Repetir o cambiar de operador | 12 rondas por caso (`OPERADOR_TRAS_RESULTADO_MIN_RONDAS`): no se oculta, se avisa |
 
 Con 3 partidas importadas el coach te va a decir que faltan datos. Es a proposito.
+
+**Ver esas rondas** (señales del Coach): abre el Resumen con los filtros que
+definen la señal (lado, mapa por slug, operador con su lado, mapa y sitio),
+sumados a los de la barra; los de la señal pisan a los de la barra. No hay
+filtro de spawn: una señal de spawn abre su mapa en ataque. Las señales de
+rival (operador rival, nemesis) abren Duelos con los filtros de la barra, y
+las generales no tienen enlace. El mapa va por slug: en un mapa rehecho el
+enlace junta las dos versiones.
