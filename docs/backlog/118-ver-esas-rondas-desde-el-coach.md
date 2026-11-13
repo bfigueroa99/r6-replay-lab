@@ -1,7 +1,7 @@
 # 118. "Ver esas rondas" desde las señales del Coach
 
-estado: implementado
-candado: revisor 2026-11-13T17:44Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/118-ver-esas-rondas-desde-el-coach
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F15 (salio del PR #14, cerrado sin merge el 2026-11-05; complementa la 112, que salta a una ronda puntual)
 archivos: backend/replays/analytics/coach.py (_insight, reglas), backend/tests/test_coach.py, frontend/src/enlaceSenal.js (nuevo), frontend/src/enlaceSenal.test.js (nuevo), frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T0804Z-cJw5MQs, dev 20261113T1651Z-cxTme8t
+turnos: po 20261113T0404Z-cnRfz4a, arquitecto 20261113T0804Z-cJw5MQs, dev 20261113T1651Z-cxTme8t, revisor 20261113T1732Z-cdpsq83
 
 ## PR
 
@@ -199,6 +199,57 @@ Skills: no aplica.
 Skills del repo: ux-copy (dev: "Ver esas rondas" / "Ver en Duelos" empiezan con verbo y nombran el destino), modern-web-guidance no corrida (pide `npx` con red; el cambio es un `Link` con la clase `btn small` que ya existe, sin CSS nuevo).
 OMC: plan=— · revisión=5 hallazgos (5 arreglados; 1 HIGH) · verificación=—
 
+## Revision 2026-11-13 sobre c29903c
+
+(revisor 20261113T1732Z-cdpsq83) Punto de partida: merge de `origin/dev`
+(09c86a4, sin conflictos); `verificar.sh`: VERDE 09c86a4e5 (1220 backend,
+371 vitest, 102 e2e).
+
+**Revision ciega, eje de estandares** (`omc-code-reviewer`, prompt de
+`revision.md`, solo el diff): aprobar, 1 MEDIUM.
+- M1 [bug, MEDIUM] `coach.py:447` (y las señales de sitio, spawn y zona):
+  las filas de `by_map`/`by_site`/`positioning` agrupan por `(slug,
+  map_id)`, asi que en un mapa rehecho la señal habla de una version y el
+  enlace por slug abre las dos (otro winrate en el Resumen). **Confirmado
+  leyendo el codigo**, pero es la decision del diseno ("Aceptable y
+  reversible") y esta documentado en `metricas.md`; con una version ya
+  elegida en la barra la señal no la pisa
+  (`test_con_mapa_en_la_barra_la_senal_no_lo_pisa`). No bloquea: va a
+  `## Para el humano` como mejora (mandar `map=<map_id>` cuando el slug
+  tiene mas de una version, cuidando `map_id=0`).
+
+**Eje de intencion** (`omc-code-reviewer`, diff contra Que gana, Criterios
+y Fuera de alcance): pidio corregir por 1 MEDIUM, mas 2 LOW.
+- I1 [MEDIUM] el e2e del criterio 4 nunca comprobaba el **mapa**: uno usa
+  `operador-debil` y el otro solo miraba `site`. **Confirmado** (en
+  `seed_demo` no sale `mapa-debil`; la señal con `site` es `zona-dormidero`,
+  que trae `map: club-house`). **Cubierto por el revisor** con aserciones
+  que pasan: el e2e del sitio ahora exige `map` en la URL y en el selector
+  Mapa (`getByLabel('Mapa')`).
+- I2 [LOW] el enlace de rival dice "Ver en Duelos": el criterio no fija ese
+  texto; no es hallazgo.
+- I3 [LOW] el vitest no cubria fechas ni modo: **cubierto** con
+  `conserva las fechas y el modo de la barra` (`since`, `until`,
+  `gamemode` mas el `map` de la señal).
+
+**Ficha.** Criterio 1: `test_la_senal_de_mapa_trae_el_slug`,
+`test_una_senal_general_no_trae_filtros`,
+`test_todas_las_senales_traen_filters_y_target`. Criterio 2: vitest de
+`enlaceSenal.test.js` (7). Criterio 3: `enlaceDeSenal` + e2e (general sin
+enlace, rival a `/duelos` en vitest). Criterio 4: los dos e2e de Coach ->
+Resumen (operador y lado; mapa y sitio, selector y URL), consola limpia. El
+diff no sale de `archivos:` salvo `Filters.jsx` y `test_posicion.py`,
+explicados en Implementacion; fila en `metricas.md`; sin tildes en
+identificadores, UI con tildes; sin `print` ni `console.log`.
+
+`verificar.sh` con los tests del revisor: VERDE c29903c38 (1220 backend,
+372 vitest, 102 e2e).
+
+Veredicto: aprobar.
+
+Skills del repo: ninguna (revision con `revision.md`).
+OMC: plan=— · revisión=3 hallazgos MEDIUM (1 cubierto con test, 1 decision del diseno al humano) y 2 LOW (1 cubierto) · verificación=—
+
 ## Para el humano
 
-(nada)
+- (revisor 2026-11-13, no bloquea) En un mapa rehecho la señal de mapa, sitio o zona habla de una version y el enlace abre las dos (va por slug, como decidio el diseno). Si se quiere exacto: mandar `map=<map_id>` cuando el slug tiene mas de una version (cuidando `map_id=0`).
