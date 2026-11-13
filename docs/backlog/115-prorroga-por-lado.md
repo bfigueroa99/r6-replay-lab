@@ -1,7 +1,7 @@
 # 115. Prorroga por lado
 
-estado: revisado
-candado: qa 2026-11-13T16:44Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/115-prorroga-por-lado
 tipo: funcionalidad
 epica: lado-y-marcador
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md B18
 archivos: backend/replays/analytics/aggregates.py (by_overtime_side, PRORROGA_LADOS), backend/replays/views.py (trends), backend/tests/test_prorroga_por_lado.py, frontend/src/prorrogaPorLado.js, frontend/src/prorrogaPorLado.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT, revisor 20261113T1603Z-cHj1H4k
+turnos: po 20261112T1603Z-cor3JBP, arquitecto 20261112T2004Z-cbaTGDt, dev 20261113T1203Z-cWfR3tT, revisor 20261113T1603Z-cHj1H4k, qa 20261113T1643Z-c4P1LiD
 
 ## PR
 
@@ -200,7 +200,27 @@ Veredicto: aprobar -> `revisado`.
 Skills: no aplica.
 OMC: plan=— · revisión=4 hallazgos (1 arreglado; 0 CRITICAL/HIGH) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 5b06539
+
+(qa 20261113T1643Z-c4P1LiD) Ejercitado el sistema, no el diff. La rama ya trae `origin/dev` (16d3986).
+
+- `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --` -> `VERDE 5b0653965 en 192s: 1181 tests backend, 344 vitest, 97 e2e. Todo en verde.`
+- Bases en el scratchpad (`SQLITE_PATH=<tmp>/x.sqlite3 python3 manage.py migrate`), sembrada con `factories.build_dataset(matches=6, rounds_per_match=6)` mas Club House con prorroga Attack ganada, Attack ganada, Defense perdida, y Border con prorroga Defense ganada y una ronda de prorroga con `my_side` vacio perdida. `runserver` y `curl /api/trends/?<q>`, todos 200:
+  - base vacia: `by_overtime_side` Attack 0 y Defense 0, winrate y rating `null`.
+  - `''`: Attack 2 rondas 100.0 rating 1.17; Defense 2 rondas 50.0; fila `overtime` de `by_half` 5 rondas 60.0 (la ronda sin lado queda fuera de las dos, como dice `metricas.md`).
+  - `side=Attack` solo Attack 2/100.0; `side=Defense` solo Defense 2/50.0; `side=foo` dos filas en 0 (igual que `by_half`); `side=`, `map=`, `until=foo`, `page=-1`, `days=99999999999` igual que sin filtros; `days=-1` ceros.
+  - `map=border` Attack 0, Defense 1/100.0; `map=club-house` Attack 2/100.0, Defense 1/0.0; `map=border&side=Defense` solo Defense 1/100.0; `map=nope` ceros.
+- Valores recalculados a mano (skill `validate-data` sobre la fila Prorroga de `metricas.md`): ataque 2 ganadas de 2 = 100 %, defensa 1 de 2 = 50 %, Border defensa 1 de 1 = 100 %. Division por cero: 0 rondas da `null` y la UI muestra la nota, no ceros; la tasa va con su `n` (columna Rondas); sin promedio de promedios (`totals()` sobre las rondas).
+- `vite build`: chunk inicial `index` 199.89 kB en dev -> 200.00 kB en la rama (+0.06 %); `Trends` (lazy) 31.71 -> 32.52 kB.
+- `accessibility-review` en Chromium (Playwright, script en el scratchpad) sobre `/tendencias` con la base sembrada, claro y oscuro: `h3` "Prórroga por lado" con rol heading y contraste 14.17:1; filas "Prórroga en ataque | 2 | 100% | 1.17" y "Prórroga en defensa | 2 | 50% | 1.17"; nota de muestra (menos de 30 rondas) contraste 5.71:1; `?side=Defense` una fila; `?map=border&side=Attack` la nota "Sin rondas de prórroga con estos filtros."; "Descargar CSV" alcanzable con Tab; columnas `sortable: false`, como la tabla de mitades. Consola sin errores ni warnings. 0 Critical, 0 Major.
+- Mutacion (todo restaurado): sin el recorte por `?side=` cae `test_con_filtro_de_lado_sale_solo_ese`; `overtime_number__gte=0` hace caer 5 tests; `exclude` en vez de `filter` por lado hace caer 3; sin el corte de ceros en `prorrogaPorLado.js` cae el vitest "todo en cero no es una tabla de ceros".
+- Sin migracion, parser, Electron ni `.ps1`: nada para verificar en el PC.
+
+Criterios: 1 a 5 cubiertos con la evidencia de arriba. Veredicto: `aprobado`.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (qa: 0 Critical/Major, contrastes 14.17 y 5.71), validate-data (qa: 3 valores recalculados coinciden), design-critique no aplica (tabla dentro de un panel existente).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
