@@ -1,7 +1,7 @@
 # 110. Tu forma contra tu historial
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T00:41Z
 rama: -
 tipo: funcionalidad
 epica: progreso
