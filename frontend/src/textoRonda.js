@@ -1,4 +1,4 @@
-import { marcasDeApertura } from './aperturas.js'
+import { esTeamkill, marcasDeApertura } from './aperturas.js'
 
 /**
  * Una ronda del detalle de partida en texto plano, para pegarla en un chat al
@@ -29,10 +29,10 @@ function cabecera(ronda, mapa) {
     .join(' · ')
 }
 
-function lineaDeBaja(evento, marcas) {
+function lineaDeBaja(evento, marcas, ronda) {
   const reloj = evento.clock_raw || '—'
-  // Un teamkill sale como "mató a" y una caida o la bomba como "murió": la
-  // timeline tampoco los distingue
+  // Un teamkill sale como "mató a" con la marca TK, como el chip de la
+  // timeline; una caida o la bomba, como "murió"
   const que =
     evento.kind === 'Kill' ? `${evento.actor} mató a ${evento.target}` : `${evento.actor} murió`
   const chips = [
@@ -40,6 +40,7 @@ function lineaDeBaja(evento, marcas) {
     evento.order === marcas.entry ? 'entry' : null,
     evento.headshot ? 'HS' : null,
     evento.traded ? 'tradeada' : null,
+    esTeamkill(ronda, evento) ? 'TK' : null,
   ].filter(Boolean)
   const linea = `${reloj} ${que}${chips.length ? ` (${chips.join(', ')})` : ''}`
   return linea.trimEnd()
@@ -53,6 +54,6 @@ export function textoRonda(ronda, mapa, miEquipo) {
     .slice()
     .sort(porOrden)
   const marcas = marcasDeApertura(ronda, miEquipo)
-  const cuerpo = bajas.length ? bajas.map((e) => lineaDeBaja(e, marcas)) : ['Sin bajas']
+  const cuerpo = bajas.length ? bajas.map((e) => lineaDeBaja(e, marcas, ronda)) : ['Sin bajas']
   return [cabecera(ronda, mapa), ...cuerpo].join('\n')
 }

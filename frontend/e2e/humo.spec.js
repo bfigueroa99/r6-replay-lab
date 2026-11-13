@@ -792,6 +792,60 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('la timeline marca un teamkill con TK', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene teamkills: se cambia la victima de una baja por un compañero del autor
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id } = matches[0]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  let indice = -1
+  let baja = null
+  let companero = ''
+  for (const [i, ronda] of detalle.rounds.entries()) {
+    const kill = ronda.events.find((e) => e.kind === 'Kill')
+    if (!kill) continue
+    const autor = ronda.players.find((p) => p.username === kill.actor)
+    const otro = autor && ronda.players.find((p) => p.team_index === autor.team_index && p.username !== kill.actor)
+    if (otro) {
+      indice = i
+      baja = kill
+      companero = otro.username
+      break
+    }
+  }
+  expect(indice).toBeGreaterThanOrEqual(0)
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const ronda = json.rounds[indice]
+    ronda.events = ronda.events.map((e) => (e.order === baja.order ? { ...e, target: companero } : e))
+    await route.fulfill({ response: respuesta, json })
+  })
+  await page.goto(`/partidas/${id}`)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
+  const pestanas = panel.locator('.round-tab')
+  await pestanas.nth(indice).click()
+  await expect(pestanas.nth(indice)).toHaveClass(/active/)
+  const tk = panel.locator('.timeline .chip', { hasText: /^TK$/ })
+  await expect(tk).toHaveCount(1)
+  await expect(tk).toHaveAttribute('title', 'Baja entre compañeros: no suma a las bajas')
+  const linea = panel.locator('.timeline li', { has: page.locator('.chip', { hasText: /^TK$/ }) })
+  await expect(linea).toContainText(`${baja.actor} mató a ${companero}`)
+  await expect(linea).not.toHaveClass(/mine|against/)
+
+  // en otra ronda, sin la baja cambiada, ningun TK
+  const otra = indice === 0 ? 1 : 0
+  await pestanas.nth(otra).click()
+  await expect(pestanas.nth(otra)).toHaveClass(/active/)
+  await expect(panel.locator('.timeline .chip', { hasText: /^TK$/ })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo: demo-17 tiene dos rondas tuyas de 2 bajas; la primera de la lista no tiene ninguna
