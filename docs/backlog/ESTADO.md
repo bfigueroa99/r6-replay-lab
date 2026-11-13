@@ -24,13 +24,13 @@ Las cuatro ramas fusionan con dev (7892cc3) sin conflicto y entre si tampoco cho
 
 1. `claude/equipo-dev/118-ver-esas-rondas-desde-el-coach` (revisado): `coach.py`, `Coach.jsx`, `Filters.jsx`, `enlaceSenal.js`.
 2. `claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion` (implementado): solo frontend, `Trends.jsx` y `resumenSesion.js`.
-3. `claude/equipo-dev/121-copiar-una-ronda-como-texto` (en curso).
+3. `claude/equipo-dev/121-copiar-una-ronda-como-texto` (implementado).
 4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109; su guardia `test_toda_ruta_esta_clasificada` pide clasificar las rutas GET nuevas que entraron despues (116: `/api/duels/death-state/`).
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:11 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres) otros:4 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: operadores: 113 en dev, 126 propuesto. lado-y-marcador: 115 en dev. rivales: 114 en dev, 122 propuesto. exportar: 111 en dev, 121 en curso. impacto: 116 en dev. progreso: 110 en dev, 119 implementado, 120 propuesto. revision-de-rondas: 112 en dev, 118 revisado, 125 propuesto. datos: 79 entregado (PR #81), 83 disenado (despues de la 79), 124 propuesto. escuadra: 109 disenado (despues de la 79), 123 propuesto.
+- Epicas en curso: operadores: 113 en dev, 126 propuesto. lado-y-marcador: 115 en dev. rivales: 114 en dev, 122 propuesto. exportar: 111 en dev, 121 implementado. impacto: 116 en dev. progreso: 110 en dev, 119 implementado, 120 propuesto. revision-de-rondas: 112 en dev, 118 revisado, 125 propuesto. datos: 79 entregado (PR #81), 83 disenado (despues de la 79), 124 propuesto. escuadra: 109 disenado (despues de la 79), 123 propuesto.
 - Papel: PAPEL_TIPOS=funcionalidad:10 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
 - `ALCANCE.md`: ALCANCE=backlog, ideas libres: 100. Ideas nuevas de este turno: ninguna.
 - Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
