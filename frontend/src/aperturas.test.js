@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { marcasDeApertura } from './aperturas.js'
+import { esTeamkill, marcasDeApertura } from './aperturas.js'
 import casos from './casosApertura.json'
 
 function rondaDe(caso) {
@@ -39,5 +39,42 @@ describe('marcasDeApertura', () => {
   it('sin equipo propio solo marca la apertura', () => {
     const ronda = rondaDe(casos.find((c) => c.nombre === 'abre el rival y tu equipo responde'))
     expect(marcasDeApertura(ronda, undefined)).toEqual({ apertura: 0, entry: null })
+  })
+})
+
+describe('esTeamkill', () => {
+  const ronda = {
+    players: [
+      { username: 'A', team_index: 0 },
+      { username: 'B', team_index: 0 },
+      { username: 'C', team_index: 1 },
+    ],
+  }
+  const kill = (actor, target, kind = 'Kill') => ({ order: 1, kind, actor, target })
+
+  it('una baja entre companeros es teamkill', () => {
+    expect(esTeamkill(ronda, kill('A', 'B'))).toBe(true)
+  })
+
+  it('una baja a un rival no lo es', () => {
+    expect(esTeamkill(ronda, kill('A', 'C'))).toBe(false)
+  })
+
+  it('un nick que no esta entre los jugadores no lo es', () => {
+    expect(esTeamkill(ronda, kill('A', 'Fantasma'))).toBe(false)
+    expect(esTeamkill(ronda, kill('Fantasma', 'A'))).toBe(false)
+  })
+
+  it('un Death no lo es', () => {
+    expect(esTeamkill(ronda, kill('A', 'B', 'Death'))).toBe(false)
+  })
+
+  it('un suicidio no lo es', () => {
+    expect(esTeamkill(ronda, kill('A', 'A'))).toBe(false)
+  })
+
+  it('sin players no lo es', () => {
+    expect(esTeamkill({}, kill('A', 'B'))).toBe(false)
+    expect(esTeamkill(undefined, kill('A', 'B'))).toBe(false)
   })
 })

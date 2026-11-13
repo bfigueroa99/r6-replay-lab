@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { filasTrasResultado, hayPares, textoWinrate, winrateCsv } from './operadorTrasResultado.js'
+import {
+  filasCambioTrasPerder,
+  filasTrasResultado,
+  hayPares,
+  textoWinrate,
+  winrateCsv,
+} from './operadorTrasResultado.js'
 
 const celda = (rounds, winrate = null) => ({ rounds, decided: rounds, won: 0, winrate })
 const bloque = (perderRep, perderCam, ganarRep, ganarCam) => ({
@@ -66,5 +72,52 @@ describe('textoWinrate y winrateCsv', () => {
   it('el CSV usa coma decimal y vacio sin dato', () => {
     expect(winrateCsv(33.3)).toBe('33,3')
     expect(winrateCsv(null)).toBe('')
+  })
+})
+
+describe('filasCambioTrasPerder', () => {
+  const cambio = (side, desde, hacia, rounds, winrate) => ({
+    side,
+    from_operator: desde,
+    to_operator: hacia,
+    rounds,
+    decided: rounds,
+    won: 0,
+    winrate,
+  })
+  const data = {
+    switch_min_rounds: 5,
+    switches: [
+      cambio('Attack', 'Ash', 'Thermite', 5, 60),
+      cambio('Attack', 'Ash', 'Sledge', 4, 25),
+      cambio('Defense', 'Mute', 'Jäger', 2, null),
+    ],
+  }
+
+  it('sin switches no hay filas', () => {
+    expect(filasCambioTrasPerder(undefined)).toEqual([])
+    expect(filasCambioTrasPerder({ pairs: 3 })).toEqual([])
+    expect(filasCambioTrasPerder({ switches: [] })).toEqual([])
+  })
+
+  it('sin lado salen los dos, con el lado en español', () => {
+    const filas = filasCambioTrasPerder(data)
+    expect(filas.map((f) => [f.lado, f.desde, f.hacia, f.rondas, f.winrate])).toEqual([
+      ['Ataque', 'Ash', 'Thermite', 5, 60],
+      ['Ataque', 'Ash', 'Sledge', 4, 25],
+      ['Defensa', 'Mute', 'Jäger', 2, null],
+    ])
+    expect(new Set(filas.map((f) => f.clave)).size).toBe(3)
+  })
+
+  it('con lado sale solo ese', () => {
+    expect(filasCambioTrasPerder(data, 'Defense').map((f) => f.desde)).toEqual(['Mute'])
+    expect(filasCambioTrasPerder(data, 'Attack')).toHaveLength(2)
+  })
+
+  it('marca pocas rondas debajo del minimo por par y no en el minimo', () => {
+    const [cinco, cuatro] = filasCambioTrasPerder(data, 'Attack')
+    expect(cinco.poca).toBe(false)
+    expect(cuatro.poca).toBe(true)
   })
 })

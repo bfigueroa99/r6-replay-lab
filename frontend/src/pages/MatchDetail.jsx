@@ -15,7 +15,7 @@ import {
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
-import { marcasDeApertura } from '../aperturas.js'
+import { esTeamkill, marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
 import { textoRonda } from '../textoRonda.js'
@@ -444,7 +444,9 @@ function Timeline({ round }) {
     <ul className="timeline">
       {round.events.map((event) => {
         const actorIsMine = mineTeam.has(event.actor)
-        const cls = event.kind === 'Kill' ? (actorIsMine ? 'mine' : 'against') : ''
+        // un teamkill no es baja de ningun equipo: sin la barra de color, como Death
+        const tk = esTeamkill(round, event)
+        const cls = event.kind === 'Kill' && !tk ? (actorIsMine ? 'mine' : 'against') : ''
         return (
           <li key={event.order} className={cls}>
             <span className="clock">{event.clock_raw || '—'}</span>
@@ -474,6 +476,11 @@ function Timeline({ round }) {
               ) : null}
               {event.headshot ? <span className="chip">HS</span> : null}
               {event.traded ? <span className="chip">tradeada</span> : null}
+              {tk ? (
+                <span className="chip" title="Baja entre compañeros: no suma a las bajas">
+                  TK
+                </span>
+              ) : null}
             </span>
           </li>
         )

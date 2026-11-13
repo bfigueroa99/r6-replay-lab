@@ -333,6 +333,7 @@ def trends(request: HttpRequest) -> JsonResponse:
             "kills_by_time": agg.kills_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
             "opening_timing": agg.opening_timing(**filters),
+            "lobby_rank": agg.lobby_rank(**filters),
         }
     )
 
@@ -351,6 +352,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),
+            "teammate_clutches": agg.teammate_clutches(**filters),
         }
     )
 
@@ -973,6 +975,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
             "log": [_import_log_row(e) for e in ImportLog.objects.all()[:25]],
+            "versions": unknowns.partidas_por_version(),
         }
     )
 

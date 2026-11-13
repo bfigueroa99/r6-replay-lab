@@ -159,7 +159,8 @@ test('Operadores muestra si repites o cambias de operador', async ({ page }) => 
   const panel = page.locator('section.panel', {
     has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
   })
-  const filas = panel.locator('tbody tr')
+  // La primera tabla del panel; la segunda es la de la ficha 126
+  const filas = panel.locator('table').first().locator('tbody tr')
   await expect(filas).toHaveCount(4)
   await expect(filas.nth(0).locator('td')).toHaveText(['Total', 'Tras perder', '0', '—', '58', '0%'])
   await expect(filas.nth(1).locator('td')).toHaveText(['Total', 'Tras ganar', '0', '—', '87', '100%'])
@@ -171,7 +172,40 @@ test('Operadores muestra si repites o cambias de operador', async ({ page }) => 
   await expect(filas.nth(0).locator('td').first()).toHaveText('Defensa')
 
   await page.goto('/operadores?operator=Ash')
-  await expect(panel.locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
+  await expect(panel.locator('table').first().locator('tr', { hasText: 'Ataque' }).locator('td').nth(4)).toHaveText('29')
+
+  expect(errores).toEqual([])
+})
+
+test('Operadores muestra a qué operador cambias tras perder', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const datos = await (await page.request.get('/api/operators/after-result/')).json()
+  // seed: la defensa pierde todo y rota Jager -> Mute -> Rook; la suma de los
+  // pares es el «Cambia» de defensa tras perder (58). Mas rondas, primero
+  const mayor = [...datos.switches].sort((x, y) => y.rounds - x.rounds)[0]
+  expect(datos.switches.reduce((n, f) => n + f.rounds, 0)).toBe(datos.sides.Defense.after_loss.switch.rounds)
+  await page.goto('/operadores')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar tras perder', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'A qué operador cambias tras perder' })).toBeVisible()
+  const filas = panel.locator('table').nth(1).locator('tbody tr')
+  await expect(filas).toHaveCount(datos.switches.length)
+  await expect(filas.nth(0).locator('td')).toHaveText([
+    'Defensa',
+    mayor.from_operator,
+    mayor.to_operator,
+    String(mayor.rounds),
+    '0%',
+  ])
+
+  // El ataque gana todo: no hay cambios tras perder y se dice, no se rompe.
+  // Antes de navegar, que termine lo que pidio la primera carga: un goto con
+  // /api/filters/ en vuelo la aborta y la consola la cuenta como fallida.
+  await page.waitForLoadState('networkidle')
+  await page.goto('/operadores?side=Attack')
+  await expect(panel.getByText('No cambiaste de operador tras perder con estos filtros.')).toBeVisible()
 
   expect(errores).toEqual([])
 })
@@ -226,6 +260,25 @@ test('Operadores muestra el operador por sitio', async ({ page }) => {
   await expect(filas.first()).toContainText('Bank')
   await expect(filas.first()).toContainText('Te hunde')
   await expect(filas.nth(1)).toContainText('Oregon')
+
+  expect(errores).toEqual([])
+})
+
+test('Tendencias muestra el puesto en el lobby', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { lobby_rank: puesto } = await (await page.request.get('/api/trends/')).json()
+  expect(puesto.best_in_lobby.matches).toBeGreaterThan(0)
+  await page.goto('/tendencias')
+
+  const panel = page.locator('section.panel', { hasText: 'Puesto en el lobby' })
+  await expect(panel).toBeVisible()
+  for (const etiqueta of ['Mejor de la partida', 'Mejor de tu equipo', 'Último de la partida']) {
+    await expect(panel.getByText(etiqueta, { exact: true })).toBeVisible()
+  }
+  // los numeros salen de la API, no a mano: si cambia el seed el test sigue al dato
+  const { count, matches } = puesto.best_in_lobby
+  const sub = `${count} de ${matches} ${matches === 1 ? 'partida' : 'partidas'}`
+  await expect(panel.locator('.stat', { hasText: 'Mejor de la partida' }).locator('.sub')).toHaveText(sub)
 
   expect(errores).toEqual([])
 })
@@ -414,6 +467,14 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
 
   const panel = page.locator('section.panel', { hasText: 'Rivales repetidos' })
   await expect(panel).toBeVisible()
+  // la ultima vez de la primera fila es la de la API: el orden inicial (partidas) es estable
+  const { rivals } = await (await page.request.get('/api/duels/')).json()
+  const [anio, mes, dia] = rivals[0].last_played.slice(0, 10).split('-')
+  await expect(panel.locator('tbody tr').first()).toBeVisible()
+  const cabeceras = await panel.locator('thead th').evaluateAll((ths) => ths.map((th) => th.textContent.trim()))
+  const ultima = cabeceras.findIndex((t) => t.startsWith('Última vez'))
+  expect(ultima).toBeGreaterThan(-1)
+  await expect(panel.locator('tbody tr').first().locator('td').nth(ultima)).toHaveText(`${dia}-${mes}-${anio}`)
   // seed_demo repite los mismos rivales en todas las partidas
   const enlace = panel.locator('table tbody tr').first().getByRole('link').first()
   await expect(enlace).toHaveAttribute('href', /\/jugadores\/\d+$/)
@@ -731,6 +792,60 @@ test('el timeline marca la apertura de cada ronda', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('la timeline marca un teamkill con TK', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no tiene teamkills: se cambia la victima de una baja por un compañero del autor
+  const { matches } = await (await page.request.get('/api/matches/?limit=1')).json()
+  const { id } = matches[0]
+  const detalle = await (await page.request.get(`/api/matches/${id}/`)).json()
+  let indice = -1
+  let baja = null
+  let companero = ''
+  for (const [i, ronda] of detalle.rounds.entries()) {
+    const kill = ronda.events.find((e) => e.kind === 'Kill')
+    if (!kill) continue
+    const autor = ronda.players.find((p) => p.username === kill.actor)
+    const otro = autor && ronda.players.find((p) => p.team_index === autor.team_index && p.username !== kill.actor)
+    if (otro) {
+      indice = i
+      baja = kill
+      companero = otro.username
+      break
+    }
+  }
+  expect(indice).toBeGreaterThanOrEqual(0)
+  await page.route(`**/api/matches/${id}/`, async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const ronda = json.rounds[indice]
+    ronda.events = ronda.events.map((e) => (e.order === baja.order ? { ...e, target: companero } : e))
+    await route.fulfill({ response: respuesta, json })
+  })
+  await page.goto(`/partidas/${id}`)
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Rondas', exact: true }),
+  })
+  // la matriz de duelos tambien usa .round-tab: se cuenta solo dentro de Rondas
+  const pestanas = panel.locator('.round-tab')
+  await pestanas.nth(indice).click()
+  await expect(pestanas.nth(indice)).toHaveClass(/active/)
+  const tk = panel.locator('.timeline .chip', { hasText: /^TK$/ })
+  await expect(tk).toHaveCount(1)
+  await expect(tk).toHaveAttribute('title', 'Baja entre compañeros: no suma a las bajas')
+  const linea = panel.locator('.timeline li', { has: page.locator('.chip', { hasText: /^TK$/ }) })
+  await expect(linea).toContainText(`${baja.actor} mató a ${companero}`)
+  await expect(linea).not.toHaveClass(/mine|against/)
+
+  // en otra ronda, sin la baja cambiada, ningun TK
+  const otra = indice === 0 ? 1 : 0
+  await pestanas.nth(otra).click()
+  await expect(pestanas.nth(otra)).toHaveClass(/active/)
+  await expect(panel.locator('.timeline .chip', { hasText: /^TK$/ })).toHaveCount(0)
+
+  expect(errores).toEqual([])
+})
+
 test('el scoreboard de la partida muestra multikills', async ({ page }) => {
   const errores = vigilarConsola(page)
   // seed_demo: demo-17 tiene dos rondas tuyas de 2 bajas; la primera de la lista no tiene ninguna
@@ -987,6 +1102,62 @@ test('Compañeros muestra el clutch por operador', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Compañeros muestra los clutches de tus compañeros', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  const { teammate_clutches: datos } = await (await page.request.get('/api/teammates/')).json()
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  await expect(panel.getByRole('heading', { name: 'Clutches de tus compañeros' })).toBeVisible()
+  // seed_demo hoy no deja a ningun habitual ultimo vivo: sale la nota. Si la semilla
+  // cambia y da intentos, se afirma la tabla con los numeros de la API
+  if (datos.rows.length) {
+    const tabla = panel.locator('table', { has: page.getByRole('cell', { name: datos.rows[0].username }) })
+    await expect(tabla.locator('tbody tr')).toHaveCount(datos.rows.length + 1)
+    await expect(tabla.locator('tbody tr').first()).toContainText('Tú')
+  } else {
+    await expect(panel).toContainText('Ningún compañero habitual quedó último en una ronda contigo con estos filtros.')
+  }
+
+  expect(errores).toEqual([])
+})
+
+test('la tabla de clutches de compañeros pone tu fila primero', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.route('**/api/teammates/**', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const teammate_clutches = {
+      min_attempts: 5,
+      me: { attempts: 6, won: 3, pct: 50, low_sample: false },
+      rows: [
+        { player_id: json.synergy[0]?.player_id ?? 1, username: 'Ocho', attempts: 8, won: 2, pct: 25, low_sample: false },
+        { player_id: 999999, username: 'Tres', attempts: 3, won: 3, pct: 100, low_sample: true },
+      ],
+    }
+    await route.fulfill({ response: respuesta, json: { ...json, teammate_clutches } })
+  })
+  await page.goto('/companeros')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Clutches', exact: true }),
+  })
+  const tabla = panel.locator('table', { has: page.getByRole('cell', { name: 'Ocho' }) })
+  const filas = tabla.locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toHaveText(/^Tú\s*6\s*3\s*50%/)
+  await expect(filas.nth(1)).toHaveText(/^Ocho\s*8\s*2\s*25%/)
+  await expect(filas.nth(2)).toHaveText(/^Tres\s*3\s*3\s*100%/)
+  await expect(filas.nth(0).getByRole('link')).toHaveCount(0)
+  await expect(filas.nth(1).getByRole('link', { name: 'Ocho' })).toBeVisible()
+  await expect(filas.nth(1).locator('.muestra-chica')).toHaveCount(0)
+  await expect(filas.nth(2).locator('.muestra-chica')).toHaveCount(1)
+
+  expect(errores).toEqual([])
+})
+
 test('Compañeros muestra el panel de teamkills', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/companeros')
@@ -1134,6 +1305,50 @@ test('Datos muestra Sin identificar sin pendientes', async ({ page }) => {
   // seed_demo no tiene IDs desconocidos: el panel se renderiza con las cuatro listas vacias
   const panel = page.locator('.panel', { hasText: 'Sin identificar' })
   await expect(panel).toContainText('no hay mapas, operadores, modos ni tipos de partida sin nombre')
+
+  expect(errores).toEqual([])
+})
+
+test('Datos muestra las partidas por version del juego', async ({ page, request }) => {
+  const errores = vigilarConsola(page)
+  const { versions } = await (await request.get('/api/import/status/')).json()
+  expect(versions.length).toBeGreaterThan(0)
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  await expect(titulo).toBeVisible()
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(versions.length)
+  // la primera fila es la version mas nueva; sin version, el rotulo de la UI
+  const primera = filas.first()
+  await expect(primera).toContainText(versions[0].game_version || 'Sin versión')
+  await expect(primera).toContainText(String(versions[0].matches))
+
+  expect(errores).toEqual([])
+})
+
+test('Datos ordena las versiones del juego como la API, no como texto', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo no trae game_version: las versiones se inyectan sobre la respuesta real
+  await page.route('**/api/import/status/', async (route) => {
+    const respuesta = await route.fetch()
+    const json = await respuesta.json()
+    const fila = (game_version, code_version, matches) => ({
+      game_version, code_version, matches, first: '2026-06-01T20:00:00', last: '2026-09-01T20:00:00',
+    })
+    await route.fulfill({
+      response: respuesta,
+      json: { ...json, versions: [fila('Y10S4', 30, 4), fila('Y9S4', 10, 7), fila('', 0, 2)] },
+    })
+  })
+  await page.goto('/datos')
+
+  const titulo = page.getByRole('heading', { name: 'Partidas por versión del juego' })
+  const filas = titulo.locator('xpath=following-sibling::*[1]').locator('tbody tr')
+  await expect(filas).toHaveCount(3)
+  await expect(filas.nth(0)).toContainText('Y10S4')
+  await expect(filas.nth(1)).toContainText('Y9S4')
+  await expect(filas.nth(2)).toContainText('Sin versión')
 
   expect(errores).toEqual([])
 })

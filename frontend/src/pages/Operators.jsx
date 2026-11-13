@@ -14,7 +14,12 @@ import {
   pct,
 } from '../components/ui.jsx'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
-import { filasTrasResultado, textoWinrate, winrateCsv } from '../operadorTrasResultado.js'
+import {
+  filasCambioTrasPerder,
+  filasTrasResultado,
+  textoWinrate,
+  winrateCsv,
+} from '../operadorTrasResultado.js'
 import { bloquesDelPool, fechaCorta, textoHintPool, textoRondas } from '../poolOperadores.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
@@ -250,6 +255,19 @@ const COLUMNAS_TRAS_RESULTADO = [
   winrateConMuestra('switch', 'Winrate cambiando'),
 ]
 
+const COLUMNAS_CAMBIO_TRAS_PERDER = [
+  { key: 'lado', label: 'Lado', left: true },
+  { key: 'desde', label: 'Perdiste con', left: true },
+  { key: 'hacia', label: 'Cambiaste a', left: true },
+  { key: 'rondas', label: 'Rondas', help: 'Rondas con el operador nuevo, tras perder con el anterior.' },
+  {
+    key: 'winrate',
+    label: 'Winrate',
+    csv: (row) => winrateCsv(row.winrate),
+    render: (row) => textoWinrate(row.winrate, row.poca),
+  },
+]
+
 function TrasResultado({ filters }) {
   const { data, error, loading } = useApi('/operators/after-result/', filters)
   let cuerpo
@@ -269,12 +287,29 @@ function TrasResultado({ filters }) {
       <p className="note">Sin rondas seguidas del mismo lado con estos filtros.</p>
     )
   }
+  const cambios = data && !error ? filasCambioTrasPerder(data, filters?.side) : null
   return (
     <Panel
       title="Repetir o cambiar tras perder"
-      hint={`Tu siguiente ronda del mismo lado en la partida: si repetiste el operador o cambiaste, y cuánto la ganaste. «Tras ganar» es la base para comparar. Con el filtro de operador o de sitio, solo los pares que empiezan en una ronda con ese operador o en ese sitio. Con menos de ${data?.min_rounds ?? 12} rondas se avisa «pocas rondas».`}
+      hint={`Tu siguiente ronda del mismo lado en la partida: si repetiste el operador o cambiaste, y cuánto la ganaste. «Tras ganar» es la base para comparar. Con el filtro de operador o de sitio, solo los pares que empiezan en una ronda con ese operador o en ese sitio. Con menos de ${data?.min_rounds ?? 12} rondas se avisa «pocas rondas». Abajo, a qué operador cambiaste y cómo te fue con cada uno; con menos de ${data?.switch_min_rounds ?? 5} rondas por par se avisa «pocas rondas».`}
     >
       {cuerpo}
+      {cambios && (
+        <>
+          <h3>A qué operador cambias tras perder</h3>
+          {cambios.length ? (
+            <DataTable
+              columns={COLUMNAS_CAMBIO_TRAS_PERDER}
+              rows={cambios}
+              rowKey={(row) => row.clave}
+              initialSort={{ key: 'rondas', dir: 'desc' }}
+              csvName="operador-cambio-tras-perder"
+            />
+          ) : (
+            <p className="note">No cambiaste de operador tras perder con estos filtros.</p>
+          )}
+        </>
+      )}
     </Panel>
   )
 }
