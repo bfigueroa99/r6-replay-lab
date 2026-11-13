@@ -1,7 +1,7 @@
 # 116. En que estado de vivos mueres
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T17:17Z
 rama: claude/equipo-dev/116-en-que-estado-de-vivos-mueres
 tipo: funcionalidad
 epica: impacto
