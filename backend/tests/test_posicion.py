@@ -187,6 +187,7 @@ class SenalesDeZonaTests(TestCase):
         self.assertEqual(insight["title"], f"En {SITIO_B} (Club House) te sostienes")
         self.assertEqual(insight["severity"], "positivo")
         self.assertIn("bajo el resto de tu historial", insight["detail"])
+        self.assertEqual(insight["filters"], {"map": "club-house", "site": SITIO_B})
 
     def test_un_spawn_dormidero_habla_del_resto_del_ataque(self):
         zona(20, 16, site=SITIO_A, spawn="Warehouse", index=0)
@@ -199,6 +200,8 @@ class SenalesDeZonaTests(TestCase):
         )
         self.assertIn("del resto de tu ataque", insight["detail"])
         self.assertEqual(insight["scope"], "Club House · Warehouse (ataque)")
+        # no hay filtro de spawn: el enlace abre el mapa en ataque
+        self.assertEqual(insight["filters"], {"map": "club-house", "side": "Attack"})
 
     def test_sin_muestra_no_hay_senal_de_zona(self):
         zona(7, 7, site=SITIO_A, spawn="Warehouse", index=0)
