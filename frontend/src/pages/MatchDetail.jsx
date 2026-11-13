@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 
-import { useApi } from '../api.js'
+import { post, useApi } from '../api.js'
 import {
   DataTable,
   ErrorBox,
@@ -32,9 +32,10 @@ export default function MatchDetail() {
 }
 
 function DetallePartida({ id }) {
-  const { data, error, status, loading } = useApi(`/matches/${id}/`)
+  const { data, error, status, loading, reload } = useApi(`/matches/${id}/`)
   const [selected, setSelected] = useState(0)
   const [copia, setCopia] = useState(null)
+  const [errorExclusion, setErrorExclusion] = useState(null)
   const total = data?.rounds?.length ?? 0
 
   useEffect(() => {
@@ -89,6 +90,17 @@ function DetallePartida({ id }) {
     }
   }
 
+  async function alternarExclusion() {
+    // Sin console: el fallo se muestra en la pagina, y el e2e exige consola limpia
+    setErrorExclusion(null)
+    try {
+      await post(`/matches/${id}/exclude/`, undefined, { excluded: !match.excluded })
+      reload()
+    } catch (err) {
+      setErrorExclusion(err.message)
+    }
+  }
+
   return (
     <>
       <div className="page-head">
@@ -96,11 +108,13 @@ function DetallePartida({ id }) {
           <h1>
             {match.map} · {match.score}{' '}
             <ResultChip won={match.won}>{match.result}</ResultChip>
+            {match.excluded && <span className="chip">excluida</span>}
           </h1>
           <p>
             {match.played_at.slice(0, 16).replace('T', ' ')} · {match.match_type} · {match.gamemode} ·{' '}
             {match.game_version}
           </p>
+          {match.excluded && <p className="note">Esta partida no cuenta en tus números.</p>}
           {rachas && <p className="note">{rachas}</p>}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -110,6 +124,12 @@ function DetallePartida({ id }) {
           <EnlacePartida id={match.next_id} title="Jugada después">
             Partida siguiente →
           </EnlacePartida>
+          {errorExclusion && (
+            <span className="note">No se pudo cambiar: {errorExclusion}</span>
+          )}
+          <button type="button" className="btn small" onClick={alternarExclusion}>
+            {match.excluded ? 'Volver a contarla' : 'Excluir de mis números'}
+          </button>
           {copia && (
             <span className="note">
               {copia === 'ok' ? 'Copiado' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}

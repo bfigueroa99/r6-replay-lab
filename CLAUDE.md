@@ -81,14 +81,19 @@ Nadie abre PR contra `main`, ni mergea ni empuja a `main` por su cuenta.
   escritorio: la UI web tiene que seguir funcionando sin ella.
 - **La API es de lectura.** Vistas planas con `JsonResponse`. Los POST son
   pocos y locales: `/api/import/`, `/api/overrides/`,
-  `/api/players/<id>/ubisoft/`, `/api/settings/` y `/api/backup/`; todos
-  exigen `application/json`, asi otra pagina abierta en el navegador no puede
-  dispararlos. No agregues serializers ni viewsets.
+  `/api/players/<id>/ubisoft/`, `/api/settings/`, `/api/backup/` y
+  `/api/matches/<id>/exclude/`; todos exigen `application/json`, asi otra
+  pagina abierta en el navegador no puede dispararlos. No agregues serializers
+  ni viewsets.
 - **La configuracion vive en el `.env`.** La pagina Ajustes lo reescribe con
   `config/envfile.py` (solo la linea tocada) y aplica en caliente; no abras un
   segundo archivo de configuracion.
 - **Las metricas se calculan al importar**, no al consultar: `analytics/metrics.py`
   escribe columnas en `RoundPlayer`, y `analytics/aggregates.py` solo agrega.
+- **Una partida excluida no cuenta en nada.** En `analytics/aggregates.py` tus
+  rondas salen de `rondas_contables()` y las partidas de `partidas_contables()`;
+  `test_excluir_partida.py` compara cada ruta y cada CSV contra la base sin la
+  partida y falla si aparece una ruta sin clasificar.
 - **Todo numero que muestra la UI tiene definicion en `docs/metricas.md`.** Si
   agregas una metrica, agregas su fila ahi.
 

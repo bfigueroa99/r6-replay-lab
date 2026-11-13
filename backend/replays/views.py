@@ -110,8 +110,8 @@ def _ok(payload: dict, status: int = 200) -> JsonResponse:
 
 def _es_json(request: HttpRequest) -> bool:
     """Todos los POST de la API exigen JSON de verdad: `/api/import/`,
-    `/api/overrides/`, `/api/players/<id>/ubisoft/`, `/api/settings/` y
-    `/api/backup/`.
+    `/api/overrides/`, `/api/players/<id>/ubisoft/`, `/api/settings/`,
+    `/api/backup/` y `/api/matches/<id>/exclude/`.
 
     Son `csrf_exempt` porque la app es local y sin sesiones, pero un formulario
     de cualquier pagina abierta en el navegador puede postear a 127.0.0.1. Lo
@@ -172,7 +172,8 @@ def _opciones_de_mapa() -> list[dict]:
     """
     mapas: dict[str, dict] = {}
     filas = list(
-        Match.objects.values("map_slug", "map_name", "map_id")
+        agg.partidas_contables()
+        .values("map_slug", "map_name", "map_id")
         .distinct()
         .order_by("map_name", "map_id")
     )
@@ -209,7 +210,13 @@ def filter_options(request: HttpRequest) -> JsonResponse:
                 {s for s in qs.values_list("round__site", flat=True).distinct() if s}
             ),
             "match_types": sorted(
-                {m for m in Match.objects.values_list("match_type", flat=True).distinct() if m}
+                {
+                    m
+                    for m in agg.partidas_contables()
+                    .values_list("match_type", flat=True)
+                    .distinct()
+                    if m
+                }
             ),
             "gamemodes": sorted(
                 {g for g in Match.objects.values_list("gamemode", flat=True).distinct() if g}
@@ -500,7 +507,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
     baseline = agg.rating_baseline()
     # una consulta por pagina y no por fila; el get cubre una partida borrada
     # despues de leer la pagina
-    etiquetas = agg.etiquetas_de_mapas({m.map_slug for m in page})
+    etiquetas = agg.etiquetas_de_mapas({m.map_slug for m in page}, incluir_excluidas=True)
 
     # La tira es de la partida entera: sale de Round (una partida sin tu fila
     # igual tiene rondas) y no lee los filtros de lado, operador ni sitio. Una
@@ -534,6 +541,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
                 "opponent_score": match.opponent_score,
                 "won": match.won,
                 "result": match.result,
+                "excluded": match.excluded,
                 "rounds": match.rounds_count,
                 "strip": tiras.get(match.id, []),
                 "my_kills": stats.get("kills_sum") or 0,
@@ -645,8 +653,9 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
     rachas = agg.rachas_de_rondas([(r["number"], r["my_team_won"]) for r in rounds])
     scoreboard = _match_scoreboard(match)
     team_trades = _trades_por_equipo(rounds, match.my_team_index)
-    my_totals = agg.totals(agg.base_queryset().filter(round__match=match))
-    etiquetas = agg.etiquetas_de_mapas({match.map_slug})
+    # la partida se muestra completa aunque este excluida
+    my_totals = agg.totals(RoundPlayer.objects.filter(is_me=True, round__match=match))
+    etiquetas = agg.etiquetas_de_mapas({match.map_slug}, incluir_excluidas=True)
 
     return _ok(
         {
@@ -666,6 +675,7 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
                 "opponent_score": match.opponent_score,
                 "won": match.won,
                 "result": match.result,
+                "excluded": match.excluded,
                 "my_team_index": match.my_team_index,
                 "warnings": match.warnings,
             },
@@ -678,6 +688,26 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
             "my_totals": my_totals,
         }
     )
+
+
+@csrf_exempt
+@require_POST
+def match_exclude(request: HttpRequest, pk: int) -> JsonResponse:
+    """Saca o devuelve una partida de todos los agregados. No borra nada."""
+    if not _es_json(request):
+        return _ok({"error": "se esperaba application/json"}, status=415)
+    if not Match.objects.filter(pk=pk).exists():
+        return _ok({"error": "partida no encontrada"}, status=404)
+    try:
+        body = json.loads(request.body or b"{}")
+    except (ValueError, UnicodeDecodeError):
+        body = None
+    excluded = body.get("excluded") if isinstance(body, dict) else None
+    if not isinstance(excluded, bool):
+        return _ok({"error": "excluded tiene que ser true o false"}, status=400)
+    # update y no save: save tocaria parsed_at (auto_now), que dice cuando se parseo
+    Match.objects.filter(pk=pk).update(excluded=excluded)
+    return _ok({"id": pk, "excluded": excluded})
 
 
 def _racha_con_etiqueta(racha: dict | None) -> dict | None:

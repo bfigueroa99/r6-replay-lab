@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
-from replays.models import Player
+from replays.models import Match, Player
 
 from .factories import ME, make_match, make_round, make_round_player
 
@@ -163,3 +163,15 @@ class ClutchesDeCompanerosTests(TestCase):
         self.assertEqual(data["min_attempts"], 5)
         self.assertEqual(data["me"]["attempts"], 0)
         self.assertIsNone(data["me"]["pct"])
+
+
+class ClutchesDeCompanerosConExcluidasTests(TestCase):
+    def test_un_habitual_solo_por_partidas_excluidas_no_sale(self):
+        # mismo criterio que `by_stack`: las partidas excluidas no hacen habitual
+        partidas_juntas(("Seba",), cuantas=agg.MIN_PARTIDAS_HABITUAL - 1)
+        filas = ronda_de_clutch({"Seba": 1})
+        self.assertEqual([f["username"] for f in agg.teammate_clutches()["rows"]], ["Seba"])
+        # se excluyen las partidas sin clutch: el clutch sigue contando, pero
+        # Seba ya no suma partidas para ser habitual
+        Match.objects.exclude(pk=filas["Seba"].round.match_id).update(excluded=True)
+        self.assertEqual(agg.teammate_clutches()["rows"], [])
