@@ -1200,6 +1200,22 @@ def by_half(**filters) -> list[dict]:
     return _filas_por_tramo("half", {mitad: tramos[mitad] for mitad in MITADES})
 
 
+#: Orden fijo de las filas de `by_overtime_side`.
+PRORROGA_LADOS = ("Attack", "Defense")
+
+
+def by_overtime_side(**filters) -> list[dict]:
+    """Rondas de prorroga partidas por el lado que te toco en cada una.
+
+    La fila `overtime` de `by_half` no se toca: esto la abre en dos. Se lee
+    `round__my_side`, el mismo campo de `by_half`.
+    """
+    qs = base_queryset(**filters).filter(round__overtime_number__gt=0)
+    # con ?side= la otra fila saldria siempre en cero: no se devuelve
+    lados = (filters["side"],) if filters.get("side") in PRORROGA_LADOS else PRORROGA_LADOS
+    return _filas_por_tramo("side", {lado: qs.filter(round__my_side=lado) for lado in lados})
+
+
 #: Orden fijo de las filas de `by_half_opener`.
 APERTURAS_DE_MITAD = ("match_start", "side_switch", "rest")
 
