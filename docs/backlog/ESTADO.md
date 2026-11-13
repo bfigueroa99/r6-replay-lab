@@ -12,7 +12,7 @@ pausa: no
 |---|---|---|---|---|
 | claude/equipo-dev/118-ver-esas-rondas-desde-el-coach | docs/backlog/118-ver-esas-rondas-desde-el-coach.md | revisado (QA de otra corrida en curso) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/118-ver-esas-rondas-desde-el-coach?expand=1) |
 | claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion | docs/backlog/119-mejor-y-peor-partida-de-cada-sesion.md | implementado (espera Revisor de otro contexto) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/119-mejor-y-peor-partida-de-cada-sesion?expand=1) |
-| claude/equipo-dev/121-copiar-una-ronda-como-texto | docs/backlog/121-copiar-una-ronda-como-texto.md | en curso (Dev de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/121-copiar-una-ronda-como-texto?expand=1) |
+| claude/equipo-dev/121-copiar-una-ronda-como-texto | docs/backlog/121-copiar-una-ronda-como-texto.md | implementado (espera Revisor) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/121-copiar-una-ronda-como-texto?expand=1) |
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
