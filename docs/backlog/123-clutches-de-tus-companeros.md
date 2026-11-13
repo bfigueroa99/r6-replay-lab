@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-13T19:26Z
 rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
