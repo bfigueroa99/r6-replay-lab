@@ -1,15 +1,15 @@
 # 122. Cuando te toco por ultima vez
 
-estado: propuesto
-candado: arquitecto 2026-11-13T18:34Z
+estado: disenado
+candado: -
 rama: -
 tipo: funcionalidad
 epica: rivales
 area: backend
 prioridad: 3
 fuente: ALCANCE.md D10
-archivos: -
-turnos: po 20261113T1650Z-c9H2L8Y
+archivos: backend/replays/analytics/aggregates.py (_record, repeated_rivals, _filas_de_stacks), backend/tests/test_duels.py, backend/tests/test_stacks_rivales.py, frontend/src/ultimaVez.js (nuevo), frontend/src/ultimaVez.test.js (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
+turnos: po 20261113T1650Z-c9H2L8Y, arquitecto 20261113T1802Z-c8dAf7p
 
 ## PR
 
@@ -45,6 +45,89 @@ esta semana del que fue de una racha de hace meses, sin abrir su perfil.
 - "Última vez" en la tabla Por rival (nemesis) de Duelos.
 
 ## Diseno
+
+(arquitecto 20261113T1802Z-c8dAf7p, sobre `origin/dev@1de3c54`) Filtros
+duros: pasa (`Match.played_at`, ya importado; sin red, sin dependencias, sin
+POST, sin migracion). Una forma obvia, ~150 lineas: sin arena ni consenso.
+
+**Backend, `backend/replays/analytics/aggregates.py`.** Las dos tablas y el
+aviso del detalle ya arman su record con `_record(ids, resultado)`, sobre
+las partidas que la fila cuenta (las que pasan los filtros). Un solo cambio
+ahi cubre los tres criterios de backend y garantiza que la fila de Duelos y
+el aviso de la partida den la misma fecha:
+- `repeated_rivals` y `_filas_de_stacks`: la consulta de resultados pasa a
+  `Match.objects.filter(id__in=match_ids).values_list("id", "won",
+  "played_at")`, y se arman dos dicts (`resultado` y `fechas`).
+- `_record(ids, resultado, fechas)` suma `"last_played":
+  max(fechas[mid] for mid in ids).isoformat()` (`ids` nunca es vacio: la
+  fila existe porque tiene `min_matches` partidas). Sin consultas nuevas:
+  la misma consulta trae una columna mas.
+- `rival_stacks_de_partida` hereda el campo por `_filas_de_stacks`; su
+  record no cambia.
+- `docs/metricas.md`: en las filas de **Rivales repetidos** y **Stacks
+  rivales** (seccion `## Duelos`), sumar: "*Última vez*: la fecha de la
+  partida mas reciente de las que cuenta la fila (con los filtros
+  aplicados)." No es un numero nuevo; es una columna de esas tablas.
+
+**Tests.**
+- `backend/tests/test_duels.py`, clase `RivalesRepetidosTests`:
+  `test_la_ultima_vez_es_la_partida_mas_reciente` (un rival en tres partidas
+  con `index` 0, 5 y 2 -> `last_played` == `played_at` de la de `index` 5 en
+  ISO) y `test_la_ultima_vez_respeta_el_filtro_de_fechas` (`until` que deja
+  afuera la mas reciente -> la siguiente).
+- `backend/tests/test_stacks_rivales.py`, clase `StacksRivalesTests`:
+  `test_el_stack_trae_la_ultima_vez` (dos partidas con el mismo grupo) y
+  `test_el_aviso_de_la_partida_da_la_misma_ultima_vez_que_duelos`
+  (`rival_stacks_de_partida(match.id)[0]["last_played"] ==
+  rival_stacks()[0]["last_played"]`, y el record igual que antes).
+- Un `assertNumQueries` vecino de `repeated_rivals`/`rival_stacks`, si
+  existe, no cambia; si no existe, no se agrega.
+
+**Frontend.**
+- `frontend/src/ultimaVez.js` (nuevo, puro): `fechaCorta(iso)` -> `"DD-MM-AAAA"`
+  (el formato de `Jugador.jsx`), `"—"` sin fecha; `fechaCsv(iso)` ->
+  `"AAAA-MM-DD"` o `""` (el CSV se ordena bien en Excel). Vitest
+  `frontend/src/ultimaVez.test.js`: fecha con hora, sin fecha (`null`,
+  `undefined`, `""`), y que `fechaCsv` no lleva hora.
+- `frontend/src/pages/Duelos.jsx`, tablas **Rivales repetidos** y **Stacks
+  rivales que se repiten**: columna `{ key: 'last_played', label: 'Última
+  vez', help: 'La partida más reciente contra esa persona (o ese grupo) entre
+  las que cuenta la fila.', render: (row) => fechaCorta(row.last_played),
+  csv: (row) => fechaCsv(row.last_played) }` despues de "Partidas". Ordenable:
+  `DataTable` ordena por el valor crudo de `key`, y un ISO se ordena bien como
+  texto. Sin cambios en el `initialSort`.
+- `MatchDetail.jsx` (`StacksRivales`): fuera de alcance; el campo llega y no
+  se muestra.
+
+**e2e, `frontend/e2e/humo.spec.js`**, en `Duelos muestra rivales repetidos
+con enlace al perfil` (antes del clic): la tabla tiene la cabecera "Última
+vez" y la celda de la primera fila es `fechaCorta` del `last_played` de la
+primera fila de `/api/duels/` con el mismo orden inicial (o, mas simple, que
+matchea `/^\d{2}-\d{2}-\d{4}$/`). Consola limpia.
+
+**Orden.** Tests backend (rojo) -> `_record` + las dos consultas -> vitest ->
+`ultimaVez.js` -> columnas en Duelos -> e2e -> `metricas.md` ->
+`npm run build` -> `verificar.sh`.
+
+**Que puede romperse.** El campo es aditivo en `/api/duels/` y en el detalle
+de partida. `_record` cambia de firma: sus dos llamadas estan en este mismo
+archivo. El CSV de las dos tablas gana la columna despues de "Partidas"; no tienen
+consumidor automatico en el repo (`git grep rivales-repetidos` solo da
+`Duelos.jsx`).
+
+**Archivos ocupados.** Ramas abiertas (79, 119, 120, 121): la 79 toca
+`aggregates.py` lejos de `_record`/`repeated_rivals` (hunks en
+`base_queryset`, `_sessions_raw`, `by_stack`...), ninguna toca `Duelos.jsx`,
+`test_duels.py` ni `test_stacks_rivales.py`; `humo.spec.js` y `metricas.md`
+en otras zonas. No se frena.
+
+**Verificacion manual.** `seed_demo`, `/duelos`: "Última vez" en las dos
+tablas con fecha; ordenar por esa columna; con `?until=<fecha vieja>` la
+fecha baja; "Descargar CSV" con `AAAA-MM-DD`.
+
+Skills: no aplica (una columna con un dato que ya se consulta).
+Skills del repo: testing-strategy (Django para el max y el filtro, vitest para el formato, humo e2e para la columna), statistical-analysis (no aplica: una fecha, no una tasa).
+OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
