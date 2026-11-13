@@ -830,7 +830,7 @@ test('la timeline marca un teamkill con TK', async ({ page }) => {
   const tk = panel.locator('.timeline .chip', { hasText: /^TK$/ })
   await expect(tk).toHaveCount(1)
   await expect(tk).toHaveAttribute('title', 'Baja entre compañeros: no suma a las bajas')
-  const linea = panel.locator('.timeline li', { has: tk })
+  const linea = panel.locator('.timeline li', { has: page.locator('.chip', { hasText: /^TK$/ }) })
   await expect(linea).toContainText(`${baja.actor} mató a ${companero}`)
   await expect(linea).not.toHaveClass(/mine|against/)
 
