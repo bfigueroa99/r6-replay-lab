@@ -37,7 +37,7 @@ from pydissect.header import etiqueta_de_version
 from .. import unknowns
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
-from .metrics import PLAYER_LEAVE, estado_al_morir, trade_window
+from .metrics import PLAYER_LEAVE, estado_al_morir, trade_window, ventaja_maxima
 
 # --------------------------------------------------------------------- filtros
 
@@ -1320,6 +1320,51 @@ def by_overtime_side(**filters) -> list[dict]:
     return _filas_por_tramo("side", {lado: qs.filter(round__my_side=lado) for lado in lados})
 
 
+def _lado_de_prorroga(match_ref: str) -> Subquery:
+    """Lado de la primera ronda de prorroga de la partida.
+
+    Como `_lado_inicial`, se lee de la partida entera: con `?side=` el filtro
+    elige la fila, no cambia con que lado arrancaste la prorroga.
+    """
+    return Subquery(
+        Round.objects.filter(match_id=OuterRef(match_ref), overtime_number__gt=0)
+        .order_by("overtime_number", "number")
+        .values("my_side")[:1]
+    )
+
+
+def by_overtime_start_side(**filters) -> list[dict]:
+    """Partidas que llegaron a prorroga y su winrate de partida, por el lado con que la arrancaste.
+
+    Es `by_start_side` leyendo la primera ronda de prorroga: en la prorroga se
+    juega la partida, no una ronda. Un lado vacio no cae en ninguna fila.
+    """
+    ids = (
+        base_queryset(**filters)
+        .filter(round__overtime_number__gt=0)
+        .values_list("round__match_id", flat=True)
+        .distinct()
+    )
+    partidas = Match.objects.filter(id__in=ids).annotate(lado=_lado_de_prorroga("id"))
+    lados = (filters["side"],) if filters.get("side") in PRORROGA_LADOS else PRORROGA_LADOS
+    filas = []
+    for lado in lados:
+        suyas = partidas.filter(lado=lado)
+        decididas = suyas.exclude(won__isnull=True)
+        wins = decididas.filter(won=True).count()
+        n_decididas = decididas.count()
+        filas.append(
+            {
+                "side": lado,
+                "matches": suyas.count(),
+                "decided": n_decididas,
+                "wins": wins,
+                "winrate": _pct(wins, n_decididas),
+            }
+        )
+    return filas
+
+
 #: Orden fijo de las filas de `by_half_opener`.
 APERTURAS_DE_MITAD = ("match_start", "side_switch", "rest")
 
@@ -2510,6 +2555,116 @@ def death_state(**filters) -> dict:
         "sin_feed": sin_feed,
         "states": salida_estados,
         "groups": salida_grupos,
+    }
+
+
+#: La lista de tiradas es para abrir rondas y volver a verlas, no un historial.
+VENTAJA_TIRADA_TOPE = 20
+
+
+def _fila_tirada() -> dict:
+    return {"rounds": 0, "thrown": 0}
+
+
+def _sumar_tirada(fila: dict, tirada: bool) -> None:
+    fila["rounds"] += 1
+    fila["thrown"] += 1 if tirada else 0
+
+
+def _cerrar_tirada(fila: dict) -> dict:
+    fila["thrown_pct"] = _pct(fila["thrown"], fila["rounds"])
+    return fila
+
+
+def thrown_advantage(**filters) -> dict:
+    """Rondas en que tu equipo llego a tener mas vivos que el rival, y cuantas perdio.
+
+    Se calcula al consultar sobre el feed, como `death_state` (sin migracion
+    ni `recompute`); la regla vive en `metrics.ventaja_maxima`. Las rondas sin
+    ganador no entran: no se sabe si la ventaja se tiro.
+    """
+    mias = base_queryset(**filters)
+    filas = list(
+        mias.filter(round__my_team_won__isnull=False).values(
+            "round_id", "team_index", "side", "round__my_team_won", "round__number",
+            "round__match_id", "round__match__map_slug", "round__match__map_id",
+            "round__match__played_at",
+        )
+    )
+    # Por version, como Mapas: un rework se cuenta aparte aunque se llame igual,
+    # y un renombre en Datos no parte la fila.
+    etiquetas = etiquetas_de_mapas({f["round__match__map_slug"] for f in filas})
+
+    # Correlacionadas por el tope de parametros de SQLite, como death_state.
+    en_mis_rondas = Exists(mias.filter(round_id=OuterRef("round_id")))
+    equipos: dict[int, dict[int, int]] = {}
+    for fila in RoundPlayer.objects.filter(en_mis_rondas).values(
+        "round_id", "player_id", "team_index"
+    ):
+        equipos.setdefault(fila["round_id"], {})[fila["player_id"]] = fila["team_index"]
+    feeds: dict[int, list[dict]] = {}
+    for ev in (
+        Event.objects.filter(en_mis_rondas, kind__in=(Event.KILL, Event.DEATH, PLAYER_LEAVE))
+        .order_by("round_id", "order")
+        .values("round_id", "kind", "actor_id", "target_id", "clock")
+    ):
+        feeds.setdefault(ev["round_id"], []).append(
+            {"kind": ev["kind"], "actor": ev["actor_id"], "target": ev["target_id"],
+             "clock": ev["clock"]}
+        )
+
+    total = _fila_tirada()
+    grupos = {g: _fila_tirada() for g in ("one", "two_plus")}
+    lados = {lado: _fila_tirada() for lado in ("Attack", "Defense")}
+    mapas: dict[tuple[str, int], dict] = {}
+    tiradas = []
+    for fila in filas:
+        round_id = fila["round_id"]
+        ventaja = ventaja_maxima(
+            feeds.get(round_id, []), equipos.get(round_id, {}), fila["team_index"]
+        )
+        if ventaja is None or ventaja < 1:
+            continue
+        tirada = fila["round__my_team_won"] is False
+        _sumar_tirada(total, tirada)
+        _sumar_tirada(grupos["one" if ventaja == 1 else "two_plus"], tirada)
+        if fila["side"] in lados:
+            _sumar_tirada(lados[fila["side"]], tirada)
+        clave = (fila["round__match__map_slug"], fila["round__match__map_id"])
+        mapa = etiquetas.get(clave, clave[0])
+        _sumar_tirada(mapas.setdefault(clave, {"map": mapa, **_fila_tirada()}), tirada)
+        if tirada:
+            tiradas.append({
+                "match_id": fila["round__match_id"],
+                "map": mapa,
+                "played_at": fila["round__match__played_at"],
+                "number": fila["round__number"],
+                "side": fila["side"],
+                "advantage": ventaja,
+            })
+
+    tiradas.sort(key=lambda t: (t["played_at"], t["number"]), reverse=True)
+    recientes = [
+        {
+            "match_id": t["match_id"],
+            "map": t["map"],
+            "played_at": t["played_at"].isoformat(),
+            # la etiqueta R<n>, que es el numero que lee el ancla #ronda-N
+            "round": t["number"] + 1,
+            "side": t["side"],
+            "advantage": t["advantage"],
+        }
+        for t in tiradas[:VENTAJA_TIRADA_TOPE]
+    ]
+    return {
+        **_cerrar_tirada(total),
+        "groups": [_cerrar_tirada({"group": g, **f}) for g, f in grupos.items()],
+        "sides": [_cerrar_tirada({"side": s, **f}) for s, f in lados.items() if f["rounds"]],
+        "maps": sorted(
+            (_cerrar_tirada(f) for f in mapas.values()),
+            key=lambda f: (-f["thrown"], -f["rounds"], f["map"]),
+        ),
+        "recent": recientes,
     }
 
 

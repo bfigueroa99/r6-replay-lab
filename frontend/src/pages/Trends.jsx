@@ -18,7 +18,7 @@ import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, Stat, fmt, pct } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
-import { filasProrrogaPorLado } from '../prorrogaPorLado.js'
+import { PARTIDAS_CORTE, conPocasPartidas, filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 import { celdaPartidaDeSesion, textoResumenSesion } from '../resumenSesion.js'
 import { avisoPuesto, statsDePuesto } from '../puestoLobby.js'
@@ -106,6 +106,25 @@ const COLUMNAS_POR_TRAMO = [
   { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
   { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
   { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+]
+// La prorroga por lado suma la partida a la derecha: las ayudas dicen que la
+// unidad cambia, porque la tabla mezcla rondas y partidas.
+const COLUMNAS_PRORROGA_POR_LADO = [
+  ...COLUMNAS_POR_TRAMO,
+  {
+    key: 'matches',
+    label: 'Partidas',
+    sortable: false,
+    help: 'Partidas que llegaron a prórroga y la arrancaste de este lado (el de tu primera ronda de prórroga).',
+  },
+  {
+    key: 'match_winrate',
+    label: 'Partidas ganadas',
+    digits: 0,
+    suffix: '%',
+    sortable: false,
+    help: 'Sobre las que tienen resultado; las incompletas cuentan en Partidas pero no acá.',
+  },
 ]
 const APERTURAS = { match_start: 'Ronda 1', side_switch: 'Primera tras el cambio', rest: 'Resto' }
 const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
@@ -283,7 +302,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     tramo: MITADES[row.half] || row.half,
   }))
-  const prorrogaPorLado = filasProrrogaPorLado(data.by_overtime_side)
+  const prorrogaPorLado = filasProrrogaPorLado(data.by_overtime_side, data.by_overtime_start_side)
   const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
     ...row,
     orden,
@@ -715,7 +734,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
           {prorrogaPorLado.length ? (
             <>
               <DataTable
-                columns={COLUMNAS_POR_TRAMO}
+                columns={COLUMNAS_PRORROGA_POR_LADO}
                 rows={prorrogaPorLado}
                 initialSort={{ key: 'orden', dir: 'asc' }}
                 rowKey={(row) => row.side}
@@ -724,6 +743,12 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               {filasConPocaMuestra(prorrogaPorLado).length ? (
                 <p className="note">
                   Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+              {conPocasPartidas(prorrogaPorLado) ? (
+                <p className="note">
+                  Ojo: algún lado tiene menos de {PARTIDAS_CORTE} partidas a prórroga; el porcentaje de partidas puede ser
+                  varianza.
                 </p>
               ) : null}
             </>

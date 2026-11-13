@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import EstadoAlMorir from '../components/EstadoAlMorir.jsx'
+import VentajaTirada from '../components/VentajaTirada.jsx'
 import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, pct } from '../components/ui.jsx'
 import { filasOperadoresQueTeAbren } from '../operadoresQueTeAbren.js'
@@ -369,6 +370,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       </Panel>
 
       <EstadoAlMorir filters={filters} />
+      <VentajaTirada filters={filters} />
     </>
   )
 }
