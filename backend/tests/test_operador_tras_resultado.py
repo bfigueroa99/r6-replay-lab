@@ -1,4 +1,4 @@
-"""Tests de repetir o cambiar de operador tras una ronda (ficha 113)."""
+"""Tests de repetir o cambiar de operador tras una ronda (fichas 113 y 126)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,9 @@ URL = "/api/operators/after-result/"
 A, D = "Attack", "Defense"
 
 
-class OperadorTrasResultadoTests(TestCase):
+class _ConPartidas:
+    """Arma partidas con una ronda tuya por numero; la comparten las dos clases."""
+
     def setUp(self):
         self.indice = 0
 
@@ -29,6 +31,8 @@ class OperadorTrasResultadoTests(TestCase):
             make_round_player(rnd, operator=operador, won=bool(gano))
         return match
 
+
+class OperadorTrasResultadoTests(_ConPartidas, TestCase):
     def _celda(self, datos, tras, caso, lado=A):
         return datos["sides"][lado][tras][caso]
 
@@ -167,3 +171,75 @@ class OperadorTrasResultadoTests(TestCase):
         self.assertEqual(datos["pairs"], 0)
         self.assertEqual(datos["min_rounds"], agg.OPERADOR_TRAS_RESULTADO_MIN_RONDAS)
         self.assertIsNone(datos["total"]["after_loss"]["repeat"]["winrate"])
+
+
+class AQueOperadorCambiasTests(_ConPartidas, TestCase):
+    """Ficha 126: los pares "tras perder, cambia" partidos por operador."""
+
+    def _filas(self, datos):
+        return [(f["side"], f["from_operator"], f["to_operator"], f["rounds"], f["winrate"])
+                for f in datos["switches"]]
+
+    def test_ash_a_thermite_y_a_sledge(self):
+        self._partida([(A, "Ash", False), (A, "Thermite", True)])
+        self._partida([(A, "Ash", False), (A, "Thermite", False)])
+        self._partida([(A, "Ash", False), (A, "Sledge", False)])
+        self.assertEqual(self._filas(agg.operator_after_result()), [
+            (A, "Ash", "Thermite", 2, 50.0),
+            (A, "Ash", "Sledge", 1, 0.0),
+        ])
+
+    def test_la_suma_de_las_filas_es_el_switch_de_la_113(self):
+        self._partida([
+            (A, "Ash", False), (D, "Mute", False), (A, "Thermite", True),
+            (D, "Jager", False), (A, "Sledge", False), (D, "Jager", True),
+            (A, "Ash", False), None, (A, "Sledge", True),
+            (D, "Mute", False), (D, "Bandit", None), (D, "Valkyrie", True),
+        ])
+        self._partida([(D, "Mute", False), (D, "Mute", False), (D, "Kaid", True),
+                       (A, "Ash", True), (A, "Sledge", False), (A, "Ash", False)])
+        datos = agg.operator_after_result()
+        for lado in (A, D):
+            switch = datos["sides"][lado]["after_loss"]["switch"]
+            filas = [f for f in datos["switches"] if f["side"] == lado]
+            self.assertTrue(filas, lado)
+            for campo in ("rounds", "decided", "won"):
+                self.assertEqual(sum(f[campo] for f in filas), switch[campo], (lado, campo))
+
+    def test_repetir_o_cambiar_tras_ganar_no_entra(self):
+        self._partida([(A, "Ash", True), (A, "Thermite", True)])
+        self.assertEqual(agg.operator_after_result()["switches"], [])
+
+    def test_repetir_tras_perder_no_entra(self):
+        self._partida([(A, "Ash", False), (A, "Ash", True)])
+        self.assertEqual(agg.operator_after_result()["switches"], [])
+
+    def test_el_filtro_de_operador_elige_desde_donde(self):
+        self._partida([(A, "Ash", False), (A, "Thermite", True)])
+        self._partida([(D, "Jager", False), (D, "Mute", True)])
+        self._partida([(A, "Sledge", False), (A, "Ash", True)])
+        self.assertEqual(self._filas(agg.operator_after_result(operator="Ash")),
+                         [(A, "Ash", "Thermite", 1, 100.0)])
+
+    def test_una_segunda_sin_ganador_no_entra_al_winrate(self):
+        self._partida([(A, "Ash", False), (A, "Thermite", None)])
+        fila = agg.operator_after_result()["switches"][0]
+        self.assertEqual((fila["rounds"], fila["decided"], fila["won"], fila["winrate"]),
+                         (1, 0, 0, None))
+
+    def test_las_filas_van_por_lado_operador_y_rondas(self):
+        self._partida([(D, "Mute", False), (D, "Jager", True)])
+        self._partida([(A, "Sledge", False), (A, "Ash", True)])
+        self._partida([(A, "Ash", False), (A, "Zofia", True)])
+        self._partida([(A, "Ash", False), (A, "Thermite", True)])
+        self._partida([(A, "Ash", False), (A, "Thermite", False)])
+        self.assertEqual([(f["side"], f["from_operator"], f["to_operator"])
+                          for f in agg.operator_after_result()["switches"]], [
+            (A, "Ash", "Thermite"), (A, "Ash", "Zofia"),
+            (A, "Sledge", "Ash"), (D, "Mute", "Jager"),
+        ])
+
+    def test_la_api_trae_switches(self):
+        datos = self.client.get(URL).json()
+        self.assertEqual(datos["switches"], [])
+        self.assertEqual(datos["switch_min_rounds"], 5)

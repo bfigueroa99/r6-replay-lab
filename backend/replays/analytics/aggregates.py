@@ -845,6 +845,11 @@ def operator_pool(catalogo: list[dict], **filters) -> dict:
 #: La muestra minima de "Operador" (tabla de muestra minima): debajo se avisa
 #: "pocas rondas" pero no se oculta, porque el par repetir/cambiar se lee junto.
 OPERADOR_TRAS_RESULTADO_MIN_RONDAS = 12
+#: Muestra minima por par de "A que operador cambias tras perder" (ficha 126):
+#: cada fila es un par de operadores, una celda mucho mas fina que repetir o
+#: cambiar, asi que con 12 casi todas dirian "pocas rondas". Debajo de 5, una
+#: ronda mueve 20 puntos el winrate: se avisa, no se oculta.
+OPERADOR_CAMBIO_MIN_RONDAS = 5
 OPERADOR_TRAS_RESULTADO = ("after_loss", "after_win")
 OPERADOR_TRAS_RESULTADO_CASOS = ("repeat", "switch")
 
@@ -867,6 +872,7 @@ def operator_after_result(**filters) -> dict:
     un hueco de un cambio de lado; la UI elige el bloque. `operator` y `site`
     eligen la primera ronda del par: filtrar las filas dejaria solo los pares
     que repiten (o que vuelven al mismo sitio) y cortaria el resto.
+    `switches` parte "tras perder, cambia" por par de operadores (ficha 126).
     """
     operador = filters.get("operator")
     sitio = filters.get("site")
@@ -878,6 +884,9 @@ def operator_after_result(**filters) -> dict:
                      "round__site", "round__my_team_won")
     )
     lados = {lado: _bloque_tras_resultado() for lado in ("Attack", "Defense")}
+    # El desglose de "tras perder, cambia" por par de operadores sale del mismo
+    # bucle: asi sus filas suman exactamente la celda de arriba.
+    cambios: dict[tuple, dict] = {}
     pendiente: dict[str, tuple] = {}
     anterior = None
     pares = 0
@@ -896,10 +905,15 @@ def operator_after_result(**filters) -> dict:
             caso = "repeat" if op == op_previo else "switch"
             tras = "after_win" if gano_previo else "after_loss"
             celda = lados[lado][tras][caso]
-            celda["rounds"] += 1
-            if gano is not None:
-                celda["decided"] += 1
-                celda["won"] += int(gano)
+            celdas = [celda]
+            if tras == "after_loss" and caso == "switch":
+                celdas.append(cambios.setdefault(
+                    (lado, op_previo, op), {"rounds": 0, "decided": 0, "won": 0}))
+            for c in celdas:
+                c["rounds"] += 1
+                if gano is not None:
+                    c["decided"] += 1
+                    c["won"] += int(gano)
             pares += 1
         # Sin ganador no hay "tras perder" ni "tras ganar": no abre par.
         if gano is not None and (not operador or op == operador) \
@@ -916,11 +930,19 @@ def operator_after_result(**filters) -> dict:
         for tras in OPERADOR_TRAS_RESULTADO:
             for celda in bloque[tras].values():
                 celda["winrate"] = _pct(celda["won"], celda["decided"])
+    switches = [
+        {"side": lado, "from_operator": desde, "to_operator": hacia, **c,
+         "winrate": _pct(c["won"], c["decided"])}
+        for (lado, desde, hacia), c in cambios.items()
+    ]
+    switches.sort(key=lambda f: (f["side"], f["from_operator"], -f["rounds"], f["to_operator"]))
     return {
         "min_rounds": OPERADOR_TRAS_RESULTADO_MIN_RONDAS,
         "pairs": pares,
         "sides": lados,
         "total": total,
+        "switches": switches,
+        "switch_min_rounds": OPERADOR_CAMBIO_MIN_RONDAS,
     }
 
 
