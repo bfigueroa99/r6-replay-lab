@@ -2749,10 +2749,11 @@ def teammate_clutches(**filters) -> dict:
     companero: `clutch_vs` se escribe al importar para cada jugador de la
     ronda. Ganado es `my_team_won`: su equipo es el tuyo.
     """
-    # Habitual con la regla de `by_stack` (todo el historial, sin filtros). Se
-    # copia la consulta en vez de extraerla para no tocar esa funcion.
-    mia = RoundPlayer.objects.filter(
-        is_me=True, round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
+    # Habitual con la regla de `by_stack` (todo el historial, sin filtros ni
+    # partidas excluidas). Se copia la consulta en vez de extraerla para no
+    # tocar esa funcion.
+    mia = rondas_contables().filter(
+        round_id=OuterRef("round_id"), team_index=OuterRef("team_index")
     )
     habituales = (
         RoundPlayer.objects.filter(is_me=False)
