@@ -1,7 +1,7 @@
 # 79. Excluir una partida de los agregados
 
 estado: entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano)
-candado: revisor 2026-11-13T18:46Z
+candado: -
 rama: claude/equipo-dev/79-excluir-una-partida-de-los-agregados
 tipo: funcionalidad
 epica: datos
@@ -164,3 +164,11 @@ el test, no el codigo de la 79: la revision y la QA siguen valiendo.
 verificar.sh: VERDE 52093dac1 (1220 tests backend, 351 vitest, 99 e2e).
 Para el humano: si el PR se mergea despues de que entre otra ruta GET a dev,
 esta guardia la va a pedir clasificada; es el comportamiento buscado.
+
+## Mantenimiento 2026-11-13 18:50 (revisor 20261113T1830Z-cTivbSq, salud de rama entregada)
+
+Rama 41 commits atras de `origin/dev` (entraron la 118, la 119 y la 121), sin
+conflicto (`git merge-tree`). `git merge origin/dev` limpio; la guardia de
+agregados de excluidas no pidio clasificar nada nuevo. `verificar.sh`: VERDE
+ef17b0c86 (1259 backend, 388 vitest, 106 e2e). Sigue esperando el merge del
+humano (toca `CLAUDE.md`).
