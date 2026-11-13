@@ -19,6 +19,7 @@ import zstandard
 from django.test import SimpleTestCase
 
 from pydissect import Reader, overrides, stats
+from pydissect import reader as reader_mod
 from pydissect.constants import ATTACK, CODE_VERSIONS, DEFENSE, RECRUIT
 from pydissect.errors import InvalidFile
 from pydissect.header import (
@@ -129,6 +130,53 @@ class DecompressionTests(SimpleTestCase):
 
     def test_sin_frames_devuelve_vacio(self):
         self.assertEqual(_decompress_chunks(b"nada de zstd aqui", 0), b"")
+
+    def test_un_frame_mas_largo_que_un_tramo_de_lectura_sale_entero(self):
+        # se lee de a tramos: los cortes no pueden perder ni repetir bytes, y
+        # el frame siguiente tiene que encontrarse donde termina este
+        grande = bytes(range(256)) * 4000 + os.urandom(300_000)
+        c = zstandard.ZstdCompressor()
+        raw = c.compress(grande) + c.compress(b"-y-el-siguiente") + b"\x00cola"
+        self.assertGreater(len(raw), 4 * reader_mod._TRAMO)
+        self.assertEqual(_decompress_chunks(raw, 0), grande + b"-y-el-siguiente")
+
+    def test_un_frame_cortado_entrega_lo_que_alcanzo_a_leer(self):
+        # un .rec truncado (el juego se cerro a mitad de ronda) no es un error
+        entero = zstandard.ZstdCompressor().compress(os.urandom(200_000))
+        salida = _decompress_chunks(b"x" + entero[: len(entero) // 2], 1)
+        self.assertGreater(len(salida), 0)
+        self.assertLess(len(salida), 200_000)
+
+    def test_un_frame_corrupto_corta_sin_reventar(self):
+        c = zstandard.ZstdCompressor()
+        roto = bytearray(c.compress(os.urandom(50_000)))
+        roto[len(roto) // 2] ^= 0xFF
+        raw = c.compress(b"sano") + bytes(roto)
+        self.assertTrue(_decompress_chunks(raw, 0).startswith(b"sano"))
+
+    def test_una_bomba_zstd_se_corta_en_el_tope(self):
+        # 20 MB de ceros caben en 2 KB comprimidos: sin tope, unos pocos MB de
+        # .rec se llevan toda la memoria del equipo
+        bomba = zstandard.ZstdCompressor().compress(b"\x00" * 20_000_000)
+        self.assertLess(len(bomba), 10_000)
+        with self.assertRaises(InvalidFile):
+            _decompress_chunks(bomba, 0, limite=1_000_000)
+
+    def test_el_tope_cuenta_todos_los_frames_juntos(self):
+        c = zstandard.ZstdCompressor()
+        raw = b"".join(c.compress(b"\x00" * 400_000) for _ in range(4))
+        self.assertEqual(len(_decompress_chunks(raw, 0, limite=2_000_000)), 1_600_000)
+        with self.assertRaises(InvalidFile):
+            _decompress_chunks(raw, 0, limite=1_000_000)
+
+    def test_el_reader_rechaza_un_rec_que_se_descomprime_de_mas(self):
+        raw = build_rec(payload=b"\x00" * 5_000_000)
+        with mock.patch.object(reader_mod, "MAX_DESCOMPRIMIDO", 1_000_000):
+            with self.assertRaises(InvalidFile):
+                Reader(raw)
+        # el tope real deja pasar con margen un replay de verdad (40 a 60 MB)
+        self.assertGreaterEqual(reader_mod.MAX_DESCOMPRIMIDO, 400 * 1024 * 1024)
+        self.assertEqual(len(Reader(raw).b), 5_000_000)
 
 
 class HeaderTests(SimpleTestCase):

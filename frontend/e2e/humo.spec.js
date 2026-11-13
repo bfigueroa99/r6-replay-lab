@@ -24,6 +24,14 @@ const PAGINAS = [
   ['/ajustes', 'Ajustes'],
 ]
 
+// Una ruta interceptada que sigue en vuelo cuando el test termina (la app
+// vuelve a pedir /api/filters/ despues de la ultima asercion) tumbaba al worker
+// con "route.fetch: Test ended". Lo que se pide despues de las aserciones no es
+// parte de la prueba.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+})
+
 test.describe('todas las paginas cargan', () => {
   for (const [ruta, titulo] of PAGINAS) {
     test(`${titulo} (${ruta}) renderiza y no ensucia la consola`, async ({ page }) => {
@@ -387,9 +395,10 @@ test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page 
   const [cabecera, ...filas] = texto.split('\r\n').map((linea) => linea.split(';'))
   const col = (nombre) => cabecera.indexOf(nombre)
   expect(filas.length).toBeGreaterThan(0)
-  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia
+  // `record` no viene en las filas de la API: sin `csv:` la celda salia vacia.
+  // Va con raya (–) y no con guion: "3-1" Excel lo abre como el 3 de enero
   for (const fila of filas) {
-    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}-${fila[col('Perdidas')]}`)
+    expect(fila[col('Récord')]).toBe(`${fila[col('Ganadas')]}–${fila[col('Perdidas')]}`)
   }
 
   expect(errores).toEqual([])
@@ -849,7 +858,8 @@ test('tu perfil enlaza a los trackers y muestra Ubisoft sin salir a la red', asy
   await expect(panel).toContainText('2950 MMR')
   await expect(panel).toContainText('Consultado el 01-09-2026 12:00 · temporada Y10S2.')
   await expect(panel.locator('code', { hasText: 'UBI_EMAIL' })).toBeVisible()
-  await expect(panel.getByRole('button')).toHaveCount(0)
+  // las cabeceras de la tabla de playlists son botones (ordenan); ningun otro
+  await expect(panel.locator('button:not(.th-orden)')).toHaveCount(0)
 
   // tus 203 rondas de seed_demo: 14 de 2 bajas
   const numeros = page.locator('section.panel', {
@@ -1211,6 +1221,10 @@ test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   respuesta = page.waitForResponse(/\/api\/matches\/\?.*map=/)
   await mapa.selectOption(valor)
   await respuesta
+  // la respuesta llega antes de que React la pinte: hasta entonces el
+  // subtitulo ya dice "con estos filtros" pero con el total de antes (29), y
+  // leerlo ahi hacia fallar el `< 29` de abajo cuando la maquina va cargada
+  await expect(subtitulo).not.toHaveText('29 partidas con estos filtros.')
   await expect(subtitulo).toHaveText(/^\d+ partidas? con estos filtros\.$/)
   const n = Number((await subtitulo.textContent()).split(' ')[0])
   expect(n).toBeGreaterThan(0)

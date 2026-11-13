@@ -310,8 +310,11 @@ def derive(row: dict, baseline: float | None = None) -> dict:
 
 
 def totals(qs: QuerySet[RoundPlayer], baseline: float | None = None) -> dict:
-    row = dict(qs.aggregate(**AGGREGATES))
-    row["matches"] = qs.values("round__match_id").distinct().count()
+    # Las partidas van en el mismo aggregate y no en un `values().distinct()
+    # .count()` aparte: esa segunda consulta recorria las mismas filas otra
+    # vez, y Tendencias llama a totals() una vez por tramo (8 por hora, 7 por
+    # dia...). Con 870 partidas /api/trends/ bajo de 2,1 s a 1,4 s (mejor de 7).
+    row = dict(qs.aggregate(**AGGREGATES, matches=Count("round__match_id", distinct=True)))
     return derive(row, baseline if baseline is not None else rating_baseline())
 
 

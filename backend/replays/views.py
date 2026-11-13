@@ -121,6 +121,25 @@ def _es_json(request: HttpRequest) -> bool:
     return request.content_type == "application/json"
 
 
+def _cuerpo_json(request: HttpRequest) -> tuple[object, JsonResponse | None]:
+    """El JSON del cuerpo de un POST, o la respuesta 400 que lo rechaza.
+
+    `ValueError` y no solo `JSONDecodeError`: un cuerpo con bytes que no son
+    UTF-8 falla antes, al decodificar. Y un `"\\ud800"` es JSON valido que al
+    cargarlo deja un surrogate suelto: no se puede escribir en el `.env` ni
+    devolver en el mensaje de error (la respuesta daba 500), asi que se corta
+    aca para todos los POST.
+    """
+    try:
+        payload = json.loads(request.body or b"{}")
+        json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    except UnicodeEncodeError:
+        return None, _ok({"error": "el cuerpo trae texto que no es Unicode válido"}, status=400)
+    except ValueError:
+        return None, _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    return payload, None
+
+
 # --------------------------------------------------------------------- generales
 
 
@@ -774,10 +793,9 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     """
     if not _es_json(request):
         return _ok({"error": "se esperaba application/json"}, status=415)
-    try:
-        payload = json.loads(request.body or b"{}")
-    except json.JSONDecodeError:
-        return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    payload, rechazo = _cuerpo_json(request)
+    if rechazo is not None:
+        return rechazo
     if not isinstance(payload, dict):
         return _ok({"error": "se esperaba un objeto JSON"}, status=400)
 
@@ -828,10 +846,9 @@ def app_settings(request: HttpRequest) -> JsonResponse:
     if request.method == "POST":
         if not _es_json(request):
             return _ok({"error": "se esperaba application/json"}, status=415)
-        try:
-            payload = json.loads(request.body or b"{}")
-        except json.JSONDecodeError:
-            return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+        payload, rechazo = _cuerpo_json(request)
+        if rechazo is not None:
+            return rechazo
         try:
             ajustes.aplicar(payload)
         except ajustes.AjusteInvalido as exc:

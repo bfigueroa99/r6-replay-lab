@@ -91,6 +91,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # primero: un Host ajeno no llega a ningun otro middleware ni a la pagina
+    # tecnica de DEBUG (ver config/middleware.py)
+    "config.middleware.HostPermitido",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

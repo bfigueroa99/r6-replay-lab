@@ -99,7 +99,9 @@ function ConB({ b, datosA }) {
         <table className="comparar">
           <thead>
             <tr>
-              <th scope="col" className="plain" />
+              <th scope="col" className="plain">
+                <span className="solo-lector">Dato</span>
+              </th>
               <th scope="col" className="plain">Partida A</th>
               <th scope="col" className="plain">Partida B</th>
               <th scope="col" className="plain">Diferencia</th>
