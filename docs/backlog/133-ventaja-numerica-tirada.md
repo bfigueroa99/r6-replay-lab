@@ -1,7 +1,7 @@
 # 133. Ventaja numerica tirada
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T19:52Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
