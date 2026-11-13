@@ -425,6 +425,30 @@ test('el Resumen muestra tus records y enlaza a la partida', async ({ page }) =>
   expect(errores).toEqual([])
 })
 
+test('el Inicio compara tu forma con tu historial', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // las etiquetas salen de la API: con otro seed cambia el tamano del resto
+  const respuesta = await page.request.get('/api/compare/?by=matches&n=10&against=rest')
+  const datos = await respuesta.json()
+  expect(datos.against).toBe('rest')
+  expect(datos.previous.rounds).toBeGreaterThan(0)
+  await page.goto('/')
+
+  const panel = page.locator('section.panel', { hasText: 'Tu forma contra tu historial' })
+  await expect(panel).toBeVisible()
+  const cabeceras = panel.locator('thead th')
+  await expect(cabeceras.nth(1)).toContainText(datos.previous.label)
+  await expect(cabeceras.nth(2)).toContainText(datos.current.label)
+  await expect(panel.locator('tbody tr td:first-child')).toHaveText([
+    'Rondas ganadas',
+    'Rating',
+    'KST',
+    'Muertes sin trade',
+  ])
+
+  expect(errores).toEqual([])
+})
+
 test('un record de ronda abre la partida en esa ronda', async ({ page }) => {
   const errores = vigilarConsola(page)
   // los valores salen de la API: el test no depende de que partida o ronda sea

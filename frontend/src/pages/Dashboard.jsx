@@ -5,7 +5,9 @@ import { useApi } from '../api.js'
 import { filasDeAperturasConTrade } from '../aperturasTrade.js'
 import { filasDeRecords } from '../records.js'
 import { rondasConMultikill, textoMultikills } from '../multikills.js'
+import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
+import { estadoDeForma, filasDeForma } from '../formaHistorial.js'
 import { hayFiltros } from '../tipoPartida.js'
 import { textoRachaActual } from '../rachas.js'
 import {
@@ -204,6 +206,8 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
         </Panel>
       </div>
 
+      <PanelForma filters={filters} />
+
       {records.length ? (
         <Panel
           title="Tus récords"
@@ -272,6 +276,67 @@ export default function Dashboard({ filters, setFilters, runImport, importing })
       </>
       )}
     </>
+  )
+}
+
+/** Tus ultimas 10 partidas contra todo tu historial anterior, con su banda de ruido. */
+function PanelForma({ filters }) {
+  // request propia: si falla, el resto del Resumen sigue en pie
+  const forma = useApi('/compare/', { ...filters, by: 'matches', n: 10, against: 'rest' })
+  if (forma.error) return <ErrorBox error={forma.error} />
+  if (!forma.data) return <Loading>Comparando tu forma...</Loading>
+  const estado = estadoDeForma(forma.data)
+  if (estado === 'sin-datos') return null
+  const { current, previous } = forma.data
+  return (
+    <Panel
+      title="Tu forma contra tu historial"
+      hint={
+        'Tus últimas 10 partidas contra todas las anteriores, con los filtros de mapa, lado, ' +
+        'tipo y modo. Si el cambio no pasa la banda de ruido, no es un cambio.'
+      }
+    >
+      {estado === 'sin-resto' ? (
+        <p className="note">Todavía no hay historial para comparar: hacen falta más de 10 partidas.</p>
+      ) : (
+        <>
+          {estado === 'poca-muestra' ? (
+            <p className="note">
+              Muestra chica: los números están, pero no alcanzan para decir que algo cambió.
+            </p>
+          ) : null}
+          <DataTable
+            columns={[
+              { key: 'label', label: 'Métrica', sortable: false, left: true },
+              {
+                key: 'previous',
+                label: previous.label,
+                sortable: false,
+                render: (row) => fmt(row.previous, row.suffix === '' ? 2 : 0, row.suffix),
+              },
+              {
+                key: 'current',
+                label: current.label,
+                sortable: false,
+                render: (row) => fmt(row.current, row.suffix === '' ? 2 : 0, row.suffix),
+              },
+              { key: 'delta', label: 'Cambio', sortable: false, render: (row) => <Delta metric={row} /> },
+              {
+                key: 'noise',
+                label: 'Ruido',
+                sortable: false,
+                help: 'Error estándar de la diferencia: el tamaño típico de un cambio que no significa nada.',
+                render: (row) => (row.noise === null ? <span className="dim">—</span> : `±${fmt(row.noise, 1)}`),
+                dim: true,
+              },
+            ]}
+            rows={filasDeForma(forma.data)}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.key}
+          />
+        </>
+      )}
+    </Panel>
   )
 }
 

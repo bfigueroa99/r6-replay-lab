@@ -297,3 +297,73 @@ class CortesApiTests(TestCase):
         self.assertEqual(data["min_rows"], 13)
         self.assertEqual(data["by_operator"], [])
         self.assertEqual(len(data["by_map"]), 1)  # el mapa junta 24 rondas por periodo
+
+
+class ContraElRestoTests(TestCase):
+    """Inicio: las ultimas n partidas contra todo el historial anterior."""
+
+    def historial(self, viejas, recientes, ganadas_viejas=3, ganadas_recientes=3):
+        for i in range(viejas):
+            partida(i, cuando=AHORA - timedelta(days=30, hours=i), ganadas=ganadas_viejas)
+        for i in range(viejas, viejas + recientes):
+            partida(i, cuando=AHORA - timedelta(days=1, hours=i), ganadas=ganadas_recientes)
+
+    def test_contra_el_resto_toma_todas_las_partidas_anteriores(self):
+        self.historial(15, 10)
+        d = agg.compare_periods(by="matches", n=10, against="rest")
+        self.assertEqual(d["against"], "rest")
+        self.assertEqual(d["current"]["matches"], 10)
+        self.assertEqual(d["previous"]["matches"], 15)
+        self.assertEqual(d["previous"]["label"], "El resto (15 partidas)")
+
+    def test_las_recientes_son_las_de_la_forma_reciente(self):
+        self.historial(15, 10)
+        recientes, _ = agg._periodo_por_partidas({}, 10, resto=True)
+        self.assertEqual(recientes, [p["id"] for p in agg.recent_form(10)])
+
+    def test_diez_recientes_ganadas_contra_diez_viejas_perdidas_salen_del_ruido(self):
+        self.historial(10, 10, ganadas_viejas=0, ganadas_recientes=6)
+        d = agg.compare_periods(by="matches", n=10, against="rest")
+        winrate = metrica(d, "winrate")
+        self.assertGreater(winrate["delta"], 0)
+        self.assertEqual(winrate["verdict"], "mejor")
+        self.assertGreater(abs(winrate["delta"]), winrate["noise"])
+
+    def test_con_diez_partidas_o_menos_no_hay_resto(self):
+        self.historial(0, 10)
+        d = agg.compare_periods(by="matches", n=10, against="rest")
+        self.assertEqual(d["previous"]["rounds"], 0)
+        self.assertIsNone(metrica(d, "winrate")["delta"])
+        self.assertFalse(d["enough_sample"])
+
+    def test_el_filtro_de_mapa_aplica_a_los_dos_lados(self):
+        for i in range(30):
+            mapa = "Bank" if i % 2 else "Club House"
+            partida(i, cuando=AHORA - timedelta(days=i + 1), mapa=mapa)
+        d = agg.compare_periods(by="matches", n=10, against="rest", map="bank")
+        self.assertEqual(d["current"]["matches"], 10)
+        self.assertEqual(d["previous"]["matches"], 5)
+
+    def test_contra_el_resto_por_dias_toma_todo_lo_anterior(self):
+        for i in range(3):
+            partida(i, cuando=AHORA - timedelta(days=100 + i))
+        partida(3, cuando=AHORA - timedelta(days=40))
+        partida(4, cuando=AHORA - timedelta(days=2))
+        d = agg.compare_periods(by="days", n=30, against="rest")
+        self.assertEqual(d["current"]["matches"], 1)
+        self.assertEqual(d["previous"]["matches"], 4)
+
+    def test_sin_against_sigue_comparando_contra_las_anteriores(self):
+        self.historial(15, 10)
+        d = agg.compare_periods(by="matches", n=10)
+        self.assertEqual(d["against"], "previous")
+        self.assertEqual(d["previous"]["matches"], 10)
+        self.assertEqual(d["previous"]["label"], "Las 10 anteriores")
+
+    def test_la_vista_acepta_against_rest_e_ignora_otro_valor(self):
+        self.historial(15, 10)
+        rest = self.client.get("/api/compare/?against=rest").json()
+        otro = self.client.get("/api/compare/?against=foo").json()
+        self.assertEqual(rest["previous"]["matches"], 15)
+        self.assertEqual(otro["previous"]["matches"], 10)
+        self.assertEqual(otro["against"], "previous")
