@@ -79,3 +79,83 @@ class ProrrogaPorLadoTests(TestCase):
     def test_la_api_sin_datos_devuelve_las_dos_filas_en_cero(self):
         data = self.client.get("/api/trends/").json()
         self.assertEqual([f["rounds"] for f in data["by_overtime_side"]], [0, 0])
+
+
+def _a_prorroga(index: int, lados_prorroga: list[str], *, gano: bool | None = True,
+                map_name: str = "Club House"):
+    """Partida que llega a prorroga; `lados_prorroga` en orden de `overtime_number`."""
+    match = make_match(index=index, map_name=map_name, my_score=5 if gano else 4,
+                       opponent_score=4 if gano else 5)
+    if gano is None:
+        match.won = None
+        match.save(update_fields=["won"])
+    for numero, lado in enumerate(["Attack", "Defense"], start=1):
+        make_round_player(make_round(match, numero, side=lado))
+    for ot, lado in enumerate(lados_prorroga, start=1):
+        make_round_player(make_round(match, 2 + ot, side=lado, overtime_number=ot))
+    return match
+
+
+class PartidasAProrrogaPorLadoTests(TestCase):
+    def test_cuenta_partidas_y_ganadas_por_el_lado_de_la_primera_ronda_de_prorroga(self):
+        _a_prorroga(0, ["Defense"], gano=True)
+        _a_prorroga(1, ["Defense"], gano=False)
+        _a_prorroga(2, ["Attack"], gano=True)
+        lados = _por_lado(agg.by_overtime_start_side())
+        self.assertEqual(
+            (lados["Defense"]["matches"], lados["Defense"]["decided"], lados["Defense"]["wins"],
+             lados["Defense"]["winrate"]),
+            (2, 2, 1, 50.0),
+        )
+        self.assertEqual((lados["Attack"]["matches"], lados["Attack"]["winrate"]), (1, 100.0))
+
+    def test_el_lado_es_el_de_la_primera_ronda_de_prorroga_y_no_el_de_la_mayoria(self):
+        _a_prorroga(0, ["Defense", "Attack", "Attack"])
+        lados = _por_lado(agg.by_overtime_start_side())
+        self.assertEqual((lados["Defense"]["matches"], lados["Attack"]["matches"]), (1, 0))
+
+    def test_una_partida_sin_prorroga_no_entra(self):
+        match = make_match(index=5)
+        make_round_player(make_round(match, 1, side="Defense"))
+        _a_prorroga(0, ["Attack"])
+        lados = _por_lado(agg.by_overtime_start_side())
+        self.assertEqual((lados["Attack"]["matches"], lados["Defense"]["matches"]), (1, 0))
+
+    def test_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje(self):
+        _a_prorroga(0, ["Defense"], gano=True)
+        _a_prorroga(1, ["Defense"], gano=None)
+        defensa = _por_lado(agg.by_overtime_start_side())["Defense"]
+        self.assertEqual(
+            (defensa["matches"], defensa["decided"], defensa["wins"], defensa["winrate"]),
+            (2, 1, 1, 100.0),
+        )
+
+    def test_con_filtro_de_lado_sale_solo_esa_fila(self):
+        _a_prorroga(0, ["Defense", "Attack"])
+        _a_prorroga(1, ["Attack"])
+        filas = agg.by_overtime_start_side(side="Attack")
+        self.assertEqual([f["side"] for f in filas], ["Attack"])
+        # la partida que arranco la prorroga en defensa no se muda a ataque
+        self.assertEqual(filas[0]["matches"], 1)
+
+    def test_el_filtro_de_mapa_aplica(self):
+        _a_prorroga(0, ["Defense"], map_name="Club House")
+        _a_prorroga(1, ["Defense"], map_name="Oregon")
+        data = self.client.get("/api/trends/?map=oregon").json()
+        defensa = _por_lado(data["by_overtime_start_side"])["Defense"]
+        self.assertEqual(defensa["matches"], 1)
+
+    def test_sin_prorrogas_las_dos_filas_en_cero_y_winrate_nulo(self):
+        match = make_match()
+        make_round_player(make_round(match, 1, side="Attack"))
+        filas = agg.by_overtime_start_side()
+        self.assertEqual([(f["side"], f["matches"]) for f in filas], [("Attack", 0), ("Defense", 0)])
+        self.assertTrue(all(f["winrate"] is None for f in filas))
+
+    def test_trends_devuelve_partidas_a_prorroga_por_lado(self):
+        _a_prorroga(0, ["Attack"])
+        data = self.client.get("/api/trends/").json()
+        self.assertEqual(
+            [(f["side"], f["matches"]) for f in data["by_overtime_start_side"]],
+            [("Attack", 1), ("Defense", 0)],
+        )
