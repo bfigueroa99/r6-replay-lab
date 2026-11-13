@@ -1,7 +1,7 @@
 # 125. Teamkill marcado en la timeline de la ronda
 
-estado: revisado
-candado: qa 2026-11-13T20:40Z
+estado: aprobado
+candado: release 2026-11-13T20:45Z
 rama: claude/equipo-dev/125-teamkill-marcado-en-la-timeline
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md F14
 archivos: frontend/src/aperturas.js (esTeamkill), frontend/src/aperturas.test.js, frontend/src/pages/MatchDetail.jsx (Timeline), frontend/src/textoRonda.js, frontend/src/textoRonda.test.js, frontend/e2e/humo.spec.js
-turnos: po 20261113T1703Z-ctZvzXQ, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cq9nfTP, revisor 20261113T1926Z-cNCxUZs
+turnos: po 20261113T1703Z-ctZvzXQ, arquitecto 20261113T1830Z-cTivbSq, dev 20261113T1926Z-cq9nfTP, revisor 20261113T1926Z-cNCxUZs, qa 20261113T2003Z-c3vr7mZ
 
 ## PR
 
@@ -200,7 +200,22 @@ Veredicto: aprobar.
 Skills del repo: ninguna (revisión con `revision.md`).
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: al humano) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre a398816
+
+(qa 20261113T2003Z-c3vr7mZ) Rama con `origin/dev@d5595cb` fusionado (entraron 123 y 124), merge limpio.
+
+- `verificar.sh`: VERDE a398816ff en 192 s (1284 tests backend, 411 vitest, 112 e2e).
+- Base sembrada con `factories.py` (script en el scratchpad), `runserver 8125`: ronda 1 con yo/amigo (team 0) y rival/rival2 (team 1), `Kill` yo->rival, amigo->yo, rival->rival2, amigo->rival; ronda 2 sin teamkills. `/api/matches/1/` 200, `/api/matches/999/` y `/api/matches/abc/` 404, `?side=Attack` 200.
+- Playwright en `/partidas/1`: ronda 1 -> "yo mató a rival" (`mine`, apertura), "amigo mató a yo" (sin clase, `TK` con el `title` exacto), "rival mató a rival2" (sin clase, `TK`), "amigo mató a rival" (`mine`, sin chips): 2 `TK`, los dos equipos, como dice el diseno. Ronda 2 por teclado (`.round-tab` es `button`, Enter): 0 `TK`. Consola sin errores ni warnings.
+- accessibility-review: chip `TK` con contraste 12.92:1; 0 Critical, 0 Major. El `title` solo se ve con mouse y el chip no es enfocable: mismo patron que el chip `apertura` ya existente (WCAG 1.3.1/4.1.2, LOW), va como idea.
+- Mutacion (vitest `aperturas.test.js` + `textoRonda.test.js`, 34 tests): quitar el chequeo de suicidio -> 1 failed; `return true` en vez de comparar equipos -> 3 failed; no exigir que autor y victima esten en `players` -> 1 failed.
+- validate-data: sin numero nuevo (TK es una marca; la fila *Teamkills* de `metricas.md` no cambia).
+- Los dos LOW del Revisor (nick repetido en los dos equipos; e2e que mira una sola ronda mas) siguen sin arreglar: no bloquean.
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major; title solo con mouse, preexistente), validate-data (sin numero nuevo).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
