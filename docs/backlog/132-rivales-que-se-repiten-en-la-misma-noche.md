@@ -1,7 +1,7 @@
 # 132. Rivales que se repiten en la misma noche
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T23:19Z
 rama: -
 tipo: funcionalidad
 epica: rivales
