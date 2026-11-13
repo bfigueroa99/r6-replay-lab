@@ -1,7 +1,7 @@
 # 117. Hotfix: el e2e de las lineas punteadas cae casi siempre
 
-estado: revisado
-candado: qa 2026-11-13T12:04Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/117-hotfix-graficos-punteados
 tipo: bug
 epica: -
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 1
 fuente: QA de la 113 (P4, dev rojo reproducido en checkout completo)
 archivos: frontend/e2e/accesibilidad.spec.js
-turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release), revisor 20261113T0804Z-cJw5MQs
+turnos: dev 20261113T0404Z-cnRfz4a (hotfix P4, desde release), revisor 20261113T0804Z-cJw5MQs, qa 20261113T1203Z-cWfR3tT
 
 ## PR
 
@@ -84,6 +84,30 @@ Veredicto: aprobar -> `revisado`.
 
 Skills: no aplica.
 OMC: plan=— · revisión=0 hallazgos · verificación=—
+
+## QA 2026-11-13 sobre 1119fa2
+
+(qa 20261113T1203Z-cWfR3tT) Solo cambia un e2e: sin backend, migracion,
+parser ni `frontend/src`, asi que no aplican runserver con curl,
+accesibilidad, design-critique ni validate-data.
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 1119fa2a8 en 172s: 1165 tests backend, 334 vitest, 95 e2e`.
+- 12 de 12: `cd frontend && E2E_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+  npx playwright test e2e/accesibilidad.spec.js -g "eje derecho" --repeat-each 12 --trace off --reporter=line`
+  -> `12 passed (38.1s)`.
+- Mutacion 1: sin `strokeDasharray="4 3"` en `src/components/EvolucionChart.jsx:61`,
+  `npm run build` y el mismo test -> `1 failed` en la linea 237 (`[false, true]`).
+- Mutacion 2: sin `strokeDasharray="4 3"` en `src/pages/Trends.jsx:441` (Rating)
+  -> `1 failed` en la linea 241 (`[false, false, true]`). Restaurado y
+  reconstruido; `git status` limpio. El poll no tapa una linea que deja de
+  ser punteada: agota el tiempo y cae.
+- Mismas expectativas que en dev, nada saltado: confirmado en el diff.
+
+Veredicto: `aprobado`.
+
+Skills del repo: ninguna (sin pantallas ni numeros nuevos).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
