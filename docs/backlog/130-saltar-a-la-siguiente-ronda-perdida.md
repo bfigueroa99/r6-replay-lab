@@ -22,23 +22,23 @@ una con las flechas.
 
 ## Criterios de aceptacion
 
-- [ ] Logica pura (en `navegacionRondas.js` o un modulo vecino): dado el
+- [x] Logica pura (en `navegacionRondas.js` o un modulo vecino): dado el
       indice elegido y `rounds`, devuelve el indice de la proxima ronda con
       `my_team_won === false` despues de la elegida, dando la vuelta; las
       rondas sin ganador (`my_team_won` nulo) no cuentan como perdidas; sin
       ninguna perdida (o con la elegida como unica perdida) devuelve null o la
       misma, segun se fije en el diseno. vitest con vuelta al final, ronda sin
       ganador salteada y partida sin perdidas.
-- [ ] La tecla `p` hace el salto con las mismas exclusiones que las flechas
+- [x] La tecla `p` hace el salto con las mismas exclusiones que las flechas
       (`pasoDeTecla`: no en campos, no con modificadores, no si otro widget
       la tomo). vitest.
-- [ ] En `MatchDetail.jsx`, un boton con nombre accesible junto a las
+- [x] En `MatchDetail.jsx`, un boton con nombre accesible junto a las
       pestañas de ronda; deshabilitado (o ausente) en una partida sin rondas
       perdidas; el salto actualiza el ancla `#ronda-N` como cambiar de ronda
       a mano. e2e sobre `seed_demo`: elegir R1, apretar el boton, la ronda
       elegida es la primera perdida que da `/api/matches/<id>/`; con `p`
       igual; consola limpia.
-- [ ] El atajo figura donde la pagina ya explica las flechas (hint o
+- [x] El atajo figura donde la pagina ya explica las flechas (hint o
       `title`), con tildes.
 
 ## Fuera de alcance
@@ -85,6 +85,24 @@ Skills del repo: testing-strategy (vitest para la regla y la tecla, e2e para el 
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261113T2003Z-c3vr7mZ) Diseno completo, sobre `origin/dev@72df8f9`:
+
+- `navegacionRondas.js`: `siguientePerdida(actual, rounds)` (vuelta al final, `my_team_won === false` estricto, `actual` acotado como `rondaVecina`, `null` sin perdidas, la misma si es la unica); `pideSiguientePerdida(evento)` (`p`/`P`); las exclusiones de `pasoDeTecla` salen a `teclaLibre`.
+- `MatchDetail.jsx` (`DetallePartida`): la `p` en el mismo `useEffect` del teclado (deps `[total, data]`), boton `btn small` "Siguiente ronda perdida" antes de `.round-tabs`, deshabilitado sin perdidas, con `title` "Próxima ronda que tu equipo perdió (tecla P)"; `hint` "Clic en una ronda, ← → para moverte o P para la siguiente perdida.". Solo `setSelected`, sin tocar el hash (como cambiar a mano).
+- e2e `el detalle salta a la siguiente ronda perdida` (boton y tecla desde R1 contra la regla calculada sobre `/api/matches/<id>/`, la pestaña queda `active` y `loss`, hash igual, hint visible) y `sin rondas perdidas el boton de la siguiente perdida queda deshabilitado` (respuesta interceptada con todo ganado; `p` no mueve).
+
+Tests vistos en rojo antes del codigo: los 9 nuevos de `navegacionRondas.test.js` (`siguientePerdida is not a function`). Criterios -> tests: 1 `describe('siguientePerdida')` (6); 2 `describe('pideSiguientePerdida')` (4, incluida la tabla con scroll); 3 los dos e2e; 4 el `hint` y el `title`, afirmados en el primer e2e. Mutaciones: sin la rama de la `p` en `alApretar` cae el primer e2e; con `disabled={false}` cae el segundo.
+
+Desvio del diseno: `CON_SCROLL` no entra a `teclaLibre`; queda solo en `pasoDeTecla`. El diseno lo metia en las exclusiones comunes, pero esa exclusion existe para no robarle las flechas al scroll horizontal y la `p` no desplaza nada: con el foco en una celda del scoreboard la `p` no hacia nada sin aviso (LOW de la revision ciega). Test `dentro de una tabla con scroll la p igual pide el salto`.
+
+Revision ciega (`omc-code-reviewer`, `revision.md`, eje de estandares): aprobar, 3 LOW. Arreglados 2: el de `CON_SCROLL` (arriba) y el e2e, que con una partida cuya unica perdida fuera R1 esperaba el indice 0 y pasaba sin moverse (ahora busca `k < n`). No arreglado, por decision del diseno: con la elegida como unica perdida el boton queda habilitado y no hace nada visible.
+
+verificar.sh: ver abajo.
+
+Skills: no aplica.
+Skills del repo: testing-strategy (vitest para la regla y la tecla, e2e para el boton y la tecla en la app real, mutaciones), ux-copy (boton como "Copiar resumen", `title` y `hint` con tildes), modern-web-guidance no leida (sin CSS ni componente nuevo: `btn small` existente).
+OMC: plan=— · revisión=3 hallazgos LOW (2 arreglados) · verificación=—
 
 ## Revision
 
