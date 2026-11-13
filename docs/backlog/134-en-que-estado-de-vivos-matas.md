@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-13T23:22Z
 rama: -
 tipo: funcionalidad
 epica: impacto
