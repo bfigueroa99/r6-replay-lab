@@ -1,7 +1,7 @@
 # 123. Clutches de tus companeros
 
-estado: revisado
-candado: qa 2026-11-13T19:54Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/123-clutches-de-tus-companeros
 tipo: funcionalidad
 epica: escuadra
@@ -282,7 +282,28 @@ Skills: no aplica.
 Skills del repo: ninguna (revision de codigo con el prompt de `revision.md`).
 OMC: plan=— · revisión=3 hallazgos (0 arreglados, todos LOW) · verificación=—
 
-## QA
+## QA 2026-11-13 sobre 100ded9
+
+(qa 20261113T1954Z-cfZTvvE; rama fusionada con `origin/dev@c332e72` en 100ded9, sin conflictos)
+
+- `check.sh`: `verificar.sh` -> VERDE 100ded971 (1279 backend, 405 vitest, 109 e2e).
+- API, `runserver` con base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3 python3 manage.py migrate` + `runserver`): `GET /api/teammates/` -> `teammate_clutches = {min_attempts: 5, me: {attempts: 0, won: 0, pct: null}, rows: []}`.
+- API con base sembrada desde `factories.py` (script en el scratchpad; Seba y Nico habituales; Seba 2 ganados en ataque, 1 perdido en defensa y 1 en ronda con `my_team_won=None`; Nico 6 en ataque, 4 ganados, con un rival `team_index=1, clutch_vs=2` en cada una; Fugaz 5 partidas, 1 ganado; Breve 3 partidas, 1 intento; vos 2, 1 ganado):
+  - sin filtros: Nico 6/4 66.7, Seba 3/2 66.7 `*`, Fugaz 1/1 100 `*`, Breve no sale (no habitual), Tú 2/1 50. **Recalculado a mano**: Seba 3 (la ronda sin ganador fuera) con 2 ganados; Nico 4/6 = 66.7 (el rival no suma). Coincide.
+  - `?side=Defense` -> Tú 1/0, solo Seba 1/0; `?side=Attack` -> Nico 6/4, Seba 2/2, Fugaz 1/1, Tú 1/1.
+  - `?until=foo`, `?page=-1`, `?map=`, `?side=` -> 200, igual que sin filtro. `?since=2099-01-01`, `?map=noexiste` -> `rows: []`, `pct: null`.
+- Bundle: chunk inicial `index-*.js` 200116 bytes en `origin/dev` y en la rama (0 %); `Teammates` (lazy) 11611 -> 13145.
+- accessibility-review (Playwright en `/companeros`, base sembrada): heading "Clutches de tus compañeros"; filas Tú, Nico, Seba, Fugaz; enlaces con nombre a `/jugadores/3,1,4`; `*` con `title` "Menos de 5 intentos" (markup de las tablas vecinas); foco de teclado visible en el enlace; contraste celdas 14.17:1, encabezados 5.71:1; consola sin errores. Sin Critical ni Major.
+- validate-data sobre la fila de `metricas.md`: division por cero -> `pct: null`, la UI pone `—` (`ui.jsx fmt`); la fila Tú es la cuenta total, no un promedio de promedios; tasa con su `n` (Intentos); redondeo 66.7 -> 67 % como el resto.
+- Mutacion (`cd backend; python3 manage.py test tests.test_clutch_companeros`): sin `round__my_team_won__isnull=False` cae `test_una_ronda_sin_ganador_no_cuenta`; sin el corte `n__gte=MIN_PARTIDAS_HABITUAL` cae `test_un_companero_que_no_es_habitual_no_sale`; sin `team_index` en la correlacion cae `test_un_habitual_que_clutchea_como_rival_no_cuenta`. Restaurado: 13 OK.
+- design-critique: no aplica (tabla nueva en un panel existente).
+
+Veredicto: `aprobado`.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data (dos valores recalculados: Seba 3/2, Nico 6/4).
+OMC: plan=— · revisión=— · verificación=PASS
+
 
 ## Para el humano
 
