@@ -1309,6 +1309,32 @@ test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach copia sus señales', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const { insights } = await (await page.request.get('/api/coach/')).json()
+  expect(insights.length).toBeGreaterThan(0)
+  await page.goto('/coach')
+
+  await page.getByRole('button', { name: 'Copiar señales' }).click()
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
+  let texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith('Coach · Sin filtros\n')).toBe(true)
+  expect(texto).toContain(`- ${insights[0].title}`)
+
+  // los filtros de la URL (ficha 96) llegan a la primera linea
+  const conLado = await (await page.request.get('/api/coach/?side=Defense')).json()
+  expect(conLado.insights.length).toBeGreaterThan(0)
+  await page.goto('/coach?side=Defense')
+  await page.getByRole('button', { name: 'Copiar señales' }).click()
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible()
+  texto = await page.evaluate(() => navigator.clipboard.readText())
+  expect(texto.startsWith('Coach · Filtros: Solo defensa\n')).toBe(true)
+  expect(texto).toContain(`- ${conLado.insights[0].title}`)
+
+  expect(errores).toEqual([])
+})
+
 test('Partidas filtra por resultado y por mapa', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/partidas')
