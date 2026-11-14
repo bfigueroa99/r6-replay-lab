@@ -13,6 +13,7 @@ import {
   SinRondasFiltradas,
   pct,
 } from '../components/ui.jsx'
+import { claseFilaOperador, sinOperador, textoOperadorElegido } from '../operadorElegido.js'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
 import {
   filasCambioTrasPerder,
@@ -25,19 +26,24 @@ import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Operators({ filters, setFilters, runImport, importing }) {
-  const { data, error, loading } = useApi('/operators/', { ...filters, min_rounds: 1 })
+  // Sin `operator`: con el filtro puesto Ataque y Defensa quedarian con una sola fila;
+  // la elegida se resalta. La vista sin rondas si mira los filtros enteros.
+  const { data, error, loading } = useApi('/operators/', { ...sinOperador(filters), min_rounds: 1 })
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
   const vista = vistaSinRondas({ vacio: !data?.operators?.length, filtros: filters, cargando: loading })
   if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
   if (vista === 'filtrado') {
-    return <SinRondasFiltradas titulo="Operadores" filtros={<Filters value={filters} onChange={setFilters} showOperator={false} />} />
+    return <SinRondasFiltradas titulo="Operadores" filtros={<Filters value={filters} onChange={setFilters} />} />
   }
 
   const rows = data.operators
   const attack = rows.filter((r) => r.side === 'Attack')
   const defense = rows.filter((r) => r.side === 'Defense')
+  const operador = filters.operator
+  // Con un lado filtrado que no es el del operador no hay fila que resaltar: la nota no lo promete
+  const notaOperador = rows.some((r) => r.operator === operador) ? textoOperadorElegido(operador) : ''
 
   return (
     <>
@@ -48,10 +54,11 @@ export default function Operators({ filters, setFilters, runImport, importing })
             Tu pool real, ordenado por rondas jugadas. Ordena por cualquier columna. «vs. tu lado»
             compara cada operador con tu winrate en ese lado.
           </p>
+          {notaOperador ? <p className="note">{notaOperador}</p> : null}
         </div>
       </div>
 
-      <Filters value={filters} onChange={setFilters} showOperator={false} />
+      <Filters value={filters} onChange={setFilters} />
 
       {[
         { title: 'Ataque', rows: attack },
@@ -59,14 +66,14 @@ export default function Operators({ filters, setFilters, runImport, importing })
       ].map((group) =>
         group.rows.length ? (
           <Panel key={group.title} title={group.title}>
-            <Table rows={group.rows} nombre={`operadores-${group.title.toLowerCase()}`} />
+            <Table rows={group.rows} nombre={`operadores-${group.title.toLowerCase()}`} operador={operador} />
           </Panel>
         ) : null,
       )}
 
       {!attack.length && !defense.length ? (
         <Panel title="Todos">
-          <Table rows={rows} nombre="operadores" />
+          <Table rows={rows} nombre="operadores" operador={operador} />
         </Panel>
       ) : null}
 
@@ -79,11 +86,17 @@ export default function Operators({ filters, setFilters, runImport, importing })
   )
 }
 
-function Table({ rows, nombre }) {
+function Table({ rows, nombre, operador }) {
   return (
     <DataTable
       columns={[
-        { key: 'operator', label: 'Operador' },
+        {
+          key: 'operator',
+          label: 'Operador',
+          // DataTable no pone atributos por fila: el nombre accesible del resaltado va en la celda
+          render: (row) =>
+            row.operator === operador ? <strong aria-current="true">{row.operator}</strong> : row.operator,
+        },
         { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
         { key: 'rounds', label: 'Rondas' },
         {
@@ -121,6 +134,7 @@ function Table({ rows, nombre }) {
       rows={rows}
       initialSort={{ key: 'rounds', dir: 'desc' }}
       rowKey={(row) => `${row.operator}-${row.side}`}
+      rowClass={(row) => claseFilaOperador(row, operador)}
       csvName={nombre}
     />
   )
