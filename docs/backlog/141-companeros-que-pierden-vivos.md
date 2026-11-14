@@ -1,7 +1,7 @@
 # 141. Compañeros que pierden vivos
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T03:50Z
 rama: -
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C20 (el reverso de la 131, `won_without_me`, que ya cuenta quien seguia vivo en las rondas que el equipo gano sin ti)
 archivos: -
-turnos: po 20261114T0040Z-chQsvnq
+turnos: po 20261114T0040Z-chQsvnq, arquitecto 20261114T0316Z-cwWsU9i
 
 ## PR
 
