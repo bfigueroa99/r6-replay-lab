@@ -1,8 +1,8 @@
 # 137. Cuantas de tus muertes son headshot
 
-estado: disenado
+estado: en curso 2026-11-14T03:27Z
 candado: -
-rama: -
+rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
 area: fullstack
