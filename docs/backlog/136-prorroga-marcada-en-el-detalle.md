@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
-estado: implementado
-candado: revisor 2026-11-14T01:25Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -159,6 +159,40 @@ selector y de `.solo-lector`.
 OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=—
 
 ## Revision
+
+## Revision 2026-11-14 sobre 5053227
+
+(revisor 20261114T0104Z-cWK4yQD)
+
+Veredicto: aprobar -> `revisado`.
+
+Base: `origin/dev` (f34baba con la 135, 7e7e8c6) fusionado sin conflicto;
+`verificar.sh`: VERDE 5053227ed (1370 tests backend, 454 vitest, 120 e2e).
+
+Revision a ciegas (omc-code-reviewer, eje estandares; diff de 132 lineas, un
+tema: no suma eje de intencion): aprobar, 3 LOW.
+
+Confirmado por el lider (grep sobre el diff):
+- [estilo] LOW `frontend/src/styles.css:425`, `frontend/src/pages/MatchDetail.jsx:178`,
+  `frontend/e2e/humo.spec.js:794`: comentarios con ñ ("pestaña", "pestañas");
+  `CLAUDE.md` pide comentarios sin tildes. Arreglo: "pestana(s)". No bloquea.
+
+Sin hallazgos en: la regla `overtime_number > 0` es la de la tira (un test la
+compara contra `/api/matches/`); partida sin rondas y `overtime` ausente
+cubiertos en vitest; el corte es un `<span>` fuera de los `.round-tab` y
+`.round-tabs` no tiene `role="tablist"`, asi que no queda un hijo ARIA
+invalido ni frena las flechas (navegan por indice: `pasoDeTecla`); marca con
+trazo y no solo color; textos de UI con tilde; sin numero nuevo (no pide fila
+en `metricas.md`); sin `print` ni `console.log`.
+
+Ficha: criterios 1, 2 y 4 con test; el 3 lo sostienen los e2e de flechas
+existentes (`navegar-partidas.spec.js`), que con `seed_demo` no renderizan el
+corte: lo anota tambien la Implementacion; QA puede mirarlo con una partida
+sembrada con prorroga. El diff no sale de `archivos:` sin explicacion.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=3 LOW (0 arreglados, confirmados) · verificación=—
 
 ## QA
 
