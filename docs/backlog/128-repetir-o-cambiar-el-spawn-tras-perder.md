@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
 estado: entregado
-candado: -
+candado: release 2026-11-14T00:13Z
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
