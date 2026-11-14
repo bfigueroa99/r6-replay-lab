@@ -763,6 +763,12 @@ test('el detalle de una partida se abre desde la lista', async ({ page }) => {
   await expect(page.locator('h1')).toContainText(/Club House|Border|Bank/)
   await expect(page.getByText('Racha: 1 ganada desde R1 · 1 perdida desde R2')).toBeVisible()
 
+  // seed_demo no tiene prorroga (ficha 136): ni corte ni pestañas marcadas; con datos lo cubren Django y vitest
+  const rondas = page.locator('#rondas')
+  await expect(rondas.locator('.round-tab').first()).toBeVisible()
+  await expect(rondas.locator('.round-tabs-corte')).toHaveCount(0)
+  await expect(rondas.locator('.round-tab.overtime')).toHaveCount(0)
+
   expect(errores).toEqual([])
 })
 

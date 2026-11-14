@@ -635,6 +635,8 @@ def match_detail(request: HttpRequest, pk: int) -> JsonResponse:
         ]
         datos = {
             "number": rnd.number,
+            # la misma regla que la tira de /api/matches/, asi el detalle y el listado no discrepan
+            "overtime": rnd.overtime_number > 0,
             "label": f"R{rnd.number + 1}",
             "site": rnd.site,
             "my_side": rnd.my_side,

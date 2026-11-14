@@ -422,6 +422,16 @@ td.dim { color: var(--muted); }
 .round-tab.win .dot { background: var(--good); }
 .round-tab.loss .dot { background: var(--bad); }
 .round-tab.active { border-color: var(--accent); background: var(--accent-soft); }
+/* la prorroga se marca con el trazo y no solo con color, y el corte separa sin ser una pestaña */
+.round-tab.overtime { border-style: dashed; }
+.round-tabs-corte {
+  align-self: center;
+  font-size: 11px;
+  color: var(--muted);
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+  margin-left: 2px;
+}
 
 .resumen {
   margin: 0 0 14px;

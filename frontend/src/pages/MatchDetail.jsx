@@ -22,6 +22,7 @@ import { textoRonda } from '../textoRonda.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
+import { pestanasDeRondas } from '../prorrogaDetalle.js'
 import { indiceDeAncla, pasoDeTecla, pideSiguientePerdida, rondaVecina, siguientePerdida } from '../navegacionRondas.js'
 
 export default function MatchDetail() {
@@ -170,20 +171,30 @@ function DetallePartida({ id }) {
             Siguiente ronda perdida
           </button>
           <div className="round-tabs">
-            {rounds.map((r, i) => (
-              <button
-                key={r.number}
-                className={`round-tab ${r.my_team_won === null ? '' : r.my_team_won ? 'win' : 'loss'} ${
-                  i === selected ? 'active' : ''
-                }`}
-                onClick={() => setSelected(i)}
-                title={`${r.site || 'sitio desconocido'} · ${r.my_side === 'Attack' ? 'ataque' : 'defensa'}`}
-              >
-                <span className="n">{r.label}</span>
-                <span className="dot" />
-                <span style={{ fontSize: 10 }}>{r.my_side === 'Attack' ? 'ATK' : 'DEF'}</span>
-              </button>
-            ))}
+            {pestanasDeRondas(rounds).map(({ prorroga, corteAntes }, i) => {
+              const r = rounds[i]
+              return (
+                <React.Fragment key={r.number}>
+                  {/* un span y no un .round-tab: el teclado navega por indice y el e2e cuenta las pestañas */}
+                  {corteAntes ? <span className="round-tabs-corte">Prórroga</span> : null}
+                  <button
+                    className={`round-tab ${r.my_team_won === null ? '' : r.my_team_won ? 'win' : 'loss'} ${
+                      i === selected ? 'active' : ''
+                    } ${prorroga ? 'overtime' : ''}`}
+                    onClick={() => setSelected(i)}
+                    title={`${r.site || 'sitio desconocido'} · ${r.my_side === 'Attack' ? 'ataque' : 'defensa'}${
+                      prorroga ? ' · prórroga' : ''
+                    }`}
+                  >
+                    <span className="n">{r.label}</span>
+                    <span className="dot" />
+                    <span style={{ fontSize: 10 }}>{r.my_side === 'Attack' ? 'ATK' : 'DEF'}</span>
+                    {/* sin aria-label: pisaria el texto visible y romperia label-in-name */}
+                    {prorroga ? <span className="solo-lector"> · prórroga</span> : null}
+                  </button>
+                </React.Fragment>
+              )
+            })}
           </div>
 
           <div className="round-detail">
