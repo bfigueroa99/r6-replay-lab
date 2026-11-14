@@ -37,7 +37,13 @@ from pydissect.header import etiqueta_de_version
 from .. import unknowns
 from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
-from .metrics import PLAYER_LEAVE, estado_al_morir, trade_window, ventaja_maxima
+from .metrics import (
+    PLAYER_LEAVE,
+    estado_al_matar,
+    estado_al_morir,
+    trade_window,
+    ventaja_maxima,
+)
 
 # --------------------------------------------------------------------- filtros
 
@@ -2549,18 +2555,12 @@ def first_teammate_death(**filters) -> list[dict]:
 ESTADO_AL_MORIR_GRUPOS = ("ahead", "even", "behind")
 
 
-def death_state(**filters) -> dict:
-    """Tus muertes por estado de vivos (tuyos contra rivales) justo antes de caer.
+def _equipos_y_feeds(mias) -> tuple[dict[int, dict[int, int]], dict[int, list[dict]]]:
+    """`team_index` por jugador y feed de salidas (`Kill`, `Death`, `PlayerLeave`) de tus rondas.
 
-    Se calcula al consultar sobre el feed, como `nemesis`: guardarlo en
-    `RoundPlayer` pediria migracion y `recompute`. El algoritmo vive en
-    `metrics.estado_al_morir` para que pasarlo a columna sea mecanico. Sin
-    normalizar a 5v5: se cuentan los jugadores que tiene la ronda.
+    Dos consultas correlacionadas por el tope de parametros de SQLite, como
+    first_teammate_death; las comparten Estado al morir y Estado al matar.
     """
-    mias = base_queryset(**filters).filter(died=True)
-    filas = list(mias.values("round_id", "player_id", "round__my_team_won"))
-
-    # Correlacionadas por el tope de parametros de SQLite, como first_teammate_death.
     en_mis_rondas = Exists(mias.filter(round_id=OuterRef("round_id")))
     equipos: dict[int, dict[int, int]] = {}
     for fila in RoundPlayer.objects.filter(en_mis_rondas).values(
@@ -2576,6 +2576,20 @@ def death_state(**filters) -> dict:
         feeds.setdefault(ev["round_id"], []).append(
             {"kind": ev["kind"], "actor": ev["actor_id"], "target": ev["target_id"]}
         )
+    return equipos, feeds
+
+
+def death_state(**filters) -> dict:
+    """Tus muertes por estado de vivos (tuyos contra rivales) justo antes de caer.
+
+    Se calcula al consultar sobre el feed, como `nemesis`: guardarlo en
+    `RoundPlayer` pediria migracion y `recompute`. El algoritmo vive en
+    `metrics.estado_al_morir` para que pasarlo a columna sea mecanico. Sin
+    normalizar a 5v5: se cuentan los jugadores que tiene la ronda.
+    """
+    mias = base_queryset(**filters).filter(died=True)
+    filas = list(mias.values("round_id", "player_id", "round__my_team_won"))
+    equipos, feeds = _equipos_y_feeds(mias)
 
     estados: dict[tuple[int, int], dict] = {}
     grupos = {g: _caso_vacio() for g in ESTADO_AL_MORIR_GRUPOS}
@@ -2603,6 +2617,62 @@ def death_state(**filters) -> dict:
         caso["winrate"] = _pct(caso["won"], caso["decided"])
     return {
         "deaths": sum(g["rounds"] for g in salida_grupos),
+        "sin_feed": sin_feed,
+        "states": salida_estados,
+        "groups": salida_grupos,
+    }
+
+
+def _grupo_de(aliados: int, rivales: int) -> str:
+    return "ahead" if aliados > rivales else "even" if aliados == rivales else "behind"
+
+
+def kill_state(**filters) -> dict:
+    """Tus bajas a rivales por estado de vivos (tuyos contra rivales) justo antes de cada una.
+
+    El reverso de `death_state`, y como ella se calcula al consultar sobre el
+    feed; el algoritmo vive en `metrics.estado_al_matar` para que pasarlo a
+    columna sea mecanico. Las bajas se cuentan por fila; rondas y winrate
+    sobre rondas distintas de la fila, porque lo que se gana o pierde es la
+    ronda: dos bajas tuyas con ventaja en la misma ronda son 2 bajas y 1 ronda
+    del grupo. `sin_feed` son bajas de `RoundPlayer.kills` que el feed no ubica.
+    """
+    # `kills` ya excluye teamkills: una ronda solo con teamkills tuyos no entra.
+    mias = base_queryset(**filters).filter(kills__gt=0)
+    filas = list(mias.values("round_id", "player_id", "kills", "round__my_team_won"))
+    equipos, feeds = _equipos_y_feeds(mias)
+
+    estados: dict[tuple[int, int], dict] = {}
+    grupos = {g: {"kills": 0, **_caso_vacio()} for g in ESTADO_AL_MORIR_GRUPOS}
+    sin_feed = 0
+    for fila in filas:
+        round_id = fila["round_id"]
+        pares = estado_al_matar(feeds.get(round_id, []), equipos.get(round_id, {})).get(
+            fila["player_id"], []
+        )
+        sin_feed += max(fila["kills"] - len(pares), 0)
+        ganada = fila["round__my_team_won"]
+        grupos_de_la_ronda = set()
+        for aliados, rivales in pares:
+            grupo = _grupo_de(aliados, rivales)
+            caso = estados.setdefault((aliados, rivales), {
+                "state": f"{aliados}v{rivales}", "allies": aliados, "enemies": rivales,
+                "group": grupo, "kills": 0, **_caso_vacio(),
+            })
+            caso["kills"] += 1
+            # un jugador no repite estado en una ronda: cada estado suma la ronda una vez
+            _sumar_caso(caso, ganada)
+            grupos[grupo]["kills"] += 1
+            if grupo not in grupos_de_la_ronda:
+                grupos_de_la_ronda.add(grupo)
+                _sumar_caso(grupos[grupo], ganada)
+
+    salida_grupos = [{"group": g, **grupos[g]} for g in ESTADO_AL_MORIR_GRUPOS]
+    salida_estados = sorted(estados.values(), key=lambda f: (-f["allies"], f["enemies"]))
+    for caso in [*salida_grupos, *salida_estados]:
+        caso["winrate"] = _pct(caso["won"], caso["decided"])
+    return {
+        "kills": sum(g["kills"] for g in salida_grupos),
         "sin_feed": sin_feed,
         "states": salida_estados,
         "groups": salida_grupos,

@@ -203,6 +203,37 @@ def estado_al_morir(eventos: list[dict], team_of: dict) -> dict:
     return estado
 
 
+def estado_al_matar(eventos: list[dict], team_of: dict) -> dict:
+    """Vivos del equipo de quien mata (contandose) y rivales justo antes de cada baja suya.
+
+    El reverso de `estado_al_morir`, con su mismo recorrido: cada baja ve el
+    estado que dejo la anterior, sin agrupar por segundo. Un teamkill no es
+    baja (como `kills` desde la ficha 67) y un `PlayerLeave` no es baja, pero
+    los dos restan su vivo. Un `Kill` sin actor, o de un actor que ya no esta
+    vivo (dato raro del feed), no se anota; el muerto igual sale. Como los
+    vivos solo bajan, un jugador no repite estado en la misma ronda.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if kind == KILL and actor in vivos and team_of[actor] != team_of[muerto]:
+            equipo = team_of[actor]
+            aliados = sum(1 for j in vivos if team_of[j] == equipo)
+            bajas.setdefault(actor, []).append((aliados, len(vivos) - aliados))
+        vivos.discard(muerto)
+    return bajas
+
+
 def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | None:
     """Mayor diferencia de vivos de `equipo` contra el resto tras cada salida del feed.
 

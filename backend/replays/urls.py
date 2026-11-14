@@ -25,6 +25,7 @@ urlpatterns = [
     path("teammates/", views.teammates, name="teammates"),
     path("duels/", views.duels, name="duels"),
     path("duels/death-state/", views.death_state, name="death-state"),
+    path("duels/kill-state/", views.kill_state, name="kill-state"),
     path("duels/thrown-advantage/", views.thrown_advantage, name="thrown-advantage"),
     path("sessions/", views.sessions, name="sessions"),
     path("compare/", views.compare, name="compare"),
