@@ -39,14 +39,20 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   - c. Sin commits del humano sin responder en la rama; en el PR, sin
     "changes requested" ni comentario humano sin respuesta; `## Para el
     humano` de la ficha sin preguntas abiertas (solo avisos informativos).
-  - d. El diff (`git diff --name-only origin/dev...<rama>`) no toca lo que
-    el humano mergea: `CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`,
-    `docs/backlog/README.md`, `docs/backlog/PLANTILLA.md`,
-    `docs/backlog/ESTADO.plantilla.md`, `docs/backlog/ALCANCE.md`,
-    `docs/backlog/INVESTIGACION.md` (las semillas; los vivos estan en
-    `backlog`) y `docs/backlog/MAQUINARIA.md`, `frontend/electron/`,
-    `frontend/electron-builder.json`, `packaging/`, `scripts/*.ps1`,
-    `.github/`, `.opencode/`.
+  - d. `git show $EQUIPO_REF:scripts/equipo-dev/puerta.sh | bash -s --
+    <rama> --ref $EQUIPO_REF` sale `PUERTA_OK d`. La corre `frontera.py`
+    con `scripts/equipo-dev/frontera.json` de `$EQUIPO_REF` sobre
+    `origin/dev...<rama>`: falla si la rama borra, salta o poda pruebas,
+    agrega supresiones en blanco (`noqa`, `eslint-disable`, `pragma: no
+    cover`), afloja un umbral (reintentos del e2e, topes) o toca lo
+    protegido: la puerta (`check.sh`, `ruff.toml`, la configuracion de
+    vitest y Playwright, `package.json`) y lo que mergea el humano
+    (`CLAUDE.md`, `.claude/`, `scripts/equipo-dev/`, las semillas de
+    `docs/backlog/` y `docs/backlog/MAQUINARIA.md`, Electron, `packaging/`,
+    `scripts/*.ps1`, `.github/`, `.opencode/`; la lista exacta esta en
+    `frontera.json`). Un commit con `Frontera: <motivo>` no la hace pasar:
+    le explica el cambio al humano, que es quien lo mergea. El motivo de
+    `pendiente de merge` es la linea `PUERTA_FALLA d: ...`.
   - e. Hay herramientas de GitHub y el PR esta abierto contra `dev`
     (nunca contra `main`: ese lo promueve el humano; no hay push directo).
   - f. `origin/dev` ya esta fusionado en la rama y empujado, y

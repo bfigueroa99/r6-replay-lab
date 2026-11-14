@@ -63,6 +63,35 @@ de respaldo.
 Nadie del equipo empuja ahi: la mueven tu merge o una sesion que vos inicies.
 Lo pendiente de la maquinaria del loop esta en `MAQUINARIA.md`.
 
+## Guardia y frontera
+
+Dos frenos que no dependen de que el turno se acuerde de la prosa:
+
+- **Guardia** (`.claude/hooks/guardia.py`, hook `PreToolUse` de
+  `.claude/settings.json`): antes de cada comando de Bash y de cada escritura
+  con el MCP de GitHub frena el push forzado (`--force`, `-f`, `+rama`,
+  `--mirror`), todo push a `main` o a `dev` (`.claude/hooks/guardia.json`; la
+  rama del playbook no, porque la puede mover una sesion tuya), `--no-verify`,
+  `git commit -n`, `core.hooksPath` y `rm -r` sobre `/`, `~` o `.git`. Sale 2,
+  el turno ve el motivo y el bloqueo queda en `.git/guardia.log`. Ve lo que
+  escribe el agente, no lo que corre un script por dentro. Rige en las
+  sesiones que arrancan en una rama que la tenga: para la Routine, desde que
+  mergees este cambio en `dev`. OpenCode no lee los hooks de Claude Code: ahi
+  no corre. En tu PC con Windows, si no hay `python3` en el PATH el hook sale
+  127: Claude Code lo muestra como error del hook, no bloquea nada y la
+  sesion sigue, pero ahi la guardia no frena.
+- **Frontera** (`scripts/equipo-dev/frontera.py` con `frontera.json`, la
+  condicion d de la puerta de merge, que corre `scripts/equipo-dev/puerta.sh`):
+  sobre `origin/dev...<rama>` marca pruebas borradas, podadas o saltadas
+  (`skip`, `only`, `skipTest`, `fixme`), supresiones en blanco (`noqa`,
+  `eslint-disable`, `pragma: no cover`), archivos protegidos (la puerta:
+  `check.sh`, `ruff.toml`, la configuracion de vitest y Playwright,
+  `package.json`; y todo lo que mergeas vos) y umbrales que se aflojan
+  (reintentos del e2e, largo de linea de ruff, topes de `pruebas.sh`). Un
+  commit con la linea `Frontera: <motivo>` declara el cambio: frontera.py lo
+  da por bueno, pero el Release igual no lo mergea; te lo deja con el motivo a
+  la vista. Un umbral flojo no se declara nunca: lo cambias vos.
+
 ## Alcance
 
 Desde el 2026-10-10 el equipo trabaja con una **directiva de alcance**: la

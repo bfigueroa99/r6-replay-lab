@@ -157,6 +157,15 @@ arbol_dev=$(git rev-parse 'origin/dev^{tree}')
 # Topes de la cola y del papel. SKILL.md y ESTADO.plantilla.md repiten los
 # numeros en prosa; pruebas.sh verifica que coincidan con estos.
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
+# Vueltas de Dev sobre una `con hallazgos` desde el ultimo `arquitecto` de su
+# `turnos:` a partir de las cuales se la da por estancada y va al Arquitecto
+# en vez de a otro Dev. La 81 dio 4 vueltas dev <-> revisor: cada Dev arreglaba
+# lo que el revisor anterior marco y el siguiente encontraba otra cosa, porque
+# lo que fallaba era el diseno, no el codigo. roles/arquitecto.md lo dice en prosa.
+tope_vueltas=3
+# Vueltas de dev desde el ultimo arquitecto en una linea `turnos:`. Las notas
+# entre parentesis se quitan antes de partir por comas, como en independencia.sh.
+vueltas_dev() { sed 's/^turnos:[[:space:]]*//; s/([^)]*)//g' <<< "$1" | tr ',' '\n' | awk '$1 == "arquitecto" { n = 0 } $1 == "dev" { n++ } END { print n + 0 }'; }
 
 # La ficha que la rama AGREGA (no la primera que toca): una rama puede ademas
 # editar una ficha que ya esta en dev.
@@ -271,7 +280,7 @@ borrables=()
 # estado va ultimo: su motivo es texto libre y puede traer una barra).
 esperan=()
 cola=0; total=0; cola_func=0
-en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0; bloqueadas=0
+en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0; bloqueadas=0; estancadas=0
 for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
     es_playbook "$r" && continue
     [ "$r" = "$B" ] && continue
@@ -294,7 +303,7 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     # La etapa que sigue (revisar una implementado, probar una revisado) solo
     # la firma un contexto que no firmo las otras dos. Lo que este no puede
     # firmar no cuenta para elegir su rol: sumaba un turno sin nada que hacer.
-    firmable=si; siguiente=""
+    firmable=si; siguiente=""; nota=""
     case "$estado" in implementado*) siguiente=revisor ;; revisado*) siguiente=qa ;; esac
     if [ -n "$siguiente" ] && [ -n "$contexto" ] && [ -n "$indep" ] \
         && ! bash "$indep" --firmable "$(campo "$r" "$f" turnos)" "$siguiente" "$contexto" >/dev/null 2>&1; then
@@ -307,7 +316,12 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
         "entregado ("*) espera_humano=$((espera_humano + 1)); esperan+=("$r|$f|$edad|$estado") ;;
         revisado*) [ "$firmable" = si ] && revisado=$((revisado + 1)) ;;
         implementado*) [ "$firmable" = si ] && implementado=$((implementado + 1)) ;;
-        "con hallazgos"*) con_hallazgos=$((con_hallazgos + 1)) ;;
+        "con hallazgos"*)
+            # Estancada: no cuenta para el Dev; la toma el Arquitecto (turno.sh).
+            vueltas=$(vueltas_dev "$(campo "$r" "$f" turnos)")
+            if [ "$vueltas" -ge "$tope_vueltas" ]; then
+                estancadas=$((estancadas + 1)); nota=" | estancada: $vueltas vueltas de dev, va al arquitecto"
+            else con_hallazgos=$((con_hallazgos + 1)); fi ;;
         "en curso"*)
             en_curso=$((en_curso + 1))
             # Huerfana: nadie la tiene (candado suelto) o quien la tenia murio.
@@ -318,7 +332,7 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     humano=$(git log --no-merges "origin/dev..$r" --format=%an | grep -vE '^(Claude|OpenCode)' | sort -u | tr '\n' ' ')
     printf '%s | %s | estado: %s | tipo: %s | candado: %s | %sh | cuenta en cola: %s | commits humanos: %s | candado muerto: %s%s\n' \
         "$r" "$f" "$estado" "$tipo" "$candado" "$edad" "$reciente" "${humano:-ninguno}" "$muerto" \
-        "$([ -n "$siguiente" ] && echo " | firmable por este turno: $firmable")"
+        "$([ -n "$siguiente" ] && echo " | firmable por este turno: $firmable")$nota"
 done
 
 echo "== ramas del playbook anterior (sin ficha; reclamo en el roadmap)"
@@ -507,8 +521,8 @@ echo "ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotaci
 
 echo "== resumen"
 # Una linea con todo lo que turno.sh necesita para elegir el rol. Mismo orden
-# siempre: pruebas.sh cuenta los 21 pares.
-linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas"
+# siempre: pruebas.sh cuenta los 22 pares.
+linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas estancadas=$estancadas"
 echo "$linea_resumen"
 
 echo "== entorno"
@@ -520,7 +534,7 @@ if ! { [ -d frontend/node_modules ] && [ "$tiene_ruff" = si ] && "$py" -c 'impor
     completo=no
     echo "ENTORNO_INCOMPLETO: pip install -r requirements.txt -r requirements-dev.txt; (cd frontend && npm install)"
 fi
-# Sin navegador check.sh cae en [5/5]: el e2e maneja la app en Chromium.
+# Sin navegador check.sh cae en el e2e, que maneja la app en Chromium.
 if ! ls -d "${PLAYWRIGHT_BROWSERS_PATH:-${HOME:-}/.cache/ms-playwright}"/chromium-* >/dev/null 2>&1; then
     completo=no
     echo "ENTORNO_INCOMPLETO: cd frontend && npm run e2e:browser"
