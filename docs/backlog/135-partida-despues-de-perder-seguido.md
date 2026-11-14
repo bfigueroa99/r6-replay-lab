@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
-estado: implementado
-candado: revisor 2026-11-14T01:09Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md E6; el Coach ya aconseja "si son tres derrotas seguidas, corta la sesión" (`coach.py`, `_form`) sin mostrar el dato que lo respalda
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_tras_derrotas.py, frontend/src/trasDerrotas.js, frontend/src/trasDerrotas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0040Z-c3LsMAo
+turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0040Z-c3LsMAo, revisor 20261114T0104Z-choi73m
 
 ## PR
 
@@ -186,7 +186,46 @@ modern-web-guidance no se consulto: el panel copia el patron
 `Panel` + `DataTable` + nota de Prórroga por lado en la misma pagina.
 OMC: plan=— · revisión=2 LOW (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-14 sobre ca7c9f5
+
+(revisor 20261114T0104Z-choi73m)
+
+Veredicto: aprobar -> `revisado`.
+
+Base: rama ya contiene `origin/dev` (f34baba); `verificar.sh`: VERDE ca7c9f542
+(1367 tests backend, 449 vitest, 120 e2e).
+
+Revision a ciegas, dos ejes (omc-code-reviewer x2; diff de 318 lineas):
+- Estandares: aprobar, 1 LOW.
+- Intencion: aprobar, los 4 criterios cubiertos (`test_tras_derrotas.py`, 10
+  tests; `trasDerrotas.test.js`; e2e de Tendencias; fila en `metricas.md`);
+  nada fuera de alcance; 2 LOW.
+
+Confirmado por el lider:
+- [test] LOW `frontend/e2e/humo.spec.js:101`: el e2e solo recorre el caso
+  con datos (seed: 29 decididas en la fila 0); el aviso de muestra y la nota
+  sin partidas solo se prueban en vitest. Opcional: un caso e2e con un rango
+  de fechas vacio que afirme la nota y la consola limpia.
+
+No confirmados o fuera de este diff:
+- LOW `aggregates.py:3078` (`_sessions_raw`, `order_by("played_at")` sin
+  desempate por `id`): dos partidas con el mismo `played_at` quedan en orden
+  no garantizado y la racha depende del orden. Es previo al cambio (lo
+  comparte `by_session_position`) y pide dos replays con la misma marca de
+  tiempo; no se le carga a esta ficha. Arreglo barato si alguien lo toma:
+  `order_by("played_at", "id")`.
+- LOW `metricas.md:136` ("como *Margen final*" vs `PARTIDAS_CORTE` de
+  `prorrogaPorLado.js`): descartado, Margen final tambien avisa con menos de
+  10 (`metricas.md:123`); el texto es cierto.
+
+Ficha: criterios cubiertos; el diff no sale de `archivos:`; fila en
+`metricas.md`; identificadores sin tildes, UI con tildes; sin `print` ni
+`console.log`.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=3 LOW (1 confirmado, 0 arreglados) · verificación=—
+
 
 ## QA
 
