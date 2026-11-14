@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
 estado: entregado
-candado: release 2026-11-14T00:13Z
+candado: -
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S3
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_repetir_spawn.py, frontend/src/repetirSpawn.js, frontend/src/repetirSpawn.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w, qa 20261114T0004Z-cagB2Hb, release 20261114T0004Z-cagB2Hb
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w, qa 20261114T0004Z-cagB2Hb, release 20261114T0004Z-cagB2Hb, release 20261114T0012Z-ccgaH14
 
 ## PR
 
@@ -29,7 +29,7 @@ Ficha 128 (ALCANCE.md S3), gemela de spawn de la 113 (operador). Molde de
 
 ### Como se probo
 
-- `check.sh` (con `verificar.sh`): VERDE c0da754, 1335 tests backend, 435 vitest, 116 e2e.
+- `check.sh` (con `verificar.sh`): VERDE e62dae3 (fusionada con dev), 1335 tests backend, 439 vitest, 118 e2e.
 - Tests nuevos: `tests/test_repetir_spawn.py` (14: caso del criterio, tras ganar,
   defensa entre medio, hueco, sin spawn, sin lado, partidas distintas, primera y
   segunda sin ganador, filtros de operador, sitio, mapa y lado, base vacia);
