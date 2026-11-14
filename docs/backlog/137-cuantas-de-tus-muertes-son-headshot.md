@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
-estado: en curso 2026-11-14T03:27Z
-candado: dev 2026-11-14T03:27Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
@@ -22,22 +22,22 @@ cabeza mas que al resto del equipo, te asomas expuesto.
 
 ## Criterios de aceptacion
 
-- [ ] Agregado nuevo: de los `Event` de baja cuyo `target` eres tu y cuyo
+- [x] Agregado nuevo: de los `Event` de baja cuyo `target` eres tu y cuyo
       autor es rival (`_solo_rivales`, sin teamkills), `deaths`,
       `with_data` (`headshot` no nulo), `headshots` y `pct` =
       headshots / with_data, por lado de tu fila (`Attack`, `Defense`) y
       total. `headshot` nulo no entra en el porcentaje. Test con muertes con
       y sin dato y un teamkill que no cuenta.
-- [ ] La referencia: el mismo calculo sobre las muertes de tus compañeros
+- [x] La referencia: el mismo calculo sobre las muertes de tus compañeros
       (tu `team_index`, `is_me=False`) en tus rondas filtradas. Test.
-- [ ] Los filtros globales aplican sobre tu fila de la ronda; test con
+- [x] Los filtros globales aplican sobre tu fila de la ronda; test con
       filtro de lado.
-- [ ] Se ve en Duelos (clave nueva en el endpoint que ya usa la pagina o uno
+- [x] Se ve en Duelos (clave nueva en el endpoint que ya usa la pagina o uno
       nuevo de lectura) como una tabla chica Tú / Tus compañeros por lado, con
       el `n` (muertes con dato) a la vista y aviso si es chico; sin dato,
       una nota. e2e sobre `seed_demo` con los numeros de la API y consola
       limpia.
-- [ ] Fila nueva en `docs/metricas.md`.
+- [x] Fila nueva en `docs/metricas.md`.
 
 ## Fuera de alcance
 
@@ -139,6 +139,95 @@ Skills del repo: statistical-analysis (denominador = muertes con dato, `n` en ca
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261114T0316Z-cwWsU9i)
+
+Quedo el diseno completo:
+
+- `aggregates.headshot_deaths(**filters)`: los `Kill` de tus rondas
+  filtradas (`_mis_bajas`) por `_solo_rivales(..., "actor_id")`, victima tuya
+  (`_me_ids()`) o de tu equipo con fila en la ronda (`_equipo_de("target_id")
+  == mi_equipo`); una consulta agrupada solo por `lado` (`_MI_LADO`, el `side`
+  de tu fila) y `es_mia` (`Case` sobre `target_id__in`), con `deaths`,
+  `with_data` (`headshot` no nulo) y `headshots`; `total` y `pct =
+  _pct(headshots, with_data)` en Python. Las seis celdas siempre presentes.
+  `GROUP BY 1, 2` visto en el SQL: las anotaciones de `_solo_rivales` no
+  parten el conteo.
+- `views.duels`: clave `headshot_deaths` (sin URL nueva).
+- `frontend/src/muertesHeadshot.js`: `filasMuertesHeadshot` (Tú y despues
+  Tus compañeros, `orden` fijo, `[]` sin muertes con dato), `textoCelda`
+  ("67% (3)", raya sin dato) y `conPocaMuestra` (con `MUESTRA_CORTE`).
+- `Duelos.jsx`: panel "Muertes por headshot" entre "Por rival" y "Rivales
+  repetidos", tabla Quién / Ataque / Defensa / Total, nota sin datos y aviso
+  de muestra.
+- e2e "Duelos muestra las muertes por headshot" con los numeros de
+  `/api/duels/`, formateados a mano en el test (no importa el helper).
+- `docs/metricas.md`: fila **Muertes por headshot** en la tabla de Duelos y
+  su corte en `## Muestra minima`.
+
+Desvios menores del diseno:
+
+- `headshot_deaths` va despues de `_duelos` (seccion duelos, junto a
+  `_mis_bajas` y `_solo_rivales`) y no despues de `death_state`: la 134
+  (`revisado`) mete `kill_state` justo ahi y el que mergeara segundo tendria
+  conflicto. Por lo mismo la fila de `metricas.md` va antes de **Rival
+  repetido** (y no al lado de **HS%**, que esta en la tabla Base): la fila
+  abre diciendo que es el reverso de HS%.
+- Boton "Descargar CSV" (`muertes-por-headshot`) como el resto de las tablas
+  de Duelos; el CSV lleva el texto de la celda y vacio donde va la raya.
+- Tests extra: `test_una_victima_sin_fila_en_la_ronda_no_cuenta`,
+  `test_un_lado_desconocido_solo_suma_al_total` (un `side` que no es ataque
+  ni defensa solo suma al total) y `test_el_filtro_de_mapa_aplica_sobre_tus_rondas`.
+  `assertNumQueries(2)` (los ids tuyos y la agregada) con 1 y con 5 rondas.
+
+Criterios -> tests (`backend/tests/test_muertes_headshot.py`, 14): (1)
+`test_cuenta_tus_muertes_headshot_sobre_las_que_tienen_dato`,
+`test_headshot_nulo_cuenta_en_muertes_y_no_en_el_porcentaje`,
+`test_un_teamkill_no_cuenta_ni_para_ti_ni_para_tus_companeros`,
+`test_muerte_sin_autor_no_cuenta`, `test_sin_dato_el_porcentaje_es_nulo`;
+(2) `test_las_muertes_de_tus_companeros_van_aparte`,
+`test_un_rival_no_cuenta_como_companero`,
+`test_una_victima_sin_fila_en_la_ronda_no_cuenta`; (3)
+`test_filtro_de_lado_deja_solo_ese_lado`,
+`test_el_filtro_de_mapa_aplica_sobre_tus_rondas`,
+`test_parte_por_tu_lado_y_suma_el_total`; (4)
+`test_api_duels_trae_headshot_deaths`, `muertesHeadshot.test.js` (4 tests),
+e2e `Duelos muestra las muertes por headshot`; (5) fila en `metricas.md`.
+
+TDD: los 13 tests Django en rojo antes del agregado (12 `AttributeError` por
+la funcion que faltaba, 1 `KeyError` por la clave de `/api/duels/`); el
+vitest en rojo antes de `muertesHeadshot.js` (suite sin modulo).
+
+Mutaciones (codigo roto a mano y restaurado, `tests.test_muertes_headshot`):
+victima de cualquier equipo con fila en vez de la tuya -> 1 falla;
+`with_data` contando tambien `headshot` nulo -> 3 fallan; sin
+`_solo_rivales` (teamkills adentro) -> 1 falla.
+
+Sobre `seed_demo` (la base del e2e): Tú 24.9% (173) en total, 26.5% (98) en
+ataque y 22.7% (75) en defensa; 173 = tus muertes del seed, asi que el total
+con dato no pasa de las muertes del Resumen. Tus compañeros queda en raya:
+el seed no crea muertes de compañeros en el feed.
+
+Revision ciega: no disponible (esta sesion no tiene herramienta de
+subagentes para `omc-code-reviewer`). En su lugar, pasada propia con la
+lista de `revision.md` sobre `git diff origin/dev...HEAD -- .
+':(exclude)docs/backlog'`: saco dos tildes de comentario y de nombre de
+test; sin otros hallazgos. El Revisor hace la revision independiente.
+
+Verificacion manual sugerida: `seed_demo`, `/duelos`: el panel entre Por
+rival y Rivales repetidos con Tú 25% (173); con lado Ataque, Defensa queda en
+raya.
+
+Skills: no aplica (conteo sobre el feed con precedentes `nemesis` y `death_state`).
+Skills del repo: test-driven-development (rojo visto en Django y vitest),
+testing-strategy (regla y API en `TestCase`, helper en vitest, panel en e2e),
+statistical-analysis (denominador = muertes con dato, `n` en cada celda,
+corte de 30 de `muestra.js`, conteos sumados), ux-copy (textos del diseno con
+tildes; aviso calcado de Estado al morir), modern-web-guidance
+(`guides/accessibility/accessibility.md`, "Lists and tables": tabla de datos
+con `th` por la `DataTable` existente, sin tabla de layout); sql-queries no
+hizo falta (patron vecino `_solo_rivales`, con `assertNumQueries`).
+OMC: plan=— · revisión=no disponible (sin subagentes) · verificación=—
 
 ## Revision
 

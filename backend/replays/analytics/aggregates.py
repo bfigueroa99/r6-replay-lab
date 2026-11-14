@@ -3457,7 +3457,7 @@ def _duelos(mine: QuerySet[RoundPlayer], me_ids: list[int]):
 #: Columnas por lado de Muertes por headshot; `total` se suma aparte.
 MUERTES_HS_LADOS = ("Attack", "Defense")
 
-#: El lado de tu fila en la ronda del evento: tus compañeros juegan el mismo.
+#: El lado de tu fila en la ronda del evento: tus companeros juegan el mismo.
 _MI_LADO = Subquery(
     RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values("side")[:1]
 )

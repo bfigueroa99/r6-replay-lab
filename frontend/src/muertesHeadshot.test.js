@@ -17,7 +17,7 @@ describe('muertesHeadshot', () => {
     expect(filasMuertesHeadshot(datos())).toEqual([])
   })
 
-  it('va primero Tú y despues tus compañeros, con el orden fijo', () => {
+  it('va primero tu fila y despues la de tus companeros, con el orden fijo', () => {
     const filas = filasMuertesHeadshot(datos({ teammates: celda(40, 10) }))
     expect(filas.map((f) => [f.grupo, f.orden])).toEqual([
       ['Tú', 0],

@@ -16,7 +16,7 @@ function celda(valor) {
 }
 
 /**
- * Una fila por grupo, Tú primero; `orden` lo fija para la tabla, que si no
+ * Una fila por grupo, la tuya primero; `orden` lo fija para la tabla, que si no
  * ordenaria por el nombre. Vacio si nadie tiene muertes con dato: la nota dice
  * mas que una tabla de rayas.
  */
