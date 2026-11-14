@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-14T00:52Z
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
