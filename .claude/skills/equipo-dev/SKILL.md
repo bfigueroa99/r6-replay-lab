@@ -103,11 +103,9 @@ Arquitecto e Investigador, `alcance.md`. Se leen enteros antes de hacer
 nada; si una salida igual sale cortada ("Output too large"), se lee el
 archivo que la herramienta indica, entero.
 
-La cadena prueba `rutina.md`, que solo este playbook tiene, y va primero a
-`dev`, donde el equipo integra; `main` y la rama del playbook son respaldo.
-Si el `git show` de `turno.sh` falla
-o `turno.sh` imprime `SIN_PLAYBOOK` (ninguna ref de la cadena tiene el
-playbook), el turno termina con un informe de una linea. Antes de trabajar,
+La cadena prueba `rutina.md` (solo este playbook la tiene), `dev` primero.
+Si el `git show` de `turno.sh` falla o imprime `SIN_PLAYBOOK`, el turno
+termina con un informe de una linea. Antes de trabajar,
 probar el acceso con `git push --dry-run origin HEAD:refs/heads/claude/equipo-dev/prueba-acceso`
 (no crea nada); si devuelve 403 u otro rechazo, no se implementa nada:
 informe con el comando y el mensaje exactos.
@@ -171,15 +169,16 @@ linea `RESUMEN` de `estado.sh --resumen`, el primero que aplique:
    release, motivo `reloj: release, N en espera`: lo que quedo `pendiente
    de merge` por un motivo transitorio (sin herramientas, veto levantado,
    pregunta respondida) se reintenta una vez por dia.
-6. `investigador` si el reloj dice investigador (franja 7, dia par).
-7. `po` si el papel esta vacio (0 `propuesto` y 0 `disenado`).
-8. `dev` si hay `disenado` y lugar en la cola (`COLA < 4` y `TOTAL < 6`).
+6. `po` si hay pedidos de GitHub sin triar (`pedidos=`, `issues.md`).
+7. `investigador` si el reloj dice investigador (franja 7, dia par).
+8. `po` si el papel esta vacio (0 `propuesto` y 0 `disenado`).
+9. `dev` si hay `disenado` y lugar en la cola (`COLA < 4` y `TOTAL < 6`).
    `disenado` no cuenta las `FRENADAS` de `estado.sh`: esperan a una ficha
    que no esta en dev ("Implementar despues de #NN") y un Dev no las toma.
-9. `arquitecto` si hay `propuesto` y menos de 3 `disenado`.
-10. `po` si hay menos de 6 `propuesto`.
-11. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
-12. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
+10. `arquitecto` si hay `propuesto` y menos de 3 `disenado`.
+11. `po` si hay menos de 6 `propuesto`.
+12. `investigador` si `ALCANCE.md` tiene menos de 10 ideas libres.
+13. El rol del reloj (tabla de abajo), motivo `nada tomable: reloj`.
 
 Las fichas cuya etapa siguiente este contexto no puede firmar
 (independencia) no cuentan en `implementado` ni `revisado`: van a
@@ -199,9 +198,6 @@ corre `git show $EQUIPO_REF:scripts/equipo-dev/turno.sh | bash -s -- --seguir`:
   y `roles/<rol>.md`), liderar ese rol con la misma `EQUIPO_SESION` y, al
   terminarlo, `--seguir` otra vez.
 - `# fin: <motivo>`: cierre comun, una sola vez, por todos los roles.
-
-Vale aunque el prompt del disparo diga "UN turno de UN rol": ese rol es el
-primero.
 
 `--seguir` aplica la regla de arriba sin el reloj y sin lo que la sesion no
 debe tomar: cada rol una vez, hasta 4 roles por sesion, y nunca dos etapas
@@ -273,7 +269,7 @@ por candado (P8).
   con candado muerto o con `## Pendiente`). Los demas siguen
   con su turno: ninguno convierte papel en codigo.
 - **P6. Cola vacia.** Solo con el rol pedido a mano (si no, lo cubre la
-  regla 8): con `COLA == 0` y `disenado` tomable, Revisor, QA y Release
+  regla 9): con `COLA == 0` y `disenado` tomable, Revisor, QA y Release
   actuan como Dev y lo anotan `turnos: dev <sesion> (por cola vacia)`. PO,
   Arquitecto e Investigador no.
 - **P7. Relevo.** Solo con el rol pedido a mano (si no, lo cubren las reglas
@@ -425,7 +421,9 @@ Antes, `--seguir` (ver "Seguir") hasta que diga `# fin:`.
    que no bloquea de una ficha que ya esta en `dev` no va: queda en
    `## Para el humano` de la ficha. Si `PARA_EL_HUMANO` dice `podar`, el turno
    lo deja bajo el tope antes de empujar.
-3. Informe final, que tiene que entenderse solo:
+3. Si `== issues` trae `cerrar` o el turno sumo un `DESTRABA` o una P10:
+   `issues.md`.
+4. Informe final, que tiene que entenderse solo:
 
 ```
 ## Iteracion equipo-dev <fecha UTC>
@@ -438,6 +436,7 @@ Antes, `--seguir` (ver "Seguir") hasta que diga `# fin:`.
 **Cola:** COLA=<n>/4 TOTAL=<n>/6 | papel: <n> propuesto, <n> disenado (<n> funcionalidad)
 **Alcance:** <funcionalidades a dev en 7 dias, epica en curso> | nada nuevo, porque <cuello de botella>
 **GitHub:** con herramientas (<PRs tocados>) | sin herramientas
+**Issues:** <#N -> ficha NN; cerrados> | sin pedidos | sin leer (<motivo>)
 **Descartado esta vez:** <ficha o idea> porque <filtro> | nada
 **Para el humano:** <lo de `DESTRABA` primero; decision, pregunta o rama para mergear/borrar> | nada
 **Verificacion:** verificar.sh: VERDE <sha> (<n> tests backend, <n> vitest, <n> e2e) | sin pushes de codigo
@@ -472,6 +471,7 @@ de la ficha que escribio el turno (`## Diseno`, `## Implementacion`,
   Force-push. Rebase de ramas publicadas. Borrar ramas, salvo la que el Release acaba de
   mergear. Empujar a `claude/equipo-dev/playbook`.
 - Saltar, desactivar o borrar un test. Empujar codigo con `check.sh` en rojo.
+- Tomar o comentar un issue sin confianza (`issues.md`).
 - Agregar dependencias, servicios externos, cuentas, telemetria, red.
   Cualquier forma de overlay in-game.
 - Instalar skills de afuera (van a `## Para el humano`, ver `skills.md`) o

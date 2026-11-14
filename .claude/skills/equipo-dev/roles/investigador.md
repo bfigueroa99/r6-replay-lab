@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) dice para que se investiga: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (reglas 6 y 11); por reloj, la franja 7 de los dias pares.
+Cuando el estado lo pide (reglas 7 y 12); por reloj, la franja 7 de los dias pares.
 
 Los demas roles miran adentro (el codigo, las fichas, el historial); este
 mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la
