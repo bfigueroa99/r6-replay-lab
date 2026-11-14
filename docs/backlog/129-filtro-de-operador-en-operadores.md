@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
-estado: revisado
-candado: qa 2026-11-14T00:00Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
@@ -9,7 +9,7 @@ area: frontend
 prioridad: 3
 fuente: ALCANCE.md O14 (friccion que vio la QA de la 113)
 archivos: frontend/src/operadorElegido.js (nuevo), frontend/src/operadorElegido.test.js (nuevo), frontend/src/pages/Operators.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s, dev 20261113T2223Z-c24t16L, revisor 20261113T2252Z-cSo9yHH, dev 20261113T2318Z-cpCpgff, revisor 20261113T2345Z-c5J2BqJ
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T1926Z-ce4Pmp6, dev 20261113T1954Z-cfZTvvE, revisor 20261113T2003Z-c3vr7mZ, qa 20261113T2156Z-cQ8Kk3s, dev 20261113T2223Z-c24t16L, revisor 20261113T2252Z-cSo9yHH, dev 20261113T2318Z-cpCpgff, revisor 20261113T2345Z-c5J2BqJ, qa 20261113T2345Z-c6MAT6w
 
 ## PR
 
