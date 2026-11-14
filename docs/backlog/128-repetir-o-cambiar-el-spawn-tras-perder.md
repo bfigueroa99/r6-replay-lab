@@ -1,6 +1,6 @@
 # 128. Repetir o cambiar el spawn tras perder
 
-estado: revisado
+estado: aprobado
 candado: qa 2026-11-14T00:04Z
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S3
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_repetir_spawn.py, frontend/src/repetirSpawn.js, frontend/src/repetirSpawn.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w, qa 20261114T0004Z-cagB2Hb
 
 ## PR
 
@@ -287,7 +287,50 @@ Veredicto: aprobar.
 OMC: plan=— · revisión=2 LOW + 1 LOW del lider (0 arreglados: el Revisor no arregla) · verificación=—
 Skills del repo: ninguna
 
-## QA
+## QA 2026-11-14 sobre c0da754
+
+(qa 20261114T0004Z-cagB2Hb)
+
+- check.sh: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE c0da754b1 en 217s: 1335 tests backend, 435 vitest, 116 e2e`.
+  Rama al dia con dev (`git rev-list --count HEAD..origin/dev` = 0).
+- Base vacia (`SQLITE_PATH=<scratch>/vacia.sqlite3`, `migrate`, `runserver`):
+  `curl /api/positioning/spawn-after-result/` -> 200, `pairs` 0, winrate `null` en los 4 casos.
+- Base sembrada desde `tests/factories.py` (script en el scratchpad): Club House
+  con A pierde, A gana, B pierde, defensa, B gana, A sin ganador; Oregon con A
+  pierde, B gana, hueco, B pierde, ataque sin spawn, A pierde; Bank con una
+  sola ronda. Recalculado a mano: 5 pares; tras perder repite 2 (2 ganadas,
+  100 %), cambia 1 (100 %); tras ganar repite 0, cambia 2 rondas con 1
+  decidida y 0 ganadas (0 %). La API devuelve exactamente eso.
+- Filtros: `?map=oregon` -> 1 par, tras perder cambia 100 % (a mano: 1;
+  `map` va por slug, como el resto); `?operator=Thermite` -> 1 par, tras
+  perder repite (elige la primera ronda); `?side=Defense` identico a sin filtro;
+  `?operator=Mute`, `?map=bank`, `?session=abc`,
+  `?ranked_only=1&match_type=Unranked` -> 0 pares. Bordes `?until=foo`,
+  `?since=foo&until=2026-99-99`, `?page=-1`, `?map=`, `?days=99999999999`
+  -> 200 con los numeros sin filtro. POST -> 403. Vecinos
+  `site-after-loss`, `coach`, `operators/after-result` con `?until=foo` -> 200.
+- Bundle: chunk inicial `index-*.js` 200459 B en la rama contra 200340 B en
+  `origin/dev` (+0,06 %).
+- Accesibilidad (Playwright en Chromium sobre /coach sembrado): heading "Repetir
+  o cambiar el spawn", tabla con 5 `columnheader` y 2 filas, "· pocas rondas"
+  visible; contraste minimo medido 5,71:1; Tab llega a "Descargar CSV" y a los
+  4 botones de orden; consola sin errores. Con `?side=Defense&operator=Mute`
+  la request lleva los filtros y sale la nota "Con estos filtros no hay dos
+  rondas de ataque seguidas con spawn." Sin Critical ni Major.
+- Datos (validate-data sobre la fila de `metricas.md`): sin division por cero
+  (winrate `null` sin decididas), la tasa va con su `n` (Repite/Cambia), sin
+  promedio de promedios, `_pct` redondea igual que la 107.
+- Mutacion: sin el corte por hueco cae `test_un_hueco_de_numeracion_corta_el_par`;
+  con una primera sin ganador abriendo par cae `test_una_primera_sin_ganador_no_abre_par`;
+  con `operator` filtrando las dos rondas cae
+  `test_el_filtro_de_operador_elige_la_primera_ronda`. Codigo restaurado.
+- Sin migracion, sin `recompute`, sin parser, sin Electron ni `.ps1`: nada que verificar en el PC.
+
+Veredicto: aprobado.
+
+Skills del repo: accessibility-review (0 Critical/Major; contraste 5,71:1), validate-data (2 valores recalculados: 5 pares y tras ganar cambia 0 % con 1 de 2 decididas)
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
