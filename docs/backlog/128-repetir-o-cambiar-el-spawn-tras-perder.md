@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
 estado: aprobado
-candado: qa 2026-11-14T00:04Z
+candado: release 2026-11-14T00:11Z
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S3
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_repetir_spawn.py, frontend/src/repetirSpawn.js, frontend/src/repetirSpawn.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w, qa 20261114T0004Z-cagB2Hb
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w, qa 20261114T0004Z-cagB2Hb, release 20261114T0004Z-cagB2Hb
 
 ## PR
 
