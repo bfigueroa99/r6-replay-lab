@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
 from replays.analytics.coach import build_insights
-from replays.models import Player, RoundPlayer
+from replays.models import Match, Player, RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -280,9 +282,12 @@ class RondasPorOperadorTests(TestCase):
 class RivalesRepetidosTests(TestCase):
     """Record de partidas contra cada persona que te toco en el equipo contrario."""
 
-    def _partida(self, index, *, rival="rival", rival_team=1, ganada=True, mapa="Club House"):
+    def _partida(
+        self, index, *, rival="rival", rival_team=1, ganada=True, mapa="Club House", played_at=None
+    ):
         match = make_match(
             index=index,
+            played_at=played_at,
             map_name=mapa,
             my_score=4 if ganada else 2,
             opponent_score=2 if ganada else 4,
@@ -395,6 +400,101 @@ class RivalesRepetidosTests(TestCase):
                 respuesta = self.client.get(f"/api/duels/?min_matches={valor}")
                 self.assertEqual(respuesta.status_code, 200)
                 self.assertIn("rivals", respuesta.json())
+
+
+    # make_match separa las partidas 1 h por index, dentro del corte de sesion
+    # (120 min): para noches distintas hace falta la fecha a mano.
+    NOCHE = datetime(2026, 9, 1, 20, 0)
+
+    def test_un_rival_dos_veces_en_la_misma_noche_suma_una_revancha(self):
+        self._partida(0)
+        self._partida(1)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["same_session"], 1)
+
+    def test_un_rival_en_noches_distintas_no_suma_revanchas(self):
+        self._partida(0, played_at=self.NOCHE)
+        self._partida(1, played_at=self.NOCHE + timedelta(days=1))
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (0, 0, 0),
+        )
+
+    def test_el_record_de_revanchas_es_el_de_las_partidas_despues_de_la_primera(self):
+        self._partida(0, ganada=False)
+        self._partida(1, ganada=True)
+        self._partida(2, ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (2, 1, 1),
+        )
+
+    def test_la_primera_de_la_noche_es_la_mas_temprana_aunque_se_importe_despues(self):
+        # el orden de creacion no manda: la perdida es la primera de la noche
+        self._partida(1, ganada=True)
+        self._partida(0, ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual((fila["same_session_wins"], fila["same_session_losses"]), (1, 0))
+
+    def test_a_igual_hora_la_primera_de_la_noche_es_la_de_menor_id(self):
+        self._partida(0, ganada=False, played_at=self.NOCHE)
+        self._partida(1, ganada=True, played_at=self.NOCHE)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 1, 0),
+        )
+
+    def test_una_revancha_sin_resultado_no_entra_al_record(self):
+        self._partida(0)
+        segunda = self._partida(1)
+        Match.objects.filter(pk=segunda.pk).update(won=None)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 0, 0),
+        )
+
+    def test_cada_noche_tiene_su_primera_partida(self):
+        self._partida(0, played_at=self.NOCHE)
+        self._partida(1, played_at=self.NOCHE + timedelta(hours=1))
+        self._partida(2, played_at=self.NOCHE + timedelta(days=1))
+        self._partida(3, played_at=self.NOCHE + timedelta(days=1, hours=1), ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (2, 1, 1),
+        )
+
+    def test_el_filtro_de_mapa_deja_sin_revancha_a_la_noche_partida(self):
+        self._partida(0, mapa="Club House", played_at=self.NOCHE)
+        self._partida(1, mapa="Border", played_at=self.NOCHE + timedelta(hours=1))
+        self._partida(2, mapa="Border", played_at=self.NOCHE + timedelta(days=1))
+
+        self.assertEqual(agg.repeated_rivals()[0]["same_session"], 1)
+        fila = agg.repeated_rivals(map="border")[0]
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(fila["same_session"], 0)
+
+    def test_el_endpoint_de_duelos_trae_las_revanchas(self):
+        self._partida(0)
+        self._partida(1, ganada=False)
+
+        fila = self.client.get("/api/duels/").json()["rivals"][0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 0, 1),
+        )
 
 
 class RondasSinDuelosTests(TestCase):
