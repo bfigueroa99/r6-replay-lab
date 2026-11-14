@@ -1,8 +1,8 @@
 # 132. Rivales que se repiten en la misma noche
 
-estado: disenado
+estado: en curso 2026-11-14T00:25Z
 candado: -
-rama: -
+rama: claude/equipo-dev/132-rivales-que-se-repiten-en-la-misma-noche
 tipo: funcionalidad
 epica: rivales
 area: fullstack
