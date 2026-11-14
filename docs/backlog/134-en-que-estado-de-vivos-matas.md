@@ -1,6 +1,6 @@
 # 134. En que estado de vivos matas
 
-estado: en curso 2026-11-14T00:39Z
+estado: implementado
 candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
