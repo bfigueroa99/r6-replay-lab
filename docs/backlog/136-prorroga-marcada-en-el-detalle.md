@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
 estado: revisado
-candado: -
+candado: qa 2026-11-14T01:30Z
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
