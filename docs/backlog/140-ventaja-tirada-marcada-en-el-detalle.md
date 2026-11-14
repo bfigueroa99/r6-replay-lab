@@ -1,7 +1,7 @@
 # 140. Ventaja tirada marcada en el detalle de partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T01:12Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas
