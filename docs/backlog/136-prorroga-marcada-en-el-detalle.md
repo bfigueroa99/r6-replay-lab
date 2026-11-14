@@ -158,8 +158,6 @@ modern-web-guidance no se consulto: el marcado sigue el patron del propio
 selector y de `.solo-lector`.
 OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=—
 
-## Revision
-
 ## Revision 2026-11-14 sobre 5053227
 
 (revisor 20261114T0104Z-cWK4yQD)
