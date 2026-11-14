@@ -1,7 +1,7 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-14 01:10 UTC por qa, release, revisor, dev, arquitecto (sesion 20261114T0040Z-c3LsMAo; motivo: sigue: por estado: 6 propuesto, 1 disenado de 3; 1 bloqueadas por independencia; sigue: 1 implementado; sigue: 3 disenado, lugar en cola; sigue: propuesto y menos de 3 disenado)
-playbook: origin/dev@bb92586
+actualizado: 2026-11-14 01:16 UTC por dev, revisor, arquitecto, po (sesion 20261114T0104Z-choi73m; motivo: por estado: 1 con_hallazgos, 0 huerfanas; sigue: 1 implementado; sigue: 4 propuesto, 2 disenado de 3; sigue: papel corto: 3 propuesto de 6)
+playbook: origin/dev@f34baba
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 12 de 41 en 7 dias
 en vacio: TURNOS_EN_VACIO=0 de 12 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
 pausa: no
@@ -10,30 +10,30 @@ pausa: no
 
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
-| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 2 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/134-en-que-estado-de-vivos-matas | docs/backlog/134-en-que-estado-de-vivos-matas.md | con hallazgos | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/134-en-que-estado-de-vivos-matas?expand=1) |
-| claude/equipo-dev/135-partida-despues-de-perder-seguido | docs/backlog/135-partida-despues-de-perder-seguido.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/135-partida-despues-de-perder-seguido?expand=1) |
+| claude/equipo-dev/134-en-que-estado-de-vivos-matas | docs/backlog/134-en-que-estado-de-vivos-matas.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/134-en-que-estado-de-vivos-matas?expand=1) |
+| claude/equipo-dev/135-partida-despues-de-perder-seguido | docs/backlog/135-partida-despues-de-perder-seguido.md | revisado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/135-partida-despues-de-perder-seguido?expand=1) |
 | claude/equipo-dev/136-prorroga-marcada-en-el-detalle | docs/backlog/136-prorroga-marcada-en-el-detalle.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/136-prorroga-marcada-en-el-detalle?expand=1) |
+| claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 2 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=4 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=1 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=102 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=6 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=101 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=2
 
 ## Orden de merge sugerido
 
-`git merge-tree --write-tree` por pares entre 79, 134, 135 y 136: sin conflictos.
+`git merge-tree --write-tree` por pares entre 79, 134, 135 y 136: sin conflictos (medido en este turno).
 
-1. `claude/equipo-dev/135-partida-despues-de-perder-seguido` (implementado): libera `Trends.jsx` para la 139.
-2. `claude/equipo-dev/136-prorroga-marcada-en-el-detalle` (implementado): `MatchDetail.jsx`, `styles.css`.
-3. `claude/equipo-dev/134-en-que-estado-de-vivos-matas` (con hallazgos: MEDIUM de bajas post-mortem).
+1. `claude/equipo-dev/135-partida-despues-de-perder-seguido` (revisado, falta QA): libera `Trends.jsx` para la 139.
+2. `claude/equipo-dev/136-prorroga-marcada-en-el-detalle` (implementado): `MatchDetail.jsx`, `views.py`, `styles.css`; libera la 140.
+3. `claude/equipo-dev/134-en-que-estado-de-vivos-matas` (implementado tras los hallazgos, lo atendio otra corrida).
 4. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 ## Alcance
 
 - Funcionalidades que llegaron a `dev` en los ultimos 7 dias (`DEV_7D`): DEV_7D=funcionalidad:27 (101-dos-partidas-lado-a-lado 102-pool-de-operadores-por-lado 103-tira-de-rondas-en-partidas 107-sitio-que-tu-equipo-repite-tras-perderlo 110-tu-forma-contra-tu-historial 111-copiar-las-senales-del-coach 112-saltar-a-la-ronda-desde-los-records 113-repetir-o-cambiar-de-operador-tras-perder 114-que-operadores-te-abren 115-prorroga-por-lado 116-en-que-estado-de-vivos-mueres 118-ver-esas-rondas-desde-el-coach 119-mejor-y-peor-partida-de-cada-sesion 120-puesto-en-el-lobby 121-copiar-una-ronda-como-texto 122-cuando-te-toco-por-ultima-vez 123-clutches-de-tus-companeros 124-partidas-por-version-del-juego 125-teamkill-marcado-en-la-timeline 126-a-que-operador-cambias-tras-perder 127-partidas-que-van-a-prorroga 128-repetir-o-cambiar-el-spawn-tras-perder 129-filtro-de-operador-en-operadores 130-saltar-a-la-siguiente-ronda-perdida 131-rondas-que-el-equipo-gano-sin-ti 132-rivales-que-se-repiten-en-la-misma-noche 133-ventaja-numerica-tirada) otros:4 (fichas que llegaron a dev en 7 dias)
-- Epicas en curso: rivales: 132 en dev (PR #134), 137 disenado. impacto: 134 con hallazgos, 143 propuesto. progreso: 135 implementado. revision-de-rondas: 136 implementado, 139 disenado (frenada por 135), 140 propuesto. posicionamiento: 138 disenado. escuadra: 109 disenado (frenada), 141 propuesto. operadores: 142 propuesto. datos: 79 entregado (PR #81), 83 disenado (frenada).
-- Papel: PAPEL_TIPOS=funcionalidad:9 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
-- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 102. Ideas nuevas de este turno: ninguna.
-- Investigacion: ultima entrada 2026-11-09 (familias 1, 2, 4 y 7).
+- Epicas en curso: rivales: 132 en dev, 137 disenado. impacto: 134 en rama, 143 propuesto. progreso: 135 revisado, 146 propuesto. revision-de-rondas: 136 implementado, 139 y 140 disenado (frenadas por 135 y 136). posicionamiento: 138 disenado. escuadra: 109 disenado (frenada), 141 y 144 propuesto. lado-y-marcador: 145 propuesto. operadores: 142 propuesto. datos: 79 entregado (PR #81), 83 disenado (frenada).
+- Papel: PAPEL_TIPOS=funcionalidad:12 otros:0 (propuesto y disenado; la directiva pide 3 funcionalidades antes de tests sueltos). Cola: COLA_TIPOS=funcionalidad:4 de 4 ramas de trabajo
+- `ALCANCE.md`: ALCANCE=backlog, ideas libres: 101. Ideas nuevas de este turno: K15 rondas de pasajero, O18 segundos hasta tu primera baja por operador.
+- Investigacion: INVESTIGACION=backlog, ultima entrada: 2026-11-09.
 - Rotacion: ROTACION=saturadas (4 o mas de las ultimas 10): ninguna | sin entrega: ninguna
 - Ciclo: CICLO=0h de reclamo a dev, mediana de las ultimas 10 funcionalidades (ficha:horas 132:0 131:0 128:0 129:4 133:1 127:0 130:2 125:0 124:0 123:0)
 
@@ -48,16 +48,19 @@ RESUMEN propuesto=4 disenado=2 en_curso=0 huerfanas=0 implementado=1 revisado=0 
 | 137-cuantas-de-tus-muertes-son-headshot | disenado | funcionalidad | rivales | 3 | - | - |
 | 138-el-sitio-con-el-que-abres-la-defensa | disenado | funcionalidad | posicionamiento | 3 | - | - |
 | 139-rondas-perdidas-sobreviviendo | disenado | funcionalidad | revision-de-rondas | 3 | - | - |
-| 140-ventaja-tirada-marcada-en-el-detalle | propuesto | funcionalidad | revision-de-rondas | 3 | - | - |
+| 140-ventaja-tirada-marcada-en-el-detalle | disenado | funcionalidad | revision-de-rondas | 3 | - | - |
 | 141-companeros-que-pierden-vivos | propuesto | funcionalidad | escuadra | 3 | - | - |
 | 142-operadores-con-los-que-mueres-solo | propuesto | funcionalidad | operadores | 3 | - | - |
 | 143-quien-cierra-la-ronda | propuesto | funcionalidad | impacto | 3 | - | - |
+| 144-companeros-por-lado | propuesto | funcionalidad | escuadra | 3 | - | - |
+| 145-ultima-ronda-antes-del-cambio-de-lado | propuesto | funcionalidad | lado-y-marcador | 3 | - | - |
+| 146-que-mapas-te-tocan | propuesto | funcionalidad | progreso | 3 | - | - |
 | 79-excluir-una-partida-de-los-agregados | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | funcionalidad | datos | 3 | - | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado | funcionalidad | datos | 3 | - | - |
 
-FRENADAS=3 (la 109 espera a la 79; la 139 espera a la 135; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
+FRENADAS=4 (la 109 espera a la 79; la 139 espera a la 135; la 140 espera a la 136; la 83 espera a la 79) | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN
 
-Espejos: 134, 135 y 136 viven en su rama, que manda. La 132 ya esta en dev (espejo quitado en este turno).
+Espejos: 134, 135 y 136 viven en su rama, que manda (el espejo de la 136 dice `en curso`; la rama, `implementado`).
 
 ## Ultimo turno de cada rol
 
@@ -65,11 +68,11 @@ Espejos: 134, 135 y 136 viven en su rama, que manda. La 132 ya esta en dev (espe
 |---|---|---|
 | release | 2026-11-14 01:10 | (release 20261114T0040Z-c3LsMAo, siguiendo como QA) 132: ficha recortada, VERDE ba373e4 (1357, 443, 119), [PR #134](https://github.com/bfigueroa99/r6-replay-lab/pull/134) abierto y mergeado (f34baba). Borrado de la rama cortado por el proxy. |
 | qa | 2026-11-14 01:10 | (qa 20261114T0040Z-c3LsMAo) 132 `revisado` -> `aprobado`: base sembrada con factories, curl con bordes (mapa, sesion, `until=foo`, vacia) y 2 valores a mano, a11y en Chromium (14.17:1 y 5.71:1, teclado, CSV), 4 mutaciones caen, omc-verifier PASS; VERDE 6ebf346. |
-| revisor | 2026-11-14 01:10 | (revisor 20261114T0040Z-c3LsMAo, sigue) 134 `implementado` -> `con hallazgos`: dev fusionado, VERDE 6851732 (1375, 448, 120); dos ejes a ciegas aprobar; MEDIUM confirmado con repro: una baja post-mortem (trampa) cae en `sin_feed` con el texto "no se puede ubicar en el feed"; 2 LOW. |
-| dev | 2026-11-14 01:10 | (dev 20261114T0040Z-c3LsMAo, sigue) 135 `disenado` -> `implementado`: `by_losing_streak` en `/api/sessions/`, panel "Después de perder seguido" en Tendencias; TDD con rojo visto; revision ciega 2 LOW (2 arreglados); VERDE 33d94a9 (1367, 449, 120). |
-| arquitecto | 2026-11-14 01:10 | (arquitecto 20261114T0040Z-c3LsMAo, sigue) Disena 138 (`defense_opener`, `/api/positioning/defense-opener/`, panel en el Coach bajo Repetir el sitio) y 139 (`lost_alive`, `/api/rounds/lost-alive/`, panel en Tendencias; frenada: implementar despues de #135). |
+| revisor | 2026-11-14 01:16 | (revisor 20261114T0104Z-choi73m, sigue) 135 `implementado` -> `revisado`: dos ejes a ciegas aprobar; 1 LOW confirmado (e2e sin el caso vacio), 2 descartados o previos (`_sessions_raw` sin desempate por `id`); VERDE ca7c9f542 (1367, 449, 120). |
+| dev | 2026-11-14 01:16 | (dev 20261114T0104Z-choi73m) 134 la tomo otra corrida al mismo minuto (push rechazado, P8); 136 `disenado` -> `implementado`: `overtime` en `/api/matches/<id>/`, separador "Prórroga" y pestañas punteadas en el detalle; TDD con rojo visto; revision ciega aprobar, 1 LOW; VERDE 3417a0ad0 (1360, 448, 119). |
+| arquitecto | 2026-11-14 01:16 | (arquitecto 20261114T0104Z-choi73m, sigue) Disena 140 (`max_advantage` en el detalle con `metrics.ventaja_maxima`, marca `+N` en la pestaña; frenada: implementar despues de #136). |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-14 00:47 | (po 20261114T0040Z-chQsvnq, sigue) Reconcilia C13 (131) en dev; propone 141 (compañeros que pierden vivos, C20), 142 (operadores con los que mueres solo, O9) y 143 (quien cierra la ronda, K7). Ideas nuevas K14 y D20 (tramos de 143 y 137). |
+| po | 2026-11-14 01:16 | (po 20261114T0104Z-choi73m, sigue) Propone 144 (compañeros por lado, C10), 145 (ultima ronda antes del cambio de lado, B20) y 146 (que mapas te tocan, E11). Ideas nuevas K15 (rondas de pasajero) y O18 (segundos hasta tu primera baja por operador). |
 
 ## Para el humano
 
