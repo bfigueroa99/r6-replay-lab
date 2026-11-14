@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import EstadoAlMatar from '../components/EstadoAlMatar.jsx'
 import EstadoAlMorir from '../components/EstadoAlMorir.jsx'
 import VentajaTirada from '../components/VentajaTirada.jsx'
 import Filters from '../components/Filters.jsx'
@@ -370,6 +371,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
       </Panel>
 
       <EstadoAlMorir filters={filters} />
+      <EstadoAlMatar filters={filters} />
       <VentajaTirada filters={filters} />
     </>
   )

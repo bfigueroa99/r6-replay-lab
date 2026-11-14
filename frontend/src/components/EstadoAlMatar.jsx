@@ -1,0 +1,90 @@
+import React from 'react'
+
+import { useApi } from '../api.js'
+import { MUESTRA_CORTE } from '../muestra.js'
+import { avisoPocaMuestra, filasDeEstados, filasDeGrupos, hayBajas, notaSinFeed } from '../estadoAlMatar.js'
+import { DataTable, ErrorBox, Loading, Panel, pct } from './ui.jsx'
+
+const ORDEN_API = { key: 'orden', dir: 'asc' }
+
+const COLUMNA_BAJAS = { key: 'kills', label: 'Bajas', help: 'Bajas a rivales; un teamkill no cuenta, pero resta su vivo.' }
+
+const COLUMNA_WINRATE = {
+  key: 'winrate',
+  label: 'Winrate de la ronda',
+  help: 'Rondas ganadas sobre las que tienen ganador; cada ronda cuenta una vez por fila.',
+  render: (row) => pct(row.winrate),
+}
+
+/** Panel aparte, con su propia consulta, como Estado al morir, que queda justo arriba. */
+export default function EstadoAlMatar({ filters }) {
+  const { data, error, loading } = useApi('/duels/kill-state/', filters)
+
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else if (!hayBajas(data)) {
+    cuerpo = (
+      <>
+        <p className="note">No hay bajas tuyas con evento en el feed con estos filtros.</p>
+        {notaSinFeed(data?.sin_feed) ? <p className="note">{notaSinFeed(data.sin_feed)}</p> : null}
+      </>
+    )
+  } else {
+    const grupos = filasDeGrupos(data)
+    const estados = filasDeEstados(data)
+    cuerpo = (
+      <>
+        <DataTable
+          columns={[
+            { key: 'label', label: 'Situación', left: true, sortable: false },
+            COLUMNA_BAJAS,
+            {
+              key: 'rounds',
+              label: 'Rondas',
+              help: 'Una ronda con dos bajas en la misma situación cuenta una vez.',
+            },
+            COLUMNA_WINRATE,
+          ]}
+          rows={grupos}
+          initialSort={ORDEN_API}
+          rowKey={(row) => row.group}
+          csvName="estado-al-matar-grupos"
+        />
+        <h3 style={{ margin: '16px 0 8px' }}>Por estado exacto</h3>
+        <DataTable
+          columns={[
+            {
+              key: 'state',
+              label: 'Estado',
+              left: true,
+              sortable: false,
+              help: 'Vivos de tu equipo (contándote) contra vivos rivales, justo antes de la baja.',
+            },
+            COLUMNA_BAJAS,
+            COLUMNA_WINRATE,
+          ]}
+          rows={estados}
+          initialSort={ORDEN_API}
+          rowKey={(row) => row.state}
+          csvName="estado-al-matar"
+        />
+        {avisoPocaMuestra([...grupos, ...estados]) ? (
+          <p className="note">
+            Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+          </p>
+        ) : null}
+        {notaSinFeed(data.sin_feed) ? <p className="note">{notaSinFeed(data.sin_feed)}</p> : null}
+      </>
+    )
+  }
+
+  return (
+    <Panel
+      title="Estado al matar"
+      hint="Cuántos quedaban vivos de cada lado justo antes de cada baja tuya, y cómo terminó esa ronda."
+    >
+      {cuerpo}
+    </Panel>
+  )
+}

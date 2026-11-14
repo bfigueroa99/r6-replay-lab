@@ -573,6 +573,32 @@ test('Duelos muestra el estado de vivos al morir', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra el estado de vivos al matar', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/duels/kill-state/')).json()
+  await page.goto('/duelos')
+
+  // por el titulo exacto: 'Estado al m' tambien agarraria Estado al morir
+  const titulo = page.getByRole('heading', { name: 'Estado al matar', exact: true })
+  await expect(titulo).toBeVisible()
+  const panel = page.locator('section.panel').filter({ has: titulo })
+  expect(datos.kills).toBeGreaterThan(0)
+  const grupos = panel.locator('table').first()
+  await expect(grupos.locator('tbody tr')).toHaveCount(3)
+  const conBajas = datos.groups.find((g) => g.kills > 0)
+  const etiqueta = { ahead: 'Con ventaja', even: 'En paridad', behind: 'En desventaja' }[conBajas.group]
+  const fila = grupos.locator('tbody tr', { hasText: etiqueta })
+  await expect(fila.locator('td').nth(1)).toHaveText(String(conBajas.kills))
+  await expect(fila.locator('td').nth(2)).toHaveText(String(conBajas.rounds))
+  const estado = datos.states[0]
+  const filaEstado = panel.locator('table').nth(1).locator('tbody tr').first()
+  await expect(filaEstado.locator('td').first()).toHaveText(estado.state)
+  await expect(filaEstado.locator('td').nth(1)).toHaveText(String(estado.kills))
+
+  expect(errores).toEqual([])
+})
+
 test('Duelos muestra la ventaja numerica tirada', async ({ page }) => {
   const errores = vigilarConsola(page)
   // numeros de la API y no a mano: si cambia seed_demo el test no se toca
