@@ -35,12 +35,12 @@ export function notaSinFeed(n) {
     : `${n} bajas no se pueden ubicar en el feed y no entran.`
 }
 
-/** Bajas de trampas o gadgets tras caer: el evento esta, pero no hay estado tuyo que contar. */
+/** Bajas que el feed pone tras tu caida: el evento esta, pero no hay estado tuyo que contar. */
 export function notaPostMortem(n) {
   if (!n) return null
   return n === 1
-    ? '1 baja llegó cuando ya habías caído (trampa o gadget): no tiene estado tuyo y no entra.'
-    : `${n} bajas llegaron cuando ya habías caído (trampas o gadgets): no tienen estado tuyo y no entran.`
+    ? '1 baja llegó al feed después de tu caída (trampa, gadget o intercambio del mismo instante): no tiene estado tuyo y no entra.'
+    : `${n} bajas llegaron al feed después de tu caída (trampas, gadgets o intercambios del mismo instante): no tienen estado tuyo y no entran.`
 }
 
 /** El winrate es de la ronda: el corte de muestra va sobre `rounds`, no sobre bajas. */

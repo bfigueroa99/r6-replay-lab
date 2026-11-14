@@ -209,8 +209,8 @@ def estado_al_matar(eventos: list[dict], team_of: dict) -> dict:
     El reverso de `estado_al_morir`, con su mismo recorrido: cada baja ve el
     estado que dejo la anterior, sin agrupar por segundo. Un teamkill no es
     baja (como `kills` desde la ficha 67) y un `PlayerLeave` no es baja, pero
-    los dos restan su vivo. Un `Kill` sin actor, o de un actor que ya no esta
-    vivo (dato raro del feed), no se anota; el muerto igual sale. Como los
+    los dos restan su vivo. Un `Kill` sin actor no se anota, y el de un actor
+    que ya no esta vivo lo cuenta `bajas_despues_de_caer`; el muerto igual sale. Como los
     vivos solo bajan, un jugador no repite estado en la misma ronda.
     """
     vivos = set(team_of)
@@ -239,8 +239,10 @@ def bajas_despues_de_caer(eventos: list[dict], team_of: dict) -> dict:
 
     Trampas y gadgets matan despues de que muere su dueno, y `kills` las cuenta
     (`clutch_kills` lo hace a proposito). `estado_al_matar` no les da estado:
-    sin el autor vivo no hay "tus vivos" que contar. Se devuelven aparte para
-    que no se confundan con bajas que el feed no trae. Mismo recorrido.
+    sin el autor vivo no hay "tus vivos" que contar. Tambien caen aca los trades
+    del mismo tick que el feed ordena con tu muerte primero: sin agrupar por
+    segundo no se pueden separar. Se devuelven aparte para que no se confundan
+    con bajas que el feed no trae. Mismo recorrido.
     """
     vivos = set(team_of)
     bajas: dict = {}

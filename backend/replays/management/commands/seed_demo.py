@@ -284,18 +284,9 @@ class Command(BaseCommand):
                 kst=True,
             )
 
-        # el kill feed: sin el no hay duelos ni narrativa de la ronda
+        # el kill feed: sin el no hay duelos ni narrativa de la ronda. Va en orden
+        # de reloj, como lo emite el juego: tus bajas son anteriores a tu muerte
         orden = 0
-        if murio:
-            verdugo = rivales[indice % 3]
-            Event.objects.create(
-                round=rnd, order=orden, kind=Event.KILL, clock=180 - muerte,
-                clock_raw=f"{int((180 - muerte) // 60)}:{int((180 - muerte) % 60):02d}",
-                elapsed=muerte, actor=verdugo, actor_name=verdugo.username,
-                target=yo, target_name=ME, headshot=indice % 4 == 0,
-                operator=OPERADORES[lado_rival][indice % 3], traded=tradeado,
-            )
-            orden += 1
         for i in range(bajas):
             victima = rivales[(indice + i + 1) % 3]
             clock = 180 - (muerte - 12 - i * 8 if murio else 90 + i * 10)
@@ -305,5 +296,15 @@ class Command(BaseCommand):
                 elapsed=180 - clock, actor=yo, actor_name=ME,
                 target=victima, target_name=victima.username,
                 headshot=indice % 3 == 0, operator=OPERADORES[lado][indice % 3],
+            )
+            orden += 1
+        if murio:
+            verdugo = rivales[indice % 3]
+            Event.objects.create(
+                round=rnd, order=orden, kind=Event.KILL, clock=180 - muerte,
+                clock_raw=f"{int((180 - muerte) // 60)}:{int((180 - muerte) % 60):02d}",
+                elapsed=muerte, actor=verdugo, actor_name=verdugo.username,
+                target=yo, target_name=ME, headshot=indice % 4 == 0,
+                operator=OPERADORES[lado_rival][indice % 3], traded=tradeado,
             )
             orden += 1

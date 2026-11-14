@@ -46,10 +46,10 @@ describe('estadoAlMatar', () => {
     expect(notaPostMortem(0)).toBeNull()
     expect(notaPostMortem(undefined)).toBeNull()
     expect(notaPostMortem(1)).toBe(
-      '1 baja llegó cuando ya habías caído (trampa o gadget): no tiene estado tuyo y no entra.',
+      '1 baja llegó al feed después de tu caída (trampa, gadget o intercambio del mismo instante): no tiene estado tuyo y no entra.',
     )
     expect(notaPostMortem(2)).toBe(
-      '2 bajas llegaron cuando ya habías caído (trampas o gadgets): no tienen estado tuyo y no entran.',
+      '2 bajas llegaron al feed después de tu caída (trampas, gadgets o intercambios del mismo instante): no tienen estado tuyo y no entran.',
     )
   })
 

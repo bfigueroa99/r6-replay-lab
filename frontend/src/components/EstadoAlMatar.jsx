@@ -52,7 +52,7 @@ export default function EstadoAlMatar({ filters }) {
   else if (!hayBajas(data)) {
     cuerpo = (
       <>
-        <p className="note">No hay bajas tuyas con evento en el feed con estos filtros.</p>
+        <p className="note">No hay bajas tuyas en vida con estos filtros.</p>
         <NotasAparte data={data} />
       </>
     )
