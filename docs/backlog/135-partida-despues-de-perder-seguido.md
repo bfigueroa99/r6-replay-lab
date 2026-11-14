@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
-estado: en curso 2026-11-14T00:57Z
-candado: dev 2026-11-14T00:57Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
@@ -169,6 +169,8 @@ TDD: los 9 tests Django se escribieron antes del codigo y fallaron
 (`python manage.py test tests.test_tras_derrotas` -> `FAILED (errors=9)`,
 `AttributeError: by_losing_streak`); el vitest tambien antes del helper
 ("no tests" al no existir el modulo).
+
+`verificar.sh`: VERDE 33d94a9 (1367 tests backend, 449 vitest, 120 e2e).
 
 Revision ciega (omc-code-reviewer, eje estandares): aprobar, 2 LOW, los dos
 arreglados (hint y test de lado/operador/sitio).
