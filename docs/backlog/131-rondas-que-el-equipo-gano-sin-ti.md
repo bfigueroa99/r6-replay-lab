@@ -1,7 +1,7 @@
 # 131. Rondas que el equipo gano sin ti
 
-estado: implementado
-candado: revisor 2026-11-14T00:16Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_ganadas_sin_ti.py, frontend/src/ganadasSinTi.js, frontend/src/ganadasSinTi.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c6MAT6w
+turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c6MAT6w, revisor 20261114T0012Z-crDhgd7
 
 ## PR
 
@@ -232,7 +232,37 @@ neutro con tildes, como el resto de la pagina); modern-web-guidance no se
 consulto: el JSX copia el patron vecino de la misma pagina (DataTable, Panel).
 OMC: plan=— · revisión=3 hallazgos (3 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-14 sobre 92c030c
+
+Veredicto: aprobar -> `revisado`.
+
+Base: rama con `origin/dev` (eccf2d9) fusionado; `verificar.sh`: VERDE 92c030c
+(1334 tests backend, 439 vitest, 118 e2e).
+
+Revision a ciegas, dos ejes (omc-code-reviewer x2; diff de 387 lineas):
+- Estandares: aprobar, 2 LOW. Intencion: aprobar, sin hallazgos (cada
+  criterio contrastado; `seed_demo` recalculado: Total 173/98/56,6 %, Seba
+  98/38, lo que afirma el e2e).
+- Confirmados por el lider (leidos en el codigo, no arreglados: LOW):
+  - [test] LOW `frontend/e2e/humo.spec.js:1236-1238`: la fila Total se afirma
+    con `toContainText` por numero, sin orden; intercambiar "Rondas en que
+    caíste" y "Ganadas" seguiria en verde (la fila de Seba si fija orden con
+    `/^Seba 98 38/`). Arreglo: `getByRole('row', { name: /^Total 173 98 57%/ })`.
+  - [estilo] LOW `backend/replays/analytics/aggregates.py:2966-2976`: la
+    subconsulta de habituales queda copiada por tercera vez (`by_stack`,
+    `teammate_clutches`, `won_without_me`). Deuda asumida por el diseno (la 79
+    toca esa consulta); extraer `_habituales_qs()` cuando la 79 entre.
+- Observacion (no del diff): en `seed_demo` tus rondas de ataque estan todas
+  ganadas y las de defensa todas perdidas, asi que el e2e no veria un cambio
+  de lados; lo cubren los tests Django con resultados armados por lado.
+
+Ficha: criterios 1-5 cubiertos por los tests que lista Implementacion; el
+diff no sale de `archivos:`; fila en `metricas.md` y en `## Muestra minima`;
+identificadores sin tildes, UI con tildes; sin `print` ni `console.log`.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=2 LOW (0 arreglados, confirmados) · verificación=—
 
 ## QA
 
