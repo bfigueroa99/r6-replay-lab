@@ -1,7 +1,7 @@
 # 132. Rivales que se repiten en la misma noche
 
-estado: en curso 2026-11-14T00:25Z
-candado: dev 2026-11-14T00:25Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/132-rivales-que-se-repiten-en-la-misma-noche
 tipo: funcionalidad
 epica: rivales
@@ -161,6 +161,59 @@ Skills del repo: statistical-analysis (conteo sin winrate por `n` chico), testin
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Quedo el diseno completo, sin desvios de alcance (la 133, de la que dependia
+por `Duelos.jsx`, ya esta en dev: PR #130).
+
+- `aggregates.py`: `_session_index_map()` (al lado de `_position_map`) y
+  `_revanchas(ids, sesion_de, resultado, fechas)`; `repeated_rivals` llama una
+  vez a `_session_index_map()` por request y suma `same_session`,
+  `same_session_wins` y `same_session_losses` a cada fila. `_record` no se
+  toco (lo comparten los stacks). Docstring con la regla del filtro.
+- `Duelos.jsx`: columna "Revanchas esa noche" despues de Winrate, `—` con 0
+  y `N (G-P)` si hay; CSV con el mismo texto (0 sin revanchas). Ordenable.
+- `docs/metricas.md`: fila **Revanchas esa noche** antes de **Stack rival
+  repetido**.
+- e2e: `Duelos muestra rivales repetidos con enlace al perfil` extendido:
+  cabecera y celda de la primera fila contra `/api/duels/`.
+
+Desvios menores:
+- Texto de ayuda: dice "la sesión se corta tras SESSION_GAP_MINUTES sin
+  jugar, en el .env", como el hint de Sesiones en Tendencias.
+- Tests extra: `test_la_primera_de_la_noche_es_la_mas_temprana_aunque_se_importe_despues`,
+  `test_cada_noche_tiene_su_primera_partida` y
+  `test_a_igual_hora_la_primera_de_la_noche_es_la_de_menor_id` (este ultimo
+  lo pidio la revision ciega; con ids chicos el orden del set ya coincide, asi
+  que fija el comportamiento mas que detectar su ausencia).
+
+Criterios -> tests: (1) `test_un_rival_dos_veces_en_la_misma_noche_suma_una_revancha`,
+`test_un_rival_en_noches_distintas_no_suma_revanchas`,
+`test_el_record_de_revanchas_es_el_de_las_partidas_despues_de_la_primera`,
+`test_una_revancha_sin_resultado_no_entra_al_record`; (2) el primero y
+`test_cada_noche_tiene_su_primera_partida`; (3)
+`test_el_filtro_de_mapa_deja_sin_revancha_a_la_noche_partida`; (4)
+`test_el_endpoint_de_duelos_trae_las_revanchas` y el e2e extendido; (5)
+`docs/metricas.md`.
+
+TDD: los 8 tests Django se escribieron antes del codigo y fallaron (KeyError
+`same_session`, 8 errores en `tests.test_duels`); despues, verde.
+
+Revision ciega (omc-code-reviewer, eje estandares): aprobar, 3 LOW. Arreglados
+2: JSDoc de `Balance` que habia quedado sobre `revanchas`, y test del
+desempate a igual hora. El tercero (el e2e solo ve la rama `—` porque
+`seed_demo` separa sus partidas 3 h) se acepta: la rama `N (G-P)` la cubren
+los tests Django del numero y el formato es una linea; cambiar `seed_demo`
+movería numeros de otras pruebas.
+
+Verificacion manual sugerida: `seed_demo` + `runserver`, Duelos: columna con
+`—` en todas las filas y la ayuda legible.
+
+Skills: no aplica (sin dominio nuevo).
+Skills del repo: test-driven-development (rojo visto antes del codigo),
+statistical-analysis (conteo y record sin winrate, n chico), ux-copy (ayuda
+con tildes, como el hint de Sesiones); modern-web-guidance no se consulto: la
+columna copia el patron de `Récord` de la misma tabla (render + csv).
+OMC: plan=— · revisión=3 LOW (2 arreglados) · verificación=—
 
 ## Revision
 

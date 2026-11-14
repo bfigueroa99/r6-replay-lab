@@ -16,13 +16,13 @@ const MUESTRAS = [
   { value: 10, label: '10+ duelos' },
 ]
 
-/** Verde si le ganas al rival, rojo si te gana. */
 // '' sin revanchas: la celda pone su marca y el CSV su 0
 function revanchas(row) {
   if (!row.same_session) return ''
   return `${row.same_session} (${row.same_session_wins}-${row.same_session_losses})`
 }
 
+/** Verde si le ganas al rival, rojo si te gana. */
 function Balance({ value }) {
   if (value === null || value === undefined) return <span className="dim">—</span>
   if (value === 0) return <span className="chip">0</span>

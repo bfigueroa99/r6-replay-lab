@@ -443,6 +443,16 @@ class RivalesRepetidosTests(TestCase):
         fila = agg.repeated_rivals()[0]
         self.assertEqual((fila["same_session_wins"], fila["same_session_losses"]), (1, 0))
 
+    def test_a_igual_hora_la_primera_de_la_noche_es_la_de_menor_id(self):
+        self._partida(0, ganada=False, played_at=self.NOCHE)
+        self._partida(1, ganada=True, played_at=self.NOCHE)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 1, 0),
+        )
+
     def test_una_revancha_sin_resultado_no_entra_al_record(self):
         self._partida(0)
         segunda = self._partida(1)
