@@ -1,6 +1,6 @@
 # 135. Partida despues de perder seguido
 
-estado: en curso 2026-11-14T00:57Z
+estado: implementado
 candado: -
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad

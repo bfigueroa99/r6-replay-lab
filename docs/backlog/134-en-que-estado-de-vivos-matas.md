@@ -1,6 +1,6 @@
 # 134. En que estado de vivos matas
 
-estado: implementado
+estado: con hallazgos
 candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
