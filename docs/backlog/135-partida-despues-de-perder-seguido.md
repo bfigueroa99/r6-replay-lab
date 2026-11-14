@@ -130,6 +130,60 @@ OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
+Quedo el diseno completo, sin desvios de alcance.
+
+- `aggregates.py`: `TRAS_DERROTAS_TOPE = 3` y `by_losing_streak(**filters)`
+  despues de `by_session_position`: resultados de todas las partidas con
+  `match_result`, ids de `match_queryset(**filters)` y `_sessions_raw()`; tres
+  consultas fijas. Siempre 4 filas (`streak`, `label`, `matches`, `decided`,
+  `wins`, `losses`, `winrate`).
+- `views.py`: clave `by_losing_streak` en `/api/sessions/`.
+- `trasDerrotas.js`: `filasTrasDerrotas` (`[]` sin partidas, tramos y orden)
+  y `conPocasPartidas` sobre las **decididas**, con `PARTIDAS_CORTE` de
+  `prorrogaPorLado.js`.
+- `Trends.jsx`: panel "Después de perder seguido" debajo de "Curva de la
+  sesión", fuera de su condicional; tabla Tramo, Partidas, Decididas (con
+  ayuda), Ganadas; aviso de muestra; nota sin partidas.
+- e2e `Tendencias muestra la partida después de perder seguido`: las 4 filas
+  de `/api/sessions/` sobre `seed_demo` (`0: 29/29/29`, el resto en 0: el
+  seed separa sus partidas 3 h y las gana todas) y la tabla, consola limpia.
+- `docs/metricas.md`: fila **Después de perder seguido** debajo de Curva de la sesion.
+
+Desvios menores:
+- El hint suma "Lado, operador y sitio no aplican: una partida tiene los dos
+  lados." (lo pidio la revision ciega: el panel de arriba si los aplica).
+- Test extra `test_lado_operador_y_sitio_no_cambian_las_filas` (revision
+  ciega): con rondas solo de defensa y otro operador; cambiar
+  `match_queryset` por `base_queryset` lo hace caer (mutacion probada).
+
+Criterios -> tests: (1) `test_sesion_d_d_v_d_reparte_por_derrotas_previas`,
+`test_la_primera_de_la_sesion_cae_en_cero`, `test_tres_o_mas_se_juntan_en_la_ultima_fila`,
+`test_una_sesion_nueva_reinicia_la_racha`, `test_consultas_constantes`
+(`assertNumQueries(3)`); (2) `test_incompleta_y_empate_no_suman_ni_cortan_ni_entran_al_winrate`;
+(3) `test_filtro_de_mapa_cuenta_solo_esas_pero_la_racha_es_de_todas`,
+`test_lado_operador_y_sitio_no_cambian_las_filas`; (4)
+`test_sin_partidas_devuelve_las_cuatro_filas_vacias`, `test_api_sessions_trae_by_losing_streak`,
+vitest `trasDerrotas.test.js` (6), e2e, fila de `metricas.md`.
+
+TDD: los 9 tests Django se escribieron antes del codigo y fallaron
+(`python manage.py test tests.test_tras_derrotas` -> `FAILED (errors=9)`,
+`AttributeError: by_losing_streak`); el vitest tambien antes del helper
+("no tests" al no existir el modulo).
+
+Revision ciega (omc-code-reviewer, eje estandares): aprobar, 2 LOW, los dos
+arreglados (hint y test de lado/operador/sitio).
+
+Verificacion manual sugerida: `seed_demo` + `runserver`, Tendencias: el
+panel con las 4 filas, 29 partidas en "Sin derrotas antes".
+
+Skills: no aplica (agregado y tabla con precedente `by_session_position`).
+Skills del repo: test-driven-development (rojo visto antes del codigo),
+statistical-analysis (winrate sobre decididas, `n` a la vista, corte de 10
+reusado), ux-copy (hint y nota con tildes, como los vecinos de Tendencias);
+modern-web-guidance no se consulto: el panel copia el patron
+`Panel` + `DataTable` + nota de Prórroga por lado en la misma pagina.
+OMC: plan=— · revisión=2 LOW (2 arreglados) · verificación=—
+
 ## Revision
 
 ## QA

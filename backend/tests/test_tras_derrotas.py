@@ -9,7 +9,7 @@ from django.test import TestCase
 from replays.analytics import aggregates as agg
 from replays.models import Match
 
-from .factories import make_match
+from .factories import make_match, make_round, make_round_player
 
 INICIO = datetime(2026, 9, 1, 20, 0)
 
@@ -90,6 +90,18 @@ class TrasDerrotasTests(TestCase):
         self.assertEqual(resumen(filas[2]), (1, 1, 1, 0))
         self.assertEqual(filas[0]["matches"], 0)
         self.assertEqual(filas[1]["matches"], 0)
+
+    def test_lado_operador_y_sitio_no_cambian_las_filas(self):
+        for match in partidas("DDV"):
+            # rondas tuyas solo de defensa, con otro operador y sitio: si el
+            # filtro mirara tus rondas, estas partidas desaparecerian
+            make_round_player(make_round(match, 0, side="Defense"))
+        # una partida tiene los dos lados: esos filtros no eligen partidas
+        sin_filtro = agg.by_losing_streak()
+        self.assertEqual(sum(f["matches"] for f in sin_filtro), 3)
+        self.assertEqual(agg.by_losing_streak(side="Attack"), sin_filtro)
+        self.assertEqual(agg.by_losing_streak(operator="Ash"), sin_filtro)
+        self.assertEqual(agg.by_losing_streak(site="1F Bar"), sin_filtro)
 
     def test_sin_partidas_devuelve_las_cuatro_filas_vacias(self):
         filas = agg.by_losing_streak()

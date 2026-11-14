@@ -523,7 +523,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       {sesiones.data ? (
         <Panel
           title="Después de perder seguido"
-          hint="Winrate de la partida siguiente según cuántas derrotas seguidas llevabas en esa sesión. Las rachas se cuentan con todas tus partidas; los filtros eligen qué partidas se cuentan."
+          hint="Winrate de la partida siguiente según cuántas derrotas seguidas llevabas en esa sesión. Las rachas se cuentan con todas tus partidas; los filtros eligen qué partidas se cuentan. Lado, operador y sitio no aplican: una partida tiene los dos lados."
         >
           {trasDerrotas.length ? (
             <>
