@@ -19,6 +19,7 @@ import Filters from '../components/Filters.jsx'
 import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, Stat, fmt, pct } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { PARTIDAS_CORTE, conPocasPartidas, filasProrrogaPorLado } from '../prorrogaPorLado.js'
+import { conPocasPartidas as pocasTrasDerrotas, filasTrasDerrotas } from '../trasDerrotas.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 import { celdaPartidaDeSesion, textoResumenSesion } from '../resumenSesion.js'
 import { avisoPuesto, statsDePuesto } from '../puestoLobby.js'
@@ -341,6 +342,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       ].map((f, orden) => ({ ...f, orden }))
     : []
   const porPosicion = sesiones.data?.by_position || []
+  const trasDerrotas = filasTrasDerrotas(sesiones.data?.by_losing_streak)
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
   return (
@@ -515,6 +517,41 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.position}
             csvName="curva-de-sesion"
           />
+        </Panel>
+      ) : null}
+
+      {sesiones.data ? (
+        <Panel
+          title="Después de perder seguido"
+          hint="Winrate de la partida siguiente según cuántas derrotas seguidas llevabas en esa sesión. Las rachas se cuentan con todas tus partidas; los filtros eligen qué partidas se cuentan."
+        >
+          {trasDerrotas.length ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Tramo', left: true, sortable: false },
+                  { key: 'matches', label: 'Partidas' },
+                  {
+                    key: 'decided',
+                    label: 'Decididas',
+                    help: 'Partidas con ganador: los empates y las que quedaron sin cerrar cuentan en Partidas y no acá.',
+                  },
+                  { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+                ]}
+                rows={trasDerrotas}
+                initialSort={{ key: 'streak', dir: 'asc' }}
+                rowKey={(row) => row.streak}
+                csvName="despues-de-perder-seguido"
+              />
+              {pocasTrasDerrotas(trasDerrotas) ? (
+                <p className="note">
+                  Ojo: algún tramo tiene menos de {PARTIDAS_CORTE} partidas decididas; el porcentaje puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Todavía no hay partidas con estos filtros.</p>
+          )}
         </Panel>
       ) : null}
 
