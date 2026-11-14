@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
-estado: implementado
-candado: revisor 2026-11-14T00:52Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md K8; Fuera de alcance de la ficha 116 ("el reverso, tus bajas por estado (K8): otro tramo de la epica")
 archivos: backend/replays/analytics/metrics.py (estado_al_matar), backend/replays/analytics/aggregates.py (kill_state), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_estado_al_matar.py (nuevo), frontend/src/estadoAlMatar.js (nuevo), frontend/src/estadoAlMatar.test.js (nuevo), frontend/src/components/EstadoAlMatar.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14
+turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14, revisor 20261114T0040Z-c3LsMAo
 
 ## PR
 
@@ -162,6 +162,61 @@ componente vecino `EstadoAlMorir.jsx`.
 OMC: plan=— · revisión=2 LOW (1 arreglado) · verificación=—
 
 ## Revision
+
+## Revision 2026-11-14 sobre 6851732
+
+(revisor 20261114T0040Z-c3LsMAo)
+
+Veredicto: corregir -> `con hallazgos` (un MEDIUM confirmado en el numero
+nuevo; barato de arreglar y cambia lo que dice el panel).
+
+Base: rama con `origin/dev` (f34baba, con la 132) fusionado sin conflicto;
+`verificar.sh`: VERDE 6851732 (1375 tests backend, 448 vitest, 120 e2e).
+
+Revision a ciegas, dos ejes (omc-code-reviewer x2; diff de 661 lineas):
+- Estandares: aprobar con 1 MEDIUM y 2 LOW.
+- Intencion: aprobar; los 5 criterios cubiertos (tests de
+  `test_estado_al_matar.py`, e2e de Duelos, fila y corte en `metricas.md`);
+  nada fuera de alcance salvo el refactor `_equipos_y_feeds`, sin cambio de
+  comportamiento (`tests.test_estado_al_morir` verde).
+
+Confirmado por el lider:
+- [bug] MEDIUM `backend/replays/analytics/metrics.py:229` (y el texto de
+  `frontend/src/estadoAlMatar.js:34-35`)
+  Que pasa: una baja tuya a un rival que el feed atribuye despues de que
+  moriste (trampa o gadget de defensor) cuenta en `RoundPlayer.kills`
+  (`bajas_a_rivales` no mira si el autor vive, y `clutch_kills` la cuenta a
+  proposito) pero `estado_al_matar` la descarta por `actor in vivos` y cae en
+  `sin_feed`; el panel dice "1 baja no se puede ubicar en el feed", que es
+  falso: el evento esta.
+  Repro (test temporal sobre `EstadoAlMatarAgregadoTests._ronda`, borrado
+  despues): `self._ronda([("Kill", "rival0", ME), ("Kill", ME, "rival1")])`
+  -> `agg.kill_state()` = `kills 0, sin_feed 1, states []`.
+  Arreglo sugerido: contar esas bajas aparte (p. ej. `post_mortem`) con su
+  propio texto ("N bajas despues de morir (trampas o gadgets) no entran") y
+  decirlo en la fila de `docs/metricas.md`; o anotarlas con el estado de tu
+  equipo sin ti (0vX). Test a agregar: el repro de arriba afirmando el
+  contador que se elija y `sin_feed == 0`.
+- [test] LOW `backend/tests/test_estado_al_matar.py`: el unico test de
+  `sin_feed` fuerza `kills=2` a mano con un solo evento, un caso que el import
+  no produce; queda cubierto con el test del MEDIUM.
+- [estilo] LOW `backend/replays/analytics/aggregates.py:2606`: `death_state`
+  repite a mano la expresion de `_grupo_de` (2626); usar `_grupo_de` en los
+  dos.
+- No confirmado como bug (decision aceptable, baja confianza): `kill_state`
+  parte de `kills__gt=0` (2641), asi que una fila con `kills=0` y un `Kill`
+  en el feed no entra; el import deriva `kills` del feed, asi que no pasa con
+  datos reales.
+- Regla "metricas al importar": mismo precedente que `death_state`
+  (algoritmo en `metrics.py`, agregado al consultar), no se reporta.
+
+Ficha: criterios cubiertos; el diff no sale de `archivos:` mas alla de
+`views.py`/`urls.py` del endpoint; fila en `metricas.md`; identificadores sin
+tildes, UI con tildes; sin `print` ni `console.log`.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=1 MEDIUM, 2 LOW (0 arreglados, confirmados) · verificación=—
 
 ## QA
 
