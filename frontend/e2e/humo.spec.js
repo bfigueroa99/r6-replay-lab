@@ -98,6 +98,34 @@ test('Tendencias muestra la prórroga por lado', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra la partida después de perder seguido', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // seed_demo separa sus partidas 3 h y las gana todas: cada partida es la primera
+  // de su sesion y cae en "Sin derrotas antes"
+  const datos = await (await page.request.get('/api/sessions/')).json()
+  const filas = datos.by_losing_streak
+  expect(filas.map((f) => [f.label, f.matches, f.decided, f.wins])).toEqual([
+    ['0', 29, 29, 29],
+    ['1', 0, 0, 0],
+    ['2', 0, 0, 0],
+    ['3+', 0, 0, 0],
+  ])
+  await page.goto('/tendencias')
+
+  const panel = page
+    .locator('section.panel')
+    .filter({ has: page.getByRole('heading', { name: 'Después de perder seguido', exact: true }) })
+  await expect(panel).toHaveCount(1)
+  const cuerpo = panel.locator('tbody tr')
+  await expect(cuerpo).toHaveCount(4)
+  await expect(cuerpo.first()).toContainText('Sin derrotas antes')
+  await expect(cuerpo.first()).toContainText(`${filas[0].matches}`)
+  await expect(cuerpo.first()).toContainText(`${Math.round(filas[0].winrate)}%`)
+  await expect(cuerpo.last()).toContainText('Tras 3 o más')
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')
