@@ -1,7 +1,7 @@
 # 132. Rivales que se repiten en la misma noche
 
-estado: implementado
-candado: revisor 2026-11-14T00:33Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/132-rivales-que-se-repiten-en-la-misma-noche
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D13
 archivos: backend/replays/analytics/aggregates.py, backend/tests/test_duels.py, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T2318Z-chc2kiA, dev 20261114T0012Z-crDhgd7
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T2318Z-chc2kiA, dev 20261114T0012Z-crDhgd7, revisor 20261114T0012Z-ccgaH14
 
 ## PR
 
@@ -215,7 +215,35 @@ con tildes, como el hint de Sesiones); modern-web-guidance no se consulto: la
 columna copia el patron de `Récord` de la misma tabla (render + csv).
 OMC: plan=— · revisión=3 LOW (2 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-14 sobre 24720ce
+
+Veredicto: aprobar -> `revisado`.
+
+Base: rama con `origin/dev` (bb92586, con la 128 y la 131) fusionado;
+`verificar.sh`: VERDE 24720ce (1357 tests backend, 443 vitest, 119 e2e).
+
+Revision a ciegas, dos ejes (omc-code-reviewer x2; diff de 276 lineas):
+- Estandares: aprobar, sin hallazgos (la sesion sale de todas las partidas
+  via `_sessions_raw`, las revanchas de las filtradas; `won=None` fuera del
+  record; desempate `(played_at, id)` con test; cada test cae con el bug que
+  nombra; `ruff` limpio).
+- Intencion: aprobar; criterios 1, 2, 3 y 5 cubiertos, 4 parcial por el LOW de
+  abajo.
+- Confirmado por el lider (leido en el codigo, no arreglado: LOW):
+  - [test] LOW `frontend/e2e/humo.spec.js:549-556`: `seed_demo` separa sus
+    partidas 3 h (`seed_demo.py:192`, corte `SESSION_GAP_MINUTES`), asi que
+    `same_session` es 0 para todo rival y el e2e solo ve `—`; el formato
+    `N (G-P)` de `Duelos.jsx` no corre en ningun test. Arreglo: extraer el
+    formato a una funcion pura con su vitest (sin tocar el seed, que mueve
+    numeros de otras pruebas).
+
+Ficha: criterios cubiertos por los tests de `test_duels.py` que lista
+Implementacion; el diff no sale de `archivos:`; fila en `metricas.md`;
+identificadores sin tildes, UI con tildes; sin `print` ni `console.log`.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=1 LOW (0 arreglados, confirmado) · verificación=—
 
 ## QA
 
