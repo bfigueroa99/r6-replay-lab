@@ -1,7 +1,7 @@
 # 131. Rondas que el equipo gano sin ti
 
-estado: revisado
-candado: qa 2026-11-14T00:22Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti
 tipo: funcionalidad
 epica: escuadra
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md C13
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_ganadas_sin_ti.py, frontend/src/ganadasSinTi.js, frontend/src/ganadasSinTi.test.js, frontend/src/pages/Teammates.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c6MAT6w, revisor 20261114T0012Z-crDhgd7
+turnos: po 20261113T1858Z-cxQ3TuB, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c6MAT6w, revisor 20261114T0012Z-crDhgd7, qa 20261114T0012Z-ccgaH14
 
 ## PR
 
@@ -264,7 +264,44 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=2 LOW (0 arreglados, confirmados) · verificación=—
 
-## QA
+## QA 2026-11-14 sobre 5532bae
+
+Veredicto: aprobado. Rama con `origin/dev` (7f665c3, con la 128) fusionado.
+
+- `verificar.sh`: VERDE 5532bae, 1348 tests backend, 443 vitest, 119 e2e.
+- Base vacia (`SQLITE_PATH` en el scratchpad, `migrate`, `runserver`):
+  `curl /api/teammates/?<q>` con `""`, `side=Attack`, `until=foo`, `page=-1`,
+  `map=`, `side=foo`, `days=99999999999`: todos 200, `won_without_me` en 0 con
+  `pct: null` y `mates: []`; con `side=Attack`, solo Attack y total.
+- Base sembrada (`seed_demo`: 29 partidas, 203 rondas): total 173/98 (56,6 %),
+  Attack 98/98, Defense 75/0; Seba 98/38, Chamo 98/21, Nico 51/20.
+  `side=Defense` -> `mates: []`; `map=foo` -> ceros; `until=foo` = sin filtro.
+- validate-data: recalculado con SQL crudo (sqlite3 de Python sobre la base
+  sembrada; tus filas `died=1` con `my_team_won` no nulo, y companeros del
+  mismo `team_index` en las ganadas): (173, 98), Seba (98, 38), Chamo (98, 21),
+  Nico (51, 20): coincide. `_pct` devuelve `None` con 0; conteos sobre filas,
+  sin promedio de promedios; el `n` esta a la vista. Fila de `metricas.md` y de
+  `## Muestra minima` coinciden con el codigo.
+- accessibility-review (Playwright en Chromium, `/companeros` sembrada): heading
+  del panel, 2 tablas, fila `Total 173 98 57%`, fila `Seba 98 38`, h3
+  "Quién la sostiene"; el enlace Seba se alcanza con Tab y Enter abre
+  `/jugadores/3`; contraste minimo del texto del panel 5,71:1; consola sin
+  errores ni warnings. `?side=Defense` muestra "Ningún compañero habitual en
+  esas rondas.". "Sin rondas en que hayas caído" no se alcanza por la UI con el
+  seed (sin rondas la pagina muestra `SinRondasFiltradas`); lo cubre el vitest.
+  Sin Critical ni Major.
+- Chunk inicial de `vite build`: `index` 200459 B en dev y en la rama.
+- Mutaciones en `aggregates.py`, cada una revertida: sin
+  `round__my_team_won__isnull=False` cae `test_una_ronda_sin_ganador_no_cuenta`;
+  sin `team_index` en `mia_ganada` cae
+  `test_un_habitual_que_juega_de_rival_no_suma_esa_ronda`; `survived` sin
+  filtro cae `test_cuenta_que_companero_habitual_seguia_vivo`.
+- design-critique: el panel copia el molde de "Primero en caer" de la misma
+  pagina; nada nuevo para `ALCANCE.md`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data
+(4 valores recalculados, 0 hallazgos), design-critique (sin hallazgos).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
