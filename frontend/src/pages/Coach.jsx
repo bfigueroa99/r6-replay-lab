@@ -18,6 +18,7 @@ import {
 } from '../posicion.js'
 import { GRUPOS_COACH, formatoCoach, textoCoach } from '../textoCoach.js'
 import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
+import { filasRepetirSpawn, hayParesSpawn, textoParesSpawn } from '../repetirSpawn.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
@@ -128,6 +129,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
       <PanelPosicion {...posicion} />
       <PanelSalidaSpawn {...posicion} />
       <PanelRepetirSitio filters={filters} />
+      <PanelRepetirSpawn filters={filters} />
 
       <p className="note">
         Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
@@ -332,6 +334,46 @@ function PanelRepetirSitio({ filters }) {
             initialSort={{ key: 'repeat_rounds', dir: 'desc' }}
             csvName="repetir-sitio-por-mapa"
             empty={SIN_PARES}
+          />
+        </>
+      )}
+    </Panel>
+  )
+}
+
+const SIN_PARES_SPAWN = 'Con estos filtros no hay dos rondas de ataque seguidas con spawn.'
+
+const columnasRepetirSpawn = [
+  { key: 'tramo', label: 'Tras', left: true, sortable: false },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que saliste del mismo spawn.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que saliste de otro spawn.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+function PanelRepetirSpawn({ filters }) {
+  const { data, error, loading } = useApi('/positioning/spawn-after-result/', filters)
+  return (
+    <Panel
+      title="Repetir o cambiar el spawn"
+      hint="Después de una ronda de ataque, si en tu siguiente ronda de ataque de esa partida saliste del mismo spawn o de otro, y cuánto ganaste esa siguiente ronda. Tras ganar es la base para comparar. Con el filtro de operador o de sitio, solo las rondas que lo cumplen abren el par."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !hayParesSpawn(data) ? (
+        <p className="note">{SIN_PARES_SPAWN}</p>
+      ) : (
+        <>
+          <p className="note">{textoParesSpawn(data.pairs)}.</p>
+          <DataTable
+            columns={columnasRepetirSpawn}
+            rows={filasRepetirSpawn(data)}
+            rowKey={(row) => row.tras}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            csvName="repetir-spawn"
+            empty={SIN_PARES_SPAWN}
           />
         </>
       )}
