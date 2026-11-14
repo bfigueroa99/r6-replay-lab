@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-14T01:09Z
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
