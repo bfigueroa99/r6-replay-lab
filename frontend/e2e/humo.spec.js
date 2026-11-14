@@ -595,6 +595,7 @@ test('Duelos muestra el estado de vivos al matar', async ({ page }) => {
   const filaEstado = panel.locator('table').nth(1).locator('tbody tr').first()
   await expect(filaEstado.locator('td').first()).toHaveText(estado.state)
   await expect(filaEstado.locator('td').nth(1)).toHaveText(String(estado.kills))
+  await expect(filaEstado.locator('td').nth(2)).toHaveText(String(estado.rounds))
 
   expect(errores).toEqual([])
 })

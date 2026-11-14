@@ -9,6 +9,13 @@ const ORDEN_API = { key: 'orden', dir: 'asc' }
 
 const COLUMNA_BAJAS = { key: 'kills', label: 'Bajas', help: 'Bajas a rivales; un teamkill no cuenta, pero resta su vivo.' }
 
+// El aviso de muestra va sobre rondas: cada tabla las muestra para que se vea que fila lo dispara.
+const COLUMNA_RONDAS = {
+  key: 'rounds',
+  label: 'Rondas',
+  help: 'Una ronda con dos bajas en la misma situación cuenta una vez.',
+}
+
 const COLUMNA_WINRATE = {
   key: 'winrate',
   label: 'Winrate de la ronda',
@@ -39,11 +46,7 @@ export default function EstadoAlMatar({ filters }) {
           columns={[
             { key: 'label', label: 'Situación', left: true, sortable: false },
             COLUMNA_BAJAS,
-            {
-              key: 'rounds',
-              label: 'Rondas',
-              help: 'Una ronda con dos bajas en la misma situación cuenta una vez.',
-            },
+            COLUMNA_RONDAS,
             COLUMNA_WINRATE,
           ]}
           rows={grupos}
@@ -62,6 +65,7 @@ export default function EstadoAlMatar({ filters }) {
               help: 'Vivos de tu equipo (contándote) contra vivos rivales, justo antes de la baja.',
             },
             COLUMNA_BAJAS,
+            COLUMNA_RONDAS,
             COLUMNA_WINRATE,
           ]}
           rows={estados}

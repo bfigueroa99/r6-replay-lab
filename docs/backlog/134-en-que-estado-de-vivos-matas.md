@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
-estado: en curso 2026-11-14T00:39Z
-candado: dev 2026-11-14T00:39Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
@@ -22,20 +22,20 @@ reverso de Estado al morir (ficha 116), que ya esta en Duelos.
 
 ## Criterios de aceptacion
 
-- [ ] Un agregado devuelve, por estado `tuyos vivos v rivales vivos` justo
+- [x] Un agregado devuelve, por estado `tuyos vivos v rivales vivos` justo
       antes de cada baja tuya a un rival, `kills` y `winrate` de esas rondas
       (sobre las que tienen ganador; una ronda con dos bajas tuyas cuenta
       en los dos estados). Test con una ronda armada: tu primera baja en
       `5v5`, la segunda en `5v4`.
-- [ ] Los teamkills no cuentan como baja tuya (como `kills` desde la
+- [x] Los teamkills no cuentan como baja tuya (como `kills` desde la
       ficha 67) pero si restan un vivo de tu equipo; un `PlayerLeave` resta
       un vivo (como `pydissect/stats.py`). Test de los dos.
-- [ ] Ventaja, paridad y desventaja agregadas (`ahead`, `even`, `behind`)
+- [x] Ventaja, paridad y desventaja agregadas (`ahead`, `even`, `behind`)
       ademas del estado exacto, con su winrate, con la misma recorrida de
       vivos que `death_state` (`metrics.estado_al_morir` o su vecina). Test.
-- [ ] Los filtros globales aplican (lado, mapa, operador, tipo, fechas,
+- [x] Los filtros globales aplican (lado, mapa, operador, tipo, fechas,
       sesion). Test de lado.
-- [ ] Se ve en Duelos junto a Estado al morir, con la muestra minima de
+- [x] Se ve en Duelos junto a Estado al morir, con la muestra minima de
       `metricas.md` como aviso; sin bajas, un texto y no un error; e2e por
       esa pagina con la consola limpia. Fila nueva en `docs/metricas.md`
       ("Estado al matar").
@@ -97,6 +97,69 @@ Skills del repo: statistical-analysis (winrate sobre rondas distintas, no por ba
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+Quedo el diseno completo, sin desvios de alcance:
+
+- `metrics.estado_al_matar` debajo de `estado_al_morir`, con su mismo recorrido.
+- `aggregates.kill_state` debajo de `death_state`: bajas por fila, rondas y
+  winrate sobre rondas distintas de la fila (un `set` de grupos por ronda; en
+  el estado exacto no hace falta, no se repite), `sin_feed` = `kills` de la
+  fila menos los pares que ubica el feed. 3 consultas constantes.
+- `GET /api/duels/kill-state/` (`views.kill_state`, url `kill-state`).
+- `estadoAlMatar.js` (reutiliza `ETIQUETAS_GRUPO`), `EstadoAlMatar.jsx` y el
+  panel en Duelos debajo de Estado al morir.
+- `docs/metricas.md`: fila "Estado al matar" y fila en `## Muestra minima`.
+
+Desvios menores del diseno:
+
+- La carga de equipos y feed (dos consultas correlacionadas) se extrajo a
+  `_equipos_y_feeds(mias)`, que usan `death_state` y `kill_state`, en vez de
+  copiarla; los 19 tests de `test_estado_al_morir.py` siguen verdes y su
+  `assertNumQueries(3)` tambien.
+- La tabla "Por estado exacto" suma la columna Rondas (pedido de la revision
+  ciega: el aviso de muestra va sobre rondas y sin ella no se ve que fila lo
+  dispara).
+- Tests extra: `test_un_teamkill_tuyo_no_es_baja`,
+  `test_la_api_sin_bajas_devuelve_grupos_vacios`; el de grupos se llama
+  `test_ventaja_paridad_y_desventaja`.
+- e2e con los numeros de `/api/duels/kill-state/` y no con literales del seed.
+
+Criterios -> tests (`backend/tests/test_estado_al_matar.py`): (1)
+`test_tu_primera_baja_en_5v5_y_la_segunda_en_5v4`,
+`test_cuenta_bajas_por_estado_y_winrate`,
+`test_una_ronda_sin_ganador_cuenta_bajas_y_no_winrate`,
+`test_dos_bajas_con_ventaja_en_la_misma_ronda_son_una_ronda_del_grupo`; (2)
+`test_un_teamkill_no_es_baja_pero_resta_un_vivo`, `test_un_teamkill_tuyo_no_es_baja`,
+`test_solo_teamkills_no_entra`, `test_un_player_leave_resta_un_vivo`; (3)
+`test_ventaja_paridad_y_desventaja`, `test_el_orden_de_estados_va_de_ventaja_a_desventaja`,
+`test_un_trade_ve_el_estado_que_dejo_la_baja_anterior`; (4)
+`test_el_filtro_de_lado_aplica_sobre_tu_fila`, `test_la_api_responde_con_los_filtros`;
+(5) `estadoAlMatar.test.js` (5 tests), e2e `Duelos muestra el estado de vivos al
+matar`, fila en `metricas.md`. Ademas `test_un_kill_de_quien_ya_no_esta_vivo_no_se_anota`,
+`test_sin_actor_no_es_baja_de_nadie`, `test_baja_sin_evento_va_a_sin_feed`,
+`test_consultas_constantes`.
+
+TDD: los 18 tests Django en rojo antes de la regla (17 errores por la
+funcion que faltaba, 1 fallo por la ruta en 404); el vitest en rojo antes de
+`estadoAlMatar.js`.
+
+Revision ciega (omc-code-reviewer, `revision.md`): aprobar, 2 LOW. Arreglado:
+columna Rondas en la tabla por estado. Sin arreglar: se calcula al consultar
+(el precedente de `death_state` y `nemesis`, dicho en el docstring).
+
+Verificacion manual sugerida: `seed_demo`, `/duelos`: el panel debajo de
+Estado al morir; Bajas por estado exacto + "no se pueden ubicar" = bajas del
+Resumen con los mismos filtros; lado Ataque cambia los numeros.
+
+Skills: no aplica (sin dominio nuevo).
+Skills del repo: test-driven-development (rojo visto en Django y vitest),
+testing-strategy (regla en `SimpleTestCase`, agregado y API en `TestCase`,
+textos en vitest, pagina en e2e), statistical-analysis (winrate sobre rondas
+distintas, no por baja; muestra 30 sobre rondas), ux-copy (textos calcados de
+Estado al morir, con tildes); sql-queries no hizo falta (patron vecino, con
+`assertNumQueries`); modern-web-guidance no se consulto: el JSX copia el
+componente vecino `EstadoAlMorir.jsx`.
+OMC: plan=— · revisión=2 LOW (1 arreglado) · verificación=—
 
 ## Revision
 
