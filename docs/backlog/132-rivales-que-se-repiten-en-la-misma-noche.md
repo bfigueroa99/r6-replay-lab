@@ -1,7 +1,7 @@
 # 132. Rivales que se repiten en la misma noche
 
-estado: revisado
-candado: qa 2026-11-14T00:40Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/132-rivales-que-se-repiten-en-la-misma-noche
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D13
 archivos: backend/replays/analytics/aggregates.py, backend/tests/test_duels.py, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T2318Z-chc2kiA, dev 20261114T0012Z-crDhgd7, revisor 20261114T0012Z-ccgaH14
+turnos: po 20261113T1926Z-ce4Pmp6, arquitecto 20261113T2318Z-chc2kiA, dev 20261114T0012Z-crDhgd7, revisor 20261114T0012Z-ccgaH14, qa 20261114T0040Z-c3LsMAo
 
 ## PR
 
@@ -245,7 +245,51 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=1 LOW (0 arreglados, confirmado) · verificación=—
 
-## QA
+## QA 2026-11-14 sobre 6ebf346
+
+(qa 20261114T0040Z-c3LsMAo)
+
+Veredicto: `aprobado`.
+
+- `check.sh` completo: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 6ebf3461c en 193s: 1357 tests backend, 443 vitest, 119 e2e. Todo en verde.`
+- Base sembrada desde `factories.py` (script en el scratchpad, `SQLITE_PATH`
+  temporal, nunca al repo): rival `acosador` en 5 partidas, noche 1
+  (2026-09-01 20/21/22 h: Club House L, Border W, Club House L) y noche 2
+  (2026-09-03 20/21 h: Border W, Border W); `casual` en la 1ra de cada noche;
+  una baja por partida, `recompute`. `runserver` en 127.0.0.1:8132 y `curl`:
+  - `/api/duels/` -> acosador `matches 5, same_session 3 (2-1)`; casual `2, 0`.
+    A mano: revanchas = partidas 2 (W), 3 (L) y 5 (W) -> 3 (2-1). Antes del
+    `recompute`, con `won=None` en la 5: `3 (1-1)` (sin resultado fuera del record).
+  - `?map=border` -> 3 partidas, `1 (0-0)` con la None (la noche 1 queda con
+    una sola en Border); `?map=club-house` -> 2 partidas, `1 (0-1)`.
+  - `?session=0` -> `1`; `?session=1` -> `2 (1-1)`.
+  - `?until=foo`, `?map=`, `?page=-1&min_duels=0` -> 200, igual que sin filtro;
+    `?match_type=Casual` -> `rivals: []`; base vacia -> 200 con `rivals: []`.
+  - Vecinos: `/api/duels/death-state/`, `/api/duels/thrown-advantage/?map=border`,
+    `/api/players/1/` -> 200.
+- Pantalla (Playwright, Chromium, base sembrada; accessibility-review):
+  `columnheader` "Revanchas esa noche" con boton y `title` de ayuda; filas
+  `acosador ... 3 (2-1)` y `casual ... —` (la rama `N (G-P)` que el e2e no ve
+  y marco el LOW de la revision, vista aca); Enter con foco en el boton ordena
+  (`aria-sort` descending, luego ascending); contraste celda 14.17:1, cabecera
+  5.71:1 (AA); consola sin errores. CSV descargado: `3 (2-1)` y `0`.
+  Sin Critical ni Major. Menor, no frena: `Récord` usa guion largo (`3–2`) y
+  la columna nueva guion corto (`2-1`), como pedia el diseno.
+- Chunk inicial: `Duelos` es `lazy` en `App.jsx`; `index-*.js` no cambia por la ficha.
+- validate-data sobre la fila de `metricas.md`: conteo y record, sin tasa ni
+  promedio; `—` en pantalla y 0 en CSV; la sesion sale de todas las partidas y
+  las revanchas de las filtradas (coincide con `?map=`). Dos valores
+  recalculados a mano arriba.
+- Mutaciones en `_revanchas` (`python manage.py test tests.test_duels.RivalesRepetidosTests`):
+  sin `[1:]` -> 8 fallan; `None` como derrota -> 1 falla; sesion ignorada -> 3
+  fallan; desempate por `-id` -> 1 falla. Todas muertas; codigo restaurado.
+- Sin migracion, parser, `recompute` nuevo, Electron ni `.ps1`: nada para
+  `## Verificar en el PC`.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (teclado, nombre, contraste: 0 Critical/Major), validate-data (2 valores recalculados), design-critique no aplica (sin pagina ni panel nuevo).
+OMC: plan=— · revisión=— · verificación=PASS
 
 ## Para el humano
 
