@@ -1,7 +1,7 @@
 # 139. Rondas perdidas sobreviviendo
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T01:07Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas

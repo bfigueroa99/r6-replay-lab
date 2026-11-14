@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T01:07Z
 rama: -
 tipo: funcionalidad
 epica: posicionamiento
