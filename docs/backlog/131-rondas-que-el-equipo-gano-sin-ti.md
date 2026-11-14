@@ -1,7 +1,7 @@
 # 131. Rondas que el equipo gano sin ti
 
 estado: revisado
-candado: -
+candado: qa 2026-11-14T00:22Z
 rama: claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti
 tipo: funcionalidad
 epica: escuadra
