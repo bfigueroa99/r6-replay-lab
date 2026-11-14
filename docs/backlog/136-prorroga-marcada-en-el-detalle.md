@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T00:41Z
 rama: -
 tipo: funcionalidad
 epica: revision-de-rondas

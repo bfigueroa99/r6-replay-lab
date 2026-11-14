@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T00:41Z
 rama: -
 tipo: funcionalidad
 epica: rivales

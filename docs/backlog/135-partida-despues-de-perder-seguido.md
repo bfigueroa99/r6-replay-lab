@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-14T00:41Z
 rama: -
 tipo: funcionalidad
 epica: progreso
