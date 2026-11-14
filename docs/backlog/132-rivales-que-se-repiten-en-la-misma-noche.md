@@ -1,7 +1,7 @@
 # 132. Rivales que se repiten en la misma noche
 
 estado: aprobado
-candado: -
+candado: release 2026-11-14T00:48Z
 rama: claude/equipo-dev/132-rivales-que-se-repiten-en-la-misma-noche
 tipo: funcionalidad
 epica: rivales
