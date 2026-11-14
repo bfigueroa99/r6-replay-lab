@@ -673,6 +673,33 @@ test('Duelos muestra los operadores que te abren', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('Duelos muestra las muertes por headshot', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = (await (await page.request.get('/api/duels/')).json()).headshot_deaths
+  await page.goto('/duelos')
+
+  const titulo = page.getByRole('heading', { name: 'Muertes por headshot', exact: true })
+  await expect(titulo).toBeVisible()
+  const panel = page.locator('section.panel').filter({ has: titulo })
+  // seed_demo trae muertes tuyas con dato de headshot: sin ellas el test miraria la nota
+  expect(datos.me.total.with_data).toBeGreaterThan(0)
+  const filas = panel.locator('table tbody tr')
+  await expect(filas).toHaveCount(2)
+  // "67% (3)" o raya: escrito aca y no importado, para no probar el helper con el mismo
+  const texto = (c) => (c.with_data ? `${c.pct.toFixed(0)}% (${c.with_data})` : '—')
+  const tu = filas.nth(0)
+  await expect(tu.locator('td').nth(0)).toHaveText('Tú')
+  await expect(tu.locator('td').nth(1)).toHaveText(texto(datos.me.Attack))
+  await expect(tu.locator('td').nth(2)).toHaveText(texto(datos.me.Defense))
+  await expect(tu.locator('td').nth(3)).toHaveText(texto(datos.me.total))
+  const companeros = filas.nth(1)
+  await expect(companeros.locator('td').nth(0)).toHaveText('Tus compañeros')
+  await expect(companeros.locator('td').nth(3)).toHaveText(texto(datos.teammates.total))
+
+  expect(errores).toEqual([])
+})
+
 test('el CSV de rivales repetidos trae el récord de cada rival', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/duelos')

@@ -7,6 +7,8 @@ import VentajaTirada from '../components/VentajaTirada.jsx'
 import Filters from '../components/Filters.jsx'
 import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, pct } from '../components/ui.jsx'
 import { filasOperadoresQueTeAbren } from '../operadoresQueTeAbren.js'
+import { MUESTRA_CORTE } from '../muestra.js'
+import { conPocaMuestra, filasMuertesHeadshot, textoCelda } from '../muertesHeadshot.js'
 import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
 import { fechaCorta, fechaCsv } from '../ultimaVez.js'
 
@@ -42,6 +44,20 @@ function Diferencia({ value, mejorSiSube }) {
   )
 }
 
+// Cada celda es "67% (3)": el porcentaje y sobre cuantas muertes con dato. El CSV
+// lleva el mismo texto, y vacio donde la tabla pone la raya.
+const COLUMNAS_HS = [
+  ['ataque', 'Ataque'],
+  ['defensa', 'Defensa'],
+  ['total', 'Total'],
+].map(([key, label]) => ({
+  key,
+  label,
+  sortable: false,
+  render: (row) => textoCelda(row[key]),
+  csv: (row) => (row[key].with_data ? textoCelda(row[key]) : null),
+}))
+
 export default function Duelos({ filters, setFilters, runImport, importing }) {
   const [minDuels, setMinDuels] = useState(3)
   const { data, error, loading } = useApi('/duels/', { ...filters, min_duels: minDuels })
@@ -72,6 +88,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const faced = data.faced || { base: {}, operators: [] }
   const rivals = data.rivals ?? []
   const stacks = data.rival_stacks ?? []
+  const muertesHs = filasMuertesHeadshot(data.headshot_deaths)
 
   const selector = (
     <label className="note" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -265,6 +282,31 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           csvName="duelos-por-rival"
           empty={`Nadie llega a ${minDuels} duelos contigo con estos filtros.`}
         />
+      </Panel>
+
+      <Panel
+        title="Muertes por headshot"
+        hint={
+          'De tus muertes a manos de rivales, cuántas fueron headshot, al lado del mismo número ' +
+          'para tus compañeros en las mismas rondas. Sin teamkills. n = muertes con dato de headshot.'
+        }
+      >
+        <DataTable
+          columns={[
+            { key: 'grupo', label: 'Quién', left: true, sortable: false },
+            ...COLUMNAS_HS,
+          ]}
+          rows={muertesHs}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => row.clave}
+          csvName="muertes-por-headshot"
+          empty="No hay muertes con dato de headshot con estos filtros."
+        />
+        {conPocaMuestra(muertesHs) ? (
+          <p className="note">
+            Ojo: alguna celda tiene menos de {MUESTRA_CORTE} muertes con dato; la diferencia puede ser varianza.
+          </p>
+        ) : null}
       </Panel>
 
       <Panel

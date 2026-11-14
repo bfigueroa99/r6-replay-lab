@@ -3454,6 +3454,69 @@ def _duelos(mine: QuerySet[RoundPlayer], me_ids: list[int]):
     return contra_mi, a_favor
 
 
+#: Columnas por lado de Muertes por headshot; `total` se suma aparte.
+MUERTES_HS_LADOS = ("Attack", "Defense")
+
+#: El lado de tu fila en la ronda del evento: tus compañeros juegan el mismo.
+_MI_LADO = Subquery(
+    RoundPlayer.objects.filter(round_id=OuterRef("round_id"), is_me=True).values("side")[:1]
+)
+
+
+def _celda_headshot() -> dict:
+    return {"deaths": 0, "with_data": 0, "headshots": 0, "pct": None}
+
+
+def headshot_deaths(**filters) -> dict:
+    """De tus muertes a manos de rivales, cuantas fueron headshot, y lo mismo de tus companeros.
+
+    El reverso del HS%, que mira tus bajas. Se calcula al consultar, como
+    `nemesis`: es un conteo de eventos del feed, sin columna nueva. Tus
+    companeros son la referencia en las mismas rondas filtradas, para separar
+    "me enganchan la cabeza" de "en este juego todo es headshot". El
+    porcentaje es sobre las muertes con dato: un `headshot` nulo cuenta como
+    muerte pero no entra en el denominador. Conteos sumados, nunca promedio de
+    partidas ni de companeros.
+    """
+    salida = {
+        quien: {lado: _celda_headshot() for lado in (*MUERTES_HS_LADOS, "total")}
+        for quien in ("me", "teammates")
+    }
+    me_ids = _me_ids()
+    if not me_ids:
+        return salida
+    es_mia = Case(When(target_id__in=me_ids, then=Value(1)), default=Value(0),
+                  output_field=IntegerField())
+    filas = (
+        # autor rival (fuera teamkills y bajas sin autor) y victima de tu equipo
+        _solo_rivales(_mis_bajas(base_queryset(**filters)), "actor_id")
+        .annotate(equipo_victima=_equipo_de("target_id"))
+        .filter(Q(target_id__in=me_ids) | Q(equipo_victima=F("mi_equipo")))
+        # solo estas dos en el GROUP BY: las anotaciones de `_solo_rivales` partirian el conteo
+        .annotate(lado=_MI_LADO, es_mia=es_mia)
+        .values("lado", "es_mia")
+        .annotate(
+            n=Count("id"),
+            con_dato=Count("id", filter=Q(headshot__isnull=False)),
+            hs=Count("id", filter=Q(headshot=True)),
+        )
+    )
+    for fila in filas:
+        grupo = salida["me" if fila["es_mia"] else "teammates"]
+        # un lado que no es ataque ni defensa (dato raro) solo suma al total
+        celdas = [grupo["total"]]
+        if fila["lado"] in MUERTES_HS_LADOS:
+            celdas.append(grupo[fila["lado"]])
+        for celda in celdas:
+            celda["deaths"] += fila["n"]
+            celda["with_data"] += fila["con_dato"]
+            celda["headshots"] += fila["hs"]
+    for grupo in salida.values():
+        for celda in grupo.values():
+            celda["pct"] = _pct(celda["headshots"], celda["with_data"])
+    return salida
+
+
 def nemesis(min_duels: int = 3, **filters) -> list[dict]:
     """Duelos contra cada rival: quien te gana, a quien le ganas.
 
