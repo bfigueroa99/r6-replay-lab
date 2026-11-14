@@ -546,6 +546,14 @@ test('Duelos muestra rivales repetidos con enlace al perfil', async ({ page }) =
   const ultima = cabeceras.findIndex((t) => t.startsWith('Última vez'))
   expect(ultima).toBeGreaterThan(-1)
   await expect(panel.locator('tbody tr').first().locator('td').nth(ultima)).toHaveText(`${dia}-${mes}-${anio}`)
+  // revanchas de la misma noche: contra la API y no contra un literal, porque
+  // seed_demo separa sus partidas 3 h y hoy todas valen 0 (la celda es la marca)
+  const revancha = cabeceras.findIndex((t) => t.startsWith('Revanchas esa noche'))
+  expect(revancha).toBeGreaterThan(-1)
+  const r = rivals[0]
+  await expect(panel.locator('tbody tr').first().locator('td').nth(revancha)).toHaveText(
+    r.same_session ? `${r.same_session} (${r.same_session_wins}-${r.same_session_losses})` : '—',
+  )
   // seed_demo repite los mismos rivales en todas las partidas
   const enlace = panel.locator('table tbody tr').first().getByRole('link').first()
   await expect(enlace).toHaveAttribute('href', /\/jugadores\/\d+$/)
