@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
 estado: revisado
-candado: -
+candado: qa 2026-11-14T01:15Z
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md E6; el Coach ya aconseja "si son tres derrotas seguidas, corta la sesión" (`coach.py`, `_form`) sin mostrar el dato que lo respalda
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_tras_derrotas.py, frontend/src/trasDerrotas.js, frontend/src/trasDerrotas.test.js, frontend/src/pages/Trends.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0040Z-c3LsMAo, revisor 20261114T0104Z-choi73m
+turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0040Z-c3LsMAo, revisor 20261114T0104Z-choi73m, qa 20261114T0104Z-cWK4yQD
 
 ## PR
 
