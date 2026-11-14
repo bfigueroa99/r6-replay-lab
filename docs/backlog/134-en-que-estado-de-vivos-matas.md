@@ -161,8 +161,6 @@ Estado al morir, con tildes); sql-queries no hizo falta (patron vecino, con
 componente vecino `EstadoAlMorir.jsx`.
 OMC: plan=— · revisión=2 LOW (1 arreglado) · verificación=—
 
-## Revision
-
 ## Revision 2026-11-14 sobre 6851732
 
 (revisor 20261114T0040Z-c3LsMAo)
