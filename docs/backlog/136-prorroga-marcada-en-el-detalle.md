@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-14T01:25Z
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F25 (la tira de Partidas, ficha 103, ya corta antes de la prorroga; el detalle no)
 archivos: backend/replays/views.py, backend/tests/test_prorroga_en_detalle.py, frontend/src/prorrogaDetalle.js, frontend/src/prorrogaDetalle.test.js, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0104Z-choi73m
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0104Z-choi73m, revisor 20261114T0104Z-cWK4yQD
 
 ## PR
 
