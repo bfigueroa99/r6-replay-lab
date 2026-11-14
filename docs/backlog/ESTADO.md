@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-13 23:53 UTC por revisor, qa, release, dev, po (sesion 20261113T2318Z-cpCpgff; motivo: por estado: 2 implementado; sigue: 1 revisado; sigue: 4 disenado, lugar en cola; sigue: papel corto: 5 propuesto de 6)
+actualizado: 2026-11-14 00:10 UTC por dev, revisor (sesion 20261113T2345Z-c5J2BqJ; motivo: por estado: 1 con_hallazgos, 0 huerfanas; sigue: 1 implementado)
 playbook: origin/dev@2b7f715
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias; prompt distinto de rutina.md, no sincronizado (la tanda simultanea no toca Routines)
 en vacio: TURNOS_EN_VACIO=0 de 13 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -11,19 +11,19 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 0 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder | docs/backlog/128-repetir-o-cambiar-el-spawn-tras-perder.md | en curso (candado dev de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder?expand=1) |
-| claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | implementado (e2e intermitente corregido, 170/170) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
-| claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti | docs/backlog/131-rondas-que-el-equipo-gano-sin-ti.md | en curso (candado dev de otra corrida) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti?expand=1) |
+| claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder | docs/backlog/128-repetir-o-cambiar-el-spawn-tras-perder.md | implementado (espera revisor de otra sesion) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder?expand=1) |
+| claude/equipo-dev/129-filtro-de-operador-en-operadores | docs/backlog/129-filtro-de-operador-en-operadores.md | revisado (tercera pasada, solo LOW; espera QA) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/129-filtro-de-operador-en-operadores?expand=1) |
+| claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti | docs/backlog/131-rondas-que-el-equipo-gano-sin-ti.md | implementado | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti?expand=1) |
 
 COLA=4 (tope 4)  TOTAL=4 (tope 6)
-RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=103 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=1
+RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=1 revisado=0 con_hallazgos=0 aprobado=0 entregado=0 espera_humano=1 cola=4 total=4 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3 ideas_libres=103 sin_merge=no pausa=no sin_rastro_48h=1 bloqueadas=2
 
 ## Orden de merge sugerido
 
 `git merge-tree` de las cuatro ramas contra `origin/dev@2b7f715` (ya con la 127 y la 133) y por pares: ninguna choca.
 
-1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (implementado: espera revisor de otra sesion): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
-2. `claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder` y `claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti` (en curso).
+1. `claude/equipo-dev/129-filtro-de-operador-en-operadores` (revisado: espera QA): `operadorElegido.js`, `Operators.jsx`, `humo.spec.js`, `metricas.md`.
+2. `claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder` (implementado; `aggregates.py`, `views.py`, `urls.py`, `Coach.jsx`, `humo.spec.js`, `metricas.md`) y `claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti` (implementado).
 3. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
 ## Alcance
@@ -43,8 +43,8 @@ RESUMEN propuesto=6 disenado=3 en_curso=2 huerfanas=0 implementado=0 revisado=0 
 | 79-excluir-una-partida-de-los-agregados | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | funcionalidad | datos | 3 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado | funcionalidad | datos | 3 | fullstack | - |
 | 109-quien-te-venga | disenado | funcionalidad | escuadra | 3 | fullstack | - |
-| 128-repetir-o-cambiar-el-spawn-tras-perder | en curso 2026-11-13T23:45Z | funcionalidad | posicionamiento | 3 | fullstack | - |
-| 129-filtro-de-operador-en-operadores | implementado (en su rama) | funcionalidad | operadores | 3 | frontend | - |
+| 128-repetir-o-cambiar-el-spawn-tras-perder | implementado (en su rama) | funcionalidad | posicionamiento | 3 | fullstack | - |
+| 129-filtro-de-operador-en-operadores | revisado (en su rama) | funcionalidad | operadores | 3 | frontend | - |
 | 131-rondas-que-el-equipo-gano-sin-ti | disenado | funcionalidad | escuadra | 3 | fullstack | - |
 | 132-rivales-que-se-repiten-en-la-misma-noche | disenado | funcionalidad | rivales | 3 | fullstack | - |
 | 134-en-que-estado-de-vivos-matas | disenado | funcionalidad | impacto | 3 | backend | - |
@@ -65,8 +65,8 @@ Espejos: 128, 129 y 131 viven en su rama, que manda. La 133 ya esta en dev (espe
 |---|---|---|
 | release | 2026-11-13 23:53 | (release 20261113T2318Z-cpCpgff, dentro de la QA) 133 entregada: ficha recortada, merge de dev (11 commits, limpio), VERDE b55bd2aa6 (1321, 431, 115) sobre el commit final, [PR #130](https://github.com/bfigueroa99/r6-replay-lab/pull/130) **mergeado** en dev (2b7f715); borrado de la rama sin efecto (proxy); espejo quitado. |
 | qa | 2026-11-13 23:53 | (qa 20261113T2318Z-cpCpgff) 133 `revisado` -> `aprobado`: VERDE f8baaae (1312, 427, 115); base sembrada con 8 escenarios (eliminacion, 5v4, 5v3, trade simultaneo, sin ganador, abandono, post-plant, partida de un jugador): API = calculo a mano; bordes por curl; Chromium claro/oscuro, contraste 5,71:1, teclado; 4 mutaciones atrapadas; omc-verifier PASS. |
-| revisor | 2026-11-13 23:53 | (revisor 20261113T2318Z-cpCpgff) 127 `implementado` -> `revisado`: dos ejes, 0 CRITICAL/HIGH, 1 MEDIUM (el e2e no dibuja la tabla con `seed_demo`, igual que la 115) y 2 LOW; VERDE d0f606a86 (1293, 425, 114). |
-| dev | 2026-11-13 23:53 | (dev 20261113T2318Z-cpCpgff) 129 `con hallazgos` -> `implementado`: e2e del selector escucha los pedidos antes del `goto` (50/50 y 100/100 con 8 workers) y fija la fila Ataque/Tras ganar (LOW del filtro ciego); merge de dev (31 commits); VERDE d0960c82f (1321, 435, 117). |
+| revisor | 2026-11-14 00:10 | (revisor 20261113T2345Z-c5J2BqJ, sigue) 129 `implementado` -> `revisado`, tercera pasada: ciego aprobar con 2 LOW (nota que nombra Defensa con `side=Attack`, `toHaveCount(0)` antes de la carga) a `## Para el humano` de la ficha; e2e antes intermitente 60/60 con 8 workers; VERDE 5a72366b6 (1321, 435, 117). |
+| dev | 2026-11-14 00:10 | (dev 20261113T2345Z-c5J2BqJ) 128 `disenado` -> `implementado`: `spawn_after_result`, `/api/positioning/spawn-after-result/`, panel "Repetir o cambiar el spawn" en Coach, 14 tests Django, 4 vitest, 1 e2e; ciego 4 LOW arreglados; VERDE e11cb35db (1335, 435, 116). |
 | arquitecto | 2026-11-13 23:37 | (arquitecto 20261113T2317Z-cBbsozQ, sigue) Disena 134 (estado de vivos al matar: `metrics.estado_al_matar`, `kill_state`, `/api/duels/kill-state/`, panel en Duelos debajo de Estado al morir; winrate sobre rondas distintas); frenada por la 133 (Duelos.jsx, aggregates, e2e). |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
 | po | 2026-11-13 23:53 | (po 20261113T2318Z-cpCpgff) Reconcilia B22 y F5 en dev; propone 140 (ventaja tirada marcada en el detalle de partida, F26, tramo tras la 133). Ideas nuevas F28 y F29 en `ALCANCE.md`. |
