@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
-estado: con hallazgos
-candado: dev 2026-11-14T01:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
@@ -215,6 +215,50 @@ tildes, UI con tildes; sin `print` ni `console.log`.
 Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=1 MEDIUM, 2 LOW (0 arreglados, confirmados) · verificación=—
+
+## Arreglo de hallazgos 2026-11-14
+
+(dev 20261114T0104Z-cWK4yQD)
+
+- MEDIUM (bajas tras tu caida contadas como `sin_feed`): nueva
+  `metrics.bajas_despues_de_caer` (mismo recorrido; `Kill` a rival de un autor
+  que ya cayo o se fue) y campo `post_mortem` en `kill_state`;
+  `sin_feed = kills - pares - post_mortem`. UI: `notaPostMortem` y las dos
+  notas juntas en `NotasAparte`. Texto: "llegó al feed después de tu caída
+  (trampa, gadget o intercambio del mismo instante)": la revision ciega de
+  este turno marco que un trade del mismo tick ordenado con tu muerte primero
+  cae aca, asi que el texto no afirma "trampa". Fila de `metricas.md` al dia.
+  Estado vacio: "No hay bajas tuyas en vida con estos filtros."
+- LOW test de `sin_feed`: cubierto por `test_una_baja_despues_de_caer_no_es_sin_feed`
+  y `test_bajas_en_vida_y_despues_de_caer_en_la_misma_ronda`; el viejo afirma
+  ademas `post_mortem == 0`.
+- LOW `_grupo_de`: `death_state` la usa; movida arriba de las dos.
+- Tests nuevos (rojo visto: 7 errores antes del codigo; vitest 1 fallo):
+  `test_una_baja_despues_de_caer_se_cuenta_aparte`,
+  `test_despues_de_caer_no_cuenta_teamkills_ni_bajas_en_vida`,
+  `test_despues_de_caer_cuenta_al_que_se_fue`, los dos agregados de arriba,
+  `post_mortem` en `test_la_api_sin_bajas_devuelve_grupos_vacios`, vitest de
+  `notaPostMortem`, e2e: la nota sale si y solo si `post_mortem > 0`.
+
+No arreglado (deuda, para ficha aparte): `seed_demo` crea tu muerte con
+`order=0` antes de tus bajas aunque sus relojes son anteriores, asi que en el
+demo 65 de 99 bajas caen en `post_mortem` (la revision ciega lo midio).
+Ordenar el feed por reloj se probo en este turno y rompe dos e2e que dependen
+del orden viejo (numeros de Estado al morir y el chip `entry` del timeline):
+excede esta ficha. Con datos reales el feed va en orden de juego.
+
+Revision ciega (omc-code-reviewer, `revision.md`): aprobar; 1 MEDIUM (trade
+del mismo tick, resuelto en texto, docstring y `metricas.md`), 5 LOW (docstring
+contradictorio y estado vacio arreglados; seed como deuda; victima sin fila en
+`sin_feed` y calculo al consultar: precedente de `death_state`, sin cambio).
+
+verificar.sh: VERDE bb90965ca (1380 tests backend, 449 vitest, 120 e2e), con
+`origin/dev` fusionado.
+
+Skills: no aplica.
+Skills del repo: test-driven-development (rojo visto en Django y vitest),
+ux-copy (textos con tildes, sin afirmar la causa que no se sabe).
+OMC: plan=— · revisión=1 MEDIUM, 5 LOW (3 arreglados) · verificación=—
 
 ## QA
 
