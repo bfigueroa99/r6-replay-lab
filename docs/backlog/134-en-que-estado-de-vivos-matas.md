@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
-estado: implementado
-candado: revisor 2026-11-14T03:25Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
@@ -259,6 +259,68 @@ Skills: no aplica.
 Skills del repo: test-driven-development (rojo visto en Django y vitest),
 ux-copy (textos con tildes, sin afirmar la causa que no se sabe).
 OMC: plan=— · revisión=1 MEDIUM, 5 LOW (3 arreglados) · verificación=—
+
+## Revision 2026-11-14 sobre 55b3d67
+
+(revisor 20261114T0316Z-cwWsU9i, segunda pasada)
+
+Veredicto: aprobar -> `revisado`. El MEDIUM de la primera pasada quedo
+resuelto (`post_mortem` aparte de `sin_feed`) y no aparecio nada CRITICAL,
+HIGH ni MEDIUM nuevo.
+
+Base: rama con `origin/dev` (7e7e8c6, con la 135) fusionado sin conflicto
+(`git merge-tree` 0); `verificar.sh`: VERDE 55b3d67ea en 202 s (1390 tests
+backend, 455 vitest, 121 e2e). `tests.test_estado_al_matar` 23 tests y con
+`tests.test_estado_al_morir` 42, en verde.
+
+Revision a ciegas: sin subagentes en esta sesion (no hay herramienta para
+lanzar `omc-code-reviewer`), asi que la hizo el lider sobre `git diff
+origin/dev...HEAD -- . ':(exclude)docs/backlog'` (11 archivos, +636 -12),
+con el prompt de `revision.md` como lista. No es a ciegas: la ficha se leyo
+antes.
+
+Sondas (test temporal sobre `kill_state`, borrado despues):
+- 3v3 (`Kill ME r0`, `Kill r1 m0`, `Kill ME r1`) -> estados `3v3` y `2v2`,
+  1 baja cada uno, `sin_feed` 0: sin normalizar a 5v5, como dice la ficha.
+- Victima sin fila en la ronda (`Kill ME fantasma`, `kills=1`) -> `kills 0,
+  sin_feed 1`: el precedente de `death_state`, ya aceptado en la primera
+  pasada.
+- `PlayerLeave` tuyo y despues un `Kill` tuyo -> `post_mortem 1`.
+- Acotacion: `pares + post_mortem` nunca supera `RoundPlayer.kills`, porque
+  los dos recorridos cuentan subconjuntos de lo que cuenta
+  `bajas_a_rivales` (autor en `team_of`, victima de otro equipo); el
+  `max(..., 0)` de `sin_feed` no esconde nada con datos del import.
+
+Mutaciones (codigo roto a mano y restaurado):
+- `estado_al_matar` con `actor in team_of` en vez de `actor in vivos`:
+  4 tests caen.
+- `kill_state` sumando la ronda al grupo en cada baja (sin el `set`
+  `grupos_de_la_ronda`): 1 test cae
+  (`test_dos_bajas_con_ventaja_en_la_misma_ronda_son_una_ronda_del_grupo`).
+
+Hallazgos:
+- [estilo] LOW `frontend/src/estadoAlMatar.js:42-43`
+  Que pasa: la nota dice "después de tu caída", pero `bajas_despues_de_caer`
+  tambien cuenta las bajas atribuidas despues de un `PlayerLeave` tuyo.
+  Como reproducirlo: la sonda de `PlayerLeave` de arriba da `post_mortem 1`
+  y la nota habla de caida; la fila de `docs/metricas.md` si dice "o de que
+  te fuiste".
+  Arreglo sugerido: "después de tu caída o de que te fuiste", o dejarlo
+  (con datos reales un `PlayerLeave` seguido de una baja tuya es raro). No
+  frena.
+
+Ficha: los 5 criterios cubiertos por los tests que lista
+`## Implementacion` (corridos en el verde de arriba); el diff no sale de
+`archivos:`; fila "Estado al matar" y su corte en `## Muestra minima` de
+`docs/metricas.md`; identificadores y comentarios sin tildes (los unicos no
+ASCII del diff son textos de UI y su e2e), UI con tildes; sin `print` ni
+`console.log`. La deuda de `seed_demo` (tu muerte con `order=0` antes de
+tus bajas) ya esta anotada en `ESTADO.md`; queda como idea T7 de
+`ALCANCE.md` para que no dependa del tablero.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes: revision del lider)
 
 ## QA
 
