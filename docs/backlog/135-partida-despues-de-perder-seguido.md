@@ -1,7 +1,7 @@
 # 135. Partida despues de perder seguido
 
-estado: revisado
-candado: qa 2026-11-14T01:15Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
@@ -22,17 +22,17 @@ como regla general.
 
 ## Criterios de aceptacion
 
-- [ ] Un agregado ordena las partidas de cada sesion (el corte de sesion
+- [x] Un agregado ordena las partidas de cada sesion (el corte de sesion
       que ya usan `sessions` y `by_session_position`) y devuelve, por
       derrotas seguidas previas en esa sesion (0, 1, 2, 3+), `matches`,
       `wins` y `winrate` de la partida siguiente. La primera partida de la
       sesion cae en 0. Test con una sesion D, D, V, D.
-- [ ] Una partida con `won` nulo o empatada no suma ni corta la racha y
+- [x] Una partida con `won` nulo o empatada no suma ni corta la racha y
       no entra al winrate de su fila (como `match_result`). Test.
-- [ ] Los filtros globales aplican a la partida que se cuenta; la racha
+- [x] Los filtros globales aplican a la partida que se cuenta; la racha
       previa se mide sobre todas las partidas de la sesion, sin filtros
       (si no, un filtro de mapa inventaria rachas). Test con filtro de mapa.
-- [ ] Panel en Tendencias cerca de "Curva de la sesión", con su `n` por
+- [x] Panel en Tendencias cerca de "Curva de la sesión", con su `n` por
       fila y aviso de muestra chica; sin sesiones, un texto y no un error;
       e2e con `seed_demo` y consola limpia. Fila nueva en `docs/metricas.md`.
 
@@ -227,7 +227,54 @@ Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=3 LOW (1 confirmado, 0 arreglados) · verificación=—
 
 
-## QA
+## QA 2026-11-14 sobre 3ba2768
+
+(qa 20261114T0104Z-cWK4yQD)
+
+Veredicto: `aprobado`. Los 4 criterios con evidencia.
+
+- `verificar.sh` (rama con `origin/dev` f34baba): VERDE 3ba2768c4, 1367 tests
+  backend, 449 vitest, 120 e2e.
+- Base sembrada desde `factories.py` (script en el scratchpad, sin `.rec` ni
+  `.sqlite3` al repo): sesion de 30 min entre partidas D Club, D Bank, V Club,
+  D Club, D Bank, D Club, D Club, V Club, empate 4-4, incompleta (`won=None`);
+  otra sesion a +10 h con una V. A mano: fila 0 = 5 partidas, 3 decididas, 1
+  ganada (33.3); 1 = 2/2/0; 2 = 2/2/1 (50); 3+ = 2/2/1 (50).
+  `SQLITE_PATH=<base> python manage.py runserver` y `curl /api/sessions/`:
+  - sin filtros: exactamente eso (criterios 1 y 2: el empate y la incompleta
+    caen en la fila 0 sin decidir ni cortar la racha).
+  - `?map=bank`: solo fila 1, 2/2/0 (la racha se mide con todas: criterio 3).
+    `?map=club-house`: 5/3/1, 0, 2/2/1, 2/2/1.
+  - `?side=Defense`, `?operator=Ash&site=x`, `?until=foo`, `?page=-1`,
+    `?map=`: 200 e iguales a sin filtros. `?since=2030-01-01`: 200, 4 filas
+    en 0 con winrate `null`. Base vacia: 200, 4 filas vacias.
+- Mutaciones (`by_losing_streak`), las tres mueren: sin `racha = 0` tras
+  victoria -> cae `test_sesion_d_d_v_d_reparte_por_derrotas_previas`; racha
+  solo con partidas filtradas -> cae
+  `test_filtro_de_mapa_cuenta_solo_esas_pero_la_racha_es_de_todas`; empate
+  como derrota -> cae `test_incompleta_y_empate_no_suman_ni_cortan_ni_entran_al_winrate`.
+- `vite build`: chunk inicial 200459 B en dev y en la rama (sin cambio);
+  chunk de Tendencias 34901 -> 36227 B.
+- accessibility-review (Playwright en Chromium, base sembrada, `/tendencias`):
+  tabla con rol y cabeceras (Tramo, Partidas, Decididas, Ganadas); filas
+  "Sin derrotas antes 5 3 33%", "Tras 1 derrota 2 2 0%", "Tras 2 derrotas 2 2
+  50%", "Tras 3 o más 2 2 50%"; aviso de muestra visible; contraste celdas
+  14.17:1, nota y cabeceras 5.71:1; con Tab se llega a Descargar CSV y a los
+  botones de orden; consola limpia. Sin hallazgos Critical ni Major.
+  Con `?since=2030-01-01` la pagina entera muestra "Ninguna ronda con estos
+  filtros." sin errores (la nota propia del panel queda en vitest).
+- validate-data sobre la fila de `metricas.md`: winrate sobre decididas
+  (`null` con 0, sin division por cero), `n` visible (Decididas), sin
+  promedio de promedios; dos valores recalculados a mano (fila 0 33.3, fila 2
+  50) iguales a la API.
+- design-critique: el panel copia el patron de Prórroga por lado (Panel +
+  DataTable + nota); nada que mandar a `ALCANCE.md`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 0 Minor),
+validate-data (2 valores recalculados, iguales), design-critique (sin
+hallazgos).
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 1, 2 y 3 PASS; 4 PARTIAL sin bloqueo: la nota propia del panel vacio solo en vitest, porque sin partidas la pagina entera muestra su aviso)
+
 
 ## Para el humano
 
