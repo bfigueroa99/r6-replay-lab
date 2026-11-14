@@ -3005,6 +3005,15 @@ def _position_map() -> dict[int, int]:
     }
 
 
+def _session_index_map() -> dict[int, int]:
+    """match_id -> `index` de su sesion (0 es la mas reciente)."""
+    return {
+        match_id: sesion["index"]
+        for sesion in _sessions_raw()
+        for match_id in sesion["match_ids"]
+    }
+
+
 #: Claves de AGGREGATES que son promedios y no sumas: al plegar filas hay que
 #: ponderarlas por su muestra en vez de sumarlas.
 _PROMEDIOS = {"avg_death_elapsed": "deaths", "rating_points": "rounds"}
@@ -3389,10 +3398,38 @@ def _record(ids: set[int], resultado: dict[int, bool | None], fechas: dict[int, 
     }
 
 
+def _revanchas(
+    ids: set[int],
+    sesion_de: dict[int, int],
+    resultado: dict[int, bool | None],
+    fechas: dict[int, datetime],
+) -> dict:
+    """Partidas contra el rival en una sesion donde ya te habia tocado."""
+    por_sesion: dict[int, list[int]] = {}
+    for mid in ids:
+        por_sesion.setdefault(sesion_de.get(mid), []).append(mid)
+    revanchas = [
+        mid
+        for grupo in por_sesion.values()
+        # el desempate por id deja fija cual es la primera si empatan en fecha
+        for mid in sorted(grupo, key=lambda m: (fechas[m], m))[1:]
+    ]
+    return {
+        "same_session": len(revanchas),
+        "same_session_wins": sum(1 for mid in revanchas if resultado.get(mid) is True),
+        "same_session_losses": sum(1 for mid in revanchas if resultado.get(mid) is False),
+    }
+
+
 def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
     """Record de partidas contra cada persona que te toco de rival varias veces.
 
     Se agrupa por profileID para que un cambio de nick no parta la fila.
+
+    `same_session` cuenta las revanchas de la misma noche. La sesion es la de
+    `_sessions_raw` (sobre todas las partidas), pero las revanchas se cuentan
+    sobre las partidas filtradas: con filtro de mapa, una noche con una sola
+    partida del rival en ese mapa no tiene revancha.
     """
     me_ids = _me_ids()
     if not me_ids:
@@ -3408,9 +3445,15 @@ def repeated_rivals(min_matches: int = 2, **filters) -> list[dict]:
     match_ids = set().union(*partidas.values())
     resultado, fechas = _resultados_y_fechas(match_ids)
     nicks = dict(Player.objects.filter(id__in=partidas).values_list("id", "username"))
+    sesion_de = _session_index_map()
 
     salida = [
-        {"player_id": pid, "username": nicks.get(pid, ""), **_record(ids, resultado, fechas)}
+        {
+            "player_id": pid,
+            "username": nicks.get(pid, ""),
+            **_record(ids, resultado, fechas),
+            **_revanchas(ids, sesion_de, resultado, fechas),
+        }
         for pid, ids in partidas.items()
     ]
     return sorted(salida, key=lambda r: (-r["matches"], -r["losses"], r["username"]))

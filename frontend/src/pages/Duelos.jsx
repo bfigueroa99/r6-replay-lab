@@ -17,6 +17,12 @@ const MUESTRAS = [
 ]
 
 /** Verde si le ganas al rival, rojo si te gana. */
+// '' sin revanchas: la celda pone su marca y el CSV su 0
+function revanchas(row) {
+  if (!row.same_session) return ''
+  return `${row.same_session} (${row.same_session_wins}-${row.same_session_losses})`
+}
+
 function Balance({ value }) {
   if (value === null || value === undefined) return <span className="dim">—</span>
   if (value === 0) return <span className="chip">0</span>
@@ -300,6 +306,16 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               label: 'Winrate',
               help: 'Sobre las partidas con resultado: las que no lo tienen cuentan en Partidas y no acá.',
               render: (row) => pct(row.winrate),
+            },
+            {
+              key: 'same_session',
+              label: 'Revanchas esa noche',
+              help:
+                'Partidas contra esa persona en una sesión en que ya te había tocado (la sesión se ' +
+                'corta tras SESSION_GAP_MINUTES sin jugar, en el .env). La primera de cada noche no ' +
+                'cuenta. Entre paréntesis, el récord de esas revanchas.',
+              render: (row) => revanchas(row) || '—',
+              csv: (row) => revanchas(row) || '0',
             },
           ]}
           rows={rivals}
