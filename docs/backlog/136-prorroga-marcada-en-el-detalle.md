@@ -1,8 +1,8 @@
 # 136. La prorroga marcada en el detalle de la partida
 
-estado: disenado
+estado: en curso 2026-11-14T01:05Z
 candado: -
-rama: -
+rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack
