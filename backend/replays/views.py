@@ -352,6 +352,7 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),
             "teammate_clutches": agg.teammate_clutches(**filters),
+            "won_without_me": agg.won_without_me(**filters),
         }
     )
 
