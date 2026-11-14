@@ -1,7 +1,7 @@
 # 128. Repetir o cambiar el spawn tras perder
 
-estado: implementado
-candado: revisor 2026-11-13T23:56Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S3
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_repetir_spawn.py, frontend/src/repetirSpawn.js, frontend/src/repetirSpawn.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ
+turnos: po 20261113T1858Z-cxdASk3, arquitecto 20261113T2157Z-cG2vDSe, dev 20261113T2345Z-c5J2BqJ, revisor 20261113T2345Z-c6MAT6w
 
 ## PR
 
@@ -239,7 +239,53 @@ reusa `DataTable`, sin JSX ni CSS nuevo fuera de el), ux-copy (estado vacio
 y hint reescritos por claridad, con tildes como el resto de la UI).
 OMC: plan=— · revisión=4 hallazgos (4 arreglados) · verificación=—
 
-## Revision
+## Revision 2026-11-14T00:00Z sobre dfde6d7
+
+(revisor 20261113T2345Z-c6MAT6w)
+
+Eje de estandares, a ciegas (`omc-code-reviewer` con `revision.md`, sin la
+ficha): aprobar, 0 CRITICAL/HIGH/MEDIUM, 2 LOW confirmados por el lider.
+Eje de intencion (diff de 336 lineas): lo hizo el lider contra `## Que gana`,
+`## Criterios` y `## Fuera de alcance`, sin subagente aparte.
+
+- [estilo] LOW docs/metricas.md:215
+  Que pasa: la fila dice "(`REPETIR_SITIO_MIN_RONDAS`, la de la 107)".
+  Como reproducirlo o por que es cierto: `grep -n "la de la 107" docs/metricas.md`; la
+  fila hermana "Repetir el sitio tras perderlo" no nombra fichas, y
+  `metricas.md` es doc para quien usa la app.
+  Arreglo sugerido: borrar ", la de la 107".
+- [regla] LOW frontend/src/pages/Coach.jsx:359
+  Que pasa: con el filtro de lado en Defensa el panel muestra los mismos pares
+  de ataque y el hint no lo explica (solo nombra operador y sitio).
+  Como reproducirlo o por que es cierto: `test_el_filtro_de_lado_no_cambia_nada`
+  fija que `?side=Defense` devuelve lo mismo que sin filtro.
+  Arreglo sugerido: sumar al hint "El filtro de lado no aplica: siempre es ataque."
+- [test] LOW frontend/e2e/humo.spec.js:1710
+  Que pasa: en `seed_demo` todas tus rondas de ataque se ganan y el spawn
+  siempre se repite, asi que la fila "Tras perder" sale en 0 y "Cambia" en 0:
+  el e2e no ve en pantalla el caso que motiva la ficha.
+  Como reproducirlo o por que es cierto: el e2e afirma 87 pares, todos "Tras
+  ganar" al 100 %. El numero lo cubren los tests Django; es limite del seed.
+  Arreglo sugerido: ninguno en esta ficha (cambiar `seed_demo` mueve los
+  numeros de otros e2e); anotado por si una ficha futura toca el seed.
+
+Ficha: cada criterio tiene test con nombre (criterio 1:
+`test_tras_perder_cuenta_repetir_y_cambiar_con_el_winrate_de_la_segunda`, el
+caso exacto del criterio; 2: hueco, sin spawn, sin lado, primera y segunda sin
+ganador, partidas distintas; 3: operador, sitio, mapa y lado; 4: e2e `el Coach
+muestra si repites el spawn tras perder`; 5: fila en `metricas.md`). El diff
+no toca archivos fuera de `archivos:`. Fuera de alcance respetado (sin
+desglose por par, sin defensa, sin recomendacion). Identificadores sin
+tildes, UI con tildes; sin `print` ni `console.log`. Sin dependencias, sin
+POST, sin calculo al consultar fuera de agregar.
+
+check.sh sobre dfde6d7 (rama al dia con dev): verificar.sh VERDE, 1335 tests
+backend, 435 vitest, 116 e2e.
+
+Veredicto: aprobar.
+
+OMC: plan=— · revisión=2 LOW + 1 LOW del lider (0 arreglados: el Revisor no arregla) · verificación=—
+Skills del repo: ninguna
 
 ## QA
 
