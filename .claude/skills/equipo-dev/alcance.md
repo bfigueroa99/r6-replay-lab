@@ -48,10 +48,12 @@ exactamente igual.
   alternativa en `## Para el humano` y la ficha avanza igual. Solo se frena
   (P10) lo que no se puede deshacer.
 - **Lo que crecer no toca.** Overlay in-game, scraping, red sin clic,
-  dependencias nuevas, cuentas, nube, telemetria, datos que el `.rec` no
-  trae, metricas de replay que dependan de Ubisoft: siguen prohibidos. Una
-  idea que choca con eso va a "Ideas descartadas" de `ALCANCE.md` con el
-  motivo, para que nadie la vuelva a proponer.
+  dependencias nuevas, cuentas, nube, telemetria (tambien el reporte de
+  errores a un tercero, como Sentry: `skills-del-repo.md`, "Las que no
+  entran"), datos que el `.rec` no trae, metricas de replay que dependan de
+  Ubisoft: siguen prohibidos. Una idea que choca con eso va a "Ideas
+  descartadas" de `ALCANCE.md` con el motivo, para que nadie la vuelva a
+  proponer.
 - **Medida.** `estado.sh` cuenta las funcionalidades en papel y en las ramas
   de trabajo, y `ESTADO.md` muestra en `## Alcance` las epicas en curso y
   las funcionalidades que llegaron a `dev` en los ultimos 7 dias. Si en 7

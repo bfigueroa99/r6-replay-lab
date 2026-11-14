@@ -20,7 +20,7 @@ if [ -n "$REF" ]; then
     git rev-parse -q --verify "$REF^{commit}" >/dev/null 2>&1 || { echo "FALLA ref: $REF no existe"; echo "PRUEBAS_FALLAN: 1"; exit 1; }
     base=$(mktemp -d)
     trap 'rm -rf "$base"' EXIT
-    for p in $(git ls-tree -r --name-only "$REF" -- .claude .opencode scripts docs/backlog 2>/dev/null); do
+    for p in $(git ls-tree -r --name-only "$REF" -- .claude .opencode scripts docs/backlog requirements.txt requirements-dev.txt frontend/package.json .mcp.json opencode.json 2>/dev/null); do
         mkdir -p "$base/$(dirname "$p")"
         git show "$REF:$p" > "$base/$p"
     done
@@ -674,6 +674,62 @@ for f in "${playbook[@]}" "$ru" "$tu" "$es" $base/.claude/skills/equipo-dev/revi
 done
 grep -qE 'abierto contra `dev`' "$ro/release.md" 2>/dev/null || det="$det roles/release.md: la puerta de merge no pide el PR contra dev;"
 cierra base "$det"
+
+# 13b. sentry: mandar los errores de la app a un servicio es telemetria, un
+# no-goal de CLAUDE.md, y su SDK seria una dependencia nueva. Ni las skills de
+# Sentry (plugin `sentry`, getsentry/sentry-for-ai) ni su plugin, su MCP o su
+# SDK entran al repo (`skills-del-repo.md`, "Las que no entran"). Primero la
+# comprobacion contra un arbol sintetico, limpio y con cada violacion
+# inyectada una por vez (un patron que no ve nada no vigila nada); despues
+# contra el repo. Los comentarios de requirements y la prosa no cuentan.
+sentry_en() { # <raiz>: una linea por hallazgo, nada si esta limpio
+    local r=$1 d f
+    for d in "$r"/.claude/skills/*/; do
+        [ -d "$d" ] || continue
+        f=$(basename "$d")
+        case "$f" in [Ss]entry*) echo "copia en .claude/skills/$f"; continue ;; esac
+        grep -qiE '^name:[[:space:]]*["'\'']?sentry' "$d/SKILL.md" 2>/dev/null && echo "skill $f con name: de Sentry"
+    done
+    grep -iE '^\|' "$r/.claude/skills/VENDORIZADAS.md" 2>/dev/null | grep -qi sentry && echo "fila de Sentry en VENDORIZADAS.md"
+    for f in .claude/settings.json .claude/settings.local.json .mcp.json opencode.json; do
+        grep -qi sentry "$r/$f" 2>/dev/null && echo "plugin o MCP de Sentry en $f"
+    done
+    for f in requirements.txt requirements-dev.txt; do
+        grep -qiE '^[^#]*sentry' "$r/$f" 2>/dev/null && echo "SDK de Sentry en $f"
+    done
+    grep -qiE '"@?sentry' "$r/frontend/package.json" 2>/dev/null && echo "SDK de Sentry en frontend/package.json"
+    return 0
+}
+det=""
+tsn=$(mktemp -d)
+limpio() {
+    rm -rf "$tsn/r"; mkdir -p "$tsn/r/.claude/skills/foo" "$tsn/r/frontend"
+    printf -- '---\nname: foo\ndescription: x\n---\n' > "$tsn/r/.claude/skills/foo/SKILL.md"
+    printf '| Skill | Plugin |\n|---|---|\n| `foo` | bar |\n\nLas de Sentry no se vendorizan.\n' > "$tsn/r/.claude/skills/VENDORIZADAS.md"
+    printf '{"permissions": {"allow": []}}\n' > "$tsn/r/.claude/settings.json"
+    printf '# Sin sentry: telemetria.\nDjango>=5.0,<6.0\nzstandard>=0.22\n' > "$tsn/r/requirements.txt"
+    printf '{"dependencies": {"react": "18.3.1"}}\n' > "$tsn/r/frontend/package.json"
+}
+limpio
+s=$(sentry_en "$tsn/r"); [ -z "$s" ] || det="$det arbol limpio con hallazgos: $s;"
+inyecciones=(
+'mkdir -p .claude/skills/sentry-instrument && echo x > .claude/skills/sentry-instrument/SKILL.md'
+'printf -- "---\nname: sentry-debug-issue\n---\n" > .claude/skills/foo/SKILL.md'
+'echo "| \`errores\` | getsentry/sentry-for-ai |" >> .claude/skills/VENDORIZADAS.md'
+'printf "{\"enabledPlugins\": {\"sentry@claude-plugins-official\": true}}\n" > .claude/settings.json'
+'printf "{\"mcpServers\": {\"x\": {\"url\": \"https://mcp.sentry.dev/mcp\"}}}\n" > .mcp.json'
+'echo "sentry-sdk[django]>=2.0" >> requirements.txt'
+'echo "sentry-sdk" > requirements-dev.txt'
+'printf "{\"dependencies\": {\"@sentry/react\": \"8.0.0\"}}\n" > frontend/package.json'
+)
+for i in "${inyecciones[@]}"; do
+    limpio
+    (cd "$tsn/r" && eval "$i")
+    s=$(sentry_en "$tsn/r"); [ -n "$s" ] || det="$det no ve: $i;"
+done
+rm -rf "$tsn"
+s=$(sentry_en "$base" | tr '\n' ';'); [ -z "$s" ] || det="$det $s"
+cierra sentry "$det"
 
 # 14. skills: toda skill que el playbook nombra existe, y toda vendorizada
 # tiene un paso que la cita o su motivo para quedar a mano. El mapa es la
