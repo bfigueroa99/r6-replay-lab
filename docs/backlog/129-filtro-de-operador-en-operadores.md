@@ -1,7 +1,7 @@
 # 129. Filtro de operador en la pagina Operadores
 
 estado: revisado
-candado: -
+candado: qa 2026-11-14T00:00Z
 rama: claude/equipo-dev/129-filtro-de-operador-en-operadores
 tipo: funcionalidad
 epica: operadores
