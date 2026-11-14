@@ -269,6 +269,56 @@ Veredicto: aprobar. Tercera pasada con solo LOW: `revisado`, los LOW a `## Para 
 Skills del repo: testing-strategy (repro en paralelo del e2e antes intermitente).
 OMC: plan=— · revisión=2 hallazgos LOW (0 arreglados: no bloquean) · verificación=—
 
+## QA 2026-11-14T00:06Z sobre 6bb5a18
+
+(qa 20261113T2345Z-c6MAT6w) Segunda QA, tras las dos revisiones posteriores a la primera. Aprobado.
+
+Sin cambios de backend (`git diff --stat origin/dev...HEAD -- backend` vacio),
+sin migracion ni parser: no aplican `recompute` ni `## Verificar en el PC`.
+
+- `check.sh` completo con `verificar.sh` sobre 6bb5a18 (rama al dia con dev):
+  exit 0, `VERDE 6bb5a18ee: 1321 tests backend, 435 vitest, 117 e2e. Todo en verde.`
+- Hallazgo MEDIUM de la primera QA (e2e intermitente en paralelo): cerrado.
+  Desde `frontend/`: `E2E_CHROMIUM=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell npx playwright test -g "Operadores (filtra por operador desde su propio selector|sin rondas deja quitar)" --trace off --repeat-each 20 --workers 6`
+  -> 40 passed.
+- App real: `node frontend/e2e/servidor.js` (base nueva con `seed_demo`, puerto
+  8099) y un script Playwright en el scratchpad (`chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })`)
+  sobre `/operadores`:
+  - Criterio 1: selector Operador visible, 7 opciones (Todos, Ash, Jager,
+    Mute, ...); elegir Ash -> URL `/operadores?operator=Ash`. El e2e de la
+    rama compara Repetir o cambiar con `/api/operators/after-result/?operator=Ash`.
+  - Criterio 2: 1 `strong[aria-current="true"]` (Ash) y 1 `tbody tr.me` de 3
+    filas en Ataque: las demas siguen; nota "Con Ash elegido, ..." visible.
+  - Criterio 3: elegir Todos -> URL `/operadores`, 0 filas `.me`.
+  - Criterio 4: `?since=2099-01-01&operator=Ash` -> "0 rondas con estos
+    filtros" con el selector Operador presente.
+  - Criterio 5: errores y warnings de consola en todo el recorrido: `[]`.
+  - Bordes: `?operator=NoExiste` -> pagina normal, sin nota ni resaltado;
+    `?operator=Ash&side=Defense` -> sin nota, los paneles Defensa, Tu pool,
+    Por sitio y Repetir siguen.
+  - `curl /api/operators/?` con `operator=`, `operator=NoExiste`,
+    `operator=%00`, `until=foo`, `page=-1`: los cinco 200.
+- Chunk inicial de `vite build`: 200459 bytes en la rama y en `origin/dev`
+  (worktree en el scratchpad): sin cambio.
+- Accesibilidad (`accessibility-review`, Chromium sobre el seed): el select
+  se alcanza con Tab y tiene nombre por su `<label>`; la fila resaltada expone
+  `aria-current` en la celda del operador; contraste del texto de la fila
+  resaltada rgb(230,237,243) sobre rgba(255,138,61,0.133) encima de
+  rgb(13,17,23): 13.2:1 (AA pide 4.5). Sin Critical ni Major.
+- `validate-data`: no hay numero nuevo; las filas Presencia y vs. tu lado de
+  `metricas.md` solo aclaran que la pagina pide `/api/operators/` sin
+  `operator` (la definicion no cambia).
+- Mutacion sobre `operadorElegido.js`: `claseFilaOperador` devolviendo `''`,
+  `sinOperador` devolviendo los filtros con `operator`, y `textoOperadorElegido`
+  sin la guarda de vacio: cada una tumba 1 test de `operadorElegido.test.js`
+  (1 failed | 3 passed); restaurado, verde.
+- Observacion menor, no es criterio: con `?operator=NoExiste` el select
+  muestra "Todos" mientras Por sitio y Repetir reciben el filtro; es el
+  comportamiento de `Filters` en todas las paginas, anterior a esta ficha.
+
+OMC: plan=— · revisión=— · verificación=PASS (omc-verifier: 5/5 criterios, 0 bloqueos)
+Skills del repo: accessibility-review (0 Critical, 0 Major; contraste 13.2:1), validate-data (sin numero nuevo), design-critique no aplica (sin panel nuevo)
+
 ## Para el humano
 
 - (revisor 2026-11-13, no bloquea) Tres LOW en la 129 (listener del e2e despues del `goto`, operador sin rondas sin aviso, `aria-current` en una celda; detalle en `## Revision`): los puede sumar un Dev despues.
