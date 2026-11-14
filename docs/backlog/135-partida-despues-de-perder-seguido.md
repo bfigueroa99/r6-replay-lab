@@ -1,8 +1,8 @@
 # 135. Partida despues de perder seguido
 
-estado: disenado
+estado: en curso 2026-11-14T00:57Z
 candado: -
-rama: -
+rama: claude/equipo-dev/135-partida-despues-de-perder-seguido
 tipo: funcionalidad
 epica: progreso
 area: backend
