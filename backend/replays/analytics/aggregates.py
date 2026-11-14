@@ -3341,6 +3341,55 @@ def by_session_position(max_position: int = 5, **filters) -> list[dict]:
     return salida
 
 
+#: Desde cuantas derrotas seguidas se juntan las filas: rachas de 4 o 5 son
+#: pocas y cada una suelta no junta muestra.
+TRAS_DERROTAS_TOPE = 3
+
+
+def by_losing_streak(**filters) -> list[dict]:
+    """Winrate de la partida siguiente segun las derrotas seguidas que llevabas en la sesion.
+
+    La racha se mide sobre **todas** las partidas de la sesion, como
+    `by_session_position`: si un filtro de mapa la midiera, dos derrotas en
+    otro mapa desaparecerian y la partida caeria en la fila de 0. Los filtros
+    solo eligen que partidas se cuentan. Empate e incompleta no suman ni
+    cortan la racha, y no entran al winrate (`decided`).
+    """
+    resultados = {
+        mid: match_result(won, mios, suyos)
+        for mid, won, mios, suyos in Match.objects.values_list(
+            "id", "won", "my_score", "opponent_score"
+        )
+    }
+    contadas = set(match_queryset(**filters).values_list("id", flat=True))
+
+    filas = {
+        n: {"streak": n, "label": f"{n}+" if n == TRAS_DERROTAS_TOPE else str(n),
+            "matches": 0, "decided": 0, "wins": 0, "losses": 0}
+        for n in range(TRAS_DERROTAS_TOPE + 1)
+    }
+    for sesion in _sessions_raw():
+        racha = 0
+        for mid in sesion["match_ids"]:
+            resultado = resultados.get(mid)
+            if mid in contadas:
+                fila = filas[min(racha, TRAS_DERROTAS_TOPE)]
+                fila["matches"] += 1
+                if resultado == "victoria":
+                    fila["wins"] += 1
+                elif resultado == "derrota":
+                    fila["losses"] += 1
+            if resultado == "derrota":
+                racha += 1
+            elif resultado == "victoria":
+                racha = 0
+
+    for fila in filas.values():
+        fila["decided"] = fila["wins"] + fila["losses"]
+        fila["winrate"] = _pct(fila["wins"], fila["decided"])
+    return list(filas.values())
+
+
 # --------------------------------------------------------------------- duelos
 
 #: El equipo del jugador en la ronda del evento.

@@ -431,6 +431,7 @@ def sessions(request: HttpRequest) -> JsonResponse:
             "gap_minutes": settings.SESSION_GAP_MINUTES,
             "sessions": agg.sessions(**filters),
             "by_position": agg.by_session_position(**filters),
+            "by_losing_streak": agg.by_losing_streak(**filters),
         }
     )
 
