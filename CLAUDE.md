@@ -131,6 +131,7 @@ No propongas features que dependan de esto (esta documentado en el README):
   ventana normal con marco, sin always-on-top y sin transparencia. Si alguna
   iteracion propone `alwaysOnTop`, `transparent` o `setIgnoreMouseEvents`, la
   respuesta es no.
-- Cuentas o login de la propia app, telemetria, sincronizacion a la nube.
+- Cuentas o login de la propia app, telemetria (tambien el reporte de errores
+  a un tercero, como Sentry), sincronizacion a la nube.
 - Credenciales de Ubisoft en la base o en el frontend: viven solo en el `.env`,
   y lo unico que se guarda es el ticket de sesion (`data/ubisoft-sesion.json`).
