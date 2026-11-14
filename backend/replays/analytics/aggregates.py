@@ -39,6 +39,7 @@ from ..models import Event, Match, Player, Round, RoundPlayer, match_result
 from . import reglas_partida
 from .metrics import (
     PLAYER_LEAVE,
+    bajas_despues_de_caer,
     estado_al_matar,
     estado_al_morir,
     trade_window,
@@ -2579,6 +2580,10 @@ def _equipos_y_feeds(mias) -> tuple[dict[int, dict[int, int]], dict[int, list[di
     return equipos, feeds
 
 
+def _grupo_de(aliados: int, rivales: int) -> str:
+    return "ahead" if aliados > rivales else "even" if aliados == rivales else "behind"
+
+
 def death_state(**filters) -> dict:
     """Tus muertes por estado de vivos (tuyos contra rivales) justo antes de caer.
 
@@ -2603,7 +2608,7 @@ def death_state(**filters) -> dict:
             sin_feed += 1
             continue
         aliados, rivales = par
-        grupo = "ahead" if aliados > rivales else "even" if aliados == rivales else "behind"
+        grupo = _grupo_de(aliados, rivales)
         caso = estados.setdefault(par, {
             "state": f"{aliados}v{rivales}", "allies": aliados, "enemies": rivales,
             "group": grupo, **_caso_vacio(),
@@ -2623,10 +2628,6 @@ def death_state(**filters) -> dict:
     }
 
 
-def _grupo_de(aliados: int, rivales: int) -> str:
-    return "ahead" if aliados > rivales else "even" if aliados == rivales else "behind"
-
-
 def kill_state(**filters) -> dict:
     """Tus bajas a rivales por estado de vivos (tuyos contra rivales) justo antes de cada una.
 
@@ -2635,7 +2636,9 @@ def kill_state(**filters) -> dict:
     columna sea mecanico. Las bajas se cuentan por fila; rondas y winrate
     sobre rondas distintas de la fila, porque lo que se gana o pierde es la
     ronda: dos bajas tuyas con ventaja en la misma ronda son 2 bajas y 1 ronda
-    del grupo. `sin_feed` son bajas de `RoundPlayer.kills` que el feed no ubica.
+    del grupo. `post_mortem` son bajas que el feed atribuye cuando ya caiste
+    (trampas, gadgets): no tienen estado tuyo que contar. `sin_feed` son bajas
+    de `RoundPlayer.kills` que el feed no ubica de ninguna forma.
     """
     # `kills` ya excluye teamkills: una ronda solo con teamkills tuyos no entra.
     mias = base_queryset(**filters).filter(kills__gt=0)
@@ -2644,13 +2647,14 @@ def kill_state(**filters) -> dict:
 
     estados: dict[tuple[int, int], dict] = {}
     grupos = {g: {"kills": 0, **_caso_vacio()} for g in ESTADO_AL_MORIR_GRUPOS}
-    sin_feed = 0
+    sin_feed = post_mortem = 0
     for fila in filas:
         round_id = fila["round_id"]
-        pares = estado_al_matar(feeds.get(round_id, []), equipos.get(round_id, {})).get(
-            fila["player_id"], []
-        )
-        sin_feed += max(fila["kills"] - len(pares), 0)
+        feed, equipo = feeds.get(round_id, []), equipos.get(round_id, {})
+        pares = estado_al_matar(feed, equipo).get(fila["player_id"], [])
+        despues = bajas_despues_de_caer(feed, equipo).get(fila["player_id"], 0)
+        post_mortem += despues
+        sin_feed += max(fila["kills"] - len(pares) - despues, 0)
         ganada = fila["round__my_team_won"]
         grupos_de_la_ronda = set()
         for aliados, rivales in pares:
@@ -2674,6 +2678,7 @@ def kill_state(**filters) -> dict:
     return {
         "kills": sum(g["kills"] for g in salida_grupos),
         "sin_feed": sin_feed,
+        "post_mortem": post_mortem,
         "states": salida_estados,
         "groups": salida_grupos,
     }

@@ -80,6 +80,31 @@ class EstadoAlMatarPuroTests(SimpleTestCase):
         ]
         self.assertEqual(metrics.estado_al_matar(eventos, self.team_of), {ME: [(5, 4)]})
 
+    def test_una_baja_despues_de_caer_se_cuenta_aparte(self):
+        # trampa o gadget: el feed atribuye la baja a quien ya murio
+        eventos = [
+            {"kind": "Kill", "actor": "rival0", "target": ME},
+            {"kind": "Kill", "actor": ME, "target": "rival1"},
+        ]
+        self.assertNotIn(ME, metrics.estado_al_matar(eventos, self.team_of))
+        self.assertEqual(metrics.bajas_despues_de_caer(eventos, self.team_of), {ME: 1})
+
+    def test_despues_de_caer_no_cuenta_teamkills_ni_bajas_en_vida(self):
+        eventos = [
+            {"kind": "Kill", "actor": ME, "target": "rival0"},
+            {"kind": "Death", "actor": ME},
+            {"kind": "Kill", "actor": ME, "target": "mate0"},
+            {"kind": "Kill", "actor": None, "target": "rival1"},
+        ]
+        self.assertEqual(metrics.bajas_despues_de_caer(eventos, self.team_of), {})
+
+    def test_despues_de_caer_cuenta_al_que_se_fue(self):
+        eventos = [
+            {"kind": "PlayerLeave", "actor": ME},
+            {"kind": "Kill", "actor": ME, "target": "rival0"},
+        ]
+        self.assertEqual(metrics.bajas_despues_de_caer(eventos, self.team_of), {ME: 1})
+
 
 class EstadoAlMatarAgregadoTests(TestCase):
     def setUp(self):
@@ -139,7 +164,20 @@ class EstadoAlMatarAgregadoTests(TestCase):
     def test_baja_sin_evento_va_a_sin_feed(self):
         self._ronda([("Kill", ME, "rival0")], kills=2)
         data = agg.kill_state()
-        self.assertEqual((data["kills"], data["sin_feed"]), (1, 1))
+        self.assertEqual((data["kills"], data["sin_feed"], data["post_mortem"]), (1, 1, 0))
+
+    def test_una_baja_despues_de_caer_no_es_sin_feed(self):
+        # el evento esta: decir que el feed no la ubica seria falso
+        self._ronda([("Kill", "rival0", ME), ("Kill", ME, "rival1")])
+        data = agg.kill_state()
+        self.assertEqual((data["kills"], data["sin_feed"], data["post_mortem"], data["states"]),
+                         (0, 0, 1, []))
+
+    def test_bajas_en_vida_y_despues_de_caer_en_la_misma_ronda(self):
+        self._ronda([("Kill", ME, "rival0"), ("Kill", "rival1", ME), ("Kill", ME, "rival2")])
+        data = agg.kill_state()
+        self.assertEqual((data["kills"], data["sin_feed"], data["post_mortem"]), (1, 0, 1))
+        self.assertEqual([f["state"] for f in data["states"]], ["5v5"])
 
     def test_ventaja_paridad_y_desventaja(self):
         self._ronda([("Kill", "mate0", "rival0"), ("Kill", ME, "rival1")])
@@ -181,6 +219,7 @@ class EstadoAlMatarAgregadoTests(TestCase):
 
     def test_la_api_sin_bajas_devuelve_grupos_vacios(self):
         data = self.client.get(URL).json()
-        self.assertEqual((data["kills"], data["sin_feed"], data["states"]), (0, 0, []))
+        self.assertEqual((data["kills"], data["sin_feed"], data["post_mortem"], data["states"]),
+                         (0, 0, 0, []))
         self.assertEqual([(g["group"], g["kills"], g["winrate"]) for g in data["groups"]],
                          [("ahead", 0, None), ("even", 0, None), ("behind", 0, None)])

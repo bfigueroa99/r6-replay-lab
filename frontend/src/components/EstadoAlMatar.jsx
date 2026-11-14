@@ -2,7 +2,14 @@ import React from 'react'
 
 import { useApi } from '../api.js'
 import { MUESTRA_CORTE } from '../muestra.js'
-import { avisoPocaMuestra, filasDeEstados, filasDeGrupos, hayBajas, notaSinFeed } from '../estadoAlMatar.js'
+import {
+  avisoPocaMuestra,
+  filasDeEstados,
+  filasDeGrupos,
+  hayBajas,
+  notaPostMortem,
+  notaSinFeed,
+} from '../estadoAlMatar.js'
 import { DataTable, ErrorBox, Loading, Panel, pct } from './ui.jsx'
 
 const ORDEN_API = { key: 'orden', dir: 'asc' }
@@ -23,6 +30,18 @@ const COLUMNA_WINRATE = {
   render: (row) => pct(row.winrate),
 }
 
+/** Las bajas que no entran en las tablas se dicen aparte, para que el total cierre con el Resumen. */
+function NotasAparte({ data }) {
+  const postMortem = notaPostMortem(data?.post_mortem)
+  const sinFeed = notaSinFeed(data?.sin_feed)
+  return (
+    <>
+      {postMortem ? <p className="note">{postMortem}</p> : null}
+      {sinFeed ? <p className="note">{sinFeed}</p> : null}
+    </>
+  )
+}
+
 /** Panel aparte, con su propia consulta, como Estado al morir, que queda justo arriba. */
 export default function EstadoAlMatar({ filters }) {
   const { data, error, loading } = useApi('/duels/kill-state/', filters)
@@ -34,7 +53,7 @@ export default function EstadoAlMatar({ filters }) {
     cuerpo = (
       <>
         <p className="note">No hay bajas tuyas con evento en el feed con estos filtros.</p>
-        {notaSinFeed(data?.sin_feed) ? <p className="note">{notaSinFeed(data.sin_feed)}</p> : null}
+        <NotasAparte data={data} />
       </>
     )
   } else {
@@ -78,7 +97,7 @@ export default function EstadoAlMatar({ filters }) {
             Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
           </p>
         ) : null}
-        {notaSinFeed(data.sin_feed) ? <p className="note">{notaSinFeed(data.sin_feed)}</p> : null}
+        <NotasAparte data={data} />
       </>
     )
   }

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { avisoPocaMuestra, filasDeEstados, filasDeGrupos, hayBajas, notaSinFeed } from './estadoAlMatar.js'
+import {
+  avisoPocaMuestra,
+  filasDeEstados,
+  filasDeGrupos,
+  hayBajas,
+  notaPostMortem,
+  notaSinFeed,
+} from './estadoAlMatar.js'
 
 describe('estadoAlMatar', () => {
   it('etiqueta los tres grupos con las etiquetas de Estado al morir y en orden', () => {
@@ -33,6 +40,17 @@ describe('estadoAlMatar', () => {
     expect(notaSinFeed(undefined)).toBeNull()
     expect(notaSinFeed(1)).toBe('1 baja no se puede ubicar en el feed y no entra.')
     expect(notaSinFeed(3)).toBe('3 bajas no se pueden ubicar en el feed y no entran.')
+  })
+
+  it('la nota de bajas despues de caer solo sale si hay alguna, en singular y plural', () => {
+    expect(notaPostMortem(0)).toBeNull()
+    expect(notaPostMortem(undefined)).toBeNull()
+    expect(notaPostMortem(1)).toBe(
+      '1 baja llegó cuando ya habías caído (trampa o gadget): no tiene estado tuyo y no entra.',
+    )
+    expect(notaPostMortem(2)).toBe(
+      '2 bajas llegaron cuando ya habías caído (trampas o gadgets): no tienen estado tuyo y no entran.',
+    )
   })
 
   it('el aviso de muestra va sobre rondas: avisa con 29 y no con 0 ni con 30', () => {

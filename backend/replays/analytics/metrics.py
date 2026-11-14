@@ -234,6 +234,34 @@ def estado_al_matar(eventos: list[dict], team_of: dict) -> dict:
     return bajas
 
 
+def bajas_despues_de_caer(eventos: list[dict], team_of: dict) -> dict:
+    """Bajas a rivales que el feed atribuye a quien ya habia caido o se habia ido.
+
+    Trampas y gadgets matan despues de que muere su dueno, y `kills` las cuenta
+    (`clutch_kills` lo hace a proposito). `estado_al_matar` no les da estado:
+    sin el autor vivo no hay "tus vivos" que contar. Se devuelven aparte para
+    que no se confundan con bajas que el feed no trae. Mismo recorrido.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if (kind == KILL and actor in team_of and actor not in vivos
+                and team_of[actor] != team_of[muerto]):
+            bajas[actor] = bajas.get(actor, 0) + 1
+        vivos.discard(muerto)
+    return bajas
+
+
 def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | None:
     """Mayor diferencia de vivos de `equipo` contra el resto tras cada salida del feed.
 

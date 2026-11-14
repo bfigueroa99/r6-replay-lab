@@ -604,6 +604,10 @@ test('Duelos muestra el estado de vivos al matar', async ({ page }) => {
   await expect(filaEstado.locator('td').first()).toHaveText(estado.state)
   await expect(filaEstado.locator('td').nth(1)).toHaveText(String(estado.kills))
   await expect(filaEstado.locator('td').nth(2)).toHaveText(String(estado.rounds))
+  // las bajas de trampas tras caer se dicen aparte, no como "no se pueden ubicar"
+  expect(typeof datos.post_mortem).toBe('number')
+  const notaPostMortem = panel.getByText('cuando ya habías caído')
+  await expect(notaPostMortem).toHaveCount(datos.post_mortem > 0 ? 1 : 0)
 
   expect(errores).toEqual([])
 })
