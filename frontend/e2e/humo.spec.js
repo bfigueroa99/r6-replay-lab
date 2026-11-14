@@ -1799,6 +1799,30 @@ test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra si repites el spawn tras perder', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'Repetir o cambiar el spawn' }),
+  })
+  // seed_demo gana todo su ataque saliendo siempre del mismo spawn: 87 pares,
+  // todos tras ganar y repitiendo, winrate 100; tras perder no hay pares.
+  await expect(panel).toContainText('87 pares de rondas de ataque seguidas')
+  await expect(panel.locator('tbody tr')).toHaveCount(2)
+  // Columnas: tras, repite, winrate repitiendo, cambia, winrate cambiando.
+  const perder = panel.locator('tr', { has: page.getByRole('cell', { name: 'Tras perder', exact: true }) })
+  await expect(perder.locator('td').nth(1)).toHaveText('0')
+  await expect(perder.locator('td').nth(2)).toHaveText('— · pocas rondas')
+  const ganar = panel.locator('tr', { has: page.getByRole('cell', { name: 'Tras ganar', exact: true }) })
+  await expect(ganar.locator('td').nth(1)).toHaveText('87')
+  await expect(ganar.locator('td').nth(2)).toHaveText('100%')
+  await expect(ganar.locator('td').nth(3)).toHaveText('0')
+  await expect(panel.locator('tbody tr').first()).toContainText('Tras perder')
+
+  expect(errores).toEqual([])
+})
+
 test('el Coach copia sus señales', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])

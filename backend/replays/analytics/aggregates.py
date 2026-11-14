@@ -1263,6 +1263,57 @@ def site_after_loss(**filters) -> dict:
     }
 
 
+def spawn_after_result(**filters) -> dict:
+    """Tras una ronda de ataque, si en tu siguiente ronda de ataque repetiste spawn.
+
+    El par es tu ronda de ataque y tu siguiente ronda de ataque de la partida,
+    como en `operator_after_result`: las de defensa entre medio no lo cortan,
+    pero un numero faltante, una ronda sin lado o una de ataque sin spawn si,
+    porque ahi no se sabe de donde saliste. Solo ataque: el defensor no elige
+    spawn como el atacante, asi que `side` no filtra. `operator` y `site`
+    eligen la primera ronda del par: filtrar las filas cortaria los pares en
+    que la segunda no los cumple.
+    """
+    operador = filters.get("operator")
+    sitio = filters.get("site")
+    base = {k: v for k, v in filters.items() if k not in ("side", "operator", "site")}
+    filas = (
+        base_queryset(**base)
+        .order_by("round__match_id", "round__number")
+        .values_list("round__match_id", "round__number", "side", "spawn",
+                     "operator", "round__site", "round__my_team_won")
+    )
+    bloques = {tras: {caso: _caso_vacio() for caso in REPETIR_SITIO_CASOS}
+               for tras in OPERADOR_TRAS_RESULTADO}
+    pares = 0
+    anterior = None
+    previa = None  # (spawn, gano) de la ultima ronda de ataque que abre par
+    for partida, numero, lado, spawn, op, sitio_ronda, gano in filas.iterator():
+        if anterior is None or anterior[0] != partida or numero != anterior[1] + 1 or not lado:
+            previa = None
+        anterior = (partida, numero)
+        if lado != "Attack":
+            continue
+        if not spawn:
+            previa = None
+            continue
+        if previa is not None:
+            spawn_previo, gano_previo = previa
+            caso = "repeat" if spawn == spawn_previo else "switch"
+            tras = "after_win" if gano_previo else "after_loss"
+            _sumar_caso(bloques[tras][caso], gano)
+            pares += 1
+        # Sin ganador no hay "tras perder" ni "tras ganar": no abre par.
+        abre = gano is not None and (not operador or op == operador) \
+            and (not sitio or sitio_ronda == sitio)
+        previa = (spawn, gano) if abre else None
+
+    for bloque in bloques.values():
+        for celda in bloque.values():
+            celda["winrate"] = _pct(celda["won"], celda["decided"])
+    return {"min_rounds": REPETIR_SITIO_MIN_RONDAS, "pairs": pares, **bloques}
+
+
 def by_round_number(**filters) -> list[dict]:
     qs = base_queryset(**filters)
     return group_by(qs, "round__number", labels=("round_number",), order="round__number")
