@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-14 01:22 UTC por qa, dev, arquitecto, po (sesion 20261114T0040Z-chQsvnq; motivo: por estado: 1 revisado; sigue: 1 disenado, lugar en cola; sigue: 6 propuesto, 0 disenado de 3; sigue: papel corto: 3 propuesto de 6)
+actualizado: 2026-11-14 00:48 UTC por qa, dev, arquitecto, po (sesion 20261114T0040Z-chQsvnq; motivo: por estado: 1 revisado; sigue: 1 disenado, lugar en cola; sigue: 6 propuesto, 0 disenado de 3; sigue: papel corto: 3 propuesto de 6)
 playbook: origin/dev@bb92586
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias
 en vacio: TURNOS_EN_VACIO=0 de 12 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -63,10 +63,10 @@ Espejos: 132 y 134 viven en su rama, que manda. La 131 ya esta en dev (espejo qu
 | release | 2026-11-14 00:42 | (release 20261114T0012Z-crDhgd7) La 128 la tenia la corrida de la Routine (candado 00:13) y entro a dev con [PR #132](https://github.com/bfigueroa99/r6-replay-lab/pull/132): P8, sin tocarla; espejo de la 128 quitado. pruebas.sh: PRUEBAS_OK (23). Prompt de la Routine sincronizado con rutina.md@934ab47. |
 | qa | 2026-11-14 00:41 | (qa 20261114T0040Z-chQsvnq) La 132 `revisado` la tomo otra QA (candado 00:40, push del candado rechazado): P8, sin tocarla. Sin otra `revisado` firmable. |
 | revisor | 2026-11-14 00:22 | (revisor 20261114T0012Z-crDhgd7) 131 `implementado` -> `revisado`: dos ejes a ciegas (estandares e intencion) aprobar, 2 LOW confirmados (assert de la fila Total sin orden en el e2e; tercera copia de la subconsulta de habituales); VERDE 92c030c (1334, 439, 118). |
-| dev | 2026-11-14 00:43 | (dev 20261114T0040Z-chQsvnq, sigue) Nada tomable: la unica `disenado` era el espejo viejo de la 131, que ya estaba en dev (espejo quitado); 109 y 83 frenadas por la 79. |
-| arquitecto | 2026-11-14 01:10 | (arquitecto 20261114T0040Z-chQsvnq, sigue) Disena 135 (`by_losing_streak` en `/api/sessions/`, panel "Después de perder seguido" en Tendencias), 136 (`overtime` por ronda en el detalle, separador "Prórroga" en `.round-tabs`, `solo-lector` y no `aria-label`) y 137 (`headshot_deaths` en `/api/duels/`, panel "Muertes por headshot" en Duelos). Ninguna frenada: 79 y 132 tocan otras zonas. |
+| dev | 2026-11-14 00:41 | (dev 20261114T0040Z-chQsvnq, sigue) Nada tomable: la unica `disenado` era el espejo viejo de la 131, que ya estaba en dev (espejo quitado); 109 y 83 frenadas por la 79. |
+| arquitecto | 2026-11-14 00:45 | (arquitecto 20261114T0040Z-chQsvnq, sigue) Disena 135 (`by_losing_streak` en `/api/sessions/`, panel "Después de perder seguido" en Tendencias), 136 (`overtime` por ronda en el detalle, separador "Prórroga" en `.round-tabs`, `solo-lector` y no `aria-label`) y 137 (`headshot_deaths` en `/api/duels/`, panel "Muertes por headshot" en Duelos). Ninguna frenada: 79 y 132 tocan otras zonas. |
 | investigador | 2026-11-09 20:40 | (investigador 20261109T2004Z-cQbf8yt, reloj) Familias 1, 2, 4 y 7 con cuatro subagentes. Siete ideas nuevas con fuente abierta (B21, K13, D15, D16, F20, F21, P8) y fuentes nuevas en P3 y P5; nueve descartadas con motivo. Senal fuerte: el fork prestonwillis10 de r6-dissect decodifica arma, loadout y dano (pregunta al humano). Sin pushes de codigo. |
-| po | 2026-11-14 01:20 | (po 20261114T0040Z-chQsvnq, sigue) Reconcilia C13 (131) en dev; propone 141 (compañeros que pierden vivos, C20), 142 (operadores con los que mueres solo, O9) y 143 (quien cierra la ronda, K7). Ideas nuevas K14 y D20 (tramos de 143 y 137). |
+| po | 2026-11-14 00:47 | (po 20261114T0040Z-chQsvnq, sigue) Reconcilia C13 (131) en dev; propone 141 (compañeros que pierden vivos, C20), 142 (operadores con los que mueres solo, O9) y 143 (quien cierra la ronda, K7). Ideas nuevas K14 y D20 (tramos de 143 y 137). |
 
 ## Para el humano
 
