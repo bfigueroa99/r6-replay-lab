@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
-estado: en curso 2026-11-14T01:04Z
-candado: dev 2026-11-14T01:04Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -22,18 +22,18 @@ ve donde termino el tiempo reglamentario.
 
 ## Criterios de aceptacion
 
-- [ ] `/api/matches/<id>/` devuelve en cada ronda `overtime` (`true` si
+- [x] `/api/matches/<id>/` devuelve en cada ronda `overtime` (`true` si
       `Round.overtime_number > 0`), la misma regla que la tira de
       `/api/matches/`. Test Django con una partida de 3 rondas normales y 2 de
       prorroga, y otro sin prorroga (todas `false`).
-- [ ] En el detalle, la lista o pestañas de rondas muestran un separador
+- [x] En el detalle, la lista o pestañas de rondas muestran un separador
       (texto "Prórroga") antes de la primera ronda de prorroga y cada ronda de
       prorroga con una marca visible y nombre accesible que diga "prórroga".
       Logica pura en un helper con vitest (sin prorroga no hay separador; el
       separador va una sola vez).
-- [ ] La tira o el selector de ronda siguen funcionando con teclado igual que
+- [x] La tira o el selector de ronda siguen funcionando con teclado igual que
       antes (las flechas no se detienen en el separador). Test vitest o e2e.
-- [ ] e2e: `seed_demo` no tiene prorroga; el e2e abre un detalle del seed y
+- [x] e2e: `seed_demo` no tiene prorroga; el e2e abre un detalle del seed y
       verifica que no aparece el separador y la consola queda limpia.
 
 ## Fuera de alcance
@@ -113,6 +113,50 @@ Skills del repo: testing-strategy (Django para la clave, vitest para la regla de
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261114T0104Z-choi73m) Quedo el diseno completo, sin desvios:
+
+- `match_detail` devuelve `overtime` (`overtime_number > 0`) en cada ronda, la
+  regla de la tira de `/api/matches/`.
+- `prorrogaDetalle.js`: `pestanasDeRondas(rounds)` -> `{prorroga, corteAntes}`
+  por ronda, mismo orden y longitud; `[]` con `null`/vacio.
+- `MatchDetail.jsx`: `<span className="round-tabs-corte">Prórroga</span>`
+  antes de la primera de prorroga (no es `.round-tab`, asi las flechas, `p` y
+  `#ronda-N` siguen por indice); el boton de prorroga suma la clase `overtime`,
+  `<span className="solo-lector"> · prórroga</span>` y " · prórroga" en el
+  `title`. Sin `aria-label`.
+- `styles.css`: `.round-tab.overtime` con borde punteado (no solo color) y
+  `.round-tabs-corte` (texto chico, `--muted`, borde izquierdo).
+- e2e: en "el detalle de una partida se abre desde la lista", el seed sin
+  prorroga no muestra `.round-tabs-corte` ni `.round-tab.overtime`; consola
+  limpia.
+
+Criterios -> tests: (1) `test_detalle_marca_las_rondas_de_prorroga`,
+`test_detalle_sin_prorroga_las_marca_todas_false`,
+`test_overtime_del_detalle_coincide_con_la_tira_del_listado`
+(`backend/tests/test_prorroga_en_detalle.py`); (2) `prorrogaDetalle.test.js`
+(corte una vez, marca por ronda, vacio, `overtime` ausente); (3) los e2e de
+flechas y de `p` existentes siguen verdes (cuentan `.round-tab`, el separador
+no lo es); (4) e2e del detalle sobre el seed.
+
+TDD: los 3 tests Django en rojo (KeyError `overtime`) y el vitest sin modulo
+antes del codigo.
+
+Revision ciega (omc-code-reviewer, `revision.md`): aprobar, 1 LOW sin
+arreglar: el e2e no renderiza una prorroga en Chromium (el seed no la tiene y
+cambiarlo mueve los numeros de todo el e2e, como dice el diseno); la rama del
+JSX la ve QA con una partida real o la verificacion manual.
+
+Verificacion: `verificar.sh` VERDE 3417a0ad0 (1360 tests backend, 448 vitest,
+119 e2e).
+
+Skills: no aplica (sin dominio nuevo).
+Skills del repo: test-driven-development (rojo visto en Django y vitest),
+testing-strategy (clave en Django, regla del corte en vitest, ausencia en
+e2e), ux-copy ("Prórroga" calcado de la tira de Partidas);
+modern-web-guidance no se consulto: el marcado sigue el patron del propio
+selector y de `.solo-lector`.
+OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=—
 
 ## Revision
 
