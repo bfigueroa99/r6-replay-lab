@@ -1,6 +1,6 @@
 # Estado del equipo de desarrollo autonomo
 
-actualizado: 2026-11-14 00:14 UTC por dev, revisor, qa, release (sesion 20261113T2345Z-c6MAT6w; motivo: por estado: 1 con_hallazgos, 0 huerfanas; sigue: implementado, revisado, entregado)
+actualizado: 2026-11-14 00:21 UTC por qa, release (sesion 20261114T0004Z-cagB2Hb; motivo: por estado: 2 revisado; sigue: entregado)
 playbook: origin/dev@2b7f715
 rutina: TURNOS_SIN_RASTRO=1 en 48 h (~11-12T08:30Z) | 13 de 42 en 7 dias; prompt distinto de rutina.md, no sincronizado (la tanda simultanea no toca Routines)
 en vacio: TURNOS_EN_VACIO=0 de 12 en 48 h | 7 de 30 en 7 dias (turnos que no dejaron otro commit que ESTADO.md)
@@ -11,7 +11,7 @@ pausa: no
 | rama | ficha | estado | horas sin commits | PR / compare |
 |---|---|---|---|---|
 | claude/equipo-dev/79-excluir-una-partida-de-los-agregados | docs/backlog/79-excluir-una-partida-de-los-agregados.md | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | 1 | [PR #81](https://github.com/bfigueroa99/r6-replay-lab/pull/81) |
-| claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder | docs/backlog/128-repetir-o-cambiar-el-spawn-tras-perder.md | entregado (lo esta mergeando el Release 20261114T0004Z-cagB2Hb) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder?expand=1) |
+| claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder | docs/backlog/128-repetir-o-cambiar-el-spawn-tras-perder.md | entregado (aprobado por la QA cagB2Hb; el merge lo esta haciendo el Release 20261114T0012Z-ccgaH14) | 0 | [PR #132](https://github.com/bfigueroa99/r6-replay-lab/pull/132) |
 | claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti | docs/backlog/131-rondas-que-el-equipo-gano-sin-ti.md | implementado (espera revisor de otra sesion) | 0 | [compare](https://github.com/bfigueroa99/r6-replay-lab/compare/dev...claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti?expand=1) |
 
 COLA=3 (tope 4)  TOTAL=3 (tope 6)
@@ -21,7 +21,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 
 `git merge-tree` de las tres ramas contra `origin/dev` (ya con la 129, PR #131) y por pares: ninguna choca.
 
-1. `claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder` (entregado; lo mergea el Release de la sesion cagB2Hb).
+1. `claude/equipo-dev/128-repetir-o-cambiar-el-spawn-tras-perder` (entregado, [PR #132](https://github.com/bfigueroa99/r6-replay-lab/pull/132); lo mergea el Release 20261114T0012Z-ccgaH14, que tomo la rama a las 00:13).
 2. `claude/equipo-dev/131-rondas-que-el-equipo-gano-sin-ti` (implementado: `aggregates.py`, `views.py`, `Teammates.jsx`, `humo.spec.js`, `metricas.md`).
 3. `claude/equipo-dev/79-excluir-una-partida-de-los-agregados` (PR #81, lo mergea el humano: toca `CLAUDE.md`). Libera la 83 y la 109.
 
@@ -42,7 +42,7 @@ RESUMEN propuesto=6 disenado=3 en_curso=0 huerfanas=0 implementado=0 revisado=0 
 | 79-excluir-una-partida-de-los-agregados | entregado (PR pendiente de merge: toca CLAUDE.md, lo mergea el humano) | funcionalidad | datos | 3 | fullstack | - |
 | 83-partidas-excluidas-en-partidas-y-datos | disenado | funcionalidad | datos | 3 | fullstack | - |
 | 109-quien-te-venga | disenado | funcionalidad | escuadra | 3 | fullstack | - |
-| 128-repetir-o-cambiar-el-spawn-tras-perder | entregado (en su rama) | funcionalidad | posicionamiento | 3 | fullstack | - |
+| 128-repetir-o-cambiar-el-spawn-tras-perder | entregado (en su rama, PR #132) | funcionalidad | posicionamiento | 3 | fullstack | - |
 | 131-rondas-que-el-equipo-gano-sin-ti | implementado (en su rama) | funcionalidad | escuadra | 3 | fullstack | - |
 | 132-rivales-que-se-repiten-en-la-misma-noche | disenado | funcionalidad | rivales | 3 | fullstack | - |
 | 134-en-que-estado-de-vivos-matas | disenado | funcionalidad | impacto | 3 | backend | - |
@@ -61,8 +61,8 @@ Espejos: 128 y 131 viven en su rama, que manda. La 129 ya esta en dev (espejo qu
 
 | rol | fecha-hora UTC | que hizo |
 |---|---|---|
-| release | 2026-11-14 00:14 | (release 20261113T2345Z-c6MAT6w, dentro de la QA) 129 entregada: ficha recortada, VERDE c67f8f846 (1321, 435, 117) sobre el commit final, [PR #131](https://github.com/bfigueroa99/r6-replay-lab/pull/131) **mergeado** en dev (eccf2d9); borrado de la rama sin efecto (proxy); espejo quitado. merge-tree de 79, 128 y 131 contra dev y por pares: limpio. pruebas.sh: PRUEBAS_OK (23). Routine con prompt desfasado, no sincronizada (consigna de la tanda). |
-| qa | 2026-11-14 00:14 | (qa 20261113T2345Z-c6MAT6w) 129 `revisado` -> `aprobado` (segunda QA): VERDE 6bb5a18 (1321, 435, 117); e2e antes intermitente 40/40 con 6 workers; Chromium sobre seed_demo: criterios 1 a 5 con consola limpia, bordes de URL y API en 200, contraste 13,2:1, Tab; chunk sin cambio; 3 mutaciones caen; omc-verifier PASS. |
+| release | 2026-11-14 00:21 | (release 20261114T0004Z-cagB2Hb, tras la QA) 128: ## PR, ficha recortada, VERDE 0819b7c, abrio [PR #132](https://github.com/bfigueroa99/r6-replay-lab/pull/132); al fusionar dev (ya con la 129) el push choco con la sesion ccgaH14, que habia tomado la entrega: P8, sin merge propio (mi VERDE 33dcae3 sobre dev fusionado queda descartado). |
+| qa | 2026-11-14 00:21 | (qa 20261114T0004Z-cagB2Hb) 128 `revisado` -> `aprobado`: VERDE c0da754 (1335, 435, 116); runserver vacia y sembrada desde factories, 5 pares recalculados a mano iguales a la API, filtros y bordes en 200, POST 403; chunk inicial +0,06 %; Chromium: contraste 5,71:1, teclado, consola limpia; 3 mutaciones caen su test; omc-verifier PASS. La 129 la tenia otra QA. |
 | revisor | 2026-11-14 00:14 | (revisor 20261113T2345Z-c6MAT6w) 128 `implementado` -> `revisado`: ciego aprobar, 2 LOW (fila de metricas.md que nombra la ficha 107; hint sin el filtro de lado) + 1 LOW del lider (el seed no tiene casos "Tras perder"); VERDE dfde6d7da (1335, 435, 116). |
 | dev | 2026-11-14 00:14 | (dev 20261113T2345Z-c6MAT6w) 131 `disenado` -> `implementado`: `won_without_me`, clave en `/api/teammates/`, panel "Rondas que tu equipo ganó sin ti" en Compañeros, 13 tests Django, 4 vitest, 1 e2e; ciego 3 hallazgos (1 MEDIUM de test, 2 LOW) arreglados; VERDE cee93f814 (1334, 435, 116). |
 | arquitecto | 2026-11-13 23:37 | (arquitecto 20261113T2317Z-cBbsozQ, sigue) Disena 134 (estado de vivos al matar: `metrics.estado_al_matar`, `kill_state`, `/api/duels/kill-state/`, panel en Duelos debajo de Estado al morir; winrate sobre rondas distintas); frenada por la 133 (Duelos.jsx, aggregates, e2e). |
