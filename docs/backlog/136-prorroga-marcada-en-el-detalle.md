@@ -1,7 +1,7 @@
 # 136. La prorroga marcada en el detalle de la partida
 
-estado: revisado
-candado: qa 2026-11-15T02:24Z
+estado: con hallazgos
+candado: -
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
 epica: revision-de-rondas
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md F25 (la tira de Partidas, ficha 103, ya corta antes de la prorroga; el detalle no)
 archivos: backend/replays/views.py, backend/tests/test_prorroga_en_detalle.py, frontend/src/prorrogaDetalle.js, frontend/src/prorrogaDetalle.test.js, frontend/src/pages/MatchDetail.jsx, frontend/src/styles.css, frontend/e2e/humo.spec.js
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0104Z-choi73m, revisor 20261114T0104Z-cWK4yQD
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0104Z-choi73m, revisor 20261114T0104Z-cWK4yQD, qa 20261115T0219Z-i32143169
 
 ## PR
 
@@ -192,7 +192,89 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=3 LOW (0 arreglados, confirmados) · verificación=—
 
-## QA
+## QA 2026-11-15 sobre f7a821d
+
+(qa 20261115T0219Z-i32143169)
+
+Veredicto: `con hallazgos`. Un criterio falla: la marca de cada ronda de
+prorroga no se ve en reposo (1,26:1 contra el fondo). Todo lo demas pasa.
+
+Base: rama con `origin/dev` (b2991fe) fusionado sin conflicto (82b5c14).
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE f7a821db7 en 261s: 1370 tests backend, 454 vitest, 120 e2e. Todo en verde.`
+- **Base sembrada** (`factories.py`, script temporal en el scratchpad, base
+  en `SQLITE_PATH`/`DATA_DIR` propios): partida 1 con 6 rondas normales y 2
+  de prorroga (`overtime_number` 1 y 2), 2 sin prorroga, 3 sin rondas, 4 con
+  una sola ronda que es de prorroga, 5 con la prorroga sin ganador.
+  `runserver 127.0.0.1:8123 --noreload` sembrada y `:8124` vacia.
+  - `curl /api/matches/<id>/` -> `overtime` por ronda: 1 `[F,F,F,F,F,F,T,T]`,
+    2 `[F,F,F]`, 3 `[]`, 4 `[T]`, 5 `[F,F,F,T]`; la tira de `/api/matches/`
+    da las mismas listas para las 5.
+  - Bordes: `/api/matches/999/`, `/0/`, `/-1/`, `/abc/` -> 404;
+    `/api/matches/1/?until=foo`, `?side=Attack`, `/api/matches/?page=-1`,
+    `?until=foo`, `?map=`, `?days=99999999999` -> 200. Base vacia:
+    `/api/matches/` 200 con `matches: []`, `/api/matches/1/` 404 con
+    `{"error": "partida no encontrada"}`.
+- **Chunk inicial** (`vite build`): `index-*.js` 200.34 kB en `origin/dev` y
+  en la rama (sin cambio); `index-*.css` 14.57 -> 14.75 kB (+1,2 %).
+- **accessibility-review** (Chromium con Playwright, script en el
+  scratchpad, sobre la base sembrada; consola sin errores ni warnings en las
+  5 partidas):
+  - Nombre y rol: `ariaSnapshot` de la tira -> `button "R6 DEF"`,
+    `text: Prórroga`, `button "R7 ATK · prórroga"`, `button "R8 DEF ·
+    prórroga"`; ningun boton normal dice prorroga. El corte es un `SPAN`
+    sin rol ni `tabIndex`. `title` de R7: "B Church, B Arsenal Room · ataque
+    · prórroga". Pasa.
+  - Teclado: desde R6, flecha derecha -> R7 -> R8 -> R8 (tope); dos
+    izquierdas -> R6; Tab desde R6 va a R7 (el corte no toma foco);
+    `#ronda-8` abre R8; foco visible (`outline auto 1px`). Pasa.
+  - Corte: una sola vez y justo antes de R7 (partida 1); con una sola ronda
+    de prorroga va primero (partida 4: `round-tabs-corte`, `round-tab ...
+    overtime`); sin prorroga, ni corte ni `overtime` (partida 2); prorroga
+    sin ganador se marca igual (partida 5); partida sin rondas abre sin
+    pestañas y sin error (partida 3). Pasa.
+  - Contraste: texto "Prórroga" `rgb(139,152,169)` sobre `rgb(23,30,41)`,
+    11 px -> **5,71:1** (pide 4,5:1). Pasa. Borde punteado de una pestaña de
+    prorroga no activa: `dashed 1px rgb(38,48,65)` sobre `rgb(23,30,41)` ->
+    **1,26:1** (WCAG 1.4.11 pide 3:1); es el mismo color del borde liso de
+    las normales, asi que en reposo R7 y R8 se ven igual que R6 (captura en
+    el scratchpad: el punteado no se distingue). Solo se ve en la pestaña
+    activa, donde el borde es el acento.
+- **Mutaciones** (codigo roto a mano y restaurado con `git checkout`):
+  `overtime_number >= 0` en `match_detail` -> los 3 tests de
+  `tests.test_prorroga_en_detalle` caen; `corteAntes = prorroga` (sin
+  `!enProrroga`) -> cae "el corte va una sola vez"; `prorroga` siempre
+  `false` -> caen 2 de 5 de `prorrogaDetalle.test.js`.
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hace falta
+  `## Verificar en el PC`. Sin numero nuevo: `validate-data` no aplica. Sin
+  pagina ni panel nuevo: `design-critique` no aplica.
+
+### Hallazgo
+
+- [a11y] **Major** (WCAG 1.4.11; criterio 2 "cada ronda de prorroga con una
+  marca visible") `frontend/src/styles.css`, `.round-tab.overtime`.
+  Que pasa: la marca es solo `border-style: dashed` con el color de borde de
+  siempre (`--border`, 1,26:1 contra el fondo): en reposo una pestaña de
+  prorroga no se distingue de una normal. El corte "Prórroga" si se ve, pero
+  el criterio pide ademas la marca por ronda, y el diseno dejo su contraste
+  para que lo midiera QA.
+  Repro: base de arriba, `/partidas/1`, sin pasar el mouse: R7 y R8 se ven
+  como R6; en Chromium,
+  `getComputedStyle(document.querySelector('#rondas .round-tab.overtime:not(.active)')).borderTopColor`
+  -> `rgb(38, 48, 65)` sobre el fondo `rgb(23, 30, 41)` de `.panel`.
+  Arreglo sugerido: un color de borde de 3:1 o mas para la pestaña de
+  prorroga no activa (por ejemplo `--muted`, 5,71:1), sin pisar el acento de
+  la activa: `.round-tab.active` va antes en `styles.css` y tiene la misma
+  especificidad, asi que la regla nueva necesita `:not(.active)` o ir antes.
+  Test a agregar: un e2e no puede (el seed no tiene prorroga); medirlo de
+  nuevo en la proxima QA con la misma base.
+
+Skills: no aplica.
+Skills del repo: accessibility-review (1 Major: borde de prorroga 1,26:1;
+corte 5,71:1, teclado y nombres pasan); design-critique y validate-data no
+aplican (sin panel ni numero nuevo).
+OMC: plan=— · revisión=— · verificación=— (no se llega a `aprobado`)
 
 ## Para el humano
 
