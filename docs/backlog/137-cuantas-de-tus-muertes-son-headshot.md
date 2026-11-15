@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
-estado: implementado
-candado: revisor 2026-11-15T02:41Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D8
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_muertes_headshot.py, frontend/src/muertesHeadshot.js, frontend/src/muertesHeadshot.test.js, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0316Z-cwWsU9i
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0316Z-cwWsU9i, revisor 20261115T0219Z-i32143169
 
 ## PR
 
@@ -229,7 +229,65 @@ con `th` por la `DataTable` existente, sin tabla de layout); sql-queries no
 hizo falta (patron vecino `_solo_rivales`, con `assertNumQueries`).
 OMC: plan=— · revisión=no disponible (sin subagentes) · verificación=—
 
-## Revision
+## Revision 2026-11-15 sobre d5009f8
+
+(revisor 20261115T0219Z-i32143169)
+
+Veredicto: aprobar -> `revisado`.
+
+Base: rama con `origin/dev` (4d90645, con la 134) fusionado sin conflicto
+(27d7177; `Duelos.jsx` y `humo.spec.js` se fusionaron solos);
+`verificar.sh`: `VERDE d5009f84d en 479s: 1404 tests backend, 459 vitest,
+122 e2e` (incluye `Duelos muestra las muertes por headshot`).
+
+Revision a ciegas: sin herramienta para lanzar subagentes en esta sesion,
+asi que la hizo el lider con el prompt de `revision.md` como lista, sobre
+`git diff 4d90645...d5009f8 -- . ':(exclude)docs/backlog'` (8 archivos,
++364), antes de leer la ficha. Un tema, sin vista POST ni lectura de `.rec`:
+no suma eje de intencion ni de seguridad.
+
+Sondas (test temporal en un worktree aparte, borrado despues):
+- El mismo jugador rival en una ronda y compañero en otra (`camaleon`): en
+  R1 su baja sobre `mate0` (headshot) cuenta en Tus compañeros, ataque; en
+  R2 su muerte a manos de `rival0` cuenta en Tus compañeros, defensa; su
+  teamkill sobre vos en R2 no cuenta. Resultado: Tú 0, compañeros total
+  2 muertes, 1 headshot, 50 %. El equipo se lee por ronda.
+- Partida de un jugador (solo tu fila, autor sin fila): Tú 0 muertes; la
+  muerte no se atribuye a un rival que la ronda no tiene, como `nemesis`.
+
+Mutaciones (codigo roto a mano y restaurado):
+- Sin la celda por lado (solo total): 2 tests caen.
+- `es_mia` invertido (tus muertes a compañeros y al reves): 8 tests caen.
+
+Hallazgos:
+- [test] LOW `frontend/e2e/humo.spec.js:707`
+  Que pasa: con `seed_demo` la fila Tus compañeros sale en raya (el seed no
+  crea muertes de compañeros en el feed), asi que el e2e solo ve numeros en
+  la fila Tú; el texto "NN% (n)" de la fila de compañeros lo cubre el vitest.
+  Como reproducirlo: `/api/duels/` sobre la base del e2e da
+  `teammates.total.with_data == 0`.
+  Arreglo sugerido: ninguno en esta ficha (cambiar el seed mueve los numeros
+  de todo el e2e); QA puede mirarlo con una base sembrada desde
+  `factories.py`. No frena.
+
+Sin hallazgos en: autor rival por `_solo_rivales` (teamkills y bajas sin
+autor fuera, test de cada uno); victima de tu equipo con fila en la ronda;
+`headshot` nulo cuenta en muertes y no en el porcentaje; `pct` sobre muertes
+con dato, sin promedio de promedios; lado de tu fila (un lado raro solo al
+total, test); filtros sobre tu fila (lado y mapa, tests); 2 consultas fijas
+(`assertNumQueries`); `headshot` del feed es dato que el `.rec` entrega (el
+HS% ya lo usa); fila en `metricas.md` y su corte en `## Muestra minima`;
+identificadores y comentarios sin tildes, UI con tildes ("Tú", "Tus
+compañeros", "cuántas"); sin `print` ni `console.log`; el diff no sale de
+`archivos:`. Calculado al consultar: el precedente de `nemesis` y
+`death_state`, dicho en el docstring.
+
+Ficha: criterios 1 a 5 cubiertos por los tests que lista
+`## Implementacion` (corridos en el verde de arriba) y por las sondas.
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes: revision del lider)
 
 ## QA
 
