@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-15T02:41Z
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
