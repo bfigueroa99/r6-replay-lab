@@ -1866,6 +1866,36 @@ test('el Coach muestra si repites el sitio tras perderlo', async ({ page }) => {
   expect(errores).toEqual([])
 })
 
+test('el Coach muestra el sitio con el que abres la defensa', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/positioning/defense-opener/')).json()
+  await page.goto('/coach')
+
+  const panel = page.locator('section.panel', {
+    has: page.getByRole('heading', { name: 'El sitio con el que abres la defensa', exact: true }),
+  })
+  // seed_demo arranca cada partida defendiendo y pierde toda su defensa: hay
+  // aperturas en todos los mapas y el winrate abriendo es 0 en todas las filas
+  expect(datos.matches).toBeGreaterThan(0)
+  await expect(panel).toContainText(`${datos.matches} partidas con apertura de defensa`)
+  const sitios = datos.maps.flatMap((m) => m.sites.map((s) => ({ map: m.map, ...s })))
+  await expect(panel.locator('tbody tr')).toHaveCount(sitios.length)
+  // escrito aca y no importado, para no probar el helper con el mismo
+  const primero = sitios[0]
+  const fila = panel.locator('tbody tr').first()
+  await expect(fila.locator('td').nth(0)).toHaveText(primero.map)
+  await expect(fila.locator('td').nth(1)).toHaveText(primero.site)
+  await expect(fila.locator('td').nth(2)).toHaveText(`${primero.opens} (${Math.round(primero.opens_share)}%)`)
+  const poca = primero.opens < datos.min_matches ? ' · pocas partidas' : ''
+  await expect(fila.locator('td').nth(3)).toHaveText(`${Math.round(primero.opens_winrate)}%${poca}`)
+  await expect(fila.locator('td').nth(4)).toHaveText(String(primero.rest_rounds))
+  // las aperturas de cada mapa suman las partidas con apertura
+  expect(datos.maps.reduce((suma, m) => suma + m.opens_total, 0)).toBe(datos.matches)
+
+  expect(errores).toEqual([])
+})
+
 test('el Coach muestra si repites el spawn tras perder', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/coach')
