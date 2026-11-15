@@ -44,6 +44,8 @@ andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
 los agentes de oh-my-claudecode vendorizados en `.claude/agents/omc-*.md` y las
 recetas de `.claude/skills/omc/`; el plugin no se instala y sus modos
 persistentes (`autopilot`, `ralph`, `team`) no se usan: el turno ya es el loop.
+Tambien toma pedidos de los issues de GitHub, solo de `OWNER`, `MEMBER` o
+`COLLABORATOR` (el repo es publico): `.claude/skills/equipo-dev/issues.md`.
 
 Tambien hay skills de afuera vendorizadas en `.claude/skills/` (superpowers,
 engineering, design, data y modern-web-guidance), copiadas de la cuenta del
@@ -131,6 +133,7 @@ No propongas features que dependan de esto (esta documentado en el README):
   ventana normal con marco, sin always-on-top y sin transparencia. Si alguna
   iteracion propone `alwaysOnTop`, `transparent` o `setIgnoreMouseEvents`, la
   respuesta es no.
-- Cuentas o login de la propia app, telemetria, sincronizacion a la nube.
+- Cuentas o login de la propia app, telemetria (tambien el reporte de errores
+  a un tercero, como Sentry), sincronizacion a la nube.
 - Credenciales de Ubisoft en la base o en el frontend: viven solo en el `.env`,
   y lo unico que se guarda es el ticket de sesion (`data/ubisoft-sesion.json`).

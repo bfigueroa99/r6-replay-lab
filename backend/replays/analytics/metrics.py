@@ -203,6 +203,67 @@ def estado_al_morir(eventos: list[dict], team_of: dict) -> dict:
     return estado
 
 
+def estado_al_matar(eventos: list[dict], team_of: dict) -> dict:
+    """Vivos del equipo de quien mata (contandose) y rivales justo antes de cada baja suya.
+
+    El reverso de `estado_al_morir`, con su mismo recorrido: cada baja ve el
+    estado que dejo la anterior, sin agrupar por segundo. Un teamkill no es
+    baja (como `kills` desde la ficha 67) y un `PlayerLeave` no es baja, pero
+    los dos restan su vivo. Un `Kill` sin actor no se anota, y el de un actor
+    que ya no esta vivo lo cuenta `bajas_despues_de_caer`; el muerto igual sale. Como los
+    vivos solo bajan, un jugador no repite estado en la misma ronda.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if kind == KILL and actor in vivos and team_of[actor] != team_of[muerto]:
+            equipo = team_of[actor]
+            aliados = sum(1 for j in vivos if team_of[j] == equipo)
+            bajas.setdefault(actor, []).append((aliados, len(vivos) - aliados))
+        vivos.discard(muerto)
+    return bajas
+
+
+def bajas_despues_de_caer(eventos: list[dict], team_of: dict) -> dict:
+    """Bajas a rivales que el feed atribuye a quien ya habia caido o se habia ido.
+
+    Trampas y gadgets matan despues de que muere su dueno, y `kills` las cuenta
+    (`clutch_kills` lo hace a proposito). `estado_al_matar` no les da estado:
+    sin el autor vivo no hay "tus vivos" que contar. Tambien caen aca los trades
+    del mismo tick que el feed ordena con tu muerte primero: sin agrupar por
+    segundo no se pueden separar. Se devuelven aparte para que no se confundan
+    con bajas que el feed no trae. Mismo recorrido.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if (kind == KILL and actor in team_of and actor not in vivos
+                and team_of[actor] != team_of[muerto]):
+            bajas[actor] = bajas.get(actor, 0) + 1
+        vivos.discard(muerto)
+    return bajas
+
+
 def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | None:
     """Mayor diferencia de vivos de `equipo` contra el resto tras cada salida del feed.
 

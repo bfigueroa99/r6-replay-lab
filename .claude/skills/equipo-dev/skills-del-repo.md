@@ -70,6 +70,29 @@ copia fija con su sha256 en `VENDORIZADAS.md` y no cambia entre turnos.
   accesibilidad (`accessibility-review`), consultas (`sql-queries`) y como
   repartir los tests (`testing-strategy`).
 
+## Las que no entran: Sentry
+
+Las skills de Sentry (el plugin `sentry` de Claude Code, que se arma desde
+https://github.com/getsentry/sentry-for-ai: sentry-get-started,
+sentry-instrument, sentry-debug-issue y las demas) no se vendorizan, no
+entran a ningun paso ni a este mapa, y find-skills no las trae ni las
+propone para instalar (`skills.md`, "Filtrar"). Tampoco se instrumenta la
+app con el SDK de Sentry ni con ningun otro reporte de errores o de uso a un
+tercero. Por que: mandar los errores de la app a un servicio es telemetria,
+un no-goal de `CLAUDE.md` (la app corre entera en el PC del usuario y nada
+sale a la red sin un clic), y el SDK (`sentry-sdk`, `@sentry/react`) seria
+una dependencia nueva en un backend que tiene `django` y `zstandard` y
+punto. Su MCP tampoco es conector del loop: no hay proyecto de Sentry que
+leer. Una idea de la app que lo pida va a "Ideas descartadas" de
+`ALCANCE.md` con este motivo; cambiarlo es cambiar el no-goal, y eso lo
+decide el humano en `CLAUDE.md`, no un turno.
+
+`pruebas.sh` (seccion `sentry`) falla si aparece una skill de Sentry en
+`.claude/skills/` (por carpeta o por `name:`), una fila suya en
+`VENDORIZADAS.md`, el plugin o el MCP en la configuracion (`.claude/`,
+`.mcp.json`, `opencode.json`) o el SDK en `requirements.txt`,
+`requirements-dev.txt` o `frontend/package.json`.
+
 ## Registro
 
 `Skills del repo: <skill> (<evidencia>), ... | ninguna` cierra la seccion de
