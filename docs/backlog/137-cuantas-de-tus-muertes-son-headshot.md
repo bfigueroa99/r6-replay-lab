@@ -1,6 +1,6 @@
 # 137. Cuantas de tus muertes son headshot
 
-estado: implementado
+estado: revisado
 candado: -
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad

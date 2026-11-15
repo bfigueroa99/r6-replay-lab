@@ -1,8 +1,8 @@
 # 138. El sitio con el que abres la defensa
 
-estado: disenado
+estado: implementado
 candado: -
-rama: -
+rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
 area: fullstack

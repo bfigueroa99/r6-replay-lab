@@ -1,6 +1,6 @@
 # 136. La prorroga marcada en el detalle de la partida
 
-estado: revisado
+estado: con hallazgos
 candado: -
 rama: claude/equipo-dev/136-prorroga-marcada-en-el-detalle
 tipo: funcionalidad
