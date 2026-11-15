@@ -4,6 +4,7 @@ actualizado: <fecha-hora UTC> por <rol>[, <rol>...] (sesion <EQUIPO_SESION>; mot
 playbook: <ref>@<sha corto>
 rutina: <linea TURNOS_SIN_RASTRO de estado.sh tal cual>[; prompt al dia | prompt sincronizado con rutina.md@<sha corto> | sin herramientas para comparar | apagada]
 en vacio: <linea TURNOS_EN_VACIO de estado.sh tal cual>
+issues: <linea ISSUES de estado.sh tal cual>; triados en este turno: <#N -> ficha NN> | ninguno
 pausa: no
 
 ## Cola (items con codigo, esperando al humano o en trabajo)
@@ -50,6 +51,7 @@ RESUMEN <linea tal cual de estado.sh>
 - Ramas borrables: <linea BORRAR de estado.sh tal cual>
 - Release: <linea RELEASE de estado.sh tal cual> (solo si dev lleva commits que main no tiene)
 - Preguntas abiertas: ...
+- Issues que esperan tu respuesta: <#N de las lineas `esperando` de `== issues`, con su titulo; quitar `loop:necesita-humano` al responder> (solo si hay)
 - PRs que esperan tu merge: ...
 - Verificar en el PC: <NN> (<que correr, en pocas palabras>), una linea por ficha
 - Rutina: <n> disparos sin rastro en 48 h (<lista>); revisar el historial de la Routine `r6-replay-lab: equipo dev cada 3h` (solo si n > 0)

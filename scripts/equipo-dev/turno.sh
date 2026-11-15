@@ -63,6 +63,12 @@
 # el env y las lineas `# leer:` del rol nuevo (SKILL.md ya esta leido), o una
 # sola linea `# fin: <motivo>`: ahi va el cierre comun, una vez por sesion.
 #
+# Pedidos de GitHub (pedidos= de RESUMEN, que cuenta issues.py): un issue de
+# un autor de confianza sin triar va antes que el papel que el equipo se
+# propone solo y que el reloj, y despues de lo que ya tiene codigo (reglas 1 a
+# 5): lo tria el PO en una ficha con prioridad 1, y desde ahi avanza como
+# cualquier otra. Quien ya fue PO en la sesion no lo vuelve a pedir.
+#
 # Al final imprime las lineas `# leer:`, cada una para su propia llamada a
 # Bash: estado.sh, SKILL.md y el archivo del rol juntos pasan de 30 KB, y la
 # herramienta guarda en un archivo la salida que pasa de ese tamano y muestra
@@ -133,7 +139,7 @@ fi
 # Contadores del pipeline. Lo que RESUMEN no traiga vale 0; los topes, lo que
 # dice el playbook. Son siempre enteros validados: por eso se comparan sin comillas.
 propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0
-aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 bloqueadas=0
+aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 bloqueadas=0 pedidos=0
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
 ideas_libres=0 sin_merge=no pausa=no sin_rastro_48h=0
 hora=""; fecha=""
@@ -144,7 +150,7 @@ cargar() {
     for kv in $1; do
         k=${kv%%=*}; v=${kv#*=}
         case "$k" in
-            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h|bloqueadas)
+            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h|bloqueadas|pedidos)
                 [[ "$v" =~ ^[0-9]+$ ]] && printf -v "$k" '%s' "$v" ;;
             sin_merge|pausa) printf -v "$k" '%s' "$v" ;;
             hora) [[ "$v" =~ ^[0-9]{4}$ ]] && hora=$v ;;
@@ -205,6 +211,7 @@ elegir_rol() {
     # Lo "entregado (...)" espera al humano, pero el motivo puede ser transitorio
     # (sin herramientas, veto levantado): el Release del reloj lo reintenta.
     elif [ $espera_humano -gt 0 ] && [ "$reloj" = release ]; then rol=release; motivo="reloj: release, $espera_humano en espera"
+    elif [ $pedidos -gt 0 ]; then rol=po; motivo="pedidos de GitHub: $pedidos sin triar"
     elif [ "$reloj" = investigador ]; then rol=investigador; motivo="reloj: investigador"
     elif [ $(( propuesto + disenado )) -eq 0 ]; then rol=po; motivo="papel vacio"
     elif [ $disenado -gt 0 ] && [ $cola -lt $tope_cola ] && [ $total -lt $tope_total ]; then rol=dev; motivo="por estado: $disenado disenado, lugar en cola"
@@ -234,7 +241,7 @@ seguir_rol() {
             # Quien diseno no implementa lo que diseno (puede arreglar los
             # hallazgos de otra ficha), y quien propuso no disena.
             arquitecto) tope_disenado=0; cola=$tope_cola ;;
-            po) tope_propuesto=0; tope_disenado=0 ;;
+            po) tope_propuesto=0; tope_disenado=0; pedidos=0 ;;
             investigador) ideas_libres=10 ;;
         esac
     done

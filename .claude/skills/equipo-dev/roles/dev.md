@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La eleccion por `tipo:` y por epica sale de la Directiva de alcance
 (`alcance.md`), resumida en el nucleo.
 
-Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
+Cuando el estado lo pide (reglas 4 y 9); por reloj, franjas 3 y 5.
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
@@ -21,7 +21,9 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
 - **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/dev` (el
   mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
   `backlog`; `estado: en curso <fecha>`, `candado: dev
-  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
+  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo` (si la ficha
+  viene de un issue, con `Refs bfigueroa99/r6-replay-lab#N` en el cuerpo:
+  `issues.md`); `git push -u
   origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
   siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
   curso`, `rama:`); si ese push falla, no importa.

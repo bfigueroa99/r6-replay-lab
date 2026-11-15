@@ -13,7 +13,8 @@ interno (tests, deuda), que riesgo baja.
 ## Por que esto y no otra cosa
 
 De donde salio la tarea (ficha NN; bug encontrado en X; deuda anotada en
-el item #N del roadmap) y que alternativas se descartaron en una linea cada una.
+el item #N del roadmap; un issue: `Refs bfigueroa99/r6-replay-lab#N`, nunca
+`Closes`) y que alternativas se descartaron en una linea cada una.
 
 ## Como se probo
 

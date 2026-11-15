@@ -69,11 +69,14 @@ y `playwright-stealth-verify` (103K) por encima de skills legitimas. En orden:
    `skills-use-*` que la salida nombra: se leen todos. Nada de ella se ejecuta
    para evaluarla.
 3. Fuera si pide bajar o correr codigo remoto (`curl ... | sh`, `npx` o
-   `pip install` de paquetes ajenos), manda datos afuera, toca credenciales o
-   tokens, pide instalarse global (`-g`), es de evasion (stealth, anti-detect,
-   pasar captchas o Cloudflare: lo mismo que `CLAUDE.md` prohibe con stats.cc y
-   R6 Tracker), choca con una regla dura de `CLAUDE.md`, o es de un stack que
-   el repo no usa (Next.js, Tailwind, DRF, pandas).
+   `pip install` de paquetes ajenos), manda datos afuera, instrumenta la app
+   para reportar errores o uso a un tercero (las de Sentry no se traen ni se
+   proponen nunca: `skills-del-repo.md`, "Las que no entran"), toca
+   credenciales o tokens, pide instalarse global (`-g`), es de evasion
+   (stealth, anti-detect, pasar captchas o Cloudflare: lo mismo que
+   `CLAUDE.md` prohibe con stats.cc y R6 Tracker), choca con una regla dura
+   de `CLAUDE.md`, o es de un stack que el repo no usa (Next.js, Tailwind,
+   DRF, pandas).
 4. Sirve para **esta** ficha, no en general.
 
 ## Usar
