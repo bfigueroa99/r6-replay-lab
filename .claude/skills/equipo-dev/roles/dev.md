@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La eleccion por `tipo:` y por epica sale de la Directiva de alcance
 (`alcance.md`), resumida en el nucleo.
 
-Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
+Cuando el estado lo pide (reglas 4 y 9); por reloj, franjas 3 y 5.
 
 - **Entrada:** `estado.sh`. Orden de eleccion, sin discusion: (0) ficha
   `en curso` con candado muerto (mas de 3 h sin commits) o con
@@ -13,21 +13,41 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   prioridad, `funcionalidad` antes que el resto, y la mas vieja) cuyo diseno
   no diga "implementar despues de #NN" con NN sin mergear. Candado `dev` ajeno de
   menos de 3 h sobre la ficha o sobre la misma zona del codigo: elegir otra.
+  Una ficha que este contexto ya reviso o probo (`git show
+  $EQUIPO_REF:scripts/equipo-dev/independencia.sh | bash -s -- <rama> --puedo
+  dev` en salida 1; pasa al seguir de Revisor o QA en la misma sesion)
+  tampoco: con un dev y un revisor del mismo contexto la puerta de merge no
+  la deja pasar nunca.
 - **Reclamo:** `git checkout -b claude/equipo-dev/NN-slug origin/dev` (el
   mismo nombre que la ficha); `mkdir -p docs/backlog`; copiar la ficha desde
   `backlog`; `estado: en curso <fecha>`, `candado: dev
-  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo`; `git push -u
+  <fecha>`, `rama:`, `turnos:`; commit `Reclama: NN titulo` (si la ficha
+  viene de un issue, con `Refs bfigueroa99/r6-replay-lab#N` en el cuerpo:
+  `issues.md`); `git push -u
   origin claude/equipo-dev/NN-slug`. Push rechazado = otro ya la tiene:
   siguiente. Despues, una linea en el espejo de `backlog` (`estado: en
   curso`, `rama:`); si ese push falla, no importa.
 - **Trabajo:** implementar el diseno completo: backend + frontend + tests +
-  fila de `docs/metricas.md` si corresponde; tests primero en logica pura;
-  con `tipo: bug`, el test que falla primero (receta 4 de OMC):
+  fila de `docs/metricas.md` si corresponde; tests primero en logica pura,
+  con el ciclo de la skill `test-driven-development` (el test visto en rojo
+  antes del codigo, despues lo minimo para el verde); con `tipo: bug`,
+  primero la causa con la skill `systematic-debugging` (fases 1 a 3; con
+  tres arreglos fallidos no hay cuarto: `## Pendiente` con lo probado) y el
+  test que falla primero (receta 4 de OMC):
   `omc-test-engineer` lo propone antes de tocar el codigo, el Dev lo escribe
   y lo ve fallar (comando y falla en `## Implementacion`) y recien entonces
   arregla; migracion + `metrics.py` + `recompute` si hay columna nueva;
   estilo del repo (espanol sin tildes en codigo, con tildes en la UI,
-  comentarios que explican por que). Dos subagentes para backend y frontend
+  comentarios que explican por que). Antes de escribir JSX o CSS en
+  `frontend/src`, la skill `modern-web-guidance` (su CLI fija y sin
+  telemetria; sin red, sus `guides/` por nombre), y los ids de las guias que
+  se aplicaron son su evidencia; si agrega o cambia texto que ve el usuario
+  (boton, aviso, estado vacio, error), la skill `ux-copy`, en voseo y con
+  tildes como el resto de la UI. Un agregado de `aggregates.py` que no sigue
+  un patron vecino (`Subquery` correlacionada, una consulta por fila): la
+  skill `sql-queries`, y un `assertNumQueries` como los de
+  `test_aggregates.py` que fije cuantas consultas hace. Las skills que cita
+  el `## Diseno` se leen igual. Dos subagentes para backend y frontend
   si son independientes. Si un punto cae en un dominio que ni el diseno ni el repo
   resuelven y el Arquitecto no busco para esa ficha (su linea `Skills:`),
   una busqueda de skills de afuera (`.claude/skills/equipo-dev/skills.md`):
@@ -44,7 +64,8 @@ Cuando el estado lo pide (reglas 4 y 8); por reloj, franjas 3 y 5.
   es el plan); un CRITICAL o HIGH confirmado que no alcanza a corregirse
   deja la ficha `en curso` con `## Pendiente`, nunca `implementado`.
   `check.sh` en `Todo en verde.`. `## Implementacion`:
-  que quedo, que no, desvios del diseno. `estado: implementado`,
+  que quedo, que no, desvios del diseno, y `Skills del repo:` con la
+  evidencia de cada una. `estado: implementado`,
   `candado: -`, push.
 - **Llegada la hora de cierre sin terminar (P9):** push de lo que esta verde,
   `## Pendiente` con lo que falta y donde se trabo, `estado: en curso`,

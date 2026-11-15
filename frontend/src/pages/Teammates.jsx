@@ -21,6 +21,8 @@ import { filasDeGrupo, textoHabituales } from '../grupo.js'
 import { MUESTRA_PARTIDAS } from '../margen.js'
 import { filasConPocaMuestra } from '../muestra.js'
 import { celdaSilenciosos, notaSilenciosos } from '../clutchSilencioso.js'
+import { filasClutchCompaneros } from '../clutchCompaneros.js'
+import { filasPorLadoSinTi, filasSostienen } from '../ganadasSinTi.js'
 
 const SAMPLES = [
   { value: 5, label: '5+ rondas' },
@@ -59,9 +61,12 @@ export default function Teammates({ filters, setFilters, runImport, importing })
   // El backend ya pone cada total de mapa arriba de sus sitios; `orden` lo conserva al ordenar
   const porSitio = (data?.clutch_by_site || []).map((row, orden) => ({ ...row, orden }))
   const porOperador = data?.clutch_by_operator || []
+  const clutchCompaneros = filasClutchCompaneros(data?.teammate_clutches)
   // El orden del backend (Ataque, Defensa, Total) se fija con `orden` para que la tabla no lo cambie al ordenar.
   const firstDown = (data?.first_down || []).map((row, orden) => ({ ...row, orden }))
   const firstDownTotal = firstDown.find((row) => row.side === 'total')
+  const sinTiPorLado = filasPorLadoSinTi(data?.won_without_me)
+  const sostienen = filasSostienen(data?.won_without_me)
   const grupos = filasDeGrupo(data?.by_stack)
   const tk = data?.teamkills
   const sinTeamkills = !tk || (tk.mine + tk.suffered === 0 && tk.rounds_with === 0)
@@ -210,6 +215,77 @@ export default function Teammates({ filters, setFilters, runImport, importing })
       </Panel>
 
       <Panel
+        title="Rondas que tu equipo ganó sin ti"
+        hint="Rondas en que caíste y tu equipo igual ganó, y qué compañero habitual (5 partidas o más en tu equipo) seguía vivo al final. Seguir vivo no es haber hecho las bajas. Las rondas sin ganador no cuentan."
+      >
+        {!sinTiPorLado.length ? (
+          <p className="dim">Sin rondas en que hayas caído con estos filtros.</p>
+        ) : (
+          <>
+            <DataTable
+              columns={[
+                {
+                  key: 'side',
+                  label: 'Lado',
+                  left: true,
+                  render: (row) => (row.side === 'total' ? 'Total' : <SideChip side={row.side} />),
+                  csv: (row) => (row.side === 'total' ? 'Total' : row.side),
+                },
+                { key: 'rounds', label: 'Rondas en que caíste', render: (row) => fmt(row.rounds) },
+                { key: 'won', label: 'Ganadas', render: (row) => fmt(row.won) },
+                { key: 'pct', label: '% ganadas', render: (row) => pct(row.pct) },
+              ]}
+              rows={sinTiPorLado}
+              initialSort={{ key: 'orden', dir: 'asc' }}
+              rowKey={(row) => row.side}
+              csvName="ganadas-sin-ti"
+            />
+            <h3>Quién la sostiene</h3>
+            {sostienen.length ? (
+              <DataTable
+                columns={[
+                  {
+                    key: 'nombre',
+                    label: 'Compañero',
+                    left: true,
+                    render: (row) => <Link to={`/jugadores/${row.playerId}`}>{row.nombre}</Link>,
+                  },
+                  {
+                    key: 'rounds',
+                    label: 'Ganadas sin ti juntos',
+                    help: 'Rondas en que caíste, tu equipo ganó y este compañero jugaba contigo.',
+                    render: (row) => fmt(row.rounds),
+                  },
+                  { key: 'survived', label: 'Seguía vivo', render: (row) => fmt(row.survived) },
+                  {
+                    key: 'pct',
+                    label: '%',
+                    help: 'Un * marca menos de 5 rondas: con tan poca muestra el % todavía no dice mucho.',
+                    render: (row) => (
+                      <>
+                        {pct(row.pct)}
+                        {row.low_sample ? (
+                          <span className="dim muestra-chica" title="Menos de 5 rondas">
+                            *
+                          </span>
+                        ) : null}
+                      </>
+                    ),
+                  },
+                ]}
+                rows={sostienen}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.clave}
+                csvName="quien-la-sostiene"
+              />
+            ) : (
+              <p className="dim">Ningún compañero habitual en esas rondas.</p>
+            )}
+          </>
+        )}
+      </Panel>
+
+      <Panel
         title="Teamkills"
         hint="Bajas del feed con autor y víctima en tu equipo esa ronda. Siguen contando en Bajas, KPR, Rating y multikills: acá solo se hacen visibles."
       >
@@ -251,7 +327,7 @@ export default function Teammates({ filters, setFilters, runImport, importing })
 
       <Panel
         title="Clutches"
-        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda. Silenciosos son los ganados sin bajas tuyas desde que quedaste solo."
+        hint="La conversión cuenta cada vez que quedaste último de tu equipo con rivales vivos, ganes o pierdas, y se arma desde el feed de bajas. La lista de clutches ganados usa el 1vX del scoreboard de la ronda. Silenciosos son los ganados sin bajas tuyas desde que quedaste solo. Clutches de tus compañeros: los habituales (5 partidas o más en tu equipo) que quedaron últimos en rondas contigo, con tu conversión arriba para comparar."
       >
         <h3>Conversión por rivales</h3>
         <DataTable
@@ -368,6 +444,46 @@ export default function Teammates({ filters, setFilters, runImport, importing })
           csvName="clutch-por-operador"
           empty="Todavía no quedaste último en ninguna ronda."
         />
+        <h3>Clutches de tus compañeros</h3>
+        {clutchCompaneros.length ? (
+          <DataTable
+            columns={[
+              {
+                key: 'nombre',
+                label: 'Compañero',
+                left: true,
+                render: (row) =>
+                  row.esYo ? <strong>{row.nombre}</strong> : <Link to={`/jugadores/${row.playerId}`}>{row.nombre}</Link>,
+              },
+              { key: 'attempts', label: 'Intentos', render: (row) => fmt(row.attempts) },
+              { key: 'won', label: 'Ganados', render: (row) => fmt(row.won) },
+              {
+                key: 'pct',
+                label: 'Conversión',
+                help: 'Un * marca menos de 5 intentos: con tan poca muestra el % todavía no dice mucho.',
+                render: (row) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                    <Bar value={row.pct} />
+                    <span style={{ minWidth: 46 }}>
+                      {pct(row.pct)}
+                      {row.low_sample ? (
+                        <span className="dim muestra-chica" title="Menos de 5 intentos">
+                          *
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                ),
+              },
+            ]}
+            rows={clutchCompaneros}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            rowKey={(row) => row.clave}
+            csvName="clutch-companeros"
+          />
+        ) : (
+          <p className="note">Ningún compañero habitual quedó último en una ronda contigo con estos filtros.</p>
+        )}
         <h3>Clutches ganados</h3>
         <DataTable
           columns={[

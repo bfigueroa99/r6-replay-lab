@@ -66,7 +66,7 @@ export default function PerfilUbisoft({ jugadorId, inicial }) {
         </p>
       ) : null}
 
-      {error ? <div className="error">{error}</div> : null}
+      {error ? <div className="error" role="alert">{error}</div> : null}
 
       {listo && !datos && !error ? <p className="note">Todavía no lo consultaste.</p> : null}
 

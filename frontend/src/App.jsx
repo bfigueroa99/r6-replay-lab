@@ -4,6 +4,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationTy
 import { get, post, useApi } from './api.js'
 import { conFiltros, filtrosDeUrl, mismosFiltros, queryDeFiltros, usaFiltros } from './filtrosUrl.js'
 import { avisoAutomatico, etiquetaImportacion } from './importacion.js'
+import { tituloDePagina } from './titulo.js'
 import Dashboard from './pages/Dashboard.jsx'
 import { Loading } from './components/ui.jsx'
 
@@ -12,6 +13,7 @@ import { Loading } from './components/ui.jsx'
 // que pesa mas que todo lo demas junto.
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'))
 const Coach = lazy(() => import('./pages/Coach.jsx'))
+const Comparar = lazy(() => import('./pages/Comparar.jsx'))
 const Datos = lazy(() => import('./pages/Datos.jsx'))
 const Duelos = lazy(() => import('./pages/Duelos.jsx'))
 const Jugador = lazy(() => import('./pages/Jugador.jsx'))
@@ -126,6 +128,10 @@ export default function App() {
     }
   }, [health])
 
+  useEffect(() => {
+    document.title = tituloDePagina(location.pathname, LINKS)
+  }, [location.pathname])
+
   // replace siempre: cada cambio de select no tiene que ser una entrada de historial
   const cambiarFiltros = useCallback(
     (nuevos) => {
@@ -206,7 +212,11 @@ export default function App() {
             {enCurso.total} listas.
           </div>
         ) : null}
-        {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        {/* el contenedor esta siempre: un lector de pantalla anuncia lo que
+            cambia dentro de una region que ya existia, no una que aparece */}
+        <div role="status">
+          {flash ? <div className="panel" style={{ marginBottom: 14 }}>{flash}</div> : null}
+        </div>
         <Suspense fallback={<Loading />}>
           <Routes>
           <Route path="/" element={<Dashboard {...context} />} />
@@ -217,6 +227,8 @@ export default function App() {
           <Route path="/tendencias" element={<Trends {...context} />} />
           <Route path="/partidas" element={<Matches {...context} />} />
           <Route path="/partidas/:id" element={<MatchDetail />} />
+          <Route path="/comparar/:a" element={<Comparar />} />
+          <Route path="/comparar/:a/:b" element={<Comparar />} />
           <Route path="/jugadores/:id" element={<Jugador />} />
           <Route path="/ruleta" element={<Ruleta />} />
           <Route path="/datos" element={<Datos />} />

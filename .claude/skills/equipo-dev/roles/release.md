@@ -10,7 +10,8 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
 - **Trabajo, en orden:** (1) P2 y P3 sobre todas las ramas de trabajo, de la
   mas vieja a la mas nueva. (2) PR cerrado por el humano sin merge:
   `estado: descartado (cerrado por el humano <fecha>)` en la rama; no se
-  mantiene mas. (3) Por cada ficha `aprobado`, hasta 2 por turno, la mas
+  mantiene mas; si la ficha viene de un issue, comentario y etiquetas como
+  dice `issues.md` (Cerrar). (3) Por cada ficha `aprobado`, hasta 2 por turno, la mas
   vieja primero: candado `release`; `independencia.sh <rama>` (ver
   condicion b) en `INDEPENDENCIA_OK` (si falla por la revision, la ficha
   vuelve a `implementado`; si falla por la QA, vuelve a `revisado`; se anota
@@ -18,6 +19,8 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   movio; `check.sh` en verde con `verificar.sh`; `README.md` solo si cambia algo que el usuario
   hace; escribir `## PR` arriba de todo (titulo `[equipo-dev][area] Titulo`,
   cuerpo de `plantilla-pr.md` armado desde Implementacion, Revision y QA,
+  con `Refs bfigueroa99/r6-replay-lab#N` si la ficha viene de un issue
+  (nunca `Closes`),
   "Como probarlo en 2 minutos" con comandos exactos, "Verificar en el PC" si
   existe); recortar la ficha a unas 80 lineas (Revision condensada al
   veredicto y a los hallazgos corregidos; el detalle queda en `git log`);
@@ -26,7 +29,8 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   seguidos con el mismo titulo por cada entrega); `estado: entregado`;
   push. (4) Con herramientas: abrir el PR con `## PR` tal cual a toda ficha
   `entregado` que no lo tenga (incluidas las `entregado (PR pendiente de
-  abrir)` que dejo un turno sin herramientas); sin herramientas: `entregado
+  abrir)` que dejo un turno sin herramientas) y, si viene de un issue, un
+  comentario en el issue con el link; sin herramientas: `entregado
   (PR pendiente de abrir)`. No se usa `subscribe_pr_activity`: la sesion
   termina con el turno y nadie atenderia esos avisos. (5) **Puerta de merge** sobre cada `entregado`, de
   la mas vieja a la mas nueva; si falla una condicion, la ficha queda
@@ -57,8 +61,8 @@ Cuando el estado lo pide (reglas 1 y 5 de Turnos); por reloj, franja 0.
   fetch origin dev`, confirmar que la ficha existe en `origin/dev`, borrar
   la rama recien mergeada (`git push origin --delete <rama>`, la unica rama
   que el equipo borra; si el proxy lo corta con 403 no se reintenta: la rama
-  sale sola en `BORRAR`) y, si el espejo de la ficha sigue en `backlog`,
-  quitarlo. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
+  sale sola en `BORRAR`), si el espejo de la ficha sigue en `backlog`,
+  quitarlo y, si viene de un issue, cerrarlo como dice `issues.md`. Maximo 2 merges por turno. (6) Merge de prueba por pares entre
   las ramas que sigan abiertas. (7) `## Alcance` de `ESTADO.md` con las
   lineas `DEV_7D`, `PAPEL_TIPOS`, `COLA_TIPOS`, `ALCANCE`, `ROTACION` y
   `CICLO` de `estado.sh`, y la linea `RELEASE` en `## Para el humano`. Si

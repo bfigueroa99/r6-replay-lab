@@ -134,6 +134,22 @@ class EndpointTests(OverridesTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", response.json())
 
+    def test_un_cuerpo_que_no_es_utf8_da_400(self):
+        # fallaba al decodificar, antes de llegar a ser "JSON invalido": 500
+        response = self.client.post(
+            "/api/overrides/", data=b'{"maps": {"1": "\xff"}}', content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+        self.assertFalse(self.path.exists())
+
+    def test_un_nombre_que_no_es_texto_da_400_y_no_escribe(self):
+        for nombre in (["Villa"], {"a": 1}, 5, True):
+            with self.subTest(nombre=nombre):
+                response = self._post({"maps": {"1": nombre}})
+                self.assertEqual(response.status_code, 400)
+        self.assertFalse(self.path.exists())
+
     def test_id_invalido_da_400_y_no_escribe(self):
         response = self._post({"maps": {"drop table": "Villa"}})
         self.assertEqual(response.status_code, 400)
@@ -237,3 +253,87 @@ class ModosYTiposTests(OverridesTestCase):
         self.assertIsNone(unknowns.id_de_unknown("Unknown(abc)"))
         self.assertIsNone(unknowns.id_de_unknown("Bomb"))
         self.assertIsNone(unknowns.id_de_unknown(""))
+
+
+class ArchivoEditadoAManoTests(OverridesTestCase):
+    """`overrides.json` se edita a mano (lo dice `docs/formato-rec.md`).
+
+    Un editor de Windows puede guardarlo con BOM o en otra codificacion, y una
+    coma de mas lo deja sin parsear: ninguna de las tres cosas puede tumbar la
+    importacion ni hacer que guardar desde Datos borre lo que habia.
+    """
+
+    def _post(self, payload):
+        return self.client.post(
+            "/api/overrides/", data=json.dumps(payload), content_type="application/json"
+        )
+
+    def test_un_json_guardado_con_bom_se_lee_igual(self):
+        contenido = json.dumps({"maps": {str(MAPA_NUEVO): "Nighthaven Labs"}})
+        self.path.write_text(contenido, encoding="utf-8-sig")
+        overrides.load(force=True)
+        self.assertEqual(overrides.extra_map(MAPA_NUEVO), "Nighthaven Labs")
+        self.assertEqual(unknowns.read_overrides()["maps"], {str(MAPA_NUEVO): "Nighthaven Labs"})
+
+    def test_guardar_desde_datos_no_borra_lo_escrito_a_mano_con_bom(self):
+        self.path.write_text(json.dumps({"maps": {"1": "Villa"}}), encoding="utf-8-sig")
+        self.assertEqual(self._post({"operators": {"2": "Denari"}}).status_code, 200)
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(data["maps"], {"1": "Villa"})
+        self.assertEqual(data["operators"], {"2": "Denari"})
+
+    def test_un_archivo_que_no_es_utf8_no_tumba_ni_al_parser_ni_a_la_api(self):
+        self.path.write_bytes('{"maps": {"1": "Año"}}'.encode("cp1252"))
+        self.assertEqual(overrides.load(force=True)["maps"], {})
+        self.assertEqual(unknowns.read_overrides()["maps"], {})
+        self.assertEqual(self.client.get("/api/unknown/").status_code, 200)
+
+    def test_un_json_con_otra_forma_no_tumba_al_parser(self):
+        for contenido in ("[]", "null", '"texto"', "7", '{"maps": ["Villa"]}', '{"maps": "Villa"}'):
+            with self.subTest(contenido=contenido):
+                self.path.write_text(contenido, encoding="utf-8")
+                self.assertEqual(overrides.load(force=True)["maps"], {})
+                self.assertIsNone(overrides.extra_map(1))
+
+    def test_un_valor_que_no_es_texto_no_se_vuelve_etiqueta(self):
+        # str(None) era "None": el mapa quedaba con ese nombre
+        self.path.write_text('{"maps": {"1": null, "2": 5, "3": "Villa"}}', encoding="utf-8")
+        cargado = overrides.load(force=True)["maps"]
+        self.assertEqual(cargado, {3: "Villa"})
+        self.assertEqual(unknowns.read_overrides()["maps"], {"3": "Villa"})
+
+    def test_guardar_sobre_un_archivo_ilegible_deja_una_copia(self):
+        roto = '{"maps": {"1": "Villa", "2": "Bank",}}'  # la coma de mas
+        self.path.write_text(roto, encoding="utf-8")
+        self.assertEqual(self._post({"maps": {"3": "Lair"}}).status_code, 200)
+        self.assertEqual(json.loads(self.path.read_text(encoding="utf-8"))["maps"], {"3": "Lair"})
+        copia = self.path.with_name(self.path.name + ".roto")
+        self.assertEqual(copia.read_text(encoding="utf-8"), roto)
+
+    def test_un_archivo_sano_no_deja_copias(self):
+        unknowns.write_overrides({"1": "Villa"}, {})
+        unknowns.write_overrides({"2": "Bank"}, {})
+        self.assertEqual([p.name for p in self.path.parent.iterdir()], [self.path.name])
+
+
+class EscrituraAtomicaTests(OverridesTestCase):
+    def test_una_escritura_que_falla_no_trunca_el_archivo(self):
+        unknowns.write_overrides({"1": "Villa"}, {"2": "Denari"})
+        antes = self.path.read_text(encoding="utf-8")
+        # medio par de un emoji: JSON lo acepta y UTF-8 no lo puede escribir
+        with self.assertRaises(UnicodeEncodeError):
+            unknowns.write_overrides({"3": "Labs \ud83d"}, {})
+        self.assertEqual(self.path.read_text(encoding="utf-8"), antes)
+        self.assertEqual([p.name for p in self.path.parent.iterdir()], [self.path.name])
+
+    def test_un_nombre_que_no_es_unicode_da_400_y_no_toca_el_archivo(self):
+        unknowns.write_overrides({"1": "Villa"}, {})
+        antes = self.path.read_text(encoding="utf-8")
+        response = self.client.post(
+            "/api/overrides/",
+            data=f'{{"maps": {{"{MAPA_NUEVO}": "Labs \\ud83d"}}}}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.json())
+        self.assertEqual(self.path.read_text(encoding="utf-8"), antes)

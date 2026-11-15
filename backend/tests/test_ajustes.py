@@ -188,6 +188,18 @@ class AjustesApiTests(TestCase):
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn("ruta completa", respuesta.json()["error"])
 
+    def test_una_ruta_que_no_es_unicode_da_400_y_no_500(self):
+        # "\ud800" es JSON valido y un surrogate suelto: el mensaje de error lo
+        # repetia y la respuesta no se podia codificar
+        for cuerpo in ('{"replay_dir": "\\ud800"}', '{"replay_dir": "/tmp/\\ud800"}'):
+            with self.subTest(cuerpo=cuerpo):
+                respuesta = self.client.post(
+                    "/api/settings/", data=cuerpo, content_type="application/json"
+                )
+                self.assertEqual(respuesta.status_code, 400)
+                self.assertIn("error", respuesta.json())
+        self.assertFalse(self.env.exists())
+
     def test_vaciarla_vuelve_a_buscarla_sola(self):
         self.env.write_text("REPLAY_DIR=C:\\vieja\nA=1\n", encoding="utf-8")
         with mock.patch.object(replay_dir, "detectar", return_value=None):

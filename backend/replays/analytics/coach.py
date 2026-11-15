@@ -11,6 +11,9 @@ from . import aggregates as agg
 
 SEVERITY_ORDER = {"alta": 0, "media": 1, "baja": 2, "positivo": 3}
 
+#: Del lado como lo nombra la senal al valor que acepta el filtro `side`.
+LADO = {"ataque": "Attack", "defensa": "Defense"}
+
 
 def _insight(
     key: str,
@@ -24,7 +27,11 @@ def _insight(
     baseline=None,
     sample: int = 0,
     scope: str = "general",
+    filters: dict | None = None,
+    target: str = "/",
 ) -> dict:
+    # `filters` son los que definen la senal, en los nombres de la API: la UI
+    # los suma a los de la barra para abrir `target` con esas rondas
     return {
         "key": key,
         "severity": severity,
@@ -36,6 +43,8 @@ def _insight(
         "baseline": baseline,
         "sample": sample,
         "scope": scope,
+        "filters": filters or {},
+        "target": target,
     }
 
 
@@ -84,6 +93,11 @@ def build_insights(**filters) -> dict:
     insights += _nemesis(**filters)
     insights += _form(overall, **filters)
 
+    if filters.get("map"):
+        # la senal ya salio dentro del mapa de la barra; su slug pisaria una
+        # version elegida (`map_id`) y el enlace abriria las dos versiones
+        for insight in insights:
+            insight["filters"].pop("map", None)
     insights.sort(key=lambda i: (SEVERITY_ORDER.get(i["severity"], 9), -(i["sample"] or 0)))
     return {"insights": insights, "totals": overall}
 
@@ -151,6 +165,7 @@ def _opening_duels(overall, attack, defense) -> list[dict]:
                     baseline=50,
                     sample=d,
                     scope=label,
+                    filters={"side": LADO[label]},
                 )
             )
     return out
@@ -217,6 +232,7 @@ def _early_deaths(attack, defense) -> list[dict]:
                     baseline=limit,
                     sample=deaths,
                     scope=label,
+                    filters={"side": LADO[label]},
                 )
             )
     return out
@@ -264,6 +280,7 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                     baseline=25,
                     sample=fila["deaths"],
                     scope=label,
+                    filters={"side": LADO[label]},
                 )
             )
 
@@ -286,6 +303,7 @@ def _momento_de_la_muerte(**filters) -> list[dict]:
                 baseline=25,
                 sample=ataque["deaths"],
                 scope="ataque",
+                filters={"side": "Attack"},
             )
         )
     return out
@@ -319,6 +337,7 @@ def _sides(attack, defense) -> list[dict]:
             baseline=strong_wr,
             sample=min(ar, dr),
             scope=weak,
+            filters={"side": LADO[weak]},
         )
     ]
 
@@ -425,6 +444,7 @@ def _maps(overall, **filters) -> list[dict]:
                 baseline=base,
                 sample=worst["rounds"],
                 scope=worst["map"],
+                filters={"map": worst["slug"]},
             )
         )
     best = max(rows, key=lambda r: r["winrate"])
@@ -441,6 +461,7 @@ def _maps(overall, **filters) -> list[dict]:
                 baseline=base,
                 sample=best["rounds"],
                 scope=best["map"],
+                filters={"map": best["slug"]},
             )
         )
     return out
@@ -468,6 +489,7 @@ def _sites(overall, **filters) -> list[dict]:
             baseline=base,
             sample=worst["rounds"],
             scope=f"{worst['map']} · {worst['site']}",
+            filters={"map": worst["slug"], "site": worst["site"]},
         )
     ]
 
@@ -500,6 +522,7 @@ def _operators(overall, **filters) -> list[dict]:
                 baseline=base_wr,
                 sample=worst["rounds"],
                 scope=worst["operator"],
+                filters={"operator": worst["operator"], "side": worst["side"]},
             )
         )
     good = [r for r in rows if r["winrate"] > base_wr + 10]
@@ -517,6 +540,7 @@ def _operators(overall, **filters) -> list[dict]:
                 baseline=base_wr,
                 sample=best["rounds"],
                 scope=best["operator"],
+                filters={"operator": best["operator"], "side": best["side"]},
             )
         )
     return out
@@ -543,11 +567,13 @@ def _spawns(overall, **filters) -> list[dict]:
             baseline=base,
             sample=worst["rounds"],
             scope=f"{worst['map']} · {worst['spawn']}",
+            # no hay filtro de spawn: el corte mas fino que la barra tiene es mapa y ataque
+            filters={"map": worst["slug"], "side": "Attack"},
         )
     ]
 
 
-#: Muestra minima de una zona para la señal del Coach, igual que sitio y spawn.
+#: Muestra minima de una zona para la senal del Coach, igual que sitio y spawn.
 POSICION_MIN_RONDAS_COACH = 8
 
 
@@ -557,14 +583,18 @@ def _posicion(**filters) -> list[dict]:
     zonas = []
     for fila in datos["sites"]:
         zonas.append((fila, f"{fila['site']} ({fila['map']})",
-                      f"{fila['map']} · {fila['site']}", "resto de tu historial"))
+                      f"{fila['map']} · {fila['site']}", "resto de tu historial",
+                      {"map": fila["slug"], "site": fila["site"]}))
     for fila in datos["spawns"]:
         zonas.append((fila, f"el spawn {fila['spawn']} ({fila['map']})",
-                      f"{fila['map']} · {fila['spawn']} (ataque)", "resto de tu ataque"))
+                      f"{fila['map']} · {fila['spawn']} (ataque)", "resto de tu ataque",
+                      {"map": fila["slug"], "side": "Attack"}))
     out = []
     dormideros = [z for z in zonas if z[0]["verdict"] == "dormidero"]
     if dormideros:
-        fila, zona, alcance, resto = max(dormideros, key=lambda z: z[0]["caught_out_delta"])
+        fila, zona, alcance, resto, filtros = max(
+            dormideros, key=lambda z: z[0]["caught_out_delta"]
+        )
         out.append(
             _insight(
                 "zona-dormidero",
@@ -581,11 +611,14 @@ def _posicion(**filters) -> list[dict]:
                 baseline=fila["rest_caught_out_pct"],
                 sample=fila["rounds"],
                 scope=alcance,
+                filters=filtros,
             )
         )
     solidas = [z for z in zonas if z[0]["verdict"] == "solido"]
     if solidas:
-        fila, zona, alcance, resto = min(solidas, key=lambda z: z[0]["caught_out_delta"])
+        fila, zona, alcance, resto, filtros = min(
+            solidas, key=lambda z: z[0]["caught_out_delta"]
+        )
         out.append(
             _insight(
                 "zona-solida",
@@ -600,6 +633,7 @@ def _posicion(**filters) -> list[dict]:
                 baseline=fila["rest_caught_out_pct"],
                 sample=fila["rounds"],
                 scope=alcance,
+                filters=filtros,
             )
         )
     return out
@@ -723,6 +757,8 @@ def _duelos_por_operador(**filters) -> list[dict]:
             baseline=base,
             sample=peor["duels"],
             scope=peor["operator"],
+            # Duelos no filtra por operador rival: abre la tabla con los filtros de la barra
+            target="/duelos",
         )
     ]
 
@@ -761,6 +797,7 @@ def _nemesis(**filters) -> list[dict]:
             baseline=base,
             sample=peor["duels"],
             scope=peor["username"],
+            target="/duelos",
         )
     ]
 

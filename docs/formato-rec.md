@@ -46,6 +46,13 @@ es zstd (formato viejo), `dissect` es el nuevo.
 cada frame y concatena la salida. El error de magic mismatch al llegar a la cola
 sin comprimir es esperado y corta el loop.
 
+La salida tiene tope: `MAX_DESCOMPRIMIDO` (512 MB, diez veces un `.rec` real).
+zstd comprime hasta 32.000 a 1, asi que un archivo de 6 KB armado a proposito
+se descomprime a 200 MB y uno de pocos MB se llevaria toda la memoria. Los
+frames se leen de a tramos de 4 KB y el tope se revisa entre tramo y tramo: un
+`.rec` que lo pasa se rechaza con `InvalidFile` y su carpeta queda como import
+fallido, sin cortar el resto.
+
 ### La cabecera
 
 Empieza con `"dissect"` (7 bytes) y despues viene un esquema de versionado que

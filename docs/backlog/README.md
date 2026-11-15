@@ -31,6 +31,11 @@ la ficha esta en `dev`.
 `https://github.com/bfigueroa99/r6-replay-lab/blob/claude/equipo-dev/backlog/docs/backlog/ESTADO.md`.
 Cada turno lo regenera: cola con estados y links de compare, orden de merge
 sugerido, ramas borrables con el comando listo, preguntas para el humano.
+`## Para el humano` abre con las lineas `DESTRABA` de `estado.sh`: lo que el
+equipo no puede mover sin vos (un PR que solo vos mergeas, como el que toca
+`CLAUDE.md`), hace cuanto espera y que fichas tiene frenadas detras; y el
+aviso de que el equipo gira en vacio, si un tercio o mas de los turnos de 48
+horas no dejaron otro commit que `ESTADO.md` (`TURNOS_EN_VACIO`).
 
 ## Quien mergea
 
@@ -106,6 +111,18 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
 - **Pedir algo**: un commit propio en la rama del item, o texto bajo
   `## Para el equipo` en `ESTADO.md` (editable desde la web). El equipo
   responde en la ficha y en el tablero en su proximo turno.
+- **Pedir algo por un issue** de GitHub: el turno siguiente lo lee un
+  product owner (va antes que el papel que el equipo se propone solo), lo
+  convierte en una ficha con `prioridad: 1` y `fuente:` con el issue, comenta
+  cual y le pone `loop:en-curso`; desde ahi pasa por diseno, dev, revision y
+  QA como cualquier ficha, y el issue se cierra cuando el cambio llega a
+  `dev`. El repo es publico: solo cuentan los issues y comentarios de
+  `OWNER`, `MEMBER` o `COLLABORATOR`, y lo que escribe el equipo empieza con
+  `<!-- loop -->`. Si un pedido choca con `CLAUDE.md` (overlay, scraping,
+  dependencias nuevas, datos que el `.rec` no trae) o necesita una decision
+  tuya, el equipo comenta y pone `loop:necesita-humano`: respondés y quitás
+  la etiqueta. `loop:ignorar` deja un issue fuera del equipo. El detalle,
+  en `.claude/skills/equipo-dev/issues.md`.
 - **Cambiar el prompt de la rutina**: editar
   `.claude/skills/equipo-dev/rutina.md` (llega por merge o por una sesion
   tuya); lo que edites a mano en claude.ai lo revierte el Release al
@@ -124,6 +141,19 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
   `mcp__claude-code-remote__list_triggers` y `update_trigger` (paso 9 del
   Release). Un orquestador que lance turnos en subagentes de una misma
   sesion le pasa a cada uno su contexto: `turno.sh --contexto <id>`.
+- **Cuanto hace cada disparo**: una sesion ya no es un solo rol. Al terminar
+  el suyo sigue con el que el estado pida (`turno.sh --seguir`), hasta 4
+  roles y dentro del mismo reloj; dev, revisor y QA de una ficha siguen
+  saliendo de tres sesiones. A un rol por disparo cada 4 horas, una ficha
+  ocupaba tres disparos seguidos (8 horas de dev a `dev`, 44 de mediana desde
+  que se propone) y entraban 1,4 por dia. Para gastar menos por disparo, bajar
+  `tope_roles` en `scripts/equipo-dev/turno.sh` (con 1 vuelve a ser un rol
+  por disparo) en un PR tuyo.
+- **Que las ramas mergeadas se borren solas**: en la nube el borrado
+  (`git push --delete`) se le niega al equipo, y cada merge suma una rama a
+  la linea `BORRAR` del tablero (73 al 2026-11-12). En GitHub, Settings >
+  General > "Automatically delete head branches" las borra al mergear el PR;
+  las que ya estan, con el comando de `BORRAR` una vez.
 - **Pausar**: crear el archivo `docs/backlog/PAUSA` en la rama `backlog`
   desde la web de GitHub. Ningun turno nuevo hace nada mientras exista, y uno
   que ya arranco lo ve antes de su proximo push y cierra.

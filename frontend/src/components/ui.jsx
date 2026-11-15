@@ -25,9 +25,9 @@ export function Stat({ label, value, sub, tone, help }) {
   )
 }
 
-export function Panel({ title, hint, children, right }) {
+export function Panel({ id, title, hint, children, right }) {
   return (
-    <section className="panel">
+    <section className="panel" id={id}>
       {title ? (
         <div className="page-head" style={{ marginBottom: hint ? 0 : 12 }}>
           <h2 style={{ margin: 0, fontSize: 15, letterSpacing: '0.6px', color: 'var(--muted)', textTransform: 'uppercase' }}>
@@ -82,14 +82,42 @@ export function winrateColor(value, low = 35, high = 65) {
  * Una columna puede traer `csv: (row) => valor` para exportar algo distinto de
  * lo que muestra, o `csv: false` para quedarse fuera del archivo.
  */
+const MARCADOR = /^(\d+)-(\d+)$/
+const NUMERO_CON_SIGNO = /^[+-]\d+([.,]\d+)?( ?(%|pts))?$/
+/**
+ * La secuencia de rondas de Partidas ("- G P | G"), con la forma exacta que
+ * arma textoDeTira: sus letras no arman ninguna formula. Un nick con las
+ * mismas letras pero otra forma ("-G|P") no pasa y lleva el apostrofo.
+ */
+const TIRA_DE_RONDAS = /^(\| )?[GP-]( (\| )?[GP-])*$/
+
+/**
+ * Un texto tal como tiene que quedar para que la planilla lo deje como texto.
+ *
+ * Excel no pregunta: "3-1" (un record, un marcador) lo abre como el 3 de enero,
+ * y lo que empieza con `=`, `+`, `-` o `@` lo evalua como formula. Los nicks,
+ * operadores y sitios salen del `.rec`, y el de un replay ajeno no es de
+ * confianza. El marcador va con raya (–), que no es separador de fecha, y la
+ * formula con un apostrofo adelante, que es como se neutraliza en un CSV. Un
+ * numero con signo escrito como texto ("-33 pts") y la secuencia de rondas se
+ * dejan como estan.
+ */
+export function textoParaPlanilla(texto) {
+  const marcador = MARCADOR.exec(texto)
+  if (marcador) return `${marcador[1]}–${marcador[2]}`
+  const conSigno = /^[+-]/.test(texto) && !NUMERO_CON_SIGNO.test(texto) && !TIRA_DE_RONDAS.test(texto)
+  return /^[=@\t\r]/.test(texto) || conSigno ? `'${texto}` : texto
+}
+
 function celdaCsv(col, row) {
-  if (typeof col.csv === 'function') return col.csv(row)
-  const valor = row[col.key]
+  // lo que devuelve `csv` pasa por lo mismo que el valor de la fila: un numero
+  // con punto decimal (9.6) Excel en espanol lo lee como el 9 de junio
+  const valor = typeof col.csv === 'function' ? col.csv(row) : row[col.key]
   if (valor === null || valor === undefined) return ''
-  if (Array.isArray(valor)) return valor.join(' / ')
+  if (Array.isArray(valor)) return textoParaPlanilla(valor.join(' / '))
   if (typeof valor === 'boolean') return valor ? 'si' : 'no'
   if (typeof valor === 'number') return String(valor).replace('.', ',')
-  return String(valor)
+  return textoParaPlanilla(String(valor))
 }
 
 const escaparCsv = (texto) =>
@@ -128,6 +156,10 @@ export function descargarCsv(columns, rows, nombre) {
  *
  * Con `csvName` aparece el boton de descarga, que exporta exactamente lo que se
  * ve: las mismas columnas, en el orden en que estan ordenadas.
+ *
+ * La cabecera que ordena es un boton dentro del `th` y no el `th` con un
+ * onClick: asi se llega con Tab, se aprieta con Enter o Espacio y el lector de
+ * pantalla la anuncia como boton. El orden vigente va en `aria-sort`.
  */
 /**
  * Orden de la tabla. Los nulos van siempre al final, en las dos direcciones: un
@@ -154,6 +186,11 @@ export function ordenarFilas(rows, sort) {
   return copia
 }
 
+/**
+ * Tabla ordenable. Toda columna lleva `label`: es lo que lee un lector de
+ * pantalla en cada celda y la cabecera del CSV. Una columna que no necesita
+ * titulo a la vista (la de los botones Copiar) trae `soloLector: true`.
+ */
 export function DataTable({
   columns,
   rows,
@@ -190,17 +227,35 @@ export function DataTable({
       <table>
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={[col.sortable === false ? 'plain' : '', col.left ? 'left' : ''].join(' ').trim()}
-                onClick={col.sortable === false ? undefined : () => toggle(col.key)}
-                title={col.help}
-              >
-                {col.label}
-                {sort.key === col.key ? <span className="arrow"> {sort.dir === 'asc' ? '↑' : '↓'}</span> : null}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const ordenada = sort.key === col.key
+              const flecha = ordenada ? (
+                <span className="arrow" aria-hidden="true">
+                  {' '}
+                  {sort.dir === 'asc' ? '↑' : '↓'}
+                </span>
+              ) : null
+              if (col.sortable === false) {
+                return (
+                  <th key={col.key} className={`plain ${col.left ? 'left' : ''}`.trim()} title={col.help}>
+                    {col.soloLector ? <span className="solo-lector">{col.label}</span> : col.label}
+                  </th>
+                )
+              }
+              return (
+                <th
+                  key={col.key}
+                  className={`orden ${col.left ? 'left' : ''}`.trim()}
+                  aria-sort={ordenada ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  {/* la ayuda va en el boton: ahi la lee tambien quien llega con el teclado */}
+                  <button type="button" className="th-orden" onClick={() => toggle(col.key)} title={col.help}>
+                    {col.label}
+                    {flecha}
+                  </button>
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>
@@ -232,10 +287,26 @@ export function Loading({ children = 'Cargando...' }) {
   return <p className="loading">{children}</p>
 }
 
+/**
+ * El aviso de una accion de la pagina (guardar, hacer una copia): `flash` es
+ * `{ ok, text }` o null. Lo que salio bien va en una region `status` y lo que
+ * fallo en una `alert`, y las dos estan siempre: un lector de pantalla anuncia
+ * lo que cambia dentro de una region que ya existia, y una que aparece con el
+ * texto adentro puede quedar en silencio.
+ */
+export function Aviso({ flash }) {
+  return (
+    <>
+      <div role="status">{flash?.ok ? <div className="flash">{flash.text}</div> : null}</div>
+      <div role="alert">{flash && !flash.ok ? <div className="flash bad">{flash.text}</div> : null}</div>
+    </>
+  )
+}
+
 export function ErrorBox({ error }) {
   if (!error) return null
   return (
-    <div className="error">
+    <div className="error" role="alert">
       <b>No pude leer la API.</b> {String(error)}
       <br />
       <span className="note">Revisa que Django esté corriendo.</span>

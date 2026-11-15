@@ -18,6 +18,7 @@ export const CLAVES_DE_URL = [
   'since',
   'until',
   'match_type',
+  'gamemode',
   'ranked_only',
 ]
 

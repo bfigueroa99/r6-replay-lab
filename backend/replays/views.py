@@ -56,7 +56,7 @@ def _fecha(valor: str, *, fin_del_dia: bool = False) -> datetime | None:
 
 def _filters(request: HttpRequest) -> dict:
     out: dict = {}
-    for key in ("side", "map", "operator", "site", "match_type"):
+    for key in ("side", "map", "operator", "site", "match_type", "gamemode"):
         value = request.GET.get(key)
         if value:
             out[key] = value
@@ -119,6 +119,25 @@ def _es_json(request: HttpRequest) -> bool:
     contesta, asi que exigirlo cierra esa puerta sin meter tokens.
     """
     return request.content_type == "application/json"
+
+
+def _cuerpo_json(request: HttpRequest) -> tuple[object, JsonResponse | None]:
+    """El JSON del cuerpo de un POST, o la respuesta 400 que lo rechaza.
+
+    `ValueError` y no solo `JSONDecodeError`: un cuerpo con bytes que no son
+    UTF-8 falla antes, al decodificar. Y un `"\\ud800"` es JSON valido que al
+    cargarlo deja un surrogate suelto: no se puede escribir en el `.env` ni
+    devolver en el mensaje de error (la respuesta daba 500), asi que se corta
+    aca para todos los POST.
+    """
+    try:
+        payload = json.loads(request.body or b"{}")
+        json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    except UnicodeEncodeError:
+        return None, _ok({"error": "el cuerpo trae texto que no es Unicode válido"}, status=400)
+    except ValueError:
+        return None, _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    return payload, None
 
 
 # --------------------------------------------------------------------- generales
@@ -192,6 +211,9 @@ def filter_options(request: HttpRequest) -> JsonResponse:
             "match_types": sorted(
                 {m for m in Match.objects.values_list("match_type", flat=True).distinct() if m}
             ),
+            "gamemodes": sorted(
+                {g for g in Match.objects.values_list("gamemode", flat=True).distinct() if g}
+            ),
             "sides": ["Attack", "Defense"],
             "sessions": agg.session_options(),
         }
@@ -224,6 +246,16 @@ def positioning(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def site_after_loss(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.site_after_loss(**_filters(request)))
+
+
+@require_GET
+def spawn_after_result(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.spawn_after_result(**_filters(request)))
+
+
+@require_GET
 def operators(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok({"operators": agg.by_operator(min_rounds=_min_rounds(request, 1), **filters)})
@@ -234,6 +266,16 @@ def operators_by_site(request: HttpRequest) -> JsonResponse:
     return _ok(agg.operator_by_site(
         min_rounds=_min_rounds(request, agg.OPERADOR_SITIO_MIN_RONDAS), **_filters(request)
     ))
+
+
+@require_GET
+def operators_pool(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_pool(_catalogo_operadores(), **_filters(request)))
+
+
+@require_GET
+def operators_after_result(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.operator_after_result(**_filters(request)))
 
 
 def _catalogo_operadores() -> list[dict]:
@@ -271,6 +313,8 @@ def trends(request: HttpRequest) -> JsonResponse:
             "by_match": agg.trend_by_match(limit=limit, **filters),
             "by_round_number": agg.by_round_number(**filters),
             "by_half": agg.by_half(**filters),
+            "by_overtime_side": agg.by_overtime_side(**filters),
+            "by_overtime_start_side": agg.by_overtime_start_side(**filters),
             "by_half_opener": agg.by_half_opener(**filters),
             "by_previous_round": agg.by_previous_round(**filters),
             "by_score_state": agg.by_score_state(**filters),
@@ -280,12 +324,15 @@ def trends(request: HttpRequest) -> JsonResponse:
             "round_endings": agg.round_endings(**filters),
             "by_round_length": agg.by_round_length(**filters),
             "by_start_side": agg.by_start_side(**filters),
+            "by_gamemode": agg.by_gamemode(**filters),
+            "by_start_side_map": agg.by_start_side_map(**filters),
             "by_hour": agg.by_hour(**filters),
             "by_weekday": agg.by_weekday(**filters),
             "deaths_by_time": agg.deaths_by_time(**filters),
             "kills_by_time": agg.kills_by_time(**filters),
             "death_timing": agg.death_timing(**filters),
             "opening_timing": agg.opening_timing(**filters),
+            "lobby_rank": agg.lobby_rank(**filters),
         }
     )
 
@@ -304,6 +351,8 @@ def teammates(request: HttpRequest) -> JsonResponse:
             "first_down": agg.first_teammate_death(**filters),
             "by_stack": agg.by_stack(**filters),
             "teamkills": agg.teamkills(**filters),
+            "teammate_clutches": agg.teammate_clutches(**filters),
+            "won_without_me": agg.won_without_me(**filters),
         }
     )
 
@@ -351,7 +400,7 @@ def player_ubisoft(request: HttpRequest, pk: int) -> JsonResponse:
 
 @require_GET
 def compare(request: HttpRequest) -> JsonResponse:
-    """Progreso: el periodo reciente contra el inmediatamente anterior."""
+    """Progreso: el periodo reciente contra el anterior, o contra todo el resto."""
     by = "days" if request.GET.get("by") == "days" else "matches"
     n = _int_param(request, "n", 30 if by == "days" else 10, minimum=1, maximum=365)
     min_rounds = _int_param(
@@ -360,9 +409,15 @@ def compare(request: HttpRequest) -> JsonResponse:
     min_rows = _int_param(
         request, "min_rows", agg.COMPARE_MIN_ROUNDS_FILA, minimum=1, maximum=10_000
     )
+    against = "rest" if request.GET.get("against") == "rest" else "previous"
     return _ok(
         agg.compare_periods(
-            by=by, n=n, min_rounds=min_rounds, min_rows=min_rows, **_filters(request)
+            by=by,
+            n=n,
+            min_rounds=min_rounds,
+            min_rows=min_rows,
+            against=against,
+            **_filters(request),
         )
     )
 
@@ -376,6 +431,7 @@ def sessions(request: HttpRequest) -> JsonResponse:
             "gap_minutes": settings.SESSION_GAP_MINUTES,
             "sessions": agg.sessions(**filters),
             "by_position": agg.by_session_position(**filters),
+            "by_losing_streak": agg.by_losing_streak(**filters),
         }
     )
 
@@ -394,6 +450,8 @@ def duels(request: HttpRequest) -> JsonResponse:
             "rounds": agg.base_queryset(**filters).count(),
             "nemesis": agg.nemesis(min_duels=min_duels, **filters),
             "operators": agg.duels_by_operator(min_duels=min_duels, **filters),
+            # el mismo selector de muestra manda en las dos tablas de operador
+            "opening_operators": agg.openings_by_operator(min_openings=min_duels, **filters),
             "faced": agg.rounds_vs_operator(
                 min_rounds=_int_param(request, "min_rounds", 10, minimum=1, maximum=10_000),
                 **filters,
@@ -402,6 +460,17 @@ def duels(request: HttpRequest) -> JsonResponse:
             "rival_stacks": agg.rival_stacks(min_matches=min_matches, **filters),
         }
     )
+
+
+@require_GET
+def death_state(request: HttpRequest) -> JsonResponse:
+    # Endpoint propio y no dentro de `duels`: es un panel aparte de Duelos.
+    return _ok(agg.death_state(**_filters(request)))
+
+
+@require_GET
+def thrown_advantage(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.thrown_advantage(**_filters(request)))
 
 
 # --------------------------------------------------------------------- partidas
@@ -446,6 +515,20 @@ def match_list(request: HttpRequest) -> JsonResponse:
     # despues de leer la pagina
     etiquetas = agg.etiquetas_de_mapas({m.map_slug for m in page})
 
+    # La tira es de la partida entera: sale de Round (una partida sin tu fila
+    # igual tiene rondas) y no lee los filtros de lado, operador ni sitio. Una
+    # sola consulta para la pagina; el order_by explicito evita el JOIN que
+    # agrega el ordering de Round (match__played_at).
+    tiras: dict[int, list[dict]] = {m.id: [] for m in page}
+    for match_id, number, won, side, overtime in (
+        Round.objects.filter(match__in=page)
+        .order_by("match_id", "number")
+        .values_list("match_id", "number", "my_team_won", "my_side", "overtime_number")
+    ):
+        tiras[match_id].append(
+            {"number": number, "won": won, "side": side, "overtime": overtime > 0}
+        )
+
     rows = []
     for match in page:
         stats = mine.get(match.id, {})
@@ -465,6 +548,7 @@ def match_list(request: HttpRequest) -> JsonResponse:
                 "won": match.won,
                 "result": match.result,
                 "rounds": match.rounds_count,
+                "strip": tiras.get(match.id, []),
                 "my_kills": stats.get("kills_sum") or 0,
                 "my_deaths": stats.get("deaths") or 0,
                 "my_opening_kills": stats.get("opening_kills") or 0,
@@ -744,10 +828,9 @@ def save_overrides(request: HttpRequest) -> JsonResponse:
     """
     if not _es_json(request):
         return _ok({"error": "se esperaba application/json"}, status=415)
-    try:
-        payload = json.loads(request.body or b"{}")
-    except json.JSONDecodeError:
-        return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+    payload, rechazo = _cuerpo_json(request)
+    if rechazo is not None:
+        return rechazo
     if not isinstance(payload, dict):
         return _ok({"error": "se esperaba un objeto JSON"}, status=400)
 
@@ -798,10 +881,9 @@ def app_settings(request: HttpRequest) -> JsonResponse:
     if request.method == "POST":
         if not _es_json(request):
             return _ok({"error": "se esperaba application/json"}, status=415)
-        try:
-            payload = json.loads(request.body or b"{}")
-        except json.JSONDecodeError:
-            return _ok({"error": "el cuerpo no es JSON valido"}, status=400)
+        payload, rechazo = _cuerpo_json(request)
+        if rechazo is not None:
+            return rechazo
         try:
             ajustes.aplicar(payload)
         except ajustes.AjusteInvalido as exc:
@@ -876,6 +958,7 @@ def import_status(request: HttpRequest) -> JsonResponse:
             "folders_imported": len([f for f in folders if f.name in known]),
             "pending": [f.name for f in folders if f.name not in known][:50],
             "log": [_import_log_row(e) for e in ImportLog.objects.all()[:25]],
+            "versions": unknowns.partidas_por_version(),
         }
     )
 

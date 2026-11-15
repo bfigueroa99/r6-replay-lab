@@ -61,6 +61,23 @@ class RecordsTests(TestCase):
         self.assertEqual(record["value"], 3)
         self.assertEqual(record["round_label"], "R3")
 
+    def test_los_records_de_ronda_traen_el_numero_de_ronda(self):
+        # el mismo `Round.number` del detalle, para que el enlace caiga en esa ronda
+        _partida([1, 1, 4, 0], index=0, one_vx={1: 2})
+        records = agg.personal_records()
+        self.assertEqual(records["most_kills_round"]["round_number"], 2)
+        self.assertEqual(records["biggest_clutch"]["round_number"], 1)
+
+    def test_la_racha_trae_el_numero_de_su_primera_ronda(self):
+        # pierde las dos primeras y gana el resto: la racha arranca en la ronda 2
+        match = make_match(index=0)
+        for numero in range(5):
+            rnd = make_round(match, numero, won=numero >= 2)
+            make_round_player(rnd, kills=1)
+        record = agg.personal_records()["longest_round_streak"]
+        self.assertEqual(record["round_label"], "R3")
+        self.assertEqual(record["round_number"], 2)
+
     def test_mejor_dia_exige_el_minimo_de_rondas_y_no_trae_partida(self):
         # dia 1: 4 de 4 ganadas, no llega al minimo; dia 2: 15 de 20
         _partida([1] * 4, index=0, played_at=datetime(2026, 9, 1, 20, 0))

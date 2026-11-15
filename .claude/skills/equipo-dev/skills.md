@@ -23,16 +23,18 @@ frena el turno: si falla, se sigue como siempre.
 
 - **Arquitecto**: antes de escribir el `## Diseno`, cuando la ficha entra en un
   dominio donde una guia experta ahorra errores y el repo todavia no muestra
-  como se hace: un tipo de grafico o tabla nuevo en React, una migracion
-  delicada de Django, la accesibilidad de un componente, un flujo e2e nuevo con
-  Playwright, el rendimiento de una consulta, el empaquetado de Electron.
+  como se hace: un tipo de tabla nuevo en React, una migracion delicada de
+  Django, un flujo e2e nuevo con Playwright, el empaquetado de Electron.
 - **Dev**: sobre un punto de la implementacion que el `## Diseno` no resuelve
   y que cae en un dominio asi, cuando el Arquitecto no busco ya para esa ficha
   (su linea `Skills:` lo dice).
 - **No aplica** cuando el repo ya tiene el patron (`aggregates.py`,
   `metrics.py`, `ui.jsx`, `logica.test.js` y `frontend/e2e/` muestran como se
-  hace lo parecido), que es lo comun; cuando la tarea es mecanica (un arreglo
-  con causa clara, una columna que sigue un patron, tests); y sin red o sin
+  hace lo parecido), que es lo comun; cuando una skill del repo ya lo cubre
+  (graficos, HTML y CSS, accesibilidad, consultas, reparto de tests:
+  `skills-del-repo.md`, "Cuando dos hacen lo mismo"); cuando la tarea es
+  mecanica (un arreglo con causa clara, una columna que sigue un patron,
+  tests); y sin red o sin
   `npx`. Tampoco en PO, Investigador, Revisor, QA ni Release: priorizan, buscan
   ideas para la app (no guias para el equipo) o juzgan con una vara fija
   (`revision.md`, la especificacion de QA), y una guia de afuera cambiaria la
@@ -67,11 +69,14 @@ y `playwright-stealth-verify` (103K) por encima de skills legitimas. En orden:
    `skills-use-*` que la salida nombra: se leen todos. Nada de ella se ejecuta
    para evaluarla.
 3. Fuera si pide bajar o correr codigo remoto (`curl ... | sh`, `npx` o
-   `pip install` de paquetes ajenos), manda datos afuera, toca credenciales o
-   tokens, pide instalarse global (`-g`), es de evasion (stealth, anti-detect,
-   pasar captchas o Cloudflare: lo mismo que `CLAUDE.md` prohibe con stats.cc y
-   R6 Tracker), choca con una regla dura de `CLAUDE.md`, o es de un stack que
-   el repo no usa (Next.js, Tailwind, DRF, pandas).
+   `pip install` de paquetes ajenos), manda datos afuera, instrumenta la app
+   para reportar errores o uso a un tercero (las de Sentry no se traen ni se
+   proponen nunca: `skills-del-repo.md`, "Las que no entran"), toca
+   credenciales o tokens, pide instalarse global (`-g`), es de evasion
+   (stealth, anti-detect, pasar captchas o Cloudflare: lo mismo que
+   `CLAUDE.md` prohibe con stats.cc y R6 Tracker), choca con una regla dura
+   de `CLAUDE.md`, o es de un stack que el repo no usa (Next.js, Tailwind,
+   DRF, pandas).
 4. Sirve para **esta** ficha, no en general.
 
 ## Usar

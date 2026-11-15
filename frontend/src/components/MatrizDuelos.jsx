@@ -11,7 +11,9 @@ function Tabla({ titulo, matriz, direccion, filas, columnas }) {
         <table className="matriz">
           <thead>
             <tr>
-              <th />
+              <th scope="col">
+                <span className="solo-lector">Mató / murió</span>
+              </th>
               {columnas.map((victima) => (
                 <th key={victima} scope="col">{victima}</th>
               ))}

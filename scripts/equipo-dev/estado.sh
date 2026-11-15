@@ -10,8 +10,14 @@
 #           una ficha cuya etapa siguiente ese contexto no puede firmar no cuenta como
 #           implementado ni revisado y suma a bloqueadas; ver independencia.sh)
 #       EQUIPO_INDEPENDENCIA=<ruta> ...   (independencia.sh a usar en vez del de la ref; pruebas)
+#       EQUIPO_ISSUES_JSON=<ruta> ...     (los issues de GitHub de ese archivo y no de gh; pruebas)
+#       EQUIPO_ISSUES_PY=<ruta> ...       (issues.py a usar en vez del de la ref; pruebas)
 #       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh --rastros "<epochs>"
 #           (solo CADENCIA y TURNOS_SIN_RASTRO sobre esos commits; sin git; lo usa pruebas.sh)
+#       scripts/equipo-dev/estado.sh --espera "<texto>"
+#           (los numeros de ficha de los que ese texto dice depender; sin git; lo usa pruebas.sh)
+#       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh --vacio "R:<epoch> A:<epoch> ..."
+#           (turnos en vacio sobre esos rastros R y esa actividad A; sin git; lo usa pruebas.sh)
 set -u
 
 # Disparos de la rutina sin rastro, medidos contra la cadencia real. La
@@ -84,6 +90,55 @@ if [ "${1:-}" = --rastros ]; then
     rastros_lineas "$(printf '%s\n' ${2:-} | rastros_calc "${EQUIPO_AHORA:-$(date -u +%s)}")"
     exit 0
 fi
+# De que fichas depende una ficha del papel: la frase que escriben el
+# Arquitecto y el PO, "Implementar despues de #NN" o "... de que #NN se
+# mergee" (PLANTILLA.md, roles/arquitecto.md, roles/po.md; pruebas.sh verifica
+# que esas formas se lean aca). Una `disenado` asi no la puede tomar un Dev
+# hasta que NN este en dev, y contarla como tomable le dio al Dev 5 turnos
+# seguidos sin nada que implementar (2026-11-10 y 11: la 83 esperaba a la 79,
+# que esperaba al humano) mientras el PO y el Arquitecto no volvian a correr.
+# Entrada: el texto de la ficha. Salida: los numeros, uno por linea. El
+# `.{1,2}` es la e de "despues", con o sin tilde y en cualquier locale: las
+# fichas las escribe un modelo y a veces la acentua.
+esperas_de() {
+    grep -oiE 'implementar despu.{1,2}s de( que)?( la| el| las| los)?( fichas?)? #?[0-9]+((,| y| e| o)( la| el)? #?[0-9]+)*' \
+        | grep -oE '[0-9]+' | sort -un
+}
+# Turnos en vacio: los que no dejaron otro commit que el de ESTADO.md. Del
+# 2026-11-10 al 12 fueron 7 de 14 y nada lo decia: TURNOS_SIN_RASTRO mide que
+# la sesion corrio, no que haya hecho algo. Una sesion es un grupo de rastros
+# a menos de 30 min (como en rastros_calc); cuenta como entrega cualquier
+# commit del equipo que toque otra cosa, en cualquiera de sus ramas o en dev,
+# desde 150 min antes de su primer rastro (un turno dura hasta 135) o desde
+# el cierre de la sesion anterior, lo que sea mas tarde, hasta 5 min despues
+# del ultimo.
+# Entrada: lineas "R <epoch>" (rastro) y "A <epoch>" (actividad), y el
+# "ahora". Salida: en_vacio_48h turnos_48h en_vacio_7d turnos_7d.
+vacio_calc() {
+    sort -k2,2n | awk -v ahora="$1" '
+        $2 > ahora { next }
+        $1 == "A" { a[++na] = $2; next }
+        { if (m == 0 || $2 - ult[m] >= 1800) { m++; pri[m] = $2 } ult[m] = $2 }
+        END {
+            for (i = 1; i <= m; i++) {
+                desde = pri[i] - 9000
+                if (i > 1 && ult[i - 1] + 300 > desde) desde = ult[i - 1] + 300
+                hubo = 0
+                for (j = 1; j <= na; j++) if (a[j] > desde && a[j] <= ult[i] + 300) { hubo = 1; break }
+                if (ult[i] >= ahora - 604800) { t7++; if (!hubo) v7++ }
+                if (ult[i] >= ahora - 172800) { t48++; if (!hubo) v48++ }
+            }
+            printf "%d %d %d %d\n", v48, t48, v7, t7
+        }'
+}
+if [ "${1:-}" = --vacio ]; then
+    printf '%s\n' ${2:-} | tr ':' ' ' | vacio_calc "${EQUIPO_AHORA:-$(date -u +%s)}"
+    exit 0
+fi
+if [ "${1:-}" = --espera ]; then
+    printf '%s\n' "${2:-}" | esperas_de | tr '\n' ' ' | sed 's/ $//'; echo
+    exit 0
+fi
 # Con --resumen todo lo demas va a /dev/null y la linea final sale por el
 # descriptor 3, que conserva la salida original.
 resumen=no
@@ -145,10 +200,18 @@ else
 fi
 # independencia.sh de la misma ref que gano la cadena (un playbook viejo no lo
 # tiene: entonces no se bloquea nada, como antes).
+temporales=()
+trap 'rm -f ${temporales[@]+"${temporales[@]}"}' EXIT
 indep=${EQUIPO_INDEPENDENCIA:-}
 if [ -z "$indep" ] && git cat-file -e "$ref:scripts/equipo-dev/independencia.sh" 2>/dev/null; then
-    indep=$(mktemp); trap 'rm -f "$indep"' EXIT
+    indep=$(mktemp); temporales+=("$indep")
     git show "$ref:scripts/equipo-dev/independencia.sh" > "$indep"
+fi
+# issues.py, de la misma ref: lee los issues de GitHub (ver la seccion == issues).
+issues_py=${EQUIPO_ISSUES_PY:-}
+if [ -z "$issues_py" ] && git cat-file -e "$ref:scripts/equipo-dev/issues.py" 2>/dev/null; then
+    issues_py=$(mktemp); temporales+=("$issues_py")
+    git show "$ref:scripts/equipo-dev/issues.py" > "$issues_py"
 fi
 contexto=${EQUIPO_CONTEXTO:-}
 
@@ -159,15 +222,50 @@ echo "== sin_merge (veto del humano al merge automatico)"
 sin_merge=no
 if git cat-file -e "$B:docs/backlog/SIN_MERGE" 2>/dev/null; then sin_merge=si; echo "SIN_MERGE"; else echo "no"; fi
 
+# Los issues de GitHub que una ficha cita en `fuente:` (forma fija:
+# bfigueroa99/r6-replay-lab#N). La ficha viva es el reclamo del equipo sobre el
+# issue: se juntan aca, de git, y van a issues.py como N:NN:estado.
+issues_de() { grep -oE 'r6-replay-lab#[0-9]+' | cut -d'#' -f2 | sort -un; }
+fichas_issue=""
 # Sin tipo: no cuenta como funcionalidad (Directiva de alcance del playbook).
 tipo_de() { local t; t=$(campo "$1" "$2" tipo); echo "${t:-sin tipo}"; }
 echo "== papel (rama backlog)"
-papel_func=0; papel_otro=0; propuesto=0; disenado=0
+papel_func=0; papel_otro=0; propuesto=0; disenado=0; frenadas=0; lista_frenadas=""
+# frena[NN]: las fichas `disenado` que esperan a la NN (para la linea DESTRABA).
+declare -A frena=()
+en_dev=" $(git ls-tree --name-only origin/dev docs/backlog/ 2>/dev/null | sed -n 's#^docs/backlog/\([0-9][0-9]*\)-.*#\1#p' | tr '\n' ' ')"
 if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
     for f in $(git -c core.quotePath=false ls-tree -r --name-only "$B" docs/backlog/ | grep -E '/[0-9]+-'); do
         estado=$(campo "$B" "$f" estado); tipo=$(tipo_de "$B" "$f"); epica=$(campo "$B" "$f" epica)
-        printf '%s | estado: %s | tipo: %s | epica: %s | candado: %s | rama: %s\n' "$f" "$estado" \
-            "$tipo" "${epica:--}" "$(campo "$B" "$f" candado)" "$(campo "$B" "$f" rama)"
+        candado=$(campo "$B" "$f" candado); nota=""
+        # La copia de una ficha que ya esta en dev no la mantiene viva: la de dev manda.
+        nn=$(basename "$f" | cut -d- -f1)
+        case "$estado" in descartado*) cual=descartado ;; *) case "$en_dev" in *" $nn "*) cual="" ;; *) cual=curso ;; esac ;; esac
+        if [ -n "$cual" ]; then for i in $(campo "$B" "$f" fuente | issues_de); do fichas_issue="$fichas_issue $i:$nn:$cual"; done; fi
+        # P8 tambien en el papel: un candado sin commits sobre la ficha en 3 h
+        # es de una sesion muerta (el del arquitecto sobre la 102 quedo 6 dias).
+        case "$estado" in
+            propuesto*|disenado*)
+                if [ -n "$candado" ] && [ "$candado" != "-" ]; then
+                    ult=$(git log -1 --format=%ct "$B" -- "$f"); ult=${ult:-0}
+                    [ $(( ahora - ult )) -ge 10800 ] && nota=" | candado muerto: si, se retoma"
+                fi ;;
+        esac
+        # Una `disenado` que espera a una ficha que no esta en dev no es
+        # tomable: no cuenta en disenado= (ver esperas_de, arriba).
+        falta=""
+        case "$estado" in
+            disenado*)
+                num=$(basename "$f" | cut -d- -f1)
+                for n in $(git show "$B:$f" 2>/dev/null | esperas_de); do
+                    case "$en_dev" in *" $n "*) continue ;; esac
+                    [ "$n" = "$num" ] && continue
+                    falta="$falta $n"; frena[$n]="${frena[$n]:-} $num"
+                done
+                [ -n "$falta" ] && falta=$(printf ' la %s,' $falta | sed 's/,$//') && nota="$nota | frenada: espera a$falta, que no esta en dev" ;;
+        esac
+        printf '%s | estado: %s | tipo: %s | epica: %s | candado: %s | rama: %s%s\n' "$f" "$estado" \
+            "$tipo" "${epica:--}" "$candado" "$(campo "$B" "$f" rama)" "$nota"
         case "$estado" in
             propuesto*|disenado*)
                 if [ "$tipo" = funcionalidad ]; then papel_func=$((papel_func + 1)); else papel_otro=$((papel_otro + 1)); fi ;;
@@ -176,15 +274,21 @@ if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
         # no manda: la rama de trabajo si.
         case "$estado" in
             propuesto*) propuesto=$((propuesto + 1)) ;;
-            disenado*) disenado=$((disenado + 1)) ;;
+            disenado*)
+                if [ -n "$falta" ]; then frenadas=$((frenadas + 1)); lista_frenadas="$lista_frenadas; la $num espera a$falta"
+                else disenado=$((disenado + 1)); fi ;;
         esac
     done
+    echo "FRENADAS=$frenadas${lista_frenadas:+ (${lista_frenadas#; })} | disenado que esperan a una ficha que no esta en dev: no cuentan en disenado= de RESUMEN"
 else
     echo "sin rama backlog (la crea el primer PO o Release)"
 fi
 
 echo "== ramas de trabajo (origin/claude/* no mergeadas con ficha)"
 borrables=()
+# Lo que quedo `entregado (...)`: rama|ficha|horas|estado, para DESTRABA (el
+# estado va ultimo: su motivo es texto libre y puede traer una barra).
+esperan=()
 cola=0; total=0; cola_func=0
 en_curso=0; huerfanas=0; implementado=0; revisado=0; con_hallazgos=0; aprobado=0; entregado=0; espera_humano=0; bloqueadas=0
 for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --format='%(refname:short)'); do
@@ -194,6 +298,10 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     if mergeada "$r"; then echo "$r | mergeada efectivamente: borrable"; borrables+=("${r#origin/}"); continue; fi
     estado=$(campo "$r" "$f" estado)
     edad=$(edad_h "$r")
+    nn=$(basename "$f" | cut -d- -f1)
+    for i in $(campo "$r" "$f" fuente | issues_de); do
+        fichas_issue="$fichas_issue $i:$nn:$([[ "$estado" == descartado* ]] && echo descartado || echo curso)"
+    done
     if [[ "$estado" == descartado* ]]; then echo "$r | $f | $estado | no cuenta: borrable"; borrables+=("${r#origin/}"); continue; fi
     total=$((total + 1))
     reciente=no
@@ -219,7 +327,7 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     case "$estado" in
         aprobado*) aprobado=$((aprobado + 1)) ;;
         entregado) entregado=$((entregado + 1)) ;;
-        "entregado ("*) espera_humano=$((espera_humano + 1)) ;;
+        "entregado ("*) espera_humano=$((espera_humano + 1)); esperan+=("$r|$f|$edad|$estado") ;;
         revisado*) [ "$firmable" = si ] && revisado=$((revisado + 1)) ;;
         implementado*) [ "$firmable" = si ] && implementado=$((implementado + 1)) ;;
         "con hallazgos"*) con_hallazgos=$((con_hallazgos + 1)) ;;
@@ -306,7 +414,7 @@ echo "== rutina (disparos sin commit de ESTADO.md en backlog, a la cadencia medi
 # Cada turno que termina deja un commit de ESTADO.md; un disparo sin ninguno
 # es una sesion que no corrio o murio antes de cerrar. Es lo unico que mide la
 # capa de la rutina desde el repo. El calculo esta en rastros_calc, arriba.
-sin_rastro_48h=0
+sin_rastro_48h=0; vacio_48h=0; turnos_48h=0
 rastros=$(git log --format='%ct %s' "$B" -- docs/backlog/ESTADO.md 2>/dev/null)
 if [ -z "$rastros" ]; then
     echo "TURNOS_SIN_RASTRO=? (sin ESTADO.md en backlog)"
@@ -320,6 +428,55 @@ else
     calculo=$(echo "$rastros" | cut -d' ' -f1 | rastros_calc "$ahora")
     read -r _ _ sin_rastro_48h _ <<< "$calculo"
     rastros_lineas "$calculo"
+    # Lo que el equipo firmo (Claude u OpenCode) en la ultima semana fuera de
+    # ESTADO.md, en dev y en sus ramas: ver vacio_calc, arriba.
+    actividad=$(git log --since="$(date -u -d "@$(( ahora - 615000 ))" +%FT%TZ)" --format=%ct --author='^Claude ' --author='^OpenCode ' \
+        origin/dev --remotes='origin/claude/equipo-dev' -- . ':(exclude)docs/backlog/ESTADO.md' 2>/dev/null)
+    read -r vacio_48h turnos_48h vacio_7d turnos_7d <<< "$({ echo "$rastros" | cut -d' ' -f1 | sed 's/^/R /'; for a in $actividad; do echo "A $a"; done; } | vacio_calc "$ahora")"
+    echo "TURNOS_EN_VACIO=$vacio_48h de $turnos_48h en 48 h | $vacio_7d de $turnos_7d en 7 dias (turnos que no dejaron otro commit que ESTADO.md)"
+fi
+
+echo "== destraba (lo que espera al humano y a quien frena; va primero en ## Para el humano)"
+# El PR de la 79 espero 6 dias al humano (toca CLAUDE.md) con la 83 frenada
+# detras, y el aviso era la vineta 12 de 20 de `## Para el humano`: una linea
+# por rama que espera, con lo que frena, para copiar tal cual arriba de todo.
+# Y si un tercio o mas de los turnos de 48 h no dejaron nada, tambien: lo que
+# sea que lo cause (lo de arriba, la cola llena, el papel) lo destraba el. Un
+# Release diario sin nada que mergear es 1 de cada 6 a un disparo cada 4 h y
+# no llega; los 5 de 12 del 2026-11-12, si.
+en_vacio=no
+[ "$turnos_48h" -ge 4 ] && [ $(( vacio_48h * 3 )) -ge "$turnos_48h" ] && en_vacio=si
+if [ "${#esperan[@]}" -eq 0 ] && [ "$en_vacio" = no ]; then echo "nada espera al humano"; fi
+for e in ${esperan[@]+"${esperan[@]}"}; do
+    IFS='|' read -r r f edad estado <<< "$e"
+    num=$(basename "$f" | cut -d- -f1)
+    detras=$(echo ${frena[$num]:-})
+    echo "DESTRABA: ficha $num, $estado, ${edad} h sin commits | frena a: ${detras:-nada} | https://github.com/bfigueroa99/r6-replay-lab/compare/dev...${r#origin/}?expand=1"
+done
+[ "$en_vacio" = si ] && echo "DESTRABA: el equipo gira en vacio: $vacio_48h de los $turnos_48h turnos de las ultimas 48 h no dejaron otro commit que ESTADO.md (ver FRENADAS, la cola y lo que espera)"
+
+echo "== issues (GitHub: solo cuenta como pedido el de un autor de confianza; .claude/skills/equipo-dev/issues.md)"
+# El dueno tambien pide por issues, y el repo es publico: quien es de confianza
+# y que toca con cada issue lo decide issues.py, no el turno. Las fichas en dev
+# que citan un issue salen de un grep sobre dev (las de backlog y las ramas de
+# trabajo se juntaron arriba). Sin gh, sin red o sin issues.py en la ref:
+# pedidos=0 y el turno sigue con su backlog; nunca aborta.
+pedidos=0
+while IFS= read -r l; do
+    nn=$(printf '%s' "$l" | sed -n 's#^[^:]*:docs/backlog/\([0-9][0-9]*\)-.*#\1#p')
+    [ -n "$nn" ] || continue
+    for i in $(printf '%s\n' "${l#*fuente:}" | issues_de); do fichas_issue="$fichas_issue $i:$nn:dev"; done
+done < <(git grep -E '^fuente:.*r6-replay-lab#[0-9]+' origin/dev -- 'docs/backlog/*.md' 2>/dev/null)
+if [ -z "$issues_py" ]; then
+    echo "ISSUES=no se pudieron leer (sin scripts/equipo-dev/issues.py en $ref): el turno sigue con su backlog"
+elif ! command -v python3 >/dev/null 2>&1; then
+    echo "ISSUES=no se pudieron leer (sin python3): el turno sigue con su backlog"
+else
+    salida_issues=$(python3 -I "$issues_py" ${EQUIPO_ISSUES_JSON:+--json-de "$EQUIPO_ISSUES_JSON"} \
+        --fichas "${fichas_issue# }" --en-dev "$en_dev" --ahora "$ahora" 2>&1)
+    printf '%s\n' "$salida_issues"
+    pedidos=$(printf '%s\n' "$salida_issues" | sed -n 's/^PEDIDOS=//p' | head -1)
+    [[ "$pedidos" =~ ^[0-9]+$ ]] || { pedidos=0; echo "ISSUES=issues.py no dijo PEDIDOS: se cuenta 0"; }
 fi
 
 echo "== cola"
@@ -397,8 +554,8 @@ echo "ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotaci
 
 echo "== resumen"
 # Una linea con todo lo que turno.sh necesita para elegir el rol. Mismo orden
-# siempre: pruebas.sh cuenta los 21 pares.
-linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas"
+# siempre: pruebas.sh cuenta los 22 pares.
+linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas pedidos=$pedidos"
 echo "$linea_resumen"
 
 echo "== entorno"

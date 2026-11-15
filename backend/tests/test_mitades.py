@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest import mock
+
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
@@ -92,6 +94,116 @@ class LadoInicialTests(TestCase):
         self.assertIsNone(ataque["winrate"])
 
 
+_SIGUIENTE = iter(range(1000, 10000))
+
+
+def _arranque(lado: str, *, map_name: str = "Bank", gano: bool | None = True,
+              map_id: int = 0):
+    """Partida de dos rondas que arranca en `lado`; `gano=None` es sin resultado."""
+    otro = "Defense" if lado == "Attack" else "Attack"
+    match = make_match(index=next(_SIGUIENTE), map_name=map_name, map_id=map_id,
+                       my_score=4 if gano is not False else 2,
+                       opponent_score=2 if gano is not False else 4)
+    if gano is None:
+        match.won = None
+        match.save()
+    make_round_player(make_round(match, 1, side=lado))
+    make_round_player(make_round(match, 2, side=otro))
+    return match
+
+
+def _por_mapa(filas: list[dict]) -> dict[str, dict]:
+    return {fila["map"]: fila for fila in filas}
+
+
+class LadoInicialPorMapaTests(TestCase):
+    def _cuatro_partidas(self):
+        _arranque("Defense", gano=True)
+        _arranque("Defense", gano=False)
+        _arranque("Attack", gano=True)
+        _arranque("Attack", map_name="Oregon", gano=False)
+
+    def test_lado_inicial_por_mapa_cuenta_cada_mapa_por_separado(self):
+        self._cuatro_partidas()
+        with mock.patch.object(agg, "MIN_PARTIDAS_LADO_INICIAL", 1):
+            filas = agg.by_start_side_map()
+        self.assertEqual([f["map"] for f in filas], ["Bank", "Oregon"])
+        bank, oregon = _por_mapa(filas)["Bank"], _por_mapa(filas)["Oregon"]
+        self.assertEqual(bank["matches"], 3)
+        self.assertEqual((bank["defense"]["matches"], bank["defense"]["wins"]), (2, 1))
+        self.assertEqual(bank["defense"]["winrate"], 50.0)
+        self.assertEqual((bank["attack"]["matches"], bank["attack"]["wins"]), (1, 1))
+        self.assertEqual(bank["attack"]["winrate"], 100.0)
+        self.assertEqual(bank["delta"], 50.0)
+        self.assertEqual((oregon["attack"]["matches"], oregon["attack"]["winrate"]), (1, 0.0))
+        self.assertEqual(oregon["defense"]["matches"], 0)
+        self.assertIsNone(oregon["defense"]["winrate"])
+        self.assertIsNone(oregon["verdict"])
+
+        # con el minimo real (3) ninguna celda llega: conteos si, porcentaje no
+        filas = agg.by_start_side_map()
+        for fila in filas:
+            self.assertIsNone(fila["attack"]["winrate"])
+            self.assertIsNone(fila["defense"]["winrate"])
+        self.assertEqual(_por_mapa(filas)["Bank"]["defense"]["matches"], 2)
+
+    def test_un_lado_bajo_el_minimo_no_da_porcentaje_ni_veredicto(self):
+        for gano in (True, True, False):
+            _arranque("Attack", gano=gano)
+        for gano in (True, False):
+            _arranque("Defense", gano=gano)
+        (bank,) = agg.by_start_side_map()
+        self.assertEqual(bank["attack"]["winrate"], 66.7)
+        self.assertEqual(bank["defense"]["matches"], 2)
+        self.assertIsNone(bank["defense"]["winrate"])
+        self.assertIsNone(bank["delta"])
+        self.assertIsNone(bank["margin"])
+        self.assertIsNone(bank["verdict"])
+
+    def test_partida_sin_resultado_cuenta_en_partidas_y_no_en_el_porcentaje(self):
+        for gano in (True, True, False, None):
+            _arranque("Attack", gano=gano)
+        (bank,) = agg.by_start_side_map()
+        ataque = bank["attack"]
+        self.assertEqual((ataque["matches"], ataque["decided"], ataque["wins"]), (4, 3, 2))
+        self.assertEqual(ataque["winrate"], 66.7)
+
+    def test_el_filtro_de_lado_no_cambia_el_lado_inicial_por_mapa(self):
+        self._cuatro_partidas()
+        self.assertEqual(agg.by_start_side_map(side="Attack"), agg.by_start_side_map())
+
+    def test_las_versiones_de_un_mapa_van_en_filas_distintas(self):
+        _arranque("Attack", map_name="Consulate", map_id=1)
+        _arranque("Attack", map_name="Consulate", map_id=2)
+        filas = agg.by_start_side_map()
+        self.assertEqual(len(filas), 2)
+        self.assertEqual({f["map_id"] for f in filas}, {1, 2})
+        self.assertEqual(len({f["map"] for f in filas}), 2)
+
+    def test_una_diferencia_grande_con_muestra_da_veredicto(self):
+        for _ in range(8):
+            _arranque("Attack", gano=True)
+            _arranque("Defense", gano=False)
+        (bank,) = agg.by_start_side_map()
+        self.assertEqual(bank["delta"], 100.0)
+        self.assertEqual(bank["verdict"], "ataque")
+
+    def test_una_diferencia_chica_con_poca_muestra_es_ruido(self):
+        for gano in (True, True, True, False):
+            _arranque("Attack", gano=gano)
+        for gano in (True, True, False, False):
+            _arranque("Defense", gano=gano)
+        (bank,) = agg.by_start_side_map()
+        self.assertEqual(bank["delta"], 25.0)
+        self.assertGreater(bank["margin"], 25.0)
+        self.assertEqual(bank["verdict"], "ruido")
+
+    def test_el_filtro_de_mapa_de_la_api_deja_solo_ese_mapa(self):
+        self._cuatro_partidas()
+        data = self.client.get("/api/trends/?map=oregon").json()
+        self.assertEqual([f["map"] for f in data["by_start_side_map"]], ["Oregon"])
+
+
 class TendenciasApiTests(TestCase):
     def test_el_filtro_de_mapa_cambia_el_conteo_por_mitad(self):
         _partida(["Attack"] * 3 + ["Defense"] * 3, index=0, map_name="Club House")
@@ -110,6 +222,7 @@ class TendenciasApiTests(TestCase):
         self.assertEqual([f["rounds"] for f in data["by_half"]], [0, 0, 0])
         self.assertEqual([f["side"] for f in data["by_start_side"]], ["Attack", "Defense"])
         self.assertTrue(all(f["matches"] == 0 for f in data["by_start_side"]))
+        self.assertEqual(data["by_start_side_map"], [])
 
 
 def _por_apertura(filas: list[dict]) -> dict[str, dict]:

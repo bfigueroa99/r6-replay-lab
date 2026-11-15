@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import {
@@ -15,13 +15,14 @@ import {
 } from '../components/ui.jsx'
 import MatrizDuelos from '../components/MatrizDuelos.jsx'
 import { detalleMultikills, textoMultikills } from '../multikills.js'
-import { marcasDeApertura } from '../aperturas.js'
+import { esTeamkill, marcasDeApertura } from '../aperturas.js'
 import { textoDeRachas } from '../rachas.js'
 import { textoResumenPartida } from '../resumenPartida.js'
+import { textoRonda } from '../textoRonda.js'
 import { filasTradesEquipo, textoTradesEquipo } from '../tradesEquipo.js'
 import { filasDeFases, hayBajas, notaDeFases } from '../fasesRonda.js'
 import { separadorAntes, textoStackRival } from '../stacksRivales.js'
-import { pasoDeTecla, rondaVecina } from '../navegacionRondas.js'
+import { indiceDeAncla, pasoDeTecla, pideSiguientePerdida, rondaVecina, siguientePerdida } from '../navegacionRondas.js'
 
 export default function MatchDetail() {
   const { id } = useParams()
@@ -38,6 +39,11 @@ function DetallePartida({ id }) {
 
   useEffect(() => {
     function alApretar(e) {
+      if (pideSiguientePerdida(e) && total) {
+        e.preventDefault()
+        setSelected((s) => siguientePerdida(s, data.rounds) ?? s)
+        return
+      }
       const paso = pasoDeTecla(e)
       if (!paso || !total) return
       // sin esto la flecha ademas desplaza la pagina
@@ -46,7 +52,18 @@ function DetallePartida({ id }) {
     }
     window.addEventListener('keydown', alApretar)
     return () => window.removeEventListener('keydown', alApretar)
-  }, [total])
+  }, [total, data])
+
+  // `#ronda-N` (los records del Resumen) abre la partida parada en esa ronda;
+  // espera a los datos, y un ancla que no es de una ronda deja el detalle como siempre
+  // con `key` volver a clicar el mismo record re-aplica el ancla aunque el hash no cambie
+  const { hash, key: navegacion } = useLocation()
+  useEffect(() => {
+    const indice = indiceDeAncla(hash, data?.rounds)
+    if (indice === null) return
+    setSelected(indice)
+    document.getElementById('rondas')?.scrollIntoView({ block: 'start' })
+  }, [hash, navegacion, data])
 
   if (status === 404) return <NoExiste titulo="Esa partida no existe" a="/partidas" texto="Ver tus partidas" />
   if (error) return <ErrorBox error={error} />
@@ -101,6 +118,9 @@ function DetallePartida({ id }) {
           <button type="button" className="btn small" onClick={copiarResumen}>
             Copiar resumen
           </button>
+          <Link className="btn small" to={`/comparar/${match.id}`}>
+            Comparar con…
+          </Link>
           <Link className="btn small" to="/partidas">
             Volver
           </Link>
@@ -135,7 +155,20 @@ function DetallePartida({ id }) {
       <StacksRivales stacks={data.rival_stacks} />
 
       {round ? (
-        <Panel title="Rondas" hint="Clic en una ronda o ← → para ver su timeline.">
+        <Panel
+          id="rondas"
+          title="Rondas"
+          hint="Clic en una ronda, ← → para moverte o P para la siguiente perdida."
+        >
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => setSelected((s) => siguientePerdida(s, rounds) ?? s)}
+            disabled={siguientePerdida(selected, rounds) === null}
+            title="Próxima ronda que tu equipo perdió (tecla P)"
+          >
+            Siguiente ronda perdida
+          </button>
           <div className="round-tabs">
             {rounds.map((r, i) => (
               <button
@@ -158,6 +191,7 @@ function DetallePartida({ id }) {
               <h3 style={{ marginTop: 0, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 {round.label} <SideChip side={round.my_side} />
                 <ResultChip won={round.my_team_won} />
+                <CopiarRonda key={round.number} round={round} mapa={match.map} miEquipo={myTeam(round)} />
               </h3>
               <p className="note" style={{ marginTop: 0 }}>
                 Sitio: <b>{round.site || 'desconocido'}</b> · marcador {round.score_before?.join('-')} →{' '}
@@ -408,7 +442,9 @@ function Timeline({ round }) {
     <ul className="timeline">
       {round.events.map((event) => {
         const actorIsMine = mineTeam.has(event.actor)
-        const cls = event.kind === 'Kill' ? (actorIsMine ? 'mine' : 'against') : ''
+        // un teamkill no es baja de ningun equipo: sin la barra de color, como Death
+        const tk = esTeamkill(round, event)
+        const cls = event.kind === 'Kill' && !tk ? (actorIsMine ? 'mine' : 'against') : ''
         return (
           <li key={event.order} className={cls}>
             <span className="clock">{event.clock_raw || '—'}</span>
@@ -438,6 +474,11 @@ function Timeline({ round }) {
               ) : null}
               {event.headshot ? <span className="chip">HS</span> : null}
               {event.traded ? <span className="chip">tradeada</span> : null}
+              {tk ? (
+                <span className="chip" title="Baja entre compañeros: no suma a las bajas">
+                  TK
+                </span>
+              ) : null}
             </span>
           </li>
         )
@@ -486,5 +527,46 @@ function EnlacePartida({ id, title, children }) {
     <Link className="btn small" to={`/partidas/${id}`} title={title}>
       {children}
     </Link>
+  )
+}
+
+/**
+ * Boton para copiar la ronda elegida. Lleva su propio estado para no sumar un
+ * hook en `DetallePartida` despues de sus returns tempranos; la `key` de la
+ * ronda lo reinicia al cambiar de ronda, asi el aviso no queda pegado a otra.
+ */
+function CopiarRonda({ round, mapa, miEquipo }) {
+  const [copia, setCopia] = useState(null)
+
+  async function copiar() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia('error')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(textoRonda(round, mapa, miEquipo))
+      setCopia('ok')
+    } catch {
+      setCopia('error')
+    }
+  }
+
+  return (
+    <>
+      {copia && (
+        <span className="note" style={{ fontWeight: 'normal' }}>
+          {copia === 'ok' ? 'Ronda copiada' : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+        </span>
+      )}
+      <button
+        type="button"
+        className="btn small"
+        onClick={copiar}
+        title="Copia esta ronda y sus bajas en texto plano."
+      >
+        Copiar ronda
+      </button>
+    </>
   )
 }

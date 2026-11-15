@@ -39,23 +39,52 @@ def _path() -> Path | None:
     return Path(raw) if raw else None
 
 
+def leer_json(path: Path) -> dict | None:
+    """El objeto JSON de `path`, o None si no se puede leer como tal.
+
+    El archivo se edita a mano, asi que llega como lo deje el editor:
+    `utf-8-sig` acepta el BOM que ponen el Bloc de notas viejo y PowerShell, y
+    `ValueError` cubre tanto el JSON mal escrito como los bytes que no son
+    UTF-8 (un archivo guardado en ANSI). Nada de eso puede tumbar un import.
+    """
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError) as exc:
+        log.warning("no se pudo leer %s: %s", path, exc)
+        return None
+    if not isinstance(raw, dict):
+        log.warning("%s no trae un objeto JSON", path)
+        return None
+    return raw
+
+
+def etiquetas(raw: dict, clave: str) -> dict[str, str]:
+    """Los pares id -> nombre de una clave, solo los que son texto.
+
+    Un `null` o un numero no son un nombre: con `str()` el mapa quedaba
+    llamandose "None". El texto vacio se conserva: es el hueco que deja
+    `unknown_ids --write` para rellenar.
+    """
+    valores = raw.get(clave)
+    if not isinstance(valores, dict):
+        return {}
+    return {str(k): v for k, v in valores.items() if isinstance(v, str)}
+
+
 def load(force: bool = False) -> dict:
     global _cache
     if _cache is not None and not force:
         return _cache
     _cache = {clave: {} for clave in CLAVES}
     path = _path()
-    if path and path.exists():
-        try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            for key in CLAVES:
-                for k, v in (raw.get(key) or {}).items():
-                    try:
-                        _cache[key][int(k)] = str(v)
-                    except (TypeError, ValueError):
-                        log.warning("id invalido en %s: %r", path, k)
-        except (OSError, json.JSONDecodeError) as exc:
-            log.warning("no se pudo leer %s: %s", path, exc)
+    raw = leer_json(path) if path and path.exists() else None
+    if raw is not None:
+        for key in CLAVES:
+            for k, v in etiquetas(raw, key).items():
+                try:
+                    _cache[key][int(k)] = v
+                except ValueError:
+                    log.warning("id invalido en %s: %r", path, k)
     return _cache
 
 

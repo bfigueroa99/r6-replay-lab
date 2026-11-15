@@ -13,24 +13,37 @@ import {
   SinRondasFiltradas,
   pct,
 } from '../components/ui.jsx'
+import { claseFilaOperador, sinOperador, textoOperadorElegido } from '../operadorElegido.js'
 import { claseSitio, conOrdenDelBackend, etiquetaSitio, textoSinFilas } from '../operadorSitio.js'
+import {
+  filasCambioTrasPerder,
+  filasTrasResultado,
+  textoWinrate,
+  winrateCsv,
+} from '../operadorTrasResultado.js'
+import { bloquesDelPool, fechaCorta, textoHintPool, textoRondas } from '../poolOperadores.js'
 import { comoMargen, conSigno } from '../posicion.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Operators({ filters, setFilters, runImport, importing }) {
-  const { data, error, loading } = useApi('/operators/', { ...filters, min_rounds: 1 })
+  // Sin `operator`: con el filtro puesto Ataque y Defensa quedarian con una sola fila;
+  // la elegida se resalta. La vista sin rondas si mira los filtros enteros.
+  const { data, error, loading } = useApi('/operators/', { ...sinOperador(filters), min_rounds: 1 })
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
   const vista = vistaSinRondas({ vacio: !data?.operators?.length, filtros: filters, cargando: loading })
   if (vista === 'importar') return <EmptyState onImport={runImport} importing={importing} />
   if (vista === 'filtrado') {
-    return <SinRondasFiltradas titulo="Operadores" filtros={<Filters value={filters} onChange={setFilters} showOperator={false} />} />
+    return <SinRondasFiltradas titulo="Operadores" filtros={<Filters value={filters} onChange={setFilters} />} />
   }
 
   const rows = data.operators
   const attack = rows.filter((r) => r.side === 'Attack')
   const defense = rows.filter((r) => r.side === 'Defense')
+  const operador = filters.operator
+  // Con un lado filtrado que no es el del operador no hay fila que resaltar: la nota no lo promete
+  const notaOperador = rows.some((r) => r.operator === operador) ? textoOperadorElegido(operador) : ''
 
   return (
     <>
@@ -41,10 +54,11 @@ export default function Operators({ filters, setFilters, runImport, importing })
             Tu pool real, ordenado por rondas jugadas. Ordena por cualquier columna. «vs. tu lado»
             compara cada operador con tu winrate en ese lado.
           </p>
+          {notaOperador ? <p className="note">{notaOperador}</p> : null}
         </div>
       </div>
 
-      <Filters value={filters} onChange={setFilters} showOperator={false} />
+      <Filters value={filters} onChange={setFilters} />
 
       {[
         { title: 'Ataque', rows: attack },
@@ -52,27 +66,37 @@ export default function Operators({ filters, setFilters, runImport, importing })
       ].map((group) =>
         group.rows.length ? (
           <Panel key={group.title} title={group.title}>
-            <Table rows={group.rows} nombre={`operadores-${group.title.toLowerCase()}`} />
+            <Table rows={group.rows} nombre={`operadores-${group.title.toLowerCase()}`} operador={operador} />
           </Panel>
         ) : null,
       )}
 
       {!attack.length && !defense.length ? (
         <Panel title="Todos">
-          <Table rows={rows} nombre="operadores" />
+          <Table rows={rows} nombre="operadores" operador={operador} />
         </Panel>
       ) : null}
 
+      <TuPool filters={filters} />
+
       <PorSitio filters={filters} />
+
+      <TrasResultado filters={filters} />
     </>
   )
 }
 
-function Table({ rows, nombre }) {
+function Table({ rows, nombre, operador }) {
   return (
     <DataTable
       columns={[
-        { key: 'operator', label: 'Operador' },
+        {
+          key: 'operator',
+          label: 'Operador',
+          // DataTable no pone atributos por fila: el nombre accesible del resaltado va en la celda
+          render: (row) =>
+            row.operator === operador ? <strong aria-current="true">{row.operator}</strong> : row.operator,
+        },
         { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
         { key: 'rounds', label: 'Rondas' },
         {
@@ -110,8 +134,50 @@ function Table({ rows, nombre }) {
       rows={rows}
       initialSort={{ key: 'rounds', dir: 'desc' }}
       rowKey={(row) => `${row.operator}-${row.side}`}
+      rowClass={(row) => claseFilaOperador(row, operador)}
       csvName={nombre}
     />
+  )
+}
+
+// Request aparte, como PorSitio: un error del panel no tumba la pagina.
+function TuPool({ filters }) {
+  const { data, error, loading } = useApi('/operators/pool/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else {
+    const bloques = bloquesDelPool(data, filters?.side)
+    cuerpo = bloques.length ? (
+      bloques.map((b) => (
+        <div key={b.lado}>
+          <h3>{b.titulo}</h3>
+          <p>{b.resumen}</p>
+          <p>
+            Sin jugar hace más de {data.stale_days} días:{' '}
+            {b.stale.length
+              ? b.stale.map((s) => `${s.operator} (último: ${fechaCorta(s.last_played)}, ${textoRondas(s.rounds)})`).join(', ')
+              : 'ninguno'}
+          </p>
+          <p>Nunca jugados ({b.never.length}):</p>
+          <div>
+            {b.never.map((nombre) => (
+              <span key={nombre} className="chip">{nombre}</span>
+            ))}
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="note">Sin partidas con estos filtros.</p>
+    )
+  }
+  return (
+    <Panel
+      title="Tu pool"
+      hint={textoHintPool(data?.stale_days)}
+    >
+      {cuerpo}
+    </Panel>
   )
 }
 
@@ -184,5 +250,80 @@ function DeltaLado({ valor }) {
       {puntos > 0 ? '+' : ''}
       {puntos}
     </span>
+  )
+}
+
+const winrateConMuestra = (caso, label) => ({
+  key: `${caso}_winrate`,
+  label,
+  csv: (row) => winrateCsv(row[`${caso}_winrate`]),
+  render: (row) => textoWinrate(row[`${caso}_winrate`], row[`${caso}_poca`]),
+})
+
+const COLUMNAS_TRAS_RESULTADO = [
+  { key: 'lado', label: 'Lado', left: true },
+  { key: 'tras', label: 'Tras', left: true },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que volviste a jugar el mismo operador.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que jugaste otro operador.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+const COLUMNAS_CAMBIO_TRAS_PERDER = [
+  { key: 'lado', label: 'Lado', left: true },
+  { key: 'desde', label: 'Perdiste con', left: true },
+  { key: 'hacia', label: 'Cambiaste a', left: true },
+  { key: 'rondas', label: 'Rondas', help: 'Rondas con el operador nuevo, tras perder con el anterior.' },
+  {
+    key: 'winrate',
+    label: 'Winrate',
+    csv: (row) => winrateCsv(row.winrate),
+    render: (row) => textoWinrate(row.winrate, row.poca),
+  },
+]
+
+function TrasResultado({ filters }) {
+  const { data, error, loading } = useApi('/operators/after-result/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else {
+    const filas = filasTrasResultado(data, filters?.side)
+    cuerpo = filas.length ? (
+      <DataTable
+        columns={COLUMNAS_TRAS_RESULTADO}
+        rows={filas}
+        rowKey={(row) => row.clave}
+        initialSort={{ key: 'orden', dir: 'asc' }}
+        csvName="operador-tras-resultado"
+      />
+    ) : (
+      <p className="note">Sin rondas seguidas del mismo lado con estos filtros.</p>
+    )
+  }
+  const cambios = data && !error ? filasCambioTrasPerder(data, filters?.side) : null
+  return (
+    <Panel
+      title="Repetir o cambiar tras perder"
+      hint={`Tu siguiente ronda del mismo lado en la partida: si repetiste el operador o cambiaste, y cuánto la ganaste. «Tras ganar» es la base para comparar. Con el filtro de operador o de sitio, solo los pares que empiezan en una ronda con ese operador o en ese sitio. Con menos de ${data?.min_rounds ?? 12} rondas se avisa «pocas rondas». Abajo, a qué operador cambiaste y cómo te fue con cada uno; con menos de ${data?.switch_min_rounds ?? 5} rondas por par se avisa «pocas rondas».`}
+    >
+      {cuerpo}
+      {cambios && (
+        <>
+          <h3>A qué operador cambias tras perder</h3>
+          {cambios.length ? (
+            <DataTable
+              columns={COLUMNAS_CAMBIO_TRAS_PERDER}
+              rows={cambios}
+              rowKey={(row) => row.clave}
+              initialSort={{ key: 'rondas', dir: 'desc' }}
+              csvName="operador-cambio-tras-perder"
+            />
+          ) : (
+            <p className="note">No cambiaste de operador tras perder con estos filtros.</p>
+          )}
+        </>
+      )}
+    </Panel>
   )
 }

@@ -1,3 +1,5 @@
+import { anclaDeRonda } from './navegacionRondas.js'
+
 /**
  * Filas del panel "Tus records" del Resumen. Separado de la pagina para
  * probar el orden y el formato sin montarla.
@@ -23,6 +25,13 @@ function detalle(clave, record) {
   return `${record.map} · ${fecha(record.played_at)} · ${record.rounds} rondas`
 }
 
+/** Los records de ronda abren el detalle parado en esa ronda; los de partida, arriba. */
+function enlace(record) {
+  if (!record.match_id) return null
+  const ancla = Number.isInteger(record.round_number) ? anclaDeRonda(record.round_number) : ''
+  return `/partidas/${record.match_id}${ancla}`
+}
+
 /** Los records que existen, en orden fijo; los nulos no se muestran. */
 export function filasDeRecords(records) {
   return RECORDS.filter(([clave]) => records?.[clave]).map(([clave, etiqueta, valor], orden) => {
@@ -33,7 +42,7 @@ export function filasDeRecords(records) {
       etiqueta,
       valor: valor(record),
       detalle: detalle(clave, record),
-      href: record.match_id ? `/partidas/${record.match_id}` : null,
+      href: enlace(record),
     }
   })
 }

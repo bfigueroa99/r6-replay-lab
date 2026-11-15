@@ -2,15 +2,25 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
+import EstadoAlMorir from '../components/EstadoAlMorir.jsx'
+import VentajaTirada from '../components/VentajaTirada.jsx'
 import Filters from '../components/Filters.jsx'
-import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, pct } from '../components/ui.jsx'
+import { Bar, DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, pct } from '../components/ui.jsx'
+import { filasOperadoresQueTeAbren } from '../operadoresQueTeAbren.js'
 import { textosSinDuelos, vistaDuelos } from '../tipoPartida.js'
+import { fechaCorta, fechaCsv } from '../ultimaVez.js'
 
 const MUESTRAS = [
   { value: 3, label: '3+ duelos' },
   { value: 5, label: '5+ duelos' },
   { value: 10, label: '10+ duelos' },
 ]
+
+// '' sin revanchas: la celda pone su marca y el CSV su 0
+function revanchas(row) {
+  if (!row.same_session) return ''
+  return `${row.same_session} (${row.same_session_wins}-${row.same_session_losses})`
+}
 
 /** Verde si le ganas al rival, rojo si te gana. */
 function Balance({ value }) {
@@ -58,6 +68,7 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
   const base = totals.winrate
   const nemesis = data.nemesis || []
   const operators = data.operators || []
+  const aperturasPorOperador = filasOperadoresQueTeAbren(data.opening_operators)
   const faced = data.faced || { base: {}, operators: [] }
   const rivals = data.rivals ?? []
   const stacks = data.rival_stacks ?? []
@@ -138,6 +149,37 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           rowKey={(row) => row.operator}
           csvName="duelos-por-operador"
           empty={`Ningún operador llega a ${minDuels} duelos con estos filtros.`}
+        />
+      </Panel>
+
+      <Panel
+        title="Operadores que te abren"
+        hint={
+          'La primera baja de la ronda, por operador rival y por tu lado. Te abre: te sacó a ti ' +
+          'en el primer duelo; Le abres: lo sacaste tú. El % es sobre tus muertes de apertura ' +
+          'contra rivales de ese lado. Usa la muestra mínima de arriba, contada en aperturas.'
+        }
+      >
+        <DataTable
+          columns={[
+            { key: 'operator', label: 'Operador', left: true },
+            { key: 'side', label: 'Lado', render: (row) => <SideChip side={row.side} /> },
+            { key: 'opened_you', label: 'Te abre' },
+            { key: 'you_opened', label: 'Le abres' },
+            { key: 'balance', label: 'Balance', render: (row) => <Balance value={row.balance} /> },
+            { key: 'winrate', label: 'Ganas', render: (row) => pct(row.winrate) },
+            {
+              key: 'share',
+              label: 'De tus aperturas perdidas',
+              render: (row) => pct(row.share),
+              help: 'Te abre sobre tus muertes de apertura contra rivales de ese lado, también las de operador desconocido.',
+            },
+          ]}
+          rows={aperturasPorOperador}
+          initialSort={{ key: 'opened_you', dir: 'desc' }}
+          rowKey={(row) => row.key}
+          csvName="operadores-que-te-abren"
+          empty={`Ningún operador llega a ${minDuels} aperturas con estos filtros.`}
         />
       </Panel>
 
@@ -242,6 +284,13 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               render: (row) => <Link to={`/jugadores/${row.player_id}`}>{row.username}</Link>,
             },
             { key: 'matches', label: 'Partidas' },
+            {
+              key: 'last_played',
+              label: 'Última vez',
+              help: 'La partida más reciente contra esa persona entre las que cuenta la fila.',
+              render: (row) => fechaCorta(row.last_played),
+              csv: (row) => fechaCsv(row.last_played),
+            },
             { key: 'wins', label: 'Ganadas' },
             { key: 'losses', label: 'Perdidas' },
             {
@@ -257,6 +306,16 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
               label: 'Winrate',
               help: 'Sobre las partidas con resultado: las que no lo tienen cuentan en Partidas y no acá.',
               render: (row) => pct(row.winrate),
+            },
+            {
+              key: 'same_session',
+              label: 'Revanchas esa noche',
+              help:
+                'Partidas contra esa persona en una sesión en que ya te había tocado (la sesión se ' +
+                'corta tras SESSION_GAP_MINUTES sin jugar, en el .env). La primera de cada noche no ' +
+                'cuenta. Entre paréntesis, el récord de esas revanchas.',
+              render: (row) => revanchas(row) || '—',
+              csv: (row) => revanchas(row) || '0',
             },
           ]}
           rows={rivals}
@@ -295,6 +354,13 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
             },
             { key: 'size', label: 'Juntos' },
             { key: 'matches', label: 'Partidas' },
+            {
+              key: 'last_played',
+              label: 'Última vez',
+              help: 'La partida más reciente contra ese grupo entre las que cuenta la fila.',
+              render: (row) => fechaCorta(row.last_played),
+              csv: (row) => fechaCsv(row.last_played),
+            },
             { key: 'wins', label: 'Ganadas' },
             { key: 'losses', label: 'Perdidas' },
             {
@@ -318,6 +384,9 @@ export default function Duelos({ filters, setFilters, runImport, importing }) {
           empty="Ningún grupo de rivales se repitió en 2 o más partidas con estos filtros."
         />
       </Panel>
+
+      <EstadoAlMorir filters={filters} />
+      <VentajaTirada filters={filters} />
     </>
   )
 }
