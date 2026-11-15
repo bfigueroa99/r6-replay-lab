@@ -236,6 +236,12 @@ sin hallazgos (identificadores y comentarios sin tildes, UI con tildes, sin
 `print` ni `console.log`, fila en `metricas.md`, sin dependencias ni POST).
 El Revisor hace la revision independiente.
 
+Verificacion: `verificar.sh` VERDE 4e2a48cba (1403 tests backend, 459
+vitest, 122 e2e). El primer intento, sobre 390993bd9, cayo solo en
+`accesibilidad.spec.js` ("ninguna tabla deja una columna sin nombre") por una
+request abortada de `/api/trends/?limit=25` en `/tendencias`, una pagina que
+este cambio no toca, con el contenedor cargado (443 s); al repetir, verde.
+
 Verificacion manual sugerida: `seed_demo`, `/coach`: el panel debajo de
 "Repetir el sitio tras perderlo", una fila por mapa y sitio y Abre sumando
 100 % por mapa.
