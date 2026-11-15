@@ -1,7 +1,7 @@
 # 134. En que estado de vivos matas
 
-estado: revisado
-candado: qa 2026-11-15T02:26Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
 epica: impacto
@@ -9,7 +9,7 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md K8; Fuera de alcance de la ficha 116 ("el reverso, tus bajas por estado (K8): otro tramo de la epica")
 archivos: backend/replays/analytics/metrics.py (estado_al_matar), backend/replays/analytics/aggregates.py (kill_state), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_estado_al_matar.py (nuevo), frontend/src/estadoAlMatar.js (nuevo), frontend/src/estadoAlMatar.test.js (nuevo), frontend/src/components/EstadoAlMatar.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14, revisor 20261114T0040Z-c3LsMAo, dev 20261114T0104Z-cWK4yQD, revisor 20261114T0316Z-cwWsU9i
+turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14, revisor 20261114T0040Z-c3LsMAo, dev 20261114T0104Z-cWK4yQD, revisor 20261114T0316Z-cwWsU9i, qa 20261115T0219Z-i32143169
 
 ## PR
 
@@ -322,7 +322,100 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes: revision del lider)
 
-## QA
+## QA 2026-11-15 sobre 6c4fd3e
+
+(qa 20261115T0219Z-i32143169)
+
+Veredicto: `aprobado`. Los 5 criterios pasan con evidencia; sin hallazgos
+Critical ni Major.
+
+Base: rama con `origin/dev` (b2991fe) fusionado sin conflicto (46a20f0).
+
+- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
+  -> `VERDE 6c4fd3ef3 en 256s: 1390 tests backend, 455 vitest, 121 e2e. Todo
+  en verde.` (incluye el e2e `Duelos muestra el estado de vivos al matar`).
+- **Base sembrada** (`factories.py`, script temporal en el scratchpad, base
+  propia): Club House con 8 rondas, tu equipo de 5 contra 5 rivales: R1 dos
+  bajas tuyas (ganada); R2 un rival mata a un compañero y lo devuelves
+  (perdida); R3 teamkill entre compañeros y tres bajas tuyas (ganada); R4 un
+  rival se va y dos bajas tuyas (sin ganador); R5 te matan y despues el feed
+  te da una baja (perdida); R6 una baja tuya sin evento (ganada); R7 un
+  teamkill tuyo y nada mas; R8 sin bajas. Border 2v2 con el nick `Dup` en
+  los dos equipos (perfiles distintos), Bank con solo tu fila y la victima
+  sin fila, Oregon con solo una baja despues de caer.
+  `runserver 127.0.0.1:8125 --noreload` sembrada y `:8126` vacia.
+- **validate-data** (fila "Estado al matar" de `metricas.md`), recalculado a
+  mano contra `curl /api/duels/kill-state/`:
+  - `?map=club-house`: a mano 8 bajas con estado, 1 despues de caer, 1 sin
+    feed; Con ventaja 4 bajas en 3 rondas, 2 decididas, 2 ganadas -> 100 %;
+    En desventaja 2 bajas, 2 rondas, 1 ganada -> 50 %; `4v5` 2 bajas, 50 %;
+    `5v3` 1 baja sin decididas -> `null` (la UI muestra "—"). La API da
+    exactamente eso.
+  - `?side=Attack`: a mano 6 bajas (5v5, 5v4, 4v5, 4v4, 4v3, 2v2), 1 despues
+    de caer, 0 sin feed; En desventaja 1 baja, 1 ronda ganada -> 100 %. La
+    API da lo mismo.
+  - El total cierra con el Resumen: sin filtros 9 con estado + 1 despues de
+    caer + 2 sin feed = 12 = `overall.kills` de `/api/overview/`; en ataque
+    6 + 1 + 0 = 7 = `attack.kills`.
+  - Division por cero: `winrate` nulo con 0 decididas. Sin promedio de
+    promedios: grupos y estados cuentan rondas distintas. Redondeo de
+    `_pct`, el de siempre. Tasa con su `n`: la columna Rondas va al lado;
+    el denominador real son las decididas (en `5v4`: 2 rondas, 1 decidida),
+    como en Estado al morir: Minor, idea en `ALCANCE.md`.
+- **Bordes** (`curl`, todos 200 sin 500): `?until=foo`, `?since=foo`,
+  `?page=-1`, `?side=`, `?map=`, `?days=99999999999`, `?days=abc` y
+  `?ranked_only=1` -> como sin filtro (9/1/2); `?operator=Nadie`,
+  `?side=Attack&map=bank`, `?session=abc`, `?session=-1`,
+  `?map=99999999999999999999` -> 0/0/0 con los tres grupos vacios; `POST`
+  -> 403; base vacia -> 200 con `kills 0` y grupos vacios. Nick repetido
+  (Border): `2v2` con 1 baja, sin mezclar a los dos `Dup`. Vecinos
+  `death-state?side=Attack` y `thrown-advantage` 200.
+- **Chunk inicial** (`vite build`): `index-*.js` 200.34 kB y `index-*.css`
+  14.57 kB, iguales a `origin/dev`; `Duelos-*.js` 14.67 -> 17.17 kB
+  (perezoso).
+- **accessibility-review** (Chromium con Playwright sobre la base sembrada,
+  consola sin errores ni warnings):
+  - Orden: Estado al morir, Estado al matar, Ventaja numerica tirada.
+    `h2` "Estado al matar", `h3` "Por estado exacto", tablas con
+    `columnheader` y orden por boton con `aria-sort`.
+  - Teclado: Tab recorre Descargar CSV, Bajas, Rondas, Winrate de las dos
+    tablas y sale a Ventaja tirada; foco visible (`outline`); Enter en Bajas
+    ordena y deja `aria-sort="descending"`.
+  - Contraste: celdas 14,17:1; cabeceras (11 px), pista y notas (12 px)
+    5,71:1; subtitulo 14,17:1. Pasa 4,5:1.
+  - Reflow a 640 px: sin scroll horizontal (`scrollWidth` 640).
+  - Sin bajas en vida (Oregon): "No hay bajas tuyas en vida con estos
+    filtros." y la nota de la baja despues de caer, sin tablas. Mapa sin
+    duelos (Bank): la pagina entera dice "0 duelos con estos filtros" y no
+    muestra paneles (comportamiento previo de Duelos, igual para Estado al
+    morir). Base vacia: el aviso de importar.
+  - Lado Ataque cambia los numeros del panel (2/3/1 bajas por grupo).
+- **design-critique** (no frena): la tabla de grupos y la de estado exacto
+  tienen anchos de columna distintos (Bajas cae en otra x en cada una) y se
+  comparan peor; idea en `ALCANCE.md`.
+- **Mutaciones** (codigo roto a mano y restaurado con `git checkout`):
+  rivales vivos de menos en `estado_al_matar` -> 11 fallos y 2 errores en
+  `tests.test_estado_al_matar`; `sin_feed` sin restar `post_mortem` -> 2
+  fallos; `bajas_despues_de_caer` contando teamkills -> 1 fallo. Las
+  mutaciones del Revisor eran otras dos.
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hace falta
+  `## Verificar en el PC`. Umbral de 30 rondas: el corte comun de
+  `muestra.js`, no hay que calibrarlo.
+- **omc-verifier** (receta 3): sin herramienta para lanzar subagentes en
+  esta sesion; fallback con `git show origin/dev:.claude/agents/omc-verifier.md`
+  como lista, corrido por el lider con evidencia fresca:
+  `manage.py test tests.test_estado_al_matar tests.test_estado_al_morir`
+  -> `Ran 42 tests ... OK`; `npx vitest run src/estadoAlMatar.test.js` ->
+  `6 passed`; e2e 55 del log de `verificar.sh` en verde; filas de
+  `metricas.md` en las lineas 246 y 437. Criterios 1 a 5 VERIFIED; PASS,
+  1 gap de riesgo bajo (el `n` del winrate, arriba).
+
+Skills: no aplica.
+Skills del repo: accessibility-review (0 Critical, 0 Major; contraste
+14,17:1 y 5,71:1, teclado y reflow pasan), validate-data (2 valores
+recalculados a mano iguales a la API, total = Resumen; 1 Minor: el `n` del
+winrate son las decididas), design-critique (1 idea: anchos de columna).
+OMC: plan=— · revisión=— · verificación=PASS (fallback del lider, sin subagentes)
 
 ## Para el humano
 
