@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
-estado: en curso 2026-11-15
-candado: dev 2026-11-15T02:50Z
+estado: implementado
+candado: -
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
@@ -22,7 +22,7 @@ defensa es predecible y si arrancar ahi te cuesta.
 
 ## Criterios de aceptacion
 
-- [ ] Agregado nuevo: primera ronda de defensa = la de menor `Round.number`
+- [x] Agregado nuevo: primera ronda de defensa = la de menor `Round.number`
       con `my_side="Defense"` de la partida, leida de la partida entera (como
       `_primera_ronda`); si falta una ronda antes (hueco de numeracion desde
       la primera ronda de la partida) o no tiene sitio, la partida no entra.
@@ -30,14 +30,14 @@ defensa es predecible y si arrancar ahi te cuesta.
       ahi), `opens_decided`, `opens_winrate`, y `rest_rounds`,
       `rest_winrate` del mismo sitio en las demas rondas de defensa. Test con
       tres partidas y un hueco.
-- [ ] Una ronda sin ganador cuenta en las rondas y no en el winrate. Test.
-- [ ] Filtros globales de partida (mapa, tipo, modo, fechas, sesion) aplican;
+- [x] Una ronda sin ganador cuenta en las rondas y no en el winrate. Test.
+- [x] Filtros globales de partida (mapa, tipo, modo, fechas, sesion) aplican;
       lado y operador no (es siempre defensa y del equipo), como "Repetir el
       sitio tras perderlo". Test con filtro de mapa.
-- [ ] Se ve en el Coach, junto a "Repetir el sitio tras perderlo", con aviso
+- [x] Se ve en el Coach, junto a "Repetir el sitio tras perderlo", con aviso
       de muestra (se avisa, no se oculta) y una nota sin datos; e2e sobre
       `seed_demo` con los numeros de la API y consola limpia.
-- [ ] Fila nueva en `docs/metricas.md`.
+- [x] Fila nueva en `docs/metricas.md`.
 
 ## Fuera de alcance
 
@@ -157,6 +157,100 @@ Skills del repo: statistical-analysis (winrate sobre decididas, `n` a la vista, 
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
+
+(dev 20261115T0219Z-i32143169)
+
+Quedo el diseno completo:
+
+- `aggregates.defense_opener(**filters)` debajo de `site_after_loss`, con
+  `APERTURA_DEFENSA_MIN_PARTIDAS = 5`. Dos consultas fijas: el `Min("number")`
+  de `Round` por partida (acotado con una subconsulta a tus partidas
+  filtradas, no con una lista de ids: sin tope de parametros de SQLite) y tus
+  filas ordenadas por partida y numero. Un recorrido: la apertura es tu
+  primera fila de defensa si tu primera fila es la ronda mas baja, los
+  numeros siguen sin hueco ni lado vacio hasta ella y tiene sitio; el resto,
+  las demas rondas de defensa con sitio (tambien las de partidas sin
+  apertura). Devuelve `min_matches`, `matches`, `skipped` y `maps` (con
+  `opens_total` y `sites`: `opens`, `opens_decided`, `opens_won`,
+  `opens_winrate`, `opens_share`, `rest_rounds`, `rest_decided`, `rest_won`,
+  `rest_winrate`), mapas por aperturas y sitios por aperturas, resto y
+  nombre; `_etiquetar` para la version del mapa.
+- `GET /api/positioning/defense-opener/` (`views.defense_opener`, url
+  `defense-opener`) al lado de `site-after-loss`.
+- `frontend/src/aperturaDefensa.js`: `hayAperturas`, `filasAperturaDefensa`
+  (una fila por mapa y sitio, `orden` de la API, `poca` con
+  `opens < min_matches`), `textoWinrateApertura`, `textoAperturas` y
+  `textoSinApertura`.
+- `Coach.jsx`: `PanelAperturaDefensa` justo debajo de `PanelRepetirSitio`,
+  con el titulo y el hint del diseno; tabla Mapa, Sitio, Abre ("5 (50%)"),
+  Winrate abriendo (con "· pocas partidas"), Resto y Winrate resto; nota sin
+  datos; CSV `sitio-con-el-que-abres-la-defensa`.
+- e2e "el Coach muestra el sitio con el que abres la defensa" con los
+  numeros de `/api/positioning/defense-opener/` (formateados a mano, sin
+  importar el helper) y la suma de `opens_total` por mapa igual a `matches`.
+- `docs/metricas.md`: fila **El sitio con el que abres la defensa** debajo de
+  **Repetir el sitio tras perderlo** y su corte en `## Muestra minima`.
+
+Desvios menores del diseno:
+
+- `rest_won` tambien va en la salida (el diseno listaba `opens_won` y no su
+  par): sirve para recalcular el winrate del resto a mano.
+- Nota aparte con `skipped` ("N partidas con defensa no entran: falta una
+  ronda antes de su primera defensa, o les falta lado o sitio."), tambien en
+  el estado sin aperturas: sin ella el total de partidas no cierra.
+- "pocas partidas" en vez del "pocas rondas" de `textoWinrate`: el corte es
+  por partidas. Sin winrate (0 aperturas) la celda es raya y no avisa.
+- Un mapa con rondas de defensa y ninguna apertura sale igual, con
+  `opens_total` 0 y `opens_share` nulo (test).
+- Tests extra: `test_una_apertura_sin_sitio_no_entra_y_su_defensa_tampoco`,
+  `test_un_mapa_sin_aperturas_sale_con_su_resto_y_sin_porcentaje`,
+  `test_sin_partidas_devuelve_vacio`.
+
+Criterios -> tests (`backend/tests/test_apertura_defensa.py`, 13): (1)
+`test_tres_partidas_una_con_hueco_dan_dos_aperturas`,
+`test_la_apertura_es_la_primera_defensa_aunque_arranques_en_ataque`,
+`test_sin_tu_fila_de_la_primera_ronda_no_hay_apertura`,
+`test_una_ronda_sin_lado_antes_corta_la_apertura`,
+`test_el_resto_es_el_mismo_sitio_sin_las_aperturas`,
+`test_el_porcentaje_de_aperturas_es_sobre_las_del_mapa`; (2)
+`test_una_apertura_sin_ganador_cuenta_y_no_entra_al_winrate`; (3)
+`test_el_filtro_de_mapa_aplica_y_el_de_lado_no` (lado, operador y sitio de la
+barra no cambian nada), `test_api_defense_opener_responde_con_filtros`; (4)
+`aperturaDefensa.test.js` (4 tests) y el e2e del Coach; (5) fila en
+`metricas.md`. Ademas `test_consultas_constantes` (`assertNumQueries(2)` con
+2 y con 6 partidas).
+
+TDD: los 13 tests Django en rojo antes del agregado (12 errores por la
+funcion que faltaba, 1 fallo por la ruta en 404); el vitest en rojo antes de
+`aperturaDefensa.js` (suite sin modulo).
+
+Sobre `seed_demo` (base del e2e): 29 partidas con apertura, 0 afuera; Bank
+10 (B Lockers 5, 50 %; A Executive 5), Club House 10 (B Church 6, 60 %),
+Border 9 (B Armory 5, 55,6 %); winrate abriendo 0 % en todas las filas, como
+anticipaba el diseno.
+
+Revision ciega: no disponible (esta sesion no tiene herramienta para lanzar
+`omc-code-reviewer`). En su lugar, pasada propia con la lista de
+`revision.md` sobre `git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'`:
+sin hallazgos (identificadores y comentarios sin tildes, UI con tildes, sin
+`print` ni `console.log`, fila en `metricas.md`, sin dependencias ni POST).
+El Revisor hace la revision independiente.
+
+Verificacion manual sugerida: `seed_demo`, `/coach`: el panel debajo de
+"Repetir el sitio tras perderlo", una fila por mapa y sitio y Abre sumando
+100 % por mapa.
+
+Skills: no aplica (panel con precedente `PanelRepetirSitio`).
+Skills del repo: test-driven-development (rojo visto en Django y vitest),
+testing-strategy (regla y API en `TestCase`, helper en vitest, panel en e2e),
+statistical-analysis (winrate sobre decididas, `n` en Abre, porcentaje sobre
+las aperturas del mapa, sin veredicto contra el resto), ux-copy (textos del
+diseno con tildes; "pocas partidas" y la nota de las que no entran, sin
+afirmar la causa exacta de cada una), modern-web-guidance
+(`guides/accessibility/accessibility.md`, "Lists and tables": tabla de datos
+con `th` por la `DataTable` existente); sql-queries no hizo falta (patron
+vecino `site_after_loss`, con `assertNumQueries`).
+OMC: plan=— · revisión=no disponible (sin subagentes) · verificación=—
 
 ## Revision
 
