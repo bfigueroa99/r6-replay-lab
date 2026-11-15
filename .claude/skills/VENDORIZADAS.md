@@ -52,3 +52,10 @@ Dentro del texto, las skills de superpowers se nombran entre si con el prefijo d
 (`superpowers:test-driven-development`, `superpowers:verification-before-completion`,
 `superpowers:writing-skills`). En este repo se llaman sin el prefijo
 (`test-driven-development`, `systematic-debugging`, `verification-before-completion`), y `writing-skills` no esta copiada.
+
+## Lo que no se vendoriza
+
+Las skills de Sentry (plugin `sentry`, de https://github.com/getsentry/sentry-for-ai), aunque
+esten en la cuenta: la app no reporta errores ni uso a un tercero (no-goal de telemetria de
+`CLAUDE.md`) y su SDK seria una dependencia nueva. El motivo entero y la guardia que lo vigila, en
+`.claude/skills/equipo-dev/skills-del-repo.md`, "Las que no entran".

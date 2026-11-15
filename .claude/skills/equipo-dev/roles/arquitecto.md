@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) manda sobre que disenar: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (regla 9); por reloj, franja 2.
+Cuando el estado lo pide (regla 10); por reloj, franja 2.
 
 - **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
   igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
@@ -13,7 +13,9 @@ Cuando el estado lo pide (regla 9); por reloj, franja 2.
   `metrics.py`, `ui.jsx`, `logica.test.js` para ver como el repo ya resuelve
   lo parecido.
 - **Trabajo:** candado `arquitecto`, push. Filtros duros como si no conociera
-  al PO: si falla uno, `estado: descartado (<filtro>)`. Si pasa, `## Diseno`
+  al PO: si falla uno, `estado: descartado (<filtro>)` y, si la ficha viene
+  de un issue (`fuente:`), el comentario y la etiqueta que dice `issues.md`
+  (Cerrar). Si pasa, `## Diseno`
   y `archivos:`: archivos exactos y por que esos; tests nuevos con nombre en
   espanol; orden de implementacion; que puede romperse; verificacion manual;
   fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral

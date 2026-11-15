@@ -111,6 +111,18 @@ los dos archivos estan en `docs/backlog/` del playbook y se copian a
 - **Pedir algo**: un commit propio en la rama del item, o texto bajo
   `## Para el equipo` en `ESTADO.md` (editable desde la web). El equipo
   responde en la ficha y en el tablero en su proximo turno.
+- **Pedir algo por un issue** de GitHub: el turno siguiente lo lee un
+  product owner (va antes que el papel que el equipo se propone solo), lo
+  convierte en una ficha con `prioridad: 1` y `fuente:` con el issue, comenta
+  cual y le pone `loop:en-curso`; desde ahi pasa por diseno, dev, revision y
+  QA como cualquier ficha, y el issue se cierra cuando el cambio llega a
+  `dev`. El repo es publico: solo cuentan los issues y comentarios de
+  `OWNER`, `MEMBER` o `COLLABORATOR`, y lo que escribe el equipo empieza con
+  `<!-- loop -->`. Si un pedido choca con `CLAUDE.md` (overlay, scraping,
+  dependencias nuevas, datos que el `.rec` no trae) o necesita una decision
+  tuya, el equipo comenta y pone `loop:necesita-humano`: respondés y quitás
+  la etiqueta. `loop:ignorar` deja un issue fuera del equipo. El detalle,
+  en `.claude/skills/equipo-dev/issues.md`.
 - **Cambiar el prompt de la rutina**: editar
   `.claude/skills/equipo-dev/rutina.md` (llega por merge o por una sesion
   tuya); lo que edites a mano en claude.ai lo revierte el Release al
