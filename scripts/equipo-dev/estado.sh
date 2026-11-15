@@ -10,6 +10,8 @@
 #           una ficha cuya etapa siguiente ese contexto no puede firmar no cuenta como
 #           implementado ni revisado y suma a bloqueadas; ver independencia.sh)
 #       EQUIPO_INDEPENDENCIA=<ruta> ...   (independencia.sh a usar en vez del de la ref; pruebas)
+#       EQUIPO_ISSUES_JSON=<ruta> ...     (los issues de GitHub de ese archivo y no de gh; pruebas)
+#       EQUIPO_ISSUES_PY=<ruta> ...       (issues.py a usar en vez del de la ref; pruebas)
 #       EQUIPO_AHORA=<epoch> scripts/equipo-dev/estado.sh --rastros "<epochs>"
 #           (solo CADENCIA y TURNOS_SIN_RASTRO sobre esos commits; sin git; lo usa pruebas.sh)
 #       scripts/equipo-dev/estado.sh --espera "<texto>"
@@ -198,10 +200,18 @@ else
 fi
 # independencia.sh de la misma ref que gano la cadena (un playbook viejo no lo
 # tiene: entonces no se bloquea nada, como antes).
+temporales=()
+trap 'rm -f ${temporales[@]+"${temporales[@]}"}' EXIT
 indep=${EQUIPO_INDEPENDENCIA:-}
 if [ -z "$indep" ] && git cat-file -e "$ref:scripts/equipo-dev/independencia.sh" 2>/dev/null; then
-    indep=$(mktemp); trap 'rm -f "$indep"' EXIT
+    indep=$(mktemp); temporales+=("$indep")
     git show "$ref:scripts/equipo-dev/independencia.sh" > "$indep"
+fi
+# issues.py, de la misma ref: lee los issues de GitHub (ver la seccion == issues).
+issues_py=${EQUIPO_ISSUES_PY:-}
+if [ -z "$issues_py" ] && git cat-file -e "$ref:scripts/equipo-dev/issues.py" 2>/dev/null; then
+    issues_py=$(mktemp); temporales+=("$issues_py")
+    git show "$ref:scripts/equipo-dev/issues.py" > "$issues_py"
 fi
 contexto=${EQUIPO_CONTEXTO:-}
 
@@ -212,6 +222,11 @@ echo "== sin_merge (veto del humano al merge automatico)"
 sin_merge=no
 if git cat-file -e "$B:docs/backlog/SIN_MERGE" 2>/dev/null; then sin_merge=si; echo "SIN_MERGE"; else echo "no"; fi
 
+# Los issues de GitHub que una ficha cita en `fuente:` (forma fija:
+# bfigueroa99/r6-replay-lab#N). La ficha viva es el reclamo del equipo sobre el
+# issue: se juntan aca, de git, y van a issues.py como N:NN:estado.
+issues_de() { grep -oE 'r6-replay-lab#[0-9]+' | cut -d'#' -f2 | sort -un; }
+fichas_issue=""
 # Sin tipo: no cuenta como funcionalidad (Directiva de alcance del playbook).
 tipo_de() { local t; t=$(campo "$1" "$2" tipo); echo "${t:-sin tipo}"; }
 echo "== papel (rama backlog)"
@@ -223,6 +238,10 @@ if git rev-parse -q --verify "$B" >/dev/null 2>&1; then
     for f in $(git -c core.quotePath=false ls-tree -r --name-only "$B" docs/backlog/ | grep -E '/[0-9]+-'); do
         estado=$(campo "$B" "$f" estado); tipo=$(tipo_de "$B" "$f"); epica=$(campo "$B" "$f" epica)
         candado=$(campo "$B" "$f" candado); nota=""
+        # La copia de una ficha que ya esta en dev no la mantiene viva: la de dev manda.
+        nn=$(basename "$f" | cut -d- -f1)
+        case "$estado" in descartado*) cual=descartado ;; *) case "$en_dev" in *" $nn "*) cual="" ;; *) cual=curso ;; esac ;; esac
+        if [ -n "$cual" ]; then for i in $(campo "$B" "$f" fuente | issues_de); do fichas_issue="$fichas_issue $i:$nn:$cual"; done; fi
         # P8 tambien en el papel: un candado sin commits sobre la ficha en 3 h
         # es de una sesion muerta (el del arquitecto sobre la 102 quedo 6 dias).
         case "$estado" in
@@ -279,6 +298,10 @@ for r in $(git branch -r --list 'origin/claude/*' --no-merged origin/dev --forma
     if mergeada "$r"; then echo "$r | mergeada efectivamente: borrable"; borrables+=("${r#origin/}"); continue; fi
     estado=$(campo "$r" "$f" estado)
     edad=$(edad_h "$r")
+    nn=$(basename "$f" | cut -d- -f1)
+    for i in $(campo "$r" "$f" fuente | issues_de); do
+        fichas_issue="$fichas_issue $i:$nn:$([[ "$estado" == descartado* ]] && echo descartado || echo curso)"
+    done
     if [[ "$estado" == descartado* ]]; then echo "$r | $f | $estado | no cuenta: borrable"; borrables+=("${r#origin/}"); continue; fi
     total=$((total + 1))
     reciente=no
@@ -432,6 +455,30 @@ for e in ${esperan[@]+"${esperan[@]}"}; do
 done
 [ "$en_vacio" = si ] && echo "DESTRABA: el equipo gira en vacio: $vacio_48h de los $turnos_48h turnos de las ultimas 48 h no dejaron otro commit que ESTADO.md (ver FRENADAS, la cola y lo que espera)"
 
+echo "== issues (GitHub: solo cuenta como pedido el de un autor de confianza; .claude/skills/equipo-dev/issues.md)"
+# El dueno tambien pide por issues, y el repo es publico: quien es de confianza
+# y que toca con cada issue lo decide issues.py, no el turno. Las fichas en dev
+# que citan un issue salen de un grep sobre dev (las de backlog y las ramas de
+# trabajo se juntaron arriba). Sin gh, sin red o sin issues.py en la ref:
+# pedidos=0 y el turno sigue con su backlog; nunca aborta.
+pedidos=0
+while IFS= read -r l; do
+    nn=$(printf '%s' "$l" | sed -n 's#^[^:]*:docs/backlog/\([0-9][0-9]*\)-.*#\1#p')
+    [ -n "$nn" ] || continue
+    for i in $(printf '%s\n' "${l#*fuente:}" | issues_de); do fichas_issue="$fichas_issue $i:$nn:dev"; done
+done < <(git grep -E '^fuente:.*r6-replay-lab#[0-9]+' origin/dev -- 'docs/backlog/*.md' 2>/dev/null)
+if [ -z "$issues_py" ]; then
+    echo "ISSUES=no se pudieron leer (sin scripts/equipo-dev/issues.py en $ref): el turno sigue con su backlog"
+elif ! command -v python3 >/dev/null 2>&1; then
+    echo "ISSUES=no se pudieron leer (sin python3): el turno sigue con su backlog"
+else
+    salida_issues=$(python3 -I "$issues_py" ${EQUIPO_ISSUES_JSON:+--json-de "$EQUIPO_ISSUES_JSON"} \
+        --fichas "${fichas_issue# }" --en-dev "$en_dev" --ahora "$ahora" 2>&1)
+    printf '%s\n' "$salida_issues"
+    pedidos=$(printf '%s\n' "$salida_issues" | sed -n 's/^PEDIDOS=//p' | head -1)
+    [[ "$pedidos" =~ ^[0-9]+$ ]] || { pedidos=0; echo "ISSUES=issues.py no dijo PEDIDOS: se cuenta 0"; }
+fi
+
 echo "== cola"
 echo "COLA=$cola (tope $tope_cola)  TOTAL=$total (tope $tope_total)"
 
@@ -507,8 +554,8 @@ echo "ROTACION=saturadas (${tope_rotacion} o mas de las ultimas ${ventana_rotaci
 
 echo "== resumen"
 # Una linea con todo lo que turno.sh necesita para elegir el rol. Mismo orden
-# siempre: pruebas.sh cuenta los 21 pares.
-linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas"
+# siempre: pruebas.sh cuenta los 22 pares.
+linea_resumen="RESUMEN propuesto=$propuesto disenado=$disenado en_curso=$en_curso huerfanas=$huerfanas implementado=$implementado revisado=$revisado con_hallazgos=$con_hallazgos aprobado=$aprobado entregado=$entregado espera_humano=$espera_humano cola=$cola total=$total tope_cola=$tope_cola tope_total=$tope_total tope_propuesto=$tope_propuesto tope_disenado=$tope_disenado ideas_libres=$libres sin_merge=$sin_merge pausa=$pausa sin_rastro_48h=$sin_rastro_48h bloqueadas=$bloqueadas pedidos=$pedidos"
 echo "$linea_resumen"
 
 echo "== entorno"

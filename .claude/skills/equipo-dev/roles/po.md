@@ -4,9 +4,10 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) manda sobre que proponer: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
+Cuando el estado lo pide (reglas 6, 8 y 11); por reloj, franja 1.
 
-- **Entrada:** `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
+- **Entrada:** las lineas `pedido` de `== issues` (`estado.sh`), que van
+  primero; `ALCANCE.md` de `backlog` (si no existe, copiarlo de `$REF`
   en este turno) y la ultima entrada de `INVESTIGACION.md` (las ideas que
   trajo el Investigador, con su fuente, van primero a la cola de lectura);
   `origin/dev` fresco: `CLAUDE.md`, `README.md` contra lo
@@ -18,6 +19,11 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
   ideas y nada mas, `mercado/*`, `claude/loop-*` y los PRs abiertos que no
   son del equipo.
 - **Trabajo, en orden:**
+  0. **Pedidos de GitHub:** si `== issues` trae `pedido`, leer `issues.md`
+     (de `$REF`) y hacer su Triaje con cada uno, el primero de la lista
+     primero, antes que el resto del turno y sin cuota: no cuentan para el
+     tope de 6 `propuesto` ni para la mezcla de la Directiva. Lo que choca con
+     una regla dura no se escribe: se responde en el issue.
   1. **Reconciliar:** quitar de `backlog` las fichas que ya estan en
      `origin/dev` y poner `en curso` + `rama:` a las que ya viven en una
      rama de trabajo. Las `descartado` no se borran: son historia y reservan
@@ -63,8 +69,10 @@ Cuando el estado lo pide (reglas 7 y 10); por reloj, franja 1.
      (Electron, `.ps1`, instalador) llevan la nota "verificado solo en
      nube" en los criterios.
 - **Salida:** push a `claude/equipo-dev/backlog`, solo `docs/backlog/*.md`,
-  commits `Propone: NN titulo` y `Alcance: <que cambio>`. Nunca PR, nunca
-  rama de trabajo, nunca codigo.
+  commits `Propone: NN titulo` (con `Refs bfigueroa99/r6-replay-lab#N` si
+  viene de un issue) y `Alcance: <que cambio>`; con herramientas, el
+  comentario y las etiquetas de cada issue triado. Nunca PR, nunca rama de
+  trabajo, nunca codigo.
 - **Turno bien hecho:** cada ficha nueva la puede disenar un Arquitecto sin
   preguntar nada, el humano entiende en 30 segundos que gana, y `ALCANCE.md`
   tiene mas ideas libres que al empezar.

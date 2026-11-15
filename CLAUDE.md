@@ -44,6 +44,8 @@ andar, en `docs/backlog/README.md`). OpenCode lee este archivo y las skills de
 los agentes de oh-my-claudecode vendorizados en `.claude/agents/omc-*.md` y las
 recetas de `.claude/skills/omc/`; el plugin no se instala y sus modos
 persistentes (`autopilot`, `ralph`, `team`) no se usan: el turno ya es el loop.
+Tambien toma pedidos de los issues de GitHub, solo de `OWNER`, `MEMBER` o
+`COLLABORATOR` (el repo es publico): `.claude/skills/equipo-dev/issues.md`.
 
 Tambien hay skills de afuera vendorizadas en `.claude/skills/` (superpowers,
 engineering, design, data y modern-web-guidance), copiadas de la cuenta del
