@@ -1,6 +1,6 @@
 # 134. En que estado de vivos matas
 
-estado: aprobado
+estado: entregado
 candado: -
 rama: claude/equipo-dev/134-en-que-estado-de-vivos-matas
 tipo: funcionalidad
@@ -9,9 +9,78 @@ area: backend
 prioridad: 3
 fuente: ALCANCE.md K8; Fuera de alcance de la ficha 116 ("el reverso, tus bajas por estado (K8): otro tramo de la epica")
 archivos: backend/replays/analytics/metrics.py (estado_al_matar), backend/replays/analytics/aggregates.py (kill_state), backend/replays/views.py, backend/replays/urls.py, backend/tests/test_estado_al_matar.py (nuevo), frontend/src/estadoAlMatar.js (nuevo), frontend/src/estadoAlMatar.test.js (nuevo), frontend/src/components/EstadoAlMatar.jsx (nuevo), frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14, revisor 20261114T0040Z-c3LsMAo, dev 20261114T0104Z-cWK4yQD, revisor 20261114T0316Z-cwWsU9i, qa 20261115T0219Z-i32143169
+turnos: po 20261113T1954Z-cfZTvvE, arquitecto 20261113T2317Z-cBbsozQ, dev 20261114T0012Z-ccgaH14, revisor 20261114T0040Z-c3LsMAo, dev 20261114T0104Z-cWK4yQD, revisor 20261114T0316Z-cwWsU9i, qa 20261115T0219Z-i32143169, release 20261115T0219Z-i32143169
 
 ## PR
+
+Titulo: `[equipo-dev][backend] En qué estado de vivos matas, en Duelos`
+
+### Que cambia
+
+En Duelos, debajo de *Estado al morir*, el panel **Estado al matar**: tus
+bajas a rivales repartidas por cuántos quedaban vivos de cada lado justo
+antes de cada una (5v5, 5v4, 4v5...), agrupadas en con ventaja, en paridad y
+en desventaja, con el winrate de esas rondas. Dice si tus bajas abren
+ventajas o llegan cuando la ronda ya estaba decidida.
+
+### Por que esto y no otra cosa
+
+Ficha 134 (ALCANCE K8, épica impacto): el reverso de Estado al morir
+(ficha 116), con su mismo recorrido del feed (`metrics.estado_al_matar`) y
+endpoint aparte `GET /api/duels/kill-state/`. Las bajas que el feed te da
+después de tu caída (trampas, gadgets o un intercambio del mismo instante)
+no tienen estado tuyo y se cuentan aparte (`post_mortem`), en vez de pasar
+por "no se puede ubicar en el feed", que era falso (hallazgo de la primera
+revisión).
+
+### Como se probo
+
+- `check.sh` (con `verificar.sh`): VERDE 6c4fd3ef3, 1390 tests backend, 455 vitest, 121 e2e.
+- Tests nuevos: `test_estado_al_matar.py` (23: regla pura con 5v5 y 5v4,
+  teamkill que resta un vivo, teamkill tuyo, `PlayerLeave`, trade, autor
+  que ya cayó, sin actor; agregado con winrate sobre rondas distintas, ronda
+  sin ganador, solo teamkills, sin feed, después de caer, filtro de lado,
+  orden de estados, 3 consultas fijas, API); vitest `estadoAlMatar.test.js`
+  (6); e2e `Duelos muestra el estado de vivos al matar`.
+- QA: base sembrada desde `factories.py` con dos valores recalculados a
+  mano iguales a la API y el total igual a las bajas del Resumen (9 + 1 + 2
+  = 12), `curl` con filtros borde (todos 200), nick repetido, partida de un
+  jugador, Playwright (orden de paneles, teclado, `aria-sort`, contraste
+  14,17:1 y 5,71:1, reflow a 640 px, estado sin bajas, consola limpia),
+  3 mutaciones muertas, chunk inicial sin cambio.
+- OMC: plan=— · revisión=— · verificación=— (diseno)
+- OMC: plan=— · revisión=1 MEDIUM, 5 LOW (3 arreglados) · verificación=— (implementacion, con el arreglo de hallazgos)
+- OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (revision, sin subagentes)
+- OMC: plan=— · revisión=— · verificación=PASS (QA, fallback del lider, sin subagentes)
+- Skills del repo: statistical-analysis, testing-strategy (diseno); test-driven-development, testing-strategy, statistical-analysis, ux-copy (implementacion); ninguna (revision); accessibility-review, validate-data, design-critique (QA).
+
+### Riesgos y lo que no entra
+
+Sin migración ni `recompute`: se calcula al consultar sobre el feed, como
+Estado al morir (3 consultas fijas por request). Con `seed_demo` 65 de 99
+bajas caen en "después de tu caída", porque el seed ordena tu muerte antes
+que tus bajas (idea T7 de `ALCANCE.md`); con datos reales el feed va en
+orden de juego. Fuera: probabilidad de ganar por estado o impacto por baja
+(K1, K2), bajas de tus compañeros por estado, normalizar a 5v5.
+
+### Como probarlo en 2 minutos
+
+```
+cd backend; python manage.py seed_demo; python manage.py runserver
+```
+Abrir `/duelos`: el panel *Estado al matar* debajo de *Estado al morir*;
+con `seed_demo`, Con ventaja 19 bajas en 17 rondas (64,7 %), En paridad 15
+(60 %), y la nota "65 bajas llegaron al feed después de tu caída". Bajas
+por estado + las de las notas = Bajas del Resumen con los mismos filtros;
+"Solo ataque" cambia los números.
+
+### Para el humano
+
+Nada.
+
+### Candidatos descubiertos
+
+Ninguno (dos ideas de la QA en `ALCANCE.md`: el `n` del winrate y los anchos de columna).
 
 ## Que gana quien usa la app
 
@@ -49,372 +118,47 @@ reverso de Estado al morir (ficha 116), que ya esta en Duelos.
 
 ## Diseno
 
-(arquitecto 20261113T2317Z-cBbsozQ) Filtros duros: pasa. Usa solo `Kill`, `Death` y `PlayerLeave` del feed y el `team_index` de cada fila, que el `.rec` entrega; sin red, sin dependencias, endpoint GET. No es premisa falsa: Duelos tiene Estado al morir (116) y Ventaja numerica tirada (133), ninguno cuenta tus bajas por estado. Una sola forma obvia (el espejo de `death_state`): sin arena ni plan por consenso.
+(arquitecto 20261113T2317Z-cBbsozQ) Detalle completo en `git log`. Espejo
+de `death_state`: `metrics.estado_al_matar(eventos, team_of)` anota para el
+autor de cada `Kill` a un rival `(aliados vivos contandose, rivales vivos)`
+antes de descontar al muerto; teamkill y `PlayerLeave` restan su vivo y no
+son baja; sin agrupar por segundo. `aggregates.kill_state` suma bajas por
+fila y rondas y winrate sobre rondas distintas de la fila. Panel
+`EstadoAlMatar.jsx` en Duelos y fila en `metricas.md`.
 
-Implementar despues de que #133 se mergee: pisa `backend/replays/analytics/aggregates.py`, `metrics.py`, `views.py`, `urls.py`, `frontend/src/pages/Duelos.jsx`, `frontend/e2e/humo.spec.js` y `docs/metricas.md` de su rama, todos en la misma zona (paneles de Duelos, al lado de `death_state`).
-
-**Regla** (`metrics.estado_al_matar(eventos, team_of) -> dict[jugador, list[tuple[int, int]]]`, en `backend/replays/analytics/metrics.py`, justo debajo de `estado_al_morir` y con su mismo recorrido):
-- `vivos = set(team_of)`; por cada evento `Kill` (muerto = `target`), `Death` o `PlayerLeave` (muerto = `actor`), si el muerto no esta en `vivos` se salta.
-- Si es `Kill`, el `actor` esta en `team_of`, sigue en `vivos` y `team_of[actor] != team_of[target]`: se anota para el `actor` el par `(aliados_vivos_del_actor, rivales_vivos)` **antes** de descontar al muerto (contandose a si mismo). Un teamkill (mismo equipo), un `Kill` sin `actor` o con un `actor` que ya no esta vivo (murio o se fue antes; datos raros) no se anota, pero el muerto igual sale de `vivos`.
-- Despues, `vivos.discard(muerto)`. Un `PlayerLeave` resta un vivo y no es baja.
-- Sin agrupar por segundo de reloj: igual que `estado_al_morir`, cada baja ve el estado que dejo la anterior (un trade da 5v5 y 5v4 a cada uno). Se escribe en `metricas.md`.
-- Los pares de un mismo jugador van en el orden del feed; como los vivos solo bajan, un jugador nunca repite estado en la misma ronda.
-
-**Agregado** `aggregates.kill_state(**filters) -> dict`, debajo de `death_state` en `aggregates.py`, calcado de ella (docstring: se calcula al consultar como `death_state`, el algoritmo en `metrics` para que pasarlo a columna sea mecanico):
-- `mias = base_queryset(**filters).filter(kills__gt=0)`; `filas = mias.values("round_id", "player_id", "round__my_team_won")`. `kills` ya excluye teamkills (ficha 67), asi que una ronda solo con teamkills tuyos no entra.
-- Equipos y feeds con el mismo `Exists(mias.filter(round_id=OuterRef("round_id")))` que `death_state` (tope de parametros de SQLite), `kind__in=(Event.KILL, Event.DEATH, PLAYER_LEAVE)`, `order_by("round_id", "order")`. Total de consultas constante (3): test con `assertNumQueries`.
-- Por fila, `pares = estado_al_matar(feed, equipos).get(player_id, [])`; cada par suma una baja al estado exacto `f"{a}v{r}"` y al grupo `ahead` (a > r), `even` o `behind`.
-- Unidad de cada fila: `kills` (bajas) y `rounds`, `decided`, `won`, `winrate` sobre **rondas distintas** de esa fila. En un estado exacto coinciden (no se repite estado en una ronda); en un grupo, dos bajas tuyas con ventaja en la misma ronda son 2 `kills` y 1 ronda. Asi el winrate no pondera dos veces la misma ronda (statistical-analysis: el denominador es la ronda, que es lo que gana o pierde). Implementacion: un `set` de `round_id` por fila mientras se recorre, y `_sumar_caso` una vez por ronda nueva.
-- `sin_feed`: bajas de `RoundPlayer.kills` que el feed no ubica (`kills` de la fila menos `len(pares)`, si es positivo), como la nota de `death_state`.
-- Salida: `{"kills": n, "sin_feed": n, "states": [...], "groups": [...]}`, con `states` ordenado como `death_state` (`-allies`, `enemies`) y `groups` en `ESTADO_AL_MORIR_GRUPOS` (se reutiliza la constante). Cada fila de estado: `state`, `allies`, `enemies`, `group`, `kills`, `rounds`, `decided`, `won`, `winrate`.
-
-**API.** `GET /api/duels/kill-state/` en `urls.py` (nombre `kill-state`, al lado de `death-state`) y `views.kill_state` en `views.py` (`_ok(agg.kill_state(**_filters(request)))`).
-
-**Frontend.**
-- `frontend/src/estadoAlMatar.js` (nuevo): `filasDeGrupos(data)` reutilizando `ETIQUETAS_GRUPO` importado de `estadoAlMorir.js`, `filasDeEstados`, `hayBajas(data)` (`data?.kills > 0`), `notaSinFeed(n)` con texto de bajas ("1 baja no se puede ubicar en el feed y no entra." / "N bajas no se pueden ubicar en el feed y no entran."), `avisoPocaMuestra(filas)` sobre `rounds` con `filasConPocaMuestra`.
-- `frontend/src/components/EstadoAlMatar.jsx` (nuevo), calcado de `EstadoAlMorir.jsx`: panel "Estado al matar", tabla de grupos (Situación, Bajas, Rondas, Winrate de la ronda) y "Por estado exacto" (Estado, Bajas, Winrate de la ronda), `csvName` `estado-al-matar-grupos` y `estado-al-matar`, aviso de muestra ("alguna fila tiene menos de 30 rondas") y, sin bajas, "No hay bajas tuyas con evento en el feed con estos filtros.". Ayuda de Bajas: "Bajas a rivales; un teamkill no cuenta, pero resta su vivo."; ayuda de Rondas en grupos: "Una ronda con dos bajas en la misma situación cuenta una vez."
-- `frontend/src/pages/Duelos.jsx`: import y `<EstadoAlMatar filters={filters} />` justo debajo de `<EstadoAlMorir />`.
-
-**Tests** (testing-strategy: regla en `SimpleTestCase`, agregado y API en `TestCase`, textos en vitest, pagina en e2e).
-- `backend/tests/test_estado_al_matar.py` (nuevo), con las fabricas de `test_estado_al_morir.py`:
-  - `EstadoAlMatarPuroTests`: `test_tu_primera_baja_en_5v5_y_la_segunda_en_5v4`; `test_un_teamkill_no_es_baja_pero_resta_un_vivo` (mate0 mata a mate1 y despues vos a rival0 -> `[(4, 5)]`); `test_un_player_leave_resta_un_vivo` (rival0 se va, vos matas -> `[(5, 4)]`); `test_un_trade_ve_el_estado_que_dejo_la_baja_anterior`; `test_un_kill_de_quien_ya_no_esta_vivo_no_se_anota`; `test_sin_actor_no_es_baja_de_nadie`.
-  - `EstadoAlMatarAgregadoTests`: `test_cuenta_bajas_por_estado_y_winrate`; `test_dos_bajas_con_ventaja_en_la_misma_ronda_son_una_ronda_del_grupo` (2 kills, 1 ronda); `test_una_ronda_sin_ganador_cuenta_bajas_y_no_winrate`; `test_solo_teamkills_no_entra`; `test_baja_sin_evento_va_a_sin_feed`; `test_el_filtro_de_lado_aplica_sobre_tu_fila`; `test_el_orden_de_estados_va_de_ventaja_a_desventaja`; `test_consultas_constantes` (`assertNumQueries(3)` con 1 y con 5 rondas); `test_la_api_responde_con_los_filtros` (`/api/duels/kill-state/?side=Attack`, 200).
-- `frontend/src/estadoAlMatar.test.js` (nuevo): etiquetas y orden de grupos, `hayBajas` con `null`/0/n, `notaSinFeed` singular y plural, `avisoPocaMuestra` con 0, 29 y 30 rondas.
-- `frontend/e2e/humo.spec.js`: en el bloque de Duelos, panel "Estado al matar" con los numeros de `/api/duels/kill-state/` (total de bajas de la fila Con ventaja y su winrate, celda exacta de un estado) y consola limpia. Si `seed_demo` no da bajas con ventaja, afirmar la fila que si tenga.
-
-**Orden.** 1) regla y sus tests en rojo; 2) agregado y tests; 3) vista y url; 4) `estadoAlMatar.js` y vitest; 5) componente y Duelos; 6) e2e; 7) `metricas.md`.
-
-**`docs/metricas.md`**: fila **Estado al matar** en la tabla de Duelos, debajo de Estado al morir: "Panel de Duelos (`/api/duels/kill-state/`). Por cada baja tuya a un rival, los vivos de tu equipo (contandote) y los rivales justo antes de ese `Kill`. Un `PlayerLeave` y un teamkill anteriores ya restaron su vivo; un teamkill tuyo no es baja. Sin agrupar por segundo: en un trade cada baja ve el estado que dejo la anterior. *Con ventaja*, *en paridad*, *en desventaja* como en Estado al morir. Bajas por fila; rondas y winrate sobre rondas distintas de la fila (dos bajas tuyas con ventaja en la misma ronda son una ronda del grupo), sobre las que tienen ganador. Bajas que el feed no ubica se informan aparte. Sin normalizar a 5v5. Todos los filtros globales aplican. Muestra minima 30 rondas por fila: no se oculta, se avisa." Y en `## Muestra minima`: "Estado al matar | 30 rondas por fila: no se oculta, se avisa".
-
-**Que puede romperse.** El e2e de Duelos ya mide Estado al morir y Ventaja tirada: localizar el panel por su titulo exacto ("Estado al matar"), porque `hasText: 'Estado al m'` agarraria los dos. `ETIQUETAS_GRUPO` se importa, no se duplica. Sin migracion ni `recompute`.
-
-**Verificacion manual.** `seed_demo`, Duelos: el panel aparece debajo de Estado al morir; la suma de Bajas por estado exacto + "no se pueden ubicar" = bajas totales del jugador con los mismos filtros (Resumen); filtro de lado Ataque cambia los numeros.
-
-Umbral: el 30 es el corte comun de `muestra.js`; no hace falta calibrarlo aparte.
-
-Skills: no aplica (sin tabla nueva ni migracion; espejo de un panel existente).
-Skills del repo: statistical-analysis (winrate sobre rondas distintas, no por baja; muestra minima 30), testing-strategy (reparto Django, vitest, e2e), dataviz no aplica (tablas, sin grafico).
 OMC: plan=— · revisión=— · verificación=—
 
 ## Implementacion
 
-Quedo el diseno completo, sin desvios de alcance:
+(dev 20261114T0012Z-ccgaH14; arreglo de hallazgos dev 20261114T0104Z-cWK4yQD)
+El diseño completo, con `_equipos_y_feeds` compartido con `death_state`,
+columna Rondas en la tabla por estado y `post_mortem`
+(`metrics.bajas_despues_de_caer`) aparte de `sin_feed`. TDD con el rojo
+visto. Deuda anotada: el orden del feed de `seed_demo` (idea T7).
 
-- `metrics.estado_al_matar` debajo de `estado_al_morir`, con su mismo recorrido.
-- `aggregates.kill_state` debajo de `death_state`: bajas por fila, rondas y
-  winrate sobre rondas distintas de la fila (un `set` de grupos por ronda; en
-  el estado exacto no hace falta, no se repite), `sin_feed` = `kills` de la
-  fila menos los pares que ubica el feed. 3 consultas constantes.
-- `GET /api/duels/kill-state/` (`views.kill_state`, url `kill-state`).
-- `estadoAlMatar.js` (reutiliza `ETIQUETAS_GRUPO`), `EstadoAlMatar.jsx` y el
-  panel en Duelos debajo de Estado al morir.
-- `docs/metricas.md`: fila "Estado al matar" y fila en `## Muestra minima`.
-
-Desvios menores del diseno:
-
-- La carga de equipos y feed (dos consultas correlacionadas) se extrajo a
-  `_equipos_y_feeds(mias)`, que usan `death_state` y `kill_state`, en vez de
-  copiarla; los 19 tests de `test_estado_al_morir.py` siguen verdes y su
-  `assertNumQueries(3)` tambien.
-- La tabla "Por estado exacto" suma la columna Rondas (pedido de la revision
-  ciega: el aviso de muestra va sobre rondas y sin ella no se ve que fila lo
-  dispara).
-- Tests extra: `test_un_teamkill_tuyo_no_es_baja`,
-  `test_la_api_sin_bajas_devuelve_grupos_vacios`; el de grupos se llama
-  `test_ventaja_paridad_y_desventaja`.
-- e2e con los numeros de `/api/duels/kill-state/` y no con literales del seed.
-
-Criterios -> tests (`backend/tests/test_estado_al_matar.py`): (1)
-`test_tu_primera_baja_en_5v5_y_la_segunda_en_5v4`,
-`test_cuenta_bajas_por_estado_y_winrate`,
-`test_una_ronda_sin_ganador_cuenta_bajas_y_no_winrate`,
-`test_dos_bajas_con_ventaja_en_la_misma_ronda_son_una_ronda_del_grupo`; (2)
-`test_un_teamkill_no_es_baja_pero_resta_un_vivo`, `test_un_teamkill_tuyo_no_es_baja`,
-`test_solo_teamkills_no_entra`, `test_un_player_leave_resta_un_vivo`; (3)
-`test_ventaja_paridad_y_desventaja`, `test_el_orden_de_estados_va_de_ventaja_a_desventaja`,
-`test_un_trade_ve_el_estado_que_dejo_la_baja_anterior`; (4)
-`test_el_filtro_de_lado_aplica_sobre_tu_fila`, `test_la_api_responde_con_los_filtros`;
-(5) `estadoAlMatar.test.js` (5 tests), e2e `Duelos muestra el estado de vivos al
-matar`, fila en `metricas.md`. Ademas `test_un_kill_de_quien_ya_no_esta_vivo_no_se_anota`,
-`test_sin_actor_no_es_baja_de_nadie`, `test_baja_sin_evento_va_a_sin_feed`,
-`test_consultas_constantes`.
-
-TDD: los 18 tests Django en rojo antes de la regla (17 errores por la
-funcion que faltaba, 1 fallo por la ruta en 404); el vitest en rojo antes de
-`estadoAlMatar.js`.
-
-Revision ciega (omc-code-reviewer, `revision.md`): aprobar, 2 LOW. Arreglado:
-columna Rondas en la tabla por estado. Sin arreglar: se calcula al consultar
-(el precedente de `death_state` y `nemesis`, dicho en el docstring).
-
-Verificacion manual sugerida: `seed_demo`, `/duelos`: el panel debajo de
-Estado al morir; Bajas por estado exacto + "no se pueden ubicar" = bajas del
-Resumen con los mismos filtros; lado Ataque cambia los numeros.
-
-Skills: no aplica (sin dominio nuevo).
-Skills del repo: test-driven-development (rojo visto en Django y vitest),
-testing-strategy (regla en `SimpleTestCase`, agregado y API en `TestCase`,
-textos en vitest, pagina en e2e), statistical-analysis (winrate sobre rondas
-distintas, no por baja; muestra 30 sobre rondas), ux-copy (textos calcados de
-Estado al morir, con tildes); sql-queries no hizo falta (patron vecino, con
-`assertNumQueries`); modern-web-guidance no se consulto: el JSX copia el
-componente vecino `EstadoAlMorir.jsx`.
-OMC: plan=— · revisión=2 LOW (1 arreglado) · verificación=—
-
-## Revision 2026-11-14 sobre 6851732
-
-(revisor 20261114T0040Z-c3LsMAo)
-
-Veredicto: corregir -> `con hallazgos` (un MEDIUM confirmado en el numero
-nuevo; barato de arreglar y cambia lo que dice el panel).
-
-Base: rama con `origin/dev` (f34baba, con la 132) fusionado sin conflicto;
-`verificar.sh`: VERDE 6851732 (1375 tests backend, 448 vitest, 120 e2e).
-
-Revision a ciegas, dos ejes (omc-code-reviewer x2; diff de 661 lineas):
-- Estandares: aprobar con 1 MEDIUM y 2 LOW.
-- Intencion: aprobar; los 5 criterios cubiertos (tests de
-  `test_estado_al_matar.py`, e2e de Duelos, fila y corte en `metricas.md`);
-  nada fuera de alcance salvo el refactor `_equipos_y_feeds`, sin cambio de
-  comportamiento (`tests.test_estado_al_morir` verde).
-
-Confirmado por el lider:
-- [bug] MEDIUM `backend/replays/analytics/metrics.py:229` (y el texto de
-  `frontend/src/estadoAlMatar.js:34-35`)
-  Que pasa: una baja tuya a un rival que el feed atribuye despues de que
-  moriste (trampa o gadget de defensor) cuenta en `RoundPlayer.kills`
-  (`bajas_a_rivales` no mira si el autor vive, y `clutch_kills` la cuenta a
-  proposito) pero `estado_al_matar` la descarta por `actor in vivos` y cae en
-  `sin_feed`; el panel dice "1 baja no se puede ubicar en el feed", que es
-  falso: el evento esta.
-  Repro (test temporal sobre `EstadoAlMatarAgregadoTests._ronda`, borrado
-  despues): `self._ronda([("Kill", "rival0", ME), ("Kill", ME, "rival1")])`
-  -> `agg.kill_state()` = `kills 0, sin_feed 1, states []`.
-  Arreglo sugerido: contar esas bajas aparte (p. ej. `post_mortem`) con su
-  propio texto ("N bajas despues de morir (trampas o gadgets) no entran") y
-  decirlo en la fila de `docs/metricas.md`; o anotarlas con el estado de tu
-  equipo sin ti (0vX). Test a agregar: el repro de arriba afirmando el
-  contador que se elija y `sin_feed == 0`.
-- [test] LOW `backend/tests/test_estado_al_matar.py`: el unico test de
-  `sin_feed` fuerza `kills=2` a mano con un solo evento, un caso que el import
-  no produce; queda cubierto con el test del MEDIUM.
-- [estilo] LOW `backend/replays/analytics/aggregates.py:2606`: `death_state`
-  repite a mano la expresion de `_grupo_de` (2626); usar `_grupo_de` en los
-  dos.
-- No confirmado como bug (decision aceptable, baja confianza): `kill_state`
-  parte de `kills__gt=0` (2641), asi que una fila con `kills=0` y un `Kill`
-  en el feed no entra; el import deriva `kills` del feed, asi que no pasa con
-  datos reales.
-- Regla "metricas al importar": mismo precedente que `death_state`
-  (algoritmo en `metrics.py`, agregado al consultar), no se reporta.
-
-Ficha: criterios cubiertos; el diff no sale de `archivos:` mas alla de
-`views.py`/`urls.py` del endpoint; fila en `metricas.md`; identificadores sin
-tildes, UI con tildes; sin `print` ni `console.log`.
-
-Skills: no aplica.
-Skills del repo: ninguna (revision con el prompt de `revision.md`).
-OMC: plan=— · revisión=1 MEDIUM, 2 LOW (0 arreglados, confirmados) · verificación=—
-
-## Arreglo de hallazgos 2026-11-14
-
-(dev 20261114T0104Z-cWK4yQD)
-
-- MEDIUM (bajas tras tu caida contadas como `sin_feed`): nueva
-  `metrics.bajas_despues_de_caer` (mismo recorrido; `Kill` a rival de un autor
-  que ya cayo o se fue) y campo `post_mortem` en `kill_state`;
-  `sin_feed = kills - pares - post_mortem`. UI: `notaPostMortem` y las dos
-  notas juntas en `NotasAparte`. Texto: "llegó al feed después de tu caída
-  (trampa, gadget o intercambio del mismo instante)": la revision ciega de
-  este turno marco que un trade del mismo tick ordenado con tu muerte primero
-  cae aca, asi que el texto no afirma "trampa". Fila de `metricas.md` al dia.
-  Estado vacio: "No hay bajas tuyas en vida con estos filtros."
-- LOW test de `sin_feed`: cubierto por `test_una_baja_despues_de_caer_no_es_sin_feed`
-  y `test_bajas_en_vida_y_despues_de_caer_en_la_misma_ronda`; el viejo afirma
-  ademas `post_mortem == 0`.
-- LOW `_grupo_de`: `death_state` la usa; movida arriba de las dos.
-- Tests nuevos (rojo visto: 7 errores antes del codigo; vitest 1 fallo):
-  `test_una_baja_despues_de_caer_se_cuenta_aparte`,
-  `test_despues_de_caer_no_cuenta_teamkills_ni_bajas_en_vida`,
-  `test_despues_de_caer_cuenta_al_que_se_fue`, los dos agregados de arriba,
-  `post_mortem` en `test_la_api_sin_bajas_devuelve_grupos_vacios`, vitest de
-  `notaPostMortem`, e2e: la nota sale si y solo si `post_mortem > 0`.
-
-No arreglado (deuda, para ficha aparte): `seed_demo` crea tu muerte con
-`order=0` antes de tus bajas aunque sus relojes son anteriores, asi que en el
-demo 65 de 99 bajas caen en `post_mortem` (la revision ciega lo midio).
-Ordenar el feed por reloj se probo en este turno y rompe dos e2e que dependen
-del orden viejo (numeros de Estado al morir y el chip `entry` del timeline):
-excede esta ficha. Con datos reales el feed va en orden de juego.
-
-Revision ciega (omc-code-reviewer, `revision.md`): aprobar; 1 MEDIUM (trade
-del mismo tick, resuelto en texto, docstring y `metricas.md`), 5 LOW (docstring
-contradictorio y estado vacio arreglados; seed como deuda; victima sin fila en
-`sin_feed` y calculo al consultar: precedente de `death_state`, sin cambio).
-
-verificar.sh: VERDE bb90965ca (1380 tests backend, 449 vitest, 120 e2e), con
-`origin/dev` fusionado.
-
-Skills: no aplica.
-Skills del repo: test-driven-development (rojo visto en Django y vitest),
-ux-copy (textos con tildes, sin afirmar la causa que no se sabe).
 OMC: plan=— · revisión=1 MEDIUM, 5 LOW (3 arreglados) · verificación=—
 
-## Revision 2026-11-14 sobre 55b3d67
+## Revision
 
-(revisor 20261114T0316Z-cwWsU9i, segunda pasada)
+- 2026-11-14 sobre 6851732 (revisor 20261114T0040Z-c3LsMAo): corregir. MEDIUM
+  arreglado: bajas tras tu caída contadas como `sin_feed` -> `post_mortem`;
+  LOW arreglados: test de `sin_feed` y `_grupo_de` compartido.
+- 2026-11-14 sobre 55b3d67 (revisor 20261114T0316Z-cwWsU9i): aprobar, 1 LOW
+  sin arreglar (la nota dice "tu caída" y tambien cuenta un `PlayerLeave`
+  tuyo; `metricas.md` si lo dice).
 
-Veredicto: aprobar -> `revisado`. El MEDIUM de la primera pasada quedo
-resuelto (`post_mortem` aparte de `sin_feed`) y no aparecio nada CRITICAL,
-HIGH ni MEDIUM nuevo.
-
-Base: rama con `origin/dev` (7e7e8c6, con la 135) fusionado sin conflicto
-(`git merge-tree` 0); `verificar.sh`: VERDE 55b3d67ea en 202 s (1390 tests
-backend, 455 vitest, 121 e2e). `tests.test_estado_al_matar` 23 tests y con
-`tests.test_estado_al_morir` 42, en verde.
-
-Revision a ciegas: sin subagentes en esta sesion (no hay herramienta para
-lanzar `omc-code-reviewer`), asi que la hizo el lider sobre `git diff
-origin/dev...HEAD -- . ':(exclude)docs/backlog'` (11 archivos, +636 -12),
-con el prompt de `revision.md` como lista. No es a ciegas: la ficha se leyo
-antes.
-
-Sondas (test temporal sobre `kill_state`, borrado despues):
-- 3v3 (`Kill ME r0`, `Kill r1 m0`, `Kill ME r1`) -> estados `3v3` y `2v2`,
-  1 baja cada uno, `sin_feed` 0: sin normalizar a 5v5, como dice la ficha.
-- Victima sin fila en la ronda (`Kill ME fantasma`, `kills=1`) -> `kills 0,
-  sin_feed 1`: el precedente de `death_state`, ya aceptado en la primera
-  pasada.
-- `PlayerLeave` tuyo y despues un `Kill` tuyo -> `post_mortem 1`.
-- Acotacion: `pares + post_mortem` nunca supera `RoundPlayer.kills`, porque
-  los dos recorridos cuentan subconjuntos de lo que cuenta
-  `bajas_a_rivales` (autor en `team_of`, victima de otro equipo); el
-  `max(..., 0)` de `sin_feed` no esconde nada con datos del import.
-
-Mutaciones (codigo roto a mano y restaurado):
-- `estado_al_matar` con `actor in team_of` en vez de `actor in vivos`:
-  4 tests caen.
-- `kill_state` sumando la ronda al grupo en cada baja (sin el `set`
-  `grupos_de_la_ronda`): 1 test cae
-  (`test_dos_bajas_con_ventaja_en_la_misma_ronda_son_una_ronda_del_grupo`).
-
-Hallazgos:
-- [estilo] LOW `frontend/src/estadoAlMatar.js:42-43`
-  Que pasa: la nota dice "después de tu caída", pero `bajas_despues_de_caer`
-  tambien cuenta las bajas atribuidas despues de un `PlayerLeave` tuyo.
-  Como reproducirlo: la sonda de `PlayerLeave` de arriba da `post_mortem 1`
-  y la nota habla de caida; la fila de `docs/metricas.md` si dice "o de que
-  te fuiste".
-  Arreglo sugerido: "después de tu caída o de que te fuiste", o dejarlo
-  (con datos reales un `PlayerLeave` seguido de una baja tuya es raro). No
-  frena.
-
-Ficha: los 5 criterios cubiertos por los tests que lista
-`## Implementacion` (corridos en el verde de arriba); el diff no sale de
-`archivos:`; fila "Estado al matar" y su corte en `## Muestra minima` de
-`docs/metricas.md`; identificadores y comentarios sin tildes (los unicos no
-ASCII del diff son textos de UI y su e2e), UI con tildes; sin `print` ni
-`console.log`. La deuda de `seed_demo` (tu muerte con `order=0` antes de
-tus bajas) ya esta anotada en `ESTADO.md`; queda como idea T7 de
-`ALCANCE.md` para que no dependa del tablero.
-
-Skills: no aplica.
-Skills del repo: ninguna (revision con el prompt de `revision.md`).
-OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes: revision del lider)
+OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes)
 
 ## QA 2026-11-15 sobre 6c4fd3e
 
-(qa 20261115T0219Z-i32143169)
+(qa 20261115T0219Z-i32143169) `aprobado`; detalle con los comandos en
+`git log` (commit `Prueba: 134`). check.sh VERDE 6c4fd3ef3 (1390, 455,
+121); dos valores recalculados a mano iguales a la API y total igual al
+Resumen; bordes 200; Playwright sin Critical ni Major; 3 mutaciones muertas.
 
-Veredicto: `aprobado`. Los 5 criterios pasan con evidencia; sin hallazgos
-Critical ni Major.
-
-Base: rama con `origin/dev` (b2991fe) fusionado sin conflicto (46a20f0).
-
-- **check.sh**: `git show origin/dev:scripts/equipo-dev/verificar.sh | bash -s --`
-  -> `VERDE 6c4fd3ef3 en 256s: 1390 tests backend, 455 vitest, 121 e2e. Todo
-  en verde.` (incluye el e2e `Duelos muestra el estado de vivos al matar`).
-- **Base sembrada** (`factories.py`, script temporal en el scratchpad, base
-  propia): Club House con 8 rondas, tu equipo de 5 contra 5 rivales: R1 dos
-  bajas tuyas (ganada); R2 un rival mata a un compañero y lo devuelves
-  (perdida); R3 teamkill entre compañeros y tres bajas tuyas (ganada); R4 un
-  rival se va y dos bajas tuyas (sin ganador); R5 te matan y despues el feed
-  te da una baja (perdida); R6 una baja tuya sin evento (ganada); R7 un
-  teamkill tuyo y nada mas; R8 sin bajas. Border 2v2 con el nick `Dup` en
-  los dos equipos (perfiles distintos), Bank con solo tu fila y la victima
-  sin fila, Oregon con solo una baja despues de caer.
-  `runserver 127.0.0.1:8125 --noreload` sembrada y `:8126` vacia.
-- **validate-data** (fila "Estado al matar" de `metricas.md`), recalculado a
-  mano contra `curl /api/duels/kill-state/`:
-  - `?map=club-house`: a mano 8 bajas con estado, 1 despues de caer, 1 sin
-    feed; Con ventaja 4 bajas en 3 rondas, 2 decididas, 2 ganadas -> 100 %;
-    En desventaja 2 bajas, 2 rondas, 1 ganada -> 50 %; `4v5` 2 bajas, 50 %;
-    `5v3` 1 baja sin decididas -> `null` (la UI muestra "—"). La API da
-    exactamente eso.
-  - `?side=Attack`: a mano 6 bajas (5v5, 5v4, 4v5, 4v4, 4v3, 2v2), 1 despues
-    de caer, 0 sin feed; En desventaja 1 baja, 1 ronda ganada -> 100 %. La
-    API da lo mismo.
-  - El total cierra con el Resumen: sin filtros 9 con estado + 1 despues de
-    caer + 2 sin feed = 12 = `overall.kills` de `/api/overview/`; en ataque
-    6 + 1 + 0 = 7 = `attack.kills`.
-  - Division por cero: `winrate` nulo con 0 decididas. Sin promedio de
-    promedios: grupos y estados cuentan rondas distintas. Redondeo de
-    `_pct`, el de siempre. Tasa con su `n`: la columna Rondas va al lado;
-    el denominador real son las decididas (en `5v4`: 2 rondas, 1 decidida),
-    como en Estado al morir: Minor, idea en `ALCANCE.md`.
-- **Bordes** (`curl`, todos 200 sin 500): `?until=foo`, `?since=foo`,
-  `?page=-1`, `?side=`, `?map=`, `?days=99999999999`, `?days=abc` y
-  `?ranked_only=1` -> como sin filtro (9/1/2); `?operator=Nadie`,
-  `?side=Attack&map=bank`, `?session=abc`, `?session=-1`,
-  `?map=99999999999999999999` -> 0/0/0 con los tres grupos vacios; `POST`
-  -> 403; base vacia -> 200 con `kills 0` y grupos vacios. Nick repetido
-  (Border): `2v2` con 1 baja, sin mezclar a los dos `Dup`. Vecinos
-  `death-state?side=Attack` y `thrown-advantage` 200.
-- **Chunk inicial** (`vite build`): `index-*.js` 200.34 kB y `index-*.css`
-  14.57 kB, iguales a `origin/dev`; `Duelos-*.js` 14.67 -> 17.17 kB
-  (perezoso).
-- **accessibility-review** (Chromium con Playwright sobre la base sembrada,
-  consola sin errores ni warnings):
-  - Orden: Estado al morir, Estado al matar, Ventaja numerica tirada.
-    `h2` "Estado al matar", `h3` "Por estado exacto", tablas con
-    `columnheader` y orden por boton con `aria-sort`.
-  - Teclado: Tab recorre Descargar CSV, Bajas, Rondas, Winrate de las dos
-    tablas y sale a Ventaja tirada; foco visible (`outline`); Enter en Bajas
-    ordena y deja `aria-sort="descending"`.
-  - Contraste: celdas 14,17:1; cabeceras (11 px), pista y notas (12 px)
-    5,71:1; subtitulo 14,17:1. Pasa 4,5:1.
-  - Reflow a 640 px: sin scroll horizontal (`scrollWidth` 640).
-  - Sin bajas en vida (Oregon): "No hay bajas tuyas en vida con estos
-    filtros." y la nota de la baja despues de caer, sin tablas. Mapa sin
-    duelos (Bank): la pagina entera dice "0 duelos con estos filtros" y no
-    muestra paneles (comportamiento previo de Duelos, igual para Estado al
-    morir). Base vacia: el aviso de importar.
-  - Lado Ataque cambia los numeros del panel (2/3/1 bajas por grupo).
-- **design-critique** (no frena): la tabla de grupos y la de estado exacto
-  tienen anchos de columna distintos (Bajas cae en otra x en cada una) y se
-  comparan peor; idea en `ALCANCE.md`.
-- **Mutaciones** (codigo roto a mano y restaurado con `git checkout`):
-  rivales vivos de menos en `estado_al_matar` -> 11 fallos y 2 errores en
-  `tests.test_estado_al_matar`; `sin_feed` sin restar `post_mortem` -> 2
-  fallos; `bajas_despues_de_caer` contando teamkills -> 1 fallo. Las
-  mutaciones del Revisor eran otras dos.
-- Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hace falta
-  `## Verificar en el PC`. Umbral de 30 rondas: el corte comun de
-  `muestra.js`, no hay que calibrarlo.
-- **omc-verifier** (receta 3): sin herramienta para lanzar subagentes en
-  esta sesion; fallback con `git show origin/dev:.claude/agents/omc-verifier.md`
-  como lista, corrido por el lider con evidencia fresca:
-  `manage.py test tests.test_estado_al_matar tests.test_estado_al_morir`
-  -> `Ran 42 tests ... OK`; `npx vitest run src/estadoAlMatar.test.js` ->
-  `6 passed`; e2e 55 del log de `verificar.sh` en verde; filas de
-  `metricas.md` en las lineas 246 y 437. Criterios 1 a 5 VERIFIED; PASS,
-  1 gap de riesgo bajo (el `n` del winrate, arriba).
-
-Skills: no aplica.
-Skills del repo: accessibility-review (0 Critical, 0 Major; contraste
-14,17:1 y 5,71:1, teclado y reflow pasan), validate-data (2 valores
-recalculados a mano iguales a la API, total = Resumen; 1 Minor: el `n` del
-winrate son las decididas), design-critique (1 idea: anchos de columna).
+Skills del repo: accessibility-review (0 Critical, 0 Major), validate-data
+(2 valores a mano iguales; 1 Minor: el `n` del winrate son las decididas),
+design-critique (1 idea: anchos de columna).
 OMC: plan=— · revisión=— · verificación=PASS (fallback del lider, sin subagentes)
 
 ## Para el humano
