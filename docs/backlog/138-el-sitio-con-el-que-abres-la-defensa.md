@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
-estado: implementado
-candado: revisor 2026-11-18T12:32Z
+estado: revisado
+candado: -
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
@@ -258,7 +258,62 @@ con `th` por la `DataTable` existente); sql-queries no hizo falta (patron
 vecino `site_after_loss`, con `assertNumQueries`).
 OMC: plan=— · revisión=no disponible (sin subagentes) · verificación=—
 
-## Revision
+## Revision 2026-11-18 sobre 1f3455d
+
+(revisor 20261118T1211Z-cMNRUxv)
+
+Veredicto: aprobar -> `revisado`.
+
+Base: rama con `origin/dev` (2611d85, con la 137) fusionado sin conflicto
+(1f3455d); `verificar.sh`: `VERDE 1f3455da2 en 418s: 1417 tests backend,
+463 vitest, 123 e2e. Todo en verde.` (incluye `el Coach muestra el sitio con
+el que abres la defensa`).
+
+Revision a ciegas: sin herramienta para lanzar subagentes en esta sesion,
+asi que la hizo el lider con el prompt de `revision.md` como lista, sobre
+`git diff origin/dev...HEAD -- . ':(exclude)docs/backlog'` (9 archivos,
++487), antes de leer la ficha. Un tema (un agregado de lectura, su endpoint
+GET y su panel), sin vista POST, `.rec`, rutas de archivos ni dependencias:
+no suma eje de intencion ni de seguridad.
+
+Sondas (test temporal en el worktree, borrado despues; `git status` limpio):
+- Partida con cambio de lado y prorroga (0-5 ataque, 6-11 defensa en B, 12
+  defensa en A): 1 apertura en B (ronda 6, ganada, 100 %), resto de B 5
+  rondas al 40 % (8 y 10 ganadas), A solo en el resto (1 ronda): la
+  prorroga no abre.
+- `/api/positioning/defense-opener/` con `until=foo`, `page=-1`, `side=`,
+  `map=`, `side=%00`, `days=99999999999`, `match_type=Ranked`: 200 y la
+  apertura; `session=abc`, `since=2030-01-01`, `map=%E2%80%AE`: 200 y 0.
+
+Mutaciones (codigo roto a mano y restaurado, `tests.test_apertura_defensa`):
+- Sin mirar huecos de numeracion: 3 tests caen.
+- La primera ronda es tu primera fila y no la de la partida: cae
+  `test_sin_tu_fila_de_la_primera_ronda_no_hay_apertura`.
+- Las aperturas sumadas al winrate del resto: 3 tests caen.
+
+Hallazgos: ninguno.
+
+Sin hallazgos en: la apertura exige la ronda mas baja de `Round` (no de tus
+filas), numeros sin hueco y lado hasta ella y sitio en ella; el resto excluye
+las aperturas e incluye las defensas de partidas sin apertura; sin ganador
+cuenta y no entra al winrate (test); `opens_share` sobre las aperturas del
+mapa; filtros: los que quedan tras quitar `side`, `site` y `operator` son
+todos de partida (`base_queryset`), asi que no recortan rondas de una
+partida a medias; 2 consultas fijas (`assertNumQueries`, subconsulta y no
+lista de ids); agrupado por mapa con su version (`_MAPA`, `_etiquetar`, como
+los vecinos); fila en `metricas.md` y su corte en `## Muestra minima`;
+calculado al consultar como su vecino `site_after_loss` (precedente del
+mismo panel del Coach); identificadores y comentarios sin tildes, UI con
+tildes ("defendió", "cuántas", "demás"); sin `print` ni `console.log`; el
+diff no sale de `archivos:`.
+
+Ficha: criterios 1 a 5 cubiertos por los tests que lista
+`## Implementacion` (corridos en el verde de arriba), las sondas y las
+mutaciones. El corte de 5 partidas queda en `## Para el humano` (calibrar).
+
+Skills: no aplica.
+Skills del repo: ninguna (revision con el prompt de `revision.md`).
+OMC: plan=— · revisión=0 hallazgos · verificación=— (sin subagentes: revision del lider)
 
 ## QA
 
