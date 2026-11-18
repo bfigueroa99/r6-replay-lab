@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
-estado: revisado
-candado: qa 2026-11-18T12:12Z
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
@@ -289,7 +289,94 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=1 LOW (0 arreglados) · verificación=— (sin subagentes: revision del lider)
 
-## QA
+## QA 2026-11-18 sobre ede9b12
+
+(qa 20261118T1211Z-cMNRUxv)
+
+Veredicto: todos los criterios pasan -> `aprobado`.
+
+- **check.sh completo** (`verificar.sh`, `E2E_PORT=46010`):
+  `VERDE ede9b1244 en 273s: 1404 tests backend, 459 vitest, 122 e2e.
+  Todo en verde.`; en el log, `✓ 58 [chromium] › e2e/humo.spec.js:707:1 ›
+  Duelos muestra las muertes por headshot`.
+- **Base sembrada desde `factories.py`** (script en el scratchpad, no en el
+  repo): 5 partidas. A (Club House, 6 rondas: tus muertes con headshot
+  si/no/nulo, compañeros con si/no/nulo, un teamkill sobre ti y otro entre
+  compañeros, una baja sin autor, una ronda sin bajas); B (Oregon: baja de
+  rival sobre rival, victima `fantasma` sin fila); C (Bank: partida de un
+  jugador, solo tu fila); D (Kafe: **nick repetido**, otro profileID llamado
+  `mate0` como rival te mata con headshot, y el `mate0` compañero muere sin
+  headshot); E (Chalet: tu baja con dato y tu unica muerte con `headshot`
+  nulo). Mas una base vacia. `runserver` en 46020 (sembrada) y 46021 (vacia).
+- **API** (`curl /api/duels/?<q>`, celda `muertes/con dato/headshots pct`):
+  sin filtros, Tú A `4/3/2 66.7` D `3/2/2 100.0` T `7/5/4 80.0`, compañeros
+  A `5/4/2 50.0` D `1/1/1 100.0` T `6/5/3 60.0`; los mismos con `until=foo`,
+  `page=-1`, `side=`, `map=`, `min_duels=-1|foo`, `days=999999999999`,
+  `operator=Zofia`, `ranked_only=1`, `until=2026-09-01`. `side=Attack`:
+  Defensa `0/0/0 None` en los dos grupos; `side=Defense`: Ataque en cero.
+  `map=oregon`: Tú D `1/1/1`, compañeros A `1/1/1` (rival sobre rival y
+  victima sin fila no cuentan). `map=kafe`: Tú A `1/1/1`, compañeros A
+  `1/1/0 0.0` (el homonimo rival no se cuenta como compañero). `map=bank`
+  (un jugador): todo en cero. `map=chalet`: Tú `1/0/0 None`.
+  `since=2026-09-01T21:30`: solo D. `operator=Mute`, `session=abc|-1`,
+  `side=%00`, `map=%E2%80%AE`, `map=NoExiste`: ceros. Base vacia: las seis
+  celdas en `0/0/0 None`. Todo 200; `death-state`, `kill-state` y
+  `thrown-advantage` con `until=foo`: 200.
+- **validate-data** sobre la fila **Muertes por headshot** de `metricas.md`:
+  denominador = muertes con dato (Tú T: 7 muertes, 5 con dato), division por
+  cero = celda nula y raya, conteos sumados (total = ataque + defensa: 4+3,
+  3+2, 2+2), el `n` en cada celda, filtros sobre tu fila. Recalculo a mano en
+  SQL crudo sobre la sqlite sembrada, sin el ORM: **Tú total** 7 muertes, 5
+  con dato, 4 headshots, 80.0 (API: `7/5/4 80.0`); **Tus compañeros
+  ataque** 5, 4, 2, 50.0 (API: `5/4/2 50.0`). Redondeo: API a un decimal, UI
+  a entero (`66.7` -> `67% (3)`), el mismo de `pct` de `ui.jsx`. Sin
+  hallazgos.
+- **Pantalla** (Chromium 1243 con Playwright, base sembrada, `/duelos`):
+  panel entre Por rival y Rivales repetidos; filas `Tú | 67% (3) | 100% (2)
+  | 80% (5)` y `Tus compañeros | 50% (4) | 100% (1) | 60% (5)`; aviso de
+  muestra chica visible; `?side=Attack` deja Defensa en `—`;
+  `?map=chalet` muestra "No hay muertes con dato de headshot con estos
+  filtros." sin tabla; consola sin errores ni avisos. CSV por teclado (foco
+  en "Descargar CSV" + Enter): `muertes-por-headshot-2026-11-18.csv` con
+  `Tú;67% (3);100% (2);80% (5)`.
+- **accessibility-review** (WCAG 2.1 AA, lo que agrego la ficha): 0
+  Critical, 0 Major. Contraste medido: titulo y `hint` 5.71:1 (`#8b98a9`
+  sobre `#171e29`, 15 y 12 px), encabezados 5.71:1, celdas 14.17:1, nota
+  de muestra 5.71:1, boton 12.92:1. Nombre y rol: `h2` "Muertes por
+  headshot", tabla con `columnheader` QUIÉN/ATAQUE/DEFENSA/TOTAL en el arbol
+  de accesibilidad de Chromium (CDP), boton "Descargar CSV". Teclado: un
+  solo tope en el panel (el boton), foco visible (anillo `auto`), Enter
+  descarga. 320 px: la pagina no desborda (`scrollWidth` 320), la tabla
+  desplaza dentro de su caja (`overflow-x: auto`). Minor que ya estaba en
+  toda `DataTable`: la primera columna es `td`, no encabezado de fila
+  (1.3.1) -> idea T10 en `ALCANCE.md`.
+- **design-critique** (panel nuevo, no frena): se lee de un vistazo y el
+  `n` de cada celda esta a la vista; lo que falta es la comparacion que da
+  sentido al panel: hay que restar Tú menos compañeros de cabeza -> idea D21
+  en `ALCANCE.md` (diferencia en puntos por lado). A 320 px la columna Total
+  queda fuera de la vista hasta desplazar (patron de todas las tablas).
+- **Build**: chunk inicial `index-*.js` 200.34 kB en `origin/dev` (4d90645)
+  y en la rama (sin cambio); `Duelos-*.js` 17.17 -> 18.70 kB (chunk diferido).
+- **Mutaciones** (codigo roto a mano y restaurado; `git status` limpio
+  despues): `hs` contando toda muerte con dato -> 5 tests caen; victima de
+  cualquier equipo con fila en vez del tuyo -> cae
+  `test_un_rival_no_cuenta_como_companero`; el total sin las filas de
+  Defensa -> caen 2; vitest: `conPocaMuestra` avisando tambien con 0 -> cae
+  "avisa la muestra chica solo entre 1 y 29".
+- Sin migracion, `recompute`, parser, Electron ni `.ps1`: no hay
+  "Verificar en el PC". El corte de 30 es `MUESTRA_CORTE`, no un umbral
+  nuevo. El LOW del Revisor (fila de compañeros en raya en el e2e) queda
+  cubierto por la base sembrada de arriba.
+
+Repetir: `cd backend && SQLITE_PATH=/tmp/qa/db.sqlite3 DATA_DIR=/tmp/qa
+R6_ENV_FILE=/tmp/qa/.env ../.venv/bin/python manage.py migrate`, sembrar con
+`tests.factories` (`make_match`, `make_round`, `make_round_player`,
+`make_event(..., headshot=True|False|None)`), `runserver 127.0.0.1:46020
+--noreload` con el mismo entorno y `curl
+'http://127.0.0.1:46020/api/duels/?side=Attack' | python3 -m json.tool`.
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 1 Minor que ya estaba -> T10), design-critique (1 idea -> D21), validate-data (Tú total 7/5/4 80.0 y compañeros ataque 5/4/2 50.0 recalculados en SQL = API), verification-before-completion (cada linea con su salida de este turno).
+OMC: plan=— · revisión=— · verificación=no disponible (sin herramienta de subagentes: tabla de criterios del lider con la vara de omc-verifier, 5 de 5 VERIFIED)
 
 ## Para el humano
 
