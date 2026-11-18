@@ -1,7 +1,7 @@
 # 143. Quien cierra la ronda
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-18T12:58Z
 rama: -
 tipo: funcionalidad
 epica: impacto
