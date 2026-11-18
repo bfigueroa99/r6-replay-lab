@@ -1,7 +1,7 @@
 # 137. Cuantas de tus muertes son headshot
 
 estado: aprobado
-candado: -
+candado: release 2026-11-18T12:23Z
 rama: claude/equipo-dev/137-cuantas-de-tus-muertes-son-headshot
 tipo: funcionalidad
 epica: rivales
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md D8
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/tests/test_muertes_headshot.py, frontend/src/muertesHeadshot.js, frontend/src/muertesHeadshot.test.js, frontend/src/pages/Duelos.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0316Z-cwWsU9i, revisor 20261115T0219Z-i32143169, qa 20261118T1211Z-cMNRUxv
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-chQsvnq, dev 20261114T0316Z-cwWsU9i, revisor 20261115T0219Z-i32143169, qa 20261118T1211Z-cMNRUxv, release 20261118T1211Z-cMNRUxv
 
 ## PR
 
