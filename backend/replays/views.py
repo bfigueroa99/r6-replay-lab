@@ -458,6 +458,7 @@ def duels(request: HttpRequest) -> JsonResponse:
             ),
             "rivals": agg.repeated_rivals(min_matches=min_matches, **filters),
             "rival_stacks": agg.rival_stacks(min_matches=min_matches, **filters),
+            "headshot_deaths": agg.headshot_deaths(**filters),
         }
     )
 
