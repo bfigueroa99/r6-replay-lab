@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
 estado: implementado
-candado: -
+candado: revisor 2026-11-18T12:32Z
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S7
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_apertura_defensa.py, frontend/src/aperturaDefensa.js, frontend/src/aperturaDefensa.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-c3LsMAo, dev 20261115T0219Z-i32143169
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-c3LsMAo, dev 20261115T0219Z-i32143169, revisor 20261118T1211Z-cMNRUxv
 
 ## PR
 
