@@ -1,7 +1,7 @@
 # 147. Headshots que recibes por operador rival
 
 estado: propuesto
-candado: -
+candado: arquitecto 2026-11-18T12:55Z
 rama: -
 tipo: funcionalidad
 epica: rivales
