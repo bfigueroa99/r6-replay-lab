@@ -338,6 +338,13 @@ def trends(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def lost_alive(request: HttpRequest) -> JsonResponse:
+    # Endpoint propio y no dentro de `trends`: ese payload ya es grande y lo
+    # comparten varios paneles de Tendencias.
+    return _ok(agg.lost_alive(**_filters(request)))
+
+
+@require_GET
 def teammates(request: HttpRequest) -> JsonResponse:
     filters = _filters(request)
     return _ok(

@@ -2036,6 +2036,67 @@ def by_round_length(**filters) -> dict:
     }
 
 
+#: Cuantas rondas perdidas vivo lista "Las mas recientes" del panel.
+PERDIDAS_VIVO_RECIENTES = 10
+
+#: Lados de la tabla de rondas perdidas sobreviviendo, en el orden del panel.
+PERDIDAS_VIVO_LADOS = ("Attack", "Defense")
+
+
+def lost_alive(**filters) -> dict:
+    """Rondas que tu equipo perdio contigo vivo al final, sobre tus rondas perdidas.
+
+    El denominador son las perdidas y no todas las rondas: sobre el total,
+    perder mas bajaria el numero. Una ronda sin ganador no entra a ningun lado
+    de la division. Una fila sin lado cuenta en el total y en su mapa, como en
+    el resto de los cortes por lado. No juzga si quedarse vivo estuvo bien: el
+    `.rec` no trae plants exactos ni posiciones.
+    """
+    perdidas = base_queryset(**filters).filter(round__my_team_won=False)
+    vivo = Q(survived=True)
+    conteos = {"lost": Count("id"), "lost_alive": Count("id", filter=vivo)}
+    for lado in PERDIDAS_VIVO_LADOS:
+        conteos[f"lost_{lado}"] = Count("id", filter=Q(side=lado))
+        conteos[f"lost_alive_{lado}"] = Count("id", filter=Q(side=lado) & vivo)
+    totales = perdidas.aggregate(**conteos)
+
+    def celda(lost, alive) -> dict:
+        return {"lost": lost, "lost_alive": alive, "pct": _pct(alive, lost)}
+
+    mapas = _etiquetar([
+        {**{etiqueta: f[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+         **celda(f["lost"], f["lost_alive"])}
+        for f in perdidas.order_by().values(*_MAPA).annotate(
+            lost=Count("id"), lost_alive=Count("id", filter=vivo)
+        )
+    ])
+    mapas.sort(key=lambda m: (-m["lost"], m["map"]))
+
+    recientes = _etiquetar([
+        {
+            "match_id": f["round__match_id"],
+            "number": f["round__number"],
+            "side": f["side"],
+            "played_at": f["round__match__played_at"].isoformat(),
+            **{etiqueta: f[campo] for campo, etiqueta in zip(_MAPA, _MAPA_LABELS, strict=True)},
+        }
+        for f in perdidas.filter(vivo)
+        .order_by("-round__match__played_at", "-round__match_id", "-round__number")
+        .values("round__match_id", "round__number", "side", "round__match__played_at", *_MAPA)[
+            :PERDIDAS_VIVO_RECIENTES
+        ]
+    ])
+    return {
+        "total": celda(totales["lost"], totales["lost_alive"]),
+        "sides": [
+            {"side": lado, **celda(totales[f"lost_{lado}"], totales[f"lost_alive_{lado}"])}
+            for lado in PERDIDAS_VIVO_LADOS
+        ],
+        "maps": mapas,
+        "recent": recientes,
+    }
+
+
 def by_hour(**filters) -> list[dict]:
     """Ocho franjas fijas de 3 horas segun la hora de inicio de la partida.
 

@@ -126,6 +126,45 @@ test('Tendencias muestra la partida después de perder seguido', async ({ page }
   expect(errores).toEqual([])
 })
 
+test('Tendencias muestra las rondas perdidas sobreviviendo', async ({ page }) => {
+  const errores = vigilarConsola(page)
+  // numeros de la API y no a mano: si cambia seed_demo el test no se toca
+  const datos = await (await page.request.get('/api/rounds/lost-alive/')).json()
+  // seed_demo pierde rondas solo en defensa y en algunas quedas vivo: sin ellas
+  // el test miraria la nota y no las tablas
+  expect(datos.total.lost_alive).toBeGreaterThan(0)
+  await page.goto('/tendencias')
+
+  const panel = page
+    .locator('section.panel')
+    .filter({ has: page.getByRole('heading', { name: 'Rondas perdidas sobreviviendo', exact: true }) })
+  await expect(panel).toHaveCount(1)
+  // "14%" o raya, con el aviso de muestra chica: escrito aca y no importado
+  const texto = (c) =>
+    c.pct === null ? '—' : `${c.pct.toFixed(0)}%${c.lost > 0 && c.lost < 30 ? ' · pocas rondas' : ''}`
+  const lados = panel.locator('table').first().locator('tbody tr')
+  await expect(lados).toHaveCount(3)
+  for (const [i, fila] of [...datos.sides, datos.total].entries()) {
+    await expect(lados.nth(i).locator('td').nth(1)).toHaveText(String(fila.lost))
+    await expect(lados.nth(i).locator('td').nth(2)).toHaveText(String(fila.lost_alive))
+    await expect(lados.nth(i).locator('td').nth(3)).toHaveText(texto(fila))
+  }
+  await expect(lados.nth(2).locator('td').first()).toHaveText('Total')
+  // el total por mapa suma lo mismo que la fila Total
+  expect(datos.maps.reduce((suma, m) => suma + m.lost, 0)).toBe(datos.total.lost)
+  await expect(panel.locator('table').nth(1).locator('tbody tr')).toHaveCount(datos.maps.length)
+
+  const primera = datos.recent[0]
+  const enlace = panel.locator('table').last().getByRole('link').first()
+  await expect(enlace).toHaveText(`Ronda ${primera.number + 1}`)
+  await expect(enlace).toHaveAttribute('href', `/partidas/${primera.match_id}#ronda-${primera.number + 1}`)
+  await enlace.click()
+  await expect(page).toHaveURL(new RegExp(`/partidas/${primera.match_id}#ronda-${primera.number + 1}$`))
+  await expect(page.locator('#rondas .round-tab.active .n')).toHaveText(`R${primera.number + 1}`)
+
+  expect(errores).toEqual([])
+})
+
 test('Tendencias muestra mapas y operadores que cambian', async ({ page }) => {
   const errores = vigilarConsola(page)
   await page.goto('/tendencias')

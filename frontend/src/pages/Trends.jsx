@@ -21,6 +21,8 @@ import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
 import { PARTIDAS_CORTE, conPocasPartidas, filasProrrogaPorLado } from '../prorrogaPorLado.js'
 import { conPocasPartidas as pocasTrasDerrotas, filasTrasDerrotas } from '../trasDerrotas.js'
 import { vistaSinRondas } from '../tipoPartida.js'
+import { ETIQUETAS_LADO, enlaceDeRonda, filasPorLado, hayPerdidas } from '../perdidasVivo.js'
+import { fechaCorta } from '../ultimaVez.js'
 import { celdaPartidaDeSesion, textoResumenSesion } from '../resumenSesion.js'
 import { avisoPuesto, statsDePuesto } from '../puestoLobby.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
@@ -1074,6 +1076,8 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </Panel>
       ) : null}
 
+      <PerdidasVivo filters={filters} />
+
       {hayVariosModos(porModo) ? (
         <Panel
           title="Por modo"
@@ -1192,6 +1196,99 @@ function PuestoEnElLobby({ data }) {
         <p className="note">No hay partidas con otros jugadores con estos filtros.</p>
       )}
       {aviso ? <p className="note">{aviso}</p> : null}
+    </Panel>
+  )
+}
+
+const SIN_PERDIDAS = 'Con estos filtros no hay rondas perdidas.'
+
+// "12 (14%)" sin el n aparte: la columna de al lado ya dice sobre cuantas
+const columnaVivo = { key: 'lost_alive', label: 'Vivo', sortable: false }
+const columnaPctVivo = {
+  key: 'pct',
+  label: '% vivo',
+  sortable: false,
+  help: 'Perdidas contigo vivo al final / rondas perdidas.',
+}
+
+const COLUMNAS_PERDIDAS_LADO = [
+  { key: 'lado', label: 'Lado', left: true, sortable: false },
+  { key: 'lost', label: 'Perdidas', sortable: false },
+  columnaVivo,
+  {
+    ...columnaPctVivo,
+    render: (row) => (row.pct === null || row.pct === undefined ? '—' : `${pct(row.pct)}${row.poca ? ' · pocas rondas' : ''}`),
+  },
+]
+
+const COLUMNAS_PERDIDAS_MAPA = [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: 'lost', label: 'Perdidas' },
+  { key: 'lost_alive', label: 'Vivo' },
+  { key: 'pct', label: '% vivo', digits: 0, suffix: '%' },
+]
+
+const COLUMNAS_PERDIDAS_RECIENTES = [
+  { key: 'played_at', label: 'Partida', left: true, sortable: false, render: (row) => fechaCorta(row.played_at) },
+  { key: 'map', label: 'Mapa', left: true, sortable: false },
+  { key: 'side', label: 'Lado', left: true, sortable: false, render: (row) => ETIQUETAS_LADO[row.side] || row.side || '—' },
+  {
+    key: 'number',
+    label: 'Ronda',
+    sortable: false,
+    render: (row) => <Link to={enlaceDeRonda(row)}>Ronda {row.number + 1}</Link>,
+  },
+]
+
+function PerdidasVivo({ filters }) {
+  const { data, error, loading } = useApi('/rounds/lost-alive/', filters)
+  let cuerpo
+  if (error) cuerpo = <ErrorBox error={error} />
+  else if (loading && !data) cuerpo = <Loading />
+  else if (!hayPerdidas(data)) cuerpo = <p className="note">{SIN_PERDIDAS}</p>
+  else {
+    const lados = filasPorLado(data)
+    const mapas = (data.maps || []).map((fila, orden) => ({ ...fila, orden }))
+    const poca = (fila) => fila.lost > 0 && fila.lost < MUESTRA_CORTE
+    cuerpo = (
+      <>
+        <DataTable
+          columns={COLUMNAS_PERDIDAS_LADO}
+          rows={lados}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => row.clave}
+          csvName="perdidas-vivo"
+        />
+        {lados.some((fila) => fila.poca) || mapas.some(poca) ? (
+          <p className="note">
+            Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas perdidas; la diferencia puede ser varianza.
+          </p>
+        ) : null}
+        <h3 style={{ margin: '16px 0 8px' }}>Por mapa</h3>
+        <DataTable
+          columns={COLUMNAS_PERDIDAS_MAPA}
+          rows={mapas}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => `${row.slug}-${row.map_id}`}
+          csvName="perdidas-vivo-mapas"
+        />
+        <h3 style={{ margin: '16px 0 8px' }}>Las más recientes</h3>
+        <DataTable
+          columns={COLUMNAS_PERDIDAS_RECIENTES}
+          rows={(data.recent || []).map((fila, orden) => ({ ...fila, orden }))}
+          initialSort={{ key: 'orden', dir: 'asc' }}
+          rowKey={(row) => `${row.match_id}-${row.number}`}
+          empty="Ninguna ronda perdida contigo vivo con estos filtros."
+        />
+      </>
+    )
+  }
+  return (
+    <Panel
+      title="Rondas perdidas sobreviviendo"
+      hint="Rondas que tu equipo perdió contigo vivo al final, sobre todas tus rondas perdidas. En ataque suele ser tiempo agotado o defuse; en defensa, la bomba que entra. No dice si quedarte vivo estuvo bien o mal."
+    >
+      {cuerpo}
     </Panel>
   )
 }
