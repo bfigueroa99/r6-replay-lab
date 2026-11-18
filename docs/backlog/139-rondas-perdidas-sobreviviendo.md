@@ -1,8 +1,8 @@
 # 139. Rondas perdidas sobreviviendo
 
-estado: disenado
+estado: implementado
 candado: -
-rama: -
+rama: claude/equipo-dev/139-rondas-perdidas-sobreviviendo
 tipo: funcionalidad
 epica: revision-de-rondas
 area: fullstack

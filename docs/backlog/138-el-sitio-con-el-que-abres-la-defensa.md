@@ -1,6 +1,6 @@
 # 138. El sitio con el que abres la defensa
 
-estado: implementado
+estado: revisado
 candado: -
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
