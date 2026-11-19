@@ -275,7 +275,10 @@ npm run dev     # http://localhost:5173
 Cada tabla de la app tiene un boton **Descargar CSV** que baja exactamente lo que
 estas viendo: las mismas columnas, con los filtros y el orden aplicados. Ese
 archivo va con punto y coma y coma decimal, que es lo que Excel en espanol abre
-sin preguntar nada.
+sin preguntar nada. Un récord o un marcador va con raya (`3–1`), porque con
+guion Excel lo abre como fecha, y un texto que Excel ejecutaria como formula
+(un nick de un replay ajeno que empieza con `=`, `+`, `-` o `@`) va con un
+apostrofo adelante.
 
 Para scripts hay un endpoint aparte, con CSV estandar (coma, punto decimal):
 
@@ -357,7 +360,10 @@ parser esta hecho para degradar bien en vez de reventar:
   importado se reetiqueta solo. Por consola es lo mismo en dos pasos:
   `manage.py unknown_ids --write` deja las entradas en `data/overrides.json` y
   `manage.py retag` las aplica. En los dos casos no se vuelve a leer un solo
-  `.rec`: los IDs ya estan en la base.
+  `.rec`: los IDs ya estan en la base. Si editas `overrides.json` a mano, da
+  igual que el editor lo guarde con BOM; si queda sin poder leerse (una coma de
+  mas), la app lo ignora y, al guardar una etiqueta desde **Datos**, deja lo que
+  habia en `overrides.json.roto` en vez de pisarlo.
 - **Modo o tipo de partida nuevo**: tambien sale como `Unknown(<id>)` (en
   Partidas y en los filtros) y aparece en **Datos** con los tipos o modos con
   que se vio. Se etiqueta igual, y en `overrides.json` va bajo `gamemodes` o

@@ -28,7 +28,12 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "mcp__claude-code-remote__get_trigger",
-      "mcp__claude-code-remote__update_trigger"
+      "mcp__claude-code-remote__update_trigger",
+      "mcp__github__list_issues",
+      "mcp__github__issue_read",
+      "mcp__github__issue_write",
+      "mcp__github__add_issue_comment",
+      "Bash(python3 scripts/equipo-dev/issues.py:*)"
     ]
   }
 }

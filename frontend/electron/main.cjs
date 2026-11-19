@@ -16,6 +16,8 @@ const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
 
+const { esDeLaApp, esWebExterna } = require('./origen.cjs')
+
 const REPO = path.resolve(__dirname, '..', '..')
 const BACKEND = path.join(REPO, 'backend')
 
@@ -161,17 +163,21 @@ function createWindow() {
   win.once('ready-to-show', () => win.show())
   if (DEV) win.webContents.openDevTools({ mode: 'detach' })
 
-  // Todo lo que no sea la app se abre en el navegador del sistema, no adentro.
+  // Todo lo que no sea la app se abre en el navegador del sistema, no adentro,
+  // y solo si es http(s): cualquier otro esquema (file:, un protocolo
+  // registrado) lo ejecutaria el sistema. El origen se compara parseado, ver
+  // origen.cjs. will-redirect cubre el 30x que saca a la ventana de la app.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http')) shell.openExternal(url)
+    if (esWebExterna(url)) shell.openExternal(url)
     return { action: 'deny' }
   })
-  win.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith(APP_URL)) {
-      event.preventDefault()
-      shell.openExternal(url)
-    }
-  })
+  const soloLaApp = (event, url) => {
+    if (esDeLaApp(url, APP_URL)) return
+    event.preventDefault()
+    if (esWebExterna(url)) shell.openExternal(url)
+  }
+  win.webContents.on('will-navigate', soloLaApp)
+  win.webContents.on('will-redirect', soloLaApp)
 
   win.on('closed', () => {
     win = null
@@ -222,7 +228,7 @@ async function abrirCarpetaDeReplays() {
 }
 
 /** Solo la pagina de la app puede pedir esto, no un sitio externo que se colara. */
-const deLaApp = (event) => (event.senderFrame?.url || '').startsWith(APP_URL)
+const deLaApp = (event) => esDeLaApp(event.senderFrame?.url, APP_URL)
 
 ipcMain.handle('r6:elegir-carpeta', async (event, desde) => {
   if (!deLaApp(event)) return null

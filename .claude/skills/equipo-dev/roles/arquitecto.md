@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) manda sobre que disenar: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (reglas 4 y 9); por reloj, franja 2.
+Cuando el estado lo pide (reglas 4 y 10); por reloj, franja 2.
 
 - **Entrada:** fichas `propuesto` en `backlog`, mayor prioridad primero; a
   igual prioridad, el tramo de una epica en curso y despues `funcionalidad`
@@ -13,20 +13,32 @@ Cuando el estado lo pide (reglas 4 y 9); por reloj, franja 2.
   `metrics.py`, `ui.jsx`, `logica.test.js` para ver como el repo ya resuelve
   lo parecido.
 - **Trabajo:** candado `arquitecto`, push. Filtros duros como si no conociera
-  al PO: si falla uno, `estado: descartado (<filtro>)`. Si pasa, `## Diseno`
+  al PO: si falla uno, `estado: descartado (<filtro>)` y, si la ficha viene
+  de un issue (`fuente:`), el comentario y la etiqueta que dice `issues.md`
+  (Cerrar). Si pasa, `## Diseno`
   y `archivos:`: archivos exactos y por que esos; tests nuevos con nombre en
   espanol; orden de implementacion; que puede romperse; verificacion manual;
   fila de `docs/metricas.md` si hay numero nuevo y en que tabla; si un umbral
-  nuevo necesita calibrarse con la base real, decirlo. Si `archivos:` pisa
+  nuevo necesita calibrarse con la base real, decirlo. Un numero o un umbral
+  nuevo se define con la skill `statistical-analysis` (denominador y `n`
+  minimo, ponderado y no promedio de promedios, cuando una diferencia es
+  ruido), y eso va a su fila de `metricas.md`; un grafico nuevo o cambiado,
+  con la skill `dataviz` (forma, ejes, color), y el diseno la cita para que
+  el Dev valide la paleta con ella; con `tipo: tests` o una pagina, flujo o
+  endpoint nuevo, la skill `testing-strategy` reparte los tests entre
+  Django, vitest y `frontend/e2e/`. `## Diseno` cierra con su linea
+  `Skills del repo:`. Si `archivos:` pisa
   los de una rama abierta, o agrega migracion mientras otra rama abierta ya
-  agrega una: `Implementar despues de que #NN se mergee` (prioriza, no
-  bloquea). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
+  agrega una: `Implementar despues de que #NN se mergee`, con esas palabras
+  y el `#NN` (no bloquea el diseno; `estado.sh` la lee y no le da la ficha a
+  un Dev hasta que NN este en dev: `FRENADAS`). Si no cabe en un turno de Dev (~500 lineas, unas 2 horas),
   partir en tramos de la misma epica: el diseno cubre el primer tramo que
   ya deja algo visible y el resto queda como fichas `propuesto` con
   `epica:` y "Implementar despues de #NN". Grande no es motivo de
   descarte; solo lo son los filtros duros. Si la ficha entra en un dominio
-  que el repo todavia no resuelve (un grafico o una tabla nuevos, una
-  migracion delicada, un flujo e2e nuevo), antes de disenar se busca una
+  que ni el repo ni sus skills resuelven (una tabla nueva, una migracion
+  delicada, un flujo e2e nuevo; un grafico ya lo cubre `dataviz`), antes de
+  disenar se busca una
   skill de afuera que lo cubra (`.claude/skills/equipo-dev/skills.md`,
   leerlo de `$REF`): una busqueda por turno, se consulta sin instalarla y
   `## Diseno` lleva su linea `Skills:` (tambien si no aplica). Si una ficha

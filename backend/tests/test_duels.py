@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from django.test import TestCase
 
 from replays.analytics import aggregates as agg
 from replays.analytics.coach import build_insights
-from replays.models import Player, RoundPlayer
+from replays.models import Match, Player, RoundPlayer
 
 from .factories import ME, make_event, make_match, make_round, make_round_player
 
@@ -280,9 +282,12 @@ class RondasPorOperadorTests(TestCase):
 class RivalesRepetidosTests(TestCase):
     """Record de partidas contra cada persona que te toco en el equipo contrario."""
 
-    def _partida(self, index, *, rival="rival", rival_team=1, ganada=True, mapa="Club House"):
+    def _partida(
+        self, index, *, rival="rival", rival_team=1, ganada=True, mapa="Club House", played_at=None
+    ):
         match = make_match(
             index=index,
+            played_at=played_at,
             map_name=mapa,
             my_score=4 if ganada else 2,
             opponent_score=2 if ganada else 4,
@@ -326,6 +331,36 @@ class RivalesRepetidosTests(TestCase):
         self.assertEqual(fila["wins"] + fila["losses"], 1)
         self.assertEqual(fila["winrate"], 100.0)
 
+    def test_la_ultima_vez_es_la_partida_mas_reciente(self):
+        self._partida(0)
+        reciente = self._partida(5)
+        self._partida(2)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["last_played"], reciente.played_at.isoformat())
+
+    def test_la_ultima_vez_respeta_el_filtro_de_fechas(self):
+        self._partida(0)
+        anterior = self._partida(2)
+        afuera = self._partida(5)
+
+        fila = agg.repeated_rivals(until=anterior.played_at)[0]
+        self.assertLess(anterior.played_at, afuera.played_at)
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(fila["last_played"], anterior.played_at.isoformat())
+
+    def test_la_ultima_vez_de_cada_rival_sale_de_sus_propias_partidas(self):
+        # la consulta de fechas junta las partidas de todos los rivales: la
+        # fila de uno no puede tomar la fecha de una partida en la que no estuvo
+        self._partida(0, rival="viejo")
+        suya = self._partida(1, rival="viejo")
+        self._partida(2, rival="nuevo")
+        ajena = self._partida(5, rival="nuevo")
+
+        filas = {f["username"]: f for f in agg.repeated_rivals()}
+        self.assertEqual(filas["viejo"]["last_played"], suya.played_at.isoformat())
+        self.assertEqual(filas["nuevo"]["last_played"], ajena.played_at.isoformat())
+
     def test_un_cambio_de_nick_no_parte_la_fila_de_rivales(self):
         self._partida(0)
         self._partida(1)
@@ -367,6 +402,101 @@ class RivalesRepetidosTests(TestCase):
                 self.assertIn("rivals", respuesta.json())
 
 
+    # make_match separa las partidas 1 h por index, dentro del corte de sesion
+    # (120 min): para noches distintas hace falta la fecha a mano.
+    NOCHE = datetime(2026, 9, 1, 20, 0)
+
+    def test_un_rival_dos_veces_en_la_misma_noche_suma_una_revancha(self):
+        self._partida(0)
+        self._partida(1)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["same_session"], 1)
+
+    def test_un_rival_en_noches_distintas_no_suma_revanchas(self):
+        self._partida(0, played_at=self.NOCHE)
+        self._partida(1, played_at=self.NOCHE + timedelta(days=1))
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (0, 0, 0),
+        )
+
+    def test_el_record_de_revanchas_es_el_de_las_partidas_despues_de_la_primera(self):
+        self._partida(0, ganada=False)
+        self._partida(1, ganada=True)
+        self._partida(2, ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (2, 1, 1),
+        )
+
+    def test_la_primera_de_la_noche_es_la_mas_temprana_aunque_se_importe_despues(self):
+        # el orden de creacion no manda: la perdida es la primera de la noche
+        self._partida(1, ganada=True)
+        self._partida(0, ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual((fila["same_session_wins"], fila["same_session_losses"]), (1, 0))
+
+    def test_a_igual_hora_la_primera_de_la_noche_es_la_de_menor_id(self):
+        self._partida(0, ganada=False, played_at=self.NOCHE)
+        self._partida(1, ganada=True, played_at=self.NOCHE)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 1, 0),
+        )
+
+    def test_una_revancha_sin_resultado_no_entra_al_record(self):
+        self._partida(0)
+        segunda = self._partida(1)
+        Match.objects.filter(pk=segunda.pk).update(won=None)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 0, 0),
+        )
+
+    def test_cada_noche_tiene_su_primera_partida(self):
+        self._partida(0, played_at=self.NOCHE)
+        self._partida(1, played_at=self.NOCHE + timedelta(hours=1))
+        self._partida(2, played_at=self.NOCHE + timedelta(days=1))
+        self._partida(3, played_at=self.NOCHE + timedelta(days=1, hours=1), ganada=False)
+
+        fila = agg.repeated_rivals()[0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (2, 1, 1),
+        )
+
+    def test_el_filtro_de_mapa_deja_sin_revancha_a_la_noche_partida(self):
+        self._partida(0, mapa="Club House", played_at=self.NOCHE)
+        self._partida(1, mapa="Border", played_at=self.NOCHE + timedelta(hours=1))
+        self._partida(2, mapa="Border", played_at=self.NOCHE + timedelta(days=1))
+
+        self.assertEqual(agg.repeated_rivals()[0]["same_session"], 1)
+        fila = agg.repeated_rivals(map="border")[0]
+        self.assertEqual(fila["matches"], 2)
+        self.assertEqual(fila["same_session"], 0)
+
+    def test_el_endpoint_de_duelos_trae_las_revanchas(self):
+        self._partida(0)
+        self._partida(1, ganada=False)
+
+        fila = self.client.get("/api/duels/").json()["rivals"][0]
+        self.assertEqual(
+            (fila["same_session"], fila["same_session_wins"], fila["same_session_losses"]),
+            (1, 0, 1),
+        )
+
+
 class RondasSinDuelosTests(TestCase):
     """Ficha 86: Duelos necesita las rondas para no decir "0 rondas" cuando las hay."""
 
@@ -384,3 +514,123 @@ class RondasSinDuelosTests(TestCase):
         self.assertEqual(data["rounds"], 1)
         self.assertEqual(data["totals"]["duels"], 0)
         self.assertEqual(self.client.get("/api/duels/").json()["rounds"], 2)
+
+
+class OperadoresQueTeAbrenTests(TestCase):
+    """La primera baja de la ronda, por operador rival y por tu lado."""
+
+    def setUp(self):
+        self.match = make_match(index=0)
+
+    def _ronda(self, numero, operador_rival="Ash", side="Attack", rival="rival"):
+        rnd = make_round(self.match, numero, side=side)
+        make_round_player(rnd, side=side)
+        lado_rival = "Defense" if side == "Attack" else "Attack"
+        make_round_player(
+            rnd, username=rival, is_me=False, team_index=1, side=lado_rival, operator=operador_rival
+        )
+        return rnd
+
+    def _por_operador(self, filas):
+        return {(f["operator"], f["side"]): f for f in filas}
+
+    def test_ash_te_abre_en_dos_y_tu_le_abres_en_una(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+        make_event(self._ronda(1), 0, "rival", ME)
+        make_event(self._ronda(2), 0, ME, "rival")
+
+        filas = agg.openings_by_operator(min_openings=1)
+        self.assertEqual(len(filas), 1)
+        fila = filas[0]
+        self.assertEqual((fila["operator"], fila["side"]), ("Ash", "Attack"))
+        self.assertEqual(fila["opened_you"], 2)
+        self.assertEqual(fila["you_opened"], 1)
+        self.assertEqual(fila["openings"], 3)
+        self.assertEqual(fila["balance"], -1)
+        self.assertEqual(fila["share"], 100.0)
+        self.assertEqual(fila["winrate"], 33.3)
+
+    def test_solo_cuenta_la_primera_baja_de_la_ronda(self):
+        rnd = self._ronda(0)
+        make_round_player(rnd, username="otro", is_me=False, team_index=1, side="Defense", operator="Mira")
+        make_event(rnd, 0, ME, "otro")  # la apertura es contra Mira
+        make_event(rnd, 1, "rival", ME)  # Ash me mata despues
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertNotIn(("Ash", "Attack"), filas)
+        self.assertEqual(filas[("Mira", "Attack")]["you_opened"], 1)
+
+    def test_teamkill_que_abre_no_suma_a_ningun_operador(self):
+        rnd = make_round(self.match, 0)
+        make_round_player(rnd)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, operator="Ash")
+        make_event(rnd, 0, "amigo", ME)
+
+        self.assertEqual(agg.openings_by_operator(min_openings=1), [])
+
+    def test_muerte_sin_autor_que_abre_no_suma(self):
+        rnd = self._ronda(0)
+        make_event(rnd, 0, "", ME, kind="Death")
+        make_event(rnd, 1, "rival", ME)
+
+        self.assertEqual(agg.openings_by_operator(min_openings=1), [])
+
+    def test_un_teamkill_de_apertura_no_pesa_en_el_share(self):
+        # El % es sobre tus muertes de apertura contra rivales: un teamkill que
+        # abre otra ronda del mismo lado no lo baja de 100
+        make_event(self._ronda(0), 0, "rival", ME)
+        rnd = self._ronda(1)
+        make_round_player(rnd, username="amigo", is_me=False, team_index=0, side="Attack", operator="Thermite")
+        make_event(rnd, 0, "amigo", ME)
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertEqual(list(filas), [("Ash", "Attack")])
+        self.assertEqual(filas[("Ash", "Attack")]["share"], 100.0)
+
+    def test_operador_vacio_o_desconocido_no_tiene_fila_pero_pesa_en_el_share(self):
+        make_event(self._ronda(0, "Ash"), 0, "rival", ME)
+        make_event(self._ronda(1, ""), 0, "rival", ME)
+        make_event(self._ronda(2, "Unknown(123)"), 0, "rival", ME)
+
+        filas = agg.openings_by_operator(min_openings=1)
+        self.assertEqual([f["operator"] for f in filas], ["Ash"])
+        self.assertEqual(filas[0]["share"], 33.3)
+
+    def test_separa_por_tu_lado(self):
+        make_event(self._ronda(0, "Thorn", side="Attack"), 0, "rival", ME)
+        make_event(self._ronda(1, "Thorn", side="Defense"), 0, "rival", ME)
+
+        filas = self._por_operador(agg.openings_by_operator(min_openings=1))
+        self.assertEqual(set(filas), {("Thorn", "Attack"), ("Thorn", "Defense")})
+        self.assertEqual(filas[("Thorn", "Attack")]["opened_you"], 1)
+        self.assertEqual(filas[("Thorn", "Defense")]["opened_you"], 1)
+
+    def test_el_filtro_de_lado_deja_solo_ese(self):
+        make_event(self._ronda(0, "Thorn", side="Attack"), 0, "rival", ME)
+        make_event(self._ronda(1, "Thorn", side="Defense"), 0, "rival", ME)
+
+        filas = agg.openings_by_operator(min_openings=1, side="Defense")
+        self.assertEqual([(f["operator"], f["side"]) for f in filas], [("Thorn", "Defense")])
+
+    def test_el_filtro_de_mapa_aplica(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+        self.assertEqual(len(agg.openings_by_operator(min_openings=1, map="club-house")), 1)
+        self.assertEqual(agg.openings_by_operator(min_openings=1, map="border"), [])
+
+    def test_muestra_minima_y_orden(self):
+        for n in range(3):
+            make_event(self._ronda(n, "Ash"), 0, ME, "rival")
+        make_event(self._ronda(3, "Thorn"), 0, "rival", ME)
+
+        self.assertEqual([f["operator"] for f in agg.openings_by_operator(min_openings=3)], ["Ash"])
+        # con muestra 1 manda Te abre: Thorn (1) antes que Ash (0)
+        self.assertEqual(
+            [f["operator"] for f in agg.openings_by_operator(min_openings=1)], ["Thorn", "Ash"]
+        )
+
+    def test_la_api_devuelve_opening_operators_con_la_muestra_del_selector(self):
+        make_event(self._ronda(0), 0, "rival", ME)
+
+        con_uno = self.client.get("/api/duels/?min_duels=1").json()
+        self.assertEqual(con_uno["opening_operators"][0]["operator"], "Ash")
+        self.assertEqual(self.client.get("/api/duels/").json()["opening_operators"], [])

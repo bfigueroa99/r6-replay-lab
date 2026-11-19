@@ -142,6 +142,24 @@ class StacksRivalesTests(TestCase):
         )
         self.assertEqual(grupos[0], agg.rival_stacks()[0])
 
+    def test_el_stack_trae_la_ultima_vez(self):
+        self._partida(0, ["A", "B"])
+        reciente = self._partida(3, ["A", "B"])
+
+        (fila,) = agg.rival_stacks()
+        self.assertEqual(fila["last_played"], reciente.played_at.isoformat())
+
+    def test_el_aviso_de_la_partida_da_la_misma_ultima_vez_que_duelos(self):
+        vieja = self._partida(0, ["A", "B"], ganada=False)
+        self._partida(4, ["A", "B"])
+
+        (duelos,) = agg.rival_stacks()
+        (aviso,) = agg.rival_stacks_de_partida(vieja.id)
+        self.assertEqual(aviso["last_played"], duelos["last_played"])
+        self.assertEqual(
+            (aviso["matches"], aviso["wins"], aviso["losses"], aviso["winrate"]), (2, 1, 1, 50.0)
+        )
+
     def test_el_detalle_muestra_solo_el_grupo_mas_grande_que_aplica(self):
         con_c = self._partida(0, ["A", "B", "C"])
         self._partida(1, ["A", "B", "C"])

@@ -98,7 +98,8 @@ export default function Filters({
         </label>
       ) : null}
 
-      {showSite ? (
+      {/* un enlace del Coach puede traer el sitio a una pagina sin selector: sin esto quedaria puesto y sin verse */}
+      {showSite || value.site ? (
         <label>
           Sitio
           <select value={value.site || ''} onChange={set('site')}>

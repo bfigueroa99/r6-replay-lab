@@ -14,11 +14,15 @@ import {
 } from 'recharts'
 
 import { useApi } from '../api.js'
+import Delta from '../components/Delta.jsx'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, fmt } from '../components/ui.jsx'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SideChip, SinRondasFiltradas, Stat, fmt, pct } from '../components/ui.jsx'
 import { MUESTRA_CORTE, filasConPocaMuestra } from '../muestra.js'
+import { PARTIDAS_CORTE, conPocasPartidas, filasProrrogaPorLado } from '../prorrogaPorLado.js'
+import { conPocasPartidas as pocasTrasDerrotas, filasTrasDerrotas } from '../trasDerrotas.js'
 import { vistaSinRondas } from '../tipoPartida.js'
-import { textoResumenSesion } from '../resumenSesion.js'
+import { celdaPartidaDeSesion, textoResumenSesion } from '../resumenSesion.js'
+import { avisoPuesto, statsDePuesto } from '../puestoLobby.js'
 import { filasDeCierre, hayCierres } from '../cierres.js'
 import { filasDeCambio, filasDePartidas } from '../remontadas.js'
 import { MUESTRA_PARTIDAS, filasDeMargen, hayMargen } from '../margen.js'
@@ -44,16 +48,6 @@ const VENTANAS = [
   { by: 'days', n: 7, label: '7 días' },
   { by: 'days', n: 30, label: '30 días' },
 ]
-
-/** Flecha con color segun si la metrica mejoro, empeoro o no se movio. */
-function Delta({ metric }) {
-  if (metric.delta === null || metric.delta === undefined) return <span className="dim">—</span>
-  const signo = metric.delta > 0 ? '+' : ''
-  const texto = `${signo}${fmt(metric.delta, Math.abs(metric.delta) < 1 ? 2 : 1)}${metric.suffix}`
-  if (metric.verdict === 'mejor') return <span className="chip win">{texto}</span>
-  if (metric.verdict === 'peor') return <span className="chip loss">{texto}</span>
-  return <span className="chip">{texto}</span>
-}
 
 /** Mapas u operadores que cambiaron entre los dos periodos, del que mas subio al que mas cayo. */
 function TablaDeCambio({ filas, columna, minRows, csvName }) {
@@ -113,6 +107,25 @@ const COLUMNAS_POR_TRAMO = [
   { key: 'rating', label: 'Rating', digits: 2, sortable: false, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
   { key: 'kpr', label: 'KPR', digits: 2, sortable: false },
   { key: 'opening_winrate', label: 'Aperturas', digits: 0, suffix: '%', sortable: false },
+]
+// La prorroga por lado suma la partida a la derecha: las ayudas dicen que la
+// unidad cambia, porque la tabla mezcla rondas y partidas.
+const COLUMNAS_PRORROGA_POR_LADO = [
+  ...COLUMNAS_POR_TRAMO,
+  {
+    key: 'matches',
+    label: 'Partidas',
+    sortable: false,
+    help: 'Partidas que llegaron a prórroga y la arrancaste de este lado (el de tu primera ronda de prórroga).',
+  },
+  {
+    key: 'match_winrate',
+    label: 'Partidas ganadas',
+    digits: 0,
+    suffix: '%',
+    sortable: false,
+    help: 'Sobre las que tienen resultado; las incompletas cuentan en Partidas pero no acá.',
+  },
 ]
 const APERTURAS = { match_start: 'Ronda 1', side_switch: 'Primera tras el cambio', rest: 'Resto' }
 const LADOS = { Attack: 'Ataque', Defense: 'Defensa' }
@@ -174,6 +187,21 @@ function columnaDuracion(lado, label) {
 }
 
 const segundos = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)} s`)
+
+// la fila trae la partida como objeto: sin `csv` el archivo diria [object Object]
+function columnaPartidaDeSesion(key, label, extremo) {
+  return {
+    key,
+    label,
+    sortable: false,
+    help: `La partida de ${extremo} rating de la sesión, entre las que pasan los filtros. Hace falta más de una partida.`,
+    render: (row) => {
+      const celda = celdaPartidaDeSesion(row[key])
+      return celda ? <Link to={`/partidas/${celda.id}`}>{celda.texto}</Link> : '—'
+    },
+    csv: (row) => celdaPartidaDeSesion(row[key])?.texto ?? '',
+  }
+}
 
 /** Lista chica de remontadas o derrumbes, con enlace al detalle de cada partida. */
 function TablaDePartidas({ partidas, clave, columna, total, vacio, csvName }) {
@@ -275,6 +303,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
     orden,
     tramo: MITADES[row.half] || row.half,
   }))
+  const prorrogaPorLado = filasProrrogaPorLado(data.by_overtime_side, data.by_overtime_start_side)
   const porApertura = (data.by_half_opener ?? []).map((row, orden) => ({
     ...row,
     orden,
@@ -313,6 +342,7 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
       ].map((f, orden) => ({ ...f, orden }))
     : []
   const porPosicion = sesiones.data?.by_position || []
+  const trasDerrotas = filasTrasDerrotas(sesiones.data?.by_losing_streak)
   const horas = Math.round((sesiones.data?.gap_minutes || 120) / 60)
 
   return (
@@ -438,11 +468,13 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line yAxisId="pct" type="monotone" dataKey="winrate" name="Rondas ganadas %" stroke="#ff8a3d" strokeWidth={2} dot={false} />
               <Line yAxisId="pct" type="monotone" dataKey="kst_pct" name="KST %" stroke="#3fb950" strokeWidth={2} dot={false} />
-              <Line yAxisId="rating" type="monotone" dataKey="rating" name="Rating" stroke="#d29922" strokeWidth={2} dot={false} />
+              <Line yAxisId="rating" type="monotone" dataKey="rating" name="Rating" stroke="#d29922" strokeWidth={2} strokeDasharray="4 3" dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </Panel>
+
+      <PuestoEnElLobby data={data.lobby_rank} />
 
       {porPosicion.length > 2 ? (
         <Panel
@@ -488,6 +520,41 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         </Panel>
       ) : null}
 
+      {sesiones.data ? (
+        <Panel
+          title="Después de perder seguido"
+          hint="Winrate de la partida siguiente según cuántas derrotas seguidas llevabas en esa sesión. Las rachas se cuentan con todas tus partidas; los filtros eligen qué partidas se cuentan. Lado, operador y sitio no aplican: una partida tiene los dos lados."
+        >
+          {trasDerrotas.length ? (
+            <>
+              <DataTable
+                columns={[
+                  { key: 'tramo', label: 'Tramo', left: true, sortable: false },
+                  { key: 'matches', label: 'Partidas' },
+                  {
+                    key: 'decided',
+                    label: 'Decididas',
+                    help: 'Partidas con ganador: los empates y las que quedaron sin cerrar cuentan en Partidas y no acá.',
+                  },
+                  { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
+                ]}
+                rows={trasDerrotas}
+                initialSort={{ key: 'streak', dir: 'asc' }}
+                rowKey={(row) => row.streak}
+                csvName="despues-de-perder-seguido"
+              />
+              {pocasTrasDerrotas(trasDerrotas) ? (
+                <p className="note">
+                  Ojo: algún tramo tiene menos de {PARTIDAS_CORTE} partidas decididas; el porcentaje puede ser varianza.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Todavía no hay partidas con estos filtros.</p>
+          )}
+        </Panel>
+      ) : null}
+
       {sesiones.data?.sessions?.length ? (
         <Panel title="Sesiones" hint="Cada bloque de juego, de la más reciente hacia atrás.">
           {copia && (
@@ -517,12 +584,15 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
               { key: 'rounds', label: 'Rondas' },
               { key: 'winrate', label: 'Ganadas', digits: 0, suffix: '%' },
               { key: 'rating', label: 'Rating', digits: 2, help: 'Aporte por ronda comparado con tu propio promedio: 1.00 es tu ronda típica.' },
+              columnaPartidaDeSesion('best_match', 'Mejor', 'mayor'),
+              columnaPartidaDeSesion('worst_match', 'Peor', 'menor'),
               { key: 'kd', label: 'K/D', digits: 2 },
               { key: 'kpr', label: 'KPR', digits: 2 },
               { key: 'kst_pct', label: 'KST', digits: 0, suffix: '%' },
               {
                 key: 'copiar',
-                label: '',
+                label: 'Copiar',
+                soloLector: true,
                 sortable: false,
                 csv: false,
                 render: (row) => (
@@ -697,6 +767,31 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
             rowKey={(row) => row.half}
             csvName="por-mitad"
           />
+          <h3 style={{ margin: '16px 0 8px' }}>Prórroga por lado</h3>
+          {prorrogaPorLado.length ? (
+            <>
+              <DataTable
+                columns={COLUMNAS_PRORROGA_POR_LADO}
+                rows={prorrogaPorLado}
+                initialSort={{ key: 'orden', dir: 'asc' }}
+                rowKey={(row) => row.side}
+                csvName="prorroga-por-lado"
+              />
+              {filasConPocaMuestra(prorrogaPorLado).length ? (
+                <p className="note">
+                  Ojo: alguna fila tiene menos de {MUESTRA_CORTE} rondas; la diferencia puede ser varianza.
+                </p>
+              ) : null}
+              {conPocasPartidas(prorrogaPorLado) ? (
+                <p className="note">
+                  Ojo: algún lado tiene menos de {PARTIDAS_CORTE} partidas a prórroga; el porcentaje de partidas puede ser
+                  varianza.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="note">Sin rondas de prórroga con estos filtros.</p>
+          )}
           {porApertura.length ? (
             <>
               <h3 style={{ margin: '16px 0 8px' }}>Primera ronda de cada lado</h3>
@@ -1076,5 +1171,27 @@ export default function Trends({ filters, setFilters, runImport, importing }) {
         />
       </Panel>
     </>
+  )
+}
+
+function PuestoEnElLobby({ data }) {
+  const filas = statsDePuesto(data)
+  const aviso = avisoPuesto(data)
+  return (
+    <Panel
+      title="Puesto en el lobby"
+      hint="Tu rating en cada partida contra el de los demás jugadores, y contra tus compañeros. Empatar con el mejor cuenta como ser el mejor."
+    >
+      {filas.length ? (
+        <div className="kpis">
+          {filas.map((fila) => (
+            <Stat key={fila.key} label={fila.label} value={pct(fila.pct)} sub={fila.sub} />
+          ))}
+        </div>
+      ) : (
+        <p className="note">No hay partidas con otros jugadores con estos filtros.</p>
+      )}
+      {aviso ? <p className="note">{aviso}</p> : null}
+    </Panel>
   )
 }

@@ -175,6 +175,156 @@ def _quedar_solo(
     return valor, desde
 
 
+def estado_al_morir(eventos: list[dict], team_of: dict) -> dict:
+    """Vivos de su equipo y rivales, contandose, justo antes de la muerte de cada jugador.
+
+    Se anota la primera muerte del feed de cada uno (`Kill` sobre el o
+    `Death` suyo), la misma eleccion que `analyse_round`. Un `PlayerLeave`
+    resta un vivo pero no es una muerte: quien se fue no aparece, ni aunque
+    el feed lo mate despues. Las claves son las de `team_of` (nick o id).
+    """
+    vivos = set(team_of)
+    estado: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        if kind != PLAYER_LEAVE:
+            equipo = team_of[muerto]
+            aliados = sum(1 for j in vivos if team_of[j] == equipo)
+            estado[muerto] = (aliados, len(vivos) - aliados)
+        vivos.discard(muerto)
+    return estado
+
+
+def estado_al_matar(eventos: list[dict], team_of: dict) -> dict:
+    """Vivos del equipo de quien mata (contandose) y rivales justo antes de cada baja suya.
+
+    El reverso de `estado_al_morir`, con su mismo recorrido: cada baja ve el
+    estado que dejo la anterior, sin agrupar por segundo. Un teamkill no es
+    baja (como `kills` desde la ficha 67) y un `PlayerLeave` no es baja, pero
+    los dos restan su vivo. Un `Kill` sin actor no se anota, y el de un actor
+    que ya no esta vivo lo cuenta `bajas_despues_de_caer`; el muerto igual sale. Como los
+    vivos solo bajan, un jugador no repite estado en la misma ronda.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if kind == KILL and actor in vivos and team_of[actor] != team_of[muerto]:
+            equipo = team_of[actor]
+            aliados = sum(1 for j in vivos if team_of[j] == equipo)
+            bajas.setdefault(actor, []).append((aliados, len(vivos) - aliados))
+        vivos.discard(muerto)
+    return bajas
+
+
+def bajas_despues_de_caer(eventos: list[dict], team_of: dict) -> dict:
+    """Bajas a rivales que el feed atribuye a quien ya habia caido o se habia ido.
+
+    Trampas y gadgets matan despues de que muere su dueno, y `kills` las cuenta
+    (`clutch_kills` lo hace a proposito). `estado_al_matar` no les da estado:
+    sin el autor vivo no hay "tus vivos" que contar. Tambien caen aca los trades
+    del mismo tick que el feed ordena con tu muerte primero: sin agrupar por
+    segundo no se pueden separar. Se devuelven aparte para que no se confundan
+    con bajas que el feed no trae. Mismo recorrido.
+    """
+    vivos = set(team_of)
+    bajas: dict = {}
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        actor = e.get("actor")
+        if (kind == KILL and actor in team_of and actor not in vivos
+                and team_of[actor] != team_of[muerto]):
+            bajas[actor] = bajas.get(actor, 0) + 1
+        vivos.discard(muerto)
+    return bajas
+
+
+def ventaja_maxima(eventos: list[dict], team_of: dict, equipo: int) -> int | None:
+    """Mayor diferencia de vivos de `equipo` contra el resto tras cada salida del feed.
+
+    Mismo recorrido que `estado_al_morir`, pero aca un `PlayerLeave` y un
+    teamkill tambien restan: quien se fue no ayuda a convertir la ventaja. La
+    diferencia de arranque (un 5v4 de entrada) no cuenta sola: se mide recien
+    despues de la primera salida, asi la ventaja es algo que paso en la ronda.
+
+    Las salidas con el mismo `clock` se miden juntas: un trade en el mismo
+    segundo no dejo a nadie con uno mas. Sin reloj (0 o ausente) cada salida
+    se mide sola, y tambien las del ultimo reloj del feed: al plantar el juego
+    deja de emitir el reloj y todo el post-plant hereda el mismo valor
+    (`pydissect/events.py`, `_track_clock`), asi que ahi el reloj igual no dice
+    que fueran simultaneas. Con un equipo sin vivos ya no hay duelo que medir:
+    esa diferencia no cuenta, si no toda eliminacion ganada seria "ventaja".
+    `None` si el feed no saca a nadie.
+    """
+    reloj_final = next(
+        (e.get("clock") for e in reversed(eventos)
+         if e.get("clock") and e.get("kind") in (KILL, DEATH, PLAYER_LEAVE)),
+        None,
+    )
+    vivos = set(team_of)
+    maxima = None
+    pendiente = False
+    reloj_pendiente = None
+
+    def medir() -> bool:
+        nonlocal maxima
+        mios = sum(1 for j in vivos if team_of[j] == equipo)
+        suyos = len(vivos) - mios
+        if mios == 0 or suyos == 0:
+            return False
+        diferencia = mios - suyos
+        maxima = diferencia if maxima is None else max(maxima, diferencia)
+        return True
+
+    for e in eventos:
+        kind = e.get("kind")
+        if kind == KILL:
+            muerto = e.get("target")
+        elif kind in (DEATH, PLAYER_LEAVE):
+            muerto = e.get("actor")
+        else:
+            continue
+        if muerto not in vivos:
+            continue
+        reloj = e.get("clock") or None
+        if reloj == reloj_final:
+            reloj = None
+        if pendiente and (reloj is None or reloj != reloj_pendiente):
+            if not medir():
+                return maxima
+        vivos.discard(muerto)
+        pendiente = True
+        reloj_pendiente = reloj
+    if pendiente:
+        medir()
+    return maxima
+
+
 def clutch_vs(eventos: list[dict], team_of: dict[str, int]) -> dict[str, int]:
     """Rivales vivos cuando cada jugador quedo como unico vivo de su equipo.
 

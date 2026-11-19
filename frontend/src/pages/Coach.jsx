@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useApi } from '../api.js'
 import Filters from '../components/Filters.jsx'
-import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas } from '../components/ui.jsx'
+import { enlaceDeSenal, textoDelEnlace } from '../enlaceSenal.js'
+import { DataTable, EmptyState, ErrorBox, Loading, Panel, SinRondasFiltradas, Stat } from '../components/ui.jsx'
 import {
   claseSalida,
   claseVeredicto,
@@ -14,18 +16,16 @@ import {
   notaDeMuestra,
   textoSinSalidas,
 } from '../posicion.js'
+import { GRUPOS_COACH, formatoCoach, textoCoach } from '../textoCoach.js'
+import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
+import { filasRepetirSpawn, hayParesSpawn, textoParesSpawn } from '../repetirSpawn.js'
 import { vistaSinRondas } from '../tipoPartida.js'
-
-const GROUPS = [
-  { key: 'alta', title: 'Prioridad alta', hint: 'Lo que más te está costando rondas.' },
-  { key: 'media', title: 'Para trabajar', hint: 'Patrones claros con muestra suficiente.' },
-  { key: 'baja', title: 'Para tener en el radar', hint: 'Señales más débiles o de contexto.' },
-  { key: 'positivo', title: 'Tus fortalezas', hint: 'Apóyate en esto al elegir rol y picks.' },
-]
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
   const { data, error, loading } = useApi('/coach/', filters)
   const posicion = useApi('/positioning/', filters)
+  // antes de los returns tempranos: si no, React cambia el orden de los hooks al llegar los datos
+  const [copia, setCopia] = useState(null)
 
   if (error) return <ErrorBox error={error} />
   if (loading && !data) return <Loading />
@@ -36,6 +36,21 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
   }
 
   const insights = data.insights || []
+  const texto = textoCoach(insights, filters)
+
+  async function copiarSenales() {
+    // Sin console: un portapapeles negado es esperable (permisos, http) y se avisa en la pagina
+    if (!navigator.clipboard?.writeText) {
+      setCopia({ estado: 'error', texto })
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopia({ estado: 'ok', texto })
+    } catch {
+      setCopia({ estado: 'error', texto })
+    }
+  }
 
   return (
     <>
@@ -47,42 +62,74 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
             y cuántas rondas lo respaldan.
           </p>
         </div>
+        {texto ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* el aviso es del texto que se copio: con otros filtros ya no vale */}
+            {copia?.texto === texto && (
+              <span className="note">
+                {copia.estado === 'ok'
+                  ? 'Copiado'
+                  : 'No se pudo copiar: el navegador no dio acceso al portapapeles.'}
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn small"
+              onClick={copiarSenales}
+              // mientras llega la respuesta de los filtros nuevos, las señales en pantalla son las viejas
+              disabled={loading}
+              title="Copia las señales que ves, con los filtros, en texto plano."
+            >
+              Copiar señales
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <Filters value={filters} onChange={setFilters} />
 
-      {GROUPS.map((group) => {
+      {GRUPOS_COACH.map((group) => {
         const rows = insights.filter((i) => i.severity === group.key)
         if (!rows.length) return null
         return (
           <Panel key={group.key} title={group.title} hint={group.hint}>
-            {rows.map((insight) => (
-              <div key={insight.key} className={`insight ${insight.severity}`}>
-                <h3>{insight.title}</h3>
-                <p>{insight.detail}</p>
-                <div className="action">
-                  <b>Qué hacer:</b> {insight.action}
+            {rows.map((insight) => {
+              const enlace = enlaceDeSenal(insight, filters)
+              return (
+                <div key={insight.key} className={`insight ${insight.severity}`}>
+                  <h3>{insight.title}</h3>
+                  <p>{insight.detail}</p>
+                  <div className="action">
+                    <b>Qué hacer:</b> {insight.action}
+                  </div>
+                  <div className="meta">
+                    {insight.metric ? (
+                      <span>
+                        {insight.metric}: <b>{formatoCoach(insight.value)}</b>
+                        {insight.baseline !== null && insight.baseline !== undefined
+                          ? ` (referencia ${formatoCoach(insight.baseline)})`
+                          : ''}
+                      </span>
+                    ) : null}
+                    {insight.sample ? <span>muestra: {insight.sample} rondas</span> : null}
+                    {insight.scope && insight.scope !== 'general' ? <span>alcance: {insight.scope}</span> : null}
+                    {enlace ? (
+                      <Link className="btn small" to={enlace}>
+                        {textoDelEnlace(insight)}
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="meta">
-                  {insight.metric ? (
-                    <span>
-                      {insight.metric}: <b>{format(insight.value)}</b>
-                      {insight.baseline !== null && insight.baseline !== undefined
-                        ? ` (referencia ${format(insight.baseline)})`
-                        : ''}
-                    </span>
-                  ) : null}
-                  {insight.sample ? <span>muestra: {insight.sample} rondas</span> : null}
-                  {insight.scope && insight.scope !== 'general' ? <span>alcance: {insight.scope}</span> : null}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </Panel>
         )
       })}
 
       <PanelPosicion {...posicion} />
       <PanelSalidaSpawn {...posicion} />
+      <PanelRepetirSitio filters={filters} />
+      <PanelRepetirSpawn filters={filters} />
 
       <p className="note">
         Las reglas exigen una muestra mínima antes de opinar (20 rondas en general, 8-15 por
@@ -237,9 +284,99 @@ function PanelSalidaSpawn({ data, error, loading }) {
   )
 }
 
-const format = (value) =>
-  value === null || value === undefined
-    ? '—'
-    : typeof value === 'number'
-      ? Number(value).toFixed(Math.abs(value) < 10 && !Number.isInteger(value) ? 2 : 0)
-      : value
+const SIN_PARES = 'Sin rondas de defensa perdidas seguidas de otra con estos filtros.'
+
+const winrateConMuestra = (caso, label) => ({
+  key: `${caso}_winrate`,
+  label,
+  csv: (row) => row[`${caso}_winrate`],
+  render: (row) => textoWinrate(row[`${caso}_winrate`], row[`${caso}_poca`]),
+})
+
+const columnasRepetirSitio = [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que tu equipo volvió al sitio que acababa de perder.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que tu equipo defendió otro sitio.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+function PanelRepetirSitio({ filters }) {
+  const { data, error, loading } = useApi('/positioning/site-after-loss/', filters)
+  return (
+    <Panel
+      title="Repetir el sitio tras perderlo"
+      hint="Después de perder una ronda defendiendo un sitio, qué hace tu equipo en la siguiente ronda de defensa de esa partida y cuánto la gana. Con el filtro de sitio, solo las rondas perdidas en ese sitio."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !hayPares(data) ? (
+        <p className="note">{SIN_PARES}</p>
+      ) : (
+        <>
+          <p className="note">{textoPares(data.pairs)}.</p>
+          <div className="kpis repetir-sitio">
+            {casosRepetirSitio(data.total, data.min_rounds).map((caso) => (
+              <Stat
+                key={caso.clave}
+                label={caso.titulo}
+                value={caso.rounds}
+                sub={`winrate ${textoWinrate(caso.winrate, caso.poca)}`}
+              />
+            ))}
+          </div>
+          <DataTable
+            columns={columnasRepetirSitio}
+            rows={filasPorMapa(data)}
+            rowKey={(row) => `${row.slug}-${row.map_id}`}
+            initialSort={{ key: 'repeat_rounds', dir: 'desc' }}
+            csvName="repetir-sitio-por-mapa"
+            empty={SIN_PARES}
+          />
+        </>
+      )}
+    </Panel>
+  )
+}
+
+const SIN_PARES_SPAWN = 'Con estos filtros no hay dos rondas de ataque seguidas con spawn.'
+
+const columnasRepetirSpawn = [
+  { key: 'tramo', label: 'Tras', left: true, sortable: false },
+  { key: 'repeat_rounds', label: 'Repite', help: 'Rondas en que saliste del mismo spawn.' },
+  winrateConMuestra('repeat', 'Winrate repitiendo'),
+  { key: 'switch_rounds', label: 'Cambia', help: 'Rondas en que saliste de otro spawn.' },
+  winrateConMuestra('switch', 'Winrate cambiando'),
+]
+
+function PanelRepetirSpawn({ filters }) {
+  const { data, error, loading } = useApi('/positioning/spawn-after-result/', filters)
+  return (
+    <Panel
+      title="Repetir o cambiar el spawn"
+      hint="Después de una ronda de ataque, si en tu siguiente ronda de ataque de esa partida saliste del mismo spawn o de otro, y cuánto ganaste esa siguiente ronda. Tras ganar es la base para comparar. Con el filtro de operador o de sitio, solo las rondas que lo cumplen abren el par."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !hayParesSpawn(data) ? (
+        <p className="note">{SIN_PARES_SPAWN}</p>
+      ) : (
+        <>
+          <p className="note">{textoParesSpawn(data.pairs)}.</p>
+          <DataTable
+            columns={columnasRepetirSpawn}
+            rows={filasRepetirSpawn(data)}
+            rowKey={(row) => row.tras}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            csvName="repetir-spawn"
+            empty={SIN_PARES_SPAWN}
+          />
+        </>
+      )}
+    </Panel>
+  )
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { textoResumenSesion } from './resumenSesion.js'
+import { celdaPartidaDeSesion, textoResumenSesion } from './resumenSesion.js'
 
 const completa = {
   start: '2026-08-01T20:00:00',
@@ -41,5 +41,23 @@ describe('textoResumenSesion', () => {
     expect(lineas[2]).toBe('Rondas ganadas — · K/D — · rating —')
     expect(lineas).toHaveLength(4)
     expect(lineas[3]).toBe('Mejor partida: Bank · 4-3 · rating 1.40')
+  })
+})
+
+describe('celdaPartidaDeSesion', () => {
+  it('celdaPartidaDeSesion da texto e id de la partida', () => {
+    expect(celdaPartidaDeSesion(completa.best_match)).toEqual({ id: 1, texto: 'Bank · 4-3 · 1.40' })
+  })
+
+  it('celdaPartidaDeSesion sin partida da null', () => {
+    expect(celdaPartidaDeSesion(null)).toBeNull()
+    expect(celdaPartidaDeSesion(undefined)).toBeNull()
+  })
+
+  it('celdaPartidaDeSesion con rating nulo muestra guion', () => {
+    expect(celdaPartidaDeSesion({ id: 7, map: 'Kafe', score: '3-3', rating: null })).toEqual({
+      id: 7,
+      texto: 'Kafe · 3-3 · —',
+    })
   })
 })

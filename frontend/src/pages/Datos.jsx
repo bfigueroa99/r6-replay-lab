@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { post, useApi } from '../api.js'
-import { DataTable, ErrorBox, Loading, Panel, SideChip } from '../components/ui.jsx'
+import { Aviso, DataTable, ErrorBox, Loading, Panel, SideChip } from '../components/ui.jsx'
 
 const fecha = (iso) => (iso ? iso.slice(0, 10).split('-').reverse().slice(0, 2).join('-') : '—')
 
@@ -15,6 +15,26 @@ const rango = (row) =>
   row.first_seen === row.last_seen
     ? fecha(row.first_seen)
     : `${fecha(row.first_seen)} a ${fecha(row.last_seen)}`
+
+const fechaCorta = (iso) => (iso ? iso.slice(0, 10) : '—')
+
+// El orden lo da la API (la version mas nueva arriba, "Sin versión" al final):
+// DataTable ordena siempre, y por texto "Y9S4" quedaria antes que "Y10S4", asi
+// que cada fila lleva su posicion y la tabla arranca ordenada por ella.
+const conPosicion = (versiones) => (versiones || []).map((v, i) => ({ ...v, posicion: i }))
+
+const COLUMNAS_VERSIONES = [
+  {
+    key: 'game_version',
+    label: 'Versión',
+    left: true,
+    render: (row) => row.game_version || 'Sin versión',
+    csv: (row) => row.game_version || 'Sin versión',
+  },
+  { key: 'matches', label: 'Partidas' },
+  { key: 'first', label: 'Primera', render: (row) => fechaCorta(row.first), csv: (row) => fechaCorta(row.first) },
+  { key: 'last', label: 'Última', render: (row) => fechaCorta(row.last), csv: (row) => fechaCorta(row.last) },
+]
 
 export default function Datos() {
   const unknown = useApi('/unknown/')
@@ -85,7 +105,7 @@ export default function Datos() {
         </div>
       </div>
 
-      {flash ? <div className={`flash ${flash.ok ? '' : 'bad'}`}>{flash.text}</div> : null}
+      <Aviso flash={flash} />
 
       {maps.length || operators.length || gamemodes.length || matchTypes.length ? (
         <Panel
@@ -267,6 +287,16 @@ export default function Datos() {
           initialSort={{ key: 'started_at', dir: 'desc' }}
           rowKey={(row) => `${row.folder}-${row.started_at}`}
           empty="Todavía no hay importaciones registradas."
+        />
+
+        <h3>Partidas por versión del juego</h3>
+        <DataTable
+          columns={COLUMNAS_VERSIONES}
+          rows={conPosicion(status.data?.versions)}
+          initialSort={{ key: 'posicion', dir: 'asc' }}
+          rowKey={(row) => row.game_version || 'sin-version'}
+          csvName="partidas-por-version"
+          empty="Todavía no hay partidas importadas."
         />
       </Panel>
     </>

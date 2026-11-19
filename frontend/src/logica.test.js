@@ -163,4 +163,57 @@ describe('csvText', () => {
   it('sin filas devuelve solo la cabecera', () => {
     expect(csvText(columnas, null)).toBe('Mapa;Ganadas')
   })
+
+  it('un numero que sale de la funcion csv tambien lleva coma decimal', () => {
+    // con punto, Excel en espanol lee 9.6 como el 9 de junio
+    const cols = [{ key: 'noise', label: 'Ruido', csv: (row) => row.noise }]
+    expect(csvText(cols, [{ noise: 9.6 }, { noise: -3.25 }, { noise: null }]).split('\r\n').slice(1)).toEqual([
+      '9,6',
+      '-3,25',
+      '',
+    ])
+  })
+
+  it('un record o un marcador no se vuelve fecha al abrirlo', () => {
+    // "3-1" es el 3 de enero para Excel: va con raya (–), que no es separador de fecha
+    const cols = [
+      { key: 'score', label: 'Marcador' },
+      { key: 'record', label: 'Récord', csv: (row) => `${row.wins}-${row.losses}` },
+    ]
+    expect(csvText(cols, [{ score: '4-2', wins: 10, losses: 12 }]).split('\r\n')[1]).toBe('4–2;10–12')
+  })
+
+  it('un texto que la planilla ejecutaria como formula queda como texto', () => {
+    // un nick o un sitio vienen del .rec: el de un replay ajeno no es de confianza
+    const cols = [{ key: 'nick', label: 'Jugador' }]
+    const nicks = ['=HYPERLINK("http://x")', '@SUM(1)', '+cmd|x', '-2+3', '\t=1+1', ['=1+1', 'Ash']]
+    expect(csvText(cols, nicks.map((nick) => ({ nick }))).split('\r\n').slice(1)).toEqual([
+      '"\'=HYPERLINK(""http://x"")"',
+      "'@SUM(1)",
+      "'+cmd|x",
+      "'-2+3",
+      "'\t=1+1",
+      "'=1+1 / Ash",
+    ])
+  })
+
+  it('solo la secuencia de rondas que arma la app se salva del apostrofo', () => {
+    // un nick de un replay ajeno puede usar las mismas letras: "-G|P" no
+    // tiene la forma de textoDeTira y se trata como cualquier otro texto
+    const cols = [{ key: 'texto', label: 'Texto' }]
+    const textos = ['- G P | G', '- -', '-G|P', '-GP', '- G|P']
+    expect(csvText(cols, textos.map((texto) => ({ texto }))).split('\r\n').slice(1)).toEqual([
+      '- G P | G',
+      '- -',
+      "'-G|P",
+      "'-GP",
+      "'- G|P",
+    ])
+  })
+
+  it('un texto que es un numero con signo no se toca', () => {
+    const cols = [{ key: 'delta', label: 'Cambio' }]
+    const textos = ['-5', '+5', '-3.5', '+12,5', '-33 pts', '+4%', 'Ash', '2F Gym, 2F Bedroom', '—', '- G P | G']
+    expect(csvText(cols, textos.map((delta) => ({ delta }))).split('\r\n').slice(1)).toEqual(textos)
+  })
 })

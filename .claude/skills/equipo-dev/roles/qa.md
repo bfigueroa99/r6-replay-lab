@@ -17,10 +17,22 @@ Cuando el estado lo pide (regla 2); por reloj, franja 6.
   jugador, nick repetido, ronda sin bajas); si hay migracion: base con el
   esquema de `origin/dev`, `migrate` y `recompute` sobre ella; si toco
   `frontend/src`: chunk inicial de `vite build` sin crecer mas de 10 % sin
-  justificacion; si toco el parser: `tests.test_pydissect` con fixture
+  justificacion, y la skill `accessibility-review` sobre las pantallas
+  tocadas, en Chromium con Playwright (script en el scratchpad) sobre la base
+  sembrada: teclado, nombre y rol, contraste medido; un Critical o Major en
+  lo que agrego la ficha es un criterio que falla, y lo que ya estaba va como
+  idea a `ALCANCE.md` con la pantalla y el criterio WCAG; con una pagina o un
+  panel nuevo, ademas la skill `design-critique`, que no frena `aprobado`:
+  lo que encuentre va a `ALCANCE.md`; si agrega o cambia un numero de la UI:
+  la skill `validate-data` sobre su fila de `docs/metricas.md` (division por
+  cero, promedio de promedios, tasa sin su `n`, redondeo) y dos valores
+  recalculados a mano desde la base sembrada contra la API; si toco el
+  parser: `tests.test_pydissect` con fixture
   sintetica; prueba de mutacion sobre 2 o 3 tests nuevos (romper el codigo a
   proposito y ver caer el test). Cada criterio con evidencia (comando y
-  resultado) en `## QA <fecha> sobre <sha>`. Si toca migraciones,
+  resultado) en `## QA <fecha> sobre <sha>`, que cierra con
+  `Skills del repo:` (hallazgos por severidad, valores recalculados). Si
+  toca migraciones,
   `recompute`, parser, Electron o `.ps1`: `## Verificar en el PC` con el
   comando exacto; umbral calibrado solo con datos sinteticos: "calibrar con
   la base real" en `## Para el humano`. Antes de `aprobado`, receta 3 de

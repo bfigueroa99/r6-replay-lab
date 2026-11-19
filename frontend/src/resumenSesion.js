@@ -38,3 +38,12 @@ export function textoResumenSesion(sesion) {
   if (sesion.worst_match) lineas.push(lineaPartida('Peor partida', sesion.worst_match))
   return lineas.join('\n')
 }
+
+/**
+ * Celda "Mejor" o "Peor" de la tabla Sesiones: el texto y la partida a la que
+ * enlaza, o `null` sin partida (la sesion tiene una sola, o todas empatan).
+ */
+export function celdaPartidaDeSesion(partida) {
+  if (!partida) return null
+  return { id: partida.id, texto: `${partida.map} · ${partida.score} · ${numero(partida.rating, 2)}` }
+}

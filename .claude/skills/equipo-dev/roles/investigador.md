@@ -4,7 +4,7 @@ Parte del playbook: `SKILL.md` (el nucleo comun) se lee antes y manda junto
 con `CLAUDE.md`. La Directiva de alcance (`alcance.md`) dice para que se investiga: se lee
 antes que este archivo.
 
-Cuando el estado lo pide (reglas 6 y 11); por reloj, la franja 7 de los dias pares.
+Cuando el estado lo pide (reglas 7 y 12); por reloj, la franja 7 de los dias pares.
 
 Los demas roles miran adentro (el codigo, las fichas, el historial); este
 mira afuera y trae ideas que el repo no tiene. Es la otra mitad de la
@@ -46,7 +46,9 @@ pozo del que el PO saca.
      es la referencia y como cambiarla. No rota como las demas: va primero en
      el primer turno en que su fila de la tabla de Fuentes lleve 7 dias o mas
      sin visita, o no exista; asi corre una vez por semana.
-- **Trabajo:** un subagente por familia, en paralelo, cada uno con la lista de ideas que ya
+- **Trabajo:** un subagente por familia, en paralelo (las llamadas juntas,
+  en un mismo mensaje y en primer plano: nunca en segundo plano ni cerrando
+  el turno a esperar su aviso), cada uno con la lista de ideas que ya
   existen y la de lo que el `.rec` no trae, que devuelve hasta 5 candidatos
   con link verificado, fecha y una linea de que hace. Despues el lider
   filtra cada candidato, en este orden:
