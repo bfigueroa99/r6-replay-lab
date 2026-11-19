@@ -1,0 +1,48 @@
+{
+  "_que_es": "Condicion d de la puerta de merge (roles/release.md), la corre puerta.sh con frontera.py. Protegidos: la puerta (check.sh y la configuracion de ruff, vitest, playwright y los comandos de package.json) mas lo que mergea el humano (la lista de la condicion d). En este repo una violacion declarada con `Frontera: <motivo>` tampoco la mergea el Release: queda a la vista y la mergea el humano.",
+  "base": "origin/dev",
+  "pruebas": [
+    "backend/tests/**",
+    "frontend/src/**/*.test.*",
+    "frontend/e2e/**"
+  ],
+  "saltos_extra": [
+    "\\bself\\.skipTest\\(",
+    "@(unittest\\.)?skip(If|Unless)?\\b",
+    "@(unittest\\.)?expectedFailure\\b",
+    "\\btest\\.(fixme|fail)\\s*\\(",
+    "\\b(it|test|describe)\\.(skipIf|runIf)\\s*\\("
+  ],
+  "protegidos": [
+    "scripts/check.sh",
+    "ruff.toml",
+    "frontend/playwright.config.js",
+    "frontend/vite.config.js",
+    "frontend/e2e/servidor.js",
+    "frontend/package.json",
+    "CLAUDE.md",
+    ".claude/**",
+    "scripts/equipo-dev/**",
+    "docs/backlog/README.md",
+    "docs/backlog/PLANTILLA.md",
+    "docs/backlog/ESTADO.plantilla.md",
+    "docs/backlog/ALCANCE.md",
+    "docs/backlog/INVESTIGACION.md",
+    "docs/backlog/MAQUINARIA.md",
+    "frontend/electron/**",
+    "frontend/electron-builder.json",
+    "packaging/**",
+    "scripts/*.ps1",
+    ".github/**",
+    ".opencode/**"
+  ],
+  "umbrales": [
+    {"archivo": "frontend/playwright.config.js", "patron": "^\\s*retries:\\s*(\\d+)", "nombre": "reintentos del e2e", "flojo": "sube"},
+    {"archivo": "ruff.toml", "patron": "^line-length\\s*=\\s*(\\d+)", "nombre": "largo de linea de ruff", "flojo": "sube"},
+    {"archivo": "scripts/equipo-dev/pruebas.sh", "patron": "^tope_parte=(\\d+)", "nombre": "tope por parte del playbook", "flojo": "sube"},
+    {"archivo": "scripts/equipo-dev/pruebas.sh", "patron": "\\[ \"\\$b\" -lt (\\d+) \\]", "nombre": "tope de bytes de rutina.md", "flojo": "sube"}
+  ],
+  "excluir": [
+    "frontend/package-lock.json"
+  ]
+}

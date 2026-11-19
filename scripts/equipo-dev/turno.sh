@@ -139,7 +139,7 @@ fi
 # Contadores del pipeline. Lo que RESUMEN no traiga vale 0; los topes, lo que
 # dice el playbook. Son siempre enteros validados: por eso se comparan sin comillas.
 propuesto=0 disenado=0 en_curso=0 huerfanas=0 implementado=0 revisado=0 con_hallazgos=0
-aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 bloqueadas=0 pedidos=0
+aprobado=0 entregado=0 espera_humano=0 cola=0 total=0 bloqueadas=0 pedidos=0 estancadas=0
 tope_cola=4 tope_total=6 tope_propuesto=6 tope_disenado=3
 ideas_libres=0 sin_merge=no pausa=no sin_rastro_48h=0
 hora=""; fecha=""
@@ -150,7 +150,7 @@ cargar() {
     for kv in $1; do
         k=${kv%%=*}; v=${kv#*=}
         case "$k" in
-            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h|bloqueadas|pedidos)
+            propuesto|disenado|en_curso|huerfanas|implementado|revisado|con_hallazgos|aprobado|entregado|espera_humano|cola|total|tope_cola|tope_total|tope_propuesto|tope_disenado|ideas_libres|sin_rastro_48h|bloqueadas|pedidos|estancadas)
                 [[ "$v" =~ ^[0-9]+$ ]] && printf -v "$k" '%s' "$v" ;;
             sin_merge|pausa) printf -v "$k" '%s' "$v" ;;
             hora) [[ "$v" =~ ^[0-9]{4}$ ]] && hora=$v ;;
@@ -208,6 +208,9 @@ elegir_rol() {
     elif [ $revisado -gt 0 ]; then rol=qa; motivo="por estado: $revisado revisado"
     elif [ $implementado -gt 0 ]; then rol=revisor; motivo="por estado: $implementado implementado"
     elif [ $con_hallazgos -gt 0 ] || [ $huerfanas -gt 0 ]; then rol=dev; motivo="por estado: $con_hallazgos con_hallazgos, $huerfanas huerfanas"
+    # Una `con hallazgos` que ya dio tope_vueltas de Dev (estado.sh) no cuenta
+    # arriba: otro Dev arreglaria el hallazgo de turno y no el diseno que falla.
+    elif [ $estancadas -gt 0 ]; then rol=arquitecto; motivo="por estado: $estancadas estancadas"
     # Lo "entregado (...)" espera al humano, pero el motivo puede ser transitorio
     # (sin herramientas, veto levantado): el Release del reloj lo reintenta.
     elif [ $espera_humano -gt 0 ] && [ "$reloj" = release ]; then rol=release; motivo="reloj: release, $espera_humano en espera"
@@ -239,8 +242,10 @@ seguir_rol() {
             # Quien ya implemento no abre otra rama: para la regla, cola llena.
             dev) con_hallazgos=0; huerfanas=0; cola=$tope_cola ;;
             # Quien diseno no implementa lo que diseno (puede arreglar los
-            # hallazgos de otra ficha), y quien propuso no disena.
-            arquitecto) tope_disenado=0; cola=$tope_cola ;;
+            # hallazgos de otra ficha), y quien propuso no disena. Las
+            # estancadas tambien son del Arquitecto: sin ponerlas en 0 la
+            # regla lo volveria a elegir y la sesion cerraria con trabajo.
+            arquitecto) tope_disenado=0; cola=$tope_cola; estancadas=0 ;;
             po) tope_propuesto=0; tope_disenado=0; pedidos=0 ;;
             investigador) ideas_libres=10 ;;
         esac

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Lo mismo que check.ps1 (lint, tests, build y e2e) pero para Linux/macOS y
-# para las sesiones cloud de Claude Code (el equipo de desarrollo corre ahi).
+# para las sesiones cloud de Claude Code (el equipo de desarrollo corre ahi),
+# mas las pruebas del arnes del equipo, que check.ps1 no corre (ver [6/6]).
 # Uso:  ./scripts/check.sh              todo
 #       SIN_E2E=1 ./scripts/check.sh    sin el end to end (mas rapido)
 #
@@ -47,7 +48,7 @@ chromium_alternativo() {
 }
 
 echo
-echo "[1/5] ruff"
+echo "[1/6] ruff"
 if [ -n "$ruff" ]; then
     "$ruff" check "$repo/backend" || fallos+=(ruff)
 else
@@ -57,20 +58,20 @@ else
 fi
 
 echo
-echo "[2/5] tests del backend"
+echo "[2/6] tests del backend"
 (cd "$repo/backend" && "$python" manage.py test tests) || fallos+=(tests)
 
 if [ -d "$repo/frontend/node_modules" ]; then
     echo
-    echo "[3/5] tests del frontend"
+    echo "[3/6] tests del frontend"
     (cd "$repo/frontend" && npm test) || fallos+=("tests del frontend")
 
     echo
-    echo "[4/5] build del frontend"
+    echo "[4/6] build del frontend"
     (cd "$repo/frontend" && npm run build) || fallos+=(build)
 
     echo
-    echo "[5/5] end to end"
+    echo "[5/6] end to end"
     if [ "${SIN_E2E:-}" = 1 ]; then
         echo "  omitido por SIN_E2E=1"
     else
@@ -93,9 +94,18 @@ else
     # nube un verde a medias se confunde con un verde, y el equipo autonomo
     # solo empuja codigo con todos los pasos pasados.
     echo
-    echo "[3/5] [4/5] [5/5] falta frontend/node_modules: corre 'npm install' en frontend/"
+    echo "[3/6] [4/6] [5/6] falta frontend/node_modules: corre 'npm install' en frontend/"
     fallos+=("frontend sin instalar")
 fi
+
+echo
+echo "[6/6] arnes del equipo"
+# pruebas.sh: que el playbook, los scripts del equipo, la guardia y la frontera
+# digan lo mismo (unos 12 s, sin red). Corria solo a mano antes de empujar el
+# playbook, asi que una rama que rompia el arnes llegaba en verde. check.ps1
+# no lo corre: pruebas.sh necesita bash, python3 y setsid, que en el PC con
+# PowerShell no estan garantizados, y un rojo ahi por el entorno no diria nada.
+(cd "$repo" && PRUEBAS_SIN_RED=1 bash scripts/equipo-dev/pruebas.sh) || fallos+=("arnes del equipo")
 
 echo
 if [ "${#fallos[@]}" -gt 0 ]; then

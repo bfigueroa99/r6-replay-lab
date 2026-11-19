@@ -1,0 +1,4 @@
+{
+  "_por_que": "dev integra y solo recibe PRs que mergea el Release o el humano: ningun rol ni sesion empuja a dev a mano. La rama claude/equipo-dev/playbook no va: una sesion que inicia el dueno puede moverla (docs/backlog/README.md).",
+  "ramas_protegidas": ["dev"]
+}
