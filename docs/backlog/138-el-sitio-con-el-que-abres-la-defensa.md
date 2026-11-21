@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
-estado: revisado
-candado: qa 2026-11-21 01:38 UTC
+estado: aprobado
+candado: -
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
@@ -9,7 +9,7 @@ area: fullstack
 prioridad: 3
 fuente: ALCANCE.md S7
 archivos: backend/replays/analytics/aggregates.py, backend/replays/views.py, backend/replays/urls.py, backend/tests/test_apertura_defensa.py, frontend/src/aperturaDefensa.js, frontend/src/aperturaDefensa.test.js, frontend/src/pages/Coach.jsx, frontend/e2e/humo.spec.js, docs/metricas.md
-turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-c3LsMAo, dev 20261115T0219Z-i32143169, revisor 20261118T1211Z-cMNRUxv
+turnos: po 20261113T2157Z-cG2vDSe, arquitecto 20261114T0040Z-c3LsMAo, dev 20261115T0219Z-i32143169, revisor 20261118T1211Z-cMNRUxv, qa 20261121T0136Z-s7f07u7
 
 ## PR
 
@@ -315,7 +315,85 @@ Skills: no aplica.
 Skills del repo: ninguna (revision con el prompt de `revision.md`).
 OMC: plan=— · revisión=0 hallazgos · verificación=— (sin subagentes: revision del lider)
 
-## QA
+## QA 2026-11-21 sobre 143ec6a
+
+(qa 20261121T0136Z-s7f07u7)
+
+Veredicto: `aprobado`. Todos los criterios con evidencia; ningun hallazgo
+Critical ni Major en lo que agrega la ficha.
+
+- **check.sh** (`verificar.sh`, `E2E_PORT=21299`): `VERDE 143ec6a5e en 440s:
+  1417 tests backend, 463 vitest, 123 e2e. Todo en verde.` La primera corrida
+  sobre el mismo commit cayo en un e2e ajeno a la ficha (`Operadores muestra
+  si repites o cambias de operador`: `request fallida ... /api/filters/
+  (net::ERR_ABORTED)` y `/api/operators/pool/?side=Defense`, un `page.goto`
+  que corta requests en vuelo con el contenedor cargado); 122 pasaron, entre
+  ellos el del panel. Es el mismo patron que vio el Dev en `/tendencias`: va
+  como ficha de bug aparte, no frena esta.
+- **Base vacia** (`migrate` en una base del scratchpad, `runserver
+  127.0.0.1:21201`): `/api/positioning/defense-opener/` ->
+  `{"min_matches": 5, "matches": 0, "skipped": 0, "maps": []}`, 200 con
+  `until=foo`, `page=-1`, `map=`, `side=`, `days=99999999999`, `days=-3`,
+  `session=abc`, `map=%00`, `map=%E2%80%AE`. `/coach` muestra el estado
+  global "Todavía no hay replays importados" (el de siempre).
+- **Base sembrada** con `factories.py` (script `sembrar.py` en el
+  scratchpad, 9 partidas): apertura normal, apertura en ronda 0, hueco de
+  numeracion, sin tu fila en la ronda 0, una ronda sin lado antes de la
+  defensa, partida de un solo jugador, nick repetido entre dos cuentas
+  rivales, rondas sin bajas (sin eventos), ronda sin ganador, Club House en
+  dos versiones (`map_id` 0 y 1) y Border con la apertura sin sitio. La API
+  da `matches 5, skipped 4`, Club House (id 0) con B Church 3 aperturas
+  (75 %, 66.7 %, resto 6 rondas al 60 %) y 1F Bar 1 apertura sin ganador
+  (25 %, winrate nulo, resto 5 al 60 %), Club House (id 1) 1F Bar 1 (100 %,
+  0 %) y Border con Armory en 0 aperturas, `opens_share` nulo y resto 1 al
+  100 %: igual al calculo a mano partida por partida.
+- **Filtros** sobre la sembrada: `map=club-house` -> 5 y 3 afuera,
+  `map=border` -> 0 y 1 afuera; `side=Attack`, `operator=Zofia`,
+  `site=1F%20Bar` no cambian nada; `match_type=Casual`, `since=2030-01-01`,
+  `session=-1` -> vacio; `days=-3` vacio igual que `site-after-loss`. POST ->
+  403. Vecinos `/api/coach/`, `/api/positioning/`, `site-after-loss`,
+  `spawn-after-result` y `/api/matches/?page=-1`: 200 en las dos bases.
+- **Valores recalculados a mano** (`recalcular.py`: `sqlite3` sobre la base,
+  sin el ORM ni `aggregates.py`): apertura en B Church `[3, 3, 2]` -> 66.7;
+  resto en 1F Bar `[5, 5, 3]` -> 60.0. La API dice 66.7 y 60.0.
+- **validate-data** sobre la fila de `metricas.md`: division por cero ->
+  nulo (`opens_winrate` sin decididas, `opens_share` con 0 aperturas en el
+  mapa); winrate desde las sumas por sitio, no promedio de promedios; el `n`
+  a la vista (Abre y Resto al lado de cada winrate); el porcentaje Abre suma
+  100 por mapa (75 + 25) y su redondeo a entero puede dar 99 o 101 con tres
+  sitios parejos, como las demas columnas de porcentaje. Sin hallazgos.
+- **Chunk inicial** (`vite build`): `index` 200.34 kB en `origin/dev` ->
+  200.46 kB (+0.06 %); `Coach` 12.55 -> 15.14 kB (chunk de la ruta).
+- **accessibility-review** (Playwright en Chromium, `a11y.cjs`, base
+  sembrada): heading `h2` con el nombre del panel; una `table` con 6 `th` con
+  boton de orden nombrado; Tab recorre Descargar CSV y las 6 cabeceras con
+  foco visible (outline); Enter en Abre ordena y pone `aria-sort`; contraste
+  medido 5.71:1 en titulo, hint, notas y cabeceras y 14.17:1 en celdas (pide
+  4.5); a 683 px (zoom 200 %) la pagina no desborda y la tabla scrollea en
+  su contenedor (`overflow-x: auto`); consola limpia. Minor, ya existente:
+  las ayudas de columna van solo en `title` (patron de `DataTable`).
+- **Nota sin datos**: `/coach?map=border` en la sembrada -> "Con estos
+  filtros no hay partidas con su primera ronda de defensa completa." y "1
+  partida con defensa no entra: ...".
+- **Mutaciones** (worktree aparte, restauradas): sin `or not lado` -> cae
+  `test_una_ronda_sin_lado_antes_corta_la_apertura`; ronda sin ganador como
+  decidida -> 2 tests en error (`int(None)`); `opens_share` sobre todas las
+  aperturas -> cae `test_el_porcentaje_de_aperturas_es_sobre_las_del_mapa`;
+  el filtro de sitio de la barra aplicado -> cae
+  `test_el_filtro_de_mapa_aplica_y_el_de_lado_no`; `poca` con `<=` -> cae el
+  vitest "marca pocas partidas por debajo del corte".
+- **design-critique** (captura del panel): lectura clara y mismo patron que
+  "Repetir el sitio tras perderlo". Dos ideas a `ALCANCE.md`, no frenan:
+  "Winrate resto" sin ayuda de columna, y al ordenar por una columna las
+  filas de un mismo mapa se separan.
+
+Sin migracion, parser, Electron ni `.ps1`: no lleva "Verificar en el PC".
+
+Skills del repo: accessibility-review (0 Critical, 0 Major, 1 Minor ya
+existente), validate-data (2 valores recalculados = API, 0 hallazgos),
+design-critique (2 ideas a `ALCANCE.md`), verification-before-completion
+(cada criterio con su comando y salida en este turno).
+OMC: plan=— · revisión=— · verificación=no disponible (sin herramienta de subagentes: el lider cruzo los 5 criterios contra la evidencia de arriba, los 5 con evidencia)
 
 ## Para el humano
 
