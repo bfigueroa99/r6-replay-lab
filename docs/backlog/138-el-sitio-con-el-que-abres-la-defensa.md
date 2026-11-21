@@ -1,7 +1,7 @@
 # 138. El sitio con el que abres la defensa
 
 estado: aprobado
-candado: -
+candado: release 2026-11-21 12:30 UTC
 rama: claude/equipo-dev/138-el-sitio-con-el-que-abres-la-defensa
 tipo: funcionalidad
 epica: posicionamiento
