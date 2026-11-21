@@ -251,6 +251,11 @@ def site_after_loss(request: HttpRequest) -> JsonResponse:
 
 
 @require_GET
+def defense_opener(request: HttpRequest) -> JsonResponse:
+    return _ok(agg.defense_opener(**_filters(request)))
+
+
+@require_GET
 def spawn_after_result(request: HttpRequest) -> JsonResponse:
     return _ok(agg.spawn_after_result(**_filters(request)))
 

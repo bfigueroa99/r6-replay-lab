@@ -1270,6 +1270,99 @@ def site_after_loss(**filters) -> dict:
     }
 
 
+#: Muestra minima de "El sitio con el que abres la defensa": una apertura por
+#: partida, asi que juntar 8 como en `site_after_loss` tarda mucho en un mapa.
+#: Debajo se avisa, no se oculta. Sin calibrar con datos reales.
+APERTURA_DEFENSA_MIN_PARTIDAS = 5
+
+
+def defense_opener(**filters) -> dict:
+    """Por mapa, el sitio que tu equipo defiende en su primera ronda de defensa de cada partida.
+
+    La apertura de defensa es tu primera fila de defensa de la partida, y solo
+    cuenta si se sabe que fue la primera: tu primera fila tiene que ser la
+    ronda mas baja de la partida (de `Round`, no de tus filas) y los numeros
+    seguir sin hueco ni ronda sin lado hasta ella, que ademas necesita sitio.
+    Si no, la partida no aporta apertura, pero sus rondas de defensa si entran
+    al resto, que es el mismo sitio en tus demas rondas de defensa. Como en
+    `site_after_loss`, `side`, `site` y `operator` no filtran: la fila es de la
+    defensa y del equipo, y el sitio partiria la comparacion contra el resto.
+    """
+    base = {k: v for k, v in filters.items() if k not in ("side", "site", "operator")}
+    mias = base_queryset(**base)
+    primeras = dict(
+        Round.objects.filter(match_id__in=mias.values("round__match_id"))
+        .values("match_id")
+        .annotate(primera=Min("number"))
+        .values_list("match_id", "primera")
+    )
+    filas = mias.order_by("round__match_id", "round__number").values_list(
+        "round__match_id", "round__number", "side", "round__site", "round__my_team_won", *_MAPA
+    )
+
+    por_mapa: dict[tuple, dict] = {}
+
+    def sitio_de(mapa_clave: tuple, sitio: str) -> dict:
+        mapa = por_mapa.setdefault(mapa_clave, {
+            **dict(zip(_MAPA_LABELS, mapa_clave, strict=True)), "opens_total": 0, "sites": {},
+        })
+        return mapa["sites"].setdefault(sitio, {
+            "site": sitio, "opens": 0, "opens_decided": 0, "opens_won": 0,
+            "rest_rounds": 0, "rest_decided": 0, "rest_won": 0,
+        })
+
+    con_apertura: set[int] = set()
+    con_defensa: set[int] = set()
+    partida = esperado = None
+    buscando = False  # todavia puede salir la apertura de esta partida
+    for match_id, numero, lado, sitio, ganada, *mapa_clave in filas.iterator():
+        if match_id != partida:
+            partida, esperado, buscando = match_id, primeras.get(match_id), True
+        apertura = False
+        if buscando:
+            # un hueco o una ronda sin lado antes de la defensa: no se sabe donde empezo
+            if numero != esperado or not lado:
+                buscando = False
+            elif lado == "Defense":
+                buscando = False
+                apertura = bool(sitio)
+            else:
+                esperado += 1
+        if lado != "Defense":
+            continue
+        con_defensa.add(match_id)
+        if not sitio:
+            continue
+        fila = sitio_de(tuple(mapa_clave), sitio)
+        prefijo = "opens" if apertura else "rest"
+        fila["opens" if apertura else "rest_rounds"] += 1
+        if ganada is not None:
+            fila[f"{prefijo}_decided"] += 1
+            fila[f"{prefijo}_won"] += int(ganada)
+        if apertura:
+            con_apertura.add(match_id)
+            por_mapa[tuple(mapa_clave)]["opens_total"] += 1
+
+    mapas = []
+    for mapa in por_mapa.values():
+        sitios = list(mapa["sites"].values())
+        for s in sitios:
+            s["opens_winrate"] = _pct(s["opens_won"], s["opens_decided"])
+            s["rest_winrate"] = _pct(s["rest_won"], s["rest_decided"])
+            # sobre las aperturas del mapa: un mapa poco jugado no diluye a otro
+            s["opens_share"] = _pct(s["opens"], mapa["opens_total"])
+        sitios.sort(key=lambda s: (-s["opens"], -s["rest_rounds"], s["site"]))
+        mapas.append({**mapa, "sites": sitios})
+    mapas = _etiquetar(mapas)
+    mapas.sort(key=lambda m: (-m["opens_total"], m["map"]))
+    return {
+        "min_matches": APERTURA_DEFENSA_MIN_PARTIDAS,
+        "matches": len(con_apertura),
+        "skipped": len(con_defensa - con_apertura),
+        "maps": mapas,
+    }
+
+
 def spawn_after_result(**filters) -> dict:
     """Tras una ronda de ataque, si en tu siguiente ronda de ataque repetiste spawn.
 

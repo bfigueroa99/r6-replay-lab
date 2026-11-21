@@ -19,6 +19,13 @@ import {
 import { GRUPOS_COACH, formatoCoach, textoCoach } from '../textoCoach.js'
 import { casosRepetirSitio, filasPorMapa, hayPares, textoPares, textoWinrate } from '../repetirSitio.js'
 import { filasRepetirSpawn, hayParesSpawn, textoParesSpawn } from '../repetirSpawn.js'
+import {
+  filasAperturaDefensa,
+  hayAperturas,
+  textoAperturas,
+  textoSinApertura,
+  textoWinrateApertura,
+} from '../aperturaDefensa.js'
 import { vistaSinRondas } from '../tipoPartida.js'
 
 export default function Coach({ filters, setFilters, runImport, importing }) {
@@ -129,6 +136,7 @@ export default function Coach({ filters, setFilters, runImport, importing }) {
       <PanelPosicion {...posicion} />
       <PanelSalidaSpawn {...posicion} />
       <PanelRepetirSitio filters={filters} />
+      <PanelAperturaDefensa filters={filters} />
       <PanelRepetirSpawn filters={filters} />
 
       <p className="note">
@@ -335,6 +343,66 @@ function PanelRepetirSitio({ filters }) {
             csvName="repetir-sitio-por-mapa"
             empty={SIN_PARES}
           />
+        </>
+      )}
+    </Panel>
+  )
+}
+
+const SIN_APERTURAS = 'Con estos filtros no hay partidas con su primera ronda de defensa completa.'
+
+const columnasAperturaDefensa = [
+  { key: 'map', label: 'Mapa', left: true },
+  { key: 'site', label: 'Sitio', left: true },
+  {
+    key: 'opens',
+    label: 'Abre',
+    help: 'Partidas en que tu equipo defendió este sitio en su primera ronda de defensa, y qué parte de las aperturas del mapa son.',
+    render: (row) => (row.opens_share === null ? String(row.opens) : `${row.opens} (${Math.round(row.opens_share)}%)`),
+  },
+  {
+    key: 'opens_winrate',
+    label: 'Winrate abriendo',
+    help: 'Rondas ganadas de esas primeras defensas, sobre las que tienen ganador.',
+    render: (row) => textoWinrateApertura(row.opens_winrate, row.poca),
+  },
+  { key: 'rest_rounds', label: 'Resto', help: 'Tus demás rondas de defensa en este sitio, sin las aperturas.' },
+  {
+    key: 'rest_winrate',
+    label: 'Winrate resto',
+    render: (row) => textoWinrateApertura(row.rest_winrate, false),
+  },
+]
+
+function PanelAperturaDefensa({ filters }) {
+  const { data, error, loading } = useApi('/positioning/defense-opener/', filters)
+  const sinApertura = textoSinApertura(data?.skipped)
+  return (
+    <Panel
+      title="El sitio con el que abres la defensa"
+      hint="En cada partida, el sitio que tu equipo defendió en su primera ronda de defensa, cuántas veces y cuánto la ganó, contra ese mismo sitio en el resto de tus rondas de defensa. Lado, operador y sitio de la barra no aplican."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : loading && !data ? (
+        <Loading />
+      ) : !hayAperturas(data) ? (
+        <>
+          <p className="note">{SIN_APERTURAS}</p>
+          {sinApertura ? <p className="note">{sinApertura}</p> : null}
+        </>
+      ) : (
+        <>
+          <p className="note">{textoAperturas(data.matches)}.</p>
+          <DataTable
+            columns={columnasAperturaDefensa}
+            rows={filasAperturaDefensa(data)}
+            rowKey={(row) => row.clave}
+            initialSort={{ key: 'orden', dir: 'asc' }}
+            csvName="sitio-con-el-que-abres-la-defensa"
+            empty={SIN_APERTURAS}
+          />
+          {sinApertura ? <p className="note">{sinApertura}</p> : null}
         </>
       )}
     </Panel>
